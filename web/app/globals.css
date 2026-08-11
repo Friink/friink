@@ -416,6 +416,9 @@ textarea {
 /* Feed */
 .home-feed {
   display: grid;
+  width: min(100%, 1024px);
+  min-width: 256px;
+  margin: 0 auto;
 }
 
 .feed-post {
@@ -743,6 +746,10 @@ textarea {
     width: 100%;
     margin: 0 auto;
     padding-bottom: 2rem;
+  }
+
+  .home-feed {
+    width: min(100%, 1024px);
   }
 
   .main-content-post {

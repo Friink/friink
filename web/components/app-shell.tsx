@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FriinkLogo } from '@/components/friink-logo';
 import { HomeScreen } from '@/components/home-screen';
 import { LoginScreen } from '@/components/login-screen';
@@ -20,6 +20,16 @@ export function AppShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+    const updateSidebarState = () => setSidebarCollapsed(mobileQuery.matches);
+
+    updateSidebarState();
+    mobileQuery.addEventListener('change', updateSidebarState);
+
+    return () => mobileQuery.removeEventListener('change', updateSidebarState);
+  }, []);
 
   function handlePost(text: string) {
     const newPost: Post = {
