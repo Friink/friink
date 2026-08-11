@@ -1,5 +1,3 @@
-import type { Post } from '@/lib/data';
-
 export type Post = {
   id: number;
   name: string;
