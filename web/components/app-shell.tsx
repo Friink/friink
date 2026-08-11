@@ -1,19 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FriinkLogo } from '@/components/friink-logo';
+import { ConnectionsScreen } from '@/components/connections-screen';
+import { SettingsScreen } from '@/components/account-screens';
+import { ProfileScreen } from '@/components/profile-screen';
+import { StarredScreen } from '@/components/starred-screen';
+import { Header } from '@/components/header';
 import { HomeScreen } from '@/components/home-screen';
 import { LoginScreen } from '@/components/login-screen';
 import { MobileNav } from '@/components/mobile-nav';
 import { PostScreen } from '@/components/post-screen';
-import { DirectoryScreen as ConnectionsScreen, MessagesScreen } from '@/components/screens';
+import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
-import { currentUser, initialPosts, type Post, type Screen } from '@/lib/data';
-
-function UserAvatar({ initials, tone }: { initials: string; tone: string }) {
-  return <span className={`user-avatar avatar-${tone}`}>{initials}</span>;
-}
+import { currentUser, initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
 
 export function AppShell() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -40,6 +40,9 @@ export function AppShell() {
       tone: currentUser.tone,
       date: 'Just now',
       text,
+      connectionType: 'following',
+      isConnection: true,
+      isStarred: false,
       replies: 0,
       reactions: 0,
     };
@@ -63,23 +66,17 @@ export function AppShell() {
         />
 
         <section className="main-panel">
-          {activeScreen === 'home' && (
-            <header className="topbar">
-              <div className="topbar-home">
-                <button className="topbar-bell" type="button" aria-label="Notifications">
-                  <i className="fa-regular fa-bell" aria-hidden="true" />
-                  <span />
-                </button>
-              </div>
-            </header>
-          )}
+          <Header activeScreen={activeScreen} onNavigate={setActiveScreen} />
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
             {activeScreen === 'home' && <HomeScreen posts={posts} />}
-            {activeScreen === 'connections' && <ConnectionsScreen />}
+            {activeScreen === 'profile' && <ProfileScreen posts={posts} />}
+            {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} />}
+            {activeScreen === 'starred' && <StarredScreen posts={posts} />}
             {activeScreen === 'post' && <PostScreen onBack={() => setActiveScreen('home')} onPost={handlePost} />}
             {activeScreen === 'search' && <SearchScreen />}
             {activeScreen === 'messages' && <MessagesScreen />}
+            {activeScreen === 'settings' && <SettingsScreen />}
           </div>
         </section>
 

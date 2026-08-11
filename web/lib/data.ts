@@ -6,11 +6,14 @@ export type Post = {
   tone: string;
   date: string;
   text: string;
+  connectionType: 'followers' | 'following';
+  isConnection: boolean;
+  isStarred: boolean;
   replies: number;
   reactions: number;
 };
 
-export type Screen = 'home' | 'connections' | 'post' | 'search' | 'messages';
+export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'post' | 'search' | 'messages' | 'settings';
 
 export type NavItem = {
   id: Screen;
@@ -26,6 +29,16 @@ export const navItems: NavItem[] = [
   { id: 'messages', label: 'Messages', icon: 'fa-solid fa-envelope' },
 ];
 
+export const sidebarNavItems: NavItem[] = [
+  { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
+  { id: 'profile', label: 'Profile', icon: 'fa-solid fa-user' },
+  { id: 'connections', label: 'Connections', icon: 'fa-solid fa-users' },
+  { id: 'starred', label: 'Starred', icon: 'fa-solid fa-star' },
+  { id: 'post', label: 'Post', icon: 'fa-solid fa-pen' },
+  { id: 'messages', label: 'Messages', icon: 'fa-solid fa-envelope' },
+  { id: 'settings', label: 'Settings', icon: 'fa-solid fa-gear' },
+];
+
 export const initialPosts: Post[] = [
   {
     id: 1,
@@ -35,6 +48,9 @@ export const initialPosts: Post[] = [
     tone: 'coral',
     date: '19 Mar 2024',
     text: 'Finally booked the little cabin by the lake. A quiet weekend is exactly what I needed.',
+    connectionType: 'followers',
+    isConnection: true,
+    isStarred: true,
     replies: 8,
     reactions: 24,
   },
@@ -46,6 +62,9 @@ export const initialPosts: Post[] = [
     tone: 'sage',
     date: '18 Mar 2024',
     text: 'Does anyone have a great recommendation for a beginner-friendly ceramics class?',
+    connectionType: 'following',
+    isConnection: true,
+    isStarred: false,
     replies: 14,
     reactions: 11,
   },
@@ -57,6 +76,9 @@ export const initialPosts: Post[] = [
     tone: 'sun',
     date: '17 Mar 2024',
     text: 'The best conversations happen when nobody is rushing to the next thing.',
+    connectionType: 'following',
+    isConnection: false,
+    isStarred: true,
     replies: 5,
     reactions: 36,
   },
@@ -68,3 +90,52 @@ export const currentUser = {
   initials: 'AM',
   tone: 'mint',
 };
+
+export type Connection = {
+  id: number;
+  name: string;
+  handle: string;
+  initials: string;
+  tone: string;
+  relationship: 'follower' | 'following' | 'mutual';
+  status: 'connected' | 'request';
+};
+
+export const initialConnections: Connection[] = [
+  {
+    id: 1,
+    name: 'Maya Chen',
+    handle: '@mayachen',
+    initials: 'MC',
+    tone: 'coral',
+    relationship: 'mutual',
+    status: 'connected',
+  },
+  {
+    id: 2,
+    name: 'Jon Bell',
+    handle: '@jonbell',
+    initials: 'JB',
+    tone: 'sage',
+    relationship: 'following',
+    status: 'connected',
+  },
+  {
+    id: 3,
+    name: 'Priya Shah',
+    handle: '@priyashah',
+    initials: 'PS',
+    tone: 'sun',
+    relationship: 'follower',
+    status: 'connected',
+  },
+  {
+    id: 4,
+    name: 'Alina Ross',
+    handle: '@alinaross',
+    initials: 'AR',
+    tone: 'coral',
+    relationship: 'follower',
+    status: 'request',
+  },
+];
