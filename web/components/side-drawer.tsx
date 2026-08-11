@@ -1,5 +1,5 @@
 import { FriinkLogo } from '@/components/friink-logo';
-import { currentUser, navItems, type Screen } from '@/lib/data';
+import { currentUser, sidebarNavItems, type Screen } from '@/lib/data';
 
 type SideDrawerProps = {
   activeScreen: Screen;
@@ -31,7 +31,7 @@ export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollap
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
-        {navItems.map((item) => (
+        {sidebarNavItems.map((item) => (
           <button
             className={`nav-item${activeScreen === item.id ? ' active' : ''}`}
             key={item.id}
