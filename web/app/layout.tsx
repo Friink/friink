@@ -5,6 +5,9 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Friink | Your people, in one place',
   description: 'A calmer way to stay close to your people.',
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 const themeCss = `:root { ${Object.entries(themeToCssVars())
