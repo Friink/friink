@@ -10,7 +10,7 @@ export type Post = {
   reactions: number;
 };
 
-export type Screen = 'home' | 'post';
+export type Screen = 'home' | 'connections' | 'post' | 'search' | 'messages';
 
 export type NavItem = {
   id: Screen;
@@ -20,7 +20,10 @@ export type NavItem = {
 
 export const navItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
+  { id: 'connections', label: 'Connections', icon: 'fa-solid fa-users' },
   { id: 'post', label: 'Post', icon: 'fa-solid fa-pen' },
+  { id: 'search', label: 'Search', icon: 'fa-solid fa-magnifying-glass' },
+  { id: 'messages', label: 'Messages', icon: 'fa-solid fa-envelope' },
 ];
 
 export const initialPosts: Post[] = [

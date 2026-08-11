@@ -1,7 +1,7 @@
 export function FriinkLogo({ className = '' }: { className?: string }) {
   return (
     <span className={`friink-logo ${className}`.trim()} aria-label="Friink">
-      i<span>i</span>
+      <img src="/brand/logoBlack.svg" alt="" />
     </span>
   );
 }

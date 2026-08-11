@@ -4,8 +4,12 @@ import { useState } from 'react';
 import { FriinkLogo } from '@/components/friink-logo';
 import { HomeScreen } from '@/components/home-screen';
 import { LoginScreen } from '@/components/login-screen';
+import { MobileNav } from '@/components/mobile-nav';
 import { PostScreen } from '@/components/post-screen';
-import { currentUser, initialPosts, navItems, type Post, type Screen } from '@/lib/data';
+import { DirectoryScreen as ConnectionsScreen, MessagesScreen } from '@/components/screens';
+import { SearchScreen } from '@/components/screens';
+import { SideDrawer } from '@/components/side-drawer';
+import { currentUser, initialPosts, type Post, type Screen } from '@/lib/data';
 
 function UserAvatar({ initials, tone }: { initials: string; tone: string }) {
   return <span className={`user-avatar avatar-${tone}`}>{initials}</span>;
@@ -13,6 +17,7 @@ function UserAvatar({ initials, tone }: { initials: string; tone: string }) {
 
 export function AppShell() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
 
@@ -39,50 +44,18 @@ export function AppShell() {
   return (
     <main className="app-shell">
       <div className="app-layout">
-        <aside className="sidebar" aria-label="Sidebar">
-          <div className="sidebar-brand">
-            <FriinkLogo />
-          </div>
-
-          <div className="sidebar-profile">
-            <UserAvatar initials={currentUser.initials} tone={currentUser.tone} />
-            <div>
-              <strong>{currentUser.name}</strong>
-              <span>{currentUser.handle}</span>
-            </div>
-          </div>
-
-          <nav className="sidebar-nav" aria-label="Main navigation">
-            {navItems.map((item) => (
-              <button
-                className={`nav-item${activeScreen === item.id ? ' active' : ''}`}
-                key={item.id}
-                type="button"
-                onClick={() => setActiveScreen(item.id)}
-              >
-                <i className={item.icon} aria-hidden="true" />
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="sidebar-footer">
-            <button className="nav-item" type="button" onClick={() => setLoggedIn(false)}>
-              <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
-              <span>Log out</span>
-            </button>
-            <p>© 2026 Friink</p>
-          </div>
-        </aside>
+        <SideDrawer
+          activeScreen={activeScreen}
+          collapsed={sidebarCollapsed}
+          onNavigate={setActiveScreen}
+          onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
+          onLogout={() => setLoggedIn(false)}
+        />
 
         <section className="main-panel">
           {activeScreen === 'home' && (
             <header className="topbar">
               <div className="topbar-home">
-                <button className="topbar-avatar" type="button" aria-label="Open profile">
-                  <UserAvatar initials={currentUser.initials} tone={currentUser.tone} />
-                </button>
-                <FriinkLogo />
                 <button className="topbar-bell" type="button" aria-label="Notifications">
                   <i className="fa-regular fa-bell" aria-hidden="true" />
                   <span />
@@ -92,27 +65,15 @@ export function AppShell() {
           )}
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
-            {activeScreen === 'home' ? (
-              <HomeScreen posts={posts} />
-            ) : (
-              <PostScreen onBack={() => setActiveScreen('home')} onPost={handlePost} />
-            )}
+            {activeScreen === 'home' && <HomeScreen posts={posts} />}
+            {activeScreen === 'connections' && <ConnectionsScreen />}
+            {activeScreen === 'post' && <PostScreen onBack={() => setActiveScreen('home')} onPost={handlePost} />}
+            {activeScreen === 'search' && <SearchScreen />}
+            {activeScreen === 'messages' && <MessagesScreen />}
           </div>
         </section>
 
-        <nav className="bottom-nav" aria-label="Mobile navigation">
-          {navItems.map((item) => (
-            <button
-              className={`bottom-nav-item${activeScreen === item.id ? ' active' : ''}`}
-              key={item.id}
-              type="button"
-              onClick={() => setActiveScreen(item.id)}
-              aria-label={item.label}
-            >
-              <i className={item.icon} aria-hidden="true" />
-            </button>
-          ))}
-        </nav>
+        <MobileNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
       </div>
     </main>
   );

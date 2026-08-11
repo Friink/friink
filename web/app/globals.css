@@ -36,17 +36,16 @@ textarea {
 
 /* Logo */
 .friink-logo {
-  color: var(--color-brand);
-  font: 700 var(--text-xl)/1 var(--font-logo);
-  letter-spacing: -0.35em;
-  transform: scaleX(0.82);
+  display: inline-block;
+  width: 2rem;
+  height: 2.25rem;
 }
 
-.friink-logo span {
-  position: relative;
-  top: 1px;
-  margin-left: 0.12em;
-  font-size: 0.92em;
+.friink-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: invert(56%) sepia(47%) saturate(605%) hue-rotate(92deg) brightness(89%) contrast(86%);
 }
 
 /* Shared */
@@ -90,6 +89,19 @@ textarea {
   font-weight: 700;
 }
 
+.profile-avatar {
+  overflow: hidden;
+  padding: 0;
+  background: var(--color-brand-soft);
+}
+
+.profile-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .avatar-coral { background: var(--color-avatar-coral); }
 .avatar-sage { background: var(--color-avatar-sage); }
 .avatar-sun { background: var(--color-avatar-sun); }
@@ -110,16 +122,16 @@ textarea {
   align-content: start;
   width: min(100%, 31rem);
   min-height: 100vh;
-  padding: clamp(5rem, 15vh, 9rem) clamp(1.25rem, 5vw, 3rem) 2.5rem;
+  padding: clamp(3rem, 10vh, 6rem) clamp(1.25rem, 5vw, 3rem) 5rem;
   text-align: center;
-  gap: 0.9rem;
+  gap: 0.75rem;
 }
 
 .brand-lockup {
   display: grid;
   justify-items: center;
   gap: 0.8rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   color: var(--color-brand);
 }
 
@@ -131,6 +143,7 @@ textarea {
 .brand-lockup-wordmark {
   width: 9rem;
   height: auto;
+  filter: invert(56%) sepia(47%) saturate(605%) hue-rotate(92deg) brightness(89%) contrast(86%);
 }
 
 .brand-lockup-sm .brand-lockup-mark {
@@ -276,8 +289,8 @@ textarea {
 
 .login-switch {
   position: absolute;
-  right: 2.25rem;
-  bottom: 2rem;
+  right: clamp(1.25rem, 5vw, 3rem);
+  bottom: 1.5rem;
   left: clamp(1.25rem, 5vw, 3rem);
   margin: 0;
   color: #8a908c;
@@ -356,7 +369,7 @@ textarea {
 .topbar-home {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   height: 100%;
   padding: 0 1.125rem;
 }
@@ -571,10 +584,14 @@ textarea {
     max-width: 1200px;
   }
 
+  .app-layout:has(.sidebar-collapsed) {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+
   .sidebar {
     display: flex;
     flex-direction: column;
-    padding: 1.75rem 1.25rem;
+    padding: 0.75rem 1.25rem 1.75rem;
     border-right: 1px solid var(--color-line);
     background: var(--color-paper);
   }
@@ -584,12 +601,13 @@ textarea {
   }
 
   .sidebar-profile {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
+    display: grid;
+    justify-items: start;
+    gap: 0.75rem;
     margin-top: 2rem;
     padding: 0 0.5rem 1.5rem;
     border-bottom: 1px solid var(--color-line);
+    text-align: left;
   }
 
   .sidebar-profile strong,
@@ -605,6 +623,12 @@ textarea {
     margin-top: 0.125rem;
     color: var(--color-muted);
     font-size: var(--text-xs);
+  }
+
+  .sidebar-profile .user-avatar {
+    width: 3rem;
+    height: 3rem;
+    font-size: 0.75rem;
   }
 
   .sidebar-nav {
@@ -633,13 +657,74 @@ textarea {
   }
 
   .nav-item.active {
-    color: var(--color-brand-dark);
-    background: var(--color-brand-soft);
+    color: var(--color-paper);
+    background: var(--color-brand);
     font-weight: 600;
   }
 
   .sidebar-footer {
+    display: grid;
+    gap: 0.35rem;
     margin-top: auto;
+  }
+
+  .sidebar-action {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    width: 100%;
+    padding: 0.75rem;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    background: transparent;
+    text-align: left;
+    font-size: var(--text-sm);
+  }
+
+  .sidebar-action i {
+    width: 1.25rem;
+    text-align: center;
+  }
+
+  .sidebar-collapse-button {
+    margin-top: 0.25rem;
+  }
+
+  .sidebar-collapsed {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .sidebar-collapsed .sidebar-profile > div,
+  .sidebar-collapsed .nav-item span,
+  .sidebar-collapsed .sidebar-action span {
+    display: none;
+  }
+
+  .sidebar-collapsed .sidebar-brand {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar-collapsed .sidebar-profile {
+    justify-items: center;
+    padding-right: 0;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .sidebar-collapsed .sidebar-profile .user-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .sidebar-collapsed .nav-item,
+  .sidebar-collapsed .sidebar-action {
+    justify-content: center;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
   }
 
   .sidebar-footer p {
@@ -655,7 +740,7 @@ textarea {
   }
 
   .main-content {
-    width: min(100%, var(--space-content-max-width));
+    width: 100%;
     margin: 0 auto;
     padding-bottom: 2rem;
   }
