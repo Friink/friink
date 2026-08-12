@@ -47,6 +47,16 @@ textarea {
   font: inherit;
 }
 
+.primary-button,
+.text-link,
+.pill-button,
+.landing-button,
+.landing-nav-links a,
+.forgot-password,
+.login-switch button {
+  font-family: 'Nunito Local', sans-serif;
+}
+
 button {
   cursor: pointer;
 }
@@ -409,8 +419,8 @@ textarea {
 
 .landing-brand img {
   display: block;
-  width: 2rem;
-  height: 2.75rem;
+  width: unset;
+  height: 1.5rem;
   object-fit: contain;
 }
 

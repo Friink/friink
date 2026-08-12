@@ -37,6 +37,19 @@ The sidebar order is:
 - Thin lines separate navigation, tabs, feed posts, and directory rows.
 - Avatars use circular shapes and soft color variations.
 - Controls should remain compact, clear, and usable on narrow screens.
+- Typography should feel soft, human, and modern; Nunito is used for headings and action-driven text.
+- The brand should feel safe, trustworthy, and quietly premium rather than loud or overly techy.
+
+## Error State
+
+Fallback and error screens should be quiet, centered, and branded.
+
+- Full Friink logo centered above the message.
+- Message text: "there appears to be something wrong"
+- Error code line beneath: "Error code: xxx"
+- Everything vertically and horizontally centered.
+- Small abstract brand mark in the upper-left corner that links back to the home route.
+- Background remains light and neutral to match the browser theme, with subtle brand color accents.
 
 ## Components
 
