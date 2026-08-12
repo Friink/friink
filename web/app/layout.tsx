@@ -3,8 +3,8 @@ import { themeToCssVars } from '@/theme.config';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Friink | Your people, in one place',
-  description: 'A calmer way to stay close to your people.',
+  title: 'Friink - A place for humans.',
+  description: 'A calmer social space unlike anything you have seen so far.',
   icons: {
     icon: '/favicon.png',
   },

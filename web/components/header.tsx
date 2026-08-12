@@ -1,5 +1,4 @@
 import type { Screen } from '@/lib/data';
-import { FriinkLogo } from '@/components/friink-logo';
 
 type HeaderProps = {
   onNavigate: (screen: Screen) => void;
@@ -25,7 +24,7 @@ export function Header({
           >
             <i className="fa-solid fa-bars" aria-hidden="true" />
           </button>
-          <FriinkLogo />
+          <img className="topbar-full-logo" src="/brand/logoFullBrand.svg" alt="Friink" />
         </div>
         <div className="topbar-actions">
           <button className="topbar-search" type="button" onClick={() => onNavigate('search')} aria-label="Search">

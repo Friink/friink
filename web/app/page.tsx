@@ -1,5 +1,9 @@
-import { AppShell } from '@/components/app-shell';
-
 export default function HomePage() {
-  return <AppShell />;
+  return (
+    <iframe
+      className="public-site-frame"
+      src="/friink-site/index.html"
+      title="Friink - A place for humans."
+    />
+  );
 }
