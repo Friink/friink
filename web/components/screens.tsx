@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { navItems } from '@/lib/data';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -9,7 +10,131 @@ export function QuestionsScreen() {
 }
 
 export function MessagesScreen() {
-  return <><ScreenHeading eyebrow="Stay close" title="Messages" copy="Your conversations, collected in one calm place." /><div className="message-search">⌕ <span>Search conversations</span></div><div className="message-list"><div className="message-row unread"><span className="avatar avatar-coral">MC</span><div><div className="message-title"><strong>Maya Chen</strong><small>10:42 AM</small></div><p>That sounds perfect. I&apos;ll send you the address!</p></div><span className="unread-dot" /></div><div className="message-row"><span className="avatar avatar-sage">JB</span><div><div className="message-title"><strong>Jon Bell</strong><small>Yesterday</small></div><p>Thanks for the ceramics recommendation.</p></div></div><div className="message-row"><span className="avatar avatar-sun">PS</span><div><div className="message-title"><strong>Priya Shah</strong><small>Mon</small></div><p>Are we still on for Thursday?</p></div></div></div></>;
+  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+  const [draft, setDraft] = useState('');
+  const [conversations, setConversations] = useState([
+    {
+      id: 1,
+      name: 'Maya Chen',
+      handle: '@mayachen',
+      initials: 'MC',
+      tone: 'coral',
+      time: '10:42 AM',
+      preview: "That sounds perfect. I'll send you the address!",
+      unread: true,
+      messages: [
+        { id: 1, from: 'them', text: 'Found a little cabin by the lake for the weekend.', time: '10:38 AM' },
+        { id: 2, from: 'me', text: 'That sounds perfect. I\'ll send you the address!', time: '10:42 AM' },
+      ],
+    },
+    {
+      id: 2,
+      name: 'Jon Bell',
+      handle: '@jonbell',
+      initials: 'JB',
+      tone: 'sage',
+      time: 'Yesterday',
+      preview: 'Thanks for the ceramics recommendation.',
+      unread: false,
+      messages: [{ id: 1, from: 'them', text: 'Thanks for the ceramics recommendation.', time: 'Yesterday' }],
+    },
+    {
+      id: 3,
+      name: 'Priya Shah',
+      handle: '@priyashah',
+      initials: 'PS',
+      tone: 'sun',
+      time: 'Mon',
+      preview: 'Are we still on for Thursday?',
+      unread: false,
+      messages: [{ id: 1, from: 'them', text: 'Are we still on for Thursday?', time: 'Mon' }],
+    },
+  ]);
+
+  const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
+
+  function sendMessage(event: React.FormEvent) {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text || !activeConversation) return;
+
+    setConversations((current) => current.map((conversation) => conversation.id === activeConversation.id
+      ? { ...conversation, preview: text, time: 'Just now', messages: [...conversation.messages, { id: Date.now(), from: 'me', text, time: 'Just now' }] }
+      : conversation));
+    setDraft('');
+  }
+
+  if (activeConversation) {
+    return (
+      <section className="messages-screen chat-screen">
+        <div className="chat-header">
+          <button className="icon-plain" type="button" onClick={() => setActiveConversationId(null)} aria-label="Back to messages">
+            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+          </button>
+          <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
+          <div className="chat-contact">
+            <strong>{activeConversation.name}</strong>
+            <span>{activeConversation.handle}</span>
+          </div>
+          <button className="icon-plain chat-more" type="button" aria-label="Conversation options">
+            <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="chat-messages">
+          <p className="chat-date">Today</p>
+          {activeConversation.messages.map((message) => (
+            <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
+              <div className="chat-bubble">
+                <p>{message.text}</p>
+                <small>{message.time}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+        <form className="chat-composer" onSubmit={sendMessage}>
+          <button className="icon-plain" type="button" aria-label="Attach file">
+            <i className="fa-solid fa-paperclip" aria-hidden="true" />
+          </button>
+          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." aria-label="Message" />
+          <button className="chat-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
+            <i className="fa-solid fa-arrow-up" aria-hidden="true" />
+          </button>
+        </form>
+      </section>
+    );
+  }
+
+  return (
+    <section className="messages-screen">
+      <div className="messages-toolbar">
+        <h1>Messages</h1>
+        <button className="icon-plain" type="button" aria-label="New message">
+          <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
+        </button>
+      </div>
+      <label className="message-search">
+        <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+        <input placeholder="Search conversations" aria-label="Search conversations" />
+      </label>
+      <div className="message-list">
+        {conversations.map((conversation) => (
+          <button
+            className={`message-row${conversation.unread ? ' unread' : ''}`}
+            key={conversation.id}
+            type="button"
+            onClick={() => setActiveConversationId(conversation.id)}
+          >
+            <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
+            <span className="message-row-copy">
+              <span className="message-title"><strong>{conversation.name}</strong><small>{conversation.time}</small></span>
+              <span className="message-preview">{conversation.preview}</span>
+            </span>
+            {conversation.unread && <span className="unread-dot" />}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export function SearchScreen() {

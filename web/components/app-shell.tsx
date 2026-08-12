@@ -66,7 +66,11 @@ export function AppShell() {
         />
 
         <section className="main-panel">
-          <Header activeScreen={activeScreen} onNavigate={setActiveScreen} />
+          <Header
+            onNavigate={setActiveScreen}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
+          />
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
             {activeScreen === 'home' && <HomeScreen posts={posts} />}

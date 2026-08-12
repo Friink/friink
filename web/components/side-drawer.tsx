@@ -9,14 +9,19 @@ type SideDrawerProps = {
   onLogout: () => void;
 };
 
-function UserAvatar({ initials, tone }: { initials: string; tone: string }) {
-  return <span className={`user-avatar avatar-${tone}`}>{initials}</span>;
-}
-
 export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
   return (
     <aside className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
-      <div className="sidebar-brand">
+      <div className="sidebar-header">
+        <button
+          className="sidebar-menu-button"
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-pressed={collapsed}
+        >
+          <i className="fa-solid fa-bars" aria-hidden="true" />
+        </button>
         <FriinkLogo />
       </div>
 
@@ -45,15 +50,9 @@ export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollap
       </nav>
 
       <div className="sidebar-footer">
-        <button
-          className="sidebar-action sidebar-collapse-button"
-          type="button"
-          onClick={onToggleCollapsed}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-pressed={collapsed}
-        >
-          <i className="fa-solid fa-bars" aria-hidden="true" />
-          <span>{collapsed ? 'Expand' : 'Collapse'}</span>
+        <button className="sidebar-action" type="button" onClick={() => onNavigate('settings')}>
+          <i className="fa-solid fa-gear" aria-hidden="true" />
+          <span>Settings</span>
         </button>
         <button className="sidebar-action" type="button" onClick={onLogout}>
           <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
