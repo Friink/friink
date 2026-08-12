@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ConnectionsScreen } from '@/components/connections-screen';
-import { SettingsScreen } from '@/components/account-screens';
+import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
 import { ProfileScreen } from '@/components/profile-screen';
 import { StarredScreen } from '@/components/starred-screen';
 import { Header } from '@/components/header';
@@ -20,6 +20,7 @@ type AppShellProps = {
 
 export function AppShell({ onLogout }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
 
@@ -53,7 +54,7 @@ export function AppShell({ onLogout }: AppShellProps) {
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" data-theme={appearance}>
       <div className="app-layout">
         <SideDrawer
           activeScreen={activeScreen}
@@ -78,7 +79,7 @@ export function AppShell({ onLogout }: AppShellProps) {
             {activeScreen === 'post' && <PostScreen onBack={() => setActiveScreen('home')} onPost={handlePost} />}
             {activeScreen === 'search' && <SearchScreen />}
             {activeScreen === 'messages' && <MessagesScreen />}
-            {activeScreen === 'settings' && <SettingsScreen />}
+            {activeScreen === 'settings' && <SettingsScreen appearance={appearance} onAppearanceChange={setAppearance} />}
           </div>
         </section>
 

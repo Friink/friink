@@ -1,4 +1,3 @@
-import { FriinkLogo } from '@/components/friink-logo';
 import { currentUser, sidebarNavItems, type Screen } from '@/lib/data';
 
 type SideDrawerProps = {
@@ -22,7 +21,6 @@ export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollap
         >
           <i className="fa-solid fa-bars" aria-hidden="true" />
         </button>
-        <FriinkLogo />
       </div>
 
       <div className="sidebar-profile">

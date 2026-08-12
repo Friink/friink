@@ -61,7 +61,6 @@
     }
     body { background: #f9f9f9; color: #1a1c1c; -webkit-font-smoothing: antialiased; }
     h1, h2, h3, h4, h5, h6 { font-family: "Nunito Local", sans-serif !important; }
-    .header-logo { filter: brightness(0); }
     .cta { border: 2px solid transparent; border-radius: 9999px !important; }
     .cta:hover { background-color: #000000 !important; color: #ffffff !important; }
     .cta-secondary { border: 2px solid #33aa55 !important; }
@@ -84,8 +83,6 @@
       .border-outline-variant { border-color: #46514c !important; }
       .bg-primary { background-color: #33aa55 !important; }
       .text-on-primary { color: #ffffff !important; }
-      .header-logo { filter: none; }
-      .footer-logo { filter: brightness(0) invert(1); }
       .cta:hover { background-color: #ffffff !important; color: #000000 !important; }
       .cta-secondary:hover { border-color: #ffffff !important; }
       input::placeholder { color: #9da9a5; }
@@ -96,7 +93,10 @@
   <nav class="bg-surface/90 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant">
     <div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
       <a href="index.html" aria-label="Friink home" class="flex items-center gap-3">
-        <img src="assets/brand/logoWhite.svg" alt="Friink" class="header-logo h-14 w-14">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logoWhite.svg">
+          <img src="assets/brand/logoBlack.svg" alt="Friink" class="header-logo h-14 w-14">
+        </picture>
       </a>
       <div class="hidden md:flex items-center gap-8">
         <a class="text-secondary hover:text-primary transition-colors text-sm" href="#vision">Our vision</a>
@@ -170,7 +170,10 @@
 
   <footer class="bg-surface border-t border-outline-variant">
     <div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-4 px-margin-mobile md:px-margin-desktop py-8">
-      <img src="assets/brand/logoTextBlack.svg" alt="Friink" class="footer-logo h-9 w-auto">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logoFullWhite.svg">
+        <img src="assets/brand/logoFullBlack.svg" alt="Friink" class="footer-logo h-9 w-auto">
+      </picture>
       <p class="text-sm text-secondary text-center md:text-left">&copy; 2026 Friink. Built for humans.</p>
     </div>
   </footer>

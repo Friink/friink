@@ -69,7 +69,6 @@ textarea {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: invert(56%) sepia(47%) saturate(605%) hue-rotate(92deg) brightness(89%) contrast(86%);
 }
 
 /* Shared */
@@ -140,13 +139,50 @@ textarea {
   background: var(--color-paper);
 }
 
+.auth-home-link {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 1;
+  display: block;
+  width: 2.25rem;
+  height: 2.5rem;
+}
+
+.auth-home-link img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (prefers-color-scheme: dark) {
+  .login-screen {
+    color: #f5f5f5;
+    background: #333333;
+  }
+
+  .login-screen .pill-field input {
+    border-color: #555555;
+    color: #f5f5f5;
+    background: #3d3d3d;
+  }
+
+  .login-screen .pill-field input::placeholder,
+  .login-screen .password-toggle,
+  .login-screen .password-status,
+  .login-screen .login-switch {
+    color: #c4c4c4;
+  }
+}
+
 .login-form {
   position: relative;
   display: grid;
-  align-content: start;
+  align-content: center;
   width: min(100%, 31rem);
   min-height: 100vh;
-  padding: clamp(3rem, 10vh, 6rem) clamp(1.25rem, 5vw, 3rem) 5rem;
+  padding: 3rem clamp(1.25rem, 5vw, 3rem) 5rem;
   text-align: center;
   gap: 0.75rem;
 }
@@ -154,48 +190,29 @@ textarea {
 .brand-lockup {
   display: grid;
   justify-items: center;
-  gap: 0.2rem;
   margin-bottom: 1rem;
   color: var(--color-brand);
 }
 
 .brand-lockup-mark {
   object-fit: contain;
-  filter: invert(56%) sepia(47%) saturate(605%) hue-rotate(92deg) brightness(89%) contrast(86%);
 }
 
 .brand-lockup-wordmark {
-  width: 9rem;
+  width: 13.5rem;
   height: auto;
-  filter: invert(56%) sepia(47%) saturate(605%) hue-rotate(92deg) brightness(89%) contrast(86%);
-}
-
-.brand-lockup-sm .brand-lockup-mark {
-  width: 2rem;
-  height: 3rem;
 }
 
 .brand-lockup-sm .brand-lockup-wordmark {
-  width: 6rem;
-}
-
-.brand-lockup-md .brand-lockup-mark {
-  width: 3rem;
-  height: 4.5rem;
+  width: 9rem;
 }
 
 .brand-lockup-md .brand-lockup-wordmark {
-  width: 8rem;
-}
-
-.brand-lockup-lg .brand-lockup-mark {
-  width: 8rem;
-  height: 8rem;
-  transform: translateY(0.8rem);
+  width: 12rem;
 }
 
 .brand-lockup-lg .brand-lockup-wordmark {
-  width: 12rem;
+  width: 18rem;
 }
 
 .pill-field {
@@ -299,12 +316,15 @@ textarea {
 }
 
 .login-submit {
-  width: 8rem;
-  height: 3rem;
+  min-width: 8rem;
+  min-height: 3rem;
   justify-self: center;
   margin-top: 0.15rem;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
   font-size: 0.95rem;
   font-weight: 500;
+  text-align: center;
 }
 
 .auth-next-button {
@@ -340,13 +360,8 @@ textarea {
     margin-bottom: 1.25rem;
   }
 
-  .brand-lockup-lg .brand-lockup-mark {
-    width: 5rem;
-    height: 5rem;
-  }
-
   .brand-lockup-lg .brand-lockup-wordmark {
-    width: 12rem;
+    width: min(18rem, 76vw);
   }
 
   .forgot-password {
@@ -724,7 +739,46 @@ textarea {
 .app-shell {
   min-height: 100vh;
   width: 100%;
+  color: var(--color-ink);
   background: var(--color-background);
+}
+
+.app-shell[data-theme='dark'] {
+  --color-background: #333333;
+  --color-background-accent: #3a3a3a;
+  --color-paper: #3d3d3d;
+  --color-ink: #f5f5f5;
+  --color-muted: #c4c4c4;
+  --color-line: #555555;
+  --color-brand-soft: #244d30;
+  --color-chrome: #262626;
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-shell[data-theme='system'] {
+    --color-background: #333333;
+    --color-background-accent: #3a3a3a;
+    --color-paper: #3d3d3d;
+    --color-ink: #f5f5f5;
+    --color-muted: #c4c4c4;
+    --color-line: #555555;
+    --color-brand-soft: #244d30;
+    --color-chrome: #262626;
+  }
+}
+
+.app-shell[data-theme='dark'] .sidebar,
+.app-shell[data-theme='dark'] .topbar,
+.app-shell[data-theme='dark'] .bottom-nav {
+  background: var(--color-chrome);
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-shell[data-theme='system'] .sidebar,
+  .app-shell[data-theme='system'] .topbar,
+  .app-shell[data-theme='system'] .bottom-nav {
+    background: var(--color-chrome);
+  }
 }
 
 .app-layout {
@@ -753,12 +807,7 @@ textarea {
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
   padding: 0 0.5rem;
-}
-
-.sidebar-header .friink-logo {
-  flex: 0 0 2rem;
 }
 
 .sidebar-menu-button:hover,
@@ -914,6 +963,13 @@ textarea {
   font-size: 1rem;
 }
 
+.topbar-full-logo {
+  display: block;
+  width: 6rem;
+  height: auto;
+  margin-left: -1.3rem;
+}
+
 .topbar-home h1 {
   margin: 0;
   font-size: var(--text-sm);
@@ -1014,6 +1070,54 @@ textarea {
   height: 4rem;
   margin-bottom: 1rem;
   font-size: 1rem;
+}
+
+.settings-preference {
+  display: grid;
+  width: min(100%, 26rem);
+  margin-top: 2rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper);
+  text-align: left;
+  gap: 1rem;
+}
+
+.settings-preference h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1rem;
+}
+
+.settings-preference p {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+}
+
+.appearance-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
+}
+
+.appearance-toggle button {
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.6rem;
+  color: var(--color-muted);
+  background: transparent;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.appearance-toggle button.active {
+  color: var(--color-paper);
+  background: var(--color-brand);
 }
 
 /* Messages */
@@ -1800,7 +1904,10 @@ textarea {
 
 /* Desktop */
 @media (min-width: 768px) {
-  .topbar-brand,
+  .topbar-brand {
+    display: flex;
+  }
+
   .topbar-menu {
     display: none;
   }

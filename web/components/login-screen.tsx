@@ -41,6 +41,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
   return (
     <div className="login-screen">
+      <a className="auth-home-link" href="/" aria-label="Back to Friink home">
+        <img src="/brand/logoBrand.svg" alt="" />
+      </a>
       <form className="login-form" onSubmit={handleSubmit}>
         <BrandLockup size="lg" />
 
