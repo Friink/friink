@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f9f9f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111414" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <title>Friink - A place for humans.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#33aa55",
+            "on-primary": "#ffffff",
+            background: "#f9f9f9",
+            surface: "#f9f9f9",
+            "surface-container-low": "#f3f3f4",
+            "surface-container-high": "#e8e8e8",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#1a1c1c",
+            "on-surface-variant": "#4c4546",
+            secondary: "#5f5e5e",
+            "inverse-surface": "#2e3131",
+            outline: "#7e7576",
+            "outline-variant": "#cfc4c5"
+          },
+          borderRadius: {
+            DEFAULT: "0.125rem",
+            lg: "0.25rem",
+            xl: "0.5rem",
+            full: "0.75rem"
+          },
+          spacing: {
+            gutter: "32px",
+            "margin-mobile": "20px",
+            "margin-desktop": "64px",
+            "section-gap": "128px",
+            "container-max": "1280px"
+          },
+          fontFamily: {
+            inter: ["Inter"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @font-face {
+      font-family: "Nunito Local";
+      src: url("/fonts/Nunito-VariableFont_wght.ttf") format("truetype");
+      font-weight: 200 1000;
+      font-style: normal;
+      font-display: swap;
+    }
+    body { background: #f9f9f9; color: #1a1c1c; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3, h4, h5, h6 { font-family: "Nunito Local", sans-serif !important; }
+    .header-logo { filter: brightness(0); }
+    .cta { border: 2px solid transparent; border-radius: 9999px !important; }
+    .cta:hover { background-color: #000000 !important; color: #ffffff !important; }
+    .cta-secondary { border: 2px solid #33aa55 !important; }
+    .cta-secondary:hover { border-color: #000000 !important; }
+    #waitlist-email { border-radius: 9999px !important; }
+    .progress-fill { width: 10%; }
+    @media (max-width: 640px) {
+      .progress-fill { width: 10%; }
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #111414; color: #f1f3f2; }
+      .bg-background,
+      .bg-surface { background-color: #111414 !important; }
+      .bg-surface\/90 { background-color: rgba(17, 20, 20, 0.9) !important; }
+      .bg-surface-container-low { background-color: #171b1a !important; }
+      .bg-surface-container-lowest { background-color: #1c201f !important; }
+      .bg-surface-container-high { background-color: #272c2b !important; }
+      .text-on-surface { color: #f1f3f2 !important; }
+      .text-secondary { color: #b8c3bf !important; }
+      .border-outline-variant { border-color: #46514c !important; }
+      .bg-primary { background-color: #33aa55 !important; }
+      .text-on-primary { color: #ffffff !important; }
+      .header-logo { filter: none; }
+      .footer-logo { filter: brightness(0) invert(1); }
+      .cta:hover { background-color: #ffffff !important; color: #000000 !important; }
+      .cta-secondary:hover { border-color: #ffffff !important; }
+      input::placeholder { color: #9da9a5; }
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-inter antialiased selection:bg-primary selection:text-on-primary">
+  <nav class="bg-surface/90 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant">
+    <div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+      <a href="index.html" aria-label="Friink home" class="flex items-center gap-3">
+        <img src="assets/brand/logoWhite.svg" alt="Friink" class="header-logo h-14 w-14">
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a class="text-secondary hover:text-primary transition-colors text-sm" href="#vision">Our vision</a>
+        <a class="cta bg-primary text-on-primary px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-inverse-surface transition-colors" href="/login">Early access</a>
+      </div>
+      <a class="cta md:hidden bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium" href="#subscribe">Early access</a>
+    </div>
+  </nav>
+
+  <main class="pt-20">
+    <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-section-gap min-h-[620px] flex flex-col justify-center items-start border-b border-outline-variant">
+      <div class="max-w-4xl">
+        <h1 class="text-5xl md:text-7xl font-semibold tracking-tight leading-[1.08] max-w-3xl">A place for humans.</h1>
+        <p class="text-xl md:text-2xl leading-relaxed text-secondary max-w-2xl mt-8">A calmer social space unlike anything you have seen so far.</p>
+        <div class="flex flex-wrap items-center gap-4 mt-10">
+          <a href="/login" class="cta group inline-flex h-14 items-center gap-3 bg-primary text-on-primary px-7 rounded-lg font-medium hover:bg-inverse-surface transition-colors">
+            Try now
+            <span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">arrow_forward</span>
+          </a>
+          <a href="#subscribe" class="cta cta-secondary inline-flex h-14 items-center border border-primary text-primary px-7 rounded-lg font-medium hover:bg-primary/10 transition-colors">
+            Get in touch
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="progress" class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop py-section-gap">
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 md:p-8">
+        <div class="flex justify-between items-end gap-6 mb-5">
+          <div>
+            <h2 class="text-2xl font-semibold">Under Development</h2>
+            <p class="text-secondary mt-2">Laying the foundation for a better space.</p>
+          </div>
+          <span class="text-3xl font-semibold">10%</span>
+        </div>
+        <div class="h-3 w-full bg-surface-container-high rounded-full overflow-hidden" role="progressbar" aria-label="Development progress" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-fill h-full bg-primary rounded-full"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vision" class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop pb-section-gap">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter items-center">
+        <div class="rounded-xl overflow-hidden min-h-[360px] border border-outline-variant order-2 md:order-1">
+          <img src="assets/media/pexels-ryank-17841014.jpg" alt="An abstract image representing clarity emerging from chaos" class="w-full h-full min-h-[360px] object-cover">
+        </div>
+        <div class="order-1 md:order-2 md:pl-8">
+          <span class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs uppercase tracking-[0.18em] font-semibold mb-5">
+            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
+            Our vision
+          </span>
+          <h2 class="text-3xl md:text-5xl font-semibold tracking-tight leading-tight">Designing for clarity, and peace.</h2>
+          <p class="text-lg leading-relaxed text-secondary mt-6">Social spaces are noisy, overwhelming, and built to keep you scrolling. We are building Friink with a different philosophy. It is a space designed to support your active life, offering a refreshing digital environment that respects you and your well-being. The goal is to create a social space that promotes human connection.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="subscribe" class="bg-surface-container-low border-y border-outline-variant">
+      <div class="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-section-gap text-center">
+        <span class="material-symbols-outlined text-5xl mb-6">water_drop</span>
+        <h2 class="text-3xl md:text-4xl font-semibold tracking-tight">Be part of the beginning.</h2>
+        <p class="text-lg text-secondary mt-4">Join the newsletter to get notified when we open the doors.</p>
+        <form class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mt-8" id="waitlist-form">
+          <label class="sr-only" for="waitlist-email">Your email address</label>
+          <input id="waitlist-email" name="email" autocomplete="email" required type="email" placeholder="Your email address" class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 focus:border-primary focus:ring-1 focus:ring-primary">
+          <button type="submit" class="cta bg-primary text-on-primary px-7 py-3 rounded-lg font-medium whitespace-nowrap hover:bg-inverse-surface transition-colors">Subscribe</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-surface border-t border-outline-variant">
+    <div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-4 px-margin-mobile md:px-margin-desktop py-8">
+      <img src="assets/brand/logoTextBlack.svg" alt="Friink" class="footer-logo h-9 w-auto">
+      <p class="text-sm text-secondary text-center md:text-left">&copy; 2026 Friink. Built for humans.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('waitlist-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      const button = this.querySelector('button');
+      const input = this.querySelector('input');
+      button.textContent = 'You are on the list';
+      button.disabled = true;
+      input.disabled = true;
+    });
+  </script>
+</body>
+</html>

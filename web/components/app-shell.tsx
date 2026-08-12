@@ -7,7 +7,6 @@ import { ProfileScreen } from '@/components/profile-screen';
 import { StarredScreen } from '@/components/starred-screen';
 import { Header } from '@/components/header';
 import { HomeScreen } from '@/components/home-screen';
-import { LoginScreen } from '@/components/login-screen';
 import { MobileNav } from '@/components/mobile-nav';
 import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
@@ -15,8 +14,11 @@ import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
 import { currentUser, initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
 
-export function AppShell() {
-  const [loggedIn, setLoggedIn] = useState(false);
+type AppShellProps = {
+  onLogout: () => void;
+};
+
+export function AppShell({ onLogout }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
@@ -50,10 +52,6 @@ export function AppShell() {
     setActiveScreen('home');
   }
 
-  if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />;
-  }
-
   return (
     <main className="app-shell">
       <div className="app-layout">
@@ -62,7 +60,7 @@ export function AppShell() {
           collapsed={sidebarCollapsed}
           onNavigate={setActiveScreen}
           onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
-          onLogout={() => setLoggedIn(false)}
+          onLogout={onLogout}
         />
 
         <section className="main-panel">
