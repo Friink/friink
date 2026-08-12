@@ -8,13 +8,13 @@ type MobileNavProps = {
 export function MobileNav({ activeScreen, onNavigate }: MobileNavProps) {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
-      {navItems.map((item) => (
+      {navItems.filter((item) => item.id !== 'search').map((item) => (
         <button
           className={`bottom-nav-item${activeScreen === item.id ? ' active' : ''}`}
           key={item.id}
           type="button"
           onClick={() => onNavigate(item.id)}
-          aria-label={item.label}
+          aria-label={item.id === 'post' ? 'Create post' : item.label}
         >
           <i className={item.icon} aria-hidden="true" />
         </button>

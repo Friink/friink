@@ -1,23 +1,32 @@
 import type { Screen } from '@/lib/data';
+import { FriinkLogo } from '@/components/friink-logo';
 
 type HeaderProps = {
-  activeScreen: Screen;
   onNavigate: (screen: Screen) => void;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 };
 
-export function Header({ activeScreen, onNavigate }: HeaderProps) {
-  const pageTitles: Partial<Record<Screen, string>> = {
-    home: 'Home',
-    connections: 'Connections',
-    profile: 'Profile',
-    starred: 'Starred',
-    settings: 'Settings',
-  };
-
+export function Header({
+  onNavigate,
+  sidebarCollapsed,
+  onToggleSidebar,
+}: HeaderProps) {
   return (
     <header className="topbar">
       <div className="topbar-home">
-        {pageTitles[activeScreen] && <h1>{pageTitles[activeScreen]}</h1>}
+        <div className="topbar-brand">
+          <button
+            className="topbar-menu"
+            type="button"
+            onClick={onToggleSidebar}
+            aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+            aria-pressed={sidebarCollapsed}
+          >
+            <i className="fa-solid fa-bars" aria-hidden="true" />
+          </button>
+          <FriinkLogo />
+        </div>
         <div className="topbar-actions">
           <button className="topbar-search" type="button" onClick={() => onNavigate('search')} aria-label="Search">
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />

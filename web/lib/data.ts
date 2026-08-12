@@ -30,13 +30,9 @@ export const navItems: NavItem[] = [
 ];
 
 export const sidebarNavItems: NavItem[] = [
-  { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
   { id: 'profile', label: 'Profile', icon: 'fa-solid fa-user' },
-  { id: 'connections', label: 'Connections', icon: 'fa-solid fa-users' },
+  { id: 'connections', label: 'Connections', icon: 'fa-solid fa-user-group' },
   { id: 'starred', label: 'Starred', icon: 'fa-solid fa-star' },
-  { id: 'post', label: 'Post', icon: 'fa-solid fa-pen' },
-  { id: 'messages', label: 'Messages', icon: 'fa-solid fa-envelope' },
-  { id: 'settings', label: 'Settings', icon: 'fa-solid fa-gear' },
 ];
 
 export const initialPosts: Post[] = [
