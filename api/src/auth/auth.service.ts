@@ -126,17 +126,17 @@ export class AuthService {
       .limit(1);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new UnauthorizedException('Sorry, that didn’t work.');
     }
 
     if (user.status !== 'active') {
-      throw new UnauthorizedException('Account is not active yet.');
+      throw new UnauthorizedException('Sorry, that didn’t work.');
     }
 
     const isPasswordValid = await compare(input.password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new UnauthorizedException('Sorry, that didn’t work.');
     }
 
     const jwtOptions: SignOptions = {

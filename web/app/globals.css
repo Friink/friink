@@ -184,6 +184,10 @@ textarea {
   .login-screen .login-switch {
     color: #c4c4c4;
   }
+
+  .login-screen .pill-field input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(2);
+  }
 }
 
 .login-form {

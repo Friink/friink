@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { PillButton } from '@/components/design/pill-button';
 import { PillField } from '@/components/design/pill-field';
-import { login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
+import { login, saveAuthSession, signUp, type AuthUser, getApiBaseUrl } from '@/lib/auth';
 
-const AUTH_FAILURE_MESSAGE = 'Account not found!';
+const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
 
 type LoginScreenProps = {
@@ -24,6 +24,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [step, setStep] = useState<AuthStep>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -42,8 +43,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         const session = await login(email, password);
         saveAuthSession(session);
         onAuthenticated(session.user);
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : AUTH_FAILURE_MESSAGE);
+      } catch {
+        setErrorMessage(AUTH_FAILURE_MESSAGE);
       } finally {
         setIsSubmitting(false);
       }
@@ -57,7 +58,12 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
       }
 
       if (!PASSWORD_PATTERN.test(password)) {
-        setErrorMessage('Use 8+ characters with uppercase, lowercase, number, and symbol.');
+        setErrorMessage('Password does not meet complexity requirements.');
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        setErrorMessage('Please enter a valid email address.');
         return;
       }
 
@@ -68,6 +74,19 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
     if (isSignupProfileStep) {
       setIsSubmitting(true);
       try {
+        if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+          setIsSubmitting(false);
+          setErrorMessage('Username must be 3–30 characters and contain only letters, numbers, and underscores.');
+          return;
+        }
+
+        const available = await checkUsernameUnique(username);
+        if (available === false) {
+          setIsSubmitting(false);
+          setErrorMessage('That username is already taken.');
+          return;
+        }
+
         const session = await signUp({ name: fullName, email, username, password, dateOfBirth });
         if (session.accessToken) {
           saveAuthSession(session);
@@ -77,8 +96,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           saveAuthSession(loginSession);
           onAuthenticated(loginSession.user);
         }
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : AUTH_FAILURE_MESSAGE);
+      } catch {
+        setErrorMessage(AUTH_FAILURE_MESSAGE);
       } finally {
         setIsSubmitting(false);
       }
@@ -93,6 +112,22 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   function handleBackToLogin() {
     setErrorMessage('');
     setStep('login');
+  }
+
+  function validateEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  async function checkUsernameUnique(handle: string): Promise<boolean | undefined> {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/auth/username-available?username=${encodeURIComponent(handle)}`);
+      if (res.status === 404) return undefined;
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      return Boolean((data as { available?: boolean }).available);
+    } catch {
+      return undefined;
+    }
   }
 
   return (
@@ -128,6 +163,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                 <button
                   className="password-toggle"
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-pressed={showPassword}
@@ -137,9 +173,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               }
             />
 
-            <div className="signup-hint-card" aria-label="Login note">
-              <p>Sign in with your account or start a new Friink account below.</p>
-            </div>
+            
 
             <button className="forgot-password" type="button">
               Forgot password?
@@ -186,6 +220,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                 <button
                   className="password-toggle"
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-pressed={showPassword}
@@ -197,20 +232,27 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
             <PillField
               label="Confirm Password"
-              type={showPassword ? 'text' : 'password'}
+              type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Confirm Password"
               autoComplete="new-password"
               required
               trailing={
-                <i className="password-status fa-regular fa-eye-slash" aria-hidden="true" />
+                <button
+                  className="password-toggle"
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowConfirmPassword((c) => !c)}
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  aria-pressed={showConfirmPassword}
+                >
+                  <i className={`fa-regular ${showConfirmPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
+                </button>
               }
             />
 
-            <div className="signup-hint-card" aria-label="Signup note">
-              <p>Use 8+ characters with uppercase, lowercase, a number, and a symbol.</p>
-            </div>
+            
 
             <div className="signup-actions signup-actions-single">
               <PillButton className="login-submit" type="submit">
