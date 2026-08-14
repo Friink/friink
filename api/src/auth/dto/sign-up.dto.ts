@@ -1,6 +1,10 @@
 import { IsDateString, IsEmail, IsNotEmpty, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class SignUpDto {
+  @IsNotEmpty()
+  @MaxLength(128)
+  name!: string;
+
   @IsEmail()
   @MaxLength(320)
   email!: string;

@@ -4,40 +4,96 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { PillButton } from '@/components/design/pill-button';
 import { PillField } from '@/components/design/pill-field';
+import { login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
+
+const AUTH_FAILURE_MESSAGE = 'Account not found!';
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
 
 type LoginScreenProps = {
-  onLogin: () => void;
+  onAuthenticated: (user: AuthUser) => void;
 };
 
-type AuthStep = 'login' | 'signup' | 'otp' | 'details';
+type AuthStep = 'login' | 'signup-credentials' | 'signup-profile';
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
-  const [location, setLocation] = useState('');
   const [step, setStep] = useState<AuthStep>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  function handleSubmit(event: React.FormEvent) {
+  const isLoginStep = step === 'login';
+  const isSignupCredentialsStep = step === 'signup-credentials';
+  const isSignupProfileStep = step === 'signup-profile';
+  const signupProgressLabel = isSignupProfileStep ? 'Step 2 of 2' : 'Step 1 of 2';
+
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    setErrorMessage('');
 
-    if (step === 'login') {
-      onLogin();
-    } else if (step === 'signup') {
-      setStep('otp');
-    } else if (step === 'otp') {
-      setStep('details');
-    } else {
-      onLogin();
+    if (isLoginStep) {
+      setIsSubmitting(true);
+      try {
+        const session = await login(email, password);
+        saveAuthSession(session);
+        onAuthenticated(session.user);
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : AUTH_FAILURE_MESSAGE);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (isSignupCredentialsStep) {
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match.');
+        return;
+      }
+
+      if (!PASSWORD_PATTERN.test(password)) {
+        setErrorMessage('Use 8+ characters with uppercase, lowercase, number, and symbol.');
+        return;
+      }
+
+      setStep('signup-profile');
+      return;
+    }
+
+    if (isSignupProfileStep) {
+      setIsSubmitting(true);
+      try {
+        const session = await signUp({ name: fullName, email, username, password, dateOfBirth });
+        if (session.accessToken) {
+          saveAuthSession(session);
+          onAuthenticated(session.user);
+        } else {
+          const loginSession = await login(email, password);
+          saveAuthSession(loginSession);
+          onAuthenticated(loginSession.user);
+        }
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : AUTH_FAILURE_MESSAGE);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   }
 
-  const isPasswordStep = step === 'login' || step === 'signup';
+  function handleStartSignup() {
+    setErrorMessage('');
+    setStep('signup-credentials');
+  }
+
+  function handleBackToLogin() {
+    setErrorMessage('');
+    setStep('login');
+  }
 
   return (
     <div className="login-screen">
@@ -46,8 +102,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       </a>
       <form className="login-form" onSubmit={handleSubmit}>
         <BrandLockup size="lg" />
+        {errorMessage && <p className="login-error" role="alert">{errorMessage}</p>}
 
-        {isPasswordStep && (
+        {isLoginStep && (
           <>
             <PillField
               label="Email"
@@ -65,7 +122,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
-              autoComplete={step === 'signup' ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
               required
               trailing={
                 <button
@@ -80,87 +137,131 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               }
             />
 
-            {step === 'signup' && (
-              <PillField
-                label="Confirm Password"
-                type={showPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Confirm Password"
-                autoComplete="new-password"
-                required
-                trailing={
-                  <i className="password-status fa-regular fa-eye-slash" aria-hidden="true" />
-                }
-              />
-            )}
+            <div className="signup-hint-card" aria-label="Login note">
+              <p>Sign in with your account or start a new Friink account below.</p>
+            </div>
 
-            {step === 'login' && (
-              <button className="forgot-password" type="button">
-                Forgot password?
-              </button>
-            )}
+            <button className="forgot-password" type="button">
+              Forgot password?
+            </button>
 
             <PillButton className="login-submit" type="submit">
-              {step === 'signup' ? 'Create account' : 'Login'}
+              {isSubmitting ? 'Please wait...' : 'Login'}
             </PillButton>
 
             <p className="login-switch">
-              {step === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}
-              <button type="button" onClick={() => setStep(step === 'signup' ? 'login' : 'signup')}>
-                {step === 'signup' ? 'Login' : 'Sign up'}
+              Don't have an account?{' '}
+              <button type="button" onClick={handleStartSignup}>
+                Sign up
               </button>
             </p>
           </>
         )}
 
-        {step === 'otp' && (
+        {isSignupCredentialsStep && (
           <>
+            <div className="signup-step-copy" aria-label="Signup progress">
+              <p>{signupProgressLabel}</p>
+            </div>
+
             <PillField
-              label="OTP"
-              inputMode="numeric"
-              value={otp}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="OTP"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Email"
+              autoComplete="email"
               required
             />
-            <div className="auth-help-copy">
-              <p>We have sent an OTP to your email address.</p>
-              <p>OTP will expire in <span>120s.</span></p>
+
+            <PillField
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Password"
+              autoComplete="new-password"
+              required
+              trailing={
+                <button
+                  className="password-toggle"
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                >
+                  <i className={`fa-regular ${showPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
+                </button>
+              }
+            />
+
+            <PillField
+              label="Confirm Password"
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Confirm Password"
+              autoComplete="new-password"
+              required
+              trailing={
+                <i className="password-status fa-regular fa-eye-slash" aria-hidden="true" />
+              }
+            />
+
+            <div className="signup-hint-card" aria-label="Signup note">
+              <p>Use 8+ characters with uppercase, lowercase, a number, and a symbol.</p>
             </div>
-            <PillButton className="login-submit auth-next-button" type="submit">
-              Next
-            </PillButton>
+
+            <div className="signup-actions signup-actions-single">
+              <PillButton className="login-submit" type="submit">
+                Continue
+              </PillButton>
+            </div>
           </>
         )}
 
-        {step === 'details' && (
+        {isSignupProfileStep && (
           <>
-            <PillField label="Name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Name" required />
+            <div className="signup-step-copy" aria-label="Signup progress">
+              <p>{signupProgressLabel}</p>
+            </div>
+
+            <PillField
+              label="Name"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Name"
+              autoComplete="name"
+              required
+            />
+
             <PillField
               label="Username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder="@username"
+              autoComplete="username"
               required
             />
+
             <PillField
               label="Date of birth"
+              type="date"
               value={dateOfBirth}
               onChange={(event) => setDateOfBirth(event.target.value)}
-              placeholder="Date of birth"
+              placeholder="YYYY-MM-DD"
+              autoComplete="bday"
               required
             />
-            <PillField
-              label="Location"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="Location"
-              required
-            />
-            <PillButton className="login-submit auth-next-button" type="submit">
-              Next
-            </PillButton>
+
+            <div className="signup-actions">
+              <button className="signup-back-button" type="button" onClick={() => setStep('signup-credentials')}>
+                Back
+              </button>
+              <PillButton className="login-submit" type="submit">
+                {isSubmitting ? 'Please wait...' : 'Create account'}
+              </PillButton>
+            </div>
           </>
         )}
       </form>

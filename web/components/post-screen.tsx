@@ -1,14 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { currentUser } from '@/lib/data';
+import type { AuthUser } from '@/lib/auth';
 
 type PostScreenProps = {
+  user: AuthUser;
   onBack: () => void;
   onPost: (text: string) => void;
 };
 
-export function PostScreen({ onBack, onPost }: PostScreenProps) {
+function getInitials(value: string) {
+  return (
+    value
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || 'FR'
+  );
+}
+
+export function PostScreen({ user, onBack, onPost }: PostScreenProps) {
   const [text, setText] = useState('');
 
   function handleSubmit(event: React.FormEvent) {
@@ -42,10 +56,10 @@ export function PostScreen({ onBack, onPost }: PostScreenProps) {
       <div className="post-composer">
         <div className="post-composer-body">
           <div className="post-composer-identity">
-            <span className={`user-avatar avatar-${currentUser.tone}`}>{currentUser.initials}</span>
+            <span className="user-avatar avatar-mint">{getInitials(user.name)}</span>
             <div>
-              <strong>{currentUser.name}</strong>
-              <span>{currentUser.handle}</span>
+              <strong>{user.name}</strong>
+              <span>@{user.username}</span>
             </div>
           </div>
           <textarea
@@ -56,7 +70,6 @@ export function PostScreen({ onBack, onPost }: PostScreenProps) {
           />
         </div>
       </div>
-
     </form>
   );
 }

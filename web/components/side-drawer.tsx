@@ -1,6 +1,8 @@
-import { currentUser, sidebarNavItems, type Screen } from '@/lib/data';
+import { sidebarNavItems, type Screen } from '@/lib/data';
+import type { AuthUser } from '@/lib/auth';
 
 type SideDrawerProps = {
+  user: AuthUser;
   activeScreen: Screen;
   collapsed: boolean;
   onNavigate: (screen: Screen) => void;
@@ -8,7 +10,20 @@ type SideDrawerProps = {
   onLogout: () => void;
 };
 
-export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
+function getInitials(value: string) {
+  return (
+    value
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || 'FR'
+  );
+}
+
+export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
   return (
     <aside className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-header">
@@ -24,12 +39,11 @@ export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollap
       </div>
 
       <div className="sidebar-profile">
-        <span className="user-avatar profile-avatar">
-          <img src="/placeholder-avatar.svg" alt="Profile placeholder" />
-        </span>
+        <span className="user-avatar profile-avatar">{getInitials(user.name)}</span>
         <div>
-          <strong>{currentUser.name}</strong>
-          <span>{currentUser.handle}</span>
+          <strong>{user.name}</strong>
+          <span>@{user.username}</span>
+          <span>{user.email}</span>
         </div>
       </div>
 
