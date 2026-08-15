@@ -43,6 +43,14 @@ _Last updated: 2026-08-15_
 ### Notes
 - These changes prepare the repo to deploy both frontend and backend on Vercel. After pushing, configure Vercel environment variables and run DB migrations in CI or a trusted runner.
 
+### 2026-08-15 (Ready for Deployment)
+
+### Notes
+- The repository is prepared for deployment to Vercel: a serverless handler (`api/api-handler.ts`) and `vercel.json` were added, and the database module was updated to reuse a global `pg` Pool for serverless environments. The `/dev-settings` route remains in the codebase for design testing and should be removed or gated before production.
+- Required Vercel environment variables: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN` (optional), `SIGNUP_OTP_ENABLED`, and `NEXT_PUBLIC_API_BASE_URL` (set to https://<your-vercel-domain>/api).
+- After you push, deploy on Vercel and verify `/api/auth/login` and the frontend. If migrations are needed, run `npm --prefix api run db:migrate` from a CI job or trusted runner.
+
+
 
 
 - [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens use streamlined helper copy; the inline password rule hint and the long login helper paragraph were removed as part of recent UX updates. The back control remains styled as a hollow outline button. The settings screen includes General, Account, and Privacy & Safety tabs, with theme under General, editable username under Account, and a read-only unique user ID. Privacy & Safety is cosmetic-only and ready for UI testing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.

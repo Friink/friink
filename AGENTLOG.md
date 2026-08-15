@@ -75,6 +75,27 @@
   - Before shipping, remove or gate `/dev-settings` route.
 - Verified Working?: untested — serverless behavior must be validated in a Vercel preview deployment.
 
+---
+
+### Entry
+
+- Date & Time: 2026-08-15 13:30 UTC
+- User: Repository maintainer (prompt provided in session)
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Mark repository as ready for Vercel deployment and instruct next agent/user on verification steps.
+- Changes Made: Added deployment-ready notes to `CHANGELOG.md` and recorded necessary Vercel environment variables and migration instructions. No code changes in this step.
+- Files/Scope Touched:
+  - CHANGELOG.md (modified)
+  - AGENTLOG.md (modified)
+- Reason/Decision: Provide clear handoff for deployment — make it straightforward for a product manager or another agent to push the repo and validate deployment on Vercel.
+- Notes for next agent/user:
+  - Push commits to GitHub and import the repo in Vercel.
+  - Set environment variables listed in the changelog.
+  - Run migrations via CI/GitHub Actions or a trusted runner: `npm --prefix api run db:migrate`.
+  - Validate `/api/auth/login` returns expected responses and the Next frontend uses `NEXT_PUBLIC_API_BASE_URL` to call the API.
+- Verified Working?: n/a — waiting for your deployment and verification.
+
 
 ---
 
