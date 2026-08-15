@@ -9,7 +9,28 @@
 > matches what the log describes — do not assume the log is 
 > authoritative over the actual code.
 
-> NOTE: Keep entries newest-first. When appending a log entry, prepend it so the most recent entries appear immediately after this instruction block and notes.
+- NOTE: Keep entries newest-first. When appending a log entry, prepend it so the most recent entries appear immediately after this instruction block and notes.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-15 13:45 UTC
+- User: Repository maintainer (prompt provided in session)
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Move post composer actions to a fixed bottom footer and hide the floating bottom navigation while composing posts.
+- Changes Made:
+  - Modified `web/components/post-screen.tsx` to remove action buttons from the top header and render attach/settings and Post controls in a bottom footer.
+  - Updated `web/app/globals.css` to hide the floating `.bottom-nav` when `.post-screen` is present and added styles for `.post-footer` and spacing adjustments.
+- Files/Scope Touched:
+  - web/components/post-screen.tsx (modified)
+  - web/app/globals.css (modified)
+- Reason/Decision: The composer needs dedicated bottom-aligned actions for a clearer UX on mobile; hiding the floating nav during composition prevents control conflicts.
+- Notes for next agent:
+  - Confirm the footer does not overlap important content on small viewports; adjust `width` and `padding-bottom` in `globals.css` if necessary.
+  - Remember to remove or gate `/dev-settings` before production.
+- Verified Working?: yes — verified in local dev server at `/dev-settings` and composer view.
 
 ---
 

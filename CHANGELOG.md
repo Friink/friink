@@ -50,6 +50,11 @@ _Last updated: 2026-08-15_
 - Required Vercel environment variables: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN` (optional), `SIGNUP_OTP_ENABLED`, and `NEXT_PUBLIC_API_BASE_URL` (set to https://<your-vercel-domain>/api).
 - After you push, deploy on Vercel and verify `/api/auth/login` and the frontend. If migrations are needed, run `npm --prefix api run db:migrate` from a CI job or trusted runner.
 
+### UI
+
+- [web] Moved the post composer action buttons (attach file, post settings, Post) from the header into a bottom-fixed footer for clearer mobile UX. While composing a post the app now hides the floating bottom navigation to avoid control conflicts. Files changed: `web/components/post-screen.tsx`, `web/app/globals.css`.
+
+
 
 
 

@@ -2070,6 +2070,44 @@ textarea {
   padding-bottom: calc(3.75rem + 2rem);
 }
 
+/* Hide the floating bottom nav when composing a post */
+.app-layout:has(.post-screen) .bottom-nav {
+  display: none;
+}
+
+/* Post footer actions placed at bottom of viewport for composer screens */
+.post-footer {
+  position: fixed;
+  right: 1rem;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: 1rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(calc(100% - 2rem), 42rem);
+  margin: 0 auto;
+  padding: 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0.75rem 2rem rgba(24, 44, 31, 0.12);
+  background: var(--color-paper);
+}
+
+.post-footer-left {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.post-footer-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.post-screen {
+  padding-bottom: calc(3.75rem + 1.5rem);
+}
+
 /* Desktop */
 @media (min-width: 768px) {
   .topbar-brand {
