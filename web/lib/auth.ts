@@ -16,7 +16,14 @@ export type AuthSession = {
 const AUTH_SESSION_KEY = 'friink-auth-session';
 
 export function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
+  const explicit = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (explicit) return explicit;
+
+  const vercelUrl = (process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL ?? '').toString();
+  if (vercelUrl.includes('staging.friink.com')) return 'https://staging-api.friink.com/api';
+  if (vercelUrl.includes('friink.com')) return 'https://api.friink.com/api';
+
+  return 'http://localhost:3001/api';
 }
 
 export async function signUp(input: {

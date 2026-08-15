@@ -10,7 +10,21 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-15_
+_Last updated: 2026-08-16_
+## 2026-08-16
+
+### Changed
+- [infra] Prepare API build for Vercel serverless: added `vercel-build` script and pointed serverless build to the compiled `dist` handler so Vercel packages the built Nest output instead of expecting a static `public` directory.
+- [web] Frontend API base URL resolution: `web/lib/auth.ts` now prefers `NEXT_PUBLIC_API_BASE_URL`, maps `staging.friink.com` -> `https://staging-api.friink.com/api` and `friink.com` -> `https://api.friink.com/api`, and falls back to `http://localhost:3001/api` for local development.
+
+### Files Changed
+- `api/package.json` (added `vercel-build`)
+- `api/vercel.json` (added/updated to use `dist/api-handler.js`)
+- `web/lib/auth.ts` (updated API base URL logic)
+
+### Notes
+- These infra and frontend changes resolve a Vercel build error where the platform expected a `public` output directory; the repository now builds the Nest API (`nest build`) during Vercel's build step and serves the compiled `dist/api-handler.js` as the serverless entrypoint. After pushing, set `NEXT_PUBLIC_API_BASE_URL` per Vercel project for explicit routing (production -> `https://api.friink.com/api`, staging -> `https://staging-api.friink.com/api`).
+
 
 - [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
 - [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens keep the step labels and password rule hint, with the back control styled as a hollow outline button. The settings UI includes General, Account, and Privacy & Safety tabs. A development-only `/dev-settings` route was added to preview the Settings UI without backend auth; the Settings header icon/heading/description was removed and the tab bar placed directly under the header for cosmetic editing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.

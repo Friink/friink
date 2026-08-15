@@ -18,30 +18,49 @@
 - NOTE: Keep entries newest-first. When appending a log entry, prepend it so the most recent entries appear immediately after this instruction block and notes.
 
 ---
+### Entry
+
+- Date & Time: 2026-08-16 12:00 UTC
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Fix Vercel build error for API — add `vercel-build`, point Vercel to compiled Nest output, and make frontend respect deployed API subdomains.
+- Changes Made:
+  - Added `vercel-build` script to `api/package.json` so Vercel runs `nest build` during project build.
+  - Added/updated `api/vercel.json` to instruct Vercel to use the compiled `dist/api-handler.js` as the serverless entrypoint and route requests to it.
+  - Updated `web/lib/auth.ts` to prefer `NEXT_PUBLIC_API_BASE_URL`, and to map deploy hostnames to the correct API subdomains (`staging.friink.com` -> `https://staging-api.friink.com/api`, `friink.com` -> `https://api.friink.com/api`) with a localhost fallback.
+- Files/Scope Touched:
+  - api/package.json (modified)
+  - api/vercel.json (added/modified)
+  - web/lib/auth.ts (modified)
+- Reason/Decision: Vercel expects either a static `public` directory or a configured serverless entrypoint; building the Nest app and pointing the serverless build to the compiled `dist` output ensures Vercel packages the correct output and avoids the missing `public` directory error. Explicit `NEXT_PUBLIC_API_BASE_URL` values remove brittle hostname-sniffing during builds and make runtime routing predictable.
+- Notes for next agent/user:
+  - Push these changes and set per-project Vercel env vars: `NEXT_PUBLIC_API_BASE_URL` for production (`https://api.friink.com/api`) and staging (`https://staging-api.friink.com/api`).
+  - After deploy, verify build logs and runtime logs in the Vercel dashboard and confirm `/api/auth/login` resolves. If DB migrations are required, run `npm --prefix api run db:migrate` from a trusted runner.
+- Verified Working?: pending Vercel deploy — the change was validated locally by running `nest build` and confirming the `dist` output would be usable as the serverless handler.
 
 -### Entry
 
-- Date & Time: 2026-08-15 17:20 UTC
-- Agent: Copilot
-- Model: not disclosed
-- Prompt Summary: UI polish — make all pages full-width, extract tab bar, remove duplicate privacy subheading, add email field, make inputs pill-shaped, make header bell theme-aware, and add side-drawer click-away behavior.
-- Changes Made:
+ Date & Time: 2026-08-15 17:20 UTC
+ Agent: Copilot
+ Model: not disclosed
+ Prompt Summary: UI polish — make all pages full-width, extract tab bar, remove duplicate privacy subheading, add email field, make inputs pill-shaped, make header bell theme-aware, and add side-drawer click-away behavior.
+ Changes Made:
   - Added `web/components/tab-bar.tsx` and replaced inline tabs in `web/components/account-screens.tsx` with the `TabBar` component.
   - Updated `web/components/account-screens.tsx` to add an editable `Email` field, removed the redundant `Privacy & Safety` subheading inside the privacy tab, and adjusted markup for full-width settings rows.
   - Made global layout and cosmetic changes in `web/app/globals.css`: set page containers (including `.simple-screen`) to full-width, added `.settings-screen-content`, styled settings rows as full-width separators, added a global rule to make single-line `input` elements pill-shaped, and added theme-aware rules for the header bell and post-footer icons.
   - Made the side drawer close when clicking/tapping outside by updating `web/components/side-drawer.tsx` to a client component with a document `pointerdown` listener.
   - Minor header CSS updates to ensure the bell icon follows the active theme.
-- Files/Scope Touched:
+ Files/Scope Touched:
   - web/components/tab-bar.tsx (added)
   - web/components/account-screens.tsx (modified)
   - web/components/side-drawer.tsx (modified)
   - web/components/header.tsx (unchanged JS; CSS updated in globals)
   - web/app/globals.css (modified)
-- Reason/Decision: Provide consistent full-width page layout and unify the tab UI as a reusable component; make inputs visually consistent and ensure interactive components respect theme and mobile spacing. Side-drawer click-away improves mobile UX.
-- Notes for next agent:
+ Reason/Decision: Provide consistent full-width page layout and unify the tab UI as a reusable component; make inputs visually consistent and ensure interactive components respect theme and mobile spacing. Side-drawer click-away improves mobile UX.
+ Notes for next agent:
   - Verify pages across breakpoints to ensure content doesn't overflow; test `dev-settings` and real pages.
   - If any page should remain centered (e.g., landing or auth flows), consider using a dedicated container class rather than relying on `.simple-screen`.
-- Verified Working?: yes — local dev server reported 200 responses for `/` and `/dev-settings` after edits.
+ Verified Working?: yes — local dev server reported 200 responses for `/` and `/dev-settings` after edits.
 
 ---
 
