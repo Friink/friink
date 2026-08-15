@@ -30,6 +30,11 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const containerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    // Only attach outside-click collapse behavior on small screens (mobile).
+    if (typeof window === 'undefined') return;
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+    if (!mobileQuery.matches) return;
+
     function handlePointerDown(e: PointerEvent) {
       if (!containerRef.current) return;
       // if already collapsed, nothing to do

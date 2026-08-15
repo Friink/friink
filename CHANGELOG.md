@@ -41,6 +41,23 @@ _Last updated: 2026-08-16_
 
 	- [infra] Corrected root route target: updated `vercel.json` to map `^/$` -> `/friink-site/index.html` (served path) instead of `/web/friink-site/index.html`.
 
+	### 2026-08-16 (UX)
+
+	- [web] Signup flow split into three steps: Email -> Password (with confirmation) -> Profile (Name, handle, DOB). The username input now always shows a leading `@` and the backend is called with the normalized username (without `@`).
+
+	- [web] UI tweak: all `PillField` inputs now use pill-shaped corners so profile text boxes match the pill aesthetic.
+
+	- [web] Sidebar and layout: click-away to collapse the side drawer is now active only on mobile; on tablet/desktop the drawer remains open until the user toggles it. Also removed horizontal padding on main content (`.simple-screen`) at tablet/desktop sizes so the main content spans from the sidebar edge to the page edge.
+
+	- [web] Layout: ensured inner app screens (`.profile-screen`, `.home-feed`, `.connections-screen`, `.starred-feed`) span the full main-panel width on desktop/tablet so content starts at the sidebar edge and reaches the page edge.
+
+	- [web] Dev-only preview: added `/dev-shell` development page (temporary). Remove after user approval — this page is for local layout review only and must be removed before production.
+
+	- [web] UI: added contextual `Footer` component with gradient overlay matching main content. Shows floating pill controls by default, displays post actions on compose (`post`) screen, and a chat composer on the `messages` screen. Footer background fades from transparent at the top to 50% opacity at the bottom and respects light/dark themes.
+
+	- [web] Revert: removed chat composer from the new `Footer` — the message composer now remains in `MessagesScreen`. Floating action pill remains in `Footer` as requested.
+
+
 ### Files Touched (for deploy)
 - `vercel.json` (root) — routes `/api/*` -> `api/dist/api-handler.js`
 - `api/vercel.json` — build + route to `dist/api-handler.js`

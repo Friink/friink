@@ -13,14 +13,14 @@ type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
 };
 
-type AuthStep = 'login' | 'signup-credentials' | 'signup-profile';
+type AuthStep = 'login' | 'signup-email' | 'signup-password' | 'signup-profile';
 
 export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('@');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [step, setStep] = useState<AuthStep>('login');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,9 +29,14 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [errorMessage, setErrorMessage] = useState('');
 
   const isLoginStep = step === 'login';
-  const isSignupCredentialsStep = step === 'signup-credentials';
+  const isSignupEmailStep = step === 'signup-email';
+  const isSignupPasswordStep = step === 'signup-password';
   const isSignupProfileStep = step === 'signup-profile';
-  const signupProgressLabel = isSignupProfileStep ? 'Step 2 of 2' : 'Step 1 of 2';
+  const signupProgressLabel = isSignupEmailStep
+    ? 'Step 1 of 3'
+    : isSignupPasswordStep
+    ? 'Step 2 of 3'
+    : 'Step 3 of 3';
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -51,7 +56,17 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
       return;
     }
 
-    if (isSignupCredentialsStep) {
+    if (isSignupEmailStep) {
+      if (!validateEmail(email)) {
+        setErrorMessage('Please enter a valid email address.');
+        return;
+      }
+
+      setStep('signup-password');
+      return;
+    }
+
+    if (isSignupPasswordStep) {
       if (password !== confirmPassword) {
         setErrorMessage('Passwords do not match.');
         return;
@@ -62,11 +77,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         return;
       }
 
-      if (!validateEmail(email)) {
-        setErrorMessage('Please enter a valid email address.');
-        return;
-      }
-
+      // advance to profile collection
       setStep('signup-profile');
       return;
     }
@@ -74,20 +85,22 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
     if (isSignupProfileStep) {
       setIsSubmitting(true);
       try {
-        if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+        // normalize username by stripping leading @ for validation and API
+        const normalized = username.startsWith('@') ? username.slice(1) : username;
+        if (!/^[a-zA-Z0-9_]{3,30}$/.test(normalized)) {
           setIsSubmitting(false);
           setErrorMessage('Username must be 3–30 characters and contain only letters, numbers, and underscores.');
           return;
         }
 
-        const available = await checkUsernameUnique(username);
+        const available = await checkUsernameUnique(normalized);
         if (available === false) {
           setIsSubmitting(false);
           setErrorMessage('That username is already taken.');
           return;
         }
 
-        const session = await signUp({ name: fullName, email, username, password, dateOfBirth });
+        const session = await signUp({ name: fullName, email, username: normalized, password, dateOfBirth });
         if (session.accessToken) {
           saveAuthSession(session);
           onAuthenticated(session.user);
@@ -106,7 +119,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
   function handleStartSignup() {
     setErrorMessage('');
-    setStep('signup-credentials');
+    setStep('signup-email');
   }
 
   function handleBackToLogin() {
@@ -120,7 +133,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
   async function checkUsernameUnique(handle: string): Promise<boolean | undefined> {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/auth/username-available?username=${encodeURIComponent(handle)}`);
+      const query = encodeURIComponent(handle.replace(/^@/, ''));
+      const res = await fetch(`${getApiBaseUrl()}/auth/username-available?username=${query}`);
       if (res.status === 404) return undefined;
       if (!res.ok) return undefined;
       const data = await res.json();
@@ -192,12 +206,11 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           </>
         )}
 
-        {isSignupCredentialsStep && (
+        {isSignupEmailStep && (
           <>
             <div className="signup-step-copy" aria-label="Signup progress">
               <p>{signupProgressLabel}</p>
             </div>
-
             <PillField
               label="Email"
               type="email"
@@ -207,6 +220,22 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               autoComplete="email"
               required
             />
+
+            <div className="signup-actions signup-actions-single">
+              <button className="signup-back-button" type="button" onClick={() => setStep('login')}>
+                Back
+              </button>
+              <PillButton className="login-submit" type="submit">
+                Continue
+              </PillButton>
+            </div>
+          </>
+        )}
+        {isSignupPasswordStep && (
+          <>
+            <div className="signup-step-copy" aria-label="Signup progress">
+              <p>{signupProgressLabel}</p>
+            </div>
 
             <PillField
               label="Password"
@@ -252,9 +281,10 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               }
             />
 
-            
-
             <div className="signup-actions signup-actions-single">
+              <button className="signup-back-button" type="button" onClick={() => setStep('signup-email')}>
+                Back
+              </button>
               <PillButton className="login-submit" type="submit">
                 Continue
               </PillButton>
@@ -280,7 +310,15 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
             <PillField
               label="Username"
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
+              onChange={(event) => {
+                const v = event.target.value || '';
+                // always keep leading @ visible
+                if (!v.startsWith('@')) {
+                  setUsername('@' + v.replace(/^@+/, ''));
+                } else {
+                  setUsername(v);
+                }
+              }}
               placeholder="@username"
               autoComplete="username"
               required
@@ -297,7 +335,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
             />
 
             <div className="signup-actions">
-              <button className="signup-back-button" type="button" onClick={() => setStep('signup-credentials')}>
+              <button className="signup-back-button" type="button" onClick={() => setStep('signup-password')}>
                 Back
               </button>
               <PillButton className="login-submit" type="submit">

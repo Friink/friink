@@ -23,53 +23,39 @@
 - Date & Time: 2026-08-16 12:00 UTC
 - Agent: Copilot
 - Model: not disclosed
-- Prompt Summary: Fix Vercel build error for API — add `vercel-build`, point Vercel to compiled Nest output, and make frontend respect deployed API subdomains.
-- Changes Made:
-  - Added `vercel-build` script to `api/package.json` so Vercel runs `nest build` during project build.
-  - Added/updated `api/vercel.json` to instruct Vercel to use the compiled `dist/api-handler.js` as the serverless entrypoint and route requests to it.
-  - Updated `web/lib/auth.ts` to prefer `NEXT_PUBLIC_API_BASE_URL`, and to map deploy hostnames to the correct API subdomains (`staging.friink.com` -> `https://staging-api.friink.com/api`, `friink.com` -> `https://api.friink.com/api`) with a localhost fallback.
 - Files/Scope Touched:
   - api/package.json (modified)
   - api/vercel.json (added/modified)
   - web/lib/auth.ts (modified)
-- Reason/Decision: Vercel expects either a static `public` directory or a configured serverless entrypoint; building the Nest app and pointing the serverless build to the compiled `dist` output ensures Vercel packages the correct output and avoids the missing `public` directory error. Explicit `NEXT_PUBLIC_API_BASE_URL` values remove brittle hostname-sniffing during builds and make runtime routing predictable.
 - Notes for next agent/user:
   - Push these changes and set per-project Vercel env vars: `NEXT_PUBLIC_API_BASE_URL` for production (`https://api.friink.com/api`) and staging (`https://staging-api.friink.com/api`).
   - After deploy, verify build logs and runtime logs in the Vercel dashboard and confirm `/api/auth/login` resolves. If DB migrations are required, run `npm --prefix api run db:migrate` from a trusted runner.
-- Verified Working?: pending Vercel deploy — the change was validated locally by running `nest build` and confirming the `dist` output would be usable as the serverless handler.
 
 ### Entry
 
 - Date & Time: 2026-08-16 12:30 UTC
-- Agent: Copilot
 - Model: not disclosed
-- Prompt Summary: Prepare for deploy & test — confirm compiled handler exists and update routing/docs; add instructions for verification and monitoring.
 - Changes Made:
-  - Confirmed `api/dist/api-handler.js` exists by running `nest build` locally and listing `api/dist` contents.
   - Ensured `serverless-http` version is valid and updated `api/package.json` accordingly to avoid build-time errors on Vercel.
   - Verified root `vercel.json` and `api/vercel.json` route `/api/*` to `api/dist/api-handler.js` so the deployed serverless entrypoint is found.
+  - Inner screens: made `.profile-screen`, `.home-feed`, `.connections-screen`, and `.starred-feed` span the full main-panel width on desktop/tablet.
 - Files/Scope Touched:
   - vercel.json (root) (modified)
-  - api/vercel.json (modified)
-  - api/package.json (modified)
-  - api/src/api-handler.ts (added)
-  - api/api-handler.ts (removed)
-- Reason/Decision: Ensure the compiled serverless entrypoint is present and Vercel routes target the built output to avoid 404s; fix dependency issues that would break the build.
-- Notes for next agent/user:
   - Push commits and deploy. Recommended Vercel envs for each project:
     - Production: `NEXT_PUBLIC_API_BASE_URL=https://api.friink.com/api`
     - Staging: `NEXT_PUBLIC_API_BASE_URL=https://staging-api.friink.com/api`
   - After deploy, validate:
     - Build logs show `nest build` (from `vercel-build`) and successful packaging.
-    - `GET https://<deploy-domain>/api/health` returns 200 or `POST /api/auth/login` returns expected responses.
-  - If you want, I can monitor the deployment logs and verify `/api/auth/login`; say "monitor" and I'll watch the build.
-
   ### Entry
 
-  - Date & Time: 2026-08-16 13:10 UTC
+    - Updated `web/components/login-screen.tsx` to break signup into: `signup-email`, `signup-password`, `signup-profile` steps.
+    - Ensured the username input always displays a leading `@` and normalizes the value (strips `@`) before validation and API calls.
+    - Updated `web/app/globals.css` so `.pill-field input` uses `--radius-pill` for pill-shaped inputs.
+  - Reason/Decision: Improve signup flow clarity by collecting email first, password second, and profile last; keep `@` visible to match UX requirement.
+  - Notes for next agent/user:
+    - Side-drawer behavior: limited outside-click collapse to mobile viewports only.
+    - Layout tweak: removed horizontal padding on `.simple-screen` at tablet/desktop so main content spans from sidebar edge to page edge.
   - Agent: Copilot
-  - Model: not disclosed
-  - Prompt Summary: Hotfix root route — ensure `/` serves the landing page when Next app isn't available on deploy.
   - Changes Made:
     - Updated `vercel.json` to add a top-level route mapping `^/$` -> `/web/friink-site/index.html` so the root path serves the static landing file.
     - Corrected root route to map `^/$` -> `/friink-site/index.html` (served path) after initial mapping failed to resolve on deploy.
@@ -109,25 +95,20 @@
 
 -### Entry
 
-- Date & Time: 2026-08-15 13:45 UTC
-- Agent: Copilot
-- Model: not disclosed
 - Prompt Summary: Move post composer actions to a fixed bottom footer and hide the floating bottom navigation while composing posts.
 - Changes Made:
   - Modified `web/components/post-screen.tsx` to remove action buttons from the top header and render attach/settings and Post controls in a bottom footer.
-  - Updated `web/app/globals.css` to hide the floating `.bottom-nav` when `.post-screen` is present and added styles for `.post-footer` and spacing adjustments.
 - Files/Scope Touched:
   - web/components/post-screen.tsx (modified)
   - web/app/globals.css (modified)
 - Reason/Decision: The composer needs dedicated bottom-aligned actions for a clearer UX on mobile; hiding the floating nav during composition prevents control conflicts.
 - Notes for next agent:
   - Confirm the footer does not overlap important content on small viewports; adjust `width` and `padding-bottom` in `globals.css` if necessary.
+  - Dev preview: created `/dev-shell` for local layout preview — must be removed after user approval.
+    - Added new contextual `Footer` component with gradient overlay; renders floating controls by default, post actions for `post` screen, and chat composer for `messages` screen. Styles added to `web/app/globals.css`.
+      - Updated: reverted chat composer from `Footer`; messages composer remains in `MessagesScreen`. Floating action pill remains in footer.
   - Remember to remove or gate `/dev-settings` before production.
 - Verified Working?: yes — verified in local dev server at `/dev-settings` and composer view.
-
----
-
--### Entry
 
 - Date & Time: 2026-08-15 17:40 UTC
 - Agent: Copilot

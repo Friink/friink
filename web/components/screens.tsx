@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { navItems } from '@/lib/data';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {

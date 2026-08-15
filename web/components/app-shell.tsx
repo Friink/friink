@@ -8,6 +8,7 @@ import { StarredScreen } from '@/components/starred-screen';
 import { Header } from '@/components/header';
 import { HomeScreen } from '@/components/home-screen';
 import { MobileNav } from '@/components/mobile-nav';
+import { Footer } from '@/components/footer';
 import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
@@ -106,6 +107,7 @@ export function AppShell({ user, onLogout }: AppShellProps) {
         </section>
 
         <MobileNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
+        <Footer activeScreen={activeScreen} onPost={handlePost} onSendMessage={(text) => console.log('send', text)} />
       </div>
     </main>
   );
