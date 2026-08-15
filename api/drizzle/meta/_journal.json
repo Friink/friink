@@ -8,6 +8,20 @@
       "when": 1786531200000,
       "tag": "0000_create_users",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786617600000,
+      "tag": "0001_signup_otp",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786704000000,
+      "tag": "0002_add_user_name",
+      "breakpoints": true
     }
   ]
 }

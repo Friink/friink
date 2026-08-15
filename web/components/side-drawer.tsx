@@ -1,6 +1,11 @@
-import { currentUser, sidebarNavItems, type Screen } from '@/lib/data';
+"use client";
+
+import { useEffect, useRef } from 'react';
+import { sidebarNavItems, type Screen } from '@/lib/data';
+import type { AuthUser } from '@/lib/auth';
 
 type SideDrawerProps = {
+  user: AuthUser;
   activeScreen: Screen;
   collapsed: boolean;
   onNavigate: (screen: Screen) => void;
@@ -8,9 +13,39 @@ type SideDrawerProps = {
   onLogout: () => void;
 };
 
-export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
+function getInitials(value: string) {
   return (
-    <aside className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
+    value
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || 'FR'
+  );
+}
+
+export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
+  const containerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    function handlePointerDown(e: PointerEvent) {
+      if (!containerRef.current) return;
+      // if already collapsed, nothing to do
+      if (collapsed) return;
+      const target = e.target as Node | null;
+      if (target && !containerRef.current.contains(target)) {
+        onToggleCollapsed();
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [collapsed, onToggleCollapsed]);
+
+  return (
+    <aside ref={containerRef} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-header">
         <button
           className="sidebar-menu-button"
@@ -24,12 +59,10 @@ export function SideDrawer({ activeScreen, collapsed, onNavigate, onToggleCollap
       </div>
 
       <div className="sidebar-profile">
-        <span className="user-avatar profile-avatar">
-          <img src="/placeholder-avatar.svg" alt="Profile placeholder" />
-        </span>
+        <span className="user-avatar profile-avatar">{getInitials(user.name)}</span>
         <div>
-          <strong>{currentUser.name}</strong>
-          <span>{currentUser.handle}</span>
+          <strong>{user.name}</strong>
+          <span>@{user.username}</span>
         </div>
       </div>
 

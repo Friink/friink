@@ -12,13 +12,32 @@ import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
-import { currentUser, initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
+import { initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
+import type { AuthUser } from '@/lib/auth';
 
 type AppShellProps = {
+  user: AuthUser;
   onLogout: () => void;
 };
 
-export function AppShell({ onLogout }: AppShellProps) {
+function getInitials(username: string) {
+  return (
+    username
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || 'FR'
+  );
+}
+
+function getDisplayName(user: AuthUser) {
+  return user.name.trim() || user.username;
+}
+
+export function AppShell({ user, onLogout }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>('home');
@@ -37,10 +56,10 @@ export function AppShell({ onLogout }: AppShellProps) {
   function handlePost(text: string) {
     const newPost: Post = {
       id: Date.now(),
-      name: currentUser.name,
-      handle: currentUser.handle,
-      initials: currentUser.initials,
-      tone: currentUser.tone,
+      name: user.name,
+      handle: `@${user.username}`,
+      initials: getInitials(user.name),
+      tone: 'mint',
       date: 'Just now',
       text,
       connectionType: 'following',
@@ -57,6 +76,7 @@ export function AppShell({ onLogout }: AppShellProps) {
     <main className="app-shell" data-theme={appearance}>
       <div className="app-layout">
         <SideDrawer
+          user={user}
           activeScreen={activeScreen}
           collapsed={sidebarCollapsed}
           onNavigate={setActiveScreen}
@@ -73,13 +93,15 @@ export function AppShell({ onLogout }: AppShellProps) {
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
             {activeScreen === 'home' && <HomeScreen posts={posts} />}
-            {activeScreen === 'profile' && <ProfileScreen posts={posts} />}
+            {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
             {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} />}
             {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-            {activeScreen === 'post' && <PostScreen onBack={() => setActiveScreen('home')} onPost={handlePost} />}
+            {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
             {activeScreen === 'search' && <SearchScreen />}
             {activeScreen === 'messages' && <MessagesScreen />}
-            {activeScreen === 'settings' && <SettingsScreen appearance={appearance} onAppearanceChange={setAppearance} />}
+            {activeScreen === 'settings' && (
+              <SettingsScreen user={user} appearance={appearance} onAppearanceChange={setAppearance} />
+            )}
           </div>
         </section>
 

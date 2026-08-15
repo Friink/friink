@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { FeedPost } from '@/components/feed-post';
-import { currentUser, type Post } from '@/lib/data';
+import type { AuthUser } from '@/lib/auth';
+import type { Post } from '@/lib/data';
 
 type ProfileScreenProps = {
+  user: AuthUser;
   posts: Post[];
 };
 
@@ -15,24 +17,37 @@ const profileTabs: { id: ProfileTab; label: string }[] = [
   { id: 'replies', label: 'Replies' },
 ];
 
-export function ProfileScreen({ posts }: ProfileScreenProps) {
+function getInitials(value: string) {
+  return (
+    value
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || 'FR'
+  );
+}
+
+export function ProfileScreen({ user, posts }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
-  const profilePosts = posts.filter((post) => post.name === currentUser.name);
+  const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
 
   return (
     <section className="profile-screen">
       <div className="profile-intro">
-        <span className={`user-avatar avatar-${currentUser.tone} profile-large-avatar`}>{currentUser.initials}</span>
+        <span className="user-avatar avatar-mint profile-large-avatar">{getInitials(user.name)}</span>
         <div className="profile-details">
-          <h2>{currentUser.name}</h2>
-          <p>{currentUser.handle}</p>
-          <p className="profile-bio">Making room for good conversations, quiet mornings, and people who feel like home.</p>
+          <h2>{user.name}</h2>
+          <p>@{user.username}</p>
+          <p className="profile-bio">Your signed-in account is now driving this profile view.</p>
         </div>
       </div>
 
       <div className="profile-stats" aria-label="Profile statistics">
-        <span><strong>18</strong> following</span>
-        <span><strong>34</strong> followers</span>
+        <span><strong>0</strong> following</span>
+        <span><strong>0</strong> followers</span>
       </div>
 
       <div className="profile-edit-row">

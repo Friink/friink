@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { FriinkLogo } from '@/components/friink-logo';
 
 export default function GlobalError({
   error,
@@ -9,7 +10,7 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const code = error?.digest ?? 'xxx';
+  const code = resolveErrorCode(error);
 
   return (
     <main
@@ -31,21 +32,19 @@ export default function GlobalError({
           position: 'absolute',
           top: 24,
           left: 24,
-          width: 44,
-          height: 44,
-          borderRadius: 14,
+          width: 48,
+          height: 48,
+          borderRadius: 16,
           display: 'grid',
           placeItems: 'center',
-          background: '#edf5ef',
+          background: '#ffffff',
           color: '#1c9a54',
           border: '1px solid rgba(28, 154, 84, 0.2)',
-          boxShadow: '0 10px 25px rgba(17, 20, 20, 0.06)',
+          boxShadow: '0 10px 25px rgba(17, 20, 20, 0.08)',
           textDecoration: 'none',
         }}
       >
-        <span aria-hidden="true" style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-          F
-        </span>
+        <FriinkLogo />
       </Link>
 
       <div
@@ -79,7 +78,7 @@ export default function GlobalError({
             fontWeight: 700,
           }}
         >
-          there appears to be something wrong
+          It looks like we ran into a problem.
         </h1>
 
         <p
@@ -90,7 +89,7 @@ export default function GlobalError({
             letterSpacing: '0.01em',
           }}
         >
-          Error code: {code}
+          Error code {code}
         </p>
 
         <button
@@ -113,4 +112,22 @@ export default function GlobalError({
       </div>
     </main>
   );
+}
+
+function resolveErrorCode(error: Error & { digest?: string }): number {
+  const digestCode = Number.parseInt(error?.digest ?? '', 10);
+
+  if (Number.isInteger(digestCode) && digestCode >= 100 && digestCode <= 599) {
+    return digestCode;
+  }
+
+  if (error?.message?.includes('NEXT_NOT_FOUND')) {
+    return 404;
+  }
+
+  if (error?.message?.includes('NEXT_REDIRECT')) {
+    return 307;
+  }
+
+  return 500;
 }
