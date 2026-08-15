@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FeedPost } from '@/components/feed-post';
+import { TabBar } from '@/components/tab-bar';
 import type { AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
@@ -54,20 +55,14 @@ export function ProfileScreen({ user, posts }: ProfileScreenProps) {
         <button className="profile-edit-button" type="button">Edit</button>
       </div>
 
-      <div className="profile-tabs" role="tablist" aria-label="Profile content">
-        {profileTabs.map((tab) => (
-          <button
-            className={`profile-tab${activeTab === tab.id ? ' active' : ''}`}
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={profileTabs}
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as ProfileTab)}
+        containerClass="profile-tabs"
+        itemClass="profile-tab"
+        ariaLabel="Profile content"
+      />
 
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (

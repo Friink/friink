@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from 'react';
+import { TabBar } from '@/components/tab-bar';
 import type { AuthUser } from '@/lib/auth';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
@@ -24,20 +27,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange }: Setting
     <section className="simple-screen settings-screen">
       <div className="settings-header" />
 
-      <div className="settings-tabs" role="tablist" aria-label="Settings sections">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={activeTab === tab.id ? 'settings-tab active' : 'settings-tab'}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={tabs}
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as SettingsTab)}
+        containerClass="settings-tabs"
+        itemClass="settings-tab"
+        ariaLabel="Settings sections"
+      />
 
       {activeTab === 'general' && (
         <div className="settings-panel">

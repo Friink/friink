@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FeedPost } from '@/components/feed-post';
+import { TabBar } from '@/components/tab-bar';
 import type { Post } from '@/lib/data';
 
 type HomeScreenProps = {
@@ -21,20 +22,14 @@ export function HomeScreen({ posts }: HomeScreenProps) {
 
   return (
     <div className="home-feed">
-      <div className="home-filters" role="tablist" aria-label="Home feed filters">
-        {filters.map((filter) => (
-          <button
-            className={`home-filter${activeFilter === filter.id ? ' active' : ''}`}
-            key={filter.id}
-            type="button"
-            role="tab"
-            aria-selected={activeFilter === filter.id}
-            onClick={() => setActiveFilter(filter.id)}
-          >
-            {filter.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={filters}
+        activeId={activeFilter}
+        onChange={(id) => setActiveFilter(id as HomeFilter)}
+        containerClass="home-filters"
+        itemClass="home-filter"
+        ariaLabel="Home feed filters"
+      />
       {filteredPosts.map((post) => <FeedPost key={post.id} post={post} />)}
     </div>
   );

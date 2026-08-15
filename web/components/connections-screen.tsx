@@ -1,6 +1,7 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
+import { TabBar } from '@/components/tab-bar';
 import type { Connection } from '@/lib/data';
 
 type ConnectionsScreenProps = {
@@ -32,20 +33,14 @@ export function ConnectionsScreen({ connections }: ConnectionsScreenProps) {
 
   return (
     <div className="connections-screen">
-      <div className="connection-tabs" role="tablist" aria-label="Connection lists">
-        {filters.map((filter) => (
-          <button
-            className={`connection-tab${activeFilter === filter.id ? ' active' : ''}`}
-            key={filter.id}
-            type="button"
-            role="tab"
-            aria-selected={activeFilter === filter.id}
-            onClick={() => setActiveFilter(filter.id)}
-          >
-            {filter.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={filters}
+        activeId={activeFilter}
+        onChange={(id) => setActiveFilter(id as ConnectionFilter)}
+        containerClass="connection-tabs"
+        itemClass="connection-tab"
+        ariaLabel="Connection lists"
+      />
 
       <div className="connection-list">
         {visibleConnections.length > 0 ? (

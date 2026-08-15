@@ -43,7 +43,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         <div>
           <strong>{user.name}</strong>
           <span>@{user.username}</span>
-          <span>{user.email}</span>
         </div>
       </div>
 
