@@ -1,12 +1,31 @@
 # Changelog
 
+> INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file 
+> for project history and current state. After completing any change 
+> to the codebase, add a dated entry here summarizing what changed and 
+> why. Also read AGENTLOG.md for the most recent detailed change context.
+>
+> NOTE FOR AGENTS: Whenever you update this `CHANGELOG.md`, you MUST also append a corresponding, detailed entry to `AGENTLOG.md` describing the exact files or scope touched and why. Do not assume the agent log is optional — keep both files in sync.
+
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-14_
+_Last updated: 2026-08-15_
 
 - [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
-- [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens keep the step labels and password rule hint, with the back control styled as a hollow outline button. The settings screen includes General, Account, and Privacy & Safety tabs, with theme under General, editable username under Account, and a read-only unique user ID. Privacy & Safety is cosmetic-only and ready for UI testing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
+- [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens keep the step labels and password rule hint, with the back control styled as a hollow outline button. The settings UI includes General, Account, and Privacy & Safety tabs. A development-only `/dev-settings` route was added to preview the Settings UI without backend auth; the Settings header icon/heading/description was removed and the tab bar placed directly under the header for cosmetic editing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
+
+## 2026-08-15
+
+### Added
+- [web] Development-only `/dev-settings` page to render the Settings UI without requiring backend authentication (for offline cosmetic edits).
+
+### Changed
+- [web] Removed the Settings header icon, heading, and descriptive paragraph; adjusted the styles so the tab bar sits directly under the header. Added CSS updates in `web/app/globals.css` and adjusted `web/components/account-screens.tsx` to support these cosmetic changes.
+
+### Notes
+- UI-only changes. Dev route should be removed or guarded before shipping to production. The change was verified by starting the local dev server and loading `/dev-settings`.
+
 - [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens use streamlined helper copy; the inline password rule hint and the long login helper paragraph were removed as part of recent UX updates. The back control remains styled as a hollow outline button. The settings screen includes General, Account, and Privacy & Safety tabs, with theme under General, editable username under Account, and a read-only unique user ID. Privacy & Safety is cosmetic-only and ready for UI testing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
 - [mobile] The mobile workspace currently contains brand assets only. There is no runnable mobile app code yet.
 

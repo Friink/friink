@@ -22,11 +22,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange }: Setting
 
   return (
     <section className="simple-screen settings-screen">
-      <div className="settings-header">
-        <i className="fa-solid fa-gear" aria-hidden="true" />
-        <h2>Settings</h2>
-        <p>Manage your Friink preferences.</p>
-      </div>
+      <div className="settings-header" />
 
       <div className="settings-tabs" role="tablist" aria-label="Settings sections">
         {tabs.map((tab) => (
