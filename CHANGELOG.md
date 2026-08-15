@@ -25,28 +25,6 @@ _Last updated: 2026-08-16_
 ### Notes
 - These infra and frontend changes resolve a Vercel build error where the platform expected a `public` output directory; the repository now builds the Nest API (`nest build`) during Vercel's build step and serves the compiled `dist/api-handler.js` as the serverless entrypoint. After pushing, set `NEXT_PUBLIC_API_BASE_URL` per Vercel project for explicit routing (production -> `https://api.friink.com/api`, staging -> `https://staging-api.friink.com/api`).
 
-### Deployment (ready for test)
-
-- [infra] Ready to deploy: API builds to `api/dist/api-handler.js` and root `vercel.json` routes `/api/*` to `api/dist/api-handler.js`. `vercel-build` is present so Vercel will run `nest build` during build.
-- [qa] Recommended verification after push:
-	- Confirm Vercel build completes without the `missing public directory` error.
-	- Verify runtime by calling `GET https://<your-deploy-domain>/api/health` or `POST /api/auth/login` on the deployed domain.
-	- If DB migrations are required, run `npm --prefix api run db:migrate` from a trusted runner.
-
-	### Hotfix
-
-	- [infra] Route `/` -> `/friink-site/index.html`: added explicit root route in `vercel.json` to serve the static landing page while Next app routing is investigated.
-
-	### Hotfix 2
-
-	- [infra] Corrected root route target: updated `vercel.json` to map `^/$` -> `/friink-site/index.html` (served path) instead of `/web/friink-site/index.html`.
-
-### Files Touched (for deploy)
-- `vercel.json` (root) — routes `/api/*` -> `api/dist/api-handler.js`
-- `api/vercel.json` — build + route to `dist/api-handler.js`
-- `api/package.json` — added `vercel-build` script
-
-
 
 - [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
 - [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens keep the step labels and password rule hint, with the back control styled as a hollow outline button. The settings UI includes General, Account, and Privacy & Safety tabs. A development-only `/dev-settings` route was added to preview the Settings UI without backend auth; the Settings header icon/heading/description was removed and the tab bar placed directly under the header for cosmetic editing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
