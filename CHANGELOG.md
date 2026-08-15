@@ -26,6 +26,25 @@ _Last updated: 2026-08-15_
 ### Notes
 - UI-only changes. Dev route should be removed or guarded before shipping to production. The change was verified by starting the local dev server and loading `/dev-settings`.
 
+### Fixed / Backend
+- [api] Repaired local API dev workflow: installed dependencies, rebuilt the API, and resolved a build/runtime issue so the API can run locally on port 3001. Verified the server process is running for local testing. If your local DB is configured and migrations are applied, login/signup routes will operate end-to-end.
+- [web] Fixed a CSS compile error introduced while adjusting settings spacing (`web/app/globals.css`) that caused the dev server to fail until corrected.
+- [repo] Removed obsolete docs (`codex.md`, `copilot.md`) and committed all changes (commit 383b617).
+
+### 2026-08-15 (Vercel Prep)
+
+### Added
+- [infra] `api/api-handler.ts` serverless wrapper to run the Nest API on Vercel using `serverless-http`.
+- [infra] `vercel.json` to build the Next.js `web` project and route `/api/*` to the API handler.
+
+### Changed
+- [api] Use a global `pg` Pool in `api/src/database/database.module.ts` so serverless functions reuse connections and avoid exhausting Neon DB connection limits.
+
+### Notes
+- These changes prepare the repo to deploy both frontend and backend on Vercel. After pushing, configure Vercel environment variables and run DB migrations in CI or a trusted runner.
+
+
+
 - [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens use streamlined helper copy; the inline password rule hint and the long login helper paragraph were removed as part of recent UX updates. The back control remains styled as a hollow outline button. The settings screen includes General, Account, and Privacy & Safety tabs, with theme under General, editable username under Account, and a read-only unique user ID. Privacy & Safety is cosmetic-only and ready for UI testing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
 - [mobile] The mobile workspace currently contains brand assets only. There is no runnable mobile app code yet.
 

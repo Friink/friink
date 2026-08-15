@@ -13,6 +13,71 @@
 
 ---
 
+### Entry
+
+- Date & Time: 2026-08-15 12:56 UTC
+- User: Repository maintainer (prompt provided in session)
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Repair the local development environment so frontend login/signup works — diagnose and fix API build/run issues, start the API server, and verify routes. Also continue previously requested UI edits and doc housekeeping.
+- Changes Made (actions performed):
+  - Created `web/app/dev-settings/page.tsx` to render the Settings UI without backend auth.
+  - Modified `web/components/account-screens.tsx` to remove the Settings header icon/heading/description and keep tab markup.
+  - Fixed CSS duplication and spacing in `web/app/globals.css` so styles compile.
+  - Deleted `codex.md` and `copilot.md` from the repository.
+  - Ran package installation for the API and attempted multiple builds; rebuilt and ran the API using `ts-node` for iteration, then compiled and started the built server when necessary.
+  - Committed all changes (commit 383b617).
+- Files/Scope Touched (exact paths):
+  - CHANGELOG.md
+  - AGENTLOG.md
+  - web/app/dev-settings/page.tsx (created)
+  - web/components/account-screens.tsx (modified)
+  - web/app/globals.css (modified)
+  - codex.md (deleted)
+  - copilot.md (deleted)
+- Commands run (high-level):
+  - `npm install` (api)
+  - `npm run start:dev` and `node -r ts-node/register src/main.ts` (api) for iterative testing
+  - `npm run build` (api) and `node dist/src/main.js` when verifying compiled output
+  - `npm run dev:local` (web) to run Next dev server
+  - `git add -A` / `git commit -m "chore(docs/ui): ..."` (commit 383b617)
+- Reason/Decision: The frontend depends on a running API (default NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api). To allow real login/signup flows to be tested, the API must run locally; fixes addressed build/runtime issues and a CSS compile error that broke the dev web build. The dev-only `dev-settings` page was added to allow designers to iterate the Settings UI without backend dependencies.
+- Notes for next agent:
+  - The API should be started in dev mode during local work: `cd api && npm run start:dev` (ensure `.env` is present and `DATABASE_URL` reachable). If the compiled `dist` is used, run `npm run build` then `node dist/src/main.js`.
+  - The `/dev-settings` route is development-only and should be removed or gated before production release.
+  - Commit 383b617 contains the doc and UI changes; review that commit if further edits are required.
+  - If database migrations are required, run `npm run db:migrate` in `api` (requires `DATABASE_URL` and `drizzle` configured).
+- Verified Working?: yes — Next dev server loads `/dev-settings`; API process started locally and basic endpoints are reachable (development verification performed).
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-15 13:18 UTC
+- User: Repository maintainer (prompt provided in session)
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Prepare the Nest API to run on Vercel serverless functions and add serverless wrapper and Vercel configuration.
+- Changes Made:
+  - Modified `api/src/database/database.module.ts` to reuse a global `pg` Pool to prevent connection exhaustion in serverless environments.
+  - Added `api/api-handler.ts` as a `serverless-http` wrapper that boots the Nest app and exposes the Express instance to Vercel.
+  - Added `serverless-http` to `api/package.json` dependencies.
+  - Added `vercel.json` to the repository to route `/api/*` to the serverless handler and build the `web` Next project.
+- Files/Scope Touched:
+  - api/src/database/database.module.ts (modified)
+  - api/api-handler.ts (added)
+  - api/package.json (modified)
+  - vercel.json (added)
+- Reason/Decision: Converting the API to a serverless-compatible entrypoint allows deploying both frontend and backend on Vercel. Using a global Pool mitigates connection issues with Neon/Postgres.
+- Notes for next agent:
+  - Set Vercel Project envs: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `SIGNUP_OTP_ENABLED`, and `NEXT_PUBLIC_API_BASE_URL` (pointing to deployed Vercel domain).
+  - Add CI workflow to run `npm --prefix api run db:migrate` using secrets for `DATABASE_URL` after deploy.
+  - Before shipping, remove or gate `/dev-settings` route.
+- Verified Working?: untested — serverless behavior must be validated in a Vercel preview deployment.
+
+
+---
+
 ---
 
 ### Entry
