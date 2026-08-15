@@ -21,7 +21,7 @@ export default function AppHomePage() {
 
   function handleLogout() {
     clearAuthSession();
-    router.replace('/login');
+    router.replace('/');
   }
 
   if (!user) {

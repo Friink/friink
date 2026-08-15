@@ -4,6 +4,12 @@
 > After completing any change that required modifying code, append a 
 > new entry here with the fields below.
 >
+> IMPORTANT: Do NOT include a `User:` field in log entries. The agent
+> log is for recording agent actions and context; user attribution
+> should be handled elsewhere (commit authorship, PRs, or external
+> trackers). Future entries must omit `User:` lines to avoid
+> misattribution.
+>
 > Before modifying a file another agent recently touched (per this log 
 > or git history), briefly verify the current state of that file 
 > matches what the log describes — do not assume the log is 
@@ -13,10 +19,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 17:20 UTC
-- User: Repository maintainer
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: UI polish — make all pages full-width, extract tab bar, remove duplicate privacy subheading, add email field, make inputs pill-shaped, make header bell theme-aware, and add side-drawer click-away behavior.
@@ -40,10 +45,9 @@
 
 ---
 
-### Entry
+-### Entry
 
- - Date & Time: 2026-08-15 13:45 UTC
-- User: Repository maintainer (prompt provided in session)
+- Date & Time: 2026-08-15 13:45 UTC
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Move post composer actions to a fixed bottom footer and hide the floating bottom navigation while composing posts.
@@ -61,10 +65,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 17:40 UTC
-- User: Repository maintainer
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Deployment preparation — user will push current branch to GitHub for Vercel to build staging. Agent verified `vercel.json`, `api/api-handler.ts`, and repo build scripts. Confirmed staging domain is protected by Vercel SSO which redirects unauthenticated requests to Vercel login.
@@ -86,10 +89,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 12:56 UTC
-- User: Repository maintainer (prompt provided in session)
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Repair the local development environment so frontend login/signup works — diagnose and fix API build/run issues, start the API server, and verify routes. Also continue previously requested UI edits and doc housekeeping.
@@ -124,10 +126,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 13:18 UTC
-- User: Repository maintainer (prompt provided in session)
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Prepare the Nest API to run on Vercel serverless functions and add serverless wrapper and Vercel configuration.
@@ -150,10 +151,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 13:30 UTC
-- User: Repository maintainer (prompt provided in session)
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Mark repository as ready for Vercel deployment and instruct next agent/user on verification steps.
@@ -174,10 +174,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 12:20 UTC
-- User: Repository maintainer (prompt provided in session)
 - Agent: Copilot
 - Model: GPT-5 mini
 - Prompt Summary: Add an agent-sync note to `CHANGELOG.md`, update the Current State, add a dated `2026-08-15` changelog entry, and create/modify files to allow offline cosmetic edits to the Settings UI.
@@ -194,10 +193,9 @@
 
 ---
 
-### Entry
+-### Entry
 
 - Date & Time: 2026-08-15 12:00 UTC
-- User: Repository maintainer (prompt provided in session)
 - Agent: Copilot
 - Model: GPT-5 mini
 - Prompt Summary: Add AI agent instruction block to `CHANGELOG.md` and create `AGENTLOG.md` with a seeded entry describing the change.
