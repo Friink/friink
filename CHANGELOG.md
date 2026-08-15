@@ -57,6 +57,18 @@ _Last updated: 2026-08-16_
 
 	- [web] Revert: removed chat composer from the new `Footer` — the message composer now remains in `MessagesScreen`. Floating action pill remains in `Footer` as requested.
 
+	### Revert (pending)
+
+	- [web] Revert of Footer: user requested resetting the `staging` branch to the commit immediately before `a1df120` (the change that introduced the new `Footer` component). The revert has been authorized but not executed — this changelog entry documents the approval and the intent. Files affected by the footer commit include `web/components/footer.tsx`, `web/app/globals.css`, `web/components/post-screen.tsx`, and `web/components/app-shell.tsx`.
+
+	### Notes
+
+	- This entry was added at the user's request to record the pending revert and to keep `CHANGELOG.md` and `AGENTLOG.md` synchronized. If you want me to perform the actual reset now, reply with "proceed with reset" and I'll run:
+
+	```
+	git reset --hard a1df120^
+	git push --force origin staging
+	```
 
 ### Files Touched (for deploy)
 - `vercel.json` (root) — routes `/api/*` -> `api/dist/api-handler.js`
