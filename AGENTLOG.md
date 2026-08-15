@@ -38,6 +38,49 @@
   - After deploy, verify build logs and runtime logs in the Vercel dashboard and confirm `/api/auth/login` resolves. If DB migrations are required, run `npm --prefix api run db:migrate` from a trusted runner.
 - Verified Working?: pending Vercel deploy — the change was validated locally by running `nest build` and confirming the `dist` output would be usable as the serverless handler.
 
+### Entry
+
+- Date & Time: 2026-08-16 12:30 UTC
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Prepare for deploy & test — confirm compiled handler exists and update routing/docs; add instructions for verification and monitoring.
+- Changes Made:
+  - Confirmed `api/dist/api-handler.js` exists by running `nest build` locally and listing `api/dist` contents.
+  - Ensured `serverless-http` version is valid and updated `api/package.json` accordingly to avoid build-time errors on Vercel.
+  - Verified root `vercel.json` and `api/vercel.json` route `/api/*` to `api/dist/api-handler.js` so the deployed serverless entrypoint is found.
+- Files/Scope Touched:
+  - vercel.json (root) (modified)
+  - api/vercel.json (modified)
+  - api/package.json (modified)
+  - api/src/api-handler.ts (added)
+  - api/api-handler.ts (removed)
+- Reason/Decision: Ensure the compiled serverless entrypoint is present and Vercel routes target the built output to avoid 404s; fix dependency issues that would break the build.
+- Notes for next agent/user:
+  - Push commits and deploy. Recommended Vercel envs for each project:
+    - Production: `NEXT_PUBLIC_API_BASE_URL=https://api.friink.com/api`
+    - Staging: `NEXT_PUBLIC_API_BASE_URL=https://staging-api.friink.com/api`
+  - After deploy, validate:
+    - Build logs show `nest build` (from `vercel-build`) and successful packaging.
+    - `GET https://<deploy-domain>/api/health` returns 200 or `POST /api/auth/login` returns expected responses.
+  - If you want, I can monitor the deployment logs and verify `/api/auth/login`; say "monitor" and I'll watch the build.
+
+  ### Entry
+
+  - Date & Time: 2026-08-16 13:10 UTC
+  - Agent: Copilot
+  - Model: not disclosed
+  - Prompt Summary: Hotfix root route — ensure `/` serves the landing page when Next app isn't available on deploy.
+  - Changes Made:
+    - Updated `vercel.json` to add a top-level route mapping `^/$` -> `/web/friink-site/index.html` so the root path serves the static landing file.
+    - Corrected root route to map `^/$` -> `/friink-site/index.html` (served path) after initial mapping failed to resolve on deploy.
+  - Files/Scope Touched:
+    - vercel.json (root) (modified)
+  - Reason/Decision: `/friink-site/index.html` was accessible but `/` returned 404 on deploy; mapping `/` to the static landing file is a safe short-term fix while investigating Next routing/build issues.
+  - Notes for next agent/user:
+    - This is a temporary hotfix. Long-term, the Next app root should render the landing iframe; investigate Next build failures or Vercel build logs if `/` 404s after removing this route.
+
+
+
 -### Entry
 
  Date & Time: 2026-08-15 17:20 UTC

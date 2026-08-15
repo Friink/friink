@@ -2,7 +2,7 @@ import 'dotenv/config';
 import serverless from 'serverless-http';
 import { NestFactory } from '@nestjs/core';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from './src/app.module';
+import { AppModule } from './app.module';
 
 let cachedHandler: any = null;
 

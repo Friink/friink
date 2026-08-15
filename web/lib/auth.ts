@@ -16,9 +16,17 @@ export type AuthSession = {
 const AUTH_SESSION_KEY = 'friink-auth-session';
 
 export function getApiBaseUrl() {
+  // If running in the browser prefer the runtime host to determine API domain
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host.includes('staging.friink.com')) return 'https://staging-api.friink.com/api';
+    if (host.includes('friink.com')) return 'https://api.friink.com/api';
+  }
+
   const explicit = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (explicit) return explicit;
 
+  // Build-time Vercel hostnames (only available at build time)
   const vercelUrl = (process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL ?? '').toString();
   if (vercelUrl.includes('staging.friink.com')) return 'https://staging-api.friink.com/api';
   if (vercelUrl.includes('friink.com')) return 'https://api.friink.com/api';
