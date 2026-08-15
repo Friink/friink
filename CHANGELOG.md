@@ -33,6 +33,10 @@ _Last updated: 2026-08-16_
 	- Verify runtime by calling `GET https://<your-deploy-domain>/api/health` or `POST /api/auth/login` on the deployed domain.
 	- If DB migrations are required, run `npm --prefix api run db:migrate` from a trusted runner.
 
+	### Hotfix
+
+	- [infra] Route `/` -> `/friink-site/index.html`: added explicit root route in `vercel.json` to serve the static landing page while Next app routing is investigated.
+
 ### Files Touched (for deploy)
 - `vercel.json` (root) — routes `/api/*` -> `api/dist/api-handler.js`
 - `api/vercel.json` — build + route to `dist/api-handler.js`

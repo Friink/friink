@@ -64,6 +64,21 @@
     - `GET https://<deploy-domain>/api/health` returns 200 or `POST /api/auth/login` returns expected responses.
   - If you want, I can monitor the deployment logs and verify `/api/auth/login`; say "monitor" and I'll watch the build.
 
+  ### Entry
+
+  - Date & Time: 2026-08-16 13:10 UTC
+  - Agent: Copilot
+  - Model: not disclosed
+  - Prompt Summary: Hotfix root route — ensure `/` serves the landing page when Next app isn't available on deploy.
+  - Changes Made:
+    - Updated `vercel.json` to add a top-level route mapping `^/$` -> `/web/friink-site/index.html` so the root path serves the static landing file.
+  - Files/Scope Touched:
+    - vercel.json (root) (modified)
+  - Reason/Decision: `/friink-site/index.html` was accessible but `/` returned 404 on deploy; mapping `/` to the static landing file is a safe short-term fix while investigating Next routing/build issues.
+  - Notes for next agent/user:
+    - This is a temporary hotfix. Long-term, the Next app root should render the landing iframe; investigate Next build failures or Vercel build logs if `/` 404s after removing this route.
+
+
 
 -### Entry
 

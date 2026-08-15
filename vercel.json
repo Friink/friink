@@ -5,6 +5,7 @@
     { "src": "api/dist/api-handler.js", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "^/$", "dest": "/web/friink-site/index.html" },
     { "src": "/api/(.*)", "dest": "/api/dist/api-handler.js" },
     { "src": "/(.*)", "dest": "/web/$1" }
   ]
