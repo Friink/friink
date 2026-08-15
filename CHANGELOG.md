@@ -37,6 +37,10 @@ _Last updated: 2026-08-16_
 
 	- [infra] Route `/` -> `/friink-site/index.html`: added explicit root route in `vercel.json` to serve the static landing page while Next app routing is investigated.
 
+	### Hotfix 2
+
+	- [infra] Corrected root route target: updated `vercel.json` to map `^/$` -> `/friink-site/index.html` (served path) instead of `/web/friink-site/index.html`.
+
 ### Files Touched (for deploy)
 - `vercel.json` (root) — routes `/api/*` -> `api/dist/api-handler.js`
 - `api/vercel.json` — build + route to `dist/api-handler.js`

@@ -72,6 +72,7 @@
   - Prompt Summary: Hotfix root route — ensure `/` serves the landing page when Next app isn't available on deploy.
   - Changes Made:
     - Updated `vercel.json` to add a top-level route mapping `^/$` -> `/web/friink-site/index.html` so the root path serves the static landing file.
+    - Corrected root route to map `^/$` -> `/friink-site/index.html` (served path) after initial mapping failed to resolve on deploy.
   - Files/Scope Touched:
     - vercel.json (root) (modified)
   - Reason/Decision: `/friink-site/index.html` was accessible but `/` returned 404 on deploy; mapping `/` to the static landing file is a safe short-term fix while investigating Next routing/build issues.
