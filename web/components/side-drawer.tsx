@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from 'react';
 import { sidebarNavItems, type Screen } from '@/lib/data';
 import type { AuthUser } from '@/lib/auth';
 
@@ -24,8 +27,25 @@ function getInitials(value: string) {
 }
 
 export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
+  const containerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    function handlePointerDown(e: PointerEvent) {
+      if (!containerRef.current) return;
+      // if already collapsed, nothing to do
+      if (collapsed) return;
+      const target = e.target as Node | null;
+      if (target && !containerRef.current.contains(target)) {
+        onToggleCollapsed();
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [collapsed, onToggleCollapsed]);
+
   return (
-    <aside className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
+    <aside ref={containerRef} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-header">
         <button
           className="sidebar-menu-button"
@@ -43,7 +63,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         <div>
           <strong>{user.name}</strong>
           <span>@{user.username}</span>
-          <span>{user.email}</span>
         </div>
       </div>
 

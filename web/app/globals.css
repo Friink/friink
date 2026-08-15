@@ -239,7 +239,7 @@ textarea {
   width: 100%;
   height: 3rem;
   border: 1px solid #9dc7ae;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   padding: 0 1rem;
   color: var(--color-ink);
   background: #edf1ee;
@@ -1071,6 +1071,10 @@ textarea {
   font-size: 1.125rem;
 }
 
+.topbar-bell i {
+  color: var(--color-ink);
+}
+
 .topbar-bell span {
   position: absolute;
   top: -2px;
@@ -1099,23 +1103,36 @@ textarea {
 }
 
 .simple-screen {
-  display: grid;
-  justify-items: center;
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 4rem 1rem;
+  display: block;
+  justify-items: start;
+  width: 100%;
+  margin: 0;
+  padding: 2.5rem 1rem;
   color: var(--color-muted);
-  text-align: center;
+  text-align: left;
+}
+
+/* Full-width settings content container that stretches from the sidebar edge to the page edge */
+.settings-screen-content {
+  width: 100%;
+  padding: 1.25rem 1rem;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.settings-screen-content .settings-panel {
+  width: min(100%, 26rem);
 }
 
 .simple-screen > i {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   color: var(--color-brand);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .simple-screen h2 {
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   color: var(--color-ink);
   font-size: 1.25rem;
 }
@@ -1138,52 +1155,74 @@ textarea {
   min-height: 0;
   padding: 0;
 }
+
+/* Align settings tabs under the header like other screens */
 .settings-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: min(100%, 26rem);
-  margin-top: 0;
-  padding: 0.25rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  background: var(--color-paper);
+  display: flex;
   gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--color-line);
+  scrollbar-width: none;
+}
+
+/* Make settings tab bar span the full content width and align left under header */
+.settings-tabs {
+  width: 100%;
+  max-width: none;
+  justify-content: flex-start;
+}
+
+.settings-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .settings-tab {
-  min-height: 2.5rem;
+  position: relative;
+  flex: 0 0 auto;
   border: 0;
-  border-radius: var(--radius-pill);
-  padding: 0.5rem 0.6rem;
+  padding: 0.7rem 0.75rem 0.8rem;
   color: var(--color-muted);
   background: transparent;
   font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  text-transform: none;
+  font-weight: 600;
 }
 
 .settings-tab.active {
-  color: var(--color-paper);
+  color: var(--color-brand);
+}
+
+.settings-tab.active::after {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -1px;
+  left: 0.75rem;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
   background: var(--color-brand);
+  content: '';
 }
 
 .settings-panel {
-  display: grid;
-  gap: 1rem;
-  width: min(100%, 26rem);
+  display: block;
+  width: 100%;
 }
 
+/* Make each setting take full width with a separator line and no boxed container */
 .settings-preference {
-  display: grid;
-  width: min(100%, 26rem);
-  margin-top: 1rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  background: var(--color-paper);
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  background: transparent;
   text-align: left;
-  gap: 1rem;
+  gap: 0;
+}
+
+.settings-preference:last-child {
+  border-bottom: 0;
 }
 
 .settings-preference h3,
@@ -1191,6 +1230,17 @@ textarea {
   margin: 0;
   color: var(--color-ink);
   font-size: 1rem;
+}
+
+/* Global: make single-line text inputs pill-shaped */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"] {
+  border-radius: var(--radius-pill);
 }
 
 .settings-preference p,
@@ -1216,7 +1266,7 @@ textarea {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   padding: 0.7rem 0.8rem;
   background: var(--color-background);
   color: var(--color-ink);
@@ -1955,8 +2005,11 @@ textarea {
 
 .post-composer {
   display: flex;
+  flex-direction: column;
   flex: 1;
   padding: 1rem;
+  padding-bottom: calc(1rem + max(0.75rem, env(safe-area-inset-bottom))); /* extra bottom spacing so footer/buttons float above edge */
+  min-height: 0;
 }
 
 .post-composer-body {
@@ -1964,12 +2017,20 @@ textarea {
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  min-height: 0;
+}
+
+/* Constrain composer width so textarea doesn't cover most of the page */
+.post-composer-body {
+  max-width: 64rem;
+  width: 100%;
 }
 
 .post-composer-identity {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .post-composer-body strong,
@@ -1985,12 +2046,16 @@ textarea {
 
 .post-composer textarea {
   width: 100%;
-  flex: 1;
-  min-height: 0;
-  margin-top: 0.75rem;
-  padding: 0;
+  flex: 1; /* grow to fill remaining space */
+  min-height: 10rem; /* a bit taller by default */
+  margin-top: 0; /* spacing handled by identity margin */
+  margin-bottom: 0.25rem; /* smaller gap to actions */
+  padding: 0.75rem 1rem;
   resize: none;
-  border: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 0.25rem;
+  background: var(--color-background);
+  box-sizing: border-box;
   font-size: var(--text-base);
   line-height: 1.5;
 }
@@ -2066,6 +2131,32 @@ textarea {
   padding-bottom: 0;
 }
 
+/* Make main content fill available height when composing a post so textarea can expand */
+.app-layout:has(.post-screen) .main-content {
+  height: calc(100vh - var(--space-topbar-height));
+  overflow: hidden;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Mobile-specific composer tweaks */
+@media (max-width: 767px) {
+  .post-composer {
+    padding: 0.75rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .post-composer textarea {
+    min-height: 9rem; /* slightly smaller on mobile to avoid overflowing */
+    margin-bottom: 0.5rem; /* reduce gap to actions on mobile */
+    padding: 0.75rem 0.75rem;
+  }
+
+  .post-footer {
+    padding: 0.5rem 0.5rem;
+    gap: 0.5rem;
+  }
+}
+
 .main-content {
   padding-bottom: calc(3.75rem + 2rem);
 }
@@ -2075,23 +2166,26 @@ textarea {
   display: none;
 }
 
-/* Post footer actions placed at bottom of viewport for composer screens */
+/* Post footer integrated into composer (non-fixed) */
 .post-footer {
-  position: fixed;
-  right: 1rem;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  left: 1rem;
-  z-index: 4;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(calc(100% - 2rem), 42rem);
-  margin: 0 auto;
-  padding: 0.5rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  box-shadow: 0 0.75rem 2rem rgba(24, 44, 31, 0.12);
-  background: var(--color-paper);
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+}
+
+/* push footer to the bottom of the composer */
+.post-footer {
+  margin-top: auto;
+}
+
+/* Ensure footer sits below the textarea and fills available width */
+.post-composer-body .post-footer {
+  width: 100%;
+  margin-top: 0.75rem;
+  align-self: stretch;
 }
 
 .post-footer-left {
@@ -2102,10 +2196,26 @@ textarea {
 .post-footer-right {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
-.post-screen {
-  padding-bottom: calc(3.75rem + 1.5rem);
+/* Footer icons should not have a filled background */
+.post-footer .post-option {
+  background: transparent;
+  border-radius: 0.375rem;
+  color: var(--color-ink);
+  background: transparent !important;
+  color: var(--color-ink) !important;
+}
+
+.post-option {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.post-submit {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
 }
 
 /* Desktop */
@@ -2182,12 +2292,34 @@ textarea {
 
   .sidebar-nav {
     display: grid;
-    gap: 0.25rem;
+    border-radius: 0.25rem !important;
     padding-top: 1.25rem;
   }
 
   .nav-item {
     display: flex;
+  .app-shell:not([data-theme='dark']) .post-composer textarea {
+    border-color: rgba(0,0,0,0.08);
+  }
+  .app-shell[data-theme='dark'] .post-composer textarea {
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  /* Notifications bell color: white on dark, black on light */
+  .app-shell[data-theme='dark'] .topbar-bell i {
+    color: var(--color-paper) !important;
+  }
+  .app-shell:not([data-theme='dark']) .topbar-bell i {
+    color: #111111 !important;
+  }
+
+  /* Ensure post footer icons contrast with theme: black on light, white on dark */
+  .app-shell[data-theme='dark'] .post-footer .post-option {
+    color: var(--color-paper) !important;
+  }
+  .app-shell:not([data-theme='dark']) .post-footer .post-option {
+    color: #111111 !important;
+  }
     align-items: center;
     gap: 0.875rem;
     width: 100%;

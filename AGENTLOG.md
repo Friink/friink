@@ -15,7 +15,34 @@
 
 ### Entry
 
-- Date & Time: 2026-08-15 13:45 UTC
+- Date & Time: 2026-08-15 17:20 UTC
+- User: Repository maintainer
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: UI polish — make all pages full-width, extract tab bar, remove duplicate privacy subheading, add email field, make inputs pill-shaped, make header bell theme-aware, and add side-drawer click-away behavior.
+- Changes Made:
+  - Added `web/components/tab-bar.tsx` and replaced inline tabs in `web/components/account-screens.tsx` with the `TabBar` component.
+  - Updated `web/components/account-screens.tsx` to add an editable `Email` field, removed the redundant `Privacy & Safety` subheading inside the privacy tab, and adjusted markup for full-width settings rows.
+  - Made global layout and cosmetic changes in `web/app/globals.css`: set page containers (including `.simple-screen`) to full-width, added `.settings-screen-content`, styled settings rows as full-width separators, added a global rule to make single-line `input` elements pill-shaped, and added theme-aware rules for the header bell and post-footer icons.
+  - Made the side drawer close when clicking/tapping outside by updating `web/components/side-drawer.tsx` to a client component with a document `pointerdown` listener.
+  - Minor header CSS updates to ensure the bell icon follows the active theme.
+- Files/Scope Touched:
+  - web/components/tab-bar.tsx (added)
+  - web/components/account-screens.tsx (modified)
+  - web/components/side-drawer.tsx (modified)
+  - web/components/header.tsx (unchanged JS; CSS updated in globals)
+  - web/app/globals.css (modified)
+- Reason/Decision: Provide consistent full-width page layout and unify the tab UI as a reusable component; make inputs visually consistent and ensure interactive components respect theme and mobile spacing. Side-drawer click-away improves mobile UX.
+- Notes for next agent:
+  - Verify pages across breakpoints to ensure content doesn't overflow; test `dev-settings` and real pages.
+  - If any page should remain centered (e.g., landing or auth flows), consider using a dedicated container class rather than relying on `.simple-screen`.
+- Verified Working?: yes — local dev server reported 200 responses for `/` and `/dev-settings` after edits.
+
+---
+
+### Entry
+
+ - Date & Time: 2026-08-15 13:45 UTC
 - User: Repository maintainer (prompt provided in session)
 - Agent: Copilot
 - Model: not disclosed
@@ -31,6 +58,31 @@
   - Confirm the footer does not overlap important content on small viewports; adjust `width` and `padding-bottom` in `globals.css` if necessary.
   - Remember to remove or gate `/dev-settings` before production.
 - Verified Working?: yes — verified in local dev server at `/dev-settings` and composer view.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-15 17:40 UTC
+- User: Repository maintainer
+- Agent: Copilot
+- Model: not disclosed
+- Prompt Summary: Deployment preparation — user will push current branch to GitHub for Vercel to build staging. Agent verified `vercel.json`, `api/api-handler.ts`, and repo build scripts. Confirmed staging domain is protected by Vercel SSO which redirects unauthenticated requests to Vercel login.
+- Changes Made / Checks:
+  - Reviewed `vercel.json` (routes `/api/*` to `api/api-handler.ts`).
+  - Reviewed `api/api-handler.ts` using `serverless-http`, enabling CORS and global `api` prefix.
+  - Confirmed presence of build scripts in `web/package.json` and `api/package.json`.
+  - Performed unauthenticated `curl` to `https://staging.friink.com/` and observed redirect to Vercel SSO (expected for protected staging).
+- Recommended Actions:
+  - Ensure Vercel Project environment variables for staging are set: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `SIGNUP_OTP_ENABLED`, `NEXT_PUBLIC_API_BASE_URL`.
+  - Push branch to GitHub so Vercel builds the deployment. Watch build logs and runtime logs for DB connection or missing-file errors.
+  - Run migrations on staging DB if required: `npm --prefix api run db:migrate`.
+- Files/Scope Reviewed:
+  - vercel.json
+  - api/api-handler.ts
+  - web/package.json
+  - api/package.json
+- Verified Working?: n/a — pending user push and Vercel build.
 
 ---
 

@@ -15,6 +15,8 @@ _Last updated: 2026-08-15_
 - [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
 - [web] Login is wired to the API and signup uses a two-step UI: credentials first, then profile details. Successful auth stores a session in `localStorage`, and the signed-in user is passed into the shell, profile, sidebar, and composer. The landing page now points every `Early access` CTA to `/login`. The signup screens keep the step labels and password rule hint, with the back control styled as a hollow outline button. The settings UI includes General, Account, and Privacy & Safety tabs. A development-only `/dev-settings` route was added to preview the Settings UI without backend auth; the Settings header icon/heading/description was removed and the tab bar placed directly under the header for cosmetic editing. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
 
+- [web] UI polish (2026-08-15): global content containers now span the full app content column (pages start after the side drawer and extend to the page edge). The Settings UI was refactored: extracted a reusable `TabBar` component, removed redundant section subheadings (Privacy & Safety tab no longer repeats the heading inside the section), made each settings row full-width with separators (no boxed containers), added an editable Email field to Account, and adjusted spacing for mobile. The header bell color and post footer icons were made theme-aware. Single-line text inputs are now pill-shaped globally. Files changed: `web/components/tab-bar.tsx`, `web/components/account-screens.tsx`, `web/components/side-drawer.tsx`, `web/components/header.tsx` (CSS only), and `web/app/globals.css`.
+
 ## 2026-08-15
 
 ### Added
@@ -25,6 +27,12 @@ _Last updated: 2026-08-15_
 
 ### Notes
 - UI-only changes. Dev route should be removed or guarded before shipping to production. The change was verified by starting the local dev server and loading `/dev-settings`.
+
+### Deployment (pending)
+
+- [infra] Staging deployment: user will push the current branch to GitHub; Vercel will build and deploy to `https://staging.friink.com/` (protected by SSO). Before pushing, ensure the following environment variables are set in Vercel for staging: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `SIGNUP_OTP_ENABLED`, and `NEXT_PUBLIC_API_BASE_URL` (set to `https://staging.friink.com/api`).
+
+- After deploy: verify build logs and runtime logs in the Vercel dashboard; confirm `/api/*` routes resolve (Vercel routes are configured in `vercel.json`) and run DB migrations if required: `npm --prefix api run db:migrate`.
 
 ### Fixed / Backend
 - [api] Repaired local API dev workflow: installed dependencies, rebuilt the API, and resolved a build/runtime issue so the API can run locally on port 3001. Verified the server process is running for local testing. If your local DB is configured and migrations are applied, login/signup routes will operate end-to-end.

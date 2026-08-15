@@ -57,21 +57,21 @@ export function PostScreen({ user, onBack, onPost }: PostScreenProps) {
             onChange={(event) => setText(event.target.value)}
             placeholder="What's on your mind?"
           />
-        </div>
-      </div>
-      <div className="post-footer">
-        <div className="post-footer-left">
-          <button className="post-option" type="button" aria-label="Post settings" title="Post settings">
-            <i className="fa-solid fa-gear" aria-hidden="true" />
-          </button>
-          <button className="post-option" type="button" aria-label="Attach file" title="Attach file">
-            <i className="fa-solid fa-paperclip" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="post-footer-right">
-          <button className="primary-button post-submit" type="submit" disabled={!text.trim()}>
-            Post
-          </button>
+          <div className="post-footer">
+            <div className="post-footer-left">
+              <button className="post-option" type="button" aria-label="Attach file" title="Attach file">
+                <i className="fa-solid fa-paperclip" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="post-footer-right">
+              <button className="post-option" type="button" aria-label="Post settings" title="Post settings">
+                <i className="fa-solid fa-gear" aria-hidden="true" />
+              </button>
+              <button className="primary-button post-submit" type="submit" disabled={!text.trim()}>
+                Post
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </form>
