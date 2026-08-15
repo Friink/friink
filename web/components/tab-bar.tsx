@@ -2,16 +2,16 @@
 
 import React from 'react';
 
-export type TabItem = { id: string; label: string };
+export type TabItem<T extends string> = { id: T; label: string };
 
-type TabBarProps = {
-  tabs: TabItem[];
-  activeId: string;
-  onChange: (id: string) => void;
+type TabBarProps<T extends string> = {
+  tabs: TabItem<T>[];
+  activeId: T;
+  onChange: (id: T) => void;
   ariaLabel?: string;
 };
 
-export function TabBar({ tabs, activeId, onChange, ariaLabel = 'Tabs' }: TabBarProps) {
+export function TabBar<T extends string>({ tabs, activeId, onChange, ariaLabel = 'Tabs' }: TabBarProps<T>) {
   return (
     <div className="settings-tabs" role="tablist" aria-label={ariaLabel}>
       {tabs.map((tab) => (
