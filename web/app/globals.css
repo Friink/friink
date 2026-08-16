@@ -25,7 +25,9 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  overflow-y: auto;
   overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 body {
@@ -46,7 +48,8 @@ h6 {
 
 .public-site-frame {
   display: block;
-  width: 100%;
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
   border: 0;
 }
@@ -991,7 +994,7 @@ textarea {
   min-height: 100vh;
   width: 100%;
   margin: 0 auto;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .sidebar {
@@ -1024,7 +1027,7 @@ textarea {
 }
 
 .sidebar:not(.sidebar-collapsed) .sidebar-menu-button {
-  color: var(--color-brand);
+  color: var(--color-ink);
 }
 
 @media (max-width: 767px) {
@@ -1045,7 +1048,7 @@ textarea {
     top: var(--space-topbar-height);
     bottom: 0;
     left: 0;
-    z-index: 20;
+    z-index: 50;
     display: flex;
     flex-direction: column;
     width: min(18rem, 86vw);
@@ -1129,7 +1132,10 @@ textarea {
     width: 1.25rem;
   }
 
-  .sidebar:not(.sidebar-collapsed) .nav-item.active {
+  .sidebar:not(.sidebar-collapsed) .nav-item.active,
+  .sidebar:not(.sidebar-collapsed) .nav-item.active:hover,
+  .sidebar:not(.sidebar-collapsed) .nav-item.active i,
+  .sidebar:not(.sidebar-collapsed) .nav-item.active:hover i {
     color: var(--color-paper);
     background: var(--color-brand);
     font-weight: 600;
@@ -1146,9 +1152,15 @@ textarea {
 }
 
 .main-panel {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 100vh;
+  height: auto;
+  overflow: visible;
   background: var(--color-paper);
+  overscroll-behavior: auto;
+  touch-action: pan-y;
 }
 
 .topbar {
@@ -1158,6 +1170,7 @@ textarea {
   right: 0;
   z-index: 40;
   height: var(--space-topbar-height);
+  margin: 0;
   border-bottom: 1px solid var(--color-line);
   background: var(--color-paper);
 }
@@ -1170,12 +1183,14 @@ textarea {
   padding: 0 1.125rem;
 }
 
-.mobile-home-navigation {
+.mobile-home-navigation,
+.mobile-page-navigation {
   position: sticky;
   top: var(--space-topbar-height);
-  z-index: 25;
+  z-index: 10;
   width: 100%;
   flex-shrink: 0;
+  margin-top: 0;
 }
 
 .navigationbar {
@@ -1185,36 +1200,61 @@ textarea {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 2.5rem;
-  padding: 0 0.875rem;
-  border-top: 1px solid var(--color-line);
+  height: 2rem;
+  margin: 0;
+  padding: 0 0.5rem;
   border-bottom: 1px solid var(--color-line);
   background: var(--color-paper);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
   z-index: 1;
 }
 
+.topbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: var(--space-topbar-height);
+  margin: 0;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-paper);
+}
+
+.navigationbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .navigationbar-button {
   display: inline-grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-ink);
-  font-size: 1rem;
+  font-size: 0.85rem;
   padding: 0;
 }
 
 .navigationbar-title {
   flex: 1 1 auto;
-  text-align: center;
-  font-size: 0.92rem;
+  min-width: 0;
+  text-align: left;
+  font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: capitalize;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--color-ink);
+}
+
+.navigationbar-menu {
+  flex-shrink: 0;
 }
 
 .navigationbar-back {
@@ -1311,8 +1351,21 @@ textarea {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: visible;
   padding-top: 0;
   padding-bottom: 0;
+  touch-action: pan-y;
+}
+
+.main-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  overflow-x: hidden;
+  overscroll-behavior: auto;
+  touch-action: pan-y;
 }
 
 .main-content-post {
@@ -1442,13 +1495,19 @@ textarea {
 
 /* Home Tabs placeholder */
 .tabs {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 8;
   display: flex;
   align-items: stretch;
   width: 100%;
-  min-height: 2.5rem;
+  min-height: 2.2rem;
   background: var(--color-paper);
   border-bottom: 1px solid var(--color-line);
+}
+
+.section-tabs {
+  top: 0;
 }
 
 .tabs__inner {
@@ -1456,7 +1515,7 @@ textarea {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0 0.875rem;
+  padding: 0 0.75rem;
 }
 
 .tabs__pill {
@@ -1464,28 +1523,30 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.5rem;
-  padding: 0.5rem 0.75rem 0.6rem;
+  height: 2.2rem;
+  padding: 0.52rem 0.7rem 0.38rem;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--color-muted);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   line-height: 1;
 }
 
 .tabs__pill[aria-selected="true"] {
   color: var(--color-brand);
-  border-bottom: 2px solid var(--color-brand);
+  border-bottom: 1px solid var(--color-brand);
 }
 
 .tabs__indicator {
   position: absolute;
   bottom: 0;
-  height: 2px;
+  height: 1px;
   background: var(--color-brand);
-  border-radius: 2px;
+  border-radius: 1px;
   transition: left 160ms ease, width 160ms ease;
 }
 .settings-field {
@@ -2236,6 +2297,9 @@ input[type="search"]:focus {
   margin: 0 auto;
   padding: 0 0 3rem;
   flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  overscroll-behavior: contain;
 }
 
 /* Make content fill the viewport between the topbar and bottom of the page
@@ -2525,11 +2589,11 @@ input[type="search"]:focus {
 /* Desktop */
 @media (min-width: 768px) {
   .topbar {
-    position: static;
-    top: auto;
-    left: auto;
-    right: auto;
-    z-index: auto;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
   }
 
   .topbar-brand {
@@ -2653,7 +2717,10 @@ input[type="search"]:focus {
     text-align: center;
   }
 
-  .nav-item.active {
+  .nav-item.active,
+  .nav-item.active:hover,
+  .nav-item.active i,
+  .nav-item.active:hover i {
     color: var(--color-paper);
     background: var(--color-brand);
     font-weight: 600;

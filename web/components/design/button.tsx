@@ -1,9 +1,9 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type PillButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'brand' | 'quiet';
 };
 
-export function PillButton({ className = '', variant = 'brand', ...props }: PillButtonProps) {
+export function Button({ className = '', variant = 'brand', ...props }: ButtonProps) {
   return <button className={`pill-button pill-button-${variant} ${className}`.trim()} {...props} />;
 }

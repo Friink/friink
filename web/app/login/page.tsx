@@ -10,7 +10,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (session) {
+    const isDemoSession = session?.user?.email === 'demo@friink.local';
+
+    if (session && !isDemoSession) {
       router.replace('/home');
     }
   }, [router]);

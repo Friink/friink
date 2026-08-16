@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import ComposeHeader from '@/components/compose-header';
+import { ProfileCard } from '@/components/profile-card';
 import { mockConversations } from '@/lib/mock-conversations';
 import { loadAuthSession, type AuthUser, clearAuthSession } from '@/lib/auth';
 
@@ -53,7 +53,12 @@ export default function ChatPage() {
   return (
     <AppShell user={user} onLogout={handleLogout} initialScreen="messages" showTabs={false} fillContent>
       <section className="messages-screen chat-screen">
-        <ComposeHeader name={conversation.name} handle={conversation.handle} initials={conversation.initials} tone={conversation.tone} />
+        <div className="chat-header">
+          <button className="icon-plain" type="button" onClick={() => router.back()} aria-label="Back">
+            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+          </button>
+          <ProfileCard user={user} />
+        </div>
 
         <div className="chat-messages">
           <p className="chat-date">Today</p>

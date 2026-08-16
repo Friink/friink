@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
-import { PillButton } from '@/components/design/pill-button';
-import { PillField } from '@/components/design/pill-field';
+import { Button } from '@/components/design/button';
+import { InputField } from '@/components/design/input-field';
 import { createDemoSession, login, saveAuthSession, signUp, type AuthUser, getApiBaseUrl } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
@@ -127,12 +127,12 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   async function checkUsernameUnique(handle: string): Promise<boolean | undefined> {
     try {
       const res = await fetch(`${getApiBaseUrl()}/auth/username-available?username=${encodeURIComponent(handle)}`);
-      if (res.status === 404) return undefined;
-      if (!res.ok) return undefined;
+      if (res.status === 404) return true;
+      if (!res.ok) return true;
       const data = await res.json();
       return Boolean((data as { available?: boolean }).available);
     } catch {
-      return undefined;
+      return true;
     }
   }
 
@@ -147,7 +147,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
         {isLoginStep && (
           <>
-            <PillField
+            <InputField
               label="Email"
               type="email"
               value={email}
@@ -157,7 +157,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               required
             />
 
-            <PillField
+            <InputField
               label="Password"
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -185,9 +185,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               Forgot password?
             </button>
 
-            <PillButton className="login-submit" type="submit">
+            <Button className="login-submit" type="submit">
               {isSubmitting ? 'Please wait...' : 'Login'}
-            </PillButton>
+            </Button>
 
             <p className="login-switch">
               Don't have an account?{' '}
@@ -203,7 +203,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
             <div className="signup-step-copy" aria-label="Signup progress">
               <p>{signupProgressLabel}</p>
             </div>
-            <PillField
+            <InputField
               label="Email"
               type="email"
               value={email}
@@ -224,9 +224,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               >
                 Back
               </button>
-              <PillButton className="login-submit" type="submit">
+              <Button className="login-submit" type="submit">
                 Continue
-              </PillButton>
+              </Button>
             </div>
           </>
         )}
@@ -237,7 +237,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               <p>{signupProgressLabel}</p>
             </div>
 
-            <PillField
+            <InputField
               label="Password"
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -259,7 +259,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               }
             />
 
-            <PillField
+            <InputField
               label="Confirm Password"
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
@@ -292,9 +292,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               >
                 Back
               </button>
-              <PillButton className="login-submit" type="submit">
+              <Button className="login-submit" type="submit">
                 Continue
-              </PillButton>
+              </Button>
             </div>
           </>
         )}
@@ -305,7 +305,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               <p>{signupProgressLabel}</p>
             </div>
 
-            <PillField
+            <InputField
               label="Name"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
@@ -314,7 +314,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               required
             />
 
-            <PillField
+            <InputField
               label="Username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
@@ -324,7 +324,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               required
             />
 
-            <PillField
+            <InputField
               label="Date of birth"
               type="date"
               value={dateOfBirth}
@@ -338,9 +338,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               <button className="signup-back-button" type="button" onClick={() => setStep('signup-password')}>
                 Back
               </button>
-              <PillButton className="login-submit" type="submit">
+              <Button className="login-submit" type="submit">
                 {isSubmitting ? 'Please wait...' : 'Create account'}
-              </PillButton>
+              </Button>
             </div>
           </>
         )}

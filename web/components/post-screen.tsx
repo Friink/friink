@@ -1,9 +1,8 @@
  'use client';
 
 import { useState } from 'react';
-import ComposeHeader from './compose-header';
+import { ProfileCard } from '@/components/profile-card';
 import type { AuthUser } from '@/lib/auth';
-// ProfileCard removed from compose header per request
 
 type PostScreenProps = {
   user: AuthUser;
@@ -37,7 +36,12 @@ export function PostScreen({ user, onBack, onPost }: PostScreenProps) {
 
   return (
     <form className="post-screen" onSubmit={handleSubmit}>
-      <ComposeHeader name={user.name} handle={`@${user.username}`} initials={getInitials(user.name)} tone="mint" onBack={onBack} />
+      <div className="chat-header">
+        <button className="icon-plain" type="button" onClick={onBack} aria-label="Back">
+          <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+        </button>
+        <ProfileCard user={user} />
+      </div>
 
       <div className="post-composer">
         <div className="post-composer-body">

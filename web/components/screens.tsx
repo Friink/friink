@@ -98,6 +98,7 @@ export function MessagesScreen() {
         activeId={messagesTab}
         onChange={(id) => setMessagesTab(id)}
         ariaLabel="Messages filters"
+        className="section-tabs"
       />
       <div className="message-list">
         {conversations.map((conversation) => (
@@ -140,6 +141,6 @@ export function ScreenForNav({ activeNav }: { activeNav: string }) {
   return null;
 }
 
-export function MobileNav() {
+export function BottomNavigation() {
   return navItems.slice(0, 4).map((item) => <span key={item.label}>{item.label}</span>);
 }

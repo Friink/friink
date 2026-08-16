@@ -13,7 +13,7 @@ import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
 import { FloatingActions } from '@/components/floating-actions';
 import { HomeScreen } from '@/components/home-screen';
-import { MobileNav } from '@/components/mobile-nav';
+import { BottomNavigation } from '@/components/bottom-navigation';
 import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
@@ -124,6 +124,31 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
     }
   }
 
+  function getPageTitle(screen: Screen) {
+    switch (screen) {
+      case 'home':
+        return 'Home';
+      case 'profile':
+        return 'Profile';
+      case 'connections':
+        return 'Connections';
+      case 'starred':
+        return 'Starred';
+      case 'post':
+        return 'Post';
+      case 'search':
+        return 'Search';
+      case 'messages':
+        return 'Messages';
+      case 'settings':
+        return 'Settings';
+      case 'floating':
+        return 'Floating';
+      default:
+        return 'Friink';
+    }
+  }
+
   function navigateTo(screen: Screen) {
     setActiveScreen(screen);
     // route to pages that have their own app route
@@ -195,72 +220,72 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
             onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
           />
 
-          {activeScreen === 'home' && (
-            <div className="mobile-home-navigation">
-              <NavigationBar
-                title="Home"
-                onBack={() => router.back()}
-                onMenu={() => setSidebarCollapsed(false)}
-              />
-            </div>
-          )}
+          <div className="mobile-page-navigation">
+            <NavigationBar
+              title={getPageTitle(activeScreen)}
+              onBack={() => router.back()}
+              onMenu={() => setSidebarCollapsed(false)}
+            />
+          </div>
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
-            <ContentBox className={(children || fillContent || activeScreen === 'post') ? 'fill-viewport' : ''}>
-              {children ? (
-                children
-              ) : (
-                <>
-                  {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && <Tabs ariaLabel="Home quick tabs" />}
-                  {showTabs !== false && activeScreen === 'connections' && (
-                    <Tabs
-                      tabs={[
-                        { id: 'all', label: 'All' },
-                        { id: 'followers', label: 'Followers' },
-                        { id: 'following', label: 'Following' },
-                        { id: 'requests', label: 'Requests' },
-                      ]}
-                      activeId={connectionsFilter}
-                      onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
-                      ariaLabel="Connections filters"
-                    />
-                  )}
-                  {showTabs !== false && activeScreen === 'settings' && (
-                    <Tabs
-                      tabs={[
-                        { id: 'general', label: 'General' },
-                        { id: 'account', label: 'Account' },
-                        { id: 'privacy', label: 'Privacy & Safety' },
-                      ]}
-                      activeId={settingsTab}
-                      onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
-                      ariaLabel="Settings sections"
-                    />
-                  )}
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
-                  {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
-                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                  {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
-                  {activeScreen === 'search' && <SearchScreen />}
-                  {activeScreen === 'settings' && (
-                    <SettingsScreen
-                      user={user}
-                      appearance={appearance}
-                      onAppearanceChange={(a) => persistAppearance(a)}
-                      activeTab={settingsTab}
-                      onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
-                    />
-                  )}
-                  {activeScreen === 'messages' && <MessagesScreen />}
-                </>
+            <div className="main-scroll">
+              {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && <Tabs ariaLabel="Home quick tabs" />}
+              {showTabs !== false && activeScreen === 'connections' && (
+                <Tabs
+                  tabs={[
+                    { id: 'all', label: 'All' },
+                    { id: 'followers', label: 'Followers' },
+                    { id: 'following', label: 'Following' },
+                    { id: 'requests', label: 'Requests' },
+                  ]}
+                  activeId={connectionsFilter}
+                  onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
+                  ariaLabel="Connections filters"
+                />
               )}
-            </ContentBox>
+              {showTabs !== false && activeScreen === 'settings' && (
+                <Tabs
+                  tabs={[
+                    { id: 'general', label: 'General' },
+                    { id: 'account', label: 'Account' },
+                    { id: 'privacy', label: 'Privacy & Safety' },
+                  ]}
+                  activeId={settingsTab}
+                  onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                  ariaLabel="Settings sections"
+                />
+              )}
+              <ContentBox className={(children || fillContent || activeScreen === 'post') ? 'fill-viewport' : ''}>
+                {children ? (
+                  children
+                ) : (
+                  <>
+                    {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
+                    {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
+                    {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
+                    {activeScreen === 'starred' && <StarredScreen posts={posts} />}
+                    {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
+                    {activeScreen === 'search' && <SearchScreen />}
+                    {activeScreen === 'settings' && (
+                      <SettingsScreen
+                        user={user}
+                        appearance={appearance}
+                        onAppearanceChange={(a) => persistAppearance(a)}
+                        activeTab={settingsTab}
+                        onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                      />
+                    )}
+                    {activeScreen === 'messages' && <MessagesScreen />}
+                  </>
+                )}
+              </ContentBox>
+            </div>
             <FloatingActions />
           </div>
         </section>
 
-        <MobileNav activeScreen={activeScreen} onNavigate={navigateTo} />
+        <BottomNavigation activeScreen={activeScreen} onNavigate={navigateTo} />
       </div>
     </main>
   );

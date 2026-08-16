@@ -1,11 +1,11 @@
 import { navItems, type Screen } from '@/lib/data';
 
-type MobileNavProps = {
+type BottomNavigationProps = {
   activeScreen: Screen;
   onNavigate: (screen: Screen) => void;
 };
 
-export function MobileNav({ activeScreen, onNavigate }: MobileNavProps) {
+export function BottomNavigation({ activeScreen, onNavigate }: BottomNavigationProps) {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
       {navItems.filter((item) => item.id !== 'search' && item.id !== 'connections').map((item) => (

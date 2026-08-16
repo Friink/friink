@@ -78,7 +78,21 @@
     .text-7xl {
       font-family: "Inter", sans-serif;
     }
-    .cta { border: 2px solid transparent; border-radius: 8px !important; }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.75rem 1.5rem;
+      border: 2px solid transparent;
+      border-radius: 8px !important;
+      font-size: 0.95rem;
+      line-height: 1;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+      white-space: nowrap;
+    }
     .cta:hover { background-color: #000000 !important; color: #ffffff !important; }
     .cta-secondary { border: 2px solid #33aa55 !important; }
     .cta-secondary:hover { border-color: #000000 !important; }
@@ -117,9 +131,9 @@
       </a>
       <div class="hidden md:flex items-center gap-8">
         <a class="header-link text-secondary hover:text-primary transition-colors text-sm" href="#vision">Our vision</a>
-        <a class="header-cta cta bg-primary text-on-primary px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-inverse-surface transition-colors" href="/login" style="font-family: 'Nunito Local', sans-serif !important;">Early access</a>
+        <a class="header-cta cta bg-primary text-on-primary hover:bg-inverse-surface" href="/login" style="font-family: 'Nunito Local', sans-serif !important;">Early access</a>
       </div>
-      <a class="header-cta cta md:hidden bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium" href="/login" style="font-family: 'Nunito Local', sans-serif !important;">Early access</a>
+      <a class="header-cta cta md:hidden bg-primary text-on-primary hover:bg-inverse-surface" href="/login" style="font-family: 'Nunito Local', sans-serif !important;">Early access</a>
     </div>
   </nav>
 
@@ -129,11 +143,11 @@
         <h1 class="text-5xl md:text-7xl font-semibold tracking-tight leading-[1.08] max-w-3xl">A place for humans.</h1>
         <p class="text-xl md:text-2xl leading-relaxed text-secondary max-w-2xl mt-8">A calmer social space unlike anything you have seen so far.</p>
         <div class="flex flex-wrap items-center gap-4 mt-10">
-          <a href="/login" class="cta group inline-flex h-14 items-center gap-3 bg-primary text-on-primary px-7 rounded-lg font-medium hover:bg-inverse-surface transition-colors">
+          <a href="/login" class="cta group bg-primary text-on-primary hover:bg-inverse-surface gap-3">
             Try now
             <span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">arrow_forward</span>
           </a>
-          <a href="#subscribe" class="cta cta-secondary inline-flex h-14 items-center border border-primary text-primary px-7 rounded-lg font-medium hover:bg-primary/10 transition-colors">
+          <a href="#subscribe" class="cta cta-secondary text-primary hover:bg-primary/10">
             Get in touch
           </a>
         </div>
@@ -179,7 +193,7 @@
         <form class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mt-8" id="waitlist-form">
           <label class="sr-only" for="waitlist-email">Your email address</label>
           <input id="waitlist-email" name="email" autocomplete="email" required type="email" placeholder="Your email address" class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 focus:border-primary focus:ring-1 focus:ring-primary">
-          <button type="submit" class="cta bg-primary text-on-primary px-7 py-3 rounded-lg font-medium whitespace-nowrap hover:bg-inverse-surface transition-colors">Subscribe</button>
+          <button type="submit" class="cta bg-primary text-on-primary hover:bg-inverse-surface">Subscribe</button>
         </form>
       </div>
     </section>

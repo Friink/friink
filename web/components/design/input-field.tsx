@@ -1,12 +1,12 @@
 import type { InputHTMLAttributes, ReactNode } from 'react';
 
-type PillFieldProps = InputHTMLAttributes<HTMLInputElement> & {
+type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   trailing?: ReactNode;
   prefix?: ReactNode;
 };
 
-export function PillField({ label, trailing, prefix, ...props }: PillFieldProps) {
+export function InputField({ label, trailing, prefix, ...props }: InputFieldProps) {
   return (
     <label className={`pill-field ${prefix ? 'has-prefix' : ''}`}>
       <span className="sr-only">{label}</span>
