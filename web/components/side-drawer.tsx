@@ -1,4 +1,5 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
+import { ProfileCard } from '@/components/profile-card';
 import type { AuthUser } from '@/lib/auth';
 
 type SideDrawerProps = {
@@ -39,11 +40,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       </div>
 
       <div className="sidebar-profile">
-        <span className="user-avatar profile-avatar">{getInitials(user.name)}</span>
-        <div>
-          <strong>{user.name}</strong>
-          <span>@{user.username}</span>
-        </div>
+        <ProfileCard user={user} />
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">

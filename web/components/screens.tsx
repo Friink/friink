@@ -1,5 +1,10 @@
+"use client";
+
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { navItems } from '@/lib/data';
+import { mockConversations } from '@/lib/mock-conversations';
+import { Tabs } from '@/components/tabs';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
   return <div className="screen-heading"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="intro-copy">{copy}</p></div>;
@@ -13,45 +18,10 @@ export function MessagesScreen() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
   
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      name: 'Maya Chen',
-      handle: '@mayachen',
-      initials: 'MC',
-      tone: 'coral',
-      time: '10:42 AM',
-      preview: "That sounds perfect. I'll send you the address!",
-      unread: true,
-      messages: [
-        { id: 1, from: 'them', text: 'Found a little cabin by the lake for the weekend.', time: '10:38 AM' },
-        { id: 2, from: 'me', text: 'That sounds perfect. I\'ll send you the address!', time: '10:42 AM' },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Jon Bell',
-      handle: '@jonbell',
-      initials: 'JB',
-      tone: 'sage',
-      time: 'Yesterday',
-      preview: 'Thanks for the ceramics recommendation.',
-      unread: false,
-      messages: [{ id: 1, from: 'them', text: 'Thanks for the ceramics recommendation.', time: 'Yesterday' }],
-    },
-    {
-      id: 3,
-      name: 'Priya Shah',
-      handle: '@priyashah',
-      initials: 'PS',
-      tone: 'sun',
-      time: 'Mon',
-      preview: 'Are we still on for Thursday?',
-      unread: false,
-      messages: [{ id: 1, from: 'them', text: 'Are we still on for Thursday?', time: 'Mon' }],
-    },
-  ]);
+  const [conversations, setConversations] = useState(mockConversations);
+  const [messagesTab, setMessagesTab] = useState('all'); // Added state for messagesTab
 
+  const router = useRouter();
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
 
   function sendMessage(event: React.FormEvent) {
@@ -118,13 +88,24 @@ export function MessagesScreen() {
         <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
         <input placeholder="Search conversations" aria-label="Search conversations" />
       </label>
+      <Tabs
+        tabs={[
+          { id: 'all', label: 'All' },
+          { id: 'connections', label: 'Connections' },
+          { id: 'requests', label: 'Requests' },
+          { id: 'muted', label: 'Muted' },
+        ]}
+        activeId={messagesTab}
+        onChange={(id) => setMessagesTab(id)}
+        ariaLabel="Messages filters"
+      />
       <div className="message-list">
         {conversations.map((conversation) => (
           <button
             className={`message-row${conversation.unread ? ' unread' : ''}`}
             key={conversation.id}
             type="button"
-            onClick={() => setActiveConversationId(conversation.id)}
+              onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
           >
             <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
             <span className="message-row-copy">

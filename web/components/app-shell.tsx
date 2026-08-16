@@ -24,6 +24,9 @@ type AppShellProps = {
   user: AuthUser;
   onLogout: () => void;
   initialScreen?: Screen;
+  children?: React.ReactNode;
+  fillContent?: boolean;
+  showTabs?: boolean;
 };
 
 function getInitials(username: string) {
@@ -43,7 +46,7 @@ function getDisplayName(user: AuthUser) {
   return user.name.trim() || user.username;
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home' }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', children, showTabs, fillContent }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
@@ -136,45 +139,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home' }: AppShellPro
           />
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
-            {(activeScreen === 'home' || activeScreen === 'floating') && <Tabs ariaLabel="Home quick tabs" />}
-            {activeScreen === 'connections' && (
-              <Tabs
-                tabs={[
-                  { id: 'all', label: 'All' },
-                  { id: 'followers', label: 'Followers' },
-                  { id: 'following', label: 'Following' },
-                  { id: 'requests', label: 'Requests' },
-                ]}
-                activeId={connectionsFilter}
-                onChange={(id) => setConnectionsFilter(id)}
-                ariaLabel="Connections filters"
-              />
-            )}
-            {activeScreen === 'messages' && (
-              <Tabs
-                tabs={[
-                  { id: 'all', label: 'All' },
-                  { id: 'connections', label: 'Connections' },
-                  { id: 'requests', label: 'Requests' },
-                  { id: 'muted', label: 'Muted' },
-                ]}
-                activeId={messagesTab}
-                onChange={(id) => setMessagesTab(id)}
-                ariaLabel="Messages filters"
-              />
-            )}
-            {activeScreen === 'settings' && (
-              <Tabs
-                tabs={[
-                  { id: 'general', label: 'General' },
-                  { id: 'account', label: 'Account' },
-                  { id: 'privacy', label: 'Privacy & Safety' },
-                ]}
-                activeId={settingsTab}
-                onChange={(id) => setSettingsTab(id)}
-                ariaLabel="Settings sections"
-              />
-            )}
+            {/* Tabs are rendered inside ContentBox so they sit with page content */}
+            {/* Messages tabs moved into MessagesScreen so they can appear under search */}
+            {/* Settings tabs are rendered inside ContentBox (below) */}
 
             {/* Legacy TabBar removed; UI uses `Tabs` or other controls. */}
 
@@ -183,16 +150,54 @@ export function AppShell({ user, onLogout, initialScreen = 'home' }: AppShellPro
             {/* Messages filters moved away from legacy TabBar. */}
 
             {/* Legacy TabBar removed from settings — Tabs component handles settings navigation now. */}
-            <ContentBox>
-              {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id)} />}
-              {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
-              {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id)} />}
-              {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-              {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
-              {activeScreen === 'search' && <SearchScreen />}
-              {activeScreen === 'messages' && <MessagesScreen />}
-              {activeScreen === 'settings' && (
-                <SettingsScreen user={user} appearance={appearance} onAppearanceChange={setAppearance} activeTab={settingsTab} onTabChange={(id) => setSettingsTab(id)} />
+            <ContentBox className={(children || fillContent || activeScreen === 'post') ? 'fill-viewport' : ''}>
+              {children ? (
+                children
+              ) : (
+                <>
+                  {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && <Tabs ariaLabel="Home quick tabs" />}
+                  {showTabs !== false && activeScreen === 'connections' && (
+                    <Tabs
+                      tabs={[
+                        { id: 'all', label: 'All' },
+                        { id: 'followers', label: 'Followers' },
+                        { id: 'following', label: 'Following' },
+                        { id: 'requests', label: 'Requests' },
+                      ]}
+                      activeId={connectionsFilter}
+                      onChange={(id) => setConnectionsFilter(id)}
+                      ariaLabel="Connections filters"
+                    />
+                  )}
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id)} />}
+                  {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
+                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id)} />}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} />}
+                  {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
+                  {activeScreen === 'search' && <SearchScreen />}
+                  {showTabs !== false && activeScreen === 'settings' && (
+                    <Tabs
+                      tabs={[
+                        { id: 'general', label: 'General' },
+                        { id: 'account', label: 'Account' },
+                        { id: 'privacy', label: 'Privacy & Safety' },
+                      ]}
+                      activeId={settingsTab}
+                      onChange={(id) => setSettingsTab(id)}
+                      ariaLabel="Settings sections"
+                    />
+                  )}
+                  {activeScreen === 'settings' && (
+                    <SettingsScreen
+                      user={user}
+                      appearance={appearance}
+                      onAppearanceChange={(a) => setAppearance(a)}
+                      activeTab={settingsTab}
+                      onTabChange={(id) => setSettingsTab(id)}
+                    />
+                  )}
+                  {activeScreen === 'messages' && <MessagesScreen />}
+                </>
               )}
             </ContentBox>
             <FloatingActions />

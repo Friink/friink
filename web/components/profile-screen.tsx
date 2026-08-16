@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FeedPost } from '@/components/feed-post';
+import { Tabs } from '@/components/tabs';
 import type { AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
@@ -54,7 +55,12 @@ export function ProfileScreen({ user, posts }: ProfileScreenProps) {
         <button className="profile-edit-button" type="button">Edit</button>
       </div>
 
-      {/* Profile tabs removed (legacy TabBar). */}
+      <Tabs
+        tabs={profileTabs}
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as ProfileTab)}
+        ariaLabel="Profile tabs"
+      />
 
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (

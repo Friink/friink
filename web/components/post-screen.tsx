@@ -1,8 +1,9 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
+import ComposeHeader from './compose-header';
 import type { AuthUser } from '@/lib/auth';
-import { ProfileCard } from '@/components/profile-card';
+// ProfileCard removed from compose header per request
 
 type PostScreenProps = {
   user: AuthUser;
@@ -36,15 +37,7 @@ export function PostScreen({ user, onBack, onPost }: PostScreenProps) {
 
   return (
     <form className="post-screen" onSubmit={handleSubmit}>
-      <div className="post-screen-header">
-        <button className="icon-plain" type="button" onClick={onBack} aria-label="Go back">
-          <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-        </button>
-        <div className="post-screen-header-main">
-          <div className="posting-as">Posting as</div>
-          <ProfileCard user={user} />
-        </div>
-      </div>
+      <ComposeHeader name={user.name} handle={`@${user.username}`} initials={getInitials(user.name)} tone="mint" onBack={onBack} />
 
       <div className="post-composer">
         <div className="post-composer-body">
@@ -59,9 +52,6 @@ export function PostScreen({ user, onBack, onPost }: PostScreenProps) {
       </div>
       <div className="post-footer">
         <div className="post-footer-left">
-          <button className="post-option" type="button" aria-label="Post settings" title="Post settings">
-            <i className="fa-solid fa-gear" aria-hidden="true" />
-          </button>
           <button className="post-option" type="button" aria-label="Attach file" title="Attach file">
             <i className="fa-solid fa-paperclip" aria-hidden="true" />
           </button>

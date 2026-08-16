@@ -33,7 +33,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     <section className="simple-screen settings-screen">
       <div className="settings-header" />
 
-      {active === 'general' && (
+      {activeTab === 'general' && (
         <div className="settings-panel">
           <div className="settings-preference">
             <div>
@@ -57,7 +57,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
         </div>
       )}
 
-      {active === 'account' && (
+      {activeTab === 'account' && (
         <div className="settings-panel">
           <div className="settings-preference">
             <div>
@@ -92,7 +92,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
         </div>
       )}
 
-      {active === 'privacy' && (
+      {activeTab === 'privacy' && (
         <div className="settings-panel">
           <div className="settings-preference">
             <div>

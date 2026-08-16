@@ -209,12 +209,14 @@ textarea {
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--color-line);
   background: transparent;
-  margin-top: 0; /* footer positioned by flex; no extra top margin */
-  position: sticky;
-  bottom: 0;
+  margin-top: 0;
+  position: fixed;
+  left: var(--space-sidebar-width);
+  right: 0;
+  bottom: calc(var(--space-bottom-nav-height) + 0.75rem);
   backdrop-filter: blur(2px);
   background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.02) 100%);
-  z-index: 3;
+  z-index: 1200;
   height: 3.5rem;
 }
 
@@ -1321,7 +1323,7 @@ textarea {
   padding: 0.4rem 0.9rem;
   gap: 0.5rem;
   min-height: 40px;
-  background: var(--color-background-accent);
+  background: transparent; /* tabs should not add its own background */
   position: relative;
 }
 
@@ -2110,6 +2112,15 @@ input[type="search"]:focus {
   padding: 1rem 1rem 3rem;
 }
 
+/* Make content fill the viewport between the topbar and bottom of the page
+   Used by compose and chat pages so content never grows beyond the viewport */
+.content-box.fill-viewport {
+  min-height: calc(100vh - var(--space-topbar-height));
+  max-height: calc(100vh - var(--space-topbar-height));
+  overflow: auto;
+  padding-bottom: calc(var(--space-bottom-nav-height) + 1rem);
+}
+
 /* Floating contextual actions container */
 .floating-actions {
   position: fixed;
@@ -2524,9 +2535,13 @@ input[type="search"]:focus {
     padding-left: 0.75rem;
   }
 
-  .sidebar-collapsed .sidebar-profile > div,
+  /* When collapsed, hide labels but keep avatar visible */
   .sidebar-collapsed .nav-item span,
   .sidebar-collapsed .sidebar-action span {
+    display: none;
+  }
+
+  .sidebar-collapsed .sidebar-profile .profile-card-info {
     display: none;
   }
 
