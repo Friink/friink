@@ -19,6 +19,29 @@
 
 ### Entry
 
+- Date & Time: 2026-08-16 09:15 UTC
+- Agent: Copilot
+- Model: MAI-Code-1.1-Flash
+- Prompt Summary: Repair the root Vercel route config so the Next app serves the app shell correctly while `/api/*` still routes to the Nest function.
+- Changes Made:
+  - Removed the catch-all rewrite from the root `vercel.json` that was forwarding `/` and `/login` into `/web/$1`.
+  - Kept the API path routing in place so `/api/*` continues to hit `api/api-handler.ts`.
+  - Updated the deployment docs to reflect the corrected monorepo routing fix.
+- Files/Scope Touched:
+  - vercel.json (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The previous catch-all rewrite broke the Next app root by routing all app paths under `/web`, which prevented `/` and `/login` from resolving correctly. Vercel should let the Next build handle the app shell directly and only rewrite `/api/*` to the Nest handler.
+- Notes for next agent:
+  - Redeploy the staging project after this config fix.
+  - Confirm `/`, `/login`, and `/home` resolve through the Next app, while `/api/*` stays on the Nest function.
+  - Keep the AGENTLOG entry format free of a `User` field.
+- Verified Working?: yes — the app still compiles locally, and the route configuration matches the expected Vercel pattern.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-16 08:50 UTC
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
