@@ -59,8 +59,8 @@ export function ProfileScreen({ user, posts }: ProfileScreenProps) {
         tabs={profileTabs}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as ProfileTab)}
-        containerClass="profile-tabs"
-        itemClass="profile-tab"
+        containerClass="tab-bar profile-tabs"
+        itemClass="tab-bar__item profile-tab"
         ariaLabel="Profile content"
       />
 

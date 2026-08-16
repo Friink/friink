@@ -37,8 +37,8 @@ export function ConnectionsScreen({ connections }: ConnectionsScreenProps) {
         tabs={filters}
         activeId={activeFilter}
         onChange={(id) => setActiveFilter(id as ConnectionFilter)}
-        containerClass="connection-tabs"
-        itemClass="connection-tab"
+        containerClass="tab-bar connection-tabs"
+        itemClass="tab-bar__item connection-tab"
         ariaLabel="Connection lists"
       />
 

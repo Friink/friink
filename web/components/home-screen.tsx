@@ -26,8 +26,8 @@ export function HomeScreen({ posts }: HomeScreenProps) {
         tabs={filters}
         activeId={activeFilter}
         onChange={(id) => setActiveFilter(id as HomeFilter)}
-        containerClass="home-filters"
-        itemClass="home-filter"
+        containerClass="tab-bar home-filters"
+        itemClass="tab-bar__item home-filter"
         ariaLabel="Home feed filters"
       />
       {filteredPosts.map((post) => <FeedPost key={post.id} post={post} />)}

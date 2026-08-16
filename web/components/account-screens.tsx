@@ -31,8 +31,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange }: Setting
         tabs={tabs}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as SettingsTab)}
-        containerClass="settings-tabs"
-        itemClass="settings-tab"
+        containerClass="tab-bar settings-tabs"
+        itemClass="tab-bar__item settings-tab"
         ariaLabel="Settings sections"
       />
 
@@ -69,12 +69,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange }: Setting
             </div>
             <label className="settings-field">
               <span className="settings-field-label">Username</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="@username"
-              />
+              <div className="input-with-prefix">
+                <span className="input-prefix">@</span>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value.replace(/^@+/, ''))}
+                  placeholder="username"
+                  aria-label="username"
+                />
+              </div>
             </label>
           </div>
 
