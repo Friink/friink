@@ -335,7 +335,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
             />
 
             <div className="signup-actions">
-              <button className="signup-back-button" type="button" onClick={() => setStep('signup-credentials')}>
+              <button className="signup-back-button" type="button" onClick={() => setStep('signup-password')}>
                 Back
               </button>
               <PillButton className="login-submit" type="submit">

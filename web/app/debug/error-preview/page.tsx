@@ -3,10 +3,8 @@
 import GlobalError from '@/app/error';
 
 export default function ErrorPreview() {
-  return (
-    <GlobalError
-      error={{ message: 'Preview: simulated error', digest: '500' }}
-      reset={() => window.location.reload()}
-    />
-  );
+  const error = new Error('Preview: simulated error') as Error & { digest?: string };
+  error.digest = '500';
+
+  return <GlobalError error={error} reset={() => window.location.reload()} />;
 }

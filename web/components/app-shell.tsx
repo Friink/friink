@@ -52,10 +52,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [homeFilter, setHomeFilter] = useState('all');
-  const [connectionsFilter, setConnectionsFilter] = useState('all');
+  const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
+  const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
-  const [settingsTab, setSettingsTab] = useState('general');
+  const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'privacy'>('general');
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 767px)');
@@ -221,13 +221,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                         { id: 'requests', label: 'Requests' },
                       ]}
                       activeId={connectionsFilter}
-                      onChange={(id) => setConnectionsFilter(id)}
+                      onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
                       ariaLabel="Connections filters"
                     />
                   )}
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id)} />}
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
                   {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
-                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id)} />}
+                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
                   {activeScreen === 'starred' && <StarredScreen posts={posts} />}
                   {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
                   {activeScreen === 'search' && <SearchScreen />}
@@ -239,7 +239,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                         { id: 'privacy', label: 'Privacy & Safety' },
                       ]}
                       activeId={settingsTab}
-                      onChange={(id) => setSettingsTab(id)}
+                      onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
                       ariaLabel="Settings sections"
                     />
                   )}
@@ -249,7 +249,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                       appearance={appearance}
                       onAppearanceChange={(a) => persistAppearance(a)}
                       activeTab={settingsTab}
-                      onTabChange={(id) => setSettingsTab(id)}
+                      onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
                     />
                   )}
                   {activeScreen === 'messages' && <MessagesScreen />}

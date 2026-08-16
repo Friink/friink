@@ -29,22 +29,20 @@ export default function GlobalError({
   // set CSS variables on mount if dark should be used
   if (typeof window !== 'undefined') {
     // run after paint to avoid SSR mismatch
-    import('scheduler').then(() => {
-      setTimeout(() => {
-        try {
-          const m = document.cookie.match(/(?:^|; )friink_appearance=([^;]+)/);
-          const appearance = m && m[1] ? decodeURIComponent(m[1]) : null;
-          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const useDark = appearance === 'dark' || appearance === null || appearance === 'system' ? prefersDark : appearance === 'dark';
+    requestAnimationFrame(() => {
+      try {
+        const m = document.cookie.match(/(?:^|; )friink_appearance=([^;]+)/);
+        const appearance = m && m[1] ? decodeURIComponent(m[1]) : null;
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const useDark = appearance === 'dark' || appearance === null || appearance === 'system' ? prefersDark : appearance === 'dark';
 
-          if (useDark) {
-            const root = document.documentElement;
-            Object.entries(darkVars).forEach(([k, v]) => root.style.setProperty(k, v));
-          }
-        } catch (e) {
-          // ignore
+        if (useDark) {
+          const root = document.documentElement;
+          Object.entries(darkVars).forEach(([k, v]) => root.style.setProperty(k, v));
         }
-      }, 0);
+      } catch (e) {
+        // ignore
+      }
     });
   }
 

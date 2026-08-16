@@ -21,7 +21,7 @@ export default function FloatingPage() {
 
   function handleLogout() {
     clearAuthSession();
-    router.replace('/login');
+    router.replace('/');
   }
 
   if (!user) return null;

@@ -20,7 +20,7 @@ export default function ComposePage() {
 
   function handleLogout() {
     clearAuthSession();
-    router.replace('/login');
+    router.replace('/');
   }
 
   if (!user) return null;

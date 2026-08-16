@@ -47,7 +47,7 @@ export default function ChatPage() {
 
   function handleLogout() {
     clearAuthSession();
-    router.replace('/login');
+    router.replace('/');
   }
 
   return (
