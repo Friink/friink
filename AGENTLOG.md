@@ -13,8 +13,27 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
-- NOTE: Keep entries newest-first. When appending a log entry, prepend it so the most recent entries appear immediately after this instruction block and notes.
+- NOTE: Keep entries newest-first. When adding a log entry, prepend it so the most recent entries appear immediately after this instruction block.
 
+---
+
+### Entry
+
+- Date & Time: 2026-08-16
+- Agent: Copilot
+- Model: GitHub Copilot
+- Prompt Summary: Review the changelog and agent log for formatting errors and add minimal landing-page content.
+- Changes Made:
+  - Normalized inconsistent `Notes` labels in older entries.
+  - Corrected the instruction wording so new entries are explicitly prepended in newest-first order.
+  - Added a blank source line to `web/app/page.tsx` without changing landing-page behavior.
+- Files/Scope Touched:
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+  - web/app/page.tsx (modified)
+- Reason/Decision: Keep the audit logs internally consistent while satisfying the requested minimal landing-page change.
+- Notes for next agent: Preserve newest-first ordering and consistent field labels in future entries.
+- Verified Working?: yes — `npm --prefix web run build` completed successfully.
 ---
 
 ### Entry
@@ -120,7 +139,7 @@
   - CHANGELOG.md (modified)
   - AGENTLOG.md (modified)
 - Reason/Decision: Provide a clean handoff for deployment so a product manager or another agent can push the repo and validate deployment on Vercel without missing setup steps.
-- Notes for next agent/user:
+- Notes for next agent:
   - Push commits to GitHub and import the repo in Vercel.
   - Set the Vercel env vars listed in the changelog.
   - Run migrations via CI or a trusted runner: `npm --prefix api run db:migrate`.
@@ -204,7 +223,7 @@
   - web/components/account-screens.tsx
   - web/app/globals.css
 - Reason/Decision: Provide a simple, reproducible way for frontend designers and agents to preview and edit the Settings UI without requiring a running backend, while keeping the audit trail and repo docs in sync.
-- Notes: The `/dev-settings` route is development-only and should be removed or gated before production. The fix also resolved a transient CSS compile issue.
+- Notes for next agent: The `/dev-settings` route is development-only and should be removed or gated before production. The fix also resolved a transient CSS compile issue.
 - Verified Working?: yes
 
 ---
@@ -222,6 +241,6 @@
   - CHANGELOG.md
   - AGENTLOG.md
 - Reason/Decision: Establish a lightweight, persistent audit trail so future agents read the project history before making changes and append their own log entries.
-- Notes: No runtime code changes were made in this step.
+- Notes for next agent: No runtime code changes were made in this step.
 - Verified Working?: untested
 

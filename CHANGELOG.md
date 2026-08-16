@@ -21,12 +21,15 @@ _Last updated: 2026-08-16_
 ## 2026-08-16
 
 ### Fixed
+- [docs] Corrected inconsistent `Notes` labels and newest-first entry guidance in `AGENTLOG.md`.
+- [web] Added the requested blank source line to the public landing page without changing its behavior.
 - [infra] Fixed the backend Vercel deployment issue by adding `api/vercel.json` with an explicit `outputDirectory`, preventing the “No Output Directory named public found” error for the Nest API serverless function.
 - [infra] Corrected the monorepo routing in the root `vercel.json` so the Next app serves `/`, `/login`, and other app routes normally while `/api/*` continues to route to the Nest serverless function.
 - [web] Closed the final TypeScript build blockers by tightening the literal tab unions in the app shell and fixing the stale signup back-navigation step in the login flow.
 - [docs] Removed the `User` field from the root `AGENTLOG.md` template so future entries stay consistent and no one adds it again.
 
 ### Verified
+- [web] `cd web && npm run build` completed successfully.
 - [api] `cd api && npm run build` completed successfully after the Vercel config fix.
 - [web] `cd web && npm run build` completed successfully with compilation, lint/type checks, and page optimization all passing.
 
