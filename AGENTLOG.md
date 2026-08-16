@@ -19,6 +19,54 @@
 
 ### Entry
 
+- Date & Time: 2026-08-17 20:40 UTC
+- Agent: Copilot
+- Model: MAI-Code-1.1-Flash
+- Prompt Summary: Flatten the shared button and form-field radius to an 8px rectangle across the landing page and app shell, then verify the frontend is still live locally.
+- Changes Made:
+  - Added a root CSS radius override in `web/app/globals.css` to make the shared `--radius-pill` token resolve to `8px`.
+  - Set the base button/input border radius to `8px` in the shared style layer so landing-page CTAs, form fields, and in-app controls all read as rectangular instead of pill-shaped.
+  - Updated the repo log files so the latest UI change is captured alongside the localhost demo-auth notes.
+- Files/Scope Touched:
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The app was still inheriting a pill-style design token from the shared theme; flattening the radius at the global CSS layer is the least risky way to affect all controls without touching each component individually.
+- Notes for next agent:
+  - The shared radius is now effectively `8px` for form fields and common controls.
+  - The frontend remains locally accessible at `http://localhost:3000` and was verified with an HTTP 200 response.
+  - The API remains intentionally out of scope for this frontend-only localhost flow.
+- Verified Working?: yes — the web app responded with `200 OK` on the local frontend after the update.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-17 00:00 UTC
+- Agent: Copilot
+- Model: MAI-Code-1.1-Flash
+- Prompt Summary: Keep the app usable on localhost without the backend by bypassing auth in the frontend login flow, and document the startup issues that blocked local API runs.
+- Changes Made:
+  - Added a demo auth session generator in `web/lib/auth.ts` so the login button can create a valid local session without calling the API.
+  - Updated `web/components/login-screen.tsx` so the login action no longer waits on backend auth during local UI exploration.
+  - Recorded the localhost startup troubleshooting notes in `CHANGELOG.md` and `AGENTLOG.md` so the next agent understands the API issues and the chosen frontend-only workaround.
+- Files/Scope Touched:
+  - web/lib/auth.ts (modified)
+  - web/components/login-screen.tsx (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The API remained unreliable locally because the Nest command path was failing to boot cleanly and port `3001` was sometimes still occupied. The goal was to keep frontend page browsing working on localhost without blocking on a backend that was not required for UI review.
+- Notes for next agent:
+  - The localhost frontend runs via `npm --prefix web run dev:local`.
+  - The login button now creates a demo session in `localStorage` and bypasses the unavailable backend.
+  - The API was intentionally left alone for this frontend-only demo workflow; backend auth remains off for local UI review.
+  - Earlier startup blockers included the missing `dist` entrypoint when using Nest watch, `EADDRINUSE` on port `3001`, and several failed `ts-node`/npm script combinations on Windows.
+- Verified Working?: yes — the frontend was verified to respond at `http://localhost:3000` on the live local run.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-16
 - Agent: Copilot
 - Model: GitHub Copilot

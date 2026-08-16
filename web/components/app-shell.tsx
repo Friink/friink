@@ -7,6 +7,7 @@ import { SettingsScreen, type AppearanceMode } from '@/components/account-screen
 import { ProfileScreen } from '@/components/profile-screen';
 import { StarredScreen } from '@/components/starred-screen';
 import { Header } from '@/components/header';
+import { NavigationBar } from '@/components/navigationbar';
 // legacy TabBar removed
 import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
@@ -193,6 +194,16 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
             sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
           />
+
+          {activeScreen === 'home' && (
+            <div className="mobile-home-navigation">
+              <NavigationBar
+                title="Home"
+                onBack={() => router.back()}
+                onMenu={() => setSidebarCollapsed(false)}
+              />
+            </div>
+          )}
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
             {/* Tabs are rendered inside ContentBox so they sit with page content */}

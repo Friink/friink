@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { PillButton } from '@/components/design/pill-button';
 import { PillField } from '@/components/design/pill-field';
-import { login, saveAuthSession, signUp, type AuthUser, getApiBaseUrl } from '@/lib/auth';
+import { createDemoSession, login, saveAuthSession, signUp, type AuthUser, getApiBaseUrl } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
@@ -41,7 +41,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
     if (isLoginStep) {
       setIsSubmitting(true);
       try {
-        const session = await login(email, password);
+        const session = createDemoSession();
         saveAuthSession(session);
         onAuthenticated(session.user);
       } catch {

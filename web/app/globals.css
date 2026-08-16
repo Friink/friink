@@ -12,6 +12,15 @@
   box-sizing: border-box;
 }
 
+:root {
+  --radius-pill: 8px;
+  --space-sidebar-width: 16rem;
+  --space-topbar-height: 3.75rem;
+  --space-home-nav-height: 2.5rem;
+  --space-bottom-nav-height: 3.75rem;
+  --space-sidebar-collapsed-width: 4.5rem;
+}
+
 html,
 body {
   margin: 0;
@@ -45,6 +54,7 @@ h6 {
 button,
 input,
 textarea {
+  border-radius: 8px;
   font: inherit;
 }
 
@@ -342,7 +352,7 @@ textarea {
   width: 100%;
   height: 3rem;
   border: 1px solid #9dc7ae;
-  border-radius: var(--radius-pill);
+  border-radius: 8px !important;
   padding: 0 1rem;
   color: var(--color-ink);
   background: #edf1ee;
@@ -448,7 +458,7 @@ textarea {
   min-height: 3rem;
   padding: 0.75rem 1.25rem;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 8px !important;
   font: inherit;
   line-height: 1;
   white-space: nowrap;
@@ -498,7 +508,7 @@ textarea {
   min-height: 3rem;
   padding: 0.75rem 1.35rem;
   border: 1px solid rgba(51, 170, 85, 0.28);
-  border-radius: var(--radius-pill);
+  border-radius: 8px !important;
   color: var(--color-brand);
   background: transparent;
   font-size: 0.95rem;
@@ -1022,19 +1032,24 @@ textarea {
     padding-bottom: calc(3.75rem + 1rem);
   }
 
-  .app-layout:has(.sidebar:not(.sidebar-collapsed)) .topbar-brand {
-    visibility: hidden;
+  .topbar-brand {
+    visibility: visible;
+  }
+
+  .sidebar-header {
+    display: none;
   }
 
   .sidebar:not(.sidebar-collapsed) {
     position: fixed;
-    top: 0;
+    top: var(--space-topbar-height);
     bottom: 0;
     left: 0;
-    z-index: 4;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     width: min(18rem, 86vw);
+    height: calc(100vh - var(--space-topbar-height));
     padding: 0.5rem 1.125rem 1.5rem;
     border-right: 1px solid var(--color-line);
     box-shadow: 0 1rem 2rem rgba(24, 44, 31, 0.16);
@@ -1136,10 +1151,18 @@ textarea {
   background: var(--color-paper);
 }
 
+@media (min-width: 768px) {
+  .main-panel {
+    padding-top: var(--space-topbar-height);
+  }
+}
+
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 2;
+  left: 0;
+  right: 0;
+  z-index: 40;
   height: var(--space-topbar-height);
   border-bottom: 1px solid var(--color-line);
   background: var(--color-paper);
@@ -1151,6 +1174,60 @@ textarea {
   justify-content: space-between;
   height: 100%;
   padding: 0 1.125rem;
+}
+
+.mobile-home-navigation {
+  position: sticky;
+  top: var(--space-topbar-height);
+  z-index: 25;
+  width: 100%;
+}
+
+.navigationbar {
+  position: relative;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 0.875rem;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-paper);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  z-index: 1;
+}
+
+.navigationbar-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 1rem;
+  padding: 0;
+}
+
+.navigationbar-title {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  color: var(--color-ink);
+}
+
+.navigationbar-back {
+  justify-self: flex-start;
+}
+
+.navigationbar-menu {
+  justify-self: flex-end;
 }
 
 .topbar-brand {
@@ -1235,7 +1312,8 @@ textarea {
 }
 
 .main-content {
-  padding-bottom: calc(var(--space-bottom-nav-height) + 0.5rem);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .main-content-post {
@@ -2114,7 +2192,7 @@ input[type="tel"],
 input[type="password"] {
   min-height: 2.5rem;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
+  border-radius: 8px !important;
   padding: 0.45rem 0.9rem;
   background: var(--color-background);
   color: var(--color-ink);
@@ -2161,7 +2239,7 @@ input[type="search"]:focus {
 .content-box {
   width: min(100%, 1024px);
   margin: 0 auto;
-  padding: 1rem 1rem 3rem;
+  padding: 0 1rem 3rem;
 }
 
 /* Make content fill the viewport between the topbar and bottom of the page
@@ -2401,7 +2479,14 @@ input[type="search"]:focus {
 }
 
 .main-content {
+  padding-top: 0;
   padding-bottom: calc(3.75rem + 2rem);
+}
+
+@media (max-width: 767px) {
+  .main-content {
+    padding-bottom: 0;
+  }
 }
 
 /* Hide the floating bottom nav when composing a post */
@@ -2443,6 +2528,14 @@ input[type="search"]:focus {
 
 /* Desktop */
 @media (min-width: 768px) {
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: var(--space-sidebar-width);
+    right: 0;
+    z-index: 15;
+  }
+
   .topbar-brand {
     display: flex;
   }
@@ -2450,21 +2543,32 @@ input[type="search"]:focus {
   .topbar-menu {
     display: none;
   }
+
   .app-layout {
-    display: grid;
-    grid-template-columns: var(--space-sidebar-width) minmax(0, 1fr);
+    --desktop-sidebar-width: var(--space-sidebar-width);
+    display: block;
     width: 100%;
   }
 
   .app-layout:has(.sidebar-collapsed) {
-    grid-template-columns: 4.5rem minmax(0, 1fr);
+    --desktop-sidebar-width: 4.5rem;
+  }
+
+  .bottom-nav {
+    left: calc(50vw + (var(--desktop-sidebar-width) / 2));
+    right: auto;
+    width: min(32rem, calc(100vw - var(--desktop-sidebar-width) - 2rem));
+    transform: translateX(-50%);
   }
 
   .sidebar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    z-index: 20;
     display: flex;
     flex-direction: column;
+    width: var(--desktop-sidebar-width);
     height: 100vh;
     min-height: 0;
     overflow-y: auto;
@@ -2645,12 +2749,31 @@ input[type="search"]:focus {
   .main-panel {
     display: flex;
     flex-direction: column;
+    margin-left: var(--desktop-sidebar-width);
+    min-height: 100vh;
+  }
+
+  .mobile-home-navigation {
+    width: calc(100vw - var(--desktop-sidebar-width));
+  }
+
+  .app-layout:has(.sidebar-collapsed) .sidebar {
+    width: 4.5rem;
+  }
+
+  .app-layout:has(.sidebar-collapsed) .topbar {
+    left: var(--desktop-sidebar-width);
+  }
+
+  .app-layout:has(.sidebar-collapsed) .main-panel {
+    margin-left: var(--desktop-sidebar-width);
   }
 
   .main-content {
     width: 100%;
     margin: 0 auto;
-    padding-bottom: 6rem;
+    padding-top: var(--space-home-nav-height);
+    padding-bottom: 0;
   }
 
   .home-feed {

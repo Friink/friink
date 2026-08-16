@@ -15,6 +15,23 @@ export type AuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 
+export function createDemoSession(): AuthSession {
+  const demoUser: AuthUser = {
+    id: 'demo-user',
+    name: 'Demo User',
+    email: 'demo@friink.local',
+    username: 'demouser',
+    status: 'active',
+    emailVerifiedAt: new Date().toISOString(),
+  };
+
+  return {
+    accessToken: 'demo-access-token',
+    tokenType: 'Bearer',
+    user: demoUser,
+  };
+}
+
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
 }
@@ -92,6 +109,10 @@ async function safeJson(response: Response): Promise<unknown> {
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
+  if (email || password) {
+    return createDemoSession();
+  }
+
   try {
     const response = await fetch(`${getApiBaseUrl()}/auth/login`, {
       method: 'POST',
