@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from 'react';
-import { TabBar } from '@/components/tab-bar';
+import { useState, useEffect } from 'react';
 import type { AuthUser } from '@/lib/auth';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
@@ -11,32 +10,30 @@ type SettingsScreenProps = {
   user: AuthUser;
   appearance: AppearanceMode;
   onAppearanceChange: (appearance: AppearanceMode) => void;
+  activeTab?: SettingsTab;
+  onTabChange?: (id: string) => void;
 };
 
-const tabs: { id: SettingsTab; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'account', label: 'Account' },
-  { id: 'privacy', label: 'Privacy & Safety' },
-];
-
-export function SettingsScreen({ user, appearance, onAppearanceChange }: SettingsScreenProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general' }: SettingsScreenProps) {
   const [username, setUsername] = useState(user.username);
+  const [active, setActive] = useState<SettingsTab>(activeTab);
+
+  // keep local active state in sync when parent-controlled `activeTab` changes
+  useEffect(() => {
+    setActive(activeTab as SettingsTab);
+  }, [activeTab]);
+
+  const tabs = [
+    { id: 'general', label: 'All' },
+    { id: 'account', label: 'Account' },
+    { id: 'privacy', label: 'Privacy' },
+  ];
 
   return (
     <section className="simple-screen settings-screen">
       <div className="settings-header" />
 
-      <TabBar
-        tabs={tabs}
-        activeId={activeTab}
-        onChange={(id) => setActiveTab(id as SettingsTab)}
-        containerClass="tab-bar settings-tabs"
-        itemClass="tab-bar__item settings-tab"
-        ariaLabel="Settings sections"
-      />
-
-      {activeTab === 'general' && (
+      {active === 'general' && (
         <div className="settings-panel">
           <div className="settings-preference">
             <div>
@@ -60,7 +57,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange }: Setting
         </div>
       )}
 
-      {activeTab === 'account' && (
+      {active === 'account' && (
         <div className="settings-panel">
           <div className="settings-preference">
             <div>
@@ -95,7 +92,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange }: Setting
         </div>
       )}
 
-      {activeTab === 'privacy' && (
+      {active === 'privacy' && (
         <div className="settings-panel">
           <div className="settings-preference">
             <div>

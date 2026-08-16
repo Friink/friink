@@ -12,6 +12,7 @@ export function QuestionsScreen() {
 export function MessagesScreen() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
+  
   const [conversations, setConversations] = useState([
     {
       id: 1,
@@ -112,6 +113,7 @@ export function MessagesScreen() {
           <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
         </button>
       </div>
+      
       <label className="message-search">
         <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
         <input placeholder="Search conversations" aria-label="Search conversations" />

@@ -13,7 +13,7 @@ export type Post = {
   reactions: number;
 };
 
-export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'post' | 'search' | 'messages' | 'settings';
+export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'post' | 'search' | 'messages' | 'settings' | 'floating';
 
 export type NavItem = {
   id: Screen;

@@ -1,24 +1,15 @@
  'use client';
 
 import { useState } from 'react';
-import { TabBar } from '@/components/tab-bar';
 import type { Connection } from '@/lib/data';
 
 type ConnectionsScreenProps = {
   connections: Connection[];
+  activeFilter?: 'all' | 'followers' | 'following' | 'requests';
+  onFilterChange?: (id: string) => void;
 };
 
-type ConnectionFilter = 'all' | 'followers' | 'following' | 'requests';
-
-const filters: { id: ConnectionFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'followers', label: 'Followers' },
-  { id: 'following', label: 'Following' },
-  { id: 'requests', label: 'Requests' },
-];
-
-export function ConnectionsScreen({ connections }: ConnectionsScreenProps) {
-  const [activeFilter, setActiveFilter] = useState<ConnectionFilter>('all');
+export function ConnectionsScreen({ connections, activeFilter = 'all' }: ConnectionsScreenProps) {
   const [pendingConnections, setPendingConnections] = useState(connections);
   const visibleConnections = pendingConnections.filter((connection) => {
     if (activeFilter === 'requests') return connection.status === 'request';
@@ -33,15 +24,6 @@ export function ConnectionsScreen({ connections }: ConnectionsScreenProps) {
 
   return (
     <div className="connections-screen">
-      <TabBar
-        tabs={filters}
-        activeId={activeFilter}
-        onChange={(id) => setActiveFilter(id as ConnectionFilter)}
-        containerClass="tab-bar connection-tabs"
-        itemClass="tab-bar__item connection-tab"
-        ariaLabel="Connection lists"
-      />
-
       <div className="connection-list">
         {visibleConnections.length > 0 ? (
           visibleConnections.map((connection) => (
