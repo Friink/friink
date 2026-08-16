@@ -60,7 +60,24 @@
       font-display: swap;
     }
     body { background: #f9f9f9; color: #1a1c1c; -webkit-font-smoothing: antialiased; }
-    h1, h2, h3, h4, h5, h6 { font-family: "Nunito Local", sans-serif !important; }
+    h1, h2, h3, h4, h5, h6, .cta, .cta-secondary, .primaryCTA, .landing-link, .header-cta, .vision-copy, .vision-copy * { font-family: "Nunito Local", sans-serif !important; }
+    .header-link,
+    .nav-link,
+    body,
+    p,
+    .supporting-copy,
+    .text-secondary,
+    .text-on-surface,
+    .text-lg,
+    .text-xl,
+    .text-2xl,
+    .text-3xl,
+    .text-4xl,
+    .text-5xl,
+    .text-6xl,
+    .text-7xl {
+      font-family: "Inter", sans-serif;
+    }
     .cta { border: 2px solid transparent; border-radius: 9999px !important; }
     .cta:hover { background-color: #000000 !important; color: #ffffff !important; }
     .cta-secondary { border: 2px solid #33aa55 !important; }
@@ -99,10 +116,10 @@
         </picture>
       </a>
       <div class="hidden md:flex items-center gap-8">
-        <a class="text-secondary hover:text-primary transition-colors text-sm" href="#vision">Our vision</a>
-        <a class="cta bg-primary text-on-primary px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-inverse-surface transition-colors" href="/login">Early access</a>
+        <a class="header-link text-secondary hover:text-primary transition-colors text-sm" href="#vision">Our vision</a>
+        <a class="header-cta cta bg-primary text-on-primary px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-inverse-surface transition-colors" href="/login" style="font-family: 'Nunito Local', sans-serif !important;">Early access</a>
       </div>
-      <a class="cta md:hidden bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium" href="/login">Early access</a>
+      <a class="header-cta cta md:hidden bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-medium" href="/login" style="font-family: 'Nunito Local', sans-serif !important;">Early access</a>
     </div>
   </nav>
 
@@ -143,7 +160,7 @@
         <div class="rounded-xl overflow-hidden min-h-[360px] border border-outline-variant order-2 md:order-1">
           <img src="assets/media/pexels-ryank-17841014.jpg" alt="An abstract image representing clarity emerging from chaos" class="w-full h-full min-h-[360px] object-cover">
         </div>
-        <div class="order-1 md:order-2 md:pl-8">
+        <div class="vision-copy order-1 md:order-2 md:pl-8">
           <span class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs uppercase tracking-[0.18em] font-semibold mb-5">
             <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>
             Our vision

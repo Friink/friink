@@ -59,13 +59,69 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 767px)');
-    const updateSidebarState = () => setSidebarCollapsed(mobileQuery.matches);
+    const updateSidebarState = () => {
+      const isMobile = mobileQuery.matches;
+      if (isMobile) {
+        setSidebarCollapsed(true);
+        return;
+      }
+
+      // desktop: prefer saved cookie if present, otherwise default open
+      try {
+        const match = document.cookie.match(/(?:^|; )friink_sidebar_collapsed=([^;]+)/);
+        if (match && match[1]) {
+          setSidebarCollapsed(match[1] === '1');
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      setSidebarCollapsed(false);
+    };
 
     updateSidebarState();
     mobileQuery.addEventListener('change', updateSidebarState);
 
     return () => mobileQuery.removeEventListener('change', updateSidebarState);
   }, []);
+
+  // persist sidebar collapsed state to cookie
+  function persistSidebarCollapsed(collapsed: boolean) {
+    setSidebarCollapsed(collapsed);
+    try {
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `friink_sidebar_collapsed=${collapsed ? '1' : '0'}; path=/; expires=${expires}; sameSite=Lax`;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // read persisted appearance from cookie (if present)
+  useEffect(() => {
+    try {
+      const match = document.cookie.match(/(?:^|; )friink_appearance=([^;]+)/);
+      if (match && match[1]) {
+        const value = decodeURIComponent(match[1]);
+        if (value === 'light' || value === 'dark' || value === 'system') {
+          setAppearance(value as AppearanceMode);
+        }
+      }
+    } catch (e) {
+      // ignore cookie read errors
+    }
+  }, []);
+
+  // persist appearance to cookie when changed via UI
+  function persistAppearance(a: AppearanceMode) {
+    setAppearance(a);
+    try {
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `friink_appearance=${encodeURIComponent(a)}; path=/; expires=${expires}; sameSite=Lax`;
+    } catch (e) {
+      // ignore cookie write errors
+    }
+  }
 
   function navigateTo(screen: Screen) {
     setActiveScreen(screen);
@@ -127,7 +183,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
           activeScreen={activeScreen}
           collapsed={sidebarCollapsed}
           onNavigate={navigateTo}
-          onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
+          onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
         />
 
@@ -191,7 +247,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                     <SettingsScreen
                       user={user}
                       appearance={appearance}
-                      onAppearanceChange={(a) => setAppearance(a)}
+                      onAppearanceChange={(a) => persistAppearance(a)}
                       activeTab={settingsTab}
                       onTabChange={(id) => setSettingsTab(id)}
                     />

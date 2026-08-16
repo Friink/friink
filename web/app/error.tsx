@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FriinkLogo } from '@/components/friink-logo';
 
 export default function GlobalError({
@@ -12,6 +13,41 @@ export default function GlobalError({
 }) {
   const code = resolveErrorCode(error);
 
+  // apply theme on client only to avoid hydration mismatch
+  // cookie wins, otherwise use system preference
+  const darkVars: Record<string, string> = {
+    '--color-background': '#333333',
+    '--color-background-accent': '#3a3a3a',
+    '--color-paper': '#3d3d3d',
+    '--color-ink': '#f5f5f5',
+    '--color-muted': '#c4c4c4',
+    '--color-line': '#555555',
+    '--color-brand-soft': '#244d30',
+    '--color-chrome': '#262626',
+  };
+
+  // set CSS variables on mount if dark should be used
+  if (typeof window !== 'undefined') {
+    // run after paint to avoid SSR mismatch
+    import('scheduler').then(() => {
+      setTimeout(() => {
+        try {
+          const m = document.cookie.match(/(?:^|; )friink_appearance=([^;]+)/);
+          const appearance = m && m[1] ? decodeURIComponent(m[1]) : null;
+          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const useDark = appearance === 'dark' || appearance === null || appearance === 'system' ? prefersDark : appearance === 'dark';
+
+          if (useDark) {
+            const root = document.documentElement;
+            Object.entries(darkVars).forEach(([k, v]) => root.style.setProperty(k, v));
+          }
+        } catch (e) {
+          // ignore
+        }
+      }, 0);
+    });
+  }
+
   return (
     <main
       style={{
@@ -19,9 +55,9 @@ export default function GlobalError({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f9f9f9',
-        color: '#171b1a',
-        fontFamily: 'Nunito Local, sans-serif',
+        background: 'var(--color-background)',
+        color: 'var(--color-ink)',
+        fontFamily: 'var(--font-body)',
         position: 'relative',
       }}
     >
@@ -37,10 +73,10 @@ export default function GlobalError({
           borderRadius: 16,
           display: 'grid',
           placeItems: 'center',
-          background: '#ffffff',
-          color: '#1c9a54',
-          border: '1px solid rgba(28, 154, 84, 0.2)',
-          boxShadow: '0 10px 25px rgba(17, 20, 20, 0.08)',
+          background: 'transparent',
+          color: 'var(--color-brand)',
+          border: 'none',
+          boxShadow: 'none',
           textDecoration: 'none',
         }}
       >
@@ -72,10 +108,11 @@ export default function GlobalError({
         <h1
           style={{
             margin: 0,
-            fontSize: 'clamp(2rem, 4vw, 3rem)',
-            lineHeight: 1.1,
-            letterSpacing: '-0.04em',
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
+            lineHeight: 1.12,
+            letterSpacing: '-0.02em',
             fontWeight: 700,
+            color: 'var(--color-ink)',
           }}
         >
           It looks like we ran into a problem.
@@ -84,33 +121,50 @@ export default function GlobalError({
         <p
           style={{
             margin: 0,
-            fontSize: '1rem',
-            color: '#4d5854',
+            fontSize: '1.5rem',
+            color: 'var(--color-muted)',
             letterSpacing: '0.01em',
+            fontWeight: 700,
           }}
         >
-          Error code {code}
+          {`Error Code: ${code}`}
         </p>
 
-        <button
-          type="button"
-          onClick={() => reset()}
-          style={{
-            border: 'none',
-            borderRadius: 999,
-            background: '#33aa55',
-            color: '#ffffff',
-            fontWeight: 700,
-            fontSize: 14,
-            padding: '12px 22px',
-            cursor: 'pointer',
-            boxShadow: '0 12px 30px rgba(51, 170, 85, 0.2)',
-          }}
-        >
-          Try again
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button type="button" onClick={() => reset()} className="signup-back-button">
+            Try again
+          </button>
+
+          <GoBackButton />
+        </div>
       </div>
     </main>
+  );
+}
+
+function GoBackButton() {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    try {
+      const hasReferrer = typeof document !== 'undefined' && !!document.referrer;
+      const hasHistory = typeof window !== 'undefined' && window.history && window.history.length > 1;
+
+      if (hasReferrer || hasHistory) {
+        router.back();
+        return;
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    router.push('/');
+  };
+
+  return (
+    <button type="button" onClick={handleGoBack} className="pill-button pill-button-brand">
+      Go back
+    </button>
   );
 }
 

@@ -26,6 +26,17 @@ export default function ChatPage() {
   const conversation = mockConversations.find((c) => c.handle === handle);
   const [draft, setDraft] = useState('');
 
+  // keep messages scrolled to bottom on mount
+  useEffect(() => {
+    const el = document.querySelector('.chat-messages');
+    if (el) {
+      // allow layout to settle
+      setTimeout(() => {
+        (el as HTMLElement).scrollTop = (el as HTMLElement).scrollHeight;
+      }, 0);
+    }
+  }, []);
+
   if (!user) return null;
   if (!conversation) return <div style={{ padding: '1rem' }}>Conversation not found.</div>;
 

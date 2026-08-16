@@ -13,7 +13,7 @@ type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
 };
 
-type AuthStep = 'login' | 'signup-credentials' | 'signup-profile';
+type AuthStep = 'login' | 'signup-email' | 'signup-password' | 'signup-profile';
 
 export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [email, setEmail] = useState('');
@@ -29,9 +29,10 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [errorMessage, setErrorMessage] = useState('');
 
   const isLoginStep = step === 'login';
-  const isSignupCredentialsStep = step === 'signup-credentials';
+  const isSignupEmailStep = step === 'signup-email';
+  const isSignupPasswordStep = step === 'signup-password';
   const isSignupProfileStep = step === 'signup-profile';
-  const signupProgressLabel = isSignupProfileStep ? 'Step 2 of 2' : 'Step 1 of 2';
+  const signupProgressLabel = isSignupProfileStep ? 'Step 3 of 3' : isSignupPasswordStep ? 'Step 2 of 3' : 'Step 1 of 3';
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -51,7 +52,17 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
       return;
     }
 
-    if (isSignupCredentialsStep) {
+    if (isSignupEmailStep) {
+      if (!validateEmail(email)) {
+        setErrorMessage('Please enter a valid email address.');
+        return;
+      }
+
+      setStep('signup-password');
+      return;
+    }
+
+    if (isSignupPasswordStep) {
       if (password !== confirmPassword) {
         setErrorMessage('Passwords do not match.');
         return;
@@ -59,11 +70,6 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
       if (!PASSWORD_PATTERN.test(password)) {
         setErrorMessage('Password does not meet complexity requirements.');
-        return;
-      }
-
-      if (!validateEmail(email)) {
-        setErrorMessage('Please enter a valid email address.');
         return;
       }
 
@@ -106,7 +112,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
   function handleStartSignup() {
     setErrorMessage('');
-    setStep('signup-credentials');
+    setStep('signup-email');
   }
 
   function handleBackToLogin() {
@@ -192,12 +198,11 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           </>
         )}
 
-        {isSignupCredentialsStep && (
+        {isSignupEmailStep && (
           <>
             <div className="signup-step-copy" aria-label="Signup progress">
               <p>{signupProgressLabel}</p>
             </div>
-
             <PillField
               label="Email"
               type="email"
@@ -207,6 +212,30 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               autoComplete="email"
               required
             />
+
+            <div className="signup-actions signup-actions-single">
+              <button
+                className="signup-back-button"
+                type="button"
+                onClick={() => {
+                  setErrorMessage('');
+                  setStep('login');
+                }}
+              >
+                Back
+              </button>
+              <PillButton className="login-submit" type="submit">
+                Continue
+              </PillButton>
+            </div>
+          </>
+        )}
+
+        {isSignupPasswordStep && (
+          <>
+            <div className="signup-step-copy" aria-label="Signup progress">
+              <p>{signupProgressLabel}</p>
+            </div>
 
             <PillField
               label="Password"
@@ -252,9 +281,17 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               }
             />
 
-            
-
             <div className="signup-actions signup-actions-single">
+              <button
+                className="signup-back-button"
+                type="button"
+                onClick={() => {
+                  setErrorMessage('');
+                  setStep('signup-email');
+                }}
+              >
+                Back
+              </button>
               <PillButton className="login-submit" type="submit">
                 Continue
               </PillButton>
@@ -281,7 +318,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               label="Username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="@username"
+              placeholder="username"
+              prefix={'@'}
               autoComplete="username"
               required
             />

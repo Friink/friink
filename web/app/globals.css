@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @font-face {
   font-family: 'Nunito Local';
@@ -16,6 +16,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -31,7 +32,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Nunito Local', sans-serif;
+  font-family: var(--font-display);
 }
 
 .public-site-frame {
@@ -54,7 +55,7 @@ textarea {
 .landing-nav-links a,
 .forgot-password,
 .login-switch button {
-  font-family: 'Nunito Local', sans-serif;
+  font-family: var(--font-body);
 }
 
 button {
@@ -175,7 +176,7 @@ textarea {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0;
   padding-bottom: 4rem; /* reserve space for sticky footer */
 }
 
@@ -190,6 +191,7 @@ textarea {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
+  box-sizing: border-box;
   resize: vertical;
   padding: 1rem;
   border-radius: var(--radius-sm);
@@ -345,6 +347,39 @@ textarea {
   color: var(--color-ink);
   background: #edf1ee;
   font-size: 0.95rem;
+}
+
+.pill-field.has-prefix .pill-field-prefix {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.pill-field.has-prefix input {
+  padding-left: 2.6rem;
+}
+
+/* Match settings input prefix spacing with pill-field prefix */
+.input-with-prefix {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.input-with-prefix .input-prefix {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.input-with-prefix input {
+  padding-left: 2.6rem;
 }
 
 .pill-field input:focus {
@@ -946,6 +981,7 @@ textarea {
   min-height: 100vh;
   width: 100%;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -1055,6 +1091,17 @@ textarea {
     background: transparent;
     text-align: left;
     font-size: var(--text-sm);
+  }
+
+  .sidebar:not(.sidebar-collapsed) .nav-item:hover,
+  .sidebar:not(.sidebar-collapsed) .sidebar-action:hover {
+    color: var(--color-brand);
+    background: rgba(51,170,85,0.06);
+  }
+
+  .sidebar:not(.sidebar-collapsed) .nav-item:hover i,
+  .sidebar:not(.sidebar-collapsed) .sidebar-action:hover i {
+    color: var(--color-brand);
   }
 
   .sidebar:not(.sidebar-collapsed) .nav-item i,
@@ -1605,9 +1652,11 @@ textarea {
 
 .chat-header {
   min-height: var(--space-topbar-height);
-  margin: 0 -1rem;
+  margin: 0;
   padding: 0 1rem;
   border-bottom: 1px solid var(--color-line);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .chat-contact {
@@ -1626,9 +1675,9 @@ textarea {
 }
 
 .chat-messages {
-  display: grid;
-  align-content: end;
-  flex: 1;
+  display: block;
+  flex: 1 1 auto;
+  overflow: auto;
   gap: 0.75rem;
   padding: 1rem 0 1.25rem;
 }
@@ -1682,10 +1731,13 @@ textarea {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin: 0 -1rem;
+  margin: 0;
   padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-line);
   background: var(--color-paper);
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
 }
 
 .chat-composer input {
@@ -2119,6 +2171,7 @@ input[type="search"]:focus {
   max-height: calc(100vh - var(--space-topbar-height));
   overflow: auto;
   padding-bottom: calc(var(--space-bottom-nav-height) + 1rem);
+  padding-top: 0;
 }
 
 /* Floating contextual actions container */
@@ -2224,7 +2277,7 @@ input[type="search"]:focus {
 .post-composer {
   display: flex;
   flex: 1 1 auto;
-  padding: 1rem;
+  padding: 0.75rem 0;
   min-height: 0;
   max-height: calc(100vh - var(--space-topbar-height) - 8.5rem);
   overflow: auto;
@@ -2478,6 +2531,16 @@ input[type="search"]:focus {
     background: transparent;
     text-align: left;
     font-size: var(--text-sm);
+  }
+
+  .nav-item:hover,
+  .sidebar-action:hover {
+    color: var(--color-brand);
+  }
+
+  .nav-item:hover i,
+  .sidebar-action:hover i {
+    color: var(--color-brand);
   }
 
   .nav-item i {

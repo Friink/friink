@@ -1,6 +1,7 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
 import { ProfileCard } from '@/components/profile-card';
 import type { AuthUser } from '@/lib/auth';
+import { useEffect, useRef } from 'react';
 
 type SideDrawerProps = {
   user: AuthUser;
@@ -25,8 +26,33 @@ function getInitials(value: string) {
 }
 
 export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
+  const ref = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    function handleOutside(e: Event) {
+      if (collapsed) return;
+      try {
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
+        if (!isMobile) return;
+        const target = e.target as Node | null;
+        if (ref.current && target && !ref.current.contains(target)) {
+          onToggleCollapsed();
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('focusin', handleOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('focusin', handleOutside);
+    };
+  }, [collapsed, onToggleCollapsed]);
+
   return (
-    <aside className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
+    <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-header">
         <button
           className="sidebar-menu-button"

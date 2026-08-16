@@ -16,8 +16,8 @@ export const theme = {
     avatarMint: '#a9dbba',
   },
   fonts: {
-    body: "'DM Sans', sans-serif",
-    display: "'DM Sans', sans-serif",
+    body: "'Inter', sans-serif",
+    display: "'Inter', sans-serif",
     logo: "Georgia, 'Times New Roman', serif",
   },
   fontSizes: {
