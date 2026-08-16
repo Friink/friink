@@ -206,17 +206,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
           )}
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
-            {/* Tabs are rendered inside ContentBox so they sit with page content */}
-            {/* Messages tabs moved into MessagesScreen so they can appear under search */}
-            {/* Settings tabs are rendered inside ContentBox (below) */}
-
-            {/* Legacy TabBar removed; UI uses `Tabs` or other controls. */}
-
-            {/* Profile manages its own tab UI (non-standard) */}
-
-            {/* Messages filters moved away from legacy TabBar. */}
-
-            {/* Legacy TabBar removed from settings — Tabs component handles settings navigation now. */}
             <ContentBox className={(children || fillContent || activeScreen === 'post') ? 'fill-viewport' : ''}>
               {children ? (
                 children
@@ -236,12 +225,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                       ariaLabel="Connections filters"
                     />
                   )}
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
-                  {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
-                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                  {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
-                  {activeScreen === 'search' && <SearchScreen />}
                   {showTabs !== false && activeScreen === 'settings' && (
                     <Tabs
                       tabs={[
@@ -254,6 +237,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                       ariaLabel="Settings sections"
                     />
                   )}
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
+                  {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
+                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} />}
+                  {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
+                  {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'settings' && (
                     <SettingsScreen
                       user={user}
