@@ -1,3 +1,0 @@
-cd "C:\Users\mufla\OneDrive\Documents\GitHub\friink"
-npm --prefix web install
-npm --prefix web run dev
