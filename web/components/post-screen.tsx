@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { AuthUser } from '@/lib/auth';
+import { ProfileCard } from '@/components/profile-card';
 
 type PostScreenProps = {
   user: AuthUser;
@@ -39,18 +40,15 @@ export function PostScreen({ user, onBack, onPost }: PostScreenProps) {
         <button className="icon-plain" type="button" onClick={onBack} aria-label="Go back">
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />
         </button>
-        <h2>Compose</h2>
+        <div className="post-screen-header-main">
+          <div className="posting-as">Posting as</div>
+          <ProfileCard user={user} />
+        </div>
       </div>
 
       <div className="post-composer">
         <div className="post-composer-body">
-          <div className="post-composer-identity">
-            <span className="user-avatar avatar-mint">{getInitials(user.name)}</span>
-            <div>
-              <strong>{user.name}</strong>
-              <span>@{user.username}</span>
-            </div>
-          </div>
+          {/* user identity moved to header */}
           <textarea
             autoFocus
             value={text}

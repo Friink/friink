@@ -137,6 +137,32 @@ export function AppShell({ user, onLogout, initialScreen = 'home' }: AppShellPro
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
             {(activeScreen === 'home' || activeScreen === 'floating') && <Tabs ariaLabel="Home quick tabs" />}
+            {activeScreen === 'connections' && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'All' },
+                  { id: 'followers', label: 'Followers' },
+                  { id: 'following', label: 'Following' },
+                  { id: 'requests', label: 'Requests' },
+                ]}
+                activeId={connectionsFilter}
+                onChange={(id) => setConnectionsFilter(id)}
+                ariaLabel="Connections filters"
+              />
+            )}
+            {activeScreen === 'messages' && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'All' },
+                  { id: 'connections', label: 'Connections' },
+                  { id: 'requests', label: 'Requests' },
+                  { id: 'muted', label: 'Muted' },
+                ]}
+                activeId={messagesTab}
+                onChange={(id) => setMessagesTab(id)}
+                ariaLabel="Messages filters"
+              />
+            )}
             {activeScreen === 'settings' && (
               <Tabs
                 tabs={[

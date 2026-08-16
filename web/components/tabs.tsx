@@ -15,7 +15,7 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs' }: Tab
   const tabsList = useMemo<Tab[]>(() => {
     return (
       tabs ?? [
-        { id: 'all', label: 'All' },
+        { id: 'all', label: 'Explore' },
         { id: 'followers', label: 'Followers' },
         { id: 'following', label: 'Following' },
       ]

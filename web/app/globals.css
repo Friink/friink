@@ -122,6 +122,105 @@ textarea {
   font-weight: 700;
 }
 
+/* Profile card component */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile-card-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.profile-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.profile-card-info strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.profile-card-handle {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.posting-as {
+  color: var(--color-muted);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  line-height: 1;
+}
+
+/* Compose / Post screen layout: make textarea fill available space and pin footer */
+.post-screen {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--space-topbar-height));
+}
+
+.post-composer {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding: 0.75rem 1rem;
+  padding-bottom: 4rem; /* reserve space for sticky footer */
+}
+
+.post-composer-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0; /* allow proper flexing on smaller viewports */
+}
+
+.post-composer textarea {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  resize: vertical;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  line-height: 1.4;
+  overflow: auto;
+}
+
+.post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-line);
+  background: transparent;
+  margin-top: 0; /* footer positioned by flex; no extra top margin */
+  position: sticky;
+  bottom: 0;
+  backdrop-filter: blur(2px);
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.02) 100%);
+  z-index: 3;
+  height: 3.5rem;
+}
+
+.post-footer-left { display: flex; gap: 0.5rem; align-items: center; }
+.post-footer-right { display: flex; align-items: center; }
+
 .profile-avatar {
   overflow: hidden;
   padding: 0;
@@ -1072,11 +1171,7 @@ textarea {
 }
 
 .topbar-bell i {
-  color: #000;
-}
-
-.app-shell[data-theme='dark'] .topbar-bell i {
-  color: #fff;
+  color: var(--color-ink);
 }
 
 .topbar-bell span {
@@ -2063,17 +2158,25 @@ input[type="search"]:focus {
 .post-screen {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* constrain composer to viewport so it doesn't overflow */
+  height: calc(100vh - var(--space-topbar-height));
   min-height: 0;
+  overflow: auto;
 }
 
 .post-screen-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  height: var(--space-topbar-height);
-  padding: 0 1rem;
-  border-bottom: 1px solid var(--color-line);
+  min-height: var(--space-topbar-height);
+  padding: 0.75rem 1rem;
+  border-bottom: 0;
+}
+
+.post-screen-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .post-screen-header h2 {
@@ -2109,8 +2212,11 @@ input[type="search"]:focus {
 
 .post-composer {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   padding: 1rem;
+  min-height: 0;
+  max-height: calc(100vh - var(--space-topbar-height) - 8.5rem);
+  overflow: auto;
 }
 
 .post-composer-body {
@@ -2139,14 +2245,24 @@ input[type="search"]:focus {
 
 .post-composer textarea {
   width: 100%;
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: 24vh;
+  max-height: calc(100vh - var(--space-topbar-height) - 8rem);
   margin-top: 0.75rem;
-  padding: 0;
-  resize: none;
-  border: 0;
+  padding: 1rem;
+  resize: vertical;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-size: var(--text-base);
   line-height: 1.5;
+  overflow: auto;
+}
+
+.icon-plain {
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .post-option {
@@ -2231,21 +2347,20 @@ input[type="search"]:focus {
 
 /* Post footer actions placed at bottom of viewport for composer screens */
 .post-footer {
-  position: fixed;
-  right: 1rem;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  left: 1rem;
-  z-index: 4;
+  /* Place footer in normal flow beneath composer instead of a floating pill */
+  position: static;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(calc(100% - 2rem), 42rem);
-  margin: 0 auto;
-  padding: 0.5rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-pill);
-  box-shadow: 0 0.75rem 2rem rgba(24, 44, 31, 0.12);
-  background: var(--color-paper);
+  width: 100%;
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  border-top: 0;
+  padding-top: 0.75rem;
 }
 
 .post-footer-left {
@@ -2259,7 +2374,7 @@ input[type="search"]:focus {
 }
 
 .post-screen {
-  padding-bottom: calc(3.75rem + 1.5rem);
+  padding-bottom: 0;
 }
 
 /* Desktop */
