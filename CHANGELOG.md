@@ -15,10 +15,17 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 _Last updated: 2026-08-17_
 
 - [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
-- [web] Auth is now route-gated: signed-in users are redirected away from `/` and `/login` to `/home`, and logging out returns them to `/`. The landing page keeps the local Nunito typography for display/CTA work while the app uses Inter. The post composer has a bottom footer, the floating nav hides during composition, and the settings screen is streamlined for UI-only work. Local demo mode is enabled for localhost-only browsing: the login button creates a demo session in `localStorage`, allowing the user to reach the app pages without the API being online. Shared controls now use a flatter 8px radius so buttons and text fields read as rectangular instead of pill-shaped. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
+- [web] The deployed frontend runs entirely in demo mode: `/home` can be opened directly from the landing page, and login/signup create a local session using mock data. The flow makes no API requests, so it works without backend configuration. The landing page keeps the local Nunito typography for display/CTA work while the app uses Inter. The post composer has a bottom footer, the floating nav hides during composition, and the settings screen is streamlined for UI-only work. Shared controls now use a flatter 8px radius so buttons and text fields read as rectangular instead of pill-shaped. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
 - [repo] `AGENTLOG.md` is kept in sync with `CHANGELOG.md` and no longer uses a `User` field in entry templates. Local startup troubleshooting notes are recorded here to capture platform-specific issues with the Nest API and the working frontend-only fallback.
 
 ## 2026-08-17
+
+### Changed
+- [web] Made the Vercel frontend demo self-contained: the public landing page now provides a direct `Explore the demo` path and the local login/signup flow no longer checks username availability through the unavailable API.
+- [docs] Recorded the production-safe frontend-only demo behavior in the repo notes.
+
+### Verified
+- [web] `npx tsc --noEmit` passes, a source audit confirms there are no frontend API/network requests, and `npm run build` completes successfully with Next's single-worker build setting.
 
 ### Changed
 - [web] Flattened the shared radius styling so buttons and single-line inputs use an 8px corner radius instead of the pill-style `--radius-pill` default across the app and landing UI.

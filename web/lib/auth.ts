@@ -33,10 +33,6 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
   };
 }
 
-export function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
-}
-
 export async function signUp(input: {
   name: string;
   email: string;
@@ -77,71 +73,10 @@ export function clearAuthSession() {
   window.localStorage.removeItem(AUTH_SESSION_KEY);
 }
 
-async function handleAuthResponse(response: Response, allowSignupUserResponse = false): Promise<AuthSession> {
-  const payload = await safeJson(response);
-
-  if (!response.ok) {
-    const message = extractMessage(payload);
-    throw new Error(message && message !== 'Invalid email or password.' ? message : 'Sorry, that didn’t work.');
-  }
-
-  if (isAuthSession(payload)) {
-    return payload;
-  }
-
-  if (allowSignupUserResponse && isSignupUser(payload)) {
-    return {
-      accessToken: '',
-      tokenType: 'Bearer',
-      user: payload,
-    };
-  }
-
-  throw new Error('Unexpected authentication response.');
-}
-
-async function safeJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-
 export async function login(email: string, password: string): Promise<AuthSession> {
   return createDemoSession({
     email: email || 'demo@friink.local',
     username: email ? email.split('@')[0] || 'demouser' : 'demouser',
     name: 'Demo User',
   });
-}
-
-function extractMessage(payload: unknown): string | undefined {
-  if (typeof payload !== 'object' || payload === null) return undefined;
-  if (!('message' in payload)) return undefined;
-
-  const message = (payload as { message?: unknown }).message;
-  return typeof message === 'string' ? message : undefined;
-}
-
-function isAuthSession(payload: unknown): payload is AuthSession {
-  if (typeof payload !== 'object' || payload === null) return false;
-  const value = payload as Partial<AuthSession>;
-  return typeof value.accessToken === 'string' && value.tokenType === 'Bearer' && isAuthUser(value.user);
-}
-
-function isSignupUser(payload: unknown): payload is AuthUser {
-  return isAuthUser(payload);
-}
-
-function isAuthUser(payload: unknown): payload is AuthUser {
-  if (typeof payload !== 'object' || payload === null) return false;
-  const value = payload as Partial<AuthUser>;
-  return (
-    typeof value.id === 'string' &&
-    typeof value.name === 'string' &&
-    typeof value.email === 'string' &&
-    typeof value.username === 'string' &&
-    typeof value.status === 'string'
-  );
 }

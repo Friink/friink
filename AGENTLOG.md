@@ -19,6 +19,31 @@
 
 ### Entry
 
+- Date & Time: 2026-08-17 21:15 UTC
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Vercel-deployed frontend suitable for a UI demo without relying on authentication or other APIs, beginning from the public `friink-site` landing page.
+- Changes Made:
+  - Changed the landing page primary CTA in `web/public/friink-site/index.html` to open `/home` directly as `Explore the demo`, while retaining `/login` as a separate demo-login path.
+  - Removed the username-availability request from the signup UI, so signing up never waits on an unavailable backend.
+  - Removed obsolete API URL and response-parsing helpers from the frontend auth module; login and signup now consistently create local demo sessions.
+  - Synced the current-state documentation and changelog with the no-API production demo behavior.
+- Files/Scope Touched:
+  - web/public/friink-site/index.html (modified)
+  - web/components/login-screen.tsx (modified)
+  - web/lib/auth.ts (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The app is intended for a UI demo on Vercel, so its entry paths must be usable without API availability or environment configuration. The app’s existing mock content and local-session behavior provide the required demo data.
+- Notes for next agent:
+  - `/home` is the direct demo URL; it creates an in-memory demo session when none exists.
+  - No frontend code performs network requests now. The landing page remains served through the Next `/` iframe route from `web/public/friink-site/index.html`.
+- Verified Working?: yes — TypeScript check passed (`npx tsc --noEmit`), a source audit found no frontend API/network requests, and `NEXT_PRIVATE_BUILD_WORKER=1 npm run build` completed successfully with all 15 Next pages generated.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-17 20:40 UTC
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash

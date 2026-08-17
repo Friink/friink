@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
-import { createDemoSession, login, saveAuthSession, signUp, type AuthUser, getApiBaseUrl } from '@/lib/auth';
+import { createDemoSession, login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
@@ -86,13 +86,6 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           return;
         }
 
-        const available = await checkUsernameUnique(username);
-        if (available === false) {
-          setIsSubmitting(false);
-          setErrorMessage('That username is already taken.');
-          return;
-        }
-
         const session = await signUp({ name: fullName, email, username, password, dateOfBirth });
         if (session.accessToken) {
           saveAuthSession(session);
@@ -122,18 +115,6 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
   function validateEmail(value: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }
-
-  async function checkUsernameUnique(handle: string): Promise<boolean | undefined> {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/auth/username-available?username=${encodeURIComponent(handle)}`);
-      if (res.status === 404) return true;
-      if (!res.ok) return true;
-      const data = await res.json();
-      return Boolean((data as { available?: boolean }).available);
-    } catch {
-      return true;
-    }
   }
 
   return (
