@@ -22,6 +22,7 @@ _Last updated: 2026-08-17_
 
 ### Changed
 - [web] Made the Vercel frontend demo self-contained: the public landing page now provides a direct `Explore the demo` path and the local login/signup flow no longer checks username availability through the unavailable API.
+- [infra] Removed the obsolete API build and API-only route override from the root Vercel config, allowing the Next frontend's normal routes to serve on the demo deployment.
 - [docs] Recorded the production-safe frontend-only demo behavior in the repo notes.
 
 ### Verified

@@ -44,6 +44,28 @@
 
 ### Entry
 
+- Date & Time: 2026-08-17 21:35 UTC
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose Vercel's deployment-level `404: NOT_FOUND` for the frontend demo.
+- Changes Made:
+  - Simplified the root `vercel.json` to build only the Next frontend in `web`.
+  - Removed the API-only custom routing table, which prevented Vercel from applying the Next app's filesystem routes such as `/` and `/home`.
+  - Recorded the deployment correction in the changelog.
+- Files/Scope Touched:
+  - vercel.json (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The deployed demo no longer makes API requests, so publishing a separate API function adds deployment complexity without serving the product. The prior custom `routes` config matched only `/api/*`, leaving the frontend entry route unmatched.
+- Notes for next agent:
+  - Deploy this repository with the Vercel project Root Directory left at the repository root; the root config explicitly builds `web/package.json`.
+  - If the project is configured with Root Directory `web` instead, remove the root build override and let Vercel auto-detect Next.js from `web`.
+- Verified Working?: pending — rerun the standard production build and redeploy.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-17 20:40 UTC
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
