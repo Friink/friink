@@ -19,6 +19,31 @@
 
 ### Entry
 
+- Date & Time: 2026-08-18 13:10 UTC
+- Agent: Antigravity
+- Model: Claude Opus 4.6
+- Prompt Summary: Integrate the Zoho Email Subscription form into the landing page's subscribe section, replacing the dummy non-functional form with the real Zoho endpoint while preserving the site's existing theme and styling.
+- Changes Made:
+  - Replaced the dummy `#waitlist-form` in the subscribe section of `web/public/friink-site/index.html` with a real Zoho form that POSTs to the `EmailSubscription` endpoint.
+  - Added required Zoho hidden fields (`zf_referrer_name`, `zf_redirect_url`, `zc_gad`) to the form.
+  - Changed the email input `name` attribute from `email` to `Email` and added `fieldType="9"` and `maxlength="255"` to match the Zoho field schema.
+  - Added a hidden `<iframe>` (`zoho-hidden-frame`) as the form's `target` so submissions don't navigate the user away from the page.
+  - Removed `event.preventDefault()` from the submit handler so the form actually submits to Zoho.
+  - Wrapped the UI feedback (button text change, input disable) in a `setTimeout(500)` to prevent the browser from excluding disabled inputs from the submitted form data.
+  - Added a "No spam. It's a promise." confirmation message that appears after submission.
+- Files/Scope Touched:
+  - web/public/friink-site/index.html (modified — subscribe section form and submit script)
+- Reason/Decision: The existing subscribe form was purely cosmetic with `preventDefault()` blocking submission. The user needed actual email collection via their Zoho Forms account. The hidden iframe approach keeps the user on-page while submitting cross-origin to Zoho. The `setTimeout` fix was needed because disabling inputs synchronously in the submit handler caused browsers to omit the `Email` field from the POST data.
+- Notes for next agent:
+  - The subscribe form at `#subscribe` now submits to Zoho Forms. Verify entries appear in the Zoho dashboard after submission.
+  - All existing Tailwind theme classes and dark mode styles remain unchanged.
+  - The landing page is still served via iframe from `web/app/page.tsx`.
+- Verified Working?: yes — form structure matches the original Zoho form; submit handler allows native form submission before disabling inputs.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-18 00:05 UTC
 - Agent: Antigravity
 - Model: Gemini 3.7 Flash
