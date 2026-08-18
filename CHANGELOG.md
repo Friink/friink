@@ -12,11 +12,24 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-17_
+_Last updated: 2026-08-18_
 
-- [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
-- [web] The deployed frontend runs entirely in demo mode: `/home` can be opened directly from the landing page, and login/signup create a local session using mock data. The flow makes no API requests, so it works without backend configuration. The landing page keeps the local Nunito typography for display/CTA work while the app uses Inter. The post composer has a bottom footer, the floating nav hides during composition, and the settings screen is streamlined for UI-only work. Shared controls now use a flatter 8px radius so buttons and text fields read as rectangular instead of pill-shaped. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
-- [repo] `AGENTLOG.md` is kept in sync with `CHANGELOG.md` and no longer uses a `User` field in entry templates. Local startup troubleshooting notes are recorded here to capture platform-specific issues with the Nest API and the working frontend-only fallback.
+- [api] All broken/non-functional backend auth controllers, services, database schemas, and drizzle migrations have been removed from `api/`. The `AppModule` and `package.json` in `api/` are kept minimal and clean.
+- [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement.
+- [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
+
+## 2026-08-18
+
+### Removed
+- [api] Removed auth controllers, services, DTOs, database schemas, drizzle migrations, and serverless handler from `api/`.
+- [infra] Removed `api/vercel.json` and cleaned up `api/package.json`.
+
+### Changed
+- [web] Added `<base target="_top">` to `web/public/friink-site/index.html` to ensure iframe landing page links break out to top-level routes smoothly.
+- [infra] Updated root `package.json` and local start scripts (`start-local.ps1`, `start-local.cmd`, `scripts/*`) to focus on launching the Next.js web application.
+
+### Verified
+- [web] Ran `npm --prefix web run build`, successfully generating all 15 static/dynamic routes with zero compile errors.
 
 ## 2026-08-17
 

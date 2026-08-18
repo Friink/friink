@@ -19,6 +19,44 @@
 
 ### Entry
 
+- Date & Time: 2026-08-18 00:05 UTC
+- Agent: Antigravity
+- Model: Gemini 3.7 Flash
+- Prompt Summary: Remove Nest auth code from api folder and re-route Next.js app for clean Vercel deployment starting at root/web/friink-site/index.html.
+- Changes Made:
+  - Removed all backend auth controllers, services, modules, DTOs, database schemas, and drizzle migrations from `api/`.
+  - Removed serverless handler `api/api-handler.ts` and `api/vercel.json` to prevent Vercel from attempting to deploy the Nest backend function.
+  - Cleaned `api/src/app.module.ts` and `api/package.json` to remove obsolete auth and database dependencies.
+  - Added `<base target="_top">` to `web/public/friink-site/index.html` so landing page CTAs navigate the parent browser window smoothly from `/` to `/home` and `/login`.
+  - Verified and aligned root `package.json` and `vercel.json` for Next.js web application deployment on Vercel.
+  - Updated local start scripts (`start-local.ps1`, `start-local.cmd`, `scripts/start-local-dev.ps1`, `scripts/check-local-services.ps1`) to focus on running the web frontend.
+- Files/Scope Touched:
+  - api/src/auth/ (deleted)
+  - api/src/database/ (deleted)
+  - api/drizzle/ (deleted)
+  - api/drizzle.config.ts (deleted)
+  - api/api-handler.ts (deleted)
+  - api/vercel.json (deleted)
+  - api/src/app.module.ts (modified)
+  - api/package.json (modified)
+  - web/public/friink-site/index.html (modified)
+  - package.json (modified)
+  - start-local.ps1 (modified)
+  - start-local.cmd (modified)
+  - scripts/start-local-dev.ps1 (modified)
+  - scripts/check-local-services.ps1 (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The Nest backend auth was non-functional and blocking clean deployment on Vercel. Removing the auth code and standardizing Vercel configuration on the Next.js frontend (which uses self-contained mock demo data and local auth sessions) allows the 70% completed mockup frontend to deploy and operate seamlessly.
+- Notes for next agent:
+  - The Next app compiles all 15 routes statically and dynamically without network or backend dependencies.
+  - The landing page is located at `web/public/friink-site/index.html` and served at `/` through Next's root page with `<base target="_top">` navigation to `/home` and `/login`.
+- Verified Working?: yes — `npm --prefix web run build` succeeded with exit code 0, generating all 15 static/dynamic pages.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-17 21:15 UTC
 - Agent: Codex
 - Model: GPT-5

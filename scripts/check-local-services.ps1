@@ -18,15 +18,9 @@ function Test-HttpStatus {
   }
 }
 
-$apiStatus = Test-HttpStatus -Url 'http://localhost:3001/api/auth/login' -Method 'POST'
 $webStatus = Test-HttpStatus -Url 'http://localhost:3000'
 
-Write-Host "API status: $apiStatus"
 Write-Host "WEB status: $webStatus"
-
-if ($apiStatus -eq 404) {
-  Write-Host "API is running but the route is not available yet. Check the auth controller and Nest startup."
-}
 
 if ($webStatus -eq 200) {
   Write-Host "Frontend is up on localhost:3000."
