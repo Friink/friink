@@ -1,0 +1,10 @@
+Web & Mobile Client
+API (.Net)
+ORM (Entity Framework Core?)
+DB (Postgres)
+Object storage (S3 bucket compatible R2?)
+Auth & Session (.Net & JWT)
+Notifications (.Net & Email)
+Payments (TBD)
+Search & Indexing (Postgres)
+Push Notifications (Firebase?)
