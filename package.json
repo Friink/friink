@@ -2,7 +2,9 @@
   "name": "friink",
   "private": true,
   "scripts": {
-    "build": "npm --prefix web run build"
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "start": "npm --prefix web run start"
   },
   "dependencies": {
     "next": "14.2.5",

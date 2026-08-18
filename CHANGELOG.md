@@ -12,11 +12,55 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-16_
+_Last updated: 2026-08-18_
 
-- [api] Signup creates active users by default for testability, with OTP signup still available behind `SIGNUP_OTP_ENABLED=true`. JWT login is available on `POST /auth/login` and returns a bearer token plus the user payload. The API is configured for local development with `DATABASE_URL`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. The API `tsconfig` no longer includes `baseUrl` because it caused local config errors; use project-relative paths instead. Local demo validation was relaxed so the signup payload can pass through without being rejected by the strict validation layer during dev testing. Missing: refresh tokens, logout/session revocation, email delivery, profile CRUD, feed/post APIs, and production integrations.
-- [web] Auth is now route-gated: signed-in users are redirected away from `/` and `/login` to `/home`, and logging out returns them to `/`. The landing page keeps the local Nunito typography for display/CTA work while the app uses Inter. The post composer has a bottom footer, the floating nav hides during composition, and the settings screen is streamlined for UI-only work. Missing: server-backed session refresh, OTP verification UI, and real backend data for profile/feed content.
-- [repo] `AGENTLOG.md` is kept in sync with `CHANGELOG.md` and no longer uses a `User` field in entry templates.
+- [api] All broken/non-functional backend auth controllers, services, database schemas, and drizzle migrations have been removed from `api/`. The `AppModule` and `package.json` in `api/` are kept minimal and clean.
+- [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement.
+- [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
+
+## 2026-08-18
+
+### Removed
+- [api] Removed auth controllers, services, DTOs, database schemas, drizzle migrations, and serverless handler from `api/`.
+- [infra] Removed `api/vercel.json` and cleaned up `api/package.json`.
+
+### Changed
+- [web] Added `<base target="_top">` to `web/public/friink-site/index.html` to ensure iframe landing page links break out to top-level routes smoothly.
+- [infra] Updated root `package.json` and local start scripts (`start-local.ps1`, `start-local.cmd`, `scripts/*`) to focus on launching the Next.js web application.
+
+### Verified
+- [web] Ran `npm --prefix web run build`, successfully generating all 15 static/dynamic routes with zero compile errors.
+
+## 2026-08-17
+
+### Changed
+- [web] Made the Vercel frontend demo self-contained: the public landing page now provides a direct `Explore the demo` path and the local login/signup flow no longer checks username availability through the unavailable API.
+- [infra] Removed the obsolete API build and API-only route override from the root Vercel config, allowing the Next frontend's normal routes to serve on the demo deployment.
+- [docs] Recorded the production-safe frontend-only demo behavior in the repo notes.
+
+### Verified
+- [web] `npx tsc --noEmit` passes, a source audit confirms there are no frontend API/network requests, and `npm run build` completes successfully with Next's single-worker build setting.
+
+### Changed
+- [web] Flattened the shared radius styling so buttons and single-line inputs use an 8px corner radius instead of the pill-style `--radius-pill` default across the app and landing UI.
+- [docs] Recorded the styling adjustment and the live localhost verification state in the repo notes.
+
+### Verified
+- [web] `http://localhost:3000` responded with `200 OK` after the shared style update.
+
+
+### Changed
+- [web] Enabled a localhost-only demo auth bypass so the login button creates a demo session instead of calling the unavailable backend. This lets the frontend render all app screens and routes without the API running.
+- [docs] Added the localhost startup troubleshooting notes to the repo history so future agents understand why the API was not reliable and why the frontend-only demo path was adopted.
+
+### Fixed
+- [web] Kept the app accessible locally by bypassing backend auth during UI exploration while the API remains intentionally left alone.
+- [repo] Synced `CHANGELOG.md` and `AGENTLOG.md` to reflect the current frontend-only localhost workflow.
+
+### Notes
+- The Nest API was unstable locally due to a missing dist entrypoint issue, port conflicts on `:3001`, and a broken watch launch path; it was not required to achieve a working frontend demo.
+- The frontend now creates a demo session in `localStorage` on login, so local navigation and page viewing are possible even when the backend is down.
+- The app is intended to run locally with `npm --prefix web run dev:local`; the API is intentionally not required for the UI-only demo mode.
 
 ## 2026-08-16
 

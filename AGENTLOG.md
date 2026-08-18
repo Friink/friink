@@ -19,6 +19,139 @@
 
 ### Entry
 
+- Date & Time: 2026-08-18 00:05 UTC
+- Agent: Antigravity
+- Model: Gemini 3.7 Flash
+- Prompt Summary: Remove Nest auth code from api folder and re-route Next.js app for clean Vercel deployment starting at root/web/friink-site/index.html.
+- Changes Made:
+  - Removed all backend auth controllers, services, modules, DTOs, database schemas, and drizzle migrations from `api/`.
+  - Removed serverless handler `api/api-handler.ts` and `api/vercel.json` to prevent Vercel from attempting to deploy the Nest backend function.
+  - Cleaned `api/src/app.module.ts` and `api/package.json` to remove obsolete auth and database dependencies.
+  - Added `<base target="_top">` to `web/public/friink-site/index.html` so landing page CTAs navigate the parent browser window smoothly from `/` to `/home` and `/login`.
+  - Verified and aligned root `package.json` and `vercel.json` for Next.js web application deployment on Vercel.
+  - Updated local start scripts (`start-local.ps1`, `start-local.cmd`, `scripts/start-local-dev.ps1`, `scripts/check-local-services.ps1`) to focus on running the web frontend.
+- Files/Scope Touched:
+  - api/src/auth/ (deleted)
+  - api/src/database/ (deleted)
+  - api/drizzle/ (deleted)
+  - api/drizzle.config.ts (deleted)
+  - api/api-handler.ts (deleted)
+  - api/vercel.json (deleted)
+  - api/src/app.module.ts (modified)
+  - api/package.json (modified)
+  - web/public/friink-site/index.html (modified)
+  - package.json (modified)
+  - start-local.ps1 (modified)
+  - start-local.cmd (modified)
+  - scripts/start-local-dev.ps1 (modified)
+  - scripts/check-local-services.ps1 (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The Nest backend auth was non-functional and blocking clean deployment on Vercel. Removing the auth code and standardizing Vercel configuration on the Next.js frontend (which uses self-contained mock demo data and local auth sessions) allows the 70% completed mockup frontend to deploy and operate seamlessly.
+- Notes for next agent:
+  - The Next app compiles all 15 routes statically and dynamically without network or backend dependencies.
+  - The landing page is located at `web/public/friink-site/index.html` and served at `/` through Next's root page with `<base target="_top">` navigation to `/home` and `/login`.
+- Verified Working?: yes — `npm --prefix web run build` succeeded with exit code 0, generating all 15 static/dynamic pages.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-17 21:15 UTC
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Vercel-deployed frontend suitable for a UI demo without relying on authentication or other APIs, beginning from the public `friink-site` landing page.
+- Changes Made:
+  - Changed the landing page primary CTA in `web/public/friink-site/index.html` to open `/home` directly as `Explore the demo`, while retaining `/login` as a separate demo-login path.
+  - Removed the username-availability request from the signup UI, so signing up never waits on an unavailable backend.
+  - Removed obsolete API URL and response-parsing helpers from the frontend auth module; login and signup now consistently create local demo sessions.
+  - Synced the current-state documentation and changelog with the no-API production demo behavior.
+- Files/Scope Touched:
+  - web/public/friink-site/index.html (modified)
+  - web/components/login-screen.tsx (modified)
+  - web/lib/auth.ts (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The app is intended for a UI demo on Vercel, so its entry paths must be usable without API availability or environment configuration. The app’s existing mock content and local-session behavior provide the required demo data.
+- Notes for next agent:
+  - `/home` is the direct demo URL; it creates an in-memory demo session when none exists.
+  - No frontend code performs network requests now. The landing page remains served through the Next `/` iframe route from `web/public/friink-site/index.html`.
+- Verified Working?: yes — TypeScript check passed (`npx tsc --noEmit`), a source audit found no frontend API/network requests, and `NEXT_PRIVATE_BUILD_WORKER=1 npm run build` completed successfully with all 15 Next pages generated.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-17 21:35 UTC
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose Vercel's deployment-level `404: NOT_FOUND` for the frontend demo.
+- Changes Made:
+  - Simplified the root `vercel.json` to build only the Next frontend in `web`.
+  - Removed the API-only custom routing table, which prevented Vercel from applying the Next app's filesystem routes such as `/` and `/home`.
+  - Recorded the deployment correction in the changelog.
+- Files/Scope Touched:
+  - vercel.json (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The deployed demo no longer makes API requests, so publishing a separate API function adds deployment complexity without serving the product. The prior custom `routes` config matched only `/api/*`, leaving the frontend entry route unmatched.
+- Notes for next agent:
+  - Deploy this repository with the Vercel project Root Directory left at the repository root; the root config explicitly builds `web/package.json`.
+  - If the project is configured with Root Directory `web` instead, remove the root build override and let Vercel auto-detect Next.js from `web`.
+- Verified Working?: pending — rerun the standard production build and redeploy.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-17 20:40 UTC
+- Agent: Copilot
+- Model: MAI-Code-1.1-Flash
+- Prompt Summary: Flatten the shared button and form-field radius to an 8px rectangle across the landing page and app shell, then verify the frontend is still live locally.
+- Changes Made:
+  - Added a root CSS radius override in `web/app/globals.css` to make the shared `--radius-pill` token resolve to `8px`.
+  - Set the base button/input border radius to `8px` in the shared style layer so landing-page CTAs, form fields, and in-app controls all read as rectangular instead of pill-shaped.
+  - Updated the repo log files so the latest UI change is captured alongside the localhost demo-auth notes.
+- Files/Scope Touched:
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The app was still inheriting a pill-style design token from the shared theme; flattening the radius at the global CSS layer is the least risky way to affect all controls without touching each component individually.
+- Notes for next agent:
+  - The shared radius is now effectively `8px` for form fields and common controls.
+  - The frontend remains locally accessible at `http://localhost:3000` and was verified with an HTTP 200 response.
+  - The API remains intentionally out of scope for this frontend-only localhost flow.
+- Verified Working?: yes — the web app responded with `200 OK` on the local frontend after the update.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-17 00:00 UTC
+- Agent: Copilot
+- Model: MAI-Code-1.1-Flash
+- Prompt Summary: Keep the app usable on localhost without the backend by bypassing auth in the frontend login flow, and document the startup issues that blocked local API runs.
+- Changes Made:
+  - Added a demo auth session generator in `web/lib/auth.ts` so the login button can create a valid local session without calling the API.
+  - Updated `web/components/login-screen.tsx` so the login action no longer waits on backend auth during local UI exploration.
+  - Recorded the localhost startup troubleshooting notes in `CHANGELOG.md` and `AGENTLOG.md` so the next agent understands the API issues and the chosen frontend-only workaround.
+- Files/Scope Touched:
+  - web/lib/auth.ts (modified)
+  - web/components/login-screen.tsx (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The API remained unreliable locally because the Nest command path was failing to boot cleanly and port `3001` was sometimes still occupied. The goal was to keep frontend page browsing working on localhost without blocking on a backend that was not required for UI review.
+- Notes for next agent:
+  - The localhost frontend runs via `npm --prefix web run dev:local`.
+  - The login button now creates a demo session in `localStorage` and bypasses the unavailable backend.
+  - The API was intentionally left alone for this frontend-only demo workflow; backend auth remains off for local UI review.
+  - Earlier startup blockers included the missing `dist` entrypoint when using Nest watch, `EADDRINUSE` on port `3001`, and several failed `ts-node`/npm script combinations on Windows.
+- Verified Working?: yes — the frontend was verified to respond at `http://localhost:3000` on the live local run.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-16
 - Agent: Copilot
 - Model: GitHub Copilot

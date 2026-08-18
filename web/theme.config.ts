@@ -37,7 +37,7 @@ export const theme = {
     sm: '8px',
     md: '12px',
     lg: '16px',
-    pill: '999px',
+    pill: '8px',
   },
   breakpoints: {
     desktop: '768px',

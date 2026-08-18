@@ -9,9 +9,10 @@ type TabsProps = {
   activeId?: string;
   onChange?: (id: string) => void;
   ariaLabel?: string;
+  className?: string;
 };
 
-export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs' }: TabsProps) {
+export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', className = '' }: TabsProps) {
   const tabsList = useMemo<Tab[]>(() => {
     return (
       tabs ?? [
@@ -54,7 +55,7 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs' }: Tab
   };
 
   return (
-    <div className="tabs" ref={containerRef}>
+    <div className={`tabs ${className}`.trim()} ref={containerRef}>
       <div className="tabs__inner" role="tablist" aria-label={ariaLabel}>
         {tabsList.map((t) => (
           <button

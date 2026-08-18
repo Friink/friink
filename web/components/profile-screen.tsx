@@ -51,15 +51,12 @@ export function ProfileScreen({ user, posts }: ProfileScreenProps) {
         <span><strong>0</strong> followers</span>
       </div>
 
-      <div className="profile-edit-row">
-        <button className="profile-edit-button" type="button">Edit</button>
-      </div>
-
       <Tabs
         tabs={profileTabs}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as ProfileTab)}
         ariaLabel="Profile tabs"
+        className="section-tabs"
       />
 
       <div className="profile-feed">
