@@ -216,8 +216,8 @@
       class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
       <a href="index.html" aria-label="Friink home" class="flex items-center gap-3">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logoWhite.svg">
-          <img src="assets/brand/logoBlack.svg" alt="Friink" class="header-logo" style="height: 2.5rem; width: auto;">
+          <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logoFullWhite.svg">
+          <img src="assets/brand/logoFullBlack.svg" alt="Friink" class="header-logo" style="height: 3.5rem; width: auto;">
         </picture>
       </a>
       <div class="hidden md:flex items-center gap-8">
@@ -301,13 +301,25 @@
         </svg>
         <h2 class="text-3xl md:text-4xl font-semibold tracking-tight">Be part of the beginning.</h2>
         <p class="text-lg text-secondary mt-4">Join the newsletter to get notified when we open the doors.</p>
-        <form class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mt-8" id="waitlist-form">
+        <iframe name="zoho-hidden-frame" id="zoho-hidden-frame" style="display:none;" aria-hidden="true"></iframe>
+        <form
+          class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mt-8"
+          id="waitlist-form"
+          action="https://forms.zohopublic.com/adminfri1/form/EmailSubscription/formperma/d8QCBbrRcMNOVCT7RQnWYneUowki3t51BQlD8LRoTig/htmlRecords/submit"
+          method="POST"
+          accept-charset="UTF-8"
+          enctype="multipart/form-data"
+          target="zoho-hidden-frame">
+          <input type="hidden" name="zf_referrer_name" value="">
+          <input type="hidden" name="zf_redirect_url" value="">
+          <input type="hidden" name="zc_gad" value="">
           <label class="sr-only" for="waitlist-email">Your email address</label>
-          <input id="waitlist-email" name="email" autocomplete="email" required type="email"
+          <input id="waitlist-email" name="Email" autocomplete="email" required type="email" maxlength="255" fieldType="9"
             placeholder="Your email address"
             class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 focus:border-primary focus:ring-1 focus:ring-primary">
           <button type="submit" class="cta bg-primary text-on-primary hover:bg-inverse-surface">Subscribe</button>
         </form>
+        <p id="subscribe-confirmation" class="text-primary font-semibold mt-4 hidden">No spam. It's a promise.</p>
       </div>
     </section>
   </main>
@@ -316,21 +328,26 @@
     <div
       class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-center gap-4 px-margin-mobile md:px-margin-desktop py-8">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logoFullWhite.svg">
-        <img src="assets/brand/logoFullBlack.svg" alt="Friink" class="footer-logo h-9 w-auto">
+        <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logoWhite.svg">
+        <img src="assets/brand/logoBlack.svg" alt="Friink" class="footer-logo h-9 w-auto">
       </picture>
       <p class="text-sm text-secondary text-center md:text-left">&copy; 2026 Friink. Built for humans.</p>
     </div>
   </footer>
 
   <script>
-    document.getElementById('waitlist-form').addEventListener('submit', function (event) {
-      event.preventDefault();
-      const button = this.querySelector('button');
-      const input = this.querySelector('input');
-      button.textContent = 'You are on the list';
-      button.disabled = true;
-      input.disabled = true;
+    document.getElementById('waitlist-form').addEventListener('submit', function () {
+      const button = this.querySelector('button[type="submit"]');
+      const input = this.querySelector('input[type="email"]');
+      const confirmation = document.getElementById('subscribe-confirmation');
+      // Delay UI feedback so the browser serializes form data BEFORE inputs are disabled
+      // (disabled inputs are excluded from form submissions)
+      setTimeout(function () {
+        button.textContent = 'You\'re on the list ✓';
+        button.disabled = true;
+        input.disabled = true;
+        confirmation.classList.remove('hidden');
+      }, 500);
     });
   </script>
 </body>
