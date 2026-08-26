@@ -14,6 +14,7 @@ import { ContentBox } from '@/components/content-box';
 import { FloatingActions } from '@/components/floating-actions';
 import { HomeScreen } from '@/components/home-screen';
 import { FloatingBar } from '@/components/floating-bar';
+import { PostComposerControls } from '@/components/post-composer-controls';
 import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
@@ -26,6 +27,7 @@ type AppShellProps = {
   onLogout: () => void;
   initialScreen?: Screen;
   children?: React.ReactNode;
+  floatingBarContent?: React.ReactNode;
   fillContent?: boolean;
   showTabs?: boolean;
 };
@@ -47,16 +49,28 @@ function getDisplayName(user: AuthUser) {
   return user.name.trim() || user.username;
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', children, showTabs, fillContent }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', children, floatingBarContent, showTabs, fillContent }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [postDraft, setPostDraft] = useState('');
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
   const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'privacy'>('general');
+  const [canGoBack, setCanGoBack] = useState(false);
+
+  useEffect(() => {
+    const updateBackAvailability = () => {
+      setCanGoBack(activeScreen !== 'home' && window.history.length > 1);
+    };
+
+    updateBackAvailability();
+    window.addEventListener('popstate', updateBackAvailability);
+    return () => window.removeEventListener('popstate', updateBackAvailability);
+  }, [activeScreen]);
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 767px)');
@@ -139,7 +153,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
       case 'search':
         return 'Search';
       case 'messages':
-        return 'Messages';
+        return 'Chat';
       case 'settings':
         return 'Settings';
       case 'floating':
@@ -154,28 +168,28 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
     // route to pages that have their own app route
     switch (screen) {
       case 'home':
-        router.replace('/home');
+        router.push('/home');
         break;
       case 'profile':
-        router.replace(`/${user.username}`);
+        router.push(`/${user.username}`);
         break;
       case 'connections':
-        router.replace('/connections');
+        router.push('/connections');
         break;
       case 'starred':
-        router.replace('/starred');
+        router.push('/starred');
         break;
       case 'settings':
-        router.replace('/settings');
+        router.push('/settings');
         break;
       case 'post':
-        router.replace('/compose');
+        router.push('/compose');
         break;
       case 'messages':
-        router.replace('/messages');
+        router.push('/chat');
         break;
       case 'floating':
-        router.replace('/floating');
+        router.push('/floating');
         break;
       default:
         break;
@@ -198,6 +212,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
       reactions: 0,
     };
     setPosts((current) => [newPost, ...current]);
+    setPostDraft('');
     setActiveScreen('home');
   }
 
@@ -224,6 +239,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
             <NavigationBar
               title={getPageTitle(activeScreen)}
               onBack={() => router.back()}
+              backDisabled={!canGoBack}
               onMenu={() => setSidebarCollapsed(false)}
             />
           </div>
@@ -265,7 +281,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
                     {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
                     {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
                     {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                    {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} onPost={handlePost} />}
+                    {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} text={postDraft} onTextChange={setPostDraft} />}
                     {activeScreen === 'search' && <SearchScreen />}
                     {activeScreen === 'settings' && (
                       <SettingsScreen
@@ -285,7 +301,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
           </div>
         </section>
 
-        <FloatingBar activeScreen={activeScreen} onNavigate={navigateTo} />
+        <FloatingBar activeScreen={activeScreen} onNavigate={navigateTo}>
+          {floatingBarContent ?? (activeScreen === 'post' && (
+            <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
+          ))}
+        </FloatingBar>
       </div>
     </main>
   );

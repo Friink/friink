@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { clearAuthSession, loadAuthSession, type AuthUser } from '@/lib/auth';
 
-export default function MessagesPage() {
+export default function ChatPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
 

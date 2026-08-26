@@ -1,14 +1,15 @@
 type NavigationBarProps = {
   title: string;
   onBack?: () => void;
+  backDisabled?: boolean;
   onMenu?: () => void;
 };
 
-export function NavigationBar({ title, onBack, onMenu }: NavigationBarProps) {
+export function NavigationBar({ title, onBack, backDisabled = false, onMenu }: NavigationBarProps) {
   return (
     <div className="navigationbar" aria-label={`${title} navigation`}>
       <div className="navigationbar-left">
-        <button className="navigationbar-button navigationbar-back" type="button" onClick={onBack} aria-label="Go back">
+        <button className="navigationbar-button navigationbar-back" type="button" onClick={onBack} disabled={backDisabled} aria-label="Go back">
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />
         </button>
 

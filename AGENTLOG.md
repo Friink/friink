@@ -19,6 +19,41 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 02:37 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rework the floating navigation into a persistent contextual bar, move chat and post-composer controls into it, rename the message-list route to `/chat`, and correct the resulting fallback, sizing, and compose-layout regressions.
+- Changes Made:
+  - Renamed `BottomNavigation` and its `bottom-nav` CSS namespace to `FloatingBar` and `floating-bar`.
+  - Added contextual-content support to `FloatingBar`: the default three-item navigation shrinks to its natural width, while chat and post controls expand across the available content width.
+  - Added reusable `ChatComposer` controls to the floating bar for direct `/{username}/chat` screens, removing the standalone composer from that route.
+  - Added `PostComposerControls` to the floating bar, lifted the post draft state into `AppShell`, and retained the textarea in `PostScreen`.
+  - Renamed `web/app/messages` to `web/app/chat` and changed the app-shell navigation target to `/chat`.
+  - Fixed the false-child fallback that hid the default navigation controls outside composer mode.
+  - Simplified compose overflow and sizing rules so the textarea stays above the bar and avoids nested scroll containers.
+- Files/Scope Touched:
+  - web/components/floating-bar.tsx (renamed and modified)
+  - web/components/app-shell.tsx (modified)
+  - web/components/chat-composer.tsx (added)
+  - web/components/post-composer-controls.tsx (added)
+  - web/components/post-screen.tsx (modified)
+  - web/app/chat/page.tsx (renamed from `web/app/messages/page.tsx` and modified)
+  - web/app/[username]/chat/page.tsx (modified)
+  - web/app/globals.css (modified)
+  - web/components/screens.tsx (renamed legacy export)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: A single persistent bar provides a consistent interaction surface while allowing chat and composing actions to occupy the full available width. Compose-specific sizing prevents controls from obscuring text or creating competing scroll containers.
+- Notes for next agent:
+  - The attachment buttons are visual placeholders; no attachment-upload behavior has been implemented.
+  - The default floating bar must continue to treat `false`, `null`, and `undefined` as no contextual content so its normal navigation buttons render.
+  - Direct chats use the contextual composer at `/{username}/chat`; the list route is `/chat`.
+- Verified Working?: yes — repeated `cd web && npm run build` runs completed successfully after the final CSS and component changes.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-18 13:10 UTC
 - Agent: Antigravity
 - Model: Claude Opus 4.6

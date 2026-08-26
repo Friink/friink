@@ -12,11 +12,26 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-18_
+_Last updated: 2026-08-27_
 
 - [api] All broken/non-functional backend auth controllers, services, database schemas, and drizzle migrations have been removed from `api/`. The `AppModule` and `package.json` in `api/` are kept minimal and clean.
 - [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
 - [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
+- [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
+
+## 2026-08-27
+
+### Changed
+- [web] Renamed the floating navigation component and styling namespace to `FloatingBar` / `floating-bar`, and made the default three-icon navigation compact while contextual composer modes span the available page width.
+- [web] Moved direct-chat attachment, message, and send controls into the floating bar. Moved post attachment and publish controls into the same bar while keeping the post textarea in the compose screen.
+- [web] Renamed the message-list route from `/messages` to `/chat` and updated app-shell navigation.
+
+### Fixed
+- [web] Restored the default floating navigation fallback when no contextual controls are provided, so the Compose control remains available.
+- [web] Removed nested compose scrolling and constrained the post textarea to end above the persistent floating bar.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed.
 
 ## 2026-08-18
 

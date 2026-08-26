@@ -1261,6 +1261,12 @@ textarea {
   justify-self: flex-start;
 }
 
+.navigationbar-back:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .navigationbar-menu {
   justify-self: flex-end;
 }
@@ -1899,6 +1905,19 @@ textarea {
   opacity: 0.4;
 }
 
+.floating-bar-composer {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  position: static;
+}
+
+.floating-bar-composer input {
+  height: 2.5rem;
+}
+
 /* Profile */
 .profile-screen {
   width: min(100%, 1024px);
@@ -2312,6 +2331,10 @@ input[type="search"]:focus {
   padding-top: 0;
 }
 
+.content-box.fill-viewport:has(.post-screen) {
+  overflow: hidden;
+}
+
 /* Floating contextual actions container */
 .floating-actions {
   position: fixed;
@@ -2360,10 +2383,9 @@ input[type="search"]:focus {
 .post-screen {
   display: flex;
   flex-direction: column;
-  /* constrain composer to viewport so it doesn't overflow */
-  height: calc(100vh - var(--space-topbar-height));
+  height: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .post-screen-header {
@@ -2415,10 +2437,9 @@ input[type="search"]:focus {
 .post-composer {
   display: flex;
   flex: 1 1 auto;
-  padding: 0.75rem 0;
+  padding: 0.75rem 0 0;
   min-height: 0;
-  max-height: calc(100vh - var(--space-topbar-height) - 8.5rem);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .post-composer-body {
@@ -2448,11 +2469,11 @@ input[type="search"]:focus {
 .post-composer textarea {
   width: 100%;
   flex: 1 1 auto;
-  min-height: 24vh;
-  max-height: calc(100vh - var(--space-topbar-height) - 8rem);
+  min-height: 0;
+  max-height: none;
   margin-top: 0.75rem;
   padding: 1rem;
-  resize: vertical;
+  resize: none;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   background: var(--color-paper);
@@ -2510,12 +2531,32 @@ input[type="search"]:focus {
   background: var(--color-paper);
 }
 
+.floating-bar-contextual {
+  justify-content: stretch;
+  width: calc(100% - 2.5rem);
+}
+
+.floating-bar:not(.floating-bar-contextual) {
+  width: max-content;
+}
+
+.post-composer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
 .floating-bar-item {
   display: grid;
   place-items: center;
   flex: 1;
-  min-width: 2.5rem;
-  min-height: 2.75rem;
+  width: 5rem;
+  min-width: 5rem;
+  height: 100%;
+  min-height: 0;
   border-radius: var(--radius-pill);
   border: 0;
   color: var(--color-ink);
@@ -2528,10 +2569,6 @@ input[type="search"]:focus {
   background: var(--color-brand-soft);
 }
 
-.app-layout:has(.chat-screen) .floating-bar {
-  display: none;
-}
-
 .app-layout:has(.chat-screen) .main-content {
   height: calc(100vh - var(--space-topbar-height));
   overflow: hidden;
@@ -2540,18 +2577,13 @@ input[type="search"]:focus {
 
 .main-content {
   padding-top: 0;
-  padding-bottom: calc(3.75rem + 2rem);
+  padding-bottom: calc(var(--space-floating-bar-height) + 2rem);
 }
 
 @media (max-width: 767px) {
   .main-content {
-    padding-bottom: 0;
+    padding-bottom: calc(var(--space-floating-bar-height) + 1rem);
   }
-}
-
-/* Hide the floating bar when composing a post */
-.app-layout:has(.post-screen) .floating-bar {
-  display: none;
 }
 
 /* Post footer actions placed at bottom of viewport for composer screens */
@@ -2619,6 +2651,14 @@ input[type="search"]:focus {
     right: auto;
     width: min(28rem, calc(100vw - var(--desktop-sidebar-width) - 2.5rem));
     transform: translateX(-50%);
+  }
+
+  .floating-bar.floating-bar-contextual {
+    width: calc(100vw - var(--desktop-sidebar-width) - 2.5rem);
+  }
+
+  .floating-bar:not(.floating-bar-contextual) {
+    width: max-content;
   }
 
   .sidebar {

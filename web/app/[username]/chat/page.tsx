@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
+import { ChatComposer } from '@/components/chat-composer';
 import { ProfileCard } from '@/components/profile-card';
 import { mockConversations } from '@/lib/mock-conversations';
 import { loadAuthSession, type AuthUser, clearAuthSession } from '@/lib/auth';
@@ -51,7 +52,14 @@ export default function ChatPage() {
   }
 
   return (
-    <AppShell user={user} onLogout={handleLogout} initialScreen="messages" showTabs={false} fillContent>
+    <AppShell
+      user={user}
+      onLogout={handleLogout}
+      initialScreen="messages"
+      showTabs={false}
+      fillContent
+      floatingBarContent={<ChatComposer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />}
+    >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
           <button className="icon-plain" type="button" onClick={() => router.back()} aria-label="Back">
@@ -72,15 +80,6 @@ export default function ChatPage() {
           ))}
         </div>
 
-        <form className="chat-composer" onSubmit={sendMessage}>
-          <button className="icon-plain" type="button" aria-label="Attach file">
-            <i className="fa-solid fa-paperclip" aria-hidden="true" />
-          </button>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Write a message..." aria-label="Message" />
-          <button className="chat-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
-            <i className="fa-solid fa-arrow-up" aria-hidden="true" />
-          </button>
-        </form>
       </section>
     </AppShell>
   );
