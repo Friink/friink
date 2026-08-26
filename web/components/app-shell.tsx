@@ -13,7 +13,7 @@ import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
 import { FloatingActions } from '@/components/floating-actions';
 import { HomeScreen } from '@/components/home-screen';
-import { BottomNavigation } from '@/components/bottom-navigation';
+import { FloatingBar } from '@/components/floating-bar';
 import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
@@ -285,7 +285,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, sho
           </div>
         </section>
 
-        <BottomNavigation activeScreen={activeScreen} onNavigate={navigateTo} />
+        <FloatingBar activeScreen={activeScreen} onNavigate={navigateTo} />
       </div>
     </main>
   );

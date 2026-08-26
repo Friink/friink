@@ -141,6 +141,6 @@ export function ScreenForNav({ activeNav }: { activeNav: string }) {
   return null;
 }
 
-export function BottomNavigation() {
+export function FloatingBar() {
   return navItems.slice(0, 4).map((item) => <span key={item.label}>{item.label}</span>);
 }

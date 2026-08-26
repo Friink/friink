@@ -1,16 +1,16 @@
 import { navItems, type Screen } from '@/lib/data';
 
-type BottomNavigationProps = {
+type FloatingBarProps = {
   activeScreen: Screen;
   onNavigate: (screen: Screen) => void;
 };
 
-export function BottomNavigation({ activeScreen, onNavigate }: BottomNavigationProps) {
+export function FloatingBar({ activeScreen, onNavigate }: FloatingBarProps) {
   return (
-    <nav className="bottom-nav" aria-label="Mobile navigation">
+    <nav className="floating-bar" aria-label="Contextual navigation">
       {navItems.filter((item) => item.id !== 'search' && item.id !== 'connections').map((item) => (
         <button
-          className={`bottom-nav-item${activeScreen === item.id ? ' active' : ''}`}
+          className={`floating-bar-item${activeScreen === item.id ? ' active' : ''}`}
           key={item.id}
           type="button"
           onClick={() => onNavigate(item.id)}
