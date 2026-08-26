@@ -53,18 +53,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
 
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
-      <div className="sidebar-header">
-        <button
-          className="sidebar-menu-button"
-          type="button"
-          onClick={onToggleCollapsed}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-pressed={collapsed}
-        >
-          <i className="fa-solid fa-bars" aria-hidden="true" />
-        </button>
-      </div>
-
       <div className="sidebar-profile">
         <ProfileCard user={user} />
       </div>

@@ -4,7 +4,6 @@ import type { AuthUser } from '@/lib/auth';
 
 type PostScreenProps = {
   user: AuthUser;
-  onBack: () => void;
   text: string;
   onTextChange: (text: string) => void;
 };
@@ -22,13 +21,10 @@ function getInitials(value: string) {
   );
 }
 
-export function PostScreen({ user, onBack, text, onTextChange }: PostScreenProps) {
+export function PostScreen({ user, text, onTextChange }: PostScreenProps) {
   return (
     <section className="post-screen">
       <div className="chat-header">
-        <button className="icon-plain" type="button" onClick={onBack} aria-label="Back">
-          <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-        </button>
         <ProfileCard user={user} />
       </div>
 

@@ -62,9 +62,6 @@ export default function ChatPage() {
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <button className="icon-plain" type="button" onClick={() => router.back()} aria-label="Back">
-            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-          </button>
           <ProfileCard user={user} />
         </div>
 

@@ -25,6 +25,7 @@ _Last updated: 2026-08-27_
 - [web] Renamed the floating navigation component and styling namespace to `FloatingBar` / `floating-bar`, and made the default three-icon navigation compact while contextual composer modes span the available page width.
 - [web] Moved direct-chat attachment, message, and send controls into the floating bar. Moved post attachment and publish controls into the same bar while keeping the post textarea in the compose screen.
 - [web] Renamed the message-list route from `/messages` to `/chat` and updated app-shell navigation.
+- [dev] Consolidated the root `localhost/` helpers around `start-local-dev.ps1`; it now stops only the listener on port 3000 and clears the generated `.next` cache before launching the web dev server. Removed the unused status checker and stale backend-oriented setup guide.
 
 ### Fixed
 - [web] Restored the default floating navigation fallback when no contextual controls are provided, so the Compose control remains available.

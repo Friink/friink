@@ -39,9 +39,6 @@ export function MessagesScreen() {
     return (
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <button className="icon-plain" type="button" onClick={() => setActiveConversationId(null)} aria-label="Back to messages">
-            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-          </button>
           <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
           <div className="chat-contact">
             <strong>{activeConversation.name}</strong>

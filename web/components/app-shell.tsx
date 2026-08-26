@@ -281,7 +281,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
                     {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
                     {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
                     {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                    {activeScreen === 'post' && <PostScreen user={user} onBack={() => setActiveScreen('home')} text={postDraft} onTextChange={setPostDraft} />}
+                    {activeScreen === 'post' && <PostScreen user={user} text={postDraft} onTextChange={setPostDraft} />}
                     {activeScreen === 'search' && <SearchScreen />}
                     {activeScreen === 'settings' && (
                       <SettingsScreen

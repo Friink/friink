@@ -19,6 +19,30 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 03:02 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the root `localhost/` helper files, retain only the useful launcher, and make it automatically free port 3000 before starting the frontend.
+- Changes Made:
+  - Updated `localhost/start-local-dev.ps1` to find listener processes on port 3000, stop only those processes, clear the generated `web/.next` cache, and then launch `web` with `npm run dev:local`.
+  - Removed the unused `localhost/check-local-services.ps1` status-only helper.
+  - Removed `localhost/localhost.md`, which documented obsolete API/database startup paths and contained outdated local setup material.
+- Files/Scope Touched:
+  - localhost/start-local-dev.ps1 (modified)
+  - localhost/check-local-services.ps1 (deleted)
+  - localhost/localhost.md (deleted)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The frontend is the only active local service for this demo, and the user relies on one launcher. Clearing the exact occupied listener removes repeated manual port-3000 recovery while eliminating unused and stale helpers.
+- Notes for next agent:
+  - `web/start-local.cmd` remains as a separate CMD-only launcher; it does not clear port 3000.
+  - The PowerShell launcher intentionally stops only processes listening on port 3000 and removes only the generated `web/.next` cache, avoiding the OneDrive reparse-point `readlink` failure on startup.
+- Verified Working?: pending — script behavior should be confirmed by launching `localhost/start-local-dev.ps1` from a normal local PowerShell session.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 02:37 +05:00
 - Agent: Codex
 - Model: GPT-5
