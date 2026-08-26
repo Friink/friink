@@ -19,6 +19,90 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 03:02 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the root `localhost/` helper files, retain only the useful launcher, and make it automatically free port 3000 before starting the frontend.
+- Changes Made:
+  - Updated `localhost/start-local-dev.ps1` to find listener processes on port 3000, stop only those processes, clear the generated `web/.next` cache, and then launch `web` with `npm run dev:local`.
+  - Removed the unused `localhost/check-local-services.ps1` status-only helper.
+  - Removed `localhost/localhost.md`, which documented obsolete API/database startup paths and contained outdated local setup material.
+- Files/Scope Touched:
+  - localhost/start-local-dev.ps1 (modified)
+  - localhost/check-local-services.ps1 (deleted)
+  - localhost/localhost.md (deleted)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The frontend is the only active local service for this demo, and the user relies on one launcher. Clearing the exact occupied listener removes repeated manual port-3000 recovery while eliminating unused and stale helpers.
+- Notes for next agent:
+  - `web/start-local.cmd` remains as a separate CMD-only launcher; it does not clear port 3000.
+  - The PowerShell launcher intentionally stops only processes listening on port 3000 and removes only the generated `web/.next` cache, avoiding the OneDrive reparse-point `readlink` failure on startup.
+- Verified Working?: pending — script behavior should be confirmed by launching `localhost/start-local-dev.ps1` from a normal local PowerShell session.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 02:37 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rework the floating navigation into a persistent contextual bar, move chat and post-composer controls into it, rename the message-list route to `/chat`, and correct the resulting fallback, sizing, and compose-layout regressions.
+- Changes Made:
+  - Renamed `BottomNavigation` and its `bottom-nav` CSS namespace to `FloatingBar` and `floating-bar`.
+  - Added contextual-content support to `FloatingBar`: the default three-item navigation shrinks to its natural width, while chat and post controls expand across the available content width.
+  - Added reusable `ChatComposer` controls to the floating bar for direct `/{username}/chat` screens, removing the standalone composer from that route.
+  - Added `PostComposerControls` to the floating bar, lifted the post draft state into `AppShell`, and retained the textarea in `PostScreen`.
+  - Renamed `web/app/messages` to `web/app/chat` and changed the app-shell navigation target to `/chat`.
+  - Fixed the false-child fallback that hid the default navigation controls outside composer mode.
+  - Simplified compose overflow and sizing rules so the textarea stays above the bar and avoids nested scroll containers.
+- Files/Scope Touched:
+  - web/components/floating-bar.tsx (renamed and modified)
+  - web/components/app-shell.tsx (modified)
+  - web/components/chat-composer.tsx (added)
+  - web/components/post-composer-controls.tsx (added)
+  - web/components/post-screen.tsx (modified)
+  - web/app/chat/page.tsx (renamed from `web/app/messages/page.tsx` and modified)
+  - web/app/[username]/chat/page.tsx (modified)
+  - web/app/globals.css (modified)
+  - web/components/screens.tsx (renamed legacy export)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: A single persistent bar provides a consistent interaction surface while allowing chat and composing actions to occupy the full available width. Compose-specific sizing prevents controls from obscuring text or creating competing scroll containers.
+- Notes for next agent:
+  - The attachment buttons are visual placeholders; no attachment-upload behavior has been implemented.
+  - The default floating bar must continue to treat `false`, `null`, and `undefined` as no contextual content so its normal navigation buttons render.
+  - Direct chats use the contextual composer at `/{username}/chat`; the list route is `/chat`.
+- Verified Working?: yes — repeated `cd web && npm run build` runs completed successfully after the final CSS and component changes.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-18 13:10 UTC
+- Agent: Antigravity
+- Model: Claude Opus 4.6
+- Prompt Summary: Integrate the Zoho Email Subscription form into the landing page's subscribe section, replacing the dummy non-functional form with the real Zoho endpoint while preserving the site's existing theme and styling.
+- Changes Made:
+  - Replaced the dummy `#waitlist-form` in the subscribe section of `web/public/friink-site/index.html` with a real Zoho form that POSTs to the `EmailSubscription` endpoint.
+  - Added required Zoho hidden fields (`zf_referrer_name`, `zf_redirect_url`, `zc_gad`) to the form.
+  - Changed the email input `name` attribute from `email` to `Email` and added `fieldType="9"` and `maxlength="255"` to match the Zoho field schema.
+  - Added a hidden `<iframe>` (`zoho-hidden-frame`) as the form's `target` so submissions don't navigate the user away from the page.
+  - Removed `event.preventDefault()` from the submit handler so the form actually submits to Zoho.
+  - Wrapped the UI feedback (button text change, input disable) in a `setTimeout(500)` to prevent the browser from excluding disabled inputs from the submitted form data.
+  - Added a "No spam. It's a promise." confirmation message that appears after submission.
+- Files/Scope Touched:
+  - web/public/friink-site/index.html (modified — subscribe section form and submit script)
+- Reason/Decision: The existing subscribe form was purely cosmetic with `preventDefault()` blocking submission. The user needed actual email collection via their Zoho Forms account. The hidden iframe approach keeps the user on-page while submitting cross-origin to Zoho. The `setTimeout` fix was needed because disabling inputs synchronously in the submit handler caused browsers to omit the `Email` field from the POST data.
+- Notes for next agent:
+  - The subscribe form at `#subscribe` now submits to Zoho Forms. Verify entries appear in the Zoho dashboard after submission.
+  - All existing Tailwind theme classes and dark mode styles remain unchanged.
+  - The landing page is still served via iframe from `web/app/page.tsx`.
+- Verified Working?: yes — form structure matches the original Zoho form; submit handler allows native form submission before disabling inputs.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-18 00:05 UTC
 - Agent: Antigravity
 - Model: Gemini 3.7 Flash

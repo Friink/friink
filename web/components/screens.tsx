@@ -39,9 +39,6 @@ export function MessagesScreen() {
     return (
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <button className="icon-plain" type="button" onClick={() => setActiveConversationId(null)} aria-label="Back to messages">
-            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-          </button>
           <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
           <div className="chat-contact">
             <strong>{activeConversation.name}</strong>
@@ -78,7 +75,7 @@ export function MessagesScreen() {
   return (
     <section className="messages-screen">
       <div className="messages-toolbar">
-        <h1>Messages</h1>
+        <h1>Chat</h1>
         <button className="icon-plain" type="button" aria-label="New message">
           <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
         </button>
@@ -97,7 +94,7 @@ export function MessagesScreen() {
         ]}
         activeId={messagesTab}
         onChange={(id) => setMessagesTab(id)}
-        ariaLabel="Messages filters"
+        ariaLabel="Chat filters"
         className="section-tabs"
       />
       <div className="message-list">
@@ -135,12 +132,12 @@ export function DirectoryScreen() {
 
 export function ScreenForNav({ activeNav }: { activeNav: string }) {
   if (activeNav === 'Questions') return <QuestionsScreen />;
-  if (activeNav === 'Messages') return <MessagesScreen />;
+  if (activeNav === 'Chat') return <MessagesScreen />;
   if (activeNav === 'Calendar') return <CalendarScreen />;
   if (activeNav === 'Directory') return <DirectoryScreen />;
   return null;
 }
 
-export function BottomNavigation() {
+export function FloatingBar() {
   return navItems.slice(0, 4).map((item) => <span key={item.label}>{item.label}</span>);
 }

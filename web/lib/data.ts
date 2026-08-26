@@ -26,7 +26,7 @@ export const navItems: NavItem[] = [
   { id: 'connections', label: 'Connections', icon: 'fa-solid fa-users' },
   { id: 'post', label: 'Post', icon: 'fa-solid fa-pen' },
   { id: 'search', label: 'Search', icon: 'fa-solid fa-magnifying-glass' },
-  { id: 'messages', label: 'Messages', icon: 'fa-solid fa-envelope' },
+  { id: 'messages', label: 'Chat', icon: 'fa-solid fa-envelope' },
 ];
 
 export const sidebarNavItems: NavItem[] = [
