@@ -228,13 +228,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
           onLogout={onLogout}
         />
 
-        <section className="main-panel">
-          <Header
-            onNavigate={navigateTo}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
-          />
+        <Header
+          onNavigate={navigateTo}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
+        />
 
+        <section className="main-panel">
           <div className="mobile-page-navigation">
             <NavigationBar
               title={getPageTitle(activeScreen)}
