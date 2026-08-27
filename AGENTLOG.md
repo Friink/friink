@@ -54,6 +54,46 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 18:36 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a final period to the duplicate-username signup error message.
+- Changes Made:
+  - Updated the FastAPI duplicate-username conflict detail from `Username is already taken` to `Username is already taken.`
+  - Recorded the copy-only backend change in `CHANGELOG.md`.
+- Files/Scope Touched:
+  - api/app/services/auth.py
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The frontend surfaces FastAPI auth error `detail` messages directly, so changing the backend copy keeps the UI message consistent everywhere.
+- Notes:
+  - No signup flow, routing, layout, or field order changes were made.
+- Verified Working?: yes — `.\.venv\Scripts\python.exe -m pytest` passed all 5 API tests; pytest emitted a sandbox-only cache write warning.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 18:28 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the merged auth tree after a conflict resolution and update logs.
+- Changes Made:
+  - Scanned the repository for unresolved merge conflict markers.
+  - Re-read the auth client and login/signup screen to confirm the FastAPI auth wiring, username autofill change, and backend error message handling survived the merge.
+  - Recorded the verification in `CHANGELOG.md` and `AGENTLOG.md`.
+- Files/Scope Touched:
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The user reported a merge conflict and asked to verify that everything is fine before ending the session.
+- Notes:
+  - No auth code changes were needed during this verification pass.
+- Verified Working?: yes — no `<<<<<<<`, `=======`, or `>>>>>>>` conflict markers were found; `npm --prefix web run build` passed after rerunning outside the sandbox due to the known Next.js worker-spawn `EPERM`; `npx tsc --noEmit` passed in `web`.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 18:20 +05:00
 - Agent: Codex
 - Model: GPT-5

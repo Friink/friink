@@ -28,7 +28,7 @@ async def create_user(session: AsyncSession, data: SignupRequest, email_service:
     if await get_user_by_email(session, data.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
     if await get_user_by_username(session, data.username):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
 
     user = User(
         email=data.email.lower(),

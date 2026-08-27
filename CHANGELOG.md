@@ -39,6 +39,19 @@ _Last updated: 2026-08-27_
 ## 2026-08-27
 
 ### Changed
+- [api] Updated the duplicate-username signup error copy to `Username is already taken.` so the frontend alert includes the final period.
+
+### Verified
+- [api] Ran `.\.venv\Scripts\python.exe -m pytest` in `api`; all 5 tests passed, with a sandbox-only pytest cache write warning.
+
+## 2026-08-27
+
+### Verified
+- [web] Checked the merged auth changes after conflict resolution: no conflict markers were present, `npm --prefix web run build` completed successfully after the known sandbox worker-spawn retry, and `npx tsc --noEmit` passed in `web`.
+
+## 2026-08-27
+
+### Changed
 - [web] Reconnected the auth client to FastAPI signup/login responses, preserved backend auth error details in the login/signup alert, and stopped the signup username field from using browser username autofill.
 
 ### Verified
