@@ -5,6 +5,12 @@
 > codebase, add a dated entry here summarizing what changed and why. Also
 > read AGENTLOG.md for the most recent detailed change context.
 >
+> DESIGN SYSTEM RULE: Before making any visual, UI, layout, spacing, or
+> styling change, you MUST read packages/design/design.md in full —
+> specifically the "Tokens" and "Component Contracts" sections. All rules,
+> dimensions, alignments, and component variants documented there are
+> binding and must be strictly adhered to without creating ad-hoc overrides.
+>
 > NOTE FOR AGENTS: Whenever you update this file, you MUST also append a
 > corresponding detailed entry to AGENTLOG.md describing the exact files or
 > scope touched and why. Keep both files synchronized.
@@ -27,11 +33,18 @@ _Last updated: 2026-08-27_
 - [web] The three-dot page navigation control now opens a reusable dummy options menu instead of expanding the sidebar.
 - [web] Removed the unused `FloatingActions` component, its empty render in the app shell, and its leftover CSS.
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
+- [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
+- [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
 
 ## 2026-08-27
 
 ### Changed
-- [docs] Removed a misleading component-registry note from `AGENTLOG.md` that implied only `notifications-screen.tsx` and `profile-screen.tsx` should be treated as reusable page modules.
+- [docs] Updated `packages/design/design.md` prose sections (Layout, Navigation, Feed Behavior) to accurately describe current shipped behavior (partitioned navigation across `FloatingBar`, `SideDrawer`, and `Header`; `/chat` route naming; `Explore`/`Connections` home tabs) with dated paper trail notes.
+- [docs] Verified all 10 component contracts against active component implementations across all usage contexts (no contract violations found).
+- [docs] Added a permanent standing instruction to `CHANGELOG.md` and `AGENTLOG.md` requiring agents to read `design.md`'s Tokens and Component Contracts sections before making any visual/UI/UX changes.
+
+### Verified
+- [web] Ran `npm --prefix web run build` to confirm clean compilation and zero route errors.
 
 ### Verified
 - [docs] Re-read the top of `AGENTLOG.md` to confirm the registry note was removed cleanly.
