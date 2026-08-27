@@ -15,6 +15,60 @@ export type AuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+
+type ApiUser = {
+  id: string;
+  email: string;
+  username: string;
+  date_of_birth: string;
+  location: string | null;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type ApiTokenResponse = {
+  access_token: string;
+  token_type: string;
+  user: ApiUser;
+};
+
+async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Friink API request failed with ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function mapApiUser(user: ApiUser, nameFallback?: string): AuthUser {
+  return {
+    id: user.id,
+    name: nameFallback || user.username,
+    email: user.email,
+    username: user.username,
+    status: 'active',
+    emailVerifiedAt: user.is_verified ? user.created_at : null,
+  };
+}
+
+function mapTokenResponse(response: ApiTokenResponse, nameFallback?: string): AuthSession {
+  return {
+    accessToken: response.access_token,
+    tokenType: 'Bearer',
+    user: mapApiUser(response.user, nameFallback),
+  };
+}
 
 export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSession {
   const demoUser: AuthUser = {
@@ -41,14 +95,25 @@ export async function signUp(input: {
   password: string;
   dateOfBirth: string;
 }): Promise<AuthSession> {
-  return createDemoSession({
-    id: `demo-${input.username || 'user'}`,
-    name: input.name || 'Demo User',
-    email: input.email || DEFAULT_DEMO_EMAIL,
-    username: input.username || 'demouser',
-    status: 'active',
-    emailVerifiedAt: new Date().toISOString(),
+  const user = await requestApi<ApiUser>('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: input.email,
+      username: input.username,
+      password: input.password,
+      date_of_birth: input.dateOfBirth,
+      location: null,
+    }),
   });
+
+  const loginSession = await login(input.email, input.password);
+  return {
+    ...loginSession,
+    user: {
+      ...mapApiUser(user, input.name || user.username),
+      emailVerifiedAt: loginSession.user.emailVerifiedAt,
+    },
+  };
 }
 
 export function saveAuthSession(session: AuthSession) {
@@ -89,9 +154,10 @@ export function clearAuthSession() {
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
-  return createDemoSession({
-    email: email || DEFAULT_DEMO_EMAIL,
-    username: email ? email.split('@')[0] || 'demouser' : 'demouser',
-    name: 'Demo User',
+  const response = await requestApi<ApiTokenResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
   });
+
+  return mapTokenResponse(response);
 }
