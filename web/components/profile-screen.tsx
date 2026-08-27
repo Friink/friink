@@ -11,6 +11,7 @@ type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
   isOwnProfile?: boolean;
+  onQuote?: (post: Post) => void;
 };
 
 type ProfileTab = 'posts' | 'replies';
@@ -33,7 +34,7 @@ function getInitials(value: string) {
   );
 }
 
-export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScreenProps) {
+export function ProfileScreen({ user, posts, isOwnProfile = true, onQuote }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
 
@@ -82,7 +83,7 @@ export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScree
 
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (
-          profilePosts.map((post) => <FeedPost key={post.id} post={post} />)
+          profilePosts.map((post) => <FeedPost key={post.id} post={post} onQuote={onQuote} />)
         ) : (
           <div className="profile-empty">
             <i className="fa-regular fa-comment" aria-hidden="true" />

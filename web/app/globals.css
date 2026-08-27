@@ -2480,6 +2480,36 @@ textarea {
   line-height: 1.45;
 }
 
+.feed-post-quote {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+}
+
+.feed-post-quote strong {
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+}
+
+.feed-post-quote p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.feed-post-quote-unavailable {
+  opacity: 0.75;
+}
+
+.post-screen-quote {
+  margin-bottom: 0;
+}
+
 .feed-post-actions {
   display: flex;
   justify-content: space-between;
@@ -3011,8 +3041,8 @@ input[type="search"]:focus {
   }
 
   .sidebar-collapsed .sidebar-profile .user-avatar {
-    width: 3rem;
-    height: 3rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .sidebar-collapsed .nav-item,

@@ -12,7 +12,7 @@ export function FloatingBar({ activeScreen, onNavigate, children }: FloatingBarP
 
   return (
     <nav className={`floating-bar${hasContextualContent ? ' floating-bar-contextual' : ''}`} aria-label={hasContextualContent ? 'Contextual actions' : 'Contextual navigation'}>
-      {hasContextualContent ? children : navItems.filter((item) => item.id !== 'search' && item.id !== 'connections').map((item) => (
+      {hasContextualContent ? children : navItems.filter((item) => item.id === 'post').map((item) => (
         <button
           className={`floating-bar-item${activeScreen === item.id ? ' active' : ''}`}
           key={item.id}

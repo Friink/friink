@@ -18,9 +18,10 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-27_
+_Last updated: 2026-08-28_
 
-- [api] The wiped `api/` folder now contains a structured FastAPI auth backend with async SQLAlchemy/Postgres wiring, Alembic migrations, signup/login/JWT/refresh/logout routes, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] The wiped `api/` folder now contains a structured FastAPI backend with async SQLAlchemy/Postgres wiring, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, text-only post and quote-post creation, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] Posts and quote-posts use a single `posts` table with nullable `quoted_post_id`; media schema is reserved through minimal `post_media` storage placeholders, but upload/compression/storage remains pending an object storage decision.
 - [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
 - [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
@@ -35,6 +36,27 @@ _Last updated: 2026-08-27_
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-28
+
+### Changed
+- [web] Moved Home and Chat from the default `FloatingBar` into the `SideDrawer`, leaving the floating default action as Post only.
+- [web] Updated the sidebar navigation order to Profile, Home, Connections, Chat, Starred, and reduced the collapsed desktop profile avatar size for better alignment.
+- [docs] Updated the design contract to match the new SideDrawer/FloatingBar navigation split.
+
+## 2026-08-28
+
+### Added
+- [api] Added text-only post creation and quote-post creation using a unified `POST /posts` endpoint with optional `quoted_post_id`.
+- [api] Added Alembic schema for `posts` plus reserved `post_media` placeholders without upload, compression, storage, or share logic.
+- [web] Wired the compose flow to the posts API and added basic quote display in feed posts and the composer.
+
+### Changed
+- [docs] Updated the design system content-width guidance to remove the obsolete fixed `1024px` shell-content rule.
+
+### Notes
+- [api] Media handling remains deferred pending the object storage decision.
+- [api] Quote-of-a-quote is allowed and displays only the directly quoted post. Soft-deleted or unavailable quoted originals serialize as `Original post unavailable.`
 
 ## 2026-08-27
 

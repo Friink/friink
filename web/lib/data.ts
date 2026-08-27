@@ -1,5 +1,5 @@
 export type Post = {
-  id: number;
+  id: string;
   name: string;
   handle: string;
   initials: string;
@@ -11,6 +11,12 @@ export type Post = {
   isStarred: boolean;
   replies: number;
   reactions: number;
+  quotedPost?: {
+    id: string | null;
+    authorUsername: string | null;
+    content: string;
+    unavailable: boolean;
+  } | null;
 };
 
 export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'post' | 'search' | 'messages' | 'notifications' | 'settings' | 'floating';
@@ -31,13 +37,15 @@ export const navItems: NavItem[] = [
 
 export const sidebarNavItems: NavItem[] = [
   { id: 'profile', label: 'Profile', icon: 'fa-solid fa-user' },
+  { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
   { id: 'connections', label: 'Connections', icon: 'fa-solid fa-user-group' },
+  { id: 'messages', label: 'Chat', icon: 'fa-solid fa-envelope' },
   { id: 'starred', label: 'Starred', icon: 'fa-solid fa-star' },
 ];
 
 export const initialPosts: Post[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Maya Chen',
     handle: '@mayachen',
     initials: 'MC',
@@ -51,7 +59,7 @@ export const initialPosts: Post[] = [
     reactions: 24,
   },
   {
-    id: 2,
+    id: '2',
     name: 'Jon Bell',
     handle: '@jonbell',
     initials: 'JB',
@@ -65,7 +73,7 @@ export const initialPosts: Post[] = [
     reactions: 11,
   },
   {
-    id: 3,
+    id: '3',
     name: 'Priya Shah',
     handle: '@priyashah',
     initials: 'PS',
@@ -79,7 +87,7 @@ export const initialPosts: Post[] = [
     reactions: 36,
   },
   {
-    id: 4,
+    id: '4',
     name: 'Alina Ross',
     handle: '@alinaross',
     initials: 'AR',
@@ -93,7 +101,7 @@ export const initialPosts: Post[] = [
     reactions: 18,
   },
   {
-    id: 5,
+    id: '5',
     name: 'Leo Park',
     handle: '@leopark',
     initials: 'LP',
@@ -107,7 +115,7 @@ export const initialPosts: Post[] = [
     reactions: 29,
   },
   {
-    id: 6,
+    id: '6',
     name: 'Nia Patel',
     handle: '@niapatel',
     initials: 'NP',
@@ -121,7 +129,7 @@ export const initialPosts: Post[] = [
     reactions: 21,
   },
   {
-    id: 7,
+    id: '7',
     name: 'Omar Ali',
     handle: '@omarali',
     initials: 'OA',
@@ -135,7 +143,7 @@ export const initialPosts: Post[] = [
     reactions: 26,
   },
   {
-    id: 8,
+    id: '8',
     name: 'Sara Kim',
     handle: '@sarakim',
     initials: 'SK',
@@ -149,7 +157,7 @@ export const initialPosts: Post[] = [
     reactions: 15,
   },
   {
-    id: 9,
+    id: '9',
     name: 'Theo Grant',
     handle: '@theogrant',
     initials: 'TG',
@@ -163,7 +171,7 @@ export const initialPosts: Post[] = [
     reactions: 31,
   },
   {
-    id: 10,
+    id: '10',
     name: 'Rita Gomez',
     handle: '@ritagomez',
     initials: 'RG',
@@ -177,7 +185,7 @@ export const initialPosts: Post[] = [
     reactions: 23,
   },
   {
-    id: 11,
+    id: '11',
     name: 'Dev Carter',
     handle: '@devcarter',
     initials: 'DC',
@@ -191,7 +199,7 @@ export const initialPosts: Post[] = [
     reactions: 20,
   },
   {
-    id: 12,
+    id: '12',
     name: 'Iris Chen',
     handle: '@irischen',
     initials: 'IC',
@@ -205,7 +213,7 @@ export const initialPosts: Post[] = [
     reactions: 34,
   },
   {
-    id: 13,
+    id: '13',
     name: 'Noah Lee',
     handle: '@noahlee',
     initials: 'NL',

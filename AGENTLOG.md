@@ -27,7 +27,7 @@
   - `web/components/navigationbar.tsx` — Mobile top navigation bar with back/menu controls.
   - `web/components/side-drawer.tsx` — Desktop and mobile primary navigation drawer/sidebar.
   - `web/components/floating-bar.tsx` — Persistent contextual bottom bar for default navigation and composer controls.
-  - `web/components/content-box.tsx` — Shared width/height shell for page content areas.
+  - `web/components/content-box.tsx` — Shared responsive shell for page content areas.
   - `web/components/tabs.tsx` — Shared tab strip with active indicator.
   - `web/components/feed-post.tsx` — Reusable feed/post card with identity block, date, and actions.
   - `web/components/profile-card.tsx` — Shared identity block for avatar, name, handle, and optional date.
@@ -49,6 +49,82 @@
   - `web/components/design/input-field.tsx` — Shared labeled input primitive with prefix/trailing support.
   - `web/components/friink-logo.tsx` — Small brand logo component for compact UI surfaces.
   - `web/components/navigation-menu.tsx` — Header overflow/context menu for page-level actions.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move Home and Chat into the sidebar and tune collapsed profile avatar alignment.
+- Changes Made:
+  - Updated `sidebarNavItems` order to Profile, Home, Connections, Chat, Starred.
+  - Changed default `FloatingBar` navigation to render only the Post action unless contextual composer content is provided.
+  - Reduced the collapsed desktop sidebar profile avatar from `3rem` to `2.25rem`.
+  - Updated `packages/design/design.md` so the FloatingBar and SideDrawer contracts match the new navigation ownership.
+  - Updated `CHANGELOG.md` with the navigation change.
+- Files/Scope Touched:
+  - web/lib/data.ts
+  - web/components/floating-bar.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Home and Chat are primary navigation destinations and fit the persistent side navigation better than the floating post affordance. Keeping Post alone in the default floating bar preserves the quick-create action while reducing duplicated navigation.
+- Notes:
+  - Settings and Log out remain in the sidebar footer.
+  - Contextual floating-bar composer behavior was left unchanged.
+- Verified Working?: yes — `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement text-only post creation and quote-posting, reserve media schema, and remove obsolete fixed content-width guidance.
+- Changes Made:
+  - Confirmed `CHANGELOG.md` Current State stack before coding: FastAPI with async SQLAlchemy/Postgres, Alembic, Neon Postgres, and Next.js 14 App Router frontend.
+  - Reconfirmed the latest DB schema state: `20260827_0001_create_auth_tables.py` was the only existing migration and contained only `users`, `otp_codes`, and `otp_purpose`.
+  - Added `Post` and `PostMedia` SQLAlchemy models plus Alembic migration `20260828_0002_create_posts.py`.
+  - Added text-only post creation via unified `POST /posts`; quotes use optional `quoted_post_id` on the same post table.
+  - Added `GET /posts` for the minimal feed wiring.
+  - Added server-side 512-character validation and media payload rejection with `Media uploads are not yet supported.`
+  - Wired the Next compose action to the posts endpoint and added basic quoted-post rendering to feed posts and the compose screen.
+  - Updated `packages/design/design.md` to remove the obsolete fixed `1024px` shell-content rule.
+  - Updated `CHANGELOG.md` Current State and added this detailed log entry.
+- Files/Scope Touched:
+  - api/alembic/env.py
+  - api/alembic/versions/20260828_0002_create_posts.py
+  - api/app/main.py
+  - api/app/models/__init__.py
+  - api/app/models/post.py
+  - api/app/models/user.py
+  - api/app/routers/posts.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/tests/test_posts.py
+  - web/components/app-shell.tsx
+  - web/components/feed-post.tsx
+  - web/components/home-screen.tsx
+  - web/components/post-screen.tsx
+  - web/components/profile-screen.tsx
+  - web/components/starred-screen.tsx
+  - web/lib/auth.ts
+  - web/lib/data.ts
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Quote-posting is domain-equivalent to creating a post with a self-reference, so a nullable `quoted_post_id` on `posts` avoids an unnecessary second table. Media schema was reserved minimally now to avoid a later migration redo, while storage/upload logic remains out of scope.
+- Notes:
+  - Media handling is deferred pending the object storage decision; `post_media` only reserves `id`, `post_id`, `storage_key`, `url`, and `created_at`.
+  - Quote-of-a-quote is allowed, but the response renders only the directly quoted post rather than recursively expanding quote chains.
+  - Deletion fallback is modeled for soft-deleted posts via `deleted_at`; the self-referential FK preserves quote history instead of nulling `quoted_post_id`.
+  - If a quoted post is soft-deleted or unavailable during serialization, the API returns `Original post unavailable.` instead of crashing.
+- Verified Working?: yes — `python -m compileall api\app` passed, `.\.venv\Scripts\python.exe -m pytest` passed all 11 API tests with a sandbox-only pytest cache warning, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`.
 
 ---
 

@@ -5,6 +5,7 @@ from fastapi.responses import PlainTextResponse
 
 from app.config import get_settings
 from app.routers.auth import router as auth_router
+from app.routers.posts import router as posts_router
 
 settings = get_settings()
 
@@ -17,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(posts_router)
 
 
 @app.get("/", response_class=PlainTextResponse)

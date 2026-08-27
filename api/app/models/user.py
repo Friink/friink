@@ -26,3 +26,4 @@ class User(Base):
     )
 
     otp_codes = relationship("OtpCode", back_populates="user", cascade="all, delete-orphan")
+    posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")

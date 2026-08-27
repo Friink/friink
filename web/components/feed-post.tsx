@@ -5,9 +5,10 @@ import type { Post } from '@/lib/data';
 type FeedPostProps = {
   post: Post;
   highlightedStar?: boolean;
+  onQuote?: (post: Post) => void;
 };
 
-export function FeedPost({ post, highlightedStar = false }: FeedPostProps) {
+export function FeedPost({ post, highlightedStar = false, onQuote }: FeedPostProps) {
   return (
     <article className="feed-post">
       <div className="feed-post-heading">
@@ -25,11 +26,17 @@ export function FeedPost({ post, highlightedStar = false }: FeedPostProps) {
         <small>{post.date}</small>
       </div>
       <p className="feed-post-body">{post.text}</p>
+      {post.quotedPost && (
+        <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
+          <strong>{post.quotedPost.authorUsername ? `@${post.quotedPost.authorUsername}` : 'Original post unavailable'}</strong>
+          <p>{post.quotedPost.content}</p>
+        </div>
+      )}
       <div className="feed-post-actions">
         <button type="button" aria-label="Comment">
           <i className="fa-regular fa-comment" aria-hidden="true" />
         </button>
-        <button type="button" aria-label="Quote">
+        <button type="button" aria-label="Quote" onClick={() => onQuote?.(post)}>
           <i className="fa-solid fa-quote-right" aria-hidden="true" />
         </button>
         <button type="button" aria-label="Like">

@@ -12,8 +12,8 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Top Headers**:
   - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
-- **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) serves as the primary bottom navigation on mobile/desktop in default mode (Home, Post, Chat) and seamlessly expands to host full-width contextual composers (e.g. `ChatComposer`, `PostComposerControls`).
-- **Feed & Content Constraint**: Feed content is centered with a readable maximum width (`1024px` content container, `640px` feed body reading width). Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) provides the compact Post creation affordance in default mode and seamlessly expands to host full-width contextual composers (e.g. `ChatComposer`, `PostComposerControls`).
+- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
 
 ## Navigation
 
@@ -21,14 +21,14 @@ Friink is a calm, people-first social space centered on meaningful conversations
 
 Navigation is partitioned across dedicated functional surfaces rather than a single flat list:
 
-1. **FloatingBar (Core Actions & Quick Navigation)**:
-   - Home (`fa-house` → `/home`)
+1. **FloatingBar (Core Post Action)**:
    - Post (`fa-pen` → `/compose`)
-   - Chat (`fa-envelope` → `/chat` — labeled "Chat", route `/chat`)
 2. **SideDrawer (Personal Identity & Network)**:
    - Signed-in User Identity Block (`ProfileCard` at top)
    - Profile (`fa-user` → `/[username]`)
+   - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
+   - Chat (`fa-envelope` → `/chat` — labeled "Chat", route `/chat`)
    - Starred (`fa-star` → `/starred`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
@@ -122,7 +122,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
-- **Content Max Width**: `1024px` (`min(100%, 1024px)` for shell content boxes) / Reading Max Width: `640px` (feed body)
+- **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel. Avoid hardcoded page max-width rules for primary app content.
 - **Desktop Breakpoint**: `768px` (`--breakpoint-desktop`: `768px`, `@media (max-width: 767px)` for mobile behaviors)
 
 ---
@@ -171,7 +171,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Variants & Layout Modes**:
   1. **Default Navigation Mode** (`children` is null/undefined/false):
      - Width: Compact natural width (`width: max-content`, max `28rem`), horizontally centered (`margin: 0 auto`).
-     - Fixed Navigation Items (3 items): Home (`fa-house`), Post (`fa-pen`), Chat (`fa-envelope`).
+     - Fixed Navigation Item: Post (`fa-pen`).
      - Active item highlighted with `color: var(--color-brand)` and `background: var(--color-brand-soft)`.
   2. **Contextual Composer Mode** (`children` is provided):
      - Width: Spans available page width (`width: calc(100% - 2.5rem)`, `.floating-bar-contextual`).
@@ -235,7 +235,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`).
-  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Connections (`fa-user-group`), Starred (`fa-star`).
+  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Chat (`fa-envelope`), Starred (`fa-star`).
   3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`).
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.

@@ -20,7 +20,7 @@ import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
 import { initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
-import type { AuthUser } from '@/lib/auth';
+import { createPost, listPosts, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 
 type AppShellProps = {
   user: AuthUser;
@@ -57,6 +57,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [postDraft, setPostDraft] = useState('');
+  const [quotedPost, setQuotedPost] = useState<Post | null>(null);
+  const [postError, setPostError] = useState('');
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
@@ -203,24 +205,74 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
-  function handlePost(text: string) {
-    const newPost: Post = {
-      id: Date.now(),
-      name: user.name,
-      handle: `@${user.username}`,
-      initials: getInitials(user.name),
+  useEffect(() => {
+    listPosts()
+      .then((apiPosts) => {
+        setPosts(apiPosts.map(mapApiPost));
+      })
+      .catch(() => {
+        // Keep the self-contained demo timeline available when the API is not running.
+      });
+  }, []);
+
+  function handleQuote(post: Post) {
+    setQuotedPost(post);
+    setPostError('');
+    navigateTo('post');
+  }
+
+  async function handlePost(text: string) {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    const session = loadAuthSession();
+    if (!session) {
+      setPostError('Please log in again to post.');
+      return;
+    }
+
+    try {
+      const apiPost = await createPost(session.accessToken, {
+        content: trimmedText,
+        quotedPostId: quotedPost?.id ?? null,
+      });
+      const newPost = mapApiPost(apiPost);
+      setPosts((current) => [newPost, ...current]);
+      setPostDraft('');
+      setQuotedPost(null);
+      setPostError('');
+      setActiveScreen('home');
+      router.push('/home');
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not create post.';
+      setPostError(message);
+    }
+  }
+
+  function mapApiPost(post: ApiPost): Post {
+    return {
+      id: post.id,
+      name: post.author_username,
+      handle: `@${post.author_username}`,
+      initials: getInitials(post.author_username),
       tone: 'mint',
-      date: 'Just now',
-      text,
+      date: new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+      text: post.content,
       connectionType: 'following',
       isConnection: true,
       isStarred: false,
       replies: 0,
       reactions: 0,
+      quotedPost: post.quoted_post
+        ? {
+            id: post.quoted_post.id,
+            authorUsername: post.quoted_post.author_username,
+            content: post.quoted_post.content,
+            unavailable: post.quoted_post.unavailable,
+          }
+        : null,
     };
-    setPosts((current) => [newPost, ...current]);
-    setPostDraft('');
-    setActiveScreen('home');
   }
 
   return (
@@ -292,11 +344,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 children
               ) : (
                 <>
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
-                  {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} />}
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onQuote={handleQuote} />}
+                  {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} onQuote={handleQuote} />}
                   {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')} />}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                  {activeScreen === 'post' && <PostScreen user={user} text={postDraft} onTextChange={setPostDraft} />}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} onQuote={handleQuote} />}
+                  {activeScreen === 'post' && (
+                    <PostScreen
+                      user={user}
+                      text={postDraft}
+                      onTextChange={(text) => {
+                        setPostDraft(text);
+                        setPostError('');
+                      }}
+                      quotedPost={quotedPost ? { handle: quotedPost.handle, text: quotedPost.text } : null}
+                      errorMessage={postError}
+                    />
+                  )}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen />}
                   {activeScreen === 'settings' && (

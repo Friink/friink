@@ -160,6 +160,43 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
+export type ApiPost = {
+  id: string;
+  user_id: string;
+  author_username: string;
+  content: string;
+  media_count: number;
+  quoted_post_id: string | null;
+  quoted_post: {
+    id: string | null;
+    author_username: string | null;
+    content: string;
+    unavailable: boolean;
+  } | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listPosts(): Promise<ApiPost[]> {
+  return requestApi<ApiPost[]>('/posts', {
+    method: 'GET',
+  });
+}
+
+export async function createPost(accessToken: string, input: { content: string; quotedPostId?: string | null; media?: unknown[] }): Promise<ApiPost> {
+  return requestApi<ApiPost>('/posts', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      content: input.content,
+      quoted_post_id: input.quotedPostId ?? null,
+      media: input.media,
+    }),
+  });
+}
+
 async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
