@@ -2163,6 +2163,7 @@ textarea {
 
 .profile-actions {
   display: flex;
+  gap: 0.5rem;
   justify-content: flex-end;
   padding: 0 1rem 1rem;
 }
@@ -2184,6 +2185,12 @@ textarea {
   text-decoration: none;
 }
 
+.profile-action-button:disabled,
+.icon-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .profile-action-button:hover,
 .profile-action-button:focus-visible {
   border-color: var(--color-brand);
@@ -2198,6 +2205,15 @@ textarea {
 
 .profile-action-edit {
   padding-inline: 1rem;
+}
+
+.profile-action-error,
+.connections-error {
+  margin: -0.25rem 1rem 0.75rem;
+  color: #b54444;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: right;
 }
 
 .profile-tabs {

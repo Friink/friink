@@ -20,8 +20,9 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 ## Current State
 _Last updated: 2026-08-28_
 
-- [api] The wiped `api/` folder now contains a structured FastAPI backend with async SQLAlchemy/Postgres wiring, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, text-only post and quote-post creation, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] The wiped `api/` folder now contains a structured FastAPI backend with async SQLAlchemy/Postgres wiring, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, text-only post and quote-post creation, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts and quote-posts use a single `posts` table with nullable `quoted_post_id`; media schema is reserved through minimal `post_media` storage placeholders, but upload/compression/storage remains pending an object storage decision.
+- [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
 - [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
 - [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
@@ -36,6 +37,24 @@ _Last updated: 2026-08-28_
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-28
+
+### Changed
+- [web] Removed seeded dummy posts from the app shell timeline so posts come from the API or remain empty.
+- [web] Pointed the local frontend API base URL at the current FastAPI server on `http://localhost:8000`.
+- [web] Normalized network fetch failures so `Failed to fetch.` includes terminal punctuation.
+
+## 2026-08-28
+
+### Added
+- [api] Added the dual-handshake Connections system with send, accept, reject, cancel, unfollow/remove, followers, following, incoming pending, outgoing pending, and per-profile status endpoints.
+- [api] Added Alembic schema for `follow_requests` with pending/accepted uniqueness per requester-recipient pair and a self-follow check constraint.
+- [web] Wired other-user profile follow state/actions and incoming follow request accept/reject UI to the Connections API.
+
+### Notes
+- [api] Followers/following lists are public until a profile visibility system exists; pending incoming/outgoing request lists remain scoped to the signed-in user.
+- [api] Follower/following counts are computed live from accepted rows rather than denormalized.
 
 ## 2026-08-28
 

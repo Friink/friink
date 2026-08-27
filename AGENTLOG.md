@@ -57,6 +57,74 @@
 - Date & Time: 2026-08-28 00:00 +05:00
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Remove dummy posts and fix post creation fetch failures against the current FastAPI URL.
+- Changes Made:
+  - Removed the seeded dummy post array so the home feed starts from API posts or an empty state.
+  - Updated `web/.env.local` from the stale `http://localhost:3001/api` value to `http://localhost:8000`, matching the current FastAPI route layout.
+  - Wrapped frontend API fetch calls so browser/network failures surface with terminal punctuation, including `Failed to fetch.`.
+  - Updated the stale app-shell API fallback comment and synchronized `CHANGELOG.md`.
+- Files/Scope Touched:
+  - web/.env.local
+  - web/lib/auth.ts
+  - web/lib/data.ts
+  - web/components/app-shell.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Posts should be backed by the database now, and the stale local API URL pointed at the old Nest-style `/api` server instead of the current FastAPI server, causing post creation to fail before reaching `/posts`.
+- Notes:
+  - `web/.env.local` is ignored by git, so this fixes the local workspace value; deployment still needs `NEXT_PUBLIC_API_BASE_URL` set to the deployed FastAPI base URL.
+- Verified Working?: yes — `.\.venv\Scripts\python.exe -m pytest` passed all 22 API tests with a sandbox-only pytest cache warning, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the dual-handshake Connections follow request system end to end.
+- Changes Made:
+  - Confirmed the current stack from `CHANGELOG.md`: FastAPI with async SQLAlchemy/Postgres, Alembic, Neon Postgres, and Next.js 14 App Router.
+  - Reconfirmed the migration chain before coding: auth migration `20260827_0001`, text-only posts migration `20260828_0002`, and no existing connections schema.
+  - Added the `FollowRequest` SQLAlchemy model and Alembic migration `20260828_0003_create_follow_requests.py`.
+  - Added Connections schemas, service logic, and FastAPI routes for sending, accepting, rejecting, canceling, unfollowing/removing, listing followers/following, listing current-user incoming/outgoing pending requests, and profile connection status.
+  - Wired profile follow/cancel/following actions and incoming request accept/reject UI to the new API helpers.
+  - Added service tests for self-follow, duplicate pending requests, wrong-user authorization, cancel/resend, reject/resend, unfollow cleanup, refollow after unfollow, directional follows, and live-count assumptions.
+  - Updated `CHANGELOG.md` Current State and this detailed log entry.
+- Files/Scope Touched:
+  - api/alembic/env.py
+  - api/alembic/versions/20260828_0003_create_follow_requests.py
+  - api/app/main.py
+  - api/app/models/__init__.py
+  - api/app/models/connection.py
+  - api/app/models/user.py
+  - api/app/routers/connections.py
+  - api/app/schemas/connections.py
+  - api/app/services/connections.py
+  - api/tests/test_connections.py
+  - web/components/app-shell.tsx
+  - web/components/connections-screen.tsx
+  - web/components/profile-screen.tsx
+  - web/lib/auth.ts
+  - web/lib/data.ts
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: A single `follow_requests` table keeps the request lifecycle and active directional follow edge in one source of truth. Pending rows are requests, accepted rows are active follows, and cancel/unfollow moves rows out of the active set so a future follow has to create a fresh pending request.
+- Notes:
+  - Rejected requests are retained and can be followed by an immediate fresh request, as required.
+  - Followers/following visibility is public for now because the app has no profile visibility system yet; incoming/outgoing pending request lists are private to the signed-in user.
+  - Follower/following counts are computed live from accepted rows, so there are no denormalized count columns to drift.
+  - Following is directional and does not create a reverse edge.
+- Verified Working?: yes — `python -m compileall api\app` passed, `.\.venv\Scripts\python.exe -m pytest` passed all 22 API tests with a sandbox-only pytest cache warning, `npx tsc --noEmit` passed in `web`, `npm run build` passed in `web`, and `git diff --check` reported no whitespace errors.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Move Home and Chat into the sidebar and tune collapsed profile avatar alignment.
 - Changes Made:
   - Updated `sidebarNavItems` order to Profile, Home, Connections, Chat, Starred.

@@ -177,6 +177,31 @@ export type ApiPost = {
   updated_at: string;
 };
 
+export type ApiConnectionUser = {
+  id: string;
+  username: string;
+};
+
+export type ApiFollowRequest = {
+  id: string;
+  requester: ApiConnectionUser;
+  recipient: ApiConnectionUser;
+  status: 'pending' | 'accepted' | 'rejected' | 'canceled';
+  created_at: string;
+  responded_at: string | null;
+};
+
+export type ApiConnectionStatus = {
+  user: ApiConnectionUser;
+  state: 'self' | 'none' | 'requested' | 'following';
+  request: ApiFollowRequest | null;
+};
+
+export type ApiConnectionList = {
+  users: ApiConnectionUser[];
+  count: number;
+};
+
 export async function listPosts(): Promise<ApiPost[]> {
   return requestApi<ApiPost[]>('/posts', {
     method: 'GET',
@@ -197,21 +222,118 @@ export async function createPost(accessToken: string, input: { content: string; 
   });
 }
 
-async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
+export async function getConnectionStatus(accessToken: string, username: string): Promise<ApiConnectionStatus> {
+  return requestApi<ApiConnectionStatus>(`/connections/status/${encodeURIComponent(username)}`, {
+    method: 'GET',
     headers: {
-      'Content-Type': 'application/json',
-      ...init.headers,
+      Authorization: `Bearer ${accessToken}`,
     },
-    credentials: 'include',
   });
+}
+
+export async function sendFollowRequest(accessToken: string, recipientUsername: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>('/connections/requests', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ recipient_username: recipientUsername }),
+  });
+}
+
+export async function acceptFollowRequest(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/requests/${requestId}/accept`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function rejectFollowRequest(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/requests/${requestId}/reject`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function cancelFollowRequest(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/requests/${requestId}/cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function removeConnection(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/${requestId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function listIncomingFollowRequests(accessToken: string): Promise<ApiFollowRequest[]> {
+  return requestApi<ApiFollowRequest[]>('/connections/requests/incoming', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function listOutgoingFollowRequests(accessToken: string): Promise<ApiFollowRequest[]> {
+  return requestApi<ApiFollowRequest[]>('/connections/requests/outgoing', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function listFollowers(username: string): Promise<ApiConnectionList> {
+  return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/followers`, {
+    method: 'GET',
+  });
+}
+
+export async function listFollowing(username: string): Promise<ApiConnectionList> {
+  return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/following`, {
+    method: 'GET',
+  });
+}
+
+async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init.headers,
+      },
+      credentials: 'include',
+    });
+  } catch (error) {
+    const message = error instanceof Error ? ensureTerminalPeriod(error.message) : 'Failed to fetch.';
+    throw new AuthApiError(message, 0);
+  }
 
   if (!response.ok) {
     throw new AuthApiError(await getApiErrorMessage(response), response.status);
   }
 
   return response.json() as Promise<T>;
+}
+
+function ensureTerminalPeriod(message: string): string {
+  const trimmed = message.trim();
+  if (!trimmed) return 'Friink API request failed.';
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
 async function getApiErrorMessage(response: Response): Promise<string> {

@@ -19,8 +19,22 @@ import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
-import { initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
-import { createPost, listPosts, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { initialConnections, initialPosts, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
+import {
+  acceptFollowRequest,
+  cancelFollowRequest,
+  createPost,
+  getConnectionStatus,
+  listIncomingFollowRequests,
+  listPosts,
+  loadAuthSession,
+  rejectFollowRequest,
+  removeConnection,
+  sendFollowRequest,
+  type ApiFollowRequest,
+  type ApiPost,
+  type AuthUser,
+} from '@/lib/auth';
 
 type AppShellProps = {
   user: AuthUser;
@@ -59,6 +73,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [postDraft, setPostDraft] = useState('');
   const [quotedPost, setQuotedPost] = useState<Post | null>(null);
   const [postError, setPostError] = useState('');
+  const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
+  const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
+  const [connectionActionBusy, setConnectionActionBusy] = useState(false);
+  const [connectionActionError, setConnectionActionError] = useState('');
+  const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
+  const [requestActionError, setRequestActionError] = useState('');
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
@@ -211,9 +232,52 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         setPosts(apiPosts.map(mapApiPost));
       })
       .catch(() => {
-        // Keep the self-contained demo timeline available when the API is not running.
+        // Keep the timeline empty when the API is not running.
       });
   }, []);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    listIncomingFollowRequests(session.accessToken)
+      .then((requests) => {
+        setIncomingRequests(requests.map(mapApiFollowRequest));
+        setRequestActionError('');
+      })
+      .catch(() => {
+        // Connections still renders with demo data if the API is unavailable.
+      });
+  }, [activeScreen]);
+
+  useEffect(() => {
+    const viewedUser = profileUser ?? user;
+    if (!profileUser || viewedUser.username === user.username) {
+      setProfileConnectionState('self');
+      setProfileConnectionRequestId(null);
+      setConnectionActionError('');
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      setProfileConnectionState('none');
+      setProfileConnectionRequestId(null);
+      return;
+    }
+
+    getConnectionStatus(session.accessToken, viewedUser.username)
+      .then((statusResponse) => {
+        setProfileConnectionState(statusResponse.state);
+        setProfileConnectionRequestId(statusResponse.request?.id ?? null);
+        setConnectionActionError('');
+      })
+      .catch((error) => {
+        setProfileConnectionState('none');
+        setProfileConnectionRequestId(null);
+        setConnectionActionError(error instanceof Error ? error.message : 'Could not load connection state.');
+      });
+  }, [profileUser, user]);
 
   function handleQuote(post: Post) {
     setQuotedPost(post);
@@ -273,6 +337,104 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           }
         : null,
     };
+  }
+
+  function mapApiFollowRequest(request: ApiFollowRequest): ConnectionRequest {
+    return {
+      id: request.id,
+      name: request.requester.username,
+      handle: `@${request.requester.username}`,
+      initials: getInitials(request.requester.username),
+      status: 'pending',
+      createdAt: request.created_at,
+    };
+  }
+
+  async function handleFollowProfile() {
+    if (!profileUser) return;
+    const session = loadAuthSession();
+    if (!session) {
+      setConnectionActionError('Please log in again to follow people.');
+      return;
+    }
+
+    setConnectionActionBusy(true);
+    try {
+      const request = await sendFollowRequest(session.accessToken, profileUser.username);
+      setProfileConnectionState(request.status === 'accepted' ? 'following' : 'requested');
+      setProfileConnectionRequestId(request.id);
+      setConnectionActionError('');
+    } catch (error) {
+      setConnectionActionError(error instanceof Error ? error.message : 'Could not send follow request.');
+    } finally {
+      setConnectionActionBusy(false);
+    }
+  }
+
+  async function handleCancelProfileRequest() {
+    const session = loadAuthSession();
+    if (!session || !profileConnectionRequestId) return;
+
+    setConnectionActionBusy(true);
+    try {
+      await cancelFollowRequest(session.accessToken, profileConnectionRequestId);
+      setProfileConnectionState('none');
+      setProfileConnectionRequestId(null);
+      setConnectionActionError('');
+    } catch (error) {
+      setConnectionActionError(error instanceof Error ? error.message : 'Could not cancel follow request.');
+    } finally {
+      setConnectionActionBusy(false);
+    }
+  }
+
+  async function handleUnfollowProfile() {
+    const session = loadAuthSession();
+    if (!session || !profileConnectionRequestId) return;
+
+    setConnectionActionBusy(true);
+    try {
+      await removeConnection(session.accessToken, profileConnectionRequestId);
+      setProfileConnectionState('none');
+      setProfileConnectionRequestId(null);
+      setConnectionActionError('');
+    } catch (error) {
+      setConnectionActionError(error instanceof Error ? error.message : 'Could not remove connection.');
+    } finally {
+      setConnectionActionBusy(false);
+    }
+  }
+
+  async function handleAcceptRequest(requestId: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRequestActionBusyId(requestId);
+    try {
+      await acceptFollowRequest(session.accessToken, requestId);
+      setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
+      setRequestActionError('');
+    } catch (error) {
+      setRequestActionError(error instanceof Error ? error.message : 'Could not accept request.');
+    } finally {
+      setRequestActionBusyId(null);
+    }
+  }
+
+  async function handleRejectRequest(requestId: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRequestActionBusyId(requestId);
+    try {
+      await rejectFollowRequest(session.accessToken, requestId);
+      setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
+      setRequestActionError('');
+    } catch (error) {
+      setRequestActionError(error instanceof Error ? error.message : 'Could not reject request.');
+    } finally {
+      setRequestActionBusyId(null);
+    }
   }
 
   return (
@@ -345,8 +507,32 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
               ) : (
                 <>
                   {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onQuote={handleQuote} />}
-                  {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} onQuote={handleQuote} />}
-                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')} />}
+                  {activeScreen === 'profile' && (
+                    <ProfileScreen
+                      user={profileUser ?? user}
+                      posts={posts}
+                      isOwnProfile={!profileUser}
+                      onQuote={handleQuote}
+                      connectionState={profileConnectionState}
+                      connectionActionBusy={connectionActionBusy}
+                      connectionActionError={connectionActionError}
+                      onFollow={handleFollowProfile}
+                      onCancelRequest={handleCancelProfileRequest}
+                      onUnfollow={handleUnfollowProfile}
+                    />
+                  )}
+                  {activeScreen === 'connections' && (
+                    <ConnectionsScreen
+                      connections={initialConnections}
+                      activeFilter={connectionsFilter}
+                      onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
+                      incomingRequests={incomingRequests}
+                      requestActionBusyId={requestActionBusyId}
+                      requestActionError={requestActionError}
+                      onAcceptRequest={handleAcceptRequest}
+                      onRejectRequest={handleRejectRequest}
+                    />
+                  )}
                   {activeScreen === 'starred' && <StarredScreen posts={posts} onQuote={handleQuote} />}
                   {activeScreen === 'post' && (
                     <PostScreen
