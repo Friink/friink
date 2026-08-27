@@ -38,6 +38,15 @@ _Last updated: 2026-08-27_
 
 ## 2026-08-27
 
+### Changed
+- [web] Reconnected the auth client to FastAPI signup/login responses, preserved backend auth error details in the login/signup alert, and stopped the signup username field from using browser username autofill.
+
+### Verified
+- [web] Ran `npm --prefix web run build`; the first sandboxed attempt hit the known Next.js worker-spawn `EPERM`, then the elevated rerun completed successfully with all 16 routes generated.
+- [web] Ran `npx tsc --noEmit` in `web`.
+
+## 2026-08-27
+
 ### Added
 - [api] Created ignored local FastAPI environment files for development, staging, and production, with separate JWT secrets for staging and production.
 

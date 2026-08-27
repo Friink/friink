@@ -15,6 +15,36 @@ export type AuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+
+type ApiUser = {
+  id: string;
+  email: string;
+  username: string;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type ApiTokenResponse = {
+  access_token: string;
+  token_type: string;
+  user: ApiUser;
+};
+
+type ApiErrorBody = {
+  detail?: string | Array<{ msg?: string }>;
+};
+
+export class AuthApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'AuthApiError';
+    this.status = status;
+  }
+}
 
 export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSession {
   const demoUser: AuthUser = {
@@ -41,14 +71,24 @@ export async function signUp(input: {
   password: string;
   dateOfBirth: string;
 }): Promise<AuthSession> {
-  return createDemoSession({
-    id: `demo-${input.username || 'user'}`,
-    name: input.name || 'Demo User',
-    email: input.email || DEFAULT_DEMO_EMAIL,
-    username: input.username || 'demouser',
-    status: 'active',
-    emailVerifiedAt: new Date().toISOString(),
+  await requestApi<ApiUser>('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: input.email,
+      username: input.username,
+      password: input.password,
+      date_of_birth: input.dateOfBirth,
+    }),
   });
+
+  const session = await login(input.email, input.password);
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      name: input.name || session.user.name,
+    },
+  };
 }
 
 export function saveAuthSession(session: AuthSession) {
@@ -57,15 +97,15 @@ export function saveAuthSession(session: AuthSession) {
 }
 
 export function loadAuthSession(): AuthSession | null {
-  if (typeof window === 'undefined') return createDemoSession();
+  if (typeof window === 'undefined') return null;
 
   const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-  if (!raw) return createDemoSession();
+  if (!raw) return null;
 
   try {
     return JSON.parse(raw) as AuthSession;
   } catch {
-    return createDemoSession();
+    return null;
   }
 }
 
@@ -89,9 +129,63 @@ export function clearAuthSession() {
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
-  return createDemoSession({
-    email: email || DEFAULT_DEMO_EMAIL,
-    username: email ? email.split('@')[0] || 'demouser' : 'demouser',
-    name: 'Demo User',
+  const response = await requestApi<ApiTokenResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
   });
+
+  return mapTokenResponse(response);
+}
+
+async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new AuthApiError(await getApiErrorMessage(response), response.status);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function getApiErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as ApiErrorBody;
+    if (typeof body.detail === 'string') {
+      return body.detail;
+    }
+    if (Array.isArray(body.detail)) {
+      const firstMessage = body.detail.find((item) => item.msg)?.msg;
+      if (firstMessage) return firstMessage;
+    }
+  } catch {
+    // Fall through to the generic status message below.
+  }
+
+  return `Friink API request failed with ${response.status}`;
+}
+
+function mapTokenResponse(response: ApiTokenResponse): AuthSession {
+  return {
+    accessToken: response.access_token,
+    tokenType: 'Bearer',
+    user: mapApiUser(response.user),
+  };
+}
+
+function mapApiUser(user: ApiUser): AuthUser {
+  return {
+    id: user.id,
+    name: user.username,
+    email: user.email,
+    username: user.username,
+    status: user.is_verified ? 'active' : 'pending_email_verification',
+    emailVerifiedAt: user.is_verified ? user.updated_at : null,
+  };
 }

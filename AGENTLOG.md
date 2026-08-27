@@ -54,6 +54,28 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 18:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Stop signup username autofill and show specific username-taken auth errors.
+- Changes Made:
+  - Rewired `web/lib/auth.ts` to call the FastAPI `/auth/signup` and `/auth/login` endpoints instead of creating demo sessions for those flows.
+  - Added API error parsing so FastAPI `detail` messages like `Username is already taken` are shown in the existing login/signup alert.
+  - Changed the signup username field autocomplete behavior so browsers do not treat it as an email/login identity field.
+- Files/Scope Touched:
+  - web/lib/auth.ts
+  - web/components/login-screen.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The backend already returns conflict-specific auth errors, but the frontend was replacing failures with generic copy and the username input was advertising browser username autofill.
+- Notes:
+  - The three-screen signup process and field order were left unchanged.
+- Verified Working?: yes — `npm --prefix web run build` passed after rerunning outside the sandbox due to the known Next.js worker-spawn `EPERM`; `npx tsc --noEmit` passed in `web`.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 18:04 +05:00
 - Agent: Codex
 - Model: GPT-5

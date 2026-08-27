@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
-import { createDemoSession, login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
+import { login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
@@ -41,11 +41,11 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
     if (isLoginStep) {
       setIsSubmitting(true);
       try {
-        const session = createDemoSession();
+        const session = await login(email, password);
         saveAuthSession(session);
         onAuthenticated(session.user);
-      } catch {
-        setErrorMessage(AUTH_FAILURE_MESSAGE);
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
       } finally {
         setIsSubmitting(false);
       }
@@ -95,8 +95,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           saveAuthSession(loginSession);
           onAuthenticated(loginSession.user);
         }
-      } catch {
-        setErrorMessage(AUTH_FAILURE_MESSAGE);
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
       } finally {
         setIsSubmitting(false);
       }
@@ -306,7 +306,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               onChange={(event) => setUsername(event.target.value)}
               placeholder="username"
               prefix={'@'}
-              autoComplete="username"
+              autoComplete="off"
               required
             />
 
@@ -333,4 +333,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
       </form>
     </div>
   );
+}
+
+function getAuthErrorMessage(error: unknown) {
+  return error instanceof Error && error.message ? error.message : AUTH_FAILURE_MESSAGE;
 }
