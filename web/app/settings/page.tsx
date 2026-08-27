@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, loadAuthSession, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, getCurrentUser, loadAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -15,7 +15,15 @@ export default function SettingsPage() {
       return;
     }
 
-    setUser(session.user);
+    getCurrentUser(session.accessToken)
+      .then((currentUser) => {
+        saveAuthSession({ ...session, user: currentUser });
+        setUser(currentUser);
+      })
+      .catch(() => {
+        clearAuthSession();
+        router.replace('/login');
+      });
   }, [router]);
 
   function handleLogout() {
@@ -25,5 +33,5 @@ export default function SettingsPage() {
 
   if (!user) return null;
 
-  return <AppShell user={user} onLogout={handleLogout} initialScreen="settings" />;
+  return <AppShell user={user} onLogout={handleLogout} initialScreen="settings" onUserChange={setUser} />;
 }

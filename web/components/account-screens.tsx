@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import type { AuthUser } from '@/lib/auth';
+import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, type AuthUser } from '@/lib/auth';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'account' | 'privacy';
@@ -12,16 +12,60 @@ type SettingsScreenProps = {
   onAppearanceChange: (appearance: AppearanceMode) => void;
   activeTab?: SettingsTab;
   onTabChange?: (id: string) => void;
+  onUserChange?: (user: AuthUser) => void;
 };
 
-export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general' }: SettingsScreenProps) {
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
+
+export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general', onUserChange }: SettingsScreenProps) {
   const [username, setUsername] = useState(user.username);
+  const [usernameStatus, setUsernameStatus] = useState('');
+  const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
   const [active, setActive] = useState<SettingsTab>(activeTab);
 
   // keep local active state in sync when parent-controlled `activeTab` changes
   useEffect(() => {
     setActive(activeTab as SettingsTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    setUsername(user.username);
+    setUsernameStatus('');
+  }, [user.username]);
+
+  const hasUsernameChanged = username !== user.username;
+  const isUsernameValid = USERNAME_PATTERN.test(username);
+  const canUpdateUsername = hasUsernameChanged && isUsernameValid && !isUpdatingUsername;
+
+  async function handleUsernameUpdate() {
+    if (!canUpdateUsername) {
+      if (hasUsernameChanged && !isUsernameValid) {
+        setUsernameStatus("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.");
+      }
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      setUsernameStatus('Please log in again to update your username.');
+      return;
+    }
+
+    setIsUpdatingUsername(true);
+    setUsernameStatus('');
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, { username });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setUsername(updatedSession.user.username);
+      setUsernameStatus('Username updated.');
+    } catch (error) {
+      setUsernameStatus(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update username.');
+    } finally {
+      setIsUpdatingUsername(false);
+    }
+  }
 
   const tabs = [
     { id: 'general', label: 'All' },
@@ -66,16 +110,26 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
             </div>
             <label className="settings-field">
               <span className="settings-field-label">Username</span>
-              <div className="input-with-prefix">
-                <span className="input-prefix">@</span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value.replace(/^@+/, ''))}
-                  placeholder="username"
-                  aria-label="username"
-                />
+              <div className="settings-field-row">
+                <div className="input-with-prefix">
+                  <span className="input-prefix">@</span>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(event) => {
+                      setUsername(event.target.value.replace(/^@+/, ''));
+                      setUsernameStatus('');
+                    }}
+                    placeholder="username"
+                    aria-label="username"
+                    autoComplete="off"
+                  />
+                </div>
+                <button className="settings-update-button" type="button" disabled={!canUpdateUsername} onClick={handleUsernameUpdate}>
+                  {isUpdatingUsername ? 'Updating...' : 'Update'}
+                </button>
               </div>
+              {usernameStatus && <span className="settings-field-message" role="status">{usernameStatus}</span>}
             </label>
           </div>
 

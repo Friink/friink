@@ -65,6 +65,15 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UpdateCurrentUserRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, username: str) -> str:
+        return validate_username_rules(username)
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr

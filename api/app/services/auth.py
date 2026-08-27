@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
-from app.schemas.auth import SignupRequest
+from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
 from app.services.email import EmailService
 from app.services.security import hash_password, verify_password
 
@@ -47,6 +47,20 @@ async def create_user(session: AsyncSession, data: SignupRequest, email_service:
     # TODO: wire up OTP once email is configured.
     if email_service:
         await email_service.send_registration_successful(user)
+    return user
+
+
+async def update_current_user(session: AsyncSession, user: User, data: UpdateCurrentUserRequest) -> User:
+    if data.username == user.username:
+        return user
+
+    existing_user = await get_user_by_username(session, data.username)
+    if existing_user and existing_user.id != user.id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+
+    user.username = data.username
+    await session.commit()
+    await session.refresh(user)
     return user
 
 

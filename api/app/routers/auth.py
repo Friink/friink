@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RefreshResponse, SignupRequest, TokenResponse, UserResponse
-from app.services.auth import authenticate_user, create_user, get_user_by_email, user_id_from_subject
+from app.schemas.auth import LoginRequest, RefreshResponse, SignupRequest, TokenResponse, UpdateCurrentUserRequest, UserResponse
+from app.services.auth import authenticate_user, create_user, update_current_user, user_id_from_subject
 from app.services.email import EmailService
 from app.services.security import create_access_token, create_refresh_token, decode_token
 
@@ -100,3 +100,12 @@ async def get_current_user(
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    payload: UpdateCurrentUserRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    return await update_current_user(session, current_user, payload)

@@ -31,6 +31,7 @@ type AppShellProps = {
   floatingBarContent?: React.ReactNode;
   fillContent?: boolean;
   showTabs?: boolean;
+  onUserChange?: (user: AuthUser) => void;
 };
 
 function getInitials(username: string) {
@@ -50,7 +51,7 @@ function getDisplayName(user: AuthUser) {
   return user.name.trim() || user.username;
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, fillContent }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, fillContent, onUserChange }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
@@ -307,6 +308,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                         onAppearanceChange={(a) => persistAppearance(a)}
                         activeTab={settingsTab}
                         onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                        onUserChange={onUserChange}
                       />
                     )}
                     {activeScreen === 'messages' && <MessagesScreen />}

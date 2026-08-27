@@ -137,6 +137,29 @@ export async function login(email: string, password: string): Promise<AuthSessio
   return mapTokenResponse(response);
 }
 
+export async function updateCurrentUser(accessToken: string, input: { username: string }): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me', {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ username: input.username }),
+  });
+
+  return mapApiUser(response);
+}
+
+export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return mapApiUser(response);
+}
+
 async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
