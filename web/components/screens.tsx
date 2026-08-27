@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { navItems } from '@/lib/data';
@@ -17,9 +18,8 @@ export function QuestionsScreen() {
 export function MessagesScreen() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
-  
+
   const [conversations, setConversations] = useState(mockConversations);
-  const [messagesTab, setMessagesTab] = useState('all'); // Added state for messagesTab
 
   const router = useRouter();
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
@@ -39,11 +39,13 @@ export function MessagesScreen() {
     return (
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
-          <div className="chat-contact">
-            <strong>{activeConversation.name}</strong>
-            <span>{activeConversation.handle}</span>
-          </div>
+          <Link className="chat-contact-link" href={`/${activeConversation.handle.replace('@', '')}`}>
+            <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
+            <div className="chat-contact">
+              <strong>{activeConversation.name}</strong>
+              <span>{activeConversation.handle}</span>
+            </div>
+          </Link>
           <button className="icon-plain chat-more" type="button" aria-label="Conversation options">
             <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
           </button>
@@ -74,29 +76,6 @@ export function MessagesScreen() {
 
   return (
     <section className="messages-screen">
-      <div className="messages-toolbar">
-        <h1>Chat</h1>
-        <button className="icon-plain" type="button" aria-label="New message">
-          <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
-        </button>
-      </div>
-      
-      <label className="message-search">
-        <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-        <input placeholder="Search conversations" aria-label="Search conversations" />
-      </label>
-      <Tabs
-        tabs={[
-          { id: 'all', label: 'All' },
-          { id: 'connections', label: 'Connections' },
-          { id: 'requests', label: 'Requests' },
-          { id: 'muted', label: 'Muted' },
-        ]}
-        activeId={messagesTab}
-        onChange={(id) => setMessagesTab(id)}
-        ariaLabel="Chat filters"
-        className="section-tabs"
-      />
       <div className="message-list">
         {conversations.map((conversation) => (
           <button
@@ -105,9 +84,16 @@ export function MessagesScreen() {
             type="button"
               onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
           >
-            <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
+            <Link className="message-row-profile" href={`/${conversation.handle.replace('@', '')}`} aria-label={`Open ${conversation.name} profile`}>
+              <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
+            </Link>
             <span className="message-row-copy">
-              <span className="message-title"><strong>{conversation.name}</strong><small>{conversation.time}</small></span>
+              <span className="message-title">
+                <Link className="message-profile-link" href={`/${conversation.handle.replace('@', '')}`}>
+                  <strong>{conversation.name}</strong>
+                </Link>
+                <small>{conversation.time}</small>
+              </span>
               <span className="message-preview">{conversation.preview}</span>
             </span>
             {conversation.unread && <span className="unread-dot" />}

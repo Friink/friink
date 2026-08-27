@@ -1,7 +1,5 @@
 "use client";
 
-import type { AuthUser } from '@/lib/auth';
-
 function getInitials(value: string) {
   return (
     value
@@ -16,16 +14,21 @@ function getInitials(value: string) {
 }
 
 type ProfileCardProps = {
-  user: AuthUser;
+  name: string;
+  handle: string;
+  tone?: string;
+  initials?: string;
+  date?: string;
 };
 
-export function ProfileCard({ user }: ProfileCardProps) {
+export function ProfileCard({ name, handle, tone = 'mint', initials, date }: ProfileCardProps) {
   return (
     <div className="profile-card">
-      <span className="profile-card-avatar user-avatar avatar-mint">{getInitials(user.name)}</span>
+      <span className={`profile-card-avatar user-avatar avatar-${tone}`}>{initials ?? getInitials(name)}</span>
       <div className="profile-card-info">
-        <strong>{user.name}</strong>
-        <span className="profile-card-handle">@{user.username}</span>
+        <strong>{name}</strong>
+        <span className="profile-card-handle">{handle}</span>
+        {date && <span className="profile-card-date">{date}</span>}
       </div>
     </div>
   );

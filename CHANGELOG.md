@@ -18,6 +18,119 @@ _Last updated: 2026-08-27_
 - [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
 - [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
+- [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
+- [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
+- [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and the settings account username field now matches the signup prefix treatment.
+- [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
+- [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
+- [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
+- [web] The three-dot page navigation control now opens a reusable dummy options menu instead of expanding the sidebar.
+- [web] Removed the unused `FloatingActions` component, its empty render in the app shell, and its leftover CSS.
+- [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
+
+## 2026-08-27
+
+### Changed
+- [docs] Removed a misleading component-registry note from `AGENTLOG.md` that implied only `notifications-screen.tsx` and `profile-screen.tsx` should be treated as reusable page modules.
+
+### Verified
+- [docs] Re-read the top of `AGENTLOG.md` to confirm the registry note was removed cleanly.
+
+## 2026-08-27
+
+### Removed
+- [web] Deleted `web/components/floating-actions.tsx` after confirming it was only imported/rendered as an empty placeholder.
+- [web] Removed the matching `FloatingActions` import/render from `AppShell` and pruned the stale `.floating-actions` CSS.
+
+### Verified
+- [web] Confirmed no `FloatingActions` / `floating-actions` references remain outside generated build metadata, then ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all 16 route generations passed.
+
+## 2026-08-27
+
+### Added
+- [web] Added a reusable `NavigationMenu` component with placeholder action buttons for the three-dot page navigation control.
+
+### Changed
+- [web] Rewired the nav bar overflow button to toggle the new options menu with outside-click and Escape dismissal.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all 16 route generations passed.
+
+## 2026-08-27
+
+### Changed
+- [web] Reset the settings account username prefix positioning so the `@` marker no longer overlaps the handle text.
+- [web] Changed only the other-profile message action icon from a comment/message bubble to a compose/send message icon.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all 16 route generations passed. Google Fonts optimization was skipped because the stylesheet could not be downloaded in the restricted network environment.
+
+## 2026-08-26
+
+### Changed
+- [web] Switched the `[username]` profile route to derive the viewed handle from the actual URL path, and only treat the page as the signed-in profile when the slug matches the current user.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed after the profile-route fix.
+
+## 2026-08-26
+
+### Changed
+- [web] Adjusted the settings account username prefix wrapper so the `@` marker sits outside the text field instead of overlapping the entered username.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed after the prefix-spacing cleanup.
+
+## 2026-08-26
+
+### Changed
+- [web] Aligned the profile action button to the right for both own-profile Edit and dummy-profile message states.
+- [web] Prevented the sidebar profile item from showing active when viewing another user’s dummy profile.
+- [web] Fixed the settings account username field so the `@` prefix no longer gets covered and matches the signup input treatment.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed after the profile-state and settings spacing updates.
+
+## 2026-08-26
+
+### Changed
+- [web] Moved the feed post date to sit below the profile card block, with the date left-aligned under the avatar/name/handle cluster.
+- [web] Adjusted the dummy profile view spacing so the bio, follower stats, and action control line up from the left edge instead of floating in the middle.
+- [web] Restored the self-profile action to Edit while keeping the dummy profile action as a message icon.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed after the profile spacing/action updates.
+
+## 2026-08-26
+
+### Changed
+- [web] Reworked post headers to use the reusable `ProfileCard` pattern: avatar/name/handle on one line, with the post date moved below that block.
+- [web] Simplified the home tab set to `Explore` and `Connections` only.
+- [web] Applied the same identity block pattern to sidebar/profile contexts so the app uses a single shared profile card style.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed after the `ProfileCard` refactor.
+
+## 2026-08-26
+
+### Changed
+- [web] Removed the notifications-page heading/copy/banner chrome so the page opens directly into the notification list.
+- [web] Removed the chat list page title and search box, and shifted the compose affordance into dummy profile views instead.
+- [web] Made feed posts and chat identities link into browsable dummy profiles, and added a message button to non-own profile views.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed after the chat/profile updates.
+
+## 2026-08-26
+
+### Added
+- [web] Added a dedicated Notifications route and screen so the header bell opens a first-class inbox-style page instead of a placeholder control.
+
+### Changed
+- [web] Extended the shared app-shell screen union and page routing to support `/notifications`.
+
+### Verified
+- [web] Ran `npm run build` in `web`; Next.js compilation, lint/type checks, and all route generation passed, including the new notifications page.
 
 ## 2026-08-27
 
@@ -26,6 +139,9 @@ _Last updated: 2026-08-27_
 - [web] Moved direct-chat attachment, message, and send controls into the floating bar. Moved post attachment and publish controls into the same bar while keeping the post textarea in the compose screen.
 - [web] Renamed the message-list route from `/messages` to `/chat` and updated app-shell navigation.
 - [dev] Consolidated the root `localhost/` helpers around `start-local-dev.ps1`; it now stops only the listener on port 3000 and clears the generated `.next` cache before launching the web dev server. Removed the unused status checker and stale backend-oriented setup guide.
+- [web] Removed stale fixed post-footer CSS, the header’s compensating negative logo margin, and viewport/transform-based floating-bar positioning in favor of container-relative layout constraints.
+- [web] Refined navigation and header behavior: `/chat` is the visible Chat label, the shared back control is history-aware, desktop header/sidebar controls have a single aligned hamburger, and chat/compose no longer show duplicate back buttons.
+- [web] Added a visible Back control to the login form, matching the signup-flow control and returning to the landing page.
 
 ### Fixed
 - [web] Restored the default floating navigation fallback when no contextual controls are provided, so the Compose control remains available.
