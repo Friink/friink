@@ -4,12 +4,11 @@ import React from 'react';
 
 type ContentBoxProps = {
   children: React.ReactNode;
-  className?: string;
 };
 
-export function ContentBox({ children, className = '' }: ContentBoxProps) {
+export function ContentBox({ children }: ContentBoxProps) {
   return (
-    <div className={`content-box ${className}`.trim()}>
+    <div className="content-box">
       {children}
     </div>
   );

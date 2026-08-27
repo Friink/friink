@@ -57,7 +57,6 @@ export default function ChatPage() {
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      fillContent
       floatingBarContent={<ChatComposer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />}
     >
       <section className="messages-screen chat-screen">

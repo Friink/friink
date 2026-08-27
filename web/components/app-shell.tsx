@@ -29,7 +29,6 @@ type AppShellProps = {
   profileUser?: AuthUser;
   children?: React.ReactNode;
   floatingBarContent?: React.ReactNode;
-  fillContent?: boolean;
   showTabs?: boolean;
   onUserChange?: (user: AuthUser) => void;
 };
@@ -51,7 +50,7 @@ function getDisplayName(user: AuthUser) {
   return user.name.trim() || user.username;
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, fillContent, onUserChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, onUserChange }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
@@ -251,71 +250,69 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
             />
           </div>
 
-          <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
-            <div className="main-scroll">
-              {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
-                <Tabs
-                  tabs={[
-                    { id: 'all', label: 'Explore' },
-                    { id: 'connections', label: 'Connections' },
-                  ]}
-                  activeId={homeFilter}
-                  onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
-                  ariaLabel="Home quick tabs"
-                />
+          <div className="main-content">
+            {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'Explore' },
+                  { id: 'connections', label: 'Connections' },
+                ]}
+                activeId={homeFilter}
+                onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                ariaLabel="Home quick tabs"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'connections' && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'All' },
+                  { id: 'followers', label: 'Followers' },
+                  { id: 'following', label: 'Following' },
+                  { id: 'requests', label: 'Requests' },
+                ]}
+                activeId={connectionsFilter}
+                onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
+                ariaLabel="Connections filters"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'settings' && (
+              <Tabs
+                tabs={[
+                  { id: 'general', label: 'General' },
+                  { id: 'account', label: 'Account' },
+                  { id: 'privacy', label: 'Privacy & Safety' },
+                ]}
+                activeId={settingsTab}
+                onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                ariaLabel="Settings sections"
+              />
+            )}
+            <ContentBox>
+              {children ? (
+                children
+              ) : (
+                <>
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
+                  {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} />}
+                  {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')} />}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} />}
+                  {activeScreen === 'post' && <PostScreen user={user} text={postDraft} onTextChange={setPostDraft} />}
+                  {activeScreen === 'search' && <SearchScreen />}
+                  {activeScreen === 'notifications' && <NotificationsScreen />}
+                  {activeScreen === 'settings' && (
+                    <SettingsScreen
+                      user={user}
+                      appearance={appearance}
+                      onAppearanceChange={(a) => persistAppearance(a)}
+                      activeTab={settingsTab}
+                      onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                      onUserChange={onUserChange}
+                    />
+                  )}
+                  {activeScreen === 'messages' && <MessagesScreen />}
+                </>
               )}
-              {showTabs !== false && activeScreen === 'connections' && (
-                <Tabs
-                  tabs={[
-                    { id: 'all', label: 'All' },
-                    { id: 'followers', label: 'Followers' },
-                    { id: 'following', label: 'Following' },
-                    { id: 'requests', label: 'Requests' },
-                  ]}
-                  activeId={connectionsFilter}
-                  onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
-                  ariaLabel="Connections filters"
-                />
-              )}
-              {showTabs !== false && activeScreen === 'settings' && (
-                <Tabs
-                  tabs={[
-                    { id: 'general', label: 'General' },
-                    { id: 'account', label: 'Account' },
-                    { id: 'privacy', label: 'Privacy & Safety' },
-                  ]}
-                  activeId={settingsTab}
-                  onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
-                  ariaLabel="Settings sections"
-                />
-              )}
-              <ContentBox className={(children || fillContent || activeScreen === 'post') ? 'fill-viewport' : ''}>
-                {children ? (
-                  children
-                ) : (
-                  <>
-                    {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
-                    {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} />}
-                    {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
-                    {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                    {activeScreen === 'post' && <PostScreen user={user} text={postDraft} onTextChange={setPostDraft} />}
-                    {activeScreen === 'search' && <SearchScreen />}
-                    {activeScreen === 'notifications' && <NotificationsScreen />}
-                    {activeScreen === 'settings' && (
-                      <SettingsScreen
-                        user={user}
-                        appearance={appearance}
-                        onAppearanceChange={(a) => persistAppearance(a)}
-                        activeTab={settingsTab}
-                        onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
-                        onUserChange={onUserChange}
-                      />
-                    )}
-                    {activeScreen === 'messages' && <MessagesScreen />}
-                  </>
-                )}
-              </ContentBox>
-            </div>
+            </ContentBox>
           </div>
         </section>
 
