@@ -54,6 +54,52 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 18:52 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the docs checklist to match the current tools in use.
+- Changes Made:
+  - Replaced outdated `.NET`, Entity Framework, possible Firebase, and droplet/EC2 checklist entries with the current stack.
+  - Documented Next.js 14, React 18, TypeScript, Font Awesome, FastAPI, Uvicorn, SQLAlchemy async, Alembic, Neon Postgres, PyJWT, Pydantic, bcrypt, Vercel, local dev ports, and testing tools.
+  - Marked unchosen areas like mobile, object storage, notifications provider, payments, and push notifications as TBD.
+  - Updated `CHANGELOG.md` with the docs change.
+- Files/Scope Touched:
+  - docs/checklist.txt
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The existing checklist still reflected earlier technology options rather than the tools currently present in the repository.
+- Notes:
+  - This was a docs-only update; no runtime code changed.
+- Verified Working?: not applicable — read back `docs/checklist.txt` and reviewed the diff.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 18:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure every auth-facing error message ends with a period.
+- Changes Made:
+  - Added terminal periods to FastAPI auth route errors for missing/invalid refresh and access tokens.
+  - Added terminal periods to auth validation `ValueError` messages for password, username, and age rules.
+  - Added terminal periods to remaining auth service errors for duplicate email, lockout, invalid credentials, and invalid token.
+  - Updated `CHANGELOG.md` with the punctuation sweep.
+- Files/Scope Touched:
+  - api/app/routers/auth.py
+  - api/app/schemas/auth.py
+  - api/app/services/auth.py
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The frontend surfaces backend auth error details directly, so backend copy should consistently include final punctuation.
+- Notes:
+  - Frontend local validation messages already ended with periods and no signup flow, routing, layout, or field order changes were made.
+- Verified Working?: yes — re-scanned auth/frontend error string patterns for missing terminal punctuation and `.\.venv\Scripts\python.exe -m pytest` passed all 5 API tests; pytest emitted a sandbox-only cache write warning.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 18:36 +05:00
 - Agent: Codex
 - Model: GPT-5

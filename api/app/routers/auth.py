@@ -56,16 +56,16 @@ async def refresh(
     session: AsyncSession = Depends(get_session),
 ) -> RefreshResponse:
     if not refresh_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token.")
     try:
         payload = decode_token(refresh_token, "refresh")
     except jwt.PyJWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.") from exc
 
     user_id = user_id_from_subject(str(payload.get("sub", "")))
     user = await session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
     # Optional v2 hardening: rotate refresh tokens and keep a denylist for explicit revocation.
     return RefreshResponse(access_token=create_access_token(user.id))
 
@@ -89,11 +89,11 @@ async def get_current_user(
     try:
         payload = decode_token(token, "access")
     except jwt.PyJWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token") from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.") from exc
     user_id = user_id_from_subject(str(payload.get("sub", "")))
     user = await session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.")
     return user
 
 

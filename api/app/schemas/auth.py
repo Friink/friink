@@ -9,23 +9,23 @@ USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
 def validate_password_rules(password: str) -> str:
     if len(password) < 8:
-        raise ValueError("Password must be at least 8 characters long")
+        raise ValueError("Password must be at least 8 characters long.")
     if any(character.isspace() for character in password):
-        raise ValueError("Password must not contain spaces")
+        raise ValueError("Password must not contain spaces.")
     if not re.search(r"[A-Z]", password):
-        raise ValueError("Password must include at least 1 uppercase letter")
+        raise ValueError("Password must include at least 1 uppercase letter.")
     if not re.search(r"[a-z]", password):
-        raise ValueError("Password must include at least 1 lowercase letter")
+        raise ValueError("Password must include at least 1 lowercase letter.")
     if not re.search(r"\d", password):
-        raise ValueError("Password must include at least 1 number")
+        raise ValueError("Password must include at least 1 number.")
     if not re.search(r"[^A-Za-z0-9\s]", password):
-        raise ValueError("Password must include at least 1 special character")
+        raise ValueError("Password must include at least 1 special character.")
     return password
 
 
 def validate_username_rules(username: str) -> str:
     if " " in username or not USERNAME_PATTERN.fullmatch(username):
-        raise ValueError("Username may contain only letters, numbers, '-', '_', and '.' with no spaces")
+        raise ValueError("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.")
     return username
 
 
@@ -33,7 +33,7 @@ def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date
     today = today or date.today()
     age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
     if age < minimum_age:
-        raise ValueError("User must be at least 13 years old")
+        raise ValueError("User must be at least 13 years old.")
     return date_of_birth
 
 

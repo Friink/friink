@@ -39,6 +39,20 @@ _Last updated: 2026-08-27_
 ## 2026-08-27
 
 ### Changed
+- [docs] Updated `docs/checklist.txt` to reflect the current Friink tooling: Next.js/React/TypeScript frontend, FastAPI backend, SQLAlchemy/Alembic, Neon Postgres, PyJWT auth, Vercel hosting, local scripts, and current testing tools.
+
+## 2026-08-27
+
+### Changed
+- [api] Standardized FastAPI auth and validation error copy so all backend-surfaced error messages end with a period.
+
+### Verified
+- [api] Re-scanned auth/frontend error string patterns for missing terminal punctuation.
+- [api] Ran `.\.venv\Scripts\python.exe -m pytest` in `api`; all 5 tests passed, with a sandbox-only pytest cache write warning.
+
+## 2026-08-27
+
+### Changed
 - [api] Updated the duplicate-username signup error copy to `Username is already taken.` so the frontend alert includes the final period.
 
 ### Verified

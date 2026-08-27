@@ -26,7 +26,7 @@ async def get_user_by_username(session: AsyncSession, username: str) -> User | N
 
 async def create_user(session: AsyncSession, data: SignupRequest, email_service: EmailService | None = None) -> User:
     if await get_user_by_email(session, data.email):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
     if await get_user_by_username(session, data.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
 
@@ -57,13 +57,13 @@ async def authenticate_user(session: AsyncSession, email: str, password: str) ->
     if user and user.locked_until and user.locked_until > now:
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
-            detail=f"Account locked, try again after {user.locked_until.isoformat()}",
+            detail=f"Account locked, try again after {user.locked_until.isoformat()}.",
         )
 
     if not user or not verify_password(password, user.password_hash):
         if user:
             await register_failed_login(session, user)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
     user.failed_login_attempts = 0
     user.locked_until = None
@@ -85,4 +85,4 @@ def user_id_from_subject(subject: str) -> uuid.UUID:
     try:
         return uuid.UUID(subject)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.") from exc
