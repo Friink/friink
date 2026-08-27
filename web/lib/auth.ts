@@ -14,12 +14,13 @@ export type AuthSession = {
 };
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
+const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
 
 export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSession {
   const demoUser: AuthUser = {
     id: 'demo-user',
     name: 'Demo User',
-    email: 'demo@friink.local',
+    email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
@@ -43,7 +44,7 @@ export async function signUp(input: {
   return createDemoSession({
     id: `demo-${input.username || 'user'}`,
     name: input.name || 'Demo User',
-    email: input.email || 'demo@friink.local',
+    email: input.email || DEFAULT_DEMO_EMAIL,
     username: input.username || 'demouser',
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
@@ -68,6 +69,20 @@ export function loadAuthSession(): AuthSession | null {
   }
 }
 
+export function loadPersistedAuthSession(): AuthSession | null {
+  if (typeof window === 'undefined') return null;
+
+  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
+  if (!raw) return null;
+
+  try {
+    const session = JSON.parse(raw) as AuthSession;
+    return session.user.email === DEFAULT_DEMO_EMAIL ? null : session;
+  } catch {
+    return null;
+  }
+}
+
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
@@ -75,7 +90,7 @@ export function clearAuthSession() {
 
 export async function login(email: string, password: string): Promise<AuthSession> {
   return createDemoSession({
-    email: email || 'demo@friink.local',
+    email: email || DEFAULT_DEMO_EMAIL,
     username: email ? email.split('@')[0] || 'demouser' : 'demouser',
     name: 'Demo User',
   });
