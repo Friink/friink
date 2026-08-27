@@ -4,6 +4,12 @@
 > After completing any change that required modifying code, append a
 > new entry here with the fields below.
 >
+> DESIGN SYSTEM RULE: Before making any visual, UI, layout, spacing, or
+> styling change, you MUST read packages/design/design.md in full —
+> specifically the "Tokens" and "Component Contracts" sections. All rules,
+> dimensions, alignments, and component variants documented there are
+> binding and must be strictly adhered to without creating ad-hoc overrides.
+>
 > Before modifying a file another agent recently touched (per this log
 > or git history), briefly verify the current state of that file matches
 > what the log describes — do not assume the log is authoritative over
@@ -45,6 +51,47 @@
   - `web/components/navigation-menu.tsx` — Header overflow/context menu for page-level actions.
 
 ---
+
+### Entry
+
+- Date & Time: 2026-08-27 05:56 +05:00
+- Agent: Antigravity
+- Model: Gemini 3.7 Flash
+- Prompt Summary: Resolve design.md discrepancies, verify Component Contracts against live rendering across all usage contexts, and add binding design system standing instructions to log files.
+- Changes Made:
+  - Rewrote the `Layout`, `Navigation`, and `Feed Behavior` prose sections in `packages/design/design.md` to accurately describe current shipped behavior (partitioned navigation across `FloatingBar`, `SideDrawer`, and `Header`; `/chat` route naming; `Explore`/`Connections` home tabs) with dated paper trail notes.
+  - Cleared the 4 items from the `Unresolved` section in `packages/design/design.md` after verifying all component contracts hold across all real usage contexts with no contract violations.
+  - Added permanent standing instruction to `CHANGELOG.md` and `AGENTLOG.md` requiring future agents to read `design.md`'s Tokens and Component Contracts sections before making any visual/UI/UX change.
+- Files/Scope Touched:
+  - packages/design/design.md (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: Updating the original prose to reflect reality removes stale documentation, preserves a clear paper trail, and ensures future agents adhere to binding tokens and contracts.
+- Notes:
+  - No component runtime code was modified.
+- Verified Working?: yes — `npm --prefix web run build` succeeded with exit code 0 and all 16 static/dynamic routes generated cleanly.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 05:52 +05:00
+- Agent: Antigravity
+- Model: Gemini 3.7 Flash
+- Prompt Summary: Harden design.md into an enforceable component contract document with hard Tokens and Component Contracts.
+- Changes Made:
+  - Added the `Tokens` section to `packages/design/design.md` covering concrete values for corner radius (8px rule, `--radius-pill` alias audit), colors (brand, neutrals, avatar tone palette, dark mode equivalents), typography, and layout/sizing tokens.
+  - Added the `Component Contracts` section to `packages/design/design.md` detailing fixed internal layout order, alignment invariants, props contracts, and variant behaviors for `ProfileCard`, `NavigationMenu`, `FloatingBar`, `ProfileScreen`, `FeedPost`, `Header`, `NavigationBar`, `SideDrawer`, `ChatComposer`, `PostComposerControls`, `Tabs`, `InputField`, `Button`, and `BrandLockup`.
+  - Added an `Unresolved & Historical Discrepancies` subsection flagging past differences in sidebar item listings, `/chat` naming vs `Messages`, home tabs, and `--radius-pill` legacy alias usage.
+  - Updated `CHANGELOG.md` and `AGENTLOG.md`.
+- Files/Scope Touched:
+  - packages/design/design.md (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: Locking down hard values and layout invariants in design documentation prevents repeated pixel-level regressions and enforces component consistency across all app screens.
+- Notes:
+  - Preserved all existing sections of `design.md` intact.
+- Verified Working?: yes — `npm --prefix web run build` succeeded with exit code 0 and all 16 routes generated cleanly.
 
 ### Entry
 
