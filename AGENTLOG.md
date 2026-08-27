@@ -54,6 +54,56 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 16:51 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the localhost launcher so one script starts both the frontend and the new FastAPI API while clearing occupied ports.
+- Changes Made:
+  - Added API path, port, and virtualenv Python settings to `localhost/localhost.ps1`.
+  - Added a reusable `Stop-LocalPort` helper and used it for both port `3000` and port `8000`.
+  - Added FastAPI startup via `api/.venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload`.
+  - Kept the existing Next.js `.next` cleanup and web startup behavior.
+  - Updated the script's final output to print both API and web localhost URLs.
+- Files/Scope Touched:
+  - localhost/localhost.ps1 (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The project now has a local FastAPI backend, so the one-command localhost workflow should unblock both service ports and launch both apps together.
+- Notes:
+  - The script expects `api/.venv/Scripts/python.exe` to exist and throws a setup hint if it does not.
+  - Did not run the full launcher to avoid opening persistent dev-server windows during verification.
+- Verified Working?: yes — parsed `localhost/localhost.ps1` with PowerShell's parser and confirmed syntax is valid.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 16:46 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Start the wiped API folder from scratch with a minimal FastAPI Hello World service.
+- Changes Made:
+  - Added `api/app/main.py` with a FastAPI app and root `GET /` route returning plain text `Hello, World!`.
+  - Added `api/app/__init__.py`, `api/requirements.txt`, `api/.gitignore`, and `api/README.md` with setup and run commands.
+  - Created/repaired a local `api/.venv` and installed FastAPI/Uvicorn for local verification.
+- Files/Scope Touched:
+  - api/app/__init__.py (added)
+  - api/app/main.py (added)
+  - api/requirements.txt (added)
+  - api/.gitignore (added)
+  - api/README.md (added)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The previous backend folder was wiped so the project needed a clean, framework-minimal FastAPI baseline before rebuilding real API behavior.
+- Notes:
+  - The initial venv `ensurepip` step hit Windows temp-folder permission errors and succeeded after an approved elevated retry.
+  - The API intentionally has no database, auth, ORM, or domain scaffolding yet.
+- Verified Working?: yes — installed dependencies in `api/.venv`, launched Uvicorn on `http://127.0.0.1:8000`, and confirmed the root route returns `Hello, World!`.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 05:56 +05:00
 - Agent: Antigravity
 - Model: Gemini 3.7 Flash
