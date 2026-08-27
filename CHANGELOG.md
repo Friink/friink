@@ -21,7 +21,7 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 _Last updated: 2026-08-27_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI auth backend with async SQLAlchemy/Postgres wiring, Alembic migrations, signup/login/JWT/refresh/logout routes, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
-- [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
+- [web] The deployed frontend serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Signup and login now call the FastAPI auth backend via `NEXT_PUBLIC_API_BASE_URL`, store the returned access session locally, and use the backend refresh cookie.
 - [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
@@ -35,6 +35,15 @@ _Last updated: 2026-08-27_
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-27
+
+### Changed
+- [web] Connected the existing three-step signup flow and login form to the FastAPI auth backend via `NEXT_PUBLIC_API_BASE_URL`, preserving the current UI flow and field order.
+- [web] Replaced demo-session creation on login/signup with real `/auth/signup` and `/auth/login` calls using `credentials: include`.
+
+### Verified
+- [web] Ran `npm --prefix web run build` outside the sandbox due to known Next worker `EPERM`; all 16 routes generated successfully. Ran `npx tsc --noEmit` after the build and it passed. Confirmed the production API root responds at `https://api.friink.com/`.
 
 ## 2026-08-27
 

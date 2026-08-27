@@ -54,6 +54,29 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 18:21 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Connect frontend signup/login helpers to the FastAPI auth backend while preserving the existing three-step signup UI.
+- Changes Made:
+  - Updated `web/lib/auth.ts` to call `NEXT_PUBLIC_API_BASE_URL` for `/auth/signup` and `/auth/login`.
+  - Added API response mapping into the existing `AuthSession` / `AuthUser` shape and kept localStorage session persistence unchanged.
+  - Updated the login submit path in `web/components/login-screen.tsx` to call the real `login()` helper instead of creating a demo session.
+- Files/Scope Touched:
+  - web/lib/auth.ts (modified)
+  - web/components/login-screen.tsx (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The user reported login returning to Demo User after signup. The frontend was still creating demo sessions; wiring the existing helpers to FastAPI makes signup/login usable without changing the signup UI flow.
+- Notes:
+  - No fields were moved and the signup flow remains three screens.
+  - The backend currently does not persist display name, so signup keeps the entered name in the saved client session while login maps name from username.
+- Verified Working?: yes — `npm --prefix web run build` completed successfully outside the sandbox with all 16 routes, `npx tsc --noEmit` passed after generated Next types were present, and `https://api.friink.com/` returned `Hello, World!`.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 18:04 +05:00
 - Agent: Codex
 - Model: GPT-5
