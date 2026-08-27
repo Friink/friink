@@ -54,6 +54,93 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 18:04 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create local FastAPI env files for development, staging, and production.
+- Changes Made:
+  - Added local `api/.env`, `api/.env.staging`, and `api/.env.production` files for FastAPI configuration.
+  - Generated separate staging and production JWT secrets.
+  - Updated `api/.gitignore` so `.env*` files are ignored while `.env.example` remains trackable.
+- Files/Scope Touched:
+  - api/.env (added, ignored)
+  - api/.env.staging (added, ignored)
+  - api/.env.production (added, ignored)
+  - api/.gitignore (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The user asked for FastAPI app env files matching the planned local, staging, and production deployment domains.
+- Notes:
+  - Secret-bearing env files are intentionally ignored by git and their values were not recorded in the logs.
+- Verified Working?: yes — confirmed git ignores the three secret env files and FastAPI settings load the local development `.env`.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 17:51 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Redirect authenticated users away from the landing page to `/home` without changing signup UI flow.
+- Changes Made:
+  - Added `loadPersistedAuthSession()` in `web/lib/auth.ts` to distinguish a saved user session from the default demo fallback.
+  - Converted `web/app/page.tsx` to a client component that redirects persisted non-default sessions from `/` to `/home`.
+- Files/Scope Touched:
+  - web/lib/auth.ts (modified)
+  - web/app/page.tsx (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The user requested that logged-in users who visit the landing page be sent to Home. The change is limited to route guarding and does not alter fields, screens, or signup flow.
+- Notes:
+  - No signup UI, login UI, or route structure was changed.
+  - The default demo fallback remains allowed to view `/`, preserving the logged-out landing page behavior.
+- Verified Working?: yes — `npx tsc --noEmit` completed cleanly, and `npm --prefix web run build` completed successfully with all 16 routes after running outside the sandbox because the sandboxed build hit Next worker `spawn EPERM`.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 17:46 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement backend-only FastAPI authentication while preserving the existing three-screen frontend signup flow.
+- Changes Made:
+  - Added structured FastAPI backend modules for config, async database session handling, models, schemas, auth router, auth/security/email/OTP services, Alembic migration setup, Vercel entrypoint, and tests.
+  - Implemented `POST /auth/signup`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, and `GET /auth/me`.
+  - Added `users` and unused future-ready `otp_codes` tables via Alembic, including `otp_purpose` enum.
+  - Added password, username, and age validation; bcrypt password hashing; JWT access/refresh tokens; httpOnly refresh cookie behavior controlled by environment.
+  - Added OTP stubs with TODO comments and deferred OTP flow points without calling OTP from routes.
+  - Added focused tests for password rules, username rules, minimum age, and lockout behavior.
+  - Updated README and `.env.example` with environment, migration, local run, Vercel, and frontend cookie-call notes.
+- Files/Scope Touched:
+  - api/.env.example (modified)
+  - api/README.md (modified)
+  - api/requirements.txt (modified)
+  - api/api/index.py (added)
+  - api/alembic.ini (added)
+  - api/alembic/env.py (added)
+  - api/alembic/versions/20260827_0001_create_auth_tables.py (added)
+  - api/app/config.py (added)
+  - api/app/db.py (modified)
+  - api/app/main.py (modified)
+  - api/app/models/ (added)
+  - api/app/routers/ (added)
+  - api/app/schemas/ (added)
+  - api/app/services/ (added)
+  - api/tests/ (added)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The pasted backend brief requested production-quality FastAPI auth for signup/login/JWT sessions while OTP remains deferred. The user's explicit constraint forbade UI/UX/routing changes, so all work stayed inside `api/` plus required repo logs.
+- Notes:
+  - No web UI files were modified.
+  - SQLAlchemy async uses `NullPool` because Neon provides pooled connections and serverless/TestClient event loops should not retain asyncpg connections.
+  - The Neon database URL was used only through environment variables and was not written into repository files.
+- Verified Working?: yes — installed dependencies, reset/migrated Neon staging, confirmed `alembic_version`, `otp_codes`, and `users` tables, ran a temporary signup/login smoke test with cleanup, ran `python -m pytest` with all 5 tests passing, imported the FastAPI app successfully, and scanned repo files to confirm the Neon secret was not committed.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 17:24 +05:00
 - Agent: Codex
 - Model: GPT-5
