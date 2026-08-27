@@ -25,7 +25,7 @@ export function PostScreen({ user, text, onTextChange }: PostScreenProps) {
   return (
     <section className="post-screen">
       <div className="chat-header">
-        <ProfileCard user={user} />
+        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} />
       </div>
 
       <div className="post-composer">

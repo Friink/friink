@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
 
 type FeedPostProps = {
@@ -9,19 +11,18 @@ export function FeedPost({ post, highlightedStar = false }: FeedPostProps) {
   return (
     <article className="feed-post">
       <div className="feed-post-heading">
-        <span className={`user-avatar avatar-${post.tone}`}>{post.initials}</span>
-        <div className="feed-post-meta">
-          <strong>{post.name}</strong>
-          <small>
-            {post.handle}&nbsp;&nbsp;{post.date}
-          </small>
-        </div>
+        <Link className="feed-post-profile-link" href={`/${post.handle.replace('@', '')}`} aria-label={`Open ${post.name} profile`}>
+          <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} />
+        </Link>
         <button className={`icon-plain feed-post-star${highlightedStar ? ' feed-post-star-highlighted' : ''}`} type="button" aria-label="Starred post">
           <i className={highlightedStar ? 'fa-solid fa-star' : 'fa-regular fa-star'} aria-hidden="true" />
         </button>
         <button className="icon-plain feed-post-more" type="button" aria-label="Post options">
           <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
         </button>
+      </div>
+      <div className="feed-post-date">
+        <small>{post.date}</small>
       </div>
       <p className="feed-post-body">{post.text}</p>
       <div className="feed-post-actions">

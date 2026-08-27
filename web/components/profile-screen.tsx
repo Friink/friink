@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { ProfileCard } from '@/components/profile-card';
 import { FeedPost } from '@/components/feed-post';
 import { Tabs } from '@/components/tabs';
 import type { AuthUser } from '@/lib/auth';
@@ -9,6 +10,7 @@ import type { Post } from '@/lib/data';
 type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
+  isOwnProfile?: boolean;
 };
 
 type ProfileTab = 'posts' | 'replies';
@@ -31,24 +33,43 @@ function getInitials(value: string) {
   );
 }
 
-export function ProfileScreen({ user, posts }: ProfileScreenProps) {
+export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
 
   return (
     <section className="profile-screen">
       <div className="profile-intro">
-        <span className="user-avatar avatar-mint profile-large-avatar">{getInitials(user.name)}</span>
-        <div className="profile-details">
-          <h2>{user.name}</h2>
-          <p>@{user.username}</p>
-          <p className="profile-bio">Your signed-in account is now driving this profile view.</p>
-        </div>
+        <ProfileCard
+          name={user.name}
+          handle={`@${user.username}`}
+          tone="mint"
+          initials={getInitials(user.name)}
+        />
       </div>
+
+      <p className="profile-bio">
+        {isOwnProfile
+          ? 'Your signed-in account is now driving this profile view.'
+          : 'This is a dummy profile view for browsing people around Friink.'}
+      </p>
 
       <div className="profile-stats" aria-label="Profile statistics">
         <span><strong>0</strong> following</span>
         <span><strong>0</strong> followers</span>
+      </div>
+
+      <div className="profile-actions">
+        {isOwnProfile ? (
+          <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile">
+            <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
+            <span>Edit</span>
+          </button>
+        ) : (
+          <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
+            <i className="fa-regular fa-paper-plane" aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       <Tabs

@@ -11,9 +11,9 @@ import { NavigationBar } from '@/components/navigationbar';
 // legacy TabBar removed
 import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
-import { FloatingActions } from '@/components/floating-actions';
 import { HomeScreen } from '@/components/home-screen';
 import { FloatingBar } from '@/components/floating-bar';
+import { NotificationsScreen } from '@/components/notifications-screen';
 import { PostComposerControls } from '@/components/post-composer-controls';
 import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
@@ -26,6 +26,7 @@ type AppShellProps = {
   user: AuthUser;
   onLogout: () => void;
   initialScreen?: Screen;
+  profileUser?: AuthUser;
   children?: React.ReactNode;
   floatingBarContent?: React.ReactNode;
   fillContent?: boolean;
@@ -49,7 +50,7 @@ function getDisplayName(user: AuthUser) {
   return user.name.trim() || user.username;
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', children, floatingBarContent, showTabs, fillContent }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, fillContent }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
@@ -61,6 +62,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
   const [messagesTab, setMessagesTab] = useState('all');
   const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
+  const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -154,6 +156,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
         return 'Search';
       case 'messages':
         return 'Chat';
+      case 'notifications':
+        return 'Notifications';
       case 'settings':
         return 'Settings';
       case 'floating':
@@ -188,6 +192,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
       case 'messages':
         router.push('/chat');
         break;
+      case 'notifications':
+        router.push('/notifications');
+        break;
       case 'floating':
         router.push('/floating');
         break;
@@ -221,32 +228,41 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
       <div className="app-layout">
         <SideDrawer
           user={user}
-          activeScreen={activeScreen}
+          activeScreen={sidebarActiveScreen}
           collapsed={sidebarCollapsed}
           onNavigate={navigateTo}
           onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
         />
 
-        <section className="main-panel">
-          <Header
-            onNavigate={navigateTo}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
-          />
+        <Header
+          onNavigate={navigateTo}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
+        />
 
+        <section className="main-panel">
           <div className="mobile-page-navigation">
             <NavigationBar
               title={getPageTitle(activeScreen)}
               onBack={() => router.back()}
               backDisabled={!canGoBack}
-              onMenu={() => setSidebarCollapsed(false)}
             />
           </div>
 
           <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
             <div className="main-scroll">
-              {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && <Tabs ariaLabel="Home quick tabs" />}
+              {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
+                <Tabs
+                  tabs={[
+                    { id: 'all', label: 'Explore' },
+                    { id: 'connections', label: 'Connections' },
+                  ]}
+                  activeId={homeFilter}
+                  onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                  ariaLabel="Home quick tabs"
+                />
+              )}
               {showTabs !== false && activeScreen === 'connections' && (
                 <Tabs
                   tabs={[
@@ -278,11 +294,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
                 ) : (
                   <>
                     {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
-                    {activeScreen === 'profile' && <ProfileScreen user={user} posts={posts} />}
+                    {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} />}
                     {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
                     {activeScreen === 'starred' && <StarredScreen posts={posts} />}
                     {activeScreen === 'post' && <PostScreen user={user} text={postDraft} onTextChange={setPostDraft} />}
                     {activeScreen === 'search' && <SearchScreen />}
+                    {activeScreen === 'notifications' && <NotificationsScreen />}
                     {activeScreen === 'settings' && (
                       <SettingsScreen
                         user={user}
@@ -297,7 +314,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', children, flo
                 )}
               </ContentBox>
             </div>
-            <FloatingActions />
           </div>
         </section>
 

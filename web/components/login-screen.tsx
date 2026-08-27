@@ -166,9 +166,14 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               Forgot password?
             </button>
 
-            <Button className="login-submit" type="submit">
-              {isSubmitting ? 'Please wait...' : 'Login'}
-            </Button>
+            <div className="signup-actions signup-actions-single">
+              <a className="signup-back-button login-back-button" href="/">
+                Back
+              </a>
+              <Button className="login-submit" type="submit">
+                {isSubmitting ? 'Please wait...' : 'Login'}
+              </Button>
+            </div>
 
             <p className="login-switch">
               Don't have an account?{' '}

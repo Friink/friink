@@ -62,7 +62,7 @@ export default function ChatPage() {
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <ProfileCard user={user} />
+          <ProfileCard name={conversation.name} handle={conversation.handle} tone={conversation.tone} initials={conversation.initials} />
         </div>
 
         <div className="chat-messages">

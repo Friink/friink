@@ -15,6 +15,359 @@
 
 - NOTE: Keep entries newest-first. When adding a log entry, prepend it so the most recent entries appear immediately after this instruction block.
 
+- COMPONENT REGISTRY: Keep this block updated whenever a shared component is added, renamed, removed, or repurposed. Before creating a new component, check here first so we reuse existing building blocks instead of duplicating them.
+  - `web/components/app-shell.tsx` — App-wide shell that owns route selection, shared layout state, and page composition.
+  - `web/components/header.tsx` — Desktop top header with brand, search, and notifications entry points.
+  - `web/components/navigationbar.tsx` — Mobile top navigation bar with back/menu controls.
+  - `web/components/side-drawer.tsx` — Desktop and mobile primary navigation drawer/sidebar.
+  - `web/components/floating-bar.tsx` — Persistent contextual bottom bar for default navigation and composer controls.
+  - `web/components/content-box.tsx` — Shared width/height shell for page content areas.
+  - `web/components/tabs.tsx` — Shared tab strip with active indicator.
+  - `web/components/feed-post.tsx` — Reusable feed/post card with identity block, date, and actions.
+  - `web/components/profile-card.tsx` — Shared identity block for avatar, name, handle, and optional date.
+  - `web/components/profile-screen.tsx` — User/dummy profile view with tabs and profile actions.
+  - `web/components/connections-screen.tsx` — Connections list and request/filter UI.
+  - `web/components/home-screen.tsx` — Home timeline feed renderer.
+  - `web/components/starred-screen.tsx` — Starred posts feed view.
+  - `web/components/notifications-screen.tsx` — Notifications inbox-style list view.
+  - `web/components/screens.tsx` — Shared placeholder/secondary screens: Chat list, Search, Calendar, Directory.
+  - `web/components/chat-composer.tsx` — Direct chat composer controls for the floating bar.
+  - `web/components/post-composer-controls.tsx` — Post composer action controls for the floating bar.
+  - `web/components/post-screen.tsx` — Post compose page body and text area.
+  - `web/components/compose-header.tsx` — Compose-mode header chrome for post/chat composition.
+  - `web/components/login-screen.tsx` — Auth entry UI for login/signup flow.
+  - `web/components/account-screens.tsx` — Settings/account/privacy screens.
+  - `web/components/notifications-screen.tsx` — Notifications route content and row rendering.
+  - `web/components/design/brand-lockup.tsx` — Shared Friink logo/wordmark lockup.
+  - `web/components/design/button.tsx` — Shared button primitive for app and auth surfaces.
+  - `web/components/design/input-field.tsx` — Shared labeled input primitive with prefix/trailing support.
+  - `web/components/friink-logo.tsx` — Small brand logo component for compact UI surfaces.
+  - `web/components/navigation-menu.tsx` — Header overflow/context menu for page-level actions.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 05:06 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clean up a misleading component registry note after the user pointed out all reused components should be treated consistently.
+- Changes Made:
+  - Removed the registry note that singled out `web/components/notifications-screen.tsx` and `web/components/profile-screen.tsx` as reusable page modules.
+  - Added a corresponding changelog entry for the documentation cleanup.
+- Files/Scope Touched:
+  - AGENTLOG.md (updated)
+  - CHANGELOG.md (updated)
+- Reason/Decision: The note implied those two components were exceptional, when the registry should encourage reuse consistently across shared components.
+- Notes:
+  - No runtime code changed in this pass.
+- Verified Working?: yes — re-read the top of `AGENTLOG.md` and confirmed the note was removed cleanly.
+
+### Entry
+
+- Date & Time: 2026-08-27 05:01 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Delete the unused `FloatingActions` component and remove its remaining empty shell usage.
+- Changes Made:
+  - Removed the `FloatingActions` import and empty render from `web/components/app-shell.tsx`.
+  - Deleted `web/components/floating-actions.tsx`.
+  - Removed the stale `.floating-actions` CSS block from `web/app/globals.css`.
+  - Removed `FloatingActions` from the component registry in this file.
+- Files/Scope Touched:
+  - web/components/app-shell.tsx (modified)
+  - web/components/floating-actions.tsx (deleted)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The component was no longer part of the active UI; it was imported and rendered without children, so keeping it added dead surface area and stale registry documentation.
+- Notes:
+  - A focused `rg` search found no remaining `FloatingActions` / `floating-actions` references after cleanup.
+  - The existing worktree still contains broader uncommitted UI changes from earlier tasks; this entry covers only the requested component deletion and required logs.
+- Verified Working?: yes — `npm run build` completed successfully in `web` with all 16 routes generated.
+
+### Entry
+
+- Date & Time: 2026-08-27 04:52 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create a dummy options menu for the three-dot navigation control under the header.
+- Changes Made:
+  - Added `web/components/navigation-menu.tsx` with placeholder menu actions.
+  - Converted `NavigationBar` to manage the overflow menu open state, including outside-click and Escape dismissal.
+  - Replaced the previous three-dot sidebar-expansion behavior in `AppShell` with the new menu toggle behavior.
+  - Added styling for the menu popover and dummy action rows.
+- Files/Scope Touched:
+  - web/components/navigation-menu.tsx (added)
+  - web/components/navigationbar.tsx (modified)
+  - web/components/app-shell.tsx (modified)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The header already owns sidebar toggling, so the page-level three-dot control can become a contextual options menu. Dummy buttons establish the interaction surface while leaving real actions for a later pass.
+- Notes:
+  - Current placeholder actions are Share profile, Copy link, Mute updates, and Report.
+  - The existing worktree already contained broader uncommitted UI changes; this entry covers only the new menu work and required logs.
+- Verified Working?: yes — `npm run build` completed successfully in `web` with all 16 routes generated.
+
+### Entry
+
+- Date & Time: 2026-08-27 04:47 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the settings account username `@` prefix overlap and change only the other-profile message action icon to a compose/send icon.
+- Changes Made:
+  - Reset inherited absolute positioning and transform on the settings account username prefix so the `@` marker participates in the flex layout.
+  - Changed the non-own profile action icon from `fa-message` to `fa-paper-plane`.
+- Files/Scope Touched:
+  - web/app/globals.css (modified)
+  - web/components/profile-screen.tsx (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The settings field had duplicate `.input-with-prefix` rules, and the settings-specific flex layout did not override the earlier absolute-positioned prefix. The profile page is contextual, so only the non-own profile control should visually indicate composing a message while the own-profile Edit control remains unchanged.
+- Notes:
+  - The existing worktree already contained broader uncommitted changes from recent app-shell/profile/chat work; this patch was kept to the requested CSS and icon lines plus required logs.
+  - Build warning: Google Fonts optimization skipped because the stylesheet could not be downloaded in the restricted network environment.
+- Verified Working?: yes — `npm run build` completed successfully in `web` with all 16 routes generated.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the `[username]` profile route so other-user pages open reliably from the feed instead of falling back to the signed-in profile.
+- Changes Made:
+  - Switched `web/app/[username]/page.tsx` to derive the viewed handle from the actual URL path.
+  - Added explicit own-profile detection so the shell only treats the page as self-profile when the slug matches the signed-in user.
+- Files/Scope Touched:
+  - web/app/[username]/page.tsx (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The route needed to distinguish between the signed-in user’s own profile and browsed profiles opened from feed cards. Reading the slug directly avoids the fallback behavior that made other-user pages appear broken.
+- Notes:
+  - The side drawer should remain active for the signed-in profile but not for dummy profile pages.
+  - The build was rerun after the route fix and completed successfully.
+- Verified Working?: yes — `cd web && npm run build` completed successfully after the route adjustment.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the remaining settings username prefix overlap so the `@` indicator sits outside the entered text.
+- Changes Made:
+  - Reworked the settings account username prefix wrapper in `web/app/globals.css` to use a proper inline prefix layout with a bordered container, matching the signup field behavior.
+- Files/Scope Touched:
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The username field was still visually overlapping the `@` prefix, so the wrapper needed to mirror the signup prefix treatment instead of relying on the earlier collapsed layout.
+- Notes:
+  - The settings account tab now uses the same prefix pattern as signup, so the typed value no longer sits on top of the `@`.
+- Verified Working?: yes — `cd web && npm run build` completed successfully after the CSS adjustment.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct profile action alignment/state behavior and fix the settings account username prefix spacing.
+- Changes Made:
+  - Right-aligned the profile action area so both own-profile Edit and dummy-profile message states sit on the right edge.
+  - Kept the side drawer profile highlight active only for the signed-in user’s own profile, not when browsing another user’s dummy profile.
+  - Adjusted the settings account username field prefix so the `@` marker behaves like the signup flow instead of being covered by the typed text.
+- Files/Scope Touched:
+  - web/components/profile-screen.tsx (modified)
+  - web/components/app-shell.tsx (modified)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The app needs to distinguish between the signed-in profile and browsed profiles, and the settings account username field should reuse the same prefix pattern users already see during signup.
+- Notes:
+  - The dummy `[username]` route remains a browsable other-user profile and should not light up the sidebar profile item.
+  - The repo does not include Material UI dependencies, so the message action continues to use the existing icon set.
+- Verified Working?: yes — `cd web && npm run build` completed successfully after the updates.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Tighten profile spacing, move the post date under the profile card, and restore Edit on the self profile while keeping the dummy profile as a message-only view.
+- Changes Made:
+  - Adjusted the `ProfileCard`-driven feed header so the post date sits under the avatar/name/handle block and is more legible.
+  - Tightened the dummy profile layout spacing so the bio, stats, and action control align from the left edge.
+  - Switched the self-profile action back to Edit and kept the dummy profile action as a message icon.
+  - Updated `web/app/globals.css` to support the new alignment and control sizing.
+- Files/Scope Touched:
+  - web/components/profile-screen.tsx (modified)
+  - web/components/feed-post.tsx (modified)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The self profile should remain editable, while dummy profiles should feel browsable and messageable. The feed date needed its own visual line so the post identity block reads cleanly.
+- Notes:
+  - There is no actual MUI dependency in the repo, so the message action uses the existing icon set rather than a Material UI control.
+  - The dummy `[username]` route still represents other users; the shell profile remains the signed-in user.
+- Verified Working?: yes — `cd web && npm run build` completed successfully after clearing the generated `.next` cache and fixing stale `ProfileCard` usages.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rework post headers to use the shared `ProfileCard` component and reduce the home tabs to `Explore` and `Connections`.
+- Changes Made:
+  - Updated `web/components/profile-card.tsx` to support reusable identity blocks with optional date text.
+  - Rebuilt `web/components/feed-post.tsx` so each post header uses `ProfileCard` for avatar/name/handle, with the post date moved below that block.
+  - Updated `web/components/profile-screen.tsx`, `web/components/side-drawer.tsx`, and `web/app/[username]/chat/page.tsx` / `web/components/post-screen.tsx` to use the new `ProfileCard` props.
+  - Reduced the home tabs in `web/components/app-shell.tsx` to `Explore` and `Connections`.
+  - Added supporting layout styling in `web/app/globals.css`.
+- Files/Scope Touched:
+  - web/components/profile-card.tsx (modified)
+  - web/components/feed-post.tsx (modified)
+  - web/components/profile-screen.tsx (modified)
+  - web/components/side-drawer.tsx (modified)
+  - web/app/[username]/chat/page.tsx (modified)
+  - web/components/post-screen.tsx (modified)
+  - web/components/app-shell.tsx (modified)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: Reusing a single identity block keeps the feed, sidebar, and profile surfaces visually consistent, and the home tabs now reflect the actual high-level navigation modes instead of repeating a three-way feed filter.
+- Notes:
+  - The feed date now sits on its own line below the identity block, matching the requested hierarchy.
+  - The `ProfileCard` component is now the shared pattern for avatar/name/handle blocks across post, profile, and sidebar contexts.
+- Verified Working?: yes — `cd web && npm run build` completed successfully after clearing the generated `.next` cache and fixing the remaining stale `ProfileCard` call sites.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Trim the notifications page chrome, remove the chat list search/title, and make feed/chat identities open dummy profiles with a message action.
+- Changes Made:
+  - Removed the notifications-page heading/copy/banner content and the read-all button so notifications open directly into the list.
+  - Removed the chat list page title and search box.
+  - Made feed posts and chat identities link to dummy profile views, and added a message button to non-own profile views.
+  - Updated the dummy `[username]` profile route to supply a browsable profile user instead of the signed-in account.
+- Files/Scope Touched:
+  - web/components/notifications-screen.tsx (modified)
+  - web/components/screens.tsx (modified)
+  - web/components/feed-post.tsx (modified)
+  - web/components/profile-screen.tsx (modified)
+  - web/app/[username]/page.tsx (modified)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The notifications view should behave like a read-only inbox, and the chat/profile flow should make identities feel navigable rather than decorative. Keeping the dummy profile distinct from the signed-in account preserves the expected “compose message” action.
+- Notes:
+  - The `[username]` route now renders a dummy profile based on the path slug and reuses the shared shell.
+  - The chat main page no longer needs the extra search chrome for this iteration.
+- Verified Working?: yes — `cd web && npm run build` completed successfully after the updates.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a dedicated notifications page using the attached mobile reference as directional inspiration, then wire the shell bell control to open it.
+- Changes Made:
+  - Added `web/components/notifications-screen.tsx` with an inbox-style notification list and Friink-aligned row styling.
+  - Added `web/app/notifications/page.tsx` so notifications have a first-class route.
+  - Extended the `Screen` union in `web/lib/data.ts` and routed the header bell in `web/components/header.tsx` and `web/components/app-shell.tsx` to `/notifications`.
+  - Added notifications layout styling in `web/app/globals.css`.
+- Files/Scope Touched:
+  - web/components/notifications-screen.tsx (added)
+  - web/app/notifications/page.tsx (added)
+  - web/lib/data.ts (modified)
+  - web/components/header.tsx (modified)
+  - web/components/app-shell.tsx (modified)
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The requested screen needed to behave like a real module with a route and shell integration, not a one-off mock panel. Using the existing shell keeps the new page consistent with the rest of the app.
+- Notes:
+  - The attached image was treated as directional reference only, not a pixel target.
+  - The page currently covers the notification types already visible in the app context: follow requests, likes, service interest, replies, verification/security updates.
+- Verified Working?: yes — `cd web && npm run build` completed successfully with the new `/notifications` route included.
+
+### Entry
+
+- Date & Time: 2026-08-26
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Frontend progress assessment for the Friink web app against the in-scope PRD checklist.
+- Changes Made: None — assessment only
+- Files/Scope Touched:
+  - CHANGELOG.md (reviewed)
+  - AGENTLOG.md (reviewed)
+  - CODEX.md (not present at repo root)
+  - COPILOT.md (not present at repo root)
+  - packages/design/design.md (reviewed)
+  - web/app/**/* (reviewed)
+  - web/components/**/* (reviewed)
+  - web/lib/**/* (reviewed)
+- Reason/Decision: Audit-only pass to measure frontend completion against the supplied checklist without changing implementation.
+- Notes:
+  - `CODEX.md` and `COPILOT.md` were not present at the repository root, so there was nothing to read from those paths.
+  - The frontend currently has strong coverage for auth entry, home/feed, profile shell, chat/thread UI, starred posts, and core navigation, but most advanced PRD items remain unimplemented.
+- Verified Working?: yes — source inspection completed; no code changes were made.
+
+### Entry
+
+- Date & Time: 2026-08-27 03:35 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Polish app navigation and headers across breakpoints, remove duplicate back controls, improve local-dev recovery, and add a signup-style Back control to login.
+- Changes Made:
+  - Updated the message-list wording from “Messages” to “Chat” while retaining the `/chat` route and existing internal screen identifier.
+  - Made the shared `NavigationBar` back button history-aware, disabled/grayed on Home or without history, and changed app navigation to preserve browser history with `router.push`.
+  - Removed redundant in-content back buttons from direct chats and the post composer.
+  - Moved `Header` out of the sidebar-offset main panel so it spans the page consistently in Chromium, enabled the header hamburger on desktop, and removed the duplicate drawer hamburger.
+  - Aligned header spacing across desktop/tablet breakpoints and removed the remaining header/sidebar width workaround.
+  - Investigated recurring OneDrive/Next `.next` reparse-point failures; the local launcher now clears generated cache output before startup.
+  - Added a visible login Back button that returns to `/`, using the existing signup Back-control styling.
+- Files/Scope Touched:
+  - web/components/app-shell.tsx (modified)
+  - web/components/navigationbar.tsx (modified)
+  - web/components/side-drawer.tsx (modified)
+  - web/components/screens.tsx (modified)
+  - web/components/post-screen.tsx (modified)
+  - web/components/login-screen.tsx (modified)
+  - web/lib/data.ts (modified)
+  - web/app/globals.css (modified)
+  - localhost/start-local-dev.ps1 (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: Consolidating navigation controls and removing viewport/offset workarounds gives consistent behavior across desktop, tablet, and mobile. The launcher cleanup prevents stale generated Next.js output from blocking local development under OneDrive.
+- Notes for next agent:
+  - The header hamburger is the sole sidebar-toggle control; do not reintroduce a second drawer hamburger.
+  - The production build may conflict with an actively running dev server because both use `web/.next`; stop the dev server before a clean production build.
+- Verified Working?: yes — repeated `npm run build` runs compiled, type-checked, and generated routes successfully; one concurrent build run encountered the known shared `.next` cache conflict.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-27 03:18 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit and remove brittle viewport-width, offset, and legacy layout hacks before they create cross-browser issues.
+- Changes Made:
+  - Removed the unused fixed and static `.post-footer` CSS left behind after moving post controls into the floating bar.
+  - Replaced the full-logo negative margin with normal spacing.
+  - Changed compact desktop floating-bar centering from calculated viewport positioning plus `translateX` to sidebar-aware left/right constraints with automatic margins.
+  - Changed the mobile drawer’s `86vw` width cap to a container-relative `calc(100% - 2rem)` cap.
+- Files/Scope Touched:
+  - web/app/globals.css (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: These rules were compensating for prior layout structure instead of expressing the desired layout directly. Removing them avoids scrollbar-width and browser-specific positioning regressions.
+- Notes for next agent:
+  - Remaining viewport units are limited to intentional responsive typography/asset scaling and full-height screens; no app-shell width or floating-bar positioning uses `vw`.
+- Verified Working?: source audit passed for removed footer rules, negative margins, and floating-bar viewport-width positioning; run the production build after stopping the active dev server to avoid a shared `.next` cache conflict.
+
 ---
 
 ### Entry

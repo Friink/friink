@@ -8,6 +8,7 @@ import { clearAuthSession, loadAuthSession, type AuthUser } from '@/lib/auth';
 export default function UserProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [profileHandle, setProfileHandle] = useState('alexmorgan');
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -19,6 +20,12 @@ export default function UserProfilePage() {
     setUser(session.user);
   }, [router]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const slug = window.location.pathname.split('/').filter(Boolean)[0];
+    setProfileHandle(slug || 'alexmorgan');
+  }, []);
+
   function handleLogout() {
     clearAuthSession();
     router.replace('/');
@@ -26,5 +33,26 @@ export default function UserProfilePage() {
 
   if (!user) return null;
 
-  return <AppShell user={user} onLogout={handleLogout} initialScreen="profile" />;
+  const isOwnProfile = profileHandle.toLowerCase() === user.username.toLowerCase();
+
+  const profileUser: AuthUser = {
+    ...user,
+    id: `dummy-${profileHandle}`,
+    name: profileHandle
+      .split(/[._-]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || 'Friink User',
+    username: profileHandle,
+    email: `${profileHandle}@friink.local`,
+  };
+
+  return (
+    <AppShell
+      user={user}
+      profileUser={isOwnProfile ? undefined : profileUser}
+      onLogout={handleLogout}
+      initialScreen="profile"
+    />
+  );
 }

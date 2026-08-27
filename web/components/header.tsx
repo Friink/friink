@@ -30,10 +30,10 @@ export function Header({
           <button className="topbar-search" type="button" onClick={() => onNavigate('search')} aria-label="Search">
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
           </button>
-        <button className="topbar-bell" type="button" aria-label="Notifications">
-          <i className="fa-regular fa-bell" aria-hidden="true" />
-          <span />
-        </button>
+          <button className="topbar-bell" type="button" onClick={() => onNavigate('notifications')} aria-label="Notifications">
+            <i className="fa-regular fa-bell" aria-hidden="true" />
+            <span />
+          </button>
         </div>
       </div>
     </header>
