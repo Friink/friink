@@ -20,7 +20,7 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 ## Current State
 _Last updated: 2026-08-27_
 
-- [api] The wiped `api/` folder now contains a clean FastAPI starter with a single root `Hello, World!` endpoint, local `.venv` workflow notes, and no database/auth scaffolding.
+- [api] The wiped `api/` folder now contains a clean FastAPI starter with a root `Hello, World!` endpoint, Neon/Postgres connection wiring via `DATABASE_URL`, and a reset script for rebuilding the staging database schema from scratch.
 - [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
 - [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
@@ -35,6 +35,17 @@ _Last updated: 2026-08-27_
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-27
+
+### Added
+- [api] Added Postgres/Neon wiring for FastAPI via `DATABASE_URL`, including a `/health/db` endpoint, local `.env` example, and `scripts/reset_database.py` to drop/recreate the `public` schema.
+
+### Changed
+- [api] Added `psycopg[binary]` and explicit `python-dotenv` dependencies for database connectivity and local environment loading.
+
+### Verified
+- [api] Installed the Postgres driver in `api/.venv`, reset the provided Neon staging database's `public` schema, and confirmed the FastAPI database health code returns `database: true`.
 
 ## 2026-08-27
 

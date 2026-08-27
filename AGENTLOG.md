@@ -54,6 +54,36 @@
 
 ### Entry
 
+- Date & Time: 2026-08-27 17:24 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Wipe the provided Neon staging database and wire the fresh FastAPI app for database connectivity.
+- Changes Made:
+  - Added `api/app/db.py` to load local `.env` values and expose `DATABASE_URL` lookup.
+  - Added `api/scripts/reset_database.py` to drop and recreate the connected database's `public` schema.
+  - Added `api/.env.example` with the `DATABASE_URL` placeholder.
+  - Added `/health/db` in `api/app/main.py` to verify a Postgres connection with `SELECT 1`.
+  - Added `psycopg[binary]` and explicit `python-dotenv` entries to `api/requirements.txt`.
+  - Updated `api/README.md` with local and Vercel `DATABASE_URL` notes plus the reset command.
+- Files/Scope Touched:
+  - api/.env.example (added)
+  - api/app/db.py (added)
+  - api/app/main.py (modified)
+  - api/scripts/reset_database.py (added)
+  - api/requirements.txt (modified)
+  - api/README.md (modified)
+  - CHANGELOG.md (updated)
+  - AGENTLOG.md (updated)
+- Reason/Decision: The user provided the staging Neon connection and asked to wipe it for a clean FastAPI setup before adding domain features.
+- Notes:
+  - The database URL was used only as an environment variable for local commands and was not committed into repository files.
+  - The reset operation drops/recreates the `public` schema; it does not create application tables yet.
+- Verified Working?: yes — installed the Postgres driver in `api/.venv`, reset the Neon staging database's `public` schema, and confirmed the FastAPI database health code returns `database: true`.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-27 16:51 +05:00
 - Agent: Codex
 - Model: GPT-5
