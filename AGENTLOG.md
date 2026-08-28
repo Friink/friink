@@ -22,6 +22,28 @@
 - Date/Time: 2026-08-28
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Continue staging "Failed to fetch" debug using the provided login account after the first push still did not restore the app.
+- Changes:
+  - Verified the deployed frontend bundle is correctly calling `https://staging-api.friink.com`.
+  - Confirmed live `POST /auth/login` still returned Vercel `500 Internal Server Error` before the database fix.
+  - Reproduced the backend error locally against Neon: the database was still at Alembic revision `20260827_0001`, missing the `posts` table and `users.display_name`/`users.about` columns required by deployed code.
+  - Converted Alembic's `env.py` from async SQLAlchemy migration execution to sync `engine_from_config`, matching the API's sync psycopg3 runtime path.
+  - Updated `20260828_0003_create_follow_requests.py` to use `create_type=False` for the PostgreSQL enum after creating it with `checkfirst=True`, allowing the migration to resume cleanly when the enum already exists from a partial attempt.
+  - Ran `alembic upgrade head` against the configured Neon database.
+  - Updated `CHANGELOG.md` with the database migration fix and live endpoint verification.
+- Files:
+  - api/alembic/env.py
+  - api/alembic/versions/20260828_0003_create_follow_requests.py
+  - CHANGELOG.md
+- Reason/Decision: The app code had been deployed, but the shared Neon database schema had not advanced past the initial auth migration. DB-backed routes crashed because deployed models queried missing tables/columns. Running migrations required fixing Alembic's own async DB path and the partially-created enum edge first.
+- Notes:
+  - Do not log or commit the provided password or returned tokens.
+  - The live login verification used the user-provided account only to confirm HTTP status and CORS behavior.
+- Verified Working?: yes — `alembic current` reports `20260828_0004 (head)`, live `GET /posts` returns `200 []` with staging CORS headers, and live `POST /auth/login` returns `200` for the provided account.
+
+- Date/Time: 2026-08-28
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Fix staging outage after posts work, where browser showed "Failed to fetch" because DB-backed API routes crashed before CORS headers were attached.
 - Changes:
   - Replaced SQLAlchemy's async engine/session setup with sync `create_engine` and `sessionmaker` while keeping the FastAPI dependency shape request-scoped.

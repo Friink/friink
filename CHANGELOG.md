@@ -41,6 +41,18 @@ _Last updated: 2026-08-28_
 ## 2026-08-28
 
 ### Fixed
+- [api] Applied pending Neon database migrations through `20260828_0004`, restoring staging login and post feed endpoints after the deployed API code expected columns/tables that were not present yet.
+- [api] Converted Alembic's migration runner from async SQLAlchemy to sync SQLAlchemy/psycopg so local and deployment maintenance commands use the same DB driver path as the API.
+- [api] Made the follow-request enum migration resilient to a pre-existing `follow_request_status` enum left by an earlier partial migration attempt.
+
+### Verified
+- [api] `alembic current` reports `20260828_0004 (head)`.
+- [api] Live `GET https://staging-api.friink.com/posts` returns `200` with CORS headers for `https://staging.friink.com`.
+- [api] Live `POST https://staging-api.friink.com/auth/login` returns `200` for the provided test account.
+
+## 2026-08-28
+
+### Fixed
 - [api] Replaced the API's SQLAlchemy async engine/session with sync psycopg3-backed sessions while preserving the existing FastAPI route responses. This removes the async database connection path that caused staging endpoints such as `POST /auth/login` and `GET /posts` to crash before CORS headers could be attached.
 
 ### Changed

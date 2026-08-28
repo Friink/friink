@@ -18,7 +18,14 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    follow_request_status = postgresql.ENUM("pending", "accepted", "rejected", "canceled", name="follow_request_status")
+    follow_request_status = postgresql.ENUM(
+        "pending",
+        "accepted",
+        "rejected",
+        "canceled",
+        name="follow_request_status",
+        create_type=False,
+    )
     follow_request_status.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
