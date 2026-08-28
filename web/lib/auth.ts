@@ -243,6 +243,12 @@ export async function listPosts(): Promise<ApiPost[]> {
   });
 }
 
+export async function getPost(postId: string): Promise<ApiPost> {
+  return requestApi<ApiPost>(`/posts/${encodeURIComponent(postId)}`, {
+    method: 'GET',
+  });
+}
+
 export async function createPost(accessToken: string, input: { content: string; quotedPostId?: string | null; media?: unknown[] }): Promise<ApiPost> {
   return requestApi<ApiPost>('/posts', {
     method: 'POST',

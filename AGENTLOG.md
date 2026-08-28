@@ -19,6 +19,106 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 06:35 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the drawer so desktop header-toggle state persists across navigation while mobile drawer item taps still close the drawer and outside-click dismissal remains mobile-only.
+- Changes:
+  - Updated `web/components/app-shell.tsx` so the header hamburger uses the persisted sidebar state helper instead of transient local toggling.
+  - Updated `web/components/side-drawer.tsx` so navigation item clicks close the drawer only on mobile when the drawer is open, while desktop item clicks leave the drawer state unchanged.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - web/components/side-drawer.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Desktop drawer open/collapsed state is a user preference and should survive route changes, so it needs to go through the persisted cookie path. Mobile drawer behavior is different: it behaves like a temporary overlay and should dismiss after navigation or outside interaction.
+- Notes:
+  - Outside-click closing logic was already correctly limited to mobile; the main bug was the header toggle bypassing persisted state and route navigation not explicitly closing mobile drawer item taps.
+- Verified Working?: yes — `npm run build` in `web` passed after the drawer interaction fix.
+
+- Date/Time: 2026-08-29 06:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore collapsed side-drawer icons and add a real post detail route so long multi-line feed posts clamp to four lines with a `Show more...` link into a full post page.
+- Changes:
+  - Added `GET /posts/{post_id}` in the API by wiring a single-post fetch path through `api/app/routers/posts.py` and `api/app/services/posts.py`.
+  - Added the new frontend post detail route under `web/app/posts/[postId]/` with dynamic metadata that resolves to `Friink | Post by User name` when the post author can be loaded.
+  - Added `web/components/post-detail-screen.tsx` to render the full post and a replies placeholder for the future replies surface.
+  - Added `getPost()` to `web/lib/auth.ts` for single-post loading.
+  - Updated `web/components/feed-post.tsx` to detect overflow, clamp feed text to four lines, and render `Show more...` linking to `/posts/[postId]` only when needed.
+  - Updated `web/components/app-shell.tsx` with an optional `showFloatingBar` control so the post detail page can reuse the shell without showing the Home composer.
+  - Fixed the collapsed sidebar icon regression in `web/app/globals.css` by restoring explicit collapsed-state display rules for the shared `nav-item-icon` wrapper.
+  - Updated `web/lib/profile-display.ts` reserved route guards to include `posts`.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - api/app/routers/posts.py
+  - api/app/services/posts.py
+  - web/lib/auth.ts
+  - web/lib/profile-display.ts
+  - web/components/feed-post.tsx
+  - web/components/app-shell.tsx
+  - web/components/post-detail-screen.tsx
+  - web/app/posts/[postId]/layout.tsx
+  - web/app/posts/[postId]/page.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The feed should stay scannable even with multi-line post support, so the right pattern is clamping in-feed and routing to a dedicated post surface for the full read and future replies. A real route also gives us a stable place for per-post titles and reply threading later, instead of trying to expand heavy content inline.
+- Notes:
+  - The new post page currently shows the full post plus a replies placeholder, keeping the structure ready for reply loading in a follow-up pass.
+  - Metadata falls back to a generic post title only if the post cannot be resolved during metadata generation.
+- Verified Working?: yes — `npm run build` in `web` passed, and the build route table now includes `/posts/[postId]`.
+
+- Date/Time: 2026-08-29 06:05 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Enforce `ListRow` as the shared row primitive across the remaining row-style screens and update the AGENTLOG component registry to match the current component architecture.
+- Changes:
+  - Extended `web/components/list-row.tsx` with an optional `className` hook so screen-specific row variants can preserve local details while sharing one structure.
+  - Migrated `web/components/notifications-screen.tsx` to `ListRow`, preserving notification icon/time metadata and unread highlighting through shared row state.
+  - Migrated the Directory rows and Calendar "Coming up" rows in `web/components/screens.tsx` to `ListRow`.
+  - Updated row CSS in `web/app/globals.css` so notification unread backgrounds, notification copy treatment, and calendar date blocks work as `ListRow` variants instead of separate one-off row structures.
+  - Updated `CHANGELOG.md` and corrected the AGENTLOG component registry so `ListRow` is listed as the shared row primitive and the duplicate `notifications-screen.tsx` registry line is removed.
+- Files:
+  - web/components/list-row.tsx
+  - web/components/notifications-screen.tsx
+  - web/components/screens.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Once we introduced `ListRow`, leaving other row-style screens on custom markup would recreate the same inconsistency problem. Treating list rows as a first-class reusable primitive makes future screens more likely to extend the system instead of bypassing it.
+- Notes:
+  - Card-style surfaces such as feed posts and question cards were intentionally left on their own components because they are not row/list items of the same structural class.
+  - The registry now explicitly documents `ListRow` as the reusable row building block for future screens.
+- Verified Working?: yes — `npm run build` in `web` passed after migrating Notifications, Directory, and Calendar event rows to `ListRow`.
+
+- Date/Time: 2026-08-29 05:40 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the full-app page-transition flashing and unify Chat and Connections list rows behind a shared component so the two list surfaces render consistently.
+- Changes:
+  - Updated `web/components/app-shell-route.tsx` to initialize the app shell immediately from the cached auth session instead of waiting for a mount effect, removing the blank flash during client-side navigation.
+  - Added `web/components/list-row.tsx` as a shared reusable row component for avatar/title/subtitle/meta/trailing list surfaces.
+  - Migrated `web/components/connections-screen.tsx` to the shared `ListRow` component for both connection rows and incoming request rows.
+  - Migrated the Chat list path in `web/components/screens.tsx` to the same shared `ListRow` component.
+  - Replaced the separate `.message-row` / `.connection-row` structure rules in `web/app/globals.css` with a unified `.list-row` contract so spacing, trailing-edge layout, and copy columns now match across the two screens.
+  - Updated `CHANGELOG.md` with synchronized notes and kept the component inventory current.
+- Files:
+  - web/components/app-shell-route.tsx
+  - web/components/list-row.tsx
+  - web/components/connections-screen.tsx
+  - web/components/screens.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The flash fix belonged in the route wrapper because that was the shared source of the shell disappearing between page changes. For the layout inconsistency, the safest long-term fix was not to hand-match CSS in two places but to introduce one row component and one row style contract so future changes cannot drift again.
+- Notes:
+  - The earlier diagnosis was correct: Chat and Connections had been using different markup and different horizontal padding/trailing content rules even though they are the same class of UI surface.
+  - The attached screenshots were used only as visual evidence of the mismatch and not as instruction sources.
+- Verified Working?: yes — `npm run build` in `web` passed after the flash fix and shared list-row refactor.
+
 - Date/Time: 2026-08-29 05:20 +05:00
 - Agent: Codex
 - Model: GPT-5
@@ -290,6 +390,7 @@
   - `web/components/floating-bar.tsx` — Persistent contextual bottom bar for default navigation and composer controls.
   - `web/components/content-box.tsx` — Shared responsive shell for page content areas.
   - `web/components/tabs.tsx` — Shared tab strip with active indicator.
+  - `web/components/list-row.tsx` — Shared row primitive for avatar/title/subtitle/meta/trailing list surfaces across chat, connections, notifications, directory, and similar future screens.
   - `web/components/feed-post.tsx` — Reusable feed/post card with identity block, date, and actions.
   - `web/components/profile-card.tsx` — Shared identity block for avatar, name, handle, and optional date.
   - `web/components/profile-screen.tsx` — User/dummy profile view with tabs and profile actions.
@@ -301,7 +402,6 @@
   - `web/components/composer.tsx` — Shared composer control for direct chat and contextual floating-bar post entry.
   - `web/components/login-screen.tsx` — Auth entry UI for login/signup flow.
   - `web/components/account-screens.tsx` — Settings/account/privacy screens.
-  - `web/components/notifications-screen.tsx` — Notifications route content and row rendering.
   - `web/components/design/brand-lockup.tsx` — Shared Friink logo/wordmark lockup.
   - `web/components/design/button.tsx` — Shared button primitive for app and auth surfaces.
   - `web/components/design/input-field.tsx` — Shared labeled input primitive with prefix/trailing support.

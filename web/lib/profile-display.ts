@@ -1,6 +1,6 @@
 import { mockConversations } from '@/lib/mock-conversations';
 
-const reservedProfileRoutes = new Set(['compose', 'dev-settings', 'floating']);
+const reservedProfileRoutes = new Set(['compose', 'dev-settings', 'floating', 'posts']);
 
 export function isReservedProfileRoute(username: string) {
   return reservedProfileRoutes.has(username.replace(/^@/, '').toLowerCase());

@@ -43,6 +43,47 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Fixed
+- [web] Corrected drawer interaction behavior so the header hamburger persists the desktop open/collapsed state across route changes, while drawer item taps still close the drawer on mobile and outside clicks continue to dismiss it on mobile only.
+
+### Verified
+- [web] `npm run build` passed in `web` after the drawer desktop/mobile behavior fix.
+
+## 2026-08-29
+
+### Added
+- [web] Added a dedicated post detail route at `/posts/[postId]` that renders the full post and reserves space for future replies, with dynamic page titles in the format `Friink | Post by User name` when the post can be resolved.
+- [api] Added `GET /posts/{post_id}` so the frontend can load a single post for detail routes and metadata generation.
+
+### Fixed
+- [web] Restored sidebar icons in the collapsed drawer state after the recent icon-slot refactor by explicitly preserving the collapsed icon wrapper display rules.
+- [web] Feed posts now clamp to four lines and show a `Show more...` link only when content overflows, routing to the new full post page instead of expanding inline in the feed.
+
+### Verified
+- [web] `npm run build` passed in `web` after the collapsed-sidebar fix, feed clamp/show-more behavior, and post detail route implementation.
+
+## 2026-08-29
+
+### Changed
+- [web] Expanded the shared `ListRow` primitive from Chat and Connections to the remaining row-style screens, so Notifications, Directory, and Calendar event lists now reuse the same base row component instead of hand-rolled row markup.
+
+### Verified
+- [web] `npm run build` passed in `web` after the wider `ListRow` rollout.
+
+## 2026-08-29
+
+### Changed
+- [web] Added a shared `ListRow` component for list-style people/conversation rows and moved both Connections and Chat list screens onto the same row structure and spacing contract.
+
+### Fixed
+- [web] Removed the full-app navigation flash between logged-in pages by initializing the shared app shell route from the cached auth session before route effects run.
+- [web] Eliminated the layout drift between Connections and Chat list rows by replacing their separate row markup/CSS with one shared implementation.
+
+### Verified
+- [web] `npm run build` passed in `web` after the shared list-row refactor and the global page-transition flash fix.
+
+## 2026-08-29
+
+### Fixed
 - [web] Changed the public landing page metadata title from `Friink | Home` to `Friink | A place for humans.` so the marketing route is distinct from the signed-in Home screen.
 
 ## 2026-08-29

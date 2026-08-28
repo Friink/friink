@@ -51,6 +51,19 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     };
   }, [collapsed, onToggleCollapsed]);
 
+  function handleNavigate(screen: Screen) {
+    onNavigate(screen);
+
+    try {
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      if (isMobile && !collapsed) {
+        onToggleCollapsed();
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
@@ -63,7 +76,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
             className={`nav-item${activeScreen === item.id ? ' active' : ''}`}
             key={item.id}
             type="button"
-            onClick={() => onNavigate(item.id)}
+            onClick={() => handleNavigate(item.id)}
           >
             <span className="nav-item-icon" aria-hidden="true">
               <i className={item.icon} />
@@ -74,7 +87,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-action" type="button" onClick={() => onNavigate('settings')}>
+        <button className="sidebar-action" type="button" onClick={() => handleNavigate('settings')}>
           <span className="nav-item-icon" aria-hidden="true">
             <i className="fa-solid fa-gear" />
           </span>

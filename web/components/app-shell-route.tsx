@@ -13,11 +13,12 @@ type AppShellRouteProps = {
 
 export function AppShellRoute({ initialScreen, refreshCurrentUser = false }: AppShellRouteProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
 
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
+      setUser(null);
       router.replace('/login');
       return;
     }

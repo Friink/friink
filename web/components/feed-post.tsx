@@ -1,4 +1,7 @@
+"use client";
+
 import Link from 'next/link';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
 
@@ -6,9 +9,29 @@ type FeedPostProps = {
   post: Post;
   highlightedStar?: boolean;
   onQuote?: (post: Post) => void;
+  truncateBody?: boolean;
 };
 
-export function FeedPost({ post, highlightedStar = false, onQuote }: FeedPostProps) {
+export function FeedPost({ post, highlightedStar = false, onQuote, truncateBody = true }: FeedPostProps) {
+  const bodyRef = useRef<HTMLParagraphElement | null>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!truncateBody || !bodyRef.current) {
+      setIsOverflowing(false);
+      return;
+    }
+
+    const element = bodyRef.current;
+    const updateOverflow = () => {
+      setIsOverflowing(element.scrollHeight > element.clientHeight + 1);
+    };
+
+    updateOverflow();
+    window.addEventListener('resize', updateOverflow);
+    return () => window.removeEventListener('resize', updateOverflow);
+  }, [post.text, truncateBody]);
+
   return (
     <article className="feed-post">
       <div className="feed-post-heading">
@@ -25,7 +48,12 @@ export function FeedPost({ post, highlightedStar = false, onQuote }: FeedPostPro
       <div className="feed-post-date">
         <small>{post.date}</small>
       </div>
-      <p className="feed-post-body">{post.text}</p>
+      <p ref={bodyRef} className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
+      {truncateBody && isOverflowing && (
+        <Link className="feed-post-show-more" href={`/posts/${post.id}`} aria-label={`Show full post by ${post.name}`}>
+          Show more...
+        </Link>
+      )}
       {post.quotedPost && (
         <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
           <strong>{post.quotedPost.authorUsername ? `@${post.quotedPost.authorUsername}` : 'Original post unavailable'}</strong>

@@ -44,6 +44,7 @@ type AppShellProps = {
   children?: React.ReactNode;
   floatingBarContent?: React.ReactNode;
   showTabs?: boolean;
+  showFloatingBar?: boolean;
   onUserChange?: (user: AuthUser) => void;
 };
 
@@ -60,7 +61,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, onUserChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
@@ -82,7 +83,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
-  const shouldShowFloatingBar = activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar);
+  const shouldShowFloatingBar = showFloatingBar && (activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -457,7 +458,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         <Header
           onNavigate={navigateTo}
           sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
+          onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
         />
 
         <section className="main-panel">

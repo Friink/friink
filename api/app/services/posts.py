@@ -42,6 +42,15 @@ async def get_posts(session: Session) -> list[Post]:
     return list(result.scalars().all())
 
 
+async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:
+    result = session.execute(
+        select(Post)
+        .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
+        .where(Post.id == post_id, Post.deleted_at.is_(None))
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_post_for_response(session: Session, post_id: uuid.UUID) -> Post:
     result = session.execute(
         select(Post)
