@@ -8,6 +8,7 @@ const mockUser: AuthUser = {
   name: 'Dev User',
   email: 'dev@example.com',
   username: 'devuser',
+  about: 'Your signed-in account is now driving this profile view.',
   status: 'active',
   emailVerifiedAt: new Date().toISOString(),
 };

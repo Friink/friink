@@ -6,14 +6,16 @@ import { AppShell } from '@/components/app-shell';
 import { ChatComposer } from '@/components/chat-composer';
 import { ProfileCard } from '@/components/profile-card';
 import { mockConversations } from '@/lib/mock-conversations';
-import { loadAuthSession, type AuthUser, clearAuthSession } from '@/lib/auth';
+import { clearAuthSession, getConnectionStatus, loadAuthSession, type AuthUser } from '@/lib/auth';
 
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const username = params?.username ?? '';
+  const rawUsername = params?.username ?? '';
+  const username = Array.isArray(rawUsername) ? rawUsername[0] ?? '' : rawUsername;
   const handle = `@${username}`;
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [composerDisabled, setComposerDisabled] = useState(true);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -22,9 +24,20 @@ export default function ChatPage() {
       return;
     }
     setUser(session.user);
-  }, [router]);
+    getConnectionStatus(session.accessToken, username)
+      .then((status) => {
+        setComposerDisabled(status.state !== 'following');
+      })
+      .catch(() => {
+        setComposerDisabled(true);
+      });
+  }, [router, username]);
 
   const conversation = mockConversations.find((c) => c.handle === handle);
+  const displayName = conversation?.name ?? formatDisplayName(username);
+  const initials = conversation?.initials ?? getInitials(username);
+  const tone = conversation?.tone ?? 'mint';
+  const messages = conversation?.messages ?? [];
   const [draft, setDraft] = useState('');
 
   // keep messages scrolled to bottom on mount
@@ -39,10 +52,10 @@ export default function ChatPage() {
   }, []);
 
   if (!user) return null;
-  if (!conversation) return <div style={{ padding: '1rem' }}>Conversation not found.</div>;
 
   function sendMessage(event: React.FormEvent) {
     event.preventDefault();
+    if (composerDisabled) return;
     setDraft('');
   }
 
@@ -57,16 +70,16 @@ export default function ChatPage() {
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      floatingBarContent={<ChatComposer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />}
+      floatingBarContent={<ChatComposer draft={draft} onDraftChange={setDraft} onSend={sendMessage} disabled={composerDisabled} />}
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <ProfileCard name={conversation.name} handle={conversation.handle} tone={conversation.tone} initials={conversation.initials} />
+          <ProfileCard name={displayName} handle={handle} tone={tone} initials={initials} />
         </div>
 
         <div className="chat-messages">
-          <p className="chat-date">Today</p>
-          {conversation.messages.map((message) => (
+          {messages.length > 0 && <p className="chat-date">Today</p>}
+          {messages.map((message) => (
             <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
               <div className="chat-bubble">
                 <p>{message.text}</p>
@@ -78,5 +91,28 @@ export default function ChatPage() {
 
       </section>
     </AppShell>
+  );
+}
+
+function formatDisplayName(username: string) {
+  return (
+    username
+      .split(/[._-]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || 'Friink User'
+  );
+}
+
+function getInitials(username: string) {
+  return (
+    username
+      .replace(/[^A-Za-z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || 'FR'
   );
 }

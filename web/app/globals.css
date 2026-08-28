@@ -1585,7 +1585,8 @@ textarea {
   text-transform: uppercase;
 }
 
-.settings-field input {
+.settings-field input,
+.settings-about-field {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--color-line);
@@ -1594,6 +1595,23 @@ textarea {
   background: var(--color-background);
   color: var(--color-ink);
   font: inherit;
+}
+
+.settings-about-field {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.settings-field-count {
+  justify-self: end;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.settings-field-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .settings-field .input-with-prefix {
@@ -2073,6 +2091,12 @@ textarea {
 
 .chat-send:disabled {
   opacity: 0.4;
+}
+
+.chat-composer input:disabled,
+.chat-composer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .floating-bar-composer {

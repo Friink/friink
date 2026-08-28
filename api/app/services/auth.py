@@ -33,6 +33,7 @@ async def create_user(session: AsyncSession, data: SignupRequest, email_service:
     user = User(
         email=data.email.lower(),
         username=data.username,
+        display_name=data.display_name or data.username,
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
@@ -51,14 +52,35 @@ async def create_user(session: AsyncSession, data: SignupRequest, email_service:
 
 
 async def update_current_user(session: AsyncSession, user: User, data: UpdateCurrentUserRequest) -> User:
-    if data.username == user.username:
+    changed = False
+
+    if data.username is not None and data.username != user.username:
+        existing_user = await get_user_by_username(session, data.username)
+        if existing_user and existing_user.id != user.id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+        user.username = data.username
+        changed = True
+
+    if data.email is not None:
+        normalized_email = data.email.lower()
+        if normalized_email != user.email:
+            existing_user = await get_user_by_email(session, normalized_email)
+            if existing_user and existing_user.id != user.id:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
+            user.email = normalized_email
+            changed = True
+
+    if data.display_name is not None and data.display_name != user.display_name:
+        user.display_name = data.display_name
+        changed = True
+
+    if data.about is not None and data.about != user.about:
+        user.about = data.about
+        changed = True
+
+    if not changed:
         return user
 
-    existing_user = await get_user_by_username(session, data.username)
-    if existing_user and existing_user.id != user.id:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
-
-    user.username = data.username
     await session.commit()
     await session.refresh(user)
     return user

@@ -41,6 +41,23 @@ _Last updated: 2026-08-28_
 ## 2026-08-28
 
 ### Changed
+- [web] Made direct `/[username]/chat` routes resilient: missing/nonexistent local conversations now render an empty chat shell instead of a not-found message, and the composer stays disabled unless the connection status allows chat.
+
+## 2026-08-28
+
+### Added
+- [api] Added persisted user profile fields for display name and about text, with a migration and server-side 256-character about validation.
+- [web] Added a Settings Profile tab where users can edit Name and About, and wired the profile Edit action to open that tab.
+- [web] Added an Account tab email update field with the same changed-state Update button behavior as username.
+
+### Changed
+- [api] Extended `PATCH /auth/me` to support partial username, email, display name, and about updates with uniqueness checks for username and email.
+- [web] Persisted signup Name as backend `display_name` and mapped returned profile fields into the shared auth session.
+- [docs] Updated the design contract for Settings/Profile edit ownership.
+
+## 2026-08-28
+
+### Changed
 - [web] Removed seeded dummy posts from the app shell timeline so posts come from the API or remain empty.
 - [web] Pointed the local frontend API base URL at the current FastAPI server on `http://localhost:8000`.
 - [web] Normalized network fetch failures so `Failed to fetch.` includes terminal punctuation.

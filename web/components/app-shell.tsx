@@ -83,7 +83,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
-  const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'privacy'>('general');
+  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
 
@@ -314,6 +314,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  function openProfileSettings() {
+    setSettingsTab('profile');
+    navigateTo('settings');
+  }
+
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
@@ -493,11 +498,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
               <Tabs
                 tabs={[
                   { id: 'general', label: 'General' },
+                  { id: 'profile', label: 'Profile' },
                   { id: 'account', label: 'Account' },
                   { id: 'privacy', label: 'Privacy & Safety' },
                 ]}
                 activeId={settingsTab}
-                onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                onChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
                 ariaLabel="Settings sections"
               />
             )}
@@ -513,6 +519,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       posts={posts}
                       isOwnProfile={!profileUser}
                       onQuote={handleQuote}
+                      onEditProfile={openProfileSettings}
                       connectionState={profileConnectionState}
                       connectionActionBusy={connectionActionBusy}
                       connectionActionError={connectionActionError}
@@ -554,7 +561,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       appearance={appearance}
                       onAppearanceChange={(a) => persistAppearance(a)}
                       activeTab={settingsTab}
-                      onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
+                      onTabChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
                       onUserChange={onUserChange}
                     />
                   )}

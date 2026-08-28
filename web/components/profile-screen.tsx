@@ -12,6 +12,7 @@ type ProfileScreenProps = {
   posts: Post[];
   isOwnProfile?: boolean;
   onQuote?: (post: Post) => void;
+  onEditProfile?: () => void;
   connectionState?: 'self' | 'none' | 'requested' | 'following';
   connectionActionBusy?: boolean;
   connectionActionError?: string;
@@ -45,6 +46,7 @@ export function ProfileScreen({
   posts,
   isOwnProfile = true,
   onQuote,
+  onEditProfile,
   connectionState = isOwnProfile ? 'self' : 'none',
   connectionActionBusy = false,
   connectionActionError = '',
@@ -68,9 +70,7 @@ export function ProfileScreen({
       </div>
 
       <p className="profile-bio">
-        {isOwnProfile
-          ? 'Your signed-in account is now driving this profile view.'
-          : 'This is a dummy profile view for browsing people around Friink.'}
+        {user.about || (isOwnProfile ? 'Your signed-in account is now driving this profile view.' : 'This profile has not added an about yet.')}
       </p>
 
       <div className="profile-stats" aria-label="Profile statistics">
@@ -80,7 +80,7 @@ export function ProfileScreen({
 
       <div className="profile-actions">
         {isOwnProfile ? (
-          <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile">
+          <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
             <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
             <span>Edit</span>
           </button>

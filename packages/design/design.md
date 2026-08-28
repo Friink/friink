@@ -14,6 +14,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) provides the compact Post creation affordance in default mode and seamlessly expands to host full-width contextual composers (e.g. `ChatComposer`, `PostComposerControls`).
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name` and `About`; Account edits login/account identifiers such as email, username, and user ID.
 
 ## Navigation
 
@@ -194,7 +195,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
-  - **Self-Profile Variant** (`isOwnProfile = true`): Renders the **Edit** action button (`.profile-action-edit`, icon `fa-pen-to-square` + text "Edit", right-aligned).
+  - **Self-Profile Variant** (`isOwnProfile = true`): Renders the **Edit** action button (`.profile-action-edit`, icon `fa-pen-to-square` + text "Edit", right-aligned) and routes to Settings > Profile.
   - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the **Compose / Send Message** icon button (`.profile-message-icon`, icon `fa-paper-plane`, right-aligned).
   - *These are the only two variants.*
 - **State Invariant**: Sidebar navigation highlight ONLY tracks the signed-in user's profile (`sidebarActiveScreen`). When browsing another user's dummy profile via `/[username]`, the sidebar profile navigation item must NOT be highlighted.

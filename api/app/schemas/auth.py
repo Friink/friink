@@ -40,6 +40,7 @@ def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date
 class SignupRequest(BaseModel):
     email: EmailStr
     username: str = Field(min_length=1, max_length=64)
+    display_name: str | None = Field(default=None, min_length=1, max_length=120)
     password: str
     date_of_birth: date
     location: str | None = Field(default=None, max_length=255)
@@ -66,11 +67,16 @@ class LoginRequest(BaseModel):
 
 
 class UpdateCurrentUserRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=64)
+    username: str | None = Field(default=None, min_length=1, max_length=64)
+    email: EmailStr | None = None
+    display_name: str | None = Field(default=None, min_length=1, max_length=120)
+    about: str | None = Field(default=None, max_length=256)
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, username: str) -> str:
+    def validate_username(cls, username: str | None) -> str | None:
+        if username is None:
+            return username
         return validate_username_rules(username)
 
 
@@ -78,6 +84,8 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
     username: str
+    display_name: str | None
+    about: str | None
     date_of_birth: date
     location: str | None
     is_verified: bool

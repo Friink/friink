@@ -57,6 +57,73 @@
 - Date & Time: 2026-08-28 00:00 +05:00
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Make username chat URLs resilient for missing or unavailable conversations.
+- Changes Made:
+  - Removed the direct-chat not-found render path for `/[username]/chat`.
+  - Added fallback chat identity rendering from the URL username when no local mock conversation exists.
+  - Rendered an empty message area for missing conversations instead of blocking the page.
+  - Disabled the floating chat composer by default and only enables it when the connection status endpoint reports the viewed user is being followed.
+  - Added disabled styling and placeholder behavior to `ChatComposer`.
+  - Updated `CHANGELOG.md`.
+- Files/Scope Touched:
+  - web/app/[username]/chat/page.tsx
+  - web/components/chat-composer.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Editing the browser URL should not crash or show a missing page for chats. The shell can safely show an existing or empty conversation while keeping message composition unavailable until the app confirms the relationship permits it.
+- Notes:
+  - Existing local mock conversations still display their messages.
+  - If the user does not exist, is not followed, or the API cannot confirm connection status, the composer remains disabled.
+- Verified Working?: yes — `npx tsc --noEmit` passed in `web`, `.\.venv\Scripts\python.exe -m pytest` passed all 25 API tests with a sandbox-only pytest cache warning, `npm run build` passed in `web`, and `git diff --check` reported no whitespace errors.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add Settings Profile editing and Account email updates.
+- Changes Made:
+  - Added `display_name` and `about` columns to users with Alembic migration `20260828_0004_add_profile_fields_to_users.py`.
+  - Extended auth schemas and `PATCH /auth/me` service logic to support partial updates for username, email, display name, and about.
+  - Added email uniqueness checks matching the existing username update behavior.
+  - Added the Settings Profile tab for Name and About, with a 256-character About limit and changed-state Update button behavior.
+  - Wired the own-profile Edit button to open Settings on the Profile tab.
+  - Persisted signup Name as backend `display_name` and mapped `display_name`/`about` into the frontend auth session.
+  - Added backend tests for duplicate email update rejection and profile field validation/update behavior.
+  - Updated `packages/design/design.md` and `CHANGELOG.md`.
+- Files/Scope Touched:
+  - api/alembic/versions/20260828_0004_add_profile_fields_to_users.py
+  - api/app/models/user.py
+  - api/app/schemas/auth.py
+  - api/app/services/auth.py
+  - api/tests/test_auth_updates.py
+  - api/tests/test_validation.py
+  - web/app/[username]/page.tsx
+  - web/app/dev-settings/page.tsx
+  - web/app/globals.css
+  - web/components/account-screens.tsx
+  - web/components/app-shell.tsx
+  - web/components/profile-screen.tsx
+  - web/lib/auth.ts
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Profile details need to persist in the database because the profile page now displays editable user content. Email update belongs in the existing `/auth/me` account update surface and reuses the existing uniqueness pattern.
+- Notes:
+  - Existing users will receive null `display_name`/`about`; the frontend falls back to username and the existing default about copy until the user edits Profile.
+  - About is enforced server-side by Pydantic at 256 characters and client-side by `maxLength`.
+- Verified Working?: yes — `python -m compileall api\app` passed, `.\.venv\Scripts\python.exe -m pytest` passed all 25 API tests with a sandbox-only pytest cache warning, `npx tsc --noEmit` passed in `web`, `npm run build` passed in `web`, and `git diff --check` reported no whitespace errors.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Remove dummy posts and fix post creation fetch failures against the current FastAPI URL.
 - Changes Made:
   - Removed the seeded dummy post array so the home feed starts from API posts or an empty state.

@@ -43,3 +43,11 @@ def test_update_current_user_schema_validates_username() -> None:
     assert UpdateCurrentUserRequest(username="friink.user-1_ok").username == "friink.user-1_ok"
     with pytest.raises(ValidationError):
         UpdateCurrentUserRequest(username="friink user")
+
+
+def test_update_current_user_schema_validates_profile_fields() -> None:
+    assert UpdateCurrentUserRequest(display_name="Alex", about="Short about.").about == "Short about."
+    with pytest.raises(ValidationError):
+        UpdateCurrentUserRequest(display_name="")
+    with pytest.raises(ValidationError):
+        UpdateCurrentUserRequest(about="x" * 257)

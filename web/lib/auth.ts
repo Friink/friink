@@ -3,6 +3,7 @@ export type AuthUser = {
   name: string;
   email: string;
   username: string;
+  about: string;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
 };
@@ -21,6 +22,8 @@ type ApiUser = {
   id: string;
   email: string;
   username: string;
+  display_name: string | null;
+  about: string | null;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -52,6 +55,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     name: 'Demo User',
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
+    about: '',
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
     ...overrides,
@@ -76,6 +80,7 @@ export async function signUp(input: {
     body: JSON.stringify({
       email: input.email,
       username: input.username,
+      display_name: input.name,
       password: input.password,
       date_of_birth: input.dateOfBirth,
     }),
@@ -137,13 +142,21 @@ export async function login(email: string, password: string): Promise<AuthSessio
   return mapTokenResponse(response);
 }
 
-export async function updateCurrentUser(accessToken: string, input: { username: string }): Promise<AuthUser> {
+export async function updateCurrentUser(
+  accessToken: string,
+  input: { username?: string; email?: string; displayName?: string; about?: string },
+): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ username: input.username }),
+    body: JSON.stringify({
+      username: input.username,
+      email: input.email,
+      display_name: input.displayName,
+      about: input.about,
+    }),
   });
 
   return mapApiUser(response);
@@ -350,7 +363,7 @@ async function getApiErrorMessage(response: Response): Promise<string> {
     // Fall through to the generic status message below.
   }
 
-  return `Friink API request failed with ${response.status}`;
+  return `Friink API request failed with ${response.status}.`;
 }
 
 function mapTokenResponse(response: ApiTokenResponse): AuthSession {
@@ -364,9 +377,10 @@ function mapTokenResponse(response: ApiTokenResponse): AuthSession {
 function mapApiUser(user: ApiUser): AuthUser {
   return {
     id: user.id,
-    name: user.username,
+    name: user.display_name || user.username,
     email: user.email,
     username: user.username,
+    about: user.about ?? '',
     status: user.is_verified ? 'active' : 'pending_email_verification',
     emailVerifiedAt: user.is_verified ? user.updated_at : null,
   };
