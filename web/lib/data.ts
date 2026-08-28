@@ -1,5 +1,6 @@
 export type Post = {
   id: string;
+  kind?: 'post' | 'quote' | 'reply';
   name: string;
   handle: string;
   initials: string;
@@ -14,7 +15,9 @@ export type Post = {
   quotedPost?: {
     id: string | null;
     authorUsername: string | null;
+    authorDisplayName?: string | null;
     content: string;
+    mediaCount?: number;
     unavailable: boolean;
   } | null;
 };

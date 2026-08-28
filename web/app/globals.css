@@ -2153,6 +2153,45 @@ textarea {
   text-align: right;
 }
 
+.composer-stack {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.composer-context-label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.composer-quoted-preview {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+}
+
+.composer-quoted-preview .profile-card {
+  align-items: center;
+}
+
+.composer-quoted-preview-text {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-quoted-preview-media {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
 .toast-stack {
   position: fixed;
   right: 1rem;
@@ -2723,6 +2762,28 @@ textarea {
   white-space: pre-wrap;
 }
 
+.feed-post-quote .profile-card {
+  align-items: center;
+}
+
+.feed-post-quote-body {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-post-quote-body-clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.feed-post-quote-more {
+  display: inline-block;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
 .feed-post-quote-unavailable {
   opacity: 0.75;
 }
@@ -2742,6 +2803,10 @@ textarea {
 }
 
 .post-detail-screen {
+  display: grid;
+}
+
+.post-thread {
   display: grid;
 }
 

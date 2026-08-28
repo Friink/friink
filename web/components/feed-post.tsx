@@ -8,11 +8,13 @@ import type { Post } from '@/lib/data';
 type FeedPostProps = {
   post: Post;
   highlightedStar?: boolean;
+  onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   truncateBody?: boolean;
+  truncateQuotedPost?: boolean;
 };
 
-export function FeedPost({ post, highlightedStar = false, onQuote, truncateBody = true }: FeedPostProps) {
+export function FeedPost({ post, highlightedStar = false, onReply, onQuote, truncateBody = true, truncateQuotedPost = true }: FeedPostProps) {
   const bodyRef = useRef<HTMLParagraphElement | null>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
 
@@ -56,12 +58,21 @@ export function FeedPost({ post, highlightedStar = false, onQuote, truncateBody 
       )}
       {post.quotedPost && (
         <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
-          <strong>{post.quotedPost.authorUsername ? `@${post.quotedPost.authorUsername}` : 'Original post unavailable'}</strong>
-          <p className="feed-post-quote-body">{post.quotedPost.content}</p>
+          {post.quotedPost.authorUsername ? (
+            <ProfileCard
+              name={post.quotedPost.authorDisplayName || `@${post.quotedPost.authorUsername}`}
+              handle={`@${post.quotedPost.authorUsername}`}
+              tone="mint"
+            />
+          ) : (
+            <strong>Original post unavailable</strong>
+          )}
+          <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}>{post.quotedPost.content}</p>
+          {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
         </div>
       )}
       <div className="feed-post-actions">
-        <button type="button" aria-label="Comment">
+        <button type="button" aria-label="Comment" onClick={() => onReply?.(post)}>
           <i className="fa-regular fa-comment" aria-hidden="true" />
         </button>
         <button type="button" aria-label="Quote" onClick={() => onQuote?.(post)}>

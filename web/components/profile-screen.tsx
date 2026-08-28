@@ -11,6 +11,7 @@ type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
   isOwnProfile?: boolean;
+  onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onEditProfile?: () => void;
   connectionState?: 'self' | 'none' | 'requested' | 'following';
@@ -44,6 +45,7 @@ export function ProfileScreen({
   user,
   posts,
   isOwnProfile = true,
+  onReply,
   onQuote,
   onEditProfile,
   connectionState = isOwnProfile ? 'self' : 'none',
@@ -113,7 +115,7 @@ export function ProfileScreen({
 
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (
-          profilePosts.map((post) => <FeedPost key={post.id} post={post} onQuote={onQuote} />)
+          profilePosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} />)
         ) : (
           <div className="profile-empty">
             <i className="fa-regular fa-comment" aria-hidden="true" />

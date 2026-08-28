@@ -1,11 +1,18 @@
 import uuid
 from datetime import datetime
+from enum import Enum as PyEnum
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+
+class PostKind(str, PyEnum):
+    POST = "post"
+    QUOTE = "quote"
+    REPLY = "reply"
 
 
 class Post(Base):
@@ -17,6 +24,8 @@ class Post(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    kind: Mapped[PostKind] = mapped_column(Enum(PostKind, name="post_kind"), nullable=False, default=PostKind.POST, server_default=PostKind.POST.value)
+    parent_post_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("posts.id"), nullable=True, index=True)
     quoted_post_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("posts.id"),
@@ -32,6 +41,8 @@ class Post(Base):
     )
 
     user = relationship("User", back_populates="posts")
+    parent_post = relationship("Post", remote_side=[id], foreign_keys=[parent_post_id], back_populates="replies")
+    replies = relationship("Post", foreign_keys=[parent_post_id], back_populates="parent_post")
     quoted_post = relationship("Post", remote_side=[id], foreign_keys=[quoted_post_id])
     media = relationship("PostMedia", back_populates="post", cascade="all, delete-orphan")
 

@@ -48,6 +48,11 @@ type AppShellProps = {
   onUserChange?: (user: AuthUser) => void;
 };
 
+type ComposeContext =
+  | { kind: 'post' }
+  | { kind: 'reply'; post: Post }
+  | { kind: 'quote'; post: Post };
+
 function getInitials(username: string) {
   return (
     username
@@ -69,7 +74,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [floatingDraft, setFloatingDraft] = useState('');
   const [floatingPostBusy, setFloatingPostBusy] = useState(false);
-  const [quotedPost, setQuotedPost] = useState<Post | null>(null);
+  const [composeContext, setComposeContext] = useState<ComposeContext>({ kind: 'post' });
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
@@ -83,7 +88,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
-  const shouldShowFloatingBar = showFloatingBar && (activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const hasComposerContext = composeContext.kind !== 'post';
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -281,10 +287,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       });
   }, [profileUser, user]);
 
+  function handleReply(post: Post) {
+    setComposeContext({ kind: 'reply', post });
+  }
+
   function handleQuote(post: Post) {
-    setQuotedPost(post);
-    setActiveScreen('home');
-    router.push('/home');
+    setComposeContext({ kind: 'quote', post });
   }
 
   async function handleFloatingPost(event: FormEvent<HTMLFormElement>) {
@@ -302,16 +310,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     setFloatingPostBusy(true);
     try {
       const apiPost = await createPost(session.accessToken, {
+        kind: composeContext.kind,
         content: trimmedText,
-        quotedPostId: quotedPost?.id ?? null,
+        quotedPostId: composeContext.kind === 'quote' ? composeContext.post.id : null,
+        parentPostId: composeContext.kind === 'reply' ? composeContext.post.id : null,
       });
       const newPost = mapApiPost(apiPost);
-      setPosts((current) => [newPost, ...current]);
+      if (newPost.kind !== 'reply') {
+        setPosts((current) => [newPost, ...current]);
+      }
       setFloatingDraft('');
-      setQuotedPost(null);
-      setHomeFilter('all');
-      setActiveScreen('home');
-      router.push('/home');
+      setComposeContext({ kind: 'post' });
+      if (newPost.kind !== 'reply') {
+        setHomeFilter('all');
+        setActiveScreen('home');
+        router.push('/home');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create post.';
       addToast(message);
@@ -328,6 +342,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
+      kind: post.kind,
       name: post.author_display_name || post.author_username,
       handle: `@${post.author_username}`,
       initials: getInitials(post.author_display_name || post.author_username),
@@ -343,7 +358,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         ? {
             id: post.quoted_post.id,
             authorUsername: post.quoted_post.author_username,
+            authorDisplayName: post.quoted_post.author_display_name,
             content: post.quoted_post.content,
+            mediaCount: post.quoted_post.media_count,
             unavailable: post.quoted_post.unavailable,
           }
         : null,
@@ -513,12 +530,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 children
               ) : (
                 <>
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onQuote={handleQuote} />}
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onReply={handleReply} onQuote={handleQuote} />}
                   {activeScreen === 'profile' && (
                     <ProfileScreen
                       user={profileUser ?? user}
                       posts={posts}
                       isOwnProfile={!profileUser}
+                      onReply={handleReply}
                       onQuote={handleQuote}
                       onEditProfile={openProfileSettings}
                       connectionState={profileConnectionState}
@@ -539,7 +557,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onRejectRequest={handleRejectRequest}
                     />
                   )}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} onQuote={handleQuote} />}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} />}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen />}
                   {activeScreen === 'settings' && (
@@ -571,12 +589,21 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 onSend={handleFloatingPost}
                 disabled={floatingPostBusy}
                 multiline
-                placeholder={quotedPost ? `Quote ${quotedPost.handle}...` : 'Write a post...'}
+                placeholder={composeContext.kind === 'reply' ? 'Write a reply...' : composeContext.kind === 'quote' ? 'Add your quote...' : 'Write a post...'}
                 disabledPlaceholder="Posting..."
                 inputLabel="Post"
                 sendLabel="Post"
                 maxLength={512}
                 showCount
+                contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? 'Quoting' : null}
+                quotedPreview={composeContext.kind === 'quote' ? {
+                  name: composeContext.post.name,
+                  handle: composeContext.post.handle,
+                  initials: composeContext.post.initials,
+                  tone: composeContext.post.tone,
+                  text: composeContext.post.text,
+                  mediaCount: 0,
+                } : null}
               />
             )}
           </FloatingBar>
