@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Composer } from '@/components/composer';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
 import { Tabs } from '@/components/tabs';
@@ -61,15 +62,7 @@ export function MessagesScreen() {
             </div>
           ))}
         </div>
-        <form className="composer" onSubmit={sendMessage}>
-          <button className="icon-plain" type="button" aria-label="Attach file">
-            <i className="fa-solid fa-paperclip" aria-hidden="true" />
-          </button>
-          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." aria-label="Message" />
-          <button className="composer-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
-            <i className="fa-solid fa-arrow-up" aria-hidden="true" />
-          </button>
-        </form>
+        <Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
       </section>
     );
   }

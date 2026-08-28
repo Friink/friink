@@ -19,6 +19,33 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 04:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix post newline rendering, scope the floating composer bar to only Home and direct chat, confirm the shared composer component path, and add post character counting/limit behavior.
+- Changes:
+  - Updated the shared `Composer` in `web/components/composer.tsx` to support optional max-length enforcement and a reusable live count label for contexts like post creation.
+  - Wired the floating post composer in `web/components/app-shell.tsx` to use the shared count/limit behavior with a 512-character cap.
+  - Scoped floating bar rendering in `web/components/app-shell.tsx` so it appears only for the Home post composer and direct `/{username}/chat` contextual composer, instead of on every logged-in screen.
+  - Replaced the leftover inline chat form in `web/components/screens.tsx` with the shared `Composer` component so chat and post composition reuse the same UI path.
+  - Updated `web/components/feed-post.tsx` and related CSS in `web/app/globals.css` so feed post text and quoted-post content preserve user-entered newline breaks.
+  - Tuned floating composer textarea spacing in `web/app/globals.css` so the compact `Write a post...` placeholder is vertically centered before multiline expansion.
+  - Updated `CHANGELOG.md` with synchronized high-level notes for this UX pass.
+- Files:
+  - web/components/composer.tsx
+  - web/components/app-shell.tsx
+  - web/components/screens.tsx
+  - web/components/feed-post.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The app already had a shared composer component, but the shell was rendering the post composer globally and one message screen still duplicated chat compose markup. Consolidating those paths keeps composer behavior consistent, while scoping the floating bar to the two intended contexts matches the product UX and avoids stray compose chrome on unrelated screens.
+- Notes:
+  - The canonical reusable composer component remains `Composer` at `web/components/composer.tsx`.
+  - Direct `/{username}/chat` already used the shared composer; this pass removed the remaining inline duplicate form from the older message screen path as well.
+  - The live count is displayed for post composition only; chat keeps the same simpler compose surface.
+- Verified Working?: yes — `npm run build` in `web` passed after the composer, floating-bar, and newline-rendering changes.
+
 - Date/Time: 2026-08-29 03:45 +05:00
 - Agent: Codex
 - Model: GPT-5

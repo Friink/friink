@@ -81,6 +81,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
+  const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
+  const shouldShowFloatingBar = activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar);
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -557,21 +559,27 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           </div>
         </section>
 
-        <FloatingBar>
-          {floatingBarContent ?? (
-            <Composer
-              draft={floatingDraft}
-              onDraftChange={setFloatingDraft}
-              onSend={handleFloatingPost}
-              disabled={floatingPostBusy}
-              multiline
-              placeholder={quotedPost ? `Quote ${quotedPost.handle}...` : 'Write a post...'}
-              disabledPlaceholder="Posting..."
-              inputLabel="Post"
-              sendLabel="Post"
-            />
-          )}
-        </FloatingBar>
+        {shouldShowFloatingBar && (
+          <FloatingBar>
+            {hasContextualFloatingBar ? (
+              floatingBarContent
+            ) : (
+              <Composer
+                draft={floatingDraft}
+                onDraftChange={setFloatingDraft}
+                onSend={handleFloatingPost}
+                disabled={floatingPostBusy}
+                multiline
+                placeholder={quotedPost ? `Quote ${quotedPost.handle}...` : 'Write a post...'}
+                disabledPlaceholder="Posting..."
+                inputLabel="Post"
+                sendLabel="Post"
+                maxLength={512}
+                showCount
+              />
+            )}
+          </FloatingBar>
+        )}
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
     </main>

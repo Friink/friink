@@ -29,7 +29,7 @@ export function FeedPost({ post, highlightedStar = false, onQuote }: FeedPostPro
       {post.quotedPost && (
         <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
           <strong>{post.quotedPost.authorUsername ? `@${post.quotedPost.authorUsername}` : 'Original post unavailable'}</strong>
-          <p>{post.quotedPost.content}</p>
+          <p className="feed-post-quote-body">{post.quotedPost.content}</p>
         </div>
       )}
       <div className="feed-post-actions">

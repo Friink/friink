@@ -43,6 +43,20 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Changed
+- [web] Scoped the shared `FloatingBar` so it only renders on `/home` for post creation and on direct `/{username}/chat` routes for message composition, instead of appearing across every logged-in screen.
+- [web] Standardized the remaining in-screen chat compose path to use the shared `web/components/composer.tsx` `Composer` component so post and chat composition both flow through the same reusable surface.
+
+### Fixed
+- [web] Feed post bodies and quoted post content now preserve newline formatting instead of collapsing multi-line posts into a single rendered line.
+- [web] Added a 512-character limit and live character count to the floating post composer, matching the settings profile `About` field pattern.
+- [web] Adjusted the compact multiline post composer textarea spacing so the `Write a post...` placeholder sits vertically centered before expansion.
+
+### Verified
+- [web] `npm run build` passed in `web` after the post newline rendering, floating-bar visibility, and shared-composer/count updates.
+
+## 2026-08-29
+
+### Changed
 - [web] Ported the static `friink-site` homepage into native Next.js JSX with scoped landing styles and React-managed subscribe form behavior, removing the iframe-wrapped landing page and deleting the old static `web/public/friink-site/` source once live references were gone.
 - [web] Added route-level metadata/layout wrappers for all current app routes so titles render as `Friink | Home`, `Friink | Chat`, `Friink | Settings`, `Friink | Starred`, `Friink | Connections`, `Friink | Notifications`, `Friink | Login`, dynamic display-name profile titles, and error titles.
 - [web] Removed the demo `/dev-settings` and `/floating` pages and guarded retired/demo names in the dynamic username route so they return 404 instead of being interpreted as profile slugs.
