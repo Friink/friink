@@ -23,9 +23,9 @@ _Last updated: 2026-08-28_
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with async SQLAlchemy/Postgres wiring, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, text-only post and quote-post creation, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts and quote-posts use a single `posts` table with nullable `quoted_post_id`; media schema is reserved through minimal `post_media` storage placeholders, but upload/compression/storage remains pending an object storage decision.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
-- [web] The deployed frontend runs entirely in self-contained demo mode: `/` serves the landing page from `web/public/friink-site/index.html` with seamless `<base target="_top">` navigation to `/home` and `/login`. Authentication is handled directly via mock demo sessions in `web/lib/auth.ts`, allowing full exploration of the UI mockup without any backend requirement. The subscribe section now submits to Zoho Forms for real email collection.
-- [infra] The repository and root `vercel.json` are streamlined to deploy the Next.js frontend (`web`) to Vercel without broken serverless API handlers or missing database environment dependencies.
-- [web] The shared `FloatingBar` is the persistent contextual surface: it provides compact default navigation, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
+- [web] The deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. The `NEXT_PUBLIC_API_BASE_URL` env var must be set in the Vercel **web** project to the deployed API base URL — if absent or stale the browser falls back to `http://localhost:8000`, which is unreachable from a deployed context and produces "Failed to fetch" errors. The subscribe section submits to Zoho Forms for real email collection.
+- [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
+- [web] The shared `FloatingBar` is the persistent contextual surface: it provides a compact default Post action, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and the settings account username field now matches the signup prefix treatment.
@@ -37,6 +37,19 @@ _Last updated: 2026-08-28_
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-28
+
+### Fixed
+- [api] Extended FastAPI CORS `allow_origins` in `api/app/main.py` to unconditionally include `https://staging.friink.com`, so staging browser requests are not rejected at the CORS layer even when `FRONTEND_URL` env var is unset or defaults to localhost.
+- [docs] Removed stale "self-contained demo mode / no backend requirement" claim from CHANGELOG.md "Current State"; replaced with accurate description of real API wiring and required two-Vercel-project infra topology.
+
+### Notes
+- **Manual actions required in Vercel dashboard before staging is fully functional:**
+  1. Verify or create the FastAPI API Vercel project (Root Directory: `api/`).
+  2. Set API project env vars for Staging: `DATABASE_URL`, `JWT_SECRET_KEY`, `ENVIRONMENT=staging`, `FRONTEND_URL=https://staging.friink.com`, plus JWT timing vars.
+  3. Set web project Staging env var: `NEXT_PUBLIC_API_BASE_URL=https://<api-project-url>`.
+  4. Redeploy both projects to pick up the new env vars.
 
 ## 2026-08-28
 

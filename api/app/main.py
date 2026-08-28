@@ -11,9 +11,23 @@ from app.routers.posts import router as posts_router
 settings = get_settings()
 
 app = FastAPI(title="Friink API")
+# Allowed CORS origins.
+# - FRONTEND_URL env var: set to the deployed web origin per environment
+#   (e.g. https://staging.friink.com for staging, https://friink.com for prod).
+# - The two localhost values cover local development on the default web port.
+_cors_origins: list[str] = [
+    str(settings.frontend_url),
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+# Always permit staging explicitly so CORS is not the blocker when
+# FRONTEND_URL has not yet been set in the Vercel API project env vars.
+if "https://staging.friink.com" not in _cors_origins:
+    _cors_origins.append("https://staging.friink.com")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(settings.frontend_url), "http://localhost:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

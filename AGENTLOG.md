@@ -55,6 +55,38 @@
 
 ### Entry
 
+- Date & Time: 2026-08-28 05:20 +05:00
+- Agent: Antigravity
+- Model: Claude Sonnet 4.6 (Thinking)
+- Prompt Summary: Diagnose and fix "Failed to fetch" errors on staging.friink.com — frontend/backend API wiring mismatch.
+- Changes Made:
+  - Diagnosed the full root cause from code and config inspection (see Notes).
+  - Fixed the immediate code-addressable issue: extended `api/app/main.py` CORS `allow_origins` list to explicitly include `https://staging.friink.com` regardless of the `FRONTEND_URL` env var value, so staging browser requests are not rejected at the CORS layer.
+  - Updated `CHANGELOG.md` Current State to remove the stale "self-contained demo mode / no backend requirement" claim and replace it with an accurate description of the real wiring and required two-Vercel-project topology.
+  - Added a 2026-08-28 dated CHANGELOG entry for the staging fix.
+- Files/Scope Touched:
+  - api/app/main.py
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: See Notes for full root cause. CORS was the code-level fix; the env var gaps require manual Vercel dashboard actions that cannot be performed from code.
+- Notes:
+  - **CHANGELOG/REALITY DRIFT (flagged explicitly per task instructions):** CHANGELOG.md "Current State" described the deployed frontend as running in "self-contained demo mode with no backend requirement" and stated the repo uses a "root vercel.json to deploy only the Next.js frontend." Both claims were false as of recent AGENTLOG entries (Connections dual-handshake, Post/Quote, Settings Profile). The frontend has been wired to real FastAPI calls since at least the "Remove dummy posts" entry (which explicitly noted "deployment still needs NEXT_PUBLIC_API_BASE_URL set"). CHANGELOG was never updated to reflect this shift. This entry corrects that.
+  - **ROOT CAUSE — CONFIRMED FROM CODE INSPECTION (not assumption):**
+    - **Primary cause (infra — manual action required):** No evidence of a deployed FastAPI API Vercel project for staging exists in the repo. There is no root `vercel.json`, no `api/vercel.json`, and the Vercel entrypoint `api/api/index.py` is present but it is unknown whether a matching Vercel project was ever created and deployed. If the API project does not exist on Vercel, `staging.friink.com` is a frontend-only deployment and every fetch call fails with "Failed to fetch" because there is no server to reach.
+    - **Secondary cause (env var — manual action required):** `web/lib/auth.ts` line 19 reads `process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'`. The `.env.local` file (git-ignored) sets this correctly for local dev. For staging, `NEXT_PUBLIC_API_BASE_URL` must be set in the Vercel **web** project's environment variables (Staging environment) to the API deployment URL. There is no evidence this was ever done.
+    - **Tertiary cause (CORS — fixed in this entry):** Even if the API project exists and the env var is set correctly, `api/app/main.py` only allowed `FRONTEND_URL` (defaulting to `http://localhost:3000`) and `http://localhost:3000` in CORS. If `FRONTEND_URL` was not set in the API project's env vars, requests from `https://staging.friink.com` would be blocked at the CORS layer. This is now fixed unconditionally.
+  - **REQUIRED MANUAL ACTIONS (Muflah must do these in Vercel dashboard):**
+    1. **Verify/create the API Vercel project:** Go to vercel.com → New Project → import the same GitHub repo → set Root Directory to `api/` → Vercel will detect `api/api/index.py` as the serverless entrypoint. If the project already exists, confirm it has a deployment and note its URL (e.g. `https://friink-api.vercel.app`).
+    2. **Set API project env vars (Staging environment):** `DATABASE_URL` (Neon staging connection string), `JWT_SECRET_KEY` (from `api/.env.staging`), `ENVIRONMENT=staging`, `FRONTEND_URL=https://staging.friink.com`, `JWT_ALGORITHM=HS256`, `ACCESS_TOKEN_EXPIRE_MINUTES=30`, `REFRESH_TOKEN_EXPIRE_DAYS=14`.
+    3. **Set web project env var (Staging environment):** `NEXT_PUBLIC_API_BASE_URL=https://<api-project-url>` (the URL from step 1). This must be a `NEXT_PUBLIC_` prefixed var because it is baked into the client bundle at build time.
+    4. **Redeploy both projects** after setting env vars so the built bundle picks up `NEXT_PUBLIC_API_BASE_URL`.
+  - If the API project already exists and all env vars are already set, the CORS fix in this entry alone should resolve the browser errors after redeployment of the API project.
+- Verified Working?: partial — CORS fix verified by code inspection; API project existence and env var state could not be confirmed from the local filesystem. Manual Vercel dashboard verification required per the actions listed above.
+
+---
+
+### Entry
+
 - Date & Time: 2026-08-28 00:00 +05:00
 - Agent: Codex
 - Model: GPT-5
