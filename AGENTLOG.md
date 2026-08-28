@@ -19,6 +19,34 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the existing composer to the default floating bar for demo posts, fix multiline/dark-theme UX, and rename the chat-specific composer to a generic composer.
+- Changes:
+  - Reused the existing composer implementation in the default `FloatingBar` instead of adding a new component.
+  - Added a floating-bar draft state and local demo-post submit handler in `AppShell`; submitting from the bar prepends a demo post, clears the draft, switches to Explore, and routes to Home.
+  - Extended the composer props with contextual labels/placeholders and a `multiline` mode while preserving the chat composer defaults for direct chats.
+  - Changed the floating post mode from a one-line input to a borderless textarea so multiline text works and `Shift+Enter` no longer submits.
+  - Updated composer CSS so dark-theme text inherits readable app ink color and multiline controls stay bottom-aligned beneath the full-width text area.
+  - Renamed `web/components/chat-composer.tsx` / `ChatComposer` to `web/components/composer.tsx` / `Composer`, and updated imports/usages.
+  - Updated `CHANGELOG.md` current state and dated notes for this UI series.
+- Files:
+  - web/components/app-shell.tsx
+  - web/components/composer.tsx
+  - web/components/chat-composer.tsx (renamed/deleted)
+  - web/app/[username]/chat/page.tsx
+  - web/components/screens.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The floating bar needed to become the quick post surface without deleting the existing compose page. Keeping one shared `Composer` component avoids duplicated composer UI while allowing contextual behavior for chat versus floating post entry.
+- Notes:
+  - The attached image was used only as a visual reference; no instructions embedded in attachments were treated as higher priority than the user request.
+  - The `/compose` page still exists and continues using `PostComposerControls`.
+  - Direct chat routes continue to use the same composer defaults, now imported as `Composer`.
+- Verified Working?: yes — `npm run build` in `web` passed after the floating composer UI changes and again after the component rename.
+
 - Date/Time: 2026-08-28
 - Agent: Codex
 - Model: GPT-5
@@ -87,7 +115,7 @@
   - `web/components/starred-screen.tsx` — Starred posts feed view.
   - `web/components/notifications-screen.tsx` — Notifications inbox-style list view.
   - `web/components/screens.tsx` — Shared placeholder/secondary screens: Chat list, Search, Calendar, Directory.
-  - `web/components/chat-composer.tsx` — Direct chat composer controls for the floating bar.
+  - `web/components/composer.tsx` — Shared composer control for direct chat and contextual floating-bar post entry.
   - `web/components/post-composer-controls.tsx` — Post composer action controls for the floating bar.
   - `web/components/post-screen.tsx` — Post compose page body and text area.
   - `web/components/compose-header.tsx` — Compose-mode header chrome for post/chat composition.

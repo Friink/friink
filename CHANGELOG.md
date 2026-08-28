@@ -18,14 +18,14 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-28_
+_Last updated: 2026-08-29_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, text-only post and quote-post creation, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts and quote-posts use a single `posts` table with nullable `quoted_post_id`; media schema is reserved through minimal `post_media` storage placeholders, but upload/compression/storage remains pending an object storage decision.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
 - [web] The Deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. The `NEXT_PUBLIC_API_BASE_URL` env var must be set in the Vercel **web** project to the deployed API base URL — if absent or stale the browser falls back to `http://localhost:8000`, which is unreachable from a deployed context and produces "Failed to fetch" errors. The subscribe section submits to Zoho Forms for real email collection.
 - [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
-- [web] The shared `FloatingBar` is the persistent contextual surface: it provides a compact default Post action, full-width chat and post-composer controls, and composer layouts reserve space for it without nested scrolling. The message-list route is `/chat`.
+- [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for quick demo posts by default, keeps dedicated post-composer controls on `/compose`, supports multiline borderless floating-post text entry, and uses the `/chat` route for message lists and direct chat.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and the settings account username field now matches the signup prefix treatment.
@@ -37,6 +37,18 @@ _Last updated: 2026-08-28_
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-29
+
+### Changed
+- [web] Reused the existing composer implementation as the default floating-bar post box instead of creating a new component. Submitting from the floating bar creates a local demo post and returns to Home, while the existing `/compose` page remains available.
+- [web] Renamed `web/components/chat-composer.tsx` and `ChatComposer` to `web/components/composer.tsx` and `Composer` so the shared control is not chat-specific.
+
+### Fixed
+- [web] Added a multiline floating-post composer mode with readable dark-theme text, borderless textarea styling, and bottom-aligned attach/send controls. Chat keeps its existing one-line visual behavior.
+
+### Verified
+- [web] `npm run build` passed after the floating composer changes and again after the rename.
 
 ## 2026-08-28
 

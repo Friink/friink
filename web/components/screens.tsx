@@ -61,7 +61,7 @@ export function MessagesScreen() {
             </div>
           ))}
         </div>
-        <form className="chat-composer" onSubmit={sendMessage}>
+        <form className="composer" onSubmit={sendMessage}>
           <button className="icon-plain" type="button" aria-label="Attach file">
             <i className="fa-solid fa-paperclip" aria-hidden="true" />
           </button>

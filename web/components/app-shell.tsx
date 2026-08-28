@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -12,6 +12,7 @@ import { NavigationBar } from '@/components/navigationbar';
 import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
 import { HomeScreen } from '@/components/home-screen';
+import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen } from '@/components/notifications-screen';
 import { PostComposerControls } from '@/components/post-composer-controls';
@@ -72,6 +73,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [postDraft, setPostDraft] = useState('');
+  const [floatingDraft, setFloatingDraft] = useState('');
   const [quotedPost, setQuotedPost] = useState<Post | null>(null);
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
@@ -325,6 +327,35 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  function handleFloatingDemoPost(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedText = floatingDraft.trim();
+    if (!trimmedText) return;
+
+    const demoPost: Post = {
+      id: `demo-${Date.now()}`,
+      name: getDisplayName(user),
+      handle: `@${user.username}`,
+      initials: getInitials(user.name || user.username),
+      tone: 'mint',
+      date: new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+      text: trimmedText,
+      connectionType: 'following',
+      isConnection: true,
+      isStarred: false,
+      replies: 0,
+      reactions: 0,
+      quotedPost: null,
+    };
+
+    setPosts((current) => [demoPost, ...current]);
+    setFloatingDraft('');
+    setHomeFilter('all');
+    setActiveScreen('home');
+    router.push('/home');
+  }
+
   function openProfileSettings() {
     setSettingsTab('profile');
     navigateTo('settings');
@@ -576,9 +607,21 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         </section>
 
         <FloatingBar activeScreen={activeScreen} onNavigate={navigateTo}>
-          {floatingBarContent ?? (activeScreen === 'post' && (
-            <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
-          ))}
+          {floatingBarContent ?? (
+            activeScreen === 'post' ? (
+              <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
+            ) : (
+              <Composer
+                draft={floatingDraft}
+                onDraftChange={setFloatingDraft}
+                onSend={handleFloatingDemoPost}
+                multiline
+                placeholder="Write a post..."
+                inputLabel="Post"
+                sendLabel="Post"
+              />
+            )
+          )}
         </FloatingBar>
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { ChatComposer } from '@/components/chat-composer';
+import { Composer } from '@/components/composer';
 import { ProfileCard } from '@/components/profile-card';
 import { mockConversations } from '@/lib/mock-conversations';
 import { clearAuthSession, getConnectionStatus, loadAuthSession, type AuthUser } from '@/lib/auth';
@@ -70,7 +70,7 @@ export default function ChatPage() {
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      floatingBarContent={<ChatComposer draft={draft} onDraftChange={setDraft} onSend={sendMessage} disabled={composerDisabled} />}
+      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} disabled={composerDisabled} />}
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
