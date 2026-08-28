@@ -1,5 +1,4 @@
 alembic
-asyncpg
 bcrypt
 email-validator
 fastapi

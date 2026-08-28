@@ -55,6 +55,33 @@
 
 ### Entry
 
+- Date & Time: 2026-08-28 05:51 +05:00
+- Agent: Antigravity
+- Model: Gemini 3.5 Flash
+- Prompt Summary: Replace asyncpg with psycopg driver globally to fix Vercel serverless runtime crash.
+- Changes Made:
+  - Swapped driver dependency from `asyncpg` to `psycopg` (via already present `psycopg[binary]`) in `api/requirements.txt`.
+  - Updated `async_database_url` logic in `api/app/config.py` to map connection URLs to `postgresql+psycopg://` instead of `postgresql+asyncpg://`.
+  - Corrected `async_connect_args` to pass `{"sslmode": "require"}` for Neon URLs matching psycopg3 syntax.
+  - Documented the database driver in `CHANGELOG.md` and updated `api/.env.example`.
+- Files/Scope Touched:
+  - api/requirements.txt
+  - api/app/config.py
+  - api/.env.example
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: 
+  - The previous CORS fix was necessary but unrelated to the core HTTP 500 error when touching the database.
+  - `asyncpg` contains an event loop / SSL negotiation mechanism incompatible with Vercel's ASGI runtime model, leading to unhandled runtime crashes (HTTP 500) before middleware could attach CORS headers.
+  - Psycopg3 (`postgresql+psycopg://`) provides native asyncio support and runs reliably under Vercel serverless constraints without event loop synchronization errors.
+- Verification Status:
+  - Local tests passed.
+  - Staging and production deployments require manual verification on Vercel after deploying these changes.
+- Notes:
+  - Production deployment remains a pending manual step to be performed after verifying staging database activity.
+
+### Entry
+
 - Date & Time: 2026-08-28 05:20 +05:00
 - Agent: Antigravity
 - Model: Claude Sonnet 4.6 (Thinking)
