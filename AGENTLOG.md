@@ -39,6 +39,7 @@
 - Notes:
   - Do not log or commit the provided password or returned tokens.
   - The live login verification used the user-provided account only to confirm HTTP status and CORS behavior.
+  - Prevention note: after any backend change that adds or changes SQLAlchemy models, commit the Alembic migration and run `alembic current` plus `alembic upgrade head` for the target database before treating staging/prod as healthy. Also verify at least one live DB-backed endpoint after deployment, not only `/health/db`, because `/health/db` uses a direct psycopg query and can pass while ORM-backed routes still fail on missing schema.
 - Verified Working?: yes — `alembic current` reports `20260828_0004 (head)`, live `GET /posts` returns `200 []` with staging CORS headers, and live `POST /auth/login` returns `200` for the provided account.
 
 - Date/Time: 2026-08-28
