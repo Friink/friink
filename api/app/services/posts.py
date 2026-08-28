@@ -2,21 +2,21 @@ import uuid
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from app.models.post import Post
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, PostResponse, QuotedPostResponse
+from app.services.session_ops import commit, refresh
 
-
-async def create_post(session: AsyncSession, user: User, data: CreatePostRequest) -> Post:
+async def create_post(session: Session, user: User, data: CreatePostRequest) -> Post:
     if data.media is not None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Media uploads are not yet supported.")
 
     quoted_post: Post | None = None
     if data.quoted_post_id:
-        quoted_post = await session.get(Post, data.quoted_post_id)
+        quoted_post = session.get(Post, data.quoted_post_id)
         if not quoted_post:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quoted post was not found.")
 
@@ -27,13 +27,13 @@ async def create_post(session: AsyncSession, user: User, data: CreatePostRequest
         media_count=0,
     )
     session.add(post)
-    await session.commit()
-    await session.refresh(post)
+    await commit(session)
+    await refresh(session, post)
     return post
 
 
-async def get_posts(session: AsyncSession) -> list[Post]:
-    result = await session.execute(
+async def get_posts(session: Session) -> list[Post]:
+    result = session.execute(
         select(Post)
         .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
         .where(Post.deleted_at.is_(None))
@@ -42,8 +42,8 @@ async def get_posts(session: AsyncSession) -> list[Post]:
     return list(result.scalars().all())
 
 
-async def get_post_for_response(session: AsyncSession, post_id: uuid.UUID) -> Post:
-    result = await session.execute(
+async def get_post_for_response(session: Session, post_id: uuid.UUID) -> Post:
+    result = session.execute(
         select(Post)
         .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
         .where(Post.id == post_id)

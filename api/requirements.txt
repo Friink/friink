@@ -9,5 +9,5 @@ pydantic-settings
 pytest
 pytest-asyncio
 python-dotenv
-SQLAlchemy[asyncio]
+SQLAlchemy
 uvicorn[standard]

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from app.models.connection import FollowRequest, FollowRequestStatus
@@ -16,13 +16,14 @@ from app.schemas.connections import (
     SendFollowRequestPayload,
 )
 from app.services.auth import get_user_by_username
+from app.services.session_ops import commit
 
 
 def _now() -> datetime:
     return datetime.now(UTC)
 
 
-async def send_follow_request(session: AsyncSession, requester: User, payload: SendFollowRequestPayload) -> FollowRequest:
+async def send_follow_request(session: Session, requester: User, payload: SendFollowRequestPayload) -> FollowRequest:
     recipient = await _get_recipient(session, payload)
     if recipient.id == requester.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot follow yourself.")
@@ -51,42 +52,42 @@ async def send_follow_request(session: AsyncSession, requester: User, payload: S
         status=FollowRequestStatus.pending,
     )
     session.add(request)
-    await session.commit()
+    await commit(session)
     return await get_follow_request(session, request.id)
 
 
-async def accept_follow_request(session: AsyncSession, actor: User, request_id: uuid.UUID) -> FollowRequest:
+async def accept_follow_request(session: Session, actor: User, request_id: uuid.UUID) -> FollowRequest:
     request = await get_follow_request(session, request_id)
     _require_recipient(actor, request)
     _require_pending(request, "Only pending follow requests can be accepted.")
     request.status = FollowRequestStatus.accepted
     request.responded_at = _now()
-    await session.commit()
+    await commit(session)
     return await get_follow_request(session, request.id)
 
 
-async def reject_follow_request(session: AsyncSession, actor: User, request_id: uuid.UUID) -> FollowRequest:
+async def reject_follow_request(session: Session, actor: User, request_id: uuid.UUID) -> FollowRequest:
     request = await get_follow_request(session, request_id)
     _require_recipient(actor, request)
     _require_pending(request, "Only pending follow requests can be rejected.")
     request.status = FollowRequestStatus.rejected
     request.responded_at = _now()
-    await session.commit()
+    await commit(session)
     return await get_follow_request(session, request.id)
 
 
-async def cancel_follow_request(session: AsyncSession, actor: User, request_id: uuid.UUID) -> FollowRequest:
+async def cancel_follow_request(session: Session, actor: User, request_id: uuid.UUID) -> FollowRequest:
     request = await get_follow_request(session, request_id)
     if request.requester_id != actor.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the requester can cancel this follow request.")
     _require_pending(request, "Only pending follow requests can be canceled.")
     request.status = FollowRequestStatus.canceled
     request.responded_at = _now()
-    await session.commit()
+    await commit(session)
     return await get_follow_request(session, request.id)
 
 
-async def remove_connection(session: AsyncSession, actor: User, request_id: uuid.UUID) -> FollowRequest:
+async def remove_connection(session: Session, actor: User, request_id: uuid.UUID) -> FollowRequest:
     request = await get_follow_request(session, request_id)
     if actor.id not in {request.requester_id, request.recipient_id}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only either party can remove this connection.")
@@ -94,12 +95,12 @@ async def remove_connection(session: AsyncSession, actor: User, request_id: uuid
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only accepted connections can be removed.")
     request.status = FollowRequestStatus.canceled
     request.responded_at = _now()
-    await session.commit()
+    await commit(session)
     return await get_follow_request(session, request.id)
 
 
-async def list_followers(session: AsyncSession, user: User) -> ConnectionListResponse:
-    result = await session.execute(
+async def list_followers(session: Session, user: User) -> ConnectionListResponse:
+    result = session.execute(
         select(User)
         .join(FollowRequest, FollowRequest.requester_id == User.id)
         .where(FollowRequest.recipient_id == user.id, FollowRequest.status == FollowRequestStatus.accepted)
@@ -109,8 +110,8 @@ async def list_followers(session: AsyncSession, user: User) -> ConnectionListRes
     return ConnectionListResponse(users=users, count=len(users))
 
 
-async def list_following(session: AsyncSession, user: User) -> ConnectionListResponse:
-    result = await session.execute(
+async def list_following(session: Session, user: User) -> ConnectionListResponse:
+    result = session.execute(
         select(User)
         .join(FollowRequest, FollowRequest.recipient_id == User.id)
         .where(FollowRequest.requester_id == user.id, FollowRequest.status == FollowRequestStatus.accepted)
@@ -120,22 +121,22 @@ async def list_following(session: AsyncSession, user: User) -> ConnectionListRes
     return ConnectionListResponse(users=users, count=len(users))
 
 
-async def list_incoming_pending(session: AsyncSession, user: User) -> list[FollowRequest]:
+async def list_incoming_pending(session: Session, user: User) -> list[FollowRequest]:
     return await _list_requests(session, FollowRequest.recipient_id == user.id, FollowRequestStatus.pending)
 
 
-async def list_outgoing_pending(session: AsyncSession, user: User) -> list[FollowRequest]:
+async def list_outgoing_pending(session: Session, user: User) -> list[FollowRequest]:
     return await _list_requests(session, FollowRequest.requester_id == user.id, FollowRequestStatus.pending)
 
 
-async def get_connection_status(session: AsyncSession, actor: User, username: str) -> ConnectionStatusResponse:
+async def get_connection_status(session: Session, actor: User, username: str) -> ConnectionStatusResponse:
     other = await get_user_by_username(session, username)
     if not other:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User was not found.")
     if other.id == actor.id:
         return ConnectionStatusResponse(user=serialize_connection_user(other), state="self")
 
-    result = await session.execute(
+    result = session.execute(
         select(FollowRequest)
         .options(selectinload(FollowRequest.requester), selectinload(FollowRequest.recipient))
         .where(
@@ -151,15 +152,15 @@ async def get_connection_status(session: AsyncSession, actor: User, username: st
     return ConnectionStatusResponse(user=serialize_connection_user(other), state="following" if request.status == FollowRequestStatus.accepted else "requested", request=serialize_follow_request(request))
 
 
-async def get_user_for_public_connections(session: AsyncSession, username: str) -> User:
+async def get_user_for_public_connections(session: Session, username: str) -> User:
     user = await get_user_by_username(session, username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User was not found.")
     return user
 
 
-async def get_follow_request(session: AsyncSession, request_id: uuid.UUID) -> FollowRequest:
-    result = await session.execute(
+async def get_follow_request(session: Session, request_id: uuid.UUID) -> FollowRequest:
+    result = session.execute(
         select(FollowRequest)
         .options(selectinload(FollowRequest.requester), selectinload(FollowRequest.recipient))
         .where(FollowRequest.id == request_id)
@@ -185,8 +186,8 @@ def serialize_follow_request(request: FollowRequest) -> FollowRequestResponse:
     )
 
 
-async def _get_recipient(session: AsyncSession, payload: SendFollowRequestPayload) -> User:
-    recipient = await session.get(User, payload.recipient_id) if payload.recipient_id else None
+async def _get_recipient(session: Session, payload: SendFollowRequestPayload) -> User:
+    recipient = session.get(User, payload.recipient_id) if payload.recipient_id else None
     if not recipient and payload.recipient_username:
         recipient = await get_user_by_username(session, payload.recipient_username)
     if not recipient:
@@ -195,12 +196,12 @@ async def _get_recipient(session: AsyncSession, payload: SendFollowRequestPayloa
 
 
 async def _get_pair_request(
-    session: AsyncSession,
+    session: Session,
     requester_id: uuid.UUID,
     recipient_id: uuid.UUID,
     request_status: FollowRequestStatus,
 ) -> FollowRequest | None:
-    result = await session.execute(
+    result = session.execute(
         select(FollowRequest)
         .options(selectinload(FollowRequest.requester), selectinload(FollowRequest.recipient))
         .where(
@@ -213,8 +214,8 @@ async def _get_pair_request(
     return result.scalars().first()
 
 
-async def _list_requests(session: AsyncSession, criterion, request_status: FollowRequestStatus) -> list[FollowRequest]:
-    result = await session.execute(
+async def _list_requests(session: Session, criterion, request_status: FollowRequestStatus) -> list[FollowRequest]:
+    result = session.execute(
         select(FollowRequest)
         .options(selectinload(FollowRequest.requester), selectinload(FollowRequest.recipient))
         .where(criterion, FollowRequest.status == request_status)

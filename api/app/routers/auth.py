@@ -3,7 +3,7 @@ from datetime import timedelta
 import jwt
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.db import get_session
@@ -32,7 +32,7 @@ def set_refresh_cookie(response: Response, token: str, settings: Settings) -> No
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(payload: SignupRequest, session: AsyncSession = Depends(get_session)) -> User:
+async def signup(payload: SignupRequest, session: Session = Depends(get_session)) -> User:
     return await create_user(session, payload, EmailService())
 
 
@@ -40,7 +40,7 @@ async def signup(payload: SignupRequest, session: AsyncSession = Depends(get_ses
 async def login(
     payload: LoginRequest,
     response: Response,
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
     user = await authenticate_user(session, payload.email, payload.password)
@@ -53,7 +53,7 @@ async def login(
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh(
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> RefreshResponse:
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token.")
@@ -63,7 +63,7 @@ async def refresh(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.") from exc
 
     user_id = user_id_from_subject(str(payload.get("sub", "")))
-    user = await session.get(User, user_id)
+    user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
     # Optional v2 hardening: rotate refresh tokens and keep a denylist for explicit revocation.
@@ -84,14 +84,14 @@ async def logout(response: Response, settings: Settings = Depends(get_settings))
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> User:
     try:
         payload = decode_token(token, "access")
     except jwt.PyJWTError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.") from exc
     user_id = user_id_from_subject(str(payload.get("sub", "")))
-    user = await session.get(User, user_id)
+    user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.")
     return user
@@ -106,6 +106,6 @@ async def me(current_user: User = Depends(get_current_user)) -> User:
 async def update_me(
     payload: UpdateCurrentUserRequest,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> User:
     return await update_current_user(session, current_user, payload)

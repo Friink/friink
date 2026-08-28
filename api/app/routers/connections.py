@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.models.user import User
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/connections", tags=["connections"])
 async def send_request(
     payload: SendFollowRequestPayload,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
     return serialize_follow_request(await send_follow_request(session, current_user, payload))
 
@@ -38,7 +38,7 @@ async def send_request(
 async def accept_request(
     request_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
     return serialize_follow_request(await accept_follow_request(session, current_user, request_id))
 
@@ -47,7 +47,7 @@ async def accept_request(
 async def reject_request(
     request_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
     return serialize_follow_request(await reject_follow_request(session, current_user, request_id))
 
@@ -56,7 +56,7 @@ async def reject_request(
 async def cancel_request(
     request_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
     return serialize_follow_request(await cancel_follow_request(session, current_user, request_id))
 
@@ -65,25 +65,25 @@ async def cancel_request(
 async def delete_connection(
     request_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
     return serialize_follow_request(await remove_connection(session, current_user, request_id))
 
 
 @router.get("/users/{username}/followers", response_model=ConnectionListResponse)
-async def followers(username: str, session: AsyncSession = Depends(get_session)) -> ConnectionListResponse:
+async def followers(username: str, session: Session = Depends(get_session)) -> ConnectionListResponse:
     return await list_followers(session, await get_user_for_public_connections(session, username))
 
 
 @router.get("/users/{username}/following", response_model=ConnectionListResponse)
-async def following(username: str, session: AsyncSession = Depends(get_session)) -> ConnectionListResponse:
+async def following(username: str, session: Session = Depends(get_session)) -> ConnectionListResponse:
     return await list_following(session, await get_user_for_public_connections(session, username))
 
 
 @router.get("/requests/incoming", response_model=list[FollowRequestResponse])
 async def incoming_requests(
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> list[FollowRequestResponse]:
     return [serialize_follow_request(request) for request in await list_incoming_pending(session, current_user)]
 
@@ -91,7 +91,7 @@ async def incoming_requests(
 @router.get("/requests/outgoing", response_model=list[FollowRequestResponse])
 async def outgoing_requests(
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> list[FollowRequestResponse]:
     return [serialize_follow_request(request) for request in await list_outgoing_pending(session, current_user)]
 
@@ -100,6 +100,6 @@ async def outgoing_requests(
 async def status_for_user(
     username: str,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> ConnectionStatusResponse:
     return await get_connection_status(session, current_user, username)

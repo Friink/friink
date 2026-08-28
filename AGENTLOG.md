@@ -19,6 +19,33 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-28
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix staging outage after posts work, where browser showed "Failed to fetch" because DB-backed API routes crashed before CORS headers were attached.
+- Changes:
+  - Replaced SQLAlchemy's async engine/session setup with sync `create_engine` and `sessionmaker` while keeping the FastAPI dependency shape request-scoped.
+  - Converted auth, posts, and connections routes/services from `AsyncSession` usage to sync `Session` usage for DB calls.
+  - Added `api/app/services/session_ops.py` so service commit/refresh calls work with real sync SQLAlchemy sessions and the existing async-shaped test fakes.
+  - Changed `api/requirements.txt` from `SQLAlchemy[asyncio]` to `SQLAlchemy`.
+  - Updated `CHANGELOG.md` current state and added a dated outage-fix entry.
+- Files:
+  - api/app/db.py
+  - api/app/routers/auth.py
+  - api/app/routers/connections.py
+  - api/app/routers/posts.py
+  - api/app/services/auth.py
+  - api/app/services/connections.py
+  - api/app/services/posts.py
+  - api/app/services/session_ops.py
+  - api/requirements.txt
+  - CHANGELOG.md
+- Reason/Decision: The attached investigation showed staging failures only on endpoints using the async DB session, while direct sync psycopg health checks worked. A local probe reproduced an async psycopg event-loop failure, and switching the SQLAlchemy runtime path to sync psycopg removed that driver/runtime class of failure without changing API contracts.
+- Notes:
+  - Staging still needs this commit deployed to the `api/` Vercel project before browser behavior changes.
+  - Pytest cache temp folders in `api/` had Windows permission errors, so the passing test run explicitly ignored those stale cache directories.
+- Verified Working?: yes — `python -m compileall app` passed, `python -m pytest` passed all 25 tests with the pytest-cache temp folders ignored, and a direct SQLAlchemy `SELECT 1` against the configured Neon database returned `1`.
+
 - NOTE: Keep entries newest-first. When adding a log entry, prepend it so the most recent entries appear immediately after this instruction block.
 
 - COMPONENT REGISTRY: Keep this block updated whenever a shared component is added, renamed, removed, or repurposed. Before creating a new component, check here first so we reuse existing building blocks instead of duplicating them.

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.models.user import User
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 
 
 @router.get("", response_model=list[PostResponse])
-async def list_posts(session: AsyncSession = Depends(get_session)) -> list[PostResponse]:
+async def list_posts(session: Session = Depends(get_session)) -> list[PostResponse]:
     return [serialize_post(post) for post in await get_posts(session)]
 
 
@@ -19,7 +19,7 @@ async def list_posts(session: AsyncSession = Depends(get_session)) -> list[PostR
 async def create_post_route(
     payload: CreatePostRequest,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    session: Session = Depends(get_session),
 ) -> PostResponse:
     post = await create_post(session, current_user, payload)
     return serialize_post(await get_post_for_response(session, post.id))
