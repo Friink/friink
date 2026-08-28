@@ -8,14 +8,15 @@ type HomeScreenProps = {
   posts: Post[];
   activeFilter?: 'all' | 'connections';
   onFilterChange?: (id: string) => void;
+  onQuote?: (post: Post) => void;
 };
 
-export function HomeScreen({ posts, activeFilter = 'all', onFilterChange }: HomeScreenProps) {
+export function HomeScreen({ posts, activeFilter = 'all', onFilterChange, onQuote }: HomeScreenProps) {
   const filteredPosts = activeFilter === 'connections' ? posts.filter((post) => post.isConnection) : posts;
 
   return (
     <div className="home-feed">
-      {filteredPosts.map((post) => <FeedPost key={post.id} post={post} />)}
+      {filteredPosts.map((post) => <FeedPost key={post.id} post={post} onQuote={onQuote} />)}
     </div>
   );
 }

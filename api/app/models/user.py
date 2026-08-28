@@ -14,6 +14,8 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    about: Mapped[str | None] = mapped_column(String(256), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -26,3 +28,16 @@ class User(Base):
     )
 
     otp_codes = relationship("OtpCode", back_populates="user", cascade="all, delete-orphan")
+    posts = relationship("Post", back_populates="user", cascade="all, delete-orphan")
+    sent_follow_requests = relationship(
+        "FollowRequest",
+        foreign_keys="FollowRequest.requester_id",
+        back_populates="requester",
+        cascade="all, delete-orphan",
+    )
+    received_follow_requests = relationship(
+        "FollowRequest",
+        foreign_keys="FollowRequest.recipient_id",
+        back_populates="recipient",
+        cascade="all, delete-orphan",
+    )

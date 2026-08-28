@@ -19,8 +19,23 @@ import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
-import { initialConnections, initialPosts, type Post, type Screen } from '@/lib/data';
-import type { AuthUser } from '@/lib/auth';
+import { ToastStack, type ToastMessage } from '@/components/toast-stack';
+import { initialConnections, initialPosts, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
+import {
+  acceptFollowRequest,
+  cancelFollowRequest,
+  createPost,
+  getConnectionStatus,
+  listIncomingFollowRequests,
+  listPosts,
+  loadAuthSession,
+  rejectFollowRequest,
+  removeConnection,
+  sendFollowRequest,
+  type ApiFollowRequest,
+  type ApiPost,
+  type AuthUser,
+} from '@/lib/auth';
 
 type AppShellProps = {
   user: AuthUser;
@@ -29,8 +44,8 @@ type AppShellProps = {
   profileUser?: AuthUser;
   children?: React.ReactNode;
   floatingBarContent?: React.ReactNode;
-  fillContent?: boolean;
   showTabs?: boolean;
+  onUserChange?: (user: AuthUser) => void;
 };
 
 function getInitials(username: string) {
@@ -50,17 +65,24 @@ function getDisplayName(user: AuthUser) {
   return user.name.trim() || user.username;
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, fillContent }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, onUserChange }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [postDraft, setPostDraft] = useState('');
+  const [quotedPost, setQuotedPost] = useState<Post | null>(null);
+  const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
+  const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
+  const [connectionActionBusy, setConnectionActionBusy] = useState(false);
+  const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
-  const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'privacy'>('general');
+  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
 
@@ -203,24 +225,227 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
-  function handlePost(text: string) {
-    const newPost: Post = {
-      id: Date.now(),
-      name: user.name,
-      handle: `@${user.username}`,
-      initials: getInitials(user.name),
+  function addToast(message: string, tone: ToastMessage['tone'] = 'error') {
+    const now = new Date();
+    setToasts((current) => [
+      ...current,
+      {
+        id: now.getTime(),
+        message,
+        timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+        tone,
+      },
+    ]);
+  }
+
+  function dismissToast(id: number) {
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  }
+
+  useEffect(() => {
+    listPosts()
+      .then((apiPosts) => {
+        setPosts(apiPosts.map(mapApiPost));
+      })
+      .catch(() => {
+        // Keep the timeline empty when the API is not running.
+      });
+  }, []);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    listIncomingFollowRequests(session.accessToken)
+      .then((requests) => {
+        setIncomingRequests(requests.map(mapApiFollowRequest));
+      })
+      .catch(() => {
+        // Connections still renders with demo data if the API is unavailable.
+      });
+  }, [activeScreen]);
+
+  useEffect(() => {
+    const viewedUser = profileUser ?? user;
+    if (!profileUser || viewedUser.username === user.username) {
+      setProfileConnectionState('self');
+      setProfileConnectionRequestId(null);
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      setProfileConnectionState('none');
+      setProfileConnectionRequestId(null);
+      return;
+    }
+
+    getConnectionStatus(session.accessToken, viewedUser.username)
+      .then((statusResponse) => {
+        setProfileConnectionState(statusResponse.state);
+        setProfileConnectionRequestId(statusResponse.request?.id ?? null);
+      })
+      .catch((error) => {
+        setProfileConnectionState('none');
+        setProfileConnectionRequestId(null);
+        addToast(error instanceof Error ? error.message : 'Could not load connection state.');
+      });
+  }, [profileUser, user]);
+
+  function handleQuote(post: Post) {
+    setQuotedPost(post);
+    navigateTo('post');
+  }
+
+  async function handlePost(text: string) {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    const session = loadAuthSession();
+    if (!session) {
+      addToast('Please log in again to post.');
+      return;
+    }
+
+    try {
+      const apiPost = await createPost(session.accessToken, {
+        content: trimmedText,
+        quotedPostId: quotedPost?.id ?? null,
+      });
+      const newPost = mapApiPost(apiPost);
+      setPosts((current) => [newPost, ...current]);
+      setPostDraft('');
+      setQuotedPost(null);
+      setActiveScreen('home');
+      router.push('/home');
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not create post.';
+      addToast(message);
+    }
+  }
+
+  function openProfileSettings() {
+    setSettingsTab('profile');
+    navigateTo('settings');
+  }
+
+  function mapApiPost(post: ApiPost): Post {
+    return {
+      id: post.id,
+      name: post.author_username,
+      handle: `@${post.author_username}`,
+      initials: getInitials(post.author_username),
       tone: 'mint',
-      date: 'Just now',
-      text,
+      date: new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+      text: post.content,
       connectionType: 'following',
       isConnection: true,
       isStarred: false,
       replies: 0,
       reactions: 0,
+      quotedPost: post.quoted_post
+        ? {
+            id: post.quoted_post.id,
+            authorUsername: post.quoted_post.author_username,
+            content: post.quoted_post.content,
+            unavailable: post.quoted_post.unavailable,
+          }
+        : null,
     };
-    setPosts((current) => [newPost, ...current]);
-    setPostDraft('');
-    setActiveScreen('home');
+  }
+
+  function mapApiFollowRequest(request: ApiFollowRequest): ConnectionRequest {
+    return {
+      id: request.id,
+      name: request.requester.username,
+      handle: `@${request.requester.username}`,
+      initials: getInitials(request.requester.username),
+      status: 'pending',
+      createdAt: request.created_at,
+    };
+  }
+
+  async function handleFollowProfile() {
+    if (!profileUser) return;
+    const session = loadAuthSession();
+    if (!session) {
+      addToast('Please log in again to follow people.');
+      return;
+    }
+
+    setConnectionActionBusy(true);
+    try {
+      const request = await sendFollowRequest(session.accessToken, profileUser.username);
+      setProfileConnectionState(request.status === 'accepted' ? 'following' : 'requested');
+      setProfileConnectionRequestId(request.id);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not send follow request.');
+    } finally {
+      setConnectionActionBusy(false);
+    }
+  }
+
+  async function handleCancelProfileRequest() {
+    const session = loadAuthSession();
+    if (!session || !profileConnectionRequestId) return;
+
+    setConnectionActionBusy(true);
+    try {
+      await cancelFollowRequest(session.accessToken, profileConnectionRequestId);
+      setProfileConnectionState('none');
+      setProfileConnectionRequestId(null);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not cancel follow request.');
+    } finally {
+      setConnectionActionBusy(false);
+    }
+  }
+
+  async function handleUnfollowProfile() {
+    const session = loadAuthSession();
+    if (!session || !profileConnectionRequestId) return;
+
+    setConnectionActionBusy(true);
+    try {
+      await removeConnection(session.accessToken, profileConnectionRequestId);
+      setProfileConnectionState('none');
+      setProfileConnectionRequestId(null);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not remove connection.');
+    } finally {
+      setConnectionActionBusy(false);
+    }
+  }
+
+  async function handleAcceptRequest(requestId: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRequestActionBusyId(requestId);
+    try {
+      await acceptFollowRequest(session.accessToken, requestId);
+      setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not accept request.');
+    } finally {
+      setRequestActionBusyId(null);
+    }
+  }
+
+  async function handleRejectRequest(requestId: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRequestActionBusyId(requestId);
+    try {
+      await rejectFollowRequest(session.accessToken, requestId);
+      setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not reject request.');
+    } finally {
+      setRequestActionBusyId(null);
+    }
   }
 
   return (
@@ -250,70 +475,103 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
             />
           </div>
 
-          <div className={`main-content${activeScreen === 'post' ? ' main-content-post' : ''}`}>
-            <div className="main-scroll">
-              {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
-                <Tabs
-                  tabs={[
-                    { id: 'all', label: 'Explore' },
-                    { id: 'connections', label: 'Connections' },
-                  ]}
-                  activeId={homeFilter}
-                  onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
-                  ariaLabel="Home quick tabs"
-                />
+          <div className="main-content">
+            {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'Explore' },
+                  { id: 'connections', label: 'Connections' },
+                ]}
+                activeId={homeFilter}
+                onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                ariaLabel="Home quick tabs"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'connections' && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'All' },
+                  { id: 'followers', label: 'Followers' },
+                  { id: 'following', label: 'Following' },
+                  { id: 'requests', label: 'Requests' },
+                ]}
+                activeId={connectionsFilter}
+                onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
+                ariaLabel="Connections filters"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'settings' && (
+              <Tabs
+                tabs={[
+                  { id: 'general', label: 'General' },
+                  { id: 'profile', label: 'Profile' },
+                  { id: 'account', label: 'Account' },
+                  { id: 'privacy', label: 'Privacy & Safety' },
+                ]}
+                activeId={settingsTab}
+                onChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
+                ariaLabel="Settings sections"
+              />
+            )}
+            <ContentBox>
+              {children ? (
+                children
+              ) : (
+                <>
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onQuote={handleQuote} />}
+                  {activeScreen === 'profile' && (
+                    <ProfileScreen
+                      user={profileUser ?? user}
+                      posts={posts}
+                      isOwnProfile={!profileUser}
+                      onQuote={handleQuote}
+                      onEditProfile={openProfileSettings}
+                      connectionState={profileConnectionState}
+                      connectionActionBusy={connectionActionBusy}
+                      onFollow={handleFollowProfile}
+                      onCancelRequest={handleCancelProfileRequest}
+                      onUnfollow={handleUnfollowProfile}
+                    />
+                  )}
+                  {activeScreen === 'connections' && (
+                    <ConnectionsScreen
+                      connections={initialConnections}
+                      activeFilter={connectionsFilter}
+                      onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
+                      incomingRequests={incomingRequests}
+                      requestActionBusyId={requestActionBusyId}
+                      onAcceptRequest={handleAcceptRequest}
+                      onRejectRequest={handleRejectRequest}
+                    />
+                  )}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} onQuote={handleQuote} />}
+                  {activeScreen === 'post' && (
+                    <PostScreen
+                      user={user}
+                      text={postDraft}
+                      onTextChange={(text) => {
+                        setPostDraft(text);
+                      }}
+                      quotedPost={quotedPost ? { handle: quotedPost.handle, text: quotedPost.text } : null}
+                    />
+                  )}
+                  {activeScreen === 'search' && <SearchScreen />}
+                  {activeScreen === 'notifications' && <NotificationsScreen />}
+                  {activeScreen === 'settings' && (
+                    <SettingsScreen
+                      user={user}
+                      appearance={appearance}
+                      onAppearanceChange={(a) => persistAppearance(a)}
+                      activeTab={settingsTab}
+                      onTabChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
+                      onUserChange={onUserChange}
+                      onToast={addToast}
+                    />
+                  )}
+                  {activeScreen === 'messages' && <MessagesScreen />}
+                </>
               )}
-              {showTabs !== false && activeScreen === 'connections' && (
-                <Tabs
-                  tabs={[
-                    { id: 'all', label: 'All' },
-                    { id: 'followers', label: 'Followers' },
-                    { id: 'following', label: 'Following' },
-                    { id: 'requests', label: 'Requests' },
-                  ]}
-                  activeId={connectionsFilter}
-                  onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
-                  ariaLabel="Connections filters"
-                />
-              )}
-              {showTabs !== false && activeScreen === 'settings' && (
-                <Tabs
-                  tabs={[
-                    { id: 'general', label: 'General' },
-                    { id: 'account', label: 'Account' },
-                    { id: 'privacy', label: 'Privacy & Safety' },
-                  ]}
-                  activeId={settingsTab}
-                  onChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
-                  ariaLabel="Settings sections"
-                />
-              )}
-              <ContentBox className={(children || fillContent || activeScreen === 'post') ? 'fill-viewport' : ''}>
-                {children ? (
-                  children
-                ) : (
-                  <>
-                    {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} />}
-                    {activeScreen === 'profile' && <ProfileScreen user={profileUser ?? user} posts={posts} isOwnProfile={!profileUser} />}
-                    {activeScreen === 'connections' && <ConnectionsScreen connections={initialConnections} activeFilter={connectionsFilter} onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')} />}
-                    {activeScreen === 'starred' && <StarredScreen posts={posts} />}
-                    {activeScreen === 'post' && <PostScreen user={user} text={postDraft} onTextChange={setPostDraft} />}
-                    {activeScreen === 'search' && <SearchScreen />}
-                    {activeScreen === 'notifications' && <NotificationsScreen />}
-                    {activeScreen === 'settings' && (
-                      <SettingsScreen
-                        user={user}
-                        appearance={appearance}
-                        onAppearanceChange={(a) => persistAppearance(a)}
-                        activeTab={settingsTab}
-                        onTabChange={(id) => setSettingsTab(id as 'general' | 'account' | 'privacy')}
-                      />
-                    )}
-                    {activeScreen === 'messages' && <MessagesScreen />}
-                  </>
-                )}
-              </ContentBox>
-            </div>
+            </ContentBox>
           </div>
         </section>
 
@@ -322,6 +580,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
             <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
           ))}
         </FloatingBar>
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
     </main>
   );

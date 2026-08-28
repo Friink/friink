@@ -3,6 +3,7 @@ export type AuthUser = {
   name: string;
   email: string;
   username: string;
+  about: string;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
 };
@@ -21,8 +22,8 @@ type ApiUser = {
   id: string;
   email: string;
   username: string;
-  date_of_birth: string;
-  location: string | null;
+  display_name: string | null;
+  about: string | null;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -34,40 +35,18 @@ type ApiTokenResponse = {
   user: ApiUser;
 };
 
-async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...init.headers,
-    },
-  });
+type ApiErrorBody = {
+  detail?: string | Array<{ msg?: string }>;
+};
 
-  if (!response.ok) {
-    throw new Error(`Friink API request failed with ${response.status}`);
+export class AuthApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'AuthApiError';
+    this.status = status;
   }
-
-  return response.json() as Promise<T>;
-}
-
-function mapApiUser(user: ApiUser, nameFallback?: string): AuthUser {
-  return {
-    id: user.id,
-    name: nameFallback || user.username,
-    email: user.email,
-    username: user.username,
-    status: 'active',
-    emailVerifiedAt: user.is_verified ? user.created_at : null,
-  };
-}
-
-function mapTokenResponse(response: ApiTokenResponse, nameFallback?: string): AuthSession {
-  return {
-    accessToken: response.access_token,
-    tokenType: 'Bearer',
-    user: mapApiUser(response.user, nameFallback),
-  };
 }
 
 export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSession {
@@ -76,6 +55,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     name: 'Demo User',
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
+    about: '',
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
     ...overrides,
@@ -95,23 +75,23 @@ export async function signUp(input: {
   password: string;
   dateOfBirth: string;
 }): Promise<AuthSession> {
-  const user = await requestApi<ApiUser>('/auth/signup', {
+  await requestApi<ApiUser>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({
       email: input.email,
       username: input.username,
+      display_name: input.name,
       password: input.password,
       date_of_birth: input.dateOfBirth,
-      location: null,
     }),
   });
 
-  const loginSession = await login(input.email, input.password);
+  const session = await login(input.email, input.password);
   return {
-    ...loginSession,
+    ...session,
     user: {
-      ...mapApiUser(user, input.name || user.username),
-      emailVerifiedAt: loginSession.user.emailVerifiedAt,
+      ...session.user,
+      name: input.name || session.user.name,
     },
   };
 }
@@ -122,15 +102,15 @@ export function saveAuthSession(session: AuthSession) {
 }
 
 export function loadAuthSession(): AuthSession | null {
-  if (typeof window === 'undefined') return createDemoSession();
+  if (typeof window === 'undefined') return null;
 
   const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-  if (!raw) return createDemoSession();
+  if (!raw) return null;
 
   try {
     return JSON.parse(raw) as AuthSession;
   } catch {
-    return createDemoSession();
+    return null;
   }
 }
 
@@ -160,4 +140,248 @@ export async function login(email: string, password: string): Promise<AuthSessio
   });
 
   return mapTokenResponse(response);
+}
+
+export async function updateCurrentUser(
+  accessToken: string,
+  input: { username?: string; email?: string; displayName?: string; about?: string },
+): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me', {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      username: input.username,
+      email: input.email,
+      display_name: input.displayName,
+      about: input.about,
+    }),
+  });
+
+  return mapApiUser(response);
+}
+
+export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return mapApiUser(response);
+}
+
+export type ApiPost = {
+  id: string;
+  user_id: string;
+  author_username: string;
+  content: string;
+  media_count: number;
+  quoted_post_id: string | null;
+  quoted_post: {
+    id: string | null;
+    author_username: string | null;
+    content: string;
+    unavailable: boolean;
+  } | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ApiConnectionUser = {
+  id: string;
+  username: string;
+};
+
+export type ApiFollowRequest = {
+  id: string;
+  requester: ApiConnectionUser;
+  recipient: ApiConnectionUser;
+  status: 'pending' | 'accepted' | 'rejected' | 'canceled';
+  created_at: string;
+  responded_at: string | null;
+};
+
+export type ApiConnectionStatus = {
+  user: ApiConnectionUser;
+  state: 'self' | 'none' | 'requested' | 'following';
+  request: ApiFollowRequest | null;
+};
+
+export type ApiConnectionList = {
+  users: ApiConnectionUser[];
+  count: number;
+};
+
+export async function listPosts(): Promise<ApiPost[]> {
+  return requestApi<ApiPost[]>('/posts', {
+    method: 'GET',
+  });
+}
+
+export async function createPost(accessToken: string, input: { content: string; quotedPostId?: string | null; media?: unknown[] }): Promise<ApiPost> {
+  return requestApi<ApiPost>('/posts', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      content: input.content,
+      quoted_post_id: input.quotedPostId ?? null,
+      media: input.media,
+    }),
+  });
+}
+
+export async function getConnectionStatus(accessToken: string, username: string): Promise<ApiConnectionStatus> {
+  return requestApi<ApiConnectionStatus>(`/connections/status/${encodeURIComponent(username)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function sendFollowRequest(accessToken: string, recipientUsername: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>('/connections/requests', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ recipient_username: recipientUsername }),
+  });
+}
+
+export async function acceptFollowRequest(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/requests/${requestId}/accept`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function rejectFollowRequest(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/requests/${requestId}/reject`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function cancelFollowRequest(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/requests/${requestId}/cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function removeConnection(accessToken: string, requestId: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/${requestId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function listIncomingFollowRequests(accessToken: string): Promise<ApiFollowRequest[]> {
+  return requestApi<ApiFollowRequest[]>('/connections/requests/incoming', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function listOutgoingFollowRequests(accessToken: string): Promise<ApiFollowRequest[]> {
+  return requestApi<ApiFollowRequest[]>('/connections/requests/outgoing', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function listFollowers(username: string): Promise<ApiConnectionList> {
+  return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/followers`, {
+    method: 'GET',
+  });
+}
+
+export async function listFollowing(username: string): Promise<ApiConnectionList> {
+  return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/following`, {
+    method: 'GET',
+  });
+}
+
+async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init.headers,
+      },
+      credentials: 'include',
+    });
+  } catch (error) {
+    const message = error instanceof Error ? ensureTerminalPeriod(error.message) : 'Failed to fetch.';
+    throw new AuthApiError(message, 0);
+  }
+
+  if (!response.ok) {
+    throw new AuthApiError(await getApiErrorMessage(response), response.status);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function ensureTerminalPeriod(message: string): string {
+  const trimmed = message.trim();
+  if (!trimmed) return 'Friink API request failed.';
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+async function getApiErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as ApiErrorBody;
+    if (typeof body.detail === 'string') {
+      return body.detail;
+    }
+    if (Array.isArray(body.detail)) {
+      const firstMessage = body.detail.find((item) => item.msg)?.msg;
+      if (firstMessage) return firstMessage;
+    }
+  } catch {
+    // Fall through to the generic status message below.
+  }
+
+  return `Friink API request failed with ${response.status}.`;
+}
+
+function mapTokenResponse(response: ApiTokenResponse): AuthSession {
+  return {
+    accessToken: response.access_token,
+    tokenType: 'Bearer',
+    user: mapApiUser(response.user),
+  };
+}
+
+function mapApiUser(user: ApiUser): AuthUser {
+  return {
+    id: user.id,
+    name: user.display_name || user.username,
+    email: user.email,
+    username: user.username,
+    about: user.about ?? '',
+    status: user.is_verified ? 'active' : 'pending_email_verification',
+    emailVerifiedAt: user.is_verified ? user.updated_at : null,
+  };
 }

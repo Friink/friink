@@ -11,6 +11,13 @@ type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
   isOwnProfile?: boolean;
+  onQuote?: (post: Post) => void;
+  onEditProfile?: () => void;
+  connectionState?: 'self' | 'none' | 'requested' | 'following';
+  connectionActionBusy?: boolean;
+  onFollow?: () => void;
+  onCancelRequest?: () => void;
+  onUnfollow?: () => void;
 };
 
 type ProfileTab = 'posts' | 'replies';
@@ -33,9 +40,21 @@ function getInitials(value: string) {
   );
 }
 
-export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScreenProps) {
+export function ProfileScreen({
+  user,
+  posts,
+  isOwnProfile = true,
+  onQuote,
+  onEditProfile,
+  connectionState = isOwnProfile ? 'self' : 'none',
+  connectionActionBusy = false,
+  onFollow,
+  onCancelRequest,
+  onUnfollow,
+}: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
+  const action = getConnectionAction(connectionState, { onFollow, onCancelRequest, onUnfollow });
 
   return (
     <section className="profile-screen">
@@ -49,9 +68,7 @@ export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScree
       </div>
 
       <p className="profile-bio">
-        {isOwnProfile
-          ? 'Your signed-in account is now driving this profile view.'
-          : 'This is a dummy profile view for browsing people around Friink.'}
+        {user.about || (isOwnProfile ? 'Your signed-in account is now driving this profile view.' : 'This profile has not added an about yet.')}
       </p>
 
       <div className="profile-stats" aria-label="Profile statistics">
@@ -61,14 +78,28 @@ export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScree
 
       <div className="profile-actions">
         {isOwnProfile ? (
-          <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile">
+          <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
             <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
             <span>Edit</span>
           </button>
         ) : (
-          <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
-            <i className="fa-regular fa-paper-plane" aria-hidden="true" />
-          </button>
+          <>
+            {action && (
+              <button
+                className="profile-action-button"
+                type="button"
+                onClick={action.onClick}
+                disabled={connectionActionBusy}
+                aria-label={action.ariaLabel}
+              >
+                <i className={action.icon} aria-hidden="true" />
+                <span>{connectionActionBusy ? 'Updating' : action.label}</span>
+              </button>
+            )}
+            <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
+              <i className="fa-regular fa-paper-plane" aria-hidden="true" />
+            </button>
+          </>
         )}
       </div>
 
@@ -82,7 +113,7 @@ export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScree
 
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (
-          profilePosts.map((post) => <FeedPost key={post.id} post={post} />)
+          profilePosts.map((post) => <FeedPost key={post.id} post={post} onQuote={onQuote} />)
         ) : (
           <div className="profile-empty">
             <i className="fa-regular fa-comment" aria-hidden="true" />
@@ -92,4 +123,35 @@ export function ProfileScreen({ user, posts, isOwnProfile = true }: ProfileScree
       </div>
     </section>
   );
+}
+
+function getConnectionAction(
+  state: 'self' | 'none' | 'requested' | 'following',
+  handlers: Pick<ProfileScreenProps, 'onFollow' | 'onCancelRequest' | 'onUnfollow'>,
+) {
+  if (state === 'none') {
+    return {
+      label: 'Follow',
+      ariaLabel: 'Send follow request',
+      icon: 'fa-solid fa-user-plus',
+      onClick: handlers.onFollow,
+    };
+  }
+  if (state === 'requested') {
+    return {
+      label: 'Cancel request',
+      ariaLabel: 'Cancel follow request',
+      icon: 'fa-solid fa-user-clock',
+      onClick: handlers.onCancelRequest,
+    };
+  }
+  if (state === 'following') {
+    return {
+      label: 'Following',
+      ariaLabel: 'Unfollow user',
+      icon: 'fa-solid fa-user-check',
+      onClick: handlers.onUnfollow,
+    };
+  }
+  return null;
 }

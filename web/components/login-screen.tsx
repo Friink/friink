@@ -8,6 +8,7 @@ import { login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
@@ -44,8 +45,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         const session = await login(email, password);
         saveAuthSession(session);
         onAuthenticated(session.user);
-      } catch {
-        setErrorMessage(AUTH_FAILURE_MESSAGE);
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
       } finally {
         setIsSubmitting(false);
       }
@@ -80,9 +81,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
     if (isSignupProfileStep) {
       setIsSubmitting(true);
       try {
-        if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+        if (!USERNAME_PATTERN.test(username)) {
           setIsSubmitting(false);
-          setErrorMessage('Username must be 3–30 characters and contain only letters, numbers, and underscores.');
+          setErrorMessage("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.");
           return;
         }
 
@@ -95,8 +96,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           saveAuthSession(loginSession);
           onAuthenticated(loginSession.user);
         }
-      } catch {
-        setErrorMessage(AUTH_FAILURE_MESSAGE);
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
       } finally {
         setIsSubmitting(false);
       }
@@ -306,7 +307,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               onChange={(event) => setUsername(event.target.value)}
               placeholder="username"
               prefix={'@'}
-              autoComplete="username"
+              autoComplete="off"
               required
             />
 
@@ -333,4 +334,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
       </form>
     </div>
   );
+}
+
+function getAuthErrorMessage(error: unknown) {
+  return error instanceof Error && error.message ? error.message : AUTH_FAILURE_MESSAGE;
 }

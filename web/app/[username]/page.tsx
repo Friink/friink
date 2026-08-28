@@ -45,6 +45,7 @@ export default function UserProfilePage() {
       .join(' ') || 'Friink User',
     username: profileHandle,
     email: `${profileHandle}@friink.local`,
+    about: 'This profile has not added an about yet.',
   };
 
   return (

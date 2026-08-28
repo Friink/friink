@@ -26,20 +26,23 @@ class Settings(BaseSettings):
             raise RuntimeError("DATABASE_URL is not configured")
         database_url = self.database_url
         if database_url.startswith("postgresql://"):
-            database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        if database_url.startswith("postgresql+asyncpg://"):
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        if database_url.startswith("postgresql+psycopg://"):
             parts = urlsplit(database_url)
             query = dict(parse_qsl(parts.query, keep_blank_values=True))
-            query.pop("sslmode", None)
+            # Keep standard sslmode if provided, pop any asyncpg specific query params
             query.pop("channel_binding", None)
             return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
         if self.database_url.startswith("postgresql://"):
-            return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         return database_url
 
     @property
-    def async_connect_args(self) -> dict[str, bool]:
-        return {"ssl": True} if "neon.tech" in self.database_url else {}
+    def async_connect_args(self) -> dict[str, str]:
+        # For psycopg3, sslmode is passed directly. If database is Neon, ensure we require SSL.
+        if "neon.tech" in self.database_url:
+            return {"sslmode": "require"}
+        return {}
 
 
 @lru_cache

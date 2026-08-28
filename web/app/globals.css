@@ -185,12 +185,6 @@ textarea {
 }
 
 /* Compose / Post screen layout: make textarea fill available space and pin footer */
-.post-screen {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - var(--space-topbar-height));
-}
-
 .post-composer {
   display: flex;
   flex-direction: column;
@@ -1022,10 +1016,6 @@ textarea {
 }
 
 @media (max-width: 767px) {
-  .main-content-post {
-    padding-bottom: calc(3.75rem + 1rem);
-  }
-
   .topbar-brand {
     visibility: visible;
   }
@@ -1043,7 +1033,8 @@ textarea {
     display: flex;
     flex-direction: column;
     width: min(18rem, calc(100% - 2rem));
-    height: calc(100vh - var(--space-topbar-height));
+    max-height: none;
+    overflow-y: auto;
     padding: 0.5rem 1.125rem 1.5rem;
     border-right: 1px solid var(--color-line);
     box-shadow: 0 1rem 2rem rgba(24, 44, 31, 0.16);
@@ -1151,11 +1142,12 @@ textarea {
   overflow: visible;
   background: var(--color-paper);
   overscroll-behavior: auto;
+  padding-top: calc(var(--space-topbar-height) + 2rem);
   touch-action: pan-y;
 }
 
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -1176,8 +1168,10 @@ textarea {
 
 .mobile-home-navigation,
 .mobile-page-navigation {
-  position: sticky;
+  position: fixed;
   top: var(--space-topbar-height);
+  left: 0;
+  right: 0;
   z-index: 10;
   width: 100%;
   flex-shrink: 0;
@@ -1198,18 +1192,6 @@ textarea {
   background: var(--color-paper);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
   z-index: 1;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 40;
-  height: var(--space-topbar-height);
-  margin: 0;
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-paper);
 }
 
 .navigationbar-left {
@@ -1403,29 +1385,6 @@ textarea {
   touch-action: pan-y;
 }
 
-.main-scroll {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: visible;
-  overflow-x: hidden;
-  overscroll-behavior: auto;
-  touch-action: pan-y;
-}
-
-.main-content-post {
-  height: calc(100vh - var(--space-topbar-height));
-  overflow: hidden;
-  padding-bottom: 0;
-}
-
-@media (max-width: 767px) {
-  .main-content-post {
-    padding-bottom: 0;
-  }
-}
-
 .simple-screen {
   display: grid;
   justify-items: center;
@@ -1541,9 +1500,8 @@ textarea {
 
 /* Home Tabs placeholder */
 .tabs {
-  position: sticky;
-  top: 0;
-  z-index: 8;
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: stretch;
   width: 100%;
@@ -1554,6 +1512,18 @@ textarea {
 
 .section-tabs {
   top: 0;
+}
+
+.main-content > .tabs {
+  position: fixed;
+  top: calc(var(--space-topbar-height) + 2rem);
+  left: 0;
+  right: 0;
+  z-index: 9;
+}
+
+.main-content:has(> .tabs) .content-box {
+  padding-top: 2.2rem;
 }
 
 .tabs__inner {
@@ -1600,6 +1570,13 @@ textarea {
   gap: 0.45rem;
 }
 
+.settings-field-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 .settings-field-label {
   color: var(--color-muted);
   font-size: var(--text-xs);
@@ -1608,7 +1585,8 @@ textarea {
   text-transform: uppercase;
 }
 
-.settings-field input {
+.settings-field input,
+.settings-about-field {
   width: 100%;
   min-height: 2.75rem;
   border: 1px solid var(--color-line);
@@ -1617,6 +1595,23 @@ textarea {
   background: var(--color-background);
   color: var(--color-ink);
   font: inherit;
+}
+
+.settings-about-field {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.settings-field-count {
+  justify-self: end;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.settings-field-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .settings-field .input-with-prefix {
@@ -1652,6 +1647,40 @@ textarea {
 .settings-field input[readonly] {
   cursor: not-allowed;
   opacity: 0.85;
+}
+
+.settings-update-button {
+  flex: 0 0 auto;
+  min-width: 5.75rem;
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  color: var(--color-paper);
+  background: var(--color-brand);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.settings-update-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.settings-field-message {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+@media (max-width: 420px) {
+  .settings-field-row {
+    flex-direction: column;
+  }
+
+  .settings-update-button {
+    width: 100%;
+  }
 }
 
 .settings-toggle-list {
@@ -1718,7 +1747,6 @@ textarea {
 .messages-screen {
   width: 100%;
   max-width: none;
-  min-height: calc(100vh - var(--space-topbar-height));
   margin: 0;
   padding: 1.25rem 1rem 6rem;
 }
@@ -1872,7 +1900,6 @@ textarea {
 .notifications-screen {
   width: 100%;
   max-width: none;
-  min-height: calc(100vh - var(--space-topbar-height));
   margin: 0;
   padding: 1.25rem 1rem 6rem;
 }
@@ -2066,6 +2093,85 @@ textarea {
   opacity: 0.4;
 }
 
+.chat-composer input:disabled,
+.chat-composer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--space-floating-bar-height) + 1.5rem);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(22rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.toast-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-left: 0.25rem solid #b54444;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: 0 0.75rem 2rem rgba(24, 44, 31, 0.14);
+  pointer-events: auto;
+}
+
+.toast-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.toast-copy p {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.toast-copy time {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.toast-message button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.toast-message button:hover,
+.toast-message button:focus-visible {
+  color: var(--color-ink);
+  outline: none;
+}
+
+@media (max-width: 767px) {
+  .toast-stack {
+    right: 50%;
+    bottom: calc(var(--space-floating-bar-height) + 1rem);
+    align-items: center;
+    transform: translateX(50%);
+  }
+}
+
 .floating-bar-composer {
   flex: 1;
   min-width: 0;
@@ -2081,8 +2187,8 @@ textarea {
 
 /* Profile */
 .profile-screen {
-  width: min(100%, 1024px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .profile-intro {
@@ -2154,6 +2260,7 @@ textarea {
 
 .profile-actions {
   display: flex;
+  gap: 0.5rem;
   justify-content: flex-end;
   padding: 0 1rem 1rem;
 }
@@ -2173,6 +2280,12 @@ textarea {
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
+}
+
+.profile-action-button:disabled,
+.icon-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .profile-action-button:hover,
@@ -2227,8 +2340,8 @@ textarea {
 }
 
 .profile-screen {
-  width: min(100%, 1024px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 0.75rem 1rem 1rem;
 }
 
@@ -2274,8 +2387,8 @@ textarea {
 
 /* Connections feed */
 .connections-screen {
-  width: min(100%, 1024px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .icon-button {
@@ -2403,9 +2516,9 @@ textarea {
 /* Feed */
 .home-feed {
   display: grid;
-  width: min(100%, 1024px);
+  width: 100%;
   min-width: 256px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .feed-post {
@@ -2462,13 +2575,43 @@ textarea {
 }
 
 .starred-feed {
-  width: min(100%, 1024px);
+  width: 100%;
 }
 
 .feed-post-body {
   margin: 0.625rem 0;
   font-size: var(--text-sm);
   line-height: 1.45;
+}
+
+.feed-post-quote {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+}
+
+.feed-post-quote strong {
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+}
+
+.feed-post-quote p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.feed-post-quote-unavailable {
+  opacity: 0.75;
+}
+
+.post-screen-quote {
+  margin-bottom: 0;
 }
 
 .feed-post-actions {
@@ -2546,27 +2689,14 @@ input[type="search"]:focus {
 
 /* Content box wrapper used across pages */
 .content-box {
-  width: min(100%, 1024px);
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   padding: 0 0 3rem;
   flex: 1 1 auto;
   min-height: 0;
   overflow: visible;
   overscroll-behavior: contain;
-}
-
-/* Make content fill the viewport between the topbar and bottom of the page
-   Used by compose and chat pages so content never grows beyond the viewport */
-.content-box.fill-viewport {
-  min-height: calc(100vh - var(--space-topbar-height));
-  max-height: calc(100vh - var(--space-topbar-height));
-  overflow: auto;
-  padding-bottom: calc(var(--space-floating-bar-height) + 1rem);
-  padding-top: 0;
-}
-
-.content-box.fill-viewport:has(.post-screen) {
-  overflow: hidden;
 }
 
 .home-filter {
@@ -2786,12 +2916,6 @@ input[type="search"]:focus {
   background: var(--color-brand-soft);
 }
 
-.app-layout:has(.chat-screen) .main-content {
-  height: calc(100vh - var(--space-topbar-height));
-  overflow: hidden;
-  padding-bottom: 0;
-}
-
 .main-content {
   padding-top: 0;
   padding-bottom: calc(var(--space-floating-bar-height) + 2rem);
@@ -2810,7 +2934,7 @@ input[type="search"]:focus {
 /* Desktop */
 @media (min-width: 768px) {
   .topbar {
-    position: sticky;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -2856,15 +2980,16 @@ input[type="search"]:focus {
   .sidebar {
     position: fixed;
     top: var(--space-topbar-height);
+    bottom: 0;
     left: 0;
     z-index: 20;
     display: flex;
     flex-direction: column;
     width: var(--desktop-sidebar-width);
-    height: calc(100vh - var(--space-topbar-height));
+    max-height: none;
     min-height: 0;
     overflow-y: auto;
-    padding: 0.75rem 1.25rem 1.75rem;
+    padding: 0.75rem 0.75rem 1.75rem;
     border-right: 1px solid var(--color-line);
     background: var(--color-paper);
   }
@@ -2916,7 +3041,8 @@ input[type="search"]:focus {
   }
 
   .nav-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
     align-items: center;
     gap: 0.875rem;
     width: 100%;
@@ -2965,7 +3091,8 @@ input[type="search"]:focus {
   }
 
   .sidebar-action {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
     align-items: center;
     gap: 0.875rem;
     width: 100%;
@@ -2992,11 +3119,6 @@ input[type="search"]:focus {
     margin-top: 0.25rem;
   }
 
-  .sidebar-collapsed {
-    padding-right: 0.75rem;
-    padding-left: 0.75rem;
-  }
-
   /* When collapsed, hide labels but keep avatar visible */
   .sidebar-collapsed .nav-item span,
   .sidebar-collapsed .sidebar-action span {
@@ -3016,22 +3138,23 @@ input[type="search"]:focus {
   }
 
   .sidebar-collapsed .sidebar-profile {
-    justify-items: center;
-    padding-right: 0;
-    padding-left: 0;
+    justify-items: start;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
     text-align: center;
   }
 
   .sidebar-collapsed .sidebar-profile .user-avatar {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 
   .sidebar-collapsed .nav-item,
   .sidebar-collapsed .sidebar-action {
-    justify-content: center;
-    padding-right: 0.5rem;
-    padding-left: 0.5rem;
+    grid-template-columns: 1.25rem;
+    justify-content: start;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
   }
 
   .sidebar-footer p {
@@ -3048,8 +3171,15 @@ input[type="search"]:focus {
     min-height: 100vh;
   }
 
-  .mobile-home-navigation {
-    width: 100%;
+  .mobile-home-navigation,
+  .mobile-page-navigation {
+    left: var(--desktop-sidebar-width);
+    right: 0;
+    width: auto;
+  }
+
+  .main-content > .tabs {
+    left: var(--desktop-sidebar-width);
   }
 
   .app-layout:has(.sidebar-collapsed) .sidebar {
@@ -3069,19 +3199,6 @@ input[type="search"]:focus {
     margin: 0 auto;
     padding-top: 0;
     padding-bottom: 0;
-  }
-
-  .home-feed {
-    width: min(100%, 1024px);
-  }
-
-  .main-content-post {
-    width: 100%;
-    margin: 0;
-  }
-
-  .post-screen {
-    min-height: calc(100vh - 2rem);
   }
 
 }

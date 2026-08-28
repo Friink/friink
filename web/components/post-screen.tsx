@@ -6,6 +6,11 @@ type PostScreenProps = {
   user: AuthUser;
   text: string;
   onTextChange: (text: string) => void;
+  quotedPost?: {
+    handle: string;
+    text: string;
+    unavailable?: boolean;
+  } | null;
 };
 
 function getInitials(value: string) {
@@ -21,7 +26,7 @@ function getInitials(value: string) {
   );
 }
 
-export function PostScreen({ user, text, onTextChange }: PostScreenProps) {
+export function PostScreen({ user, text, onTextChange, quotedPost }: PostScreenProps) {
   return (
     <section className="post-screen">
       <div className="chat-header">
@@ -33,10 +38,17 @@ export function PostScreen({ user, text, onTextChange }: PostScreenProps) {
           {/* user identity moved to header */}
           <textarea
             autoFocus
+            maxLength={512}
             value={text}
             onChange={(event) => onTextChange(event.target.value)}
             placeholder="What's on your mind?"
           />
+          {quotedPost && (
+            <div className={`feed-post-quote post-screen-quote${quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
+              <strong>{quotedPost.unavailable ? 'Original post unavailable' : quotedPost.handle}</strong>
+              <p>{quotedPost.text}</p>
+            </div>
+          )}
         </div>
       </div>
     </section>
