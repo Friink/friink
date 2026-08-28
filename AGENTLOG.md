@@ -19,6 +19,78 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 03:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the interrupted task to remove the iframe-wrapped landing page, port the static public site into native Next.js, fix per-route document titles, remove retired demo routes, verify, and commit.
+- Changes:
+  - Ported `web/public/friink-site/index.html` into the native App Router homepage at `/` with JSX in `web/app/page.tsx` and scoped styles in `web/app/landing.module.css`.
+  - Replaced the old iframe wrapper and removed the `.public-site-frame` styling from global CSS.
+  - Added `LandingAuthRedirect` to preserve the existing signed-in redirect behavior without wrapping the page in an iframe.
+  - Converted the Zoho waitlist behavior into a React `SubscribeForm` instead of keeping raw landing-page scripts.
+  - Moved landing media to top-level `web/public/media`; existing brand assets under `web/public/brand` are now referenced directly.
+  - Deleted `web/public/friink-site/` after confirming live source references were gone.
+  - Added route-level metadata/layout wrappers for all current app routes, using absolute `Friink | Page Name` titles to match the required order.
+  - Split client pages behind server page/layout wrappers so metadata can be exported without keeping page files as client components.
+  - Added display-name-aware dynamic profile metadata with fallback to `@username`.
+  - Added a 404 page/title helper and updated the client error boundary title handling for `Friink | Error (code)`.
+  - Deleted the demo `/dev-settings` and `/floating` page files, and guarded retired/demo slugs so `/compose`, `/dev-settings`, and `/floating` return 404 instead of dynamic profile pages.
+  - Updated `CHANGELOG.md` current state and dated notes for the landing/title work.
+- Files:
+  - web/app/page.tsx
+  - web/app/landing.module.css
+  - web/app/landing-auth-redirect.tsx
+  - web/app/subscribe-form.tsx
+  - web/app/layout.tsx
+  - web/app/not-found.tsx
+  - web/app/not-found-title.tsx
+  - web/app/error.tsx
+  - web/app/home/page.tsx
+  - web/app/home/layout.tsx
+  - web/app/chat/page.tsx
+  - web/app/chat/layout.tsx
+  - web/app/connections/page.tsx
+  - web/app/connections/layout.tsx
+  - web/app/connectionsfilter/page.tsx
+  - web/app/connectionsfilter/layout.tsx
+  - web/app/login/page.tsx
+  - web/app/login/login-client.tsx
+  - web/app/login/layout.tsx
+  - web/app/notifications/page.tsx
+  - web/app/notifications/layout.tsx
+  - web/app/settings/page.tsx
+  - web/app/settings/layout.tsx
+  - web/app/starred/page.tsx
+  - web/app/starred/layout.tsx
+  - web/app/debug/error-preview/page.tsx
+  - web/app/debug/error-preview/error-preview-client.tsx
+  - web/app/debug/error-preview/layout.tsx
+  - web/app/[username]/page.tsx
+  - web/app/[username]/profile-client.tsx
+  - web/app/[username]/layout.tsx
+  - web/app/[username]/chat/page.tsx
+  - web/app/[username]/chat/chat-client.tsx
+  - web/app/[username]/chat/layout.tsx
+  - web/components/app-shell-route.tsx
+  - web/components/app-shell.tsx
+  - web/components/floating-bar.tsx
+  - web/lib/data.ts
+  - web/lib/profile-display.ts
+  - web/app/globals.css
+  - web/public/media/*
+  - web/public/friink-site/* (deleted)
+  - web/app/dev-settings/page.tsx (deleted)
+  - web/app/floating/page.tsx (deleted)
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: A native Next.js landing route gives the future SEO path a real App Router page with metadata, avoids the iframe height-collapse behavior on localhost/embedded views, and keeps route titles owned by each page rather than inherited from a static iframe document. Deleted demo routes needed explicit dynamic-route guards because otherwise the `[username]` route would treat those old paths as usernames.
+- Notes:
+  - The route inventory was completed before code changes and identified `/dev-settings` and `/floating` as demo routes with no metadata; both have been removed.
+  - The landing page no longer uses the iframe wrapper. A hidden form-target iframe remains only inside `SubscribeForm` for the external Zoho POST flow so submitting the waitlist form does not navigate away from the app.
+  - Browser verification used `http://localhost:3001` because an older dev server on port 3000 was still serving stale `.next` output; clearing `web/.next` resolved the production build cache issue.
+  - In the in-app browser, protected routes redirect to `/login` when unauthenticated, so route metadata was also verified by direct HTTP SSR probes.
+- Verified Working?: yes — `npm run build` in `web` passed; dev-server probes confirmed expected titles and no public iframe references across the enumerated routes; browser checks confirmed the native homepage is full-width/full-height at desktop and mobile viewport sizes with no mobile horizontal overflow and no visible broken images. Deleted `/compose`, `/dev-settings`, and `/floating` now return 404, and browser title handling shows `Friink | Error (404)` for deleted routes.
+
 - Date/Time: 2026-08-29 00:00 +05:00
 - Agent: Codex
 - Model: GPT-5

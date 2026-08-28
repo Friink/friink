@@ -176,8 +176,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return 'Notifications';
       case 'settings':
         return 'Settings';
-      case 'floating':
-        return 'Floating';
       default:
         return 'Friink';
     }
@@ -207,9 +205,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         break;
       case 'notifications':
         router.push('/notifications');
-        break;
-      case 'floating':
-        router.push('/floating');
         break;
       default:
         break;
@@ -473,7 +468,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           </div>
 
           <div className="main-content">
-            {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
+            {showTabs !== false && activeScreen === 'home' && (
               <Tabs
                 tabs={[
                   { id: 'all', label: 'Explore' },

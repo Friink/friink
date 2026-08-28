@@ -1,21 +1,5 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { LoginScreen } from '@/components/login-screen';
-import { loadAuthSession } from '@/lib/auth';
+import { LoginClient } from './login-client';
 
 export default function LoginPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const session = loadAuthSession();
-    const isDemoSession = session?.user?.email === 'demo@friink.local';
-
-    if (session && !isDemoSession) {
-      router.replace('/home');
-    }
-  }, [router]);
-
-  return <LoginScreen onAuthenticated={() => router.replace('/home')} />;
+  return <LoginClient />;
 }

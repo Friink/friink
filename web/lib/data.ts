@@ -19,7 +19,7 @@ export type Post = {
   } | null;
 };
 
-export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'search' | 'messages' | 'notifications' | 'settings' | 'floating';
+export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'search' | 'messages' | 'notifications' | 'settings';
 
 export type NavItem = {
   id: Screen;
