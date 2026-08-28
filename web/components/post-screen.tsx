@@ -11,7 +11,6 @@ type PostScreenProps = {
     text: string;
     unavailable?: boolean;
   } | null;
-  errorMessage?: string;
 };
 
 function getInitials(value: string) {
@@ -27,7 +26,7 @@ function getInitials(value: string) {
   );
 }
 
-export function PostScreen({ user, text, onTextChange, quotedPost, errorMessage = '' }: PostScreenProps) {
+export function PostScreen({ user, text, onTextChange, quotedPost }: PostScreenProps) {
   return (
     <section className="post-screen">
       <div className="chat-header">
@@ -37,7 +36,6 @@ export function PostScreen({ user, text, onTextChange, quotedPost, errorMessage 
       <div className="post-composer">
         <div className="post-composer-body">
           {/* user identity moved to header */}
-          {errorMessage && <p className="login-error" role="alert">{errorMessage}</p>}
           <textarea
             autoFocus
             maxLength={512}

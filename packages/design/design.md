@@ -260,6 +260,12 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - Height `3rem`, corner radius `8px` (`.pill-button`).
   - Variants: `brand` (`.pill-button-brand`, background `#33aa55`, color white), `quiet` (`.pill-button-quiet`, background `#eaf5ed`, color ink), and hollow outline (`.signup-back-button`).
 
+### 11. ToastStack (`web/components/toast-stack.tsx`)
+- **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.
+- **Desktop Placement**: Fixed lower-right, above the floating bar, stacking vertically with newest toast appended at the bottom.
+- **Mobile Placement**: Fixed bottom center, above the floating bar, stacking upward from the bottom while center-aligned.
+- **Content Contract**: Each toast shows the message, a timestamp, and a dismiss icon button.
+
 ---
 
 ## Unresolved & Contract Violations

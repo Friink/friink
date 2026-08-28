@@ -9,7 +9,6 @@ type ConnectionsScreenProps = {
   onFilterChange?: (id: string) => void;
   incomingRequests?: ConnectionRequest[];
   requestActionBusyId?: string | null;
-  requestActionError?: string;
   onAcceptRequest?: (id: string) => void;
   onRejectRequest?: (id: string) => void;
 };
@@ -19,7 +18,6 @@ export function ConnectionsScreen({
   activeFilter = 'all',
   incomingRequests = [],
   requestActionBusyId = null,
-  requestActionError = '',
   onAcceptRequest,
   onRejectRequest,
 }: ConnectionsScreenProps) {
@@ -38,7 +36,6 @@ export function ConnectionsScreen({
 
   return (
     <div className="connections-screen">
-      {requestActionError && <p className="connections-error">{requestActionError}</p>}
       <div className="connection-list">
         {isRequestsView && incomingRequests.length > 0 ? (
           incomingRequests.map((request) => (

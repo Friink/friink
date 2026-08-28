@@ -19,6 +19,7 @@ import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
+import { ToastStack, type ToastMessage } from '@/components/toast-stack';
 import { initialConnections, initialPosts, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
@@ -72,14 +73,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [postDraft, setPostDraft] = useState('');
   const [quotedPost, setQuotedPost] = useState<Post | null>(null);
-  const [postError, setPostError] = useState('');
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
-  const [connectionActionError, setConnectionActionError] = useState('');
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
-  const [requestActionError, setRequestActionError] = useState('');
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
   const [messagesTab, setMessagesTab] = useState('all');
@@ -226,6 +225,23 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  function addToast(message: string, tone: ToastMessage['tone'] = 'error') {
+    const now = new Date();
+    setToasts((current) => [
+      ...current,
+      {
+        id: now.getTime(),
+        message,
+        timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+        tone,
+      },
+    ]);
+  }
+
+  function dismissToast(id: number) {
+    setToasts((current) => current.filter((toast) => toast.id !== id));
+  }
+
   useEffect(() => {
     listPosts()
       .then((apiPosts) => {
@@ -243,7 +259,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     listIncomingFollowRequests(session.accessToken)
       .then((requests) => {
         setIncomingRequests(requests.map(mapApiFollowRequest));
-        setRequestActionError('');
       })
       .catch(() => {
         // Connections still renders with demo data if the API is unavailable.
@@ -255,7 +270,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     if (!profileUser || viewedUser.username === user.username) {
       setProfileConnectionState('self');
       setProfileConnectionRequestId(null);
-      setConnectionActionError('');
       return;
     }
 
@@ -270,18 +284,16 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       .then((statusResponse) => {
         setProfileConnectionState(statusResponse.state);
         setProfileConnectionRequestId(statusResponse.request?.id ?? null);
-        setConnectionActionError('');
       })
       .catch((error) => {
         setProfileConnectionState('none');
         setProfileConnectionRequestId(null);
-        setConnectionActionError(error instanceof Error ? error.message : 'Could not load connection state.');
+        addToast(error instanceof Error ? error.message : 'Could not load connection state.');
       });
   }, [profileUser, user]);
 
   function handleQuote(post: Post) {
     setQuotedPost(post);
-    setPostError('');
     navigateTo('post');
   }
 
@@ -291,7 +303,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
     const session = loadAuthSession();
     if (!session) {
-      setPostError('Please log in again to post.');
+      addToast('Please log in again to post.');
       return;
     }
 
@@ -304,13 +316,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       setPosts((current) => [newPost, ...current]);
       setPostDraft('');
       setQuotedPost(null);
-      setPostError('');
       setActiveScreen('home');
       router.push('/home');
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create post.';
-      setPostError(message);
+      addToast(message);
     }
   }
 
@@ -359,7 +370,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     if (!profileUser) return;
     const session = loadAuthSession();
     if (!session) {
-      setConnectionActionError('Please log in again to follow people.');
+      addToast('Please log in again to follow people.');
       return;
     }
 
@@ -368,9 +379,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       const request = await sendFollowRequest(session.accessToken, profileUser.username);
       setProfileConnectionState(request.status === 'accepted' ? 'following' : 'requested');
       setProfileConnectionRequestId(request.id);
-      setConnectionActionError('');
     } catch (error) {
-      setConnectionActionError(error instanceof Error ? error.message : 'Could not send follow request.');
+      addToast(error instanceof Error ? error.message : 'Could not send follow request.');
     } finally {
       setConnectionActionBusy(false);
     }
@@ -385,9 +395,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       await cancelFollowRequest(session.accessToken, profileConnectionRequestId);
       setProfileConnectionState('none');
       setProfileConnectionRequestId(null);
-      setConnectionActionError('');
     } catch (error) {
-      setConnectionActionError(error instanceof Error ? error.message : 'Could not cancel follow request.');
+      addToast(error instanceof Error ? error.message : 'Could not cancel follow request.');
     } finally {
       setConnectionActionBusy(false);
     }
@@ -402,9 +411,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       await removeConnection(session.accessToken, profileConnectionRequestId);
       setProfileConnectionState('none');
       setProfileConnectionRequestId(null);
-      setConnectionActionError('');
     } catch (error) {
-      setConnectionActionError(error instanceof Error ? error.message : 'Could not remove connection.');
+      addToast(error instanceof Error ? error.message : 'Could not remove connection.');
     } finally {
       setConnectionActionBusy(false);
     }
@@ -418,9 +426,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     try {
       await acceptFollowRequest(session.accessToken, requestId);
       setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
-      setRequestActionError('');
     } catch (error) {
-      setRequestActionError(error instanceof Error ? error.message : 'Could not accept request.');
+      addToast(error instanceof Error ? error.message : 'Could not accept request.');
     } finally {
       setRequestActionBusyId(null);
     }
@@ -434,9 +441,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     try {
       await rejectFollowRequest(session.accessToken, requestId);
       setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
-      setRequestActionError('');
     } catch (error) {
-      setRequestActionError(error instanceof Error ? error.message : 'Could not reject request.');
+      addToast(error instanceof Error ? error.message : 'Could not reject request.');
     } finally {
       setRequestActionBusyId(null);
     }
@@ -522,7 +528,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onEditProfile={openProfileSettings}
                       connectionState={profileConnectionState}
                       connectionActionBusy={connectionActionBusy}
-                      connectionActionError={connectionActionError}
                       onFollow={handleFollowProfile}
                       onCancelRequest={handleCancelProfileRequest}
                       onUnfollow={handleUnfollowProfile}
@@ -535,7 +540,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
                       requestActionBusyId={requestActionBusyId}
-                      requestActionError={requestActionError}
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
                     />
@@ -547,10 +551,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       text={postDraft}
                       onTextChange={(text) => {
                         setPostDraft(text);
-                        setPostError('');
                       }}
                       quotedPost={quotedPost ? { handle: quotedPost.handle, text: quotedPost.text } : null}
-                      errorMessage={postError}
                     />
                   )}
                   {activeScreen === 'search' && <SearchScreen />}
@@ -563,6 +565,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       activeTab={settingsTab}
                       onTabChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
                       onUserChange={onUserChange}
+                      onToast={addToast}
                     />
                   )}
                   {activeScreen === 'messages' && <MessagesScreen />}
@@ -577,6 +580,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
             <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
           ))}
         </FloatingBar>
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
     </main>
   );

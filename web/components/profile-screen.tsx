@@ -15,7 +15,6 @@ type ProfileScreenProps = {
   onEditProfile?: () => void;
   connectionState?: 'self' | 'none' | 'requested' | 'following';
   connectionActionBusy?: boolean;
-  connectionActionError?: string;
   onFollow?: () => void;
   onCancelRequest?: () => void;
   onUnfollow?: () => void;
@@ -49,7 +48,6 @@ export function ProfileScreen({
   onEditProfile,
   connectionState = isOwnProfile ? 'self' : 'none',
   connectionActionBusy = false,
-  connectionActionError = '',
   onFollow,
   onCancelRequest,
   onUnfollow,
@@ -104,7 +102,6 @@ export function ProfileScreen({
           </>
         )}
       </div>
-      {connectionActionError && <p className="profile-action-error">{connectionActionError}</p>}
 
       <Tabs
         tabs={profileTabs}

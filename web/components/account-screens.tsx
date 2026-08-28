@@ -13,11 +13,12 @@ type SettingsScreenProps = {
   activeTab?: SettingsTab;
   onTabChange?: (id: string) => void;
   onUserChange?: (user: AuthUser) => void;
+  onToast?: (message: string) => void;
 };
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
-export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general', onUserChange }: SettingsScreenProps) {
+export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general', onUserChange, onToast }: SettingsScreenProps) {
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
@@ -52,14 +53,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   async function handleUsernameUpdate() {
     if (!canUpdateUsername) {
       if (hasUsernameChanged && !isUsernameValid) {
-        setUsernameStatus("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.");
+        onToast?.("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.");
       }
       return;
     }
 
     const session = loadAuthSession();
     if (!session) {
-      setUsernameStatus('Please log in again to update your username.');
+      onToast?.('Please log in again to update your username.');
       return;
     }
 
@@ -73,7 +74,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       setUsername(updatedSession.user.username);
       setUsernameStatus('Username updated.');
     } catch (error) {
-      setUsernameStatus(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update username.');
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update username.');
     } finally {
       setIsUpdatingUsername(false);
     }
@@ -82,14 +83,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   async function handleEmailUpdate() {
     if (!canUpdateEmail) {
       if (hasEmailChanged && !isEmailValid) {
-        setEmailStatus('Please enter a valid email address.');
+        onToast?.('Please enter a valid email address.');
       }
       return;
     }
 
     const session = loadAuthSession();
     if (!session) {
-      setEmailStatus('Please log in again to update your email.');
+      onToast?.('Please log in again to update your email.');
       return;
     }
 
@@ -103,7 +104,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       setEmail(updatedSession.user.email);
       setEmailStatus('Email updated.');
     } catch (error) {
-      setEmailStatus(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update email.');
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update email.');
     } finally {
       setIsUpdatingEmail(false);
     }
@@ -112,16 +113,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   async function handleProfileUpdate() {
     if (!canUpdateProfile) {
       if (!isDisplayNameValid) {
-        setProfileStatus('Name is required and must be 120 characters or fewer.');
+        onToast?.('Name is required and must be 120 characters or fewer.');
       } else if (!isAboutValid) {
-        setProfileStatus('About must be 256 characters or fewer.');
+        onToast?.('About must be 256 characters or fewer.');
       }
       return;
     }
 
     const session = loadAuthSession();
     if (!session) {
-      setProfileStatus('Please log in again to update your profile.');
+      onToast?.('Please log in again to update your profile.');
       return;
     }
 
@@ -139,7 +140,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       setAbout(updatedSession.user.about);
       setProfileStatus('Profile updated.');
     } catch (error) {
-      setProfileStatus(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update profile.');
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update profile.');
     } finally {
       setIsUpdatingProfile(false);
     }

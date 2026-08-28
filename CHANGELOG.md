@@ -40,6 +40,14 @@ _Last updated: 2026-08-28_
 
 ## 2026-08-28
 
+### Added
+- [web] Added an app-level `ToastStack` for logged-in errors, fixed lower-right on desktop and bottom-centered on mobile with timestamps and stacked ordering.
+
+### Changed
+- [web] Routed post, settings, profile-connection, and connection-request errors through toasts instead of inline page/body error text.
+
+## 2026-08-28
+
 ### Changed
 - [web] Made direct `/[username]/chat` routes resilient: missing/nonexistent local conversations now render an empty chat shell instead of a not-found message, and the composer stays disabled unless the connection status allows chat.
 

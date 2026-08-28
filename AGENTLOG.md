@@ -49,6 +49,38 @@
   - `web/components/design/input-field.tsx` — Shared labeled input primitive with prefix/trailing support.
   - `web/components/friink-logo.tsx` — Small brand logo component for compact UI surfaces.
   - `web/components/navigation-menu.tsx` — Header overflow/context menu for page-level actions.
+  - `web/components/toast-stack.tsx` — App-level stacked toast notifications for logged-in errors.
+
+---
+
+### Entry
+
+- Date & Time: 2026-08-28 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace logged-in inline errors with app-level toast notifications.
+- Changes Made:
+  - Added `ToastStack` as a reusable app-level toast component with message, timestamp, and dismiss control.
+  - Mounted the toast stack in `AppShell` and routed post creation, profile connection, connection request, and settings update errors through it.
+  - Removed inline post/profile/connections error renderers that could appear in the middle of page content.
+  - Added responsive toast styling: desktop lower-right, mobile bottom-center, newest toast appended at the bottom.
+  - Updated the component registry, design contract, and changelog.
+- Files/Scope Touched:
+  - web/components/toast-stack.tsx
+  - web/components/app-shell.tsx
+  - web/components/account-screens.tsx
+  - web/components/post-screen.tsx
+  - web/components/profile-screen.tsx
+  - web/components/connections-screen.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Logged-in operational errors should have one predictable notification surface instead of appearing inline in unrelated content positions.
+- Notes:
+  - Login/signup errors remain inline on the auth screen because that is outside the logged-in shell and tied directly to the auth form.
+  - Settings success confirmations remain inline as field-adjacent confirmations.
+- Verified Working?: pending — verification commands are being run after this log update.
 
 ---
 
