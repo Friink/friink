@@ -23,11 +23,10 @@ export default function HomePage() {
               <Image src="/brand/logoFullBlack.svg" alt="Friink" width={176} height={56} className={styles.logoFull} priority />
             </picture>
           </Link>
-          <div className={styles.navLinks}>
+          <div className={styles.navActions}>
             <a className={styles.navLink} href="#vision">Our vision</a>
             <Link className={styles.cta} href="/login">Early access</Link>
           </div>
-          <Link className={`${styles.cta} ${styles.mobileCta}`} href="/login">Early access</Link>
         </div>
       </nav>
 
@@ -38,7 +37,11 @@ export default function HomePage() {
             <p>A calmer social space unlike anything you have seen so far.</p>
             <div className={styles.heroActions}>
               <Link href="/login" className={styles.cta}>
-                Try now <span className={styles.ctaArrow} aria-hidden="true">-&gt;</span>
+                Try now
+                <svg className={styles.ctaIcon} aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12H19" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M13 6L19 12L13 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </Link>
               <a href="#subscribe" className={`${styles.cta} ${styles.secondaryCta}`}>Subscribe</a>
             </div>
@@ -53,9 +56,9 @@ export default function HomePage() {
                   <h2>Under Development</h2>
                   <p>Laying the foundation for a better space.</p>
                 </div>
-                <span className={styles.progressValue}>10%</span>
+                <span className={styles.progressValue}>25%</span>
               </div>
-              <div className={styles.progressTrack} role="progressbar" aria-label="Development progress" aria-valuenow={10} aria-valuemin={0} aria-valuemax={100}>
+              <div className={styles.progressTrack} role="progressbar" aria-label="Development progress" aria-valuenow={25} aria-valuemin={0} aria-valuemax={100}>
                 <div className={styles.progressFill} />
               </div>
             </div>
@@ -68,7 +71,13 @@ export default function HomePage() {
               <Image src="/media/pexels-ryank-17841014.jpg" alt="An abstract image representing clarity emerging from chaos" width={900} height={620} />
             </div>
             <div className={styles.visionCopy}>
-              <span className={styles.eyebrow}>Our vision</span>
+              <span className={styles.eyebrow}>
+                <svg className={styles.eyebrowIcon} aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 12C4.8 7.5 8.06 5.25 12 5.25C15.94 5.25 19.2 7.5 22 12C19.2 16.5 15.94 18.75 12 18.75C8.06 18.75 4.8 16.5 2 12Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.9" />
+                </svg>
+                Our vision
+              </span>
               <h2>Designing for clarity, and peace.</h2>
               <p>
                 Social spaces are noisy, overwhelming, and built to keep you scrolling. We are building Friink with a different philosophy.
