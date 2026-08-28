@@ -54,44 +54,42 @@ export function Composer({
   }
 
   return (
-    <div className="composer-shell">
-      <form
-        className={`composer floating-bar-composer${multiline ? ' floating-bar-composer-multiline' : ''}${expanded ? ' floating-bar-composer-expanded' : ''}`}
-        onSubmit={handleSubmit}
-      >
-        <button className="icon-plain" type="button" aria-label="Attach file" disabled={disabled}>
-          <i className="fa-solid fa-paperclip" aria-hidden="true" />
-        </button>
-        {multiline ? (
-          <textarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(event) => onDraftChange(maxLength ? event.target.value.slice(0, maxLength) : event.target.value)}
-            placeholder={disabled ? disabledPlaceholder : placeholder}
-            aria-label={inputLabel}
-            disabled={disabled}
-            rows={1}
-            maxLength={maxLength}
-          />
-        ) : (
-          <input
-            value={draft}
-            onChange={(event) => onDraftChange(maxLength ? event.target.value.slice(0, maxLength) : event.target.value)}
-            placeholder={disabled ? disabledPlaceholder : placeholder}
-            aria-label={inputLabel}
-            disabled={disabled}
-            maxLength={maxLength}
-          />
-        )}
-        <button className="composer-send" type="submit" disabled={disabled || !draft.trim() || isOverLimit} aria-label={sendLabel}>
-          <i className="fa-solid fa-arrow-up" aria-hidden="true" />
-        </button>
-      </form>
+    <form
+      className={`composer floating-bar-composer${multiline ? ' floating-bar-composer-multiline' : ''}${expanded ? ' floating-bar-composer-expanded' : ''}`}
+      onSubmit={handleSubmit}
+    >
+      <button className="icon-plain" type="button" aria-label="Attach file" disabled={disabled}>
+        <i className="fa-solid fa-paperclip" aria-hidden="true" />
+      </button>
+      {multiline ? (
+        <textarea
+          ref={textareaRef}
+          value={draft}
+          onChange={(event) => onDraftChange(maxLength ? event.target.value.slice(0, maxLength) : event.target.value)}
+          placeholder={disabled ? disabledPlaceholder : placeholder}
+          aria-label={inputLabel}
+          disabled={disabled}
+          rows={1}
+          maxLength={maxLength}
+        />
+      ) : (
+        <input
+          value={draft}
+          onChange={(event) => onDraftChange(maxLength ? event.target.value.slice(0, maxLength) : event.target.value)}
+          placeholder={disabled ? disabledPlaceholder : placeholder}
+          aria-label={inputLabel}
+          disabled={disabled}
+          maxLength={maxLength}
+        />
+      )}
       {showCount && typeof maxLength === 'number' && (
-        <span className="composer-count" aria-live="polite">
+        <span className="composer-inline-count" aria-live="polite">
           {characterCount}/{maxLength}
         </span>
       )}
-    </div>
+      <button className="composer-send" type="submit" disabled={disabled || !draft.trim() || isOverLimit} aria-label={sendLabel}>
+        <i className="fa-solid fa-arrow-up" aria-hidden="true" />
+      </button>
+    </form>
   );
 }

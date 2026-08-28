@@ -22,8 +22,9 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false }: App
       return;
     }
 
+    setUser(session.user);
+
     if (!refreshCurrentUser) {
-      setUser(session.user);
       return;
     }
 

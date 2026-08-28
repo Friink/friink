@@ -65,7 +65,9 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
             type="button"
             onClick={() => onNavigate(item.id)}
           >
-            <i className={item.icon} aria-hidden="true" />
+            <span className="nav-item-icon" aria-hidden="true">
+              <i className={item.icon} />
+            </span>
             <span>{item.label}</span>
           </button>
         ))}
@@ -73,11 +75,15 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
 
       <div className="sidebar-footer">
         <button className="sidebar-action" type="button" onClick={() => onNavigate('settings')}>
-          <i className="fa-solid fa-gear" aria-hidden="true" />
+          <span className="nav-item-icon" aria-hidden="true">
+            <i className="fa-solid fa-gear" />
+          </span>
           <span>Settings</span>
         </button>
         <button className="sidebar-action" type="button" onClick={onLogout}>
-          <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
+          <span className="nav-item-icon" aria-hidden="true">
+            <i className="fa-solid fa-right-from-bracket" />
+          </span>
           <span>Log out</span>
         </button>
       </div>

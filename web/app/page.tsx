@@ -7,7 +7,7 @@ import { SubscribeForm } from './subscribe-form';
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'Friink | Home',
+    absolute: 'Friink | A place for humans.',
   },
 };
 

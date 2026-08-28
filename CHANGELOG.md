@@ -42,6 +42,24 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Fixed
+- [web] Changed the public landing page metadata title from `Friink | Home` to `Friink | A place for humans.` so the marketing route is distinct from the signed-in Home screen.
+
+## 2026-08-29
+
+### Changed
+- [web] Reordered the `SideDrawer` primary navigation so `Home` appears before `Profile`, matching the intended priority order in the left rail.
+- [web] Moved the floating post composer character count into the composer row beside the send button instead of rendering it below the bar.
+
+### Fixed
+- [web] Centered side-drawer icon slots more precisely so active items keep their icons visually centered within the green selected state.
+- [web] Stopped the Settings route from briefly rendering a blank/white screen while refreshing `/auth/me` by seeding the shell from the existing stored session before the background refresh completes.
+
+### Verified
+- [web] `npm run build` passed in `web` after the side-drawer, composer-count, and settings refresh UX fixes.
+
+## 2026-08-29
+
 ### Changed
 - [api] Added a public `GET /auth/users/{username}` profile lookup so frontend profile and direct-chat screens can fetch a real stored `display_name` and `about` for other users instead of fabricating those values from the username slug.
 - [api] Extended post responses to include `author_display_name` alongside `author_username` so the frontend can render the signed-up display name while keeping the username as the handle.

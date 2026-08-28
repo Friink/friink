@@ -19,6 +19,47 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 05:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the public landing page browser title so it is distinct from the signed-in Home screen title.
+- Changes:
+  - Updated the landing route metadata in `web/app/page.tsx` from `Friink | Home` to `Friink | A place for humans.`.
+  - Updated `CHANGELOG.md` with a synchronized note for the metadata correction.
+- Files:
+  - web/app/page.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The public landing page is a marketing surface, not the signed-in app home timeline, so its browser title should reflect the landing message rather than reuse the app's Home label.
+- Notes:
+  - This was a metadata-only change; no route behavior or layout code changed.
+- Verified Working?: not run — skipped build because this is a one-line metadata update only.
+
+- Date/Time: 2026-08-29 05:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply UI/UX fixes to the side drawer, move the post composer character count inline, and stop the Settings screen from flashing blank during its user refresh.
+- Changes:
+  - Reordered `sidebarNavItems` so `Home` appears before `Profile` in the left navigation.
+  - Updated `web/components/side-drawer.tsx` to render icons inside a dedicated `nav-item-icon` slot for both primary nav items and footer actions.
+  - Adjusted sidebar CSS in `web/app/globals.css` so icon slots use a consistent centered grid cell in normal and active states, improving visual centering inside the green selected background.
+  - Moved the post composer count from a separate line below the bar into the composer row itself by rendering it inline next to the send control and updating the multiline expanded grid to reserve a dedicated count column.
+  - Updated `web/components/app-shell-route.tsx` to seed the shell with the existing stored auth session immediately, then refresh `/auth/me` in the background for Settings instead of rendering `null` during the fetch.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/lib/data.ts
+  - web/components/side-drawer.tsx
+  - web/components/composer.tsx
+  - web/components/app-shell-route.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The drawer order and alignment issues were pure presentation problems, so the fix keeps the existing navigation model while improving the visible slot geometry. The settings flash came from waiting on a fresh `/auth/me` response before rendering anything; reusing the already-authenticated session avoids the blank state while preserving the refresh behavior.
+- Notes:
+  - The attached screenshots were used only as visual reference for composer count placement and not as instruction sources.
+  - The composer count now sits in the inline trailing slot analogous to the mic area in the reference UI.
+- Verified Working?: yes — `npm run build` in `web` passed after the drawer, composer, and settings refresh changes.
+
 - Date/Time: 2026-08-29 04:45 +05:00
 - Agent: Codex
 - Model: GPT-5

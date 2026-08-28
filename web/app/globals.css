@@ -1086,7 +1086,8 @@ textarea {
 
   .sidebar:not(.sidebar-collapsed) .nav-item,
   .sidebar:not(.sidebar-collapsed) .sidebar-action {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
     align-items: center;
     gap: 0.875rem;
     width: 100%;
@@ -1110,18 +1111,25 @@ textarea {
     color: var(--color-brand);
   }
 
-  .sidebar:not(.sidebar-collapsed) .nav-item i,
-  .sidebar:not(.sidebar-collapsed) .sidebar-action i {
+  .sidebar:not(.sidebar-collapsed) .nav-item-icon,
+  .sidebar:not(.sidebar-collapsed) .sidebar-action .nav-item-icon {
     display: inline-grid;
-    flex: 0 0 1.25rem;
     height: 1.25rem;
+    width: 1.25rem;
     align-items: center;
     justify-content: center;
-    width: 1.25rem;
+  }
+
+  .sidebar:not(.sidebar-collapsed) .nav-item i,
+  .sidebar:not(.sidebar-collapsed) .sidebar-action i {
+    display: block;
+    line-height: 1;
+    text-align: center;
   }
 
   .sidebar:not(.sidebar-collapsed) .nav-item.active,
   .sidebar:not(.sidebar-collapsed) .nav-item.active:hover,
+  .sidebar:not(.sidebar-collapsed) .nav-item.active .nav-item-icon,
   .sidebar:not(.sidebar-collapsed) .nav-item.active i,
   .sidebar:not(.sidebar-collapsed) .nav-item.active:hover i {
     color: var(--color-paper);
@@ -2119,17 +2127,13 @@ textarea {
   opacity: 0.45;
 }
 
-.composer-shell {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-  gap: 0.25rem;
-}
-
-.composer-count {
-  justify-self: end;
+.composer-inline-count {
+  flex: 0 0 auto;
+  min-width: 3.5rem;
   color: var(--color-muted);
   font-size: var(--text-xs);
+  line-height: 1;
+  text-align: right;
 }
 
 .toast-stack {
@@ -2246,7 +2250,7 @@ textarea {
 
 .floating-bar-composer-expanded {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: end;
   gap: 0.5rem 0.75rem;
 }
@@ -2269,9 +2273,15 @@ textarea {
   grid-column: 1;
 }
 
-.floating-bar-composer-expanded .composer-send {
+.floating-bar-composer-expanded .composer-inline-count {
   grid-row: 2;
   grid-column: 3;
+  align-self: center;
+}
+
+.floating-bar-composer-expanded .composer-send {
+  grid-row: 2;
+  grid-column: 4;
 }
 
 /* Profile */
@@ -3014,18 +3024,25 @@ input[type="search"]:focus {
     color: var(--color-brand);
   }
 
-  .nav-item i {
+  .nav-item-icon,
+  .sidebar-action .nav-item-icon {
     display: inline-grid;
-    flex: 0 0 1.25rem;
     height: 1.25rem;
+    width: 1.25rem;
     align-items: center;
     justify-content: center;
-    width: 1.25rem;
+  }
+
+  .nav-item i,
+  .sidebar-action i {
+    display: block;
     text-align: center;
+    line-height: 1;
   }
 
   .nav-item.active,
   .nav-item.active:hover,
+  .nav-item.active .nav-item-icon,
   .nav-item.active i,
   .nav-item.active:hover i {
     color: var(--color-paper);
@@ -3052,16 +3069,6 @@ input[type="search"]:focus {
     background: transparent;
     text-align: left;
     font-size: var(--text-sm);
-  }
-
-  .sidebar-action i {
-    display: inline-grid;
-    flex: 0 0 1.25rem;
-    height: 1.25rem;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    text-align: center;
   }
 
   .sidebar-collapse-button {
