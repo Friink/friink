@@ -29,6 +29,13 @@ type ApiUser = {
   updated_at: string;
 };
 
+type ApiPublicUser = {
+  id: string;
+  username: string;
+  display_name: string | null;
+  about: string | null;
+};
+
 type ApiTokenResponse = {
   access_token: string;
   token_type: string;
@@ -173,16 +180,31 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
+export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about'>> {
+  const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
+    method: 'GET',
+  });
+
+  return {
+    id: response.id,
+    name: response.display_name || response.username,
+    username: response.username,
+    about: response.about ?? '',
+  };
+}
+
 export type ApiPost = {
   id: string;
   user_id: string;
   author_username: string;
+  author_display_name: string | null;
   content: string;
   media_count: number;
   quoted_post_id: string | null;
   quoted_post: {
     id: string | null;
     author_username: string | null;
+    author_display_name: string | null;
     content: string;
     unavailable: boolean;
   } | null;

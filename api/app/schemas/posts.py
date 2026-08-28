@@ -35,6 +35,7 @@ class CreatePostRequest(BaseModel):
 class QuotedPostResponse(BaseModel):
     id: uuid.UUID | None
     author_username: str | None
+    author_display_name: str | None = None
     content: str
     unavailable: bool = False
 
@@ -43,6 +44,7 @@ class PostResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     author_username: str
+    author_display_name: str | None = None
     content: str
     media_count: int
     quoted_post_id: uuid.UUID | None

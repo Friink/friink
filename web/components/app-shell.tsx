@@ -327,9 +327,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
-      name: post.author_username,
+      name: post.author_display_name || post.author_username,
       handle: `@${post.author_username}`,
-      initials: getInitials(post.author_username),
+      initials: getInitials(post.author_display_name || post.author_username),
       tone: 'mint',
       date: new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
       text: post.content,

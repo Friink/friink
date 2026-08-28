@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from app.models.post import Post
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest
-from app.services.posts import serialize_quoted_post
+from app.services.posts import serialize_post, serialize_quoted_post
 
 
 def test_post_content_rejects_513_characters() -> None:
@@ -52,3 +52,21 @@ def test_quote_of_quote_is_allowed_and_serializes_direct_quote_only() -> None:
     assert serialized is not None
     assert serialized.id == quote.id
     assert serialized.content == "Quote"
+
+
+def test_post_serialization_includes_display_name() -> None:
+    author = User(
+        id=uuid.uuid4(),
+        email="author@example.com",
+        username="author",
+        display_name="Author Name",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+    post = Post(id=uuid.uuid4(), user_id=author.id, content="Hello")
+    post.user = author
+
+    serialized = serialize_post(post)
+
+    assert serialized.author_username == "author"
+    assert serialized.author_display_name == "Author Name"

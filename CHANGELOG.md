@@ -43,6 +43,20 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Changed
+- [api] Added a public `GET /auth/users/{username}` profile lookup so frontend profile and direct-chat screens can fetch a real stored `display_name` and `about` for other users instead of fabricating those values from the username slug.
+- [api] Extended post responses to include `author_display_name` alongside `author_username` so the frontend can render the signed-up display name while keeping the username as the handle.
+- [web] Updated profile, direct-chat header, and feed post mapping to treat the signup/settings `name` field as the canonical visible display name and keep `username` only for handle routing and mentions.
+
+### Fixed
+- [web] Removed the fallback behavior that synthesized other-user profile names from usernames on `/{username}` and direct chat headers when real profile data is available.
+
+### Verified
+- [web] `npm run build` passed in `web` after the display-name/profile wiring updates.
+- [api] Targeted pytest validation could not run in this shell because `pytest` is not installed in the current Python environment.
+
+## 2026-08-29
+
+### Changed
 - [web] Scoped the shared `FloatingBar` so it only renders on `/home` for post creation and on direct `/{username}/chat` routes for message composition, instead of appearing across every logged-in screen.
 - [web] Standardized the remaining in-screen chat compose path to use the shared `web/components/composer.tsx` `Composer` component so post and chat composition both flow through the same reusable surface.
 

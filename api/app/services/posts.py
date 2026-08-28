@@ -57,6 +57,7 @@ def serialize_post(post: Post) -> PostResponse:
         id=post.id,
         user_id=post.user_id,
         author_username=post.user.username,
+        author_display_name=post.user.display_name,
         content=post.content,
         media_count=post.media_count,
         quoted_post_id=post.quoted_post_id,
@@ -73,12 +74,14 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         return QuotedPostResponse(
             id=quoted_post_id,
             author_username=None,
+            author_display_name=None,
             content="Original post unavailable.",
             unavailable=True,
         )
     return QuotedPostResponse(
         id=quoted_post.id,
         author_username=quoted_post.user.username,
+        author_display_name=quoted_post.user.display_name,
         content=quoted_post.content,
         unavailable=False,
     )

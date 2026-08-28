@@ -19,6 +19,37 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 04:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate why profile names were showing as username-derived values, and make signed-up display names the canonical visible name across profiles, chat headers, and posts.
+- Changes:
+  - Confirmed signup and settings already persist the visible profile name as `display_name`, but identified two leaks where frontend/UI behavior still derived visible names from usernames.
+  - Added `PublicUserResponse` plus `GET /auth/users/{username}` in the API so the frontend can fetch another user's stored `display_name` and `about` without exposing private account fields.
+  - Extended post serialization to include `author_display_name` and quoted-post `author_display_name` alongside username fields.
+  - Updated `web/components/app-shell.tsx` post mapping to render feed author names from `author_display_name` while keeping `@username` as the handle.
+  - Reworked `web/app/[username]/profile-client.tsx` to fetch a real public profile for other-user pages instead of synthesizing `name` from `username`.
+  - Reworked `web/app/[username]/chat/chat-client.tsx` to prefer fetched/stored profile names in direct-chat headers instead of username-derived placeholders.
+  - Added an API test covering post serialization of `author_display_name`.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - api/app/schemas/auth.py
+  - api/app/routers/auth.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/tests/test_posts.py
+  - web/lib/auth.ts
+  - web/components/app-shell.tsx
+  - web/app/[username]/profile-client.tsx
+  - web/app/[username]/chat/chat-client.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The product rule is that signup `name` is the public display name and settings profile updates that same field. Username should only be the handle. The codebase already stored the right data, so the fix was to stop reconstructing visible names from usernames and to expose the minimal public profile data needed for other-user views.
+- Notes:
+  - Own-profile screens were already using `user.name` from the stored auth session; the incorrect behavior mainly affected other-user profile/chat surfaces and feed items sourced from username-only post payloads.
+  - Dynamic route metadata still uses the local fallback helper for initial titles; this pass focused on the visible in-app profile/chat/feed name bug.
+- Verified Working?: partial — `npm run build` in `web` passed after the change set; targeted `python -m pytest api\tests\test_posts.py api\tests\test_auth_updates.py` could not run because `pytest` is not installed in the current shell environment.
+
 - Date/Time: 2026-08-29 04:25 +05:00
 - Agent: Codex
 - Model: GPT-5

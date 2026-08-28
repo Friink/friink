@@ -6,8 +6,8 @@ import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { ProfileCard } from '@/components/profile-card';
 import { mockConversations } from '@/lib/mock-conversations';
-import { clearAuthSession, getConnectionStatus, loadAuthSession, type AuthUser } from '@/lib/auth';
-import { getDisplayNameForUsername, getInitialsForUsername } from '@/lib/profile-display';
+import { clearAuthSession, getConnectionStatus, getPublicUser, loadAuthSession, type AuthUser } from '@/lib/auth';
+import { getInitialsForUsername } from '@/lib/profile-display';
 
 type ChatClientProps = {
   username: string;
@@ -19,6 +19,7 @@ export function ChatClient({ username }: ChatClientProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [composerDisabled, setComposerDisabled] = useState(true);
   const [draft, setDraft] = useState('');
+  const [publicProfile, setPublicProfile] = useState<Pick<AuthUser, 'id' | 'name' | 'username' | 'about'> | null>(null);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -37,6 +38,30 @@ export function ChatClient({ username }: ChatClientProps) {
   }, [router, username]);
 
   useEffect(() => {
+    const conversation = mockConversations.find((c) => c.handle === handle);
+    if (conversation) {
+      setPublicProfile({
+        id: conversation.id.toString(),
+        name: conversation.name,
+        username,
+        about: '',
+      });
+      return;
+    }
+
+    getPublicUser(username)
+      .then((profile) => setPublicProfile(profile))
+      .catch(() => {
+        setPublicProfile({
+          id: `missing-${username}`,
+          name: `@${username}`,
+          username,
+          about: '',
+        });
+      });
+  }, [handle, username]);
+
+  useEffect(() => {
     const el = document.querySelector('.chat-messages');
     if (el) {
       setTimeout(() => {
@@ -46,8 +71,8 @@ export function ChatClient({ username }: ChatClientProps) {
   }, []);
 
   const conversation = mockConversations.find((c) => c.handle === handle);
-  const displayName = conversation?.name ?? getDisplayNameForUsername(username);
-  const initials = conversation?.initials ?? getInitialsForUsername(username);
+  const displayName = publicProfile?.name ?? `@${username}`;
+  const initials = conversation?.initials ?? getInitialsForUsername(displayName);
   const tone = conversation?.tone ?? 'mint';
   const messages = conversation?.messages ?? [];
 

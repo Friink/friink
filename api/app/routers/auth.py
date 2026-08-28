@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RefreshResponse, SignupRequest, TokenResponse, UpdateCurrentUserRequest, UserResponse
-from app.services.auth import authenticate_user, create_user, update_current_user, user_id_from_subject
+from app.schemas.auth import LoginRequest, PublicUserResponse, RefreshResponse, SignupRequest, TokenResponse, UpdateCurrentUserRequest, UserResponse
+from app.services.auth import authenticate_user, create_user, get_user_by_username, update_current_user, user_id_from_subject
 from app.services.email import EmailService
 from app.services.security import create_access_token, create_refresh_token, decode_token
 
@@ -100,6 +100,14 @@ async def get_current_user(
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.get("/users/{username}", response_model=PublicUserResponse)
+async def get_public_user(username: str, session: Session = Depends(get_session)) -> User:
+    user = await get_user_by_username(session, username)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return user
 
 
 @router.patch("/me", response_model=UserResponse)
