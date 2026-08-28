@@ -66,7 +66,7 @@ export function MessagesScreen() {
             <i className="fa-solid fa-paperclip" aria-hidden="true" />
           </button>
           <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." aria-label="Message" />
-          <button className="chat-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
+          <button className="composer-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
             <i className="fa-solid fa-arrow-up" aria-hidden="true" />
           </button>
         </form>

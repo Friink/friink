@@ -25,7 +25,7 @@ _Last updated: 2026-08-29_
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
 - [web] The Deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. The `NEXT_PUBLIC_API_BASE_URL` env var must be set in the Vercel **web** project to the deployed API base URL — if absent or stale the browser falls back to `http://localhost:8000`, which is unreachable from a deployed context and produces "Failed to fetch" errors. The subscribe section submits to Zoho Forms for real email collection.
 - [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
-- [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for quick demo posts by default, keeps dedicated post-composer controls on `/compose`, supports multiline borderless floating-post text entry, and uses the `/chat` route for message lists and direct chat.
+- [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and the settings account username field now matches the signup prefix treatment.
@@ -41,11 +41,17 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Changed
-- [web] Reused the existing composer implementation as the default floating-bar post box instead of creating a new component. Submitting from the floating bar creates a local demo post and returns to Home, while the existing `/compose` page remains available.
+- [web] Reused the existing composer implementation as the default floating-bar post box instead of creating a new component. It starts in the compact single-line layout with attachment on the left, text in the middle, and post/send on the right; submitting from the floating bar creates a real post through the posts API and returns to Home.
 - [web] Renamed `web/components/chat-composer.tsx` and `ChatComposer` to `web/components/composer.tsx` and `Composer` so the shared control is not chat-specific.
+- [web] Made the floating composer functional by submitting through the existing posts API, removed the `/compose` route, and deleted the old post compose page/control components.
 
 ### Fixed
-- [web] Added a multiline floating-post composer mode with readable dark-theme text, borderless textarea styling, and bottom-aligned attach/send controls. Chat keeps its existing one-line visual behavior.
+- [web] Added an auto-expanding floating-post composer mode with readable dark-theme text, borderless textarea styling, and bottom-aligned attach/send controls after text wraps or new lines are added. Chat keeps its existing one-line visual behavior.
+- [web] Constrained the expanded floating composer to a readable max width and reduced the multiline textarea height cap so short multiline posts do not render as an oversized full-width box.
+- [web] Pinned expanded floating composer controls to the bottom row so the attachment button remains bottom-left while multiline text occupies the top row.
+- [web] Removed the expanded-only floating composer width override so the composer keeps the same width when switching from single-line to multiline.
+- [docs] Updated `packages/design/design.md` to rename `ChatComposer` to `Composer`, document the compact-to-expanded floating-post behavior, and set composer attachment/send controls to the standard `8px` radius.
+- [docs] Updated `packages/design/design.md` so `FloatingBar` + `Composer` are the canonical post creation surface.
 
 ### Verified
 - [web] `npm run build` passed after the floating composer changes and again after the rename.

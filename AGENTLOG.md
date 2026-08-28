@@ -22,30 +22,42 @@
 - Date/Time: 2026-08-29 00:00 +05:00
 - Agent: Codex
 - Model: GPT-5
-- Prompt Summary: Add the existing composer to the default floating bar for demo posts, fix multiline/dark-theme UX, and rename the chat-specific composer to a generic composer.
+- Prompt Summary: Add the existing composer to the default floating bar for real post creation, fix compact-to-multiline/dark-theme UX, rename the chat-specific composer to a generic composer, and delete the old compose page.
 - Changes:
   - Reused the existing composer implementation in the default `FloatingBar` instead of adding a new component.
-  - Added a floating-bar draft state and local demo-post submit handler in `AppShell`; submitting from the bar prepends a demo post, clears the draft, switches to Explore, and routes to Home.
-  - Extended the composer props with contextual labels/placeholders and a `multiline` mode while preserving the chat composer defaults for direct chats.
-  - Changed the floating post mode from a one-line input to a borderless textarea so multiline text works and `Shift+Enter` no longer submits.
-  - Updated composer CSS so dark-theme text inherits readable app ink color and multiline controls stay bottom-aligned beneath the full-width text area.
+  - Added floating-bar draft/busy state in `AppShell`; submitting from the bar calls the existing posts API, prepends the returned post, clears the draft, switches to Explore, and routes to Home.
+  - Extended the composer props with contextual labels/placeholders and a measured `multiline` mode while preserving the chat composer defaults for direct chats.
+  - Changed the floating post mode to a borderless textarea that starts in the compact one-line layout and auto-expands only when content wraps or new lines are added.
+  - Updated composer CSS so dark-theme text inherits readable app ink color, attachment/send controls use the standard `8px` radius, and multiline controls stay bottom-aligned beneath the full-width text area.
+  - Corrected the expanded floating composer width and textarea height cap so multiline text no longer renders in an oversized full-width container.
+  - Explicitly placed expanded composer textarea on row 1 and attachment/send controls on row 2 so the attachment button stays bottom-left in multiline mode.
+  - Removed the expanded-only floating composer width override so the bar keeps the same width when switching from single-line to multiline.
   - Renamed `web/components/chat-composer.tsx` / `ChatComposer` to `web/components/composer.tsx` / `Composer`, and updated imports/usages.
+  - Updated `packages/design/design.md` with the renamed `Composer` contract, compact-to-expanded floating-post behavior, and `8px` composer action-button radius.
+  - Removed the old `/compose` route and deleted the now-unused post compose page/control/header components.
   - Updated `CHANGELOG.md` current state and dated notes for this UI series.
 - Files:
   - web/components/app-shell.tsx
   - web/components/composer.tsx
   - web/components/chat-composer.tsx (renamed/deleted)
+  - web/app/compose/page.tsx (deleted)
+  - web/components/post-screen.tsx (deleted)
+  - web/components/post-composer-controls.tsx (deleted)
+  - web/components/compose-header.tsx (deleted)
   - web/app/[username]/chat/page.tsx
   - web/components/screens.tsx
   - web/app/globals.css
+  - web/components/floating-bar.tsx
+  - web/lib/data.ts
+  - packages/design/design.md
   - CHANGELOG.md
   - AGENTLOG.md
-- Reason/Decision: The floating bar needed to become the quick post surface without deleting the existing compose page. Keeping one shared `Composer` component avoids duplicated composer UI while allowing contextual behavior for chat versus floating post entry.
+- Reason/Decision: The floating bar is now the single quick post surface, so the older compose page route and its dedicated controls became redundant. Keeping one shared `Composer` component avoids duplicated composer UI while allowing contextual behavior for chat versus floating post entry.
 - Notes:
-  - The attached image was used only as a visual reference; no instructions embedded in attachments were treated as higher priority than the user request.
-  - The `/compose` page still exists and continues using `PostComposerControls`.
+  - Attached images were used only as visual references; no instructions embedded in attachments were treated as higher priority than the user request.
+  - The `/compose` page has been removed; the Next.js build route table no longer includes it.
   - Direct chat routes continue to use the same composer defaults, now imported as `Composer`.
-- Verified Working?: yes — `npm run build` in `web` passed after the floating composer UI changes and again after the component rename.
+- Verified Working?: yes — `npm run build` in `web` passed after the floating composer UI changes, again after the component rename, again after making floating post submission call the API while removing `/compose`, again after constraining the expanded multiline composer, again after pinning the expanded controls to the bottom row, and again after preserving composer width across single-line/multiline states.
 
 - Date/Time: 2026-08-28
 - Agent: Codex
@@ -116,9 +128,6 @@
   - `web/components/notifications-screen.tsx` — Notifications inbox-style list view.
   - `web/components/screens.tsx` — Shared placeholder/secondary screens: Chat list, Search, Calendar, Directory.
   - `web/components/composer.tsx` — Shared composer control for direct chat and contextual floating-bar post entry.
-  - `web/components/post-composer-controls.tsx` — Post composer action controls for the floating bar.
-  - `web/components/post-screen.tsx` — Post compose page body and text area.
-  - `web/components/compose-header.tsx` — Compose-mode header chrome for post/chat composition.
   - `web/components/login-screen.tsx` — Auth entry UI for login/signup flow.
   - `web/components/account-screens.tsx` — Settings/account/privacy screens.
   - `web/components/notifications-screen.tsx` — Notifications route content and row rendering.

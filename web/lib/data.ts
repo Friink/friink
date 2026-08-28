@@ -19,7 +19,7 @@ export type Post = {
   } | null;
 };
 
-export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'post' | 'search' | 'messages' | 'notifications' | 'settings' | 'floating';
+export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'search' | 'messages' | 'notifications' | 'settings' | 'floating';
 
 export type NavItem = {
   id: Screen;
@@ -30,7 +30,6 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
   { id: 'connections', label: 'Connections', icon: 'fa-solid fa-users' },
-  { id: 'post', label: 'Post', icon: 'fa-solid fa-pen' },
   { id: 'search', label: 'Search', icon: 'fa-solid fa-magnifying-glass' },
   { id: 'messages', label: 'Chat', icon: 'fa-solid fa-envelope' },
 ];

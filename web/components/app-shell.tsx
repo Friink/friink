@@ -15,8 +15,6 @@ import { HomeScreen } from '@/components/home-screen';
 import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen } from '@/components/notifications-screen';
-import { PostComposerControls } from '@/components/post-composer-controls';
-import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
@@ -62,18 +60,14 @@ function getInitials(username: string) {
   );
 }
 
-function getDisplayName(user: AuthUser) {
-  return user.name.trim() || user.username;
-}
-
 export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, onUserChange }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [postDraft, setPostDraft] = useState('');
   const [floatingDraft, setFloatingDraft] = useState('');
+  const [floatingPostBusy, setFloatingPostBusy] = useState(false);
   const [quotedPost, setQuotedPost] = useState<Post | null>(null);
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
@@ -174,8 +168,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return 'Connections';
       case 'starred':
         return 'Starred';
-      case 'post':
-        return 'Post';
       case 'search':
         return 'Search';
       case 'messages':
@@ -209,9 +201,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         break;
       case 'settings':
         router.push('/settings');
-        break;
-      case 'post':
-        router.push('/compose');
         break;
       case 'messages':
         router.push('/chat');
@@ -296,11 +285,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   function handleQuote(post: Post) {
     setQuotedPost(post);
-    navigateTo('post');
+    setActiveScreen('home');
+    router.push('/home');
   }
 
-  async function handlePost(text: string) {
-    const trimmedText = text.trim();
+  async function handleFloatingPost(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedText = floatingDraft.trim();
     if (!trimmedText) return;
 
     const session = loadAuthSession();
@@ -309,6 +301,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       return;
     }
 
+    setFloatingPostBusy(true);
     try {
       const apiPost = await createPost(session.accessToken, {
         content: trimmedText,
@@ -316,44 +309,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       });
       const newPost = mapApiPost(apiPost);
       setPosts((current) => [newPost, ...current]);
-      setPostDraft('');
+      setFloatingDraft('');
       setQuotedPost(null);
+      setHomeFilter('all');
       setActiveScreen('home');
       router.push('/home');
-      return;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create post.';
       addToast(message);
+    } finally {
+      setFloatingPostBusy(false);
     }
-  }
-
-  function handleFloatingDemoPost(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const trimmedText = floatingDraft.trim();
-    if (!trimmedText) return;
-
-    const demoPost: Post = {
-      id: `demo-${Date.now()}`,
-      name: getDisplayName(user),
-      handle: `@${user.username}`,
-      initials: getInitials(user.name || user.username),
-      tone: 'mint',
-      date: new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
-      text: trimmedText,
-      connectionType: 'following',
-      isConnection: true,
-      isStarred: false,
-      replies: 0,
-      reactions: 0,
-      quotedPost: null,
-    };
-
-    setPosts((current) => [demoPost, ...current]);
-    setFloatingDraft('');
-    setHomeFilter('all');
-    setActiveScreen('home');
-    router.push('/home');
   }
 
   function openProfileSettings() {
@@ -576,16 +542,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     />
                   )}
                   {activeScreen === 'starred' && <StarredScreen posts={posts} onQuote={handleQuote} />}
-                  {activeScreen === 'post' && (
-                    <PostScreen
-                      user={user}
-                      text={postDraft}
-                      onTextChange={(text) => {
-                        setPostDraft(text);
-                      }}
-                      quotedPost={quotedPost ? { handle: quotedPost.handle, text: quotedPost.text } : null}
-                    />
-                  )}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen />}
                   {activeScreen === 'settings' && (
@@ -606,21 +562,19 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           </div>
         </section>
 
-        <FloatingBar activeScreen={activeScreen} onNavigate={navigateTo}>
+        <FloatingBar>
           {floatingBarContent ?? (
-            activeScreen === 'post' ? (
-              <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
-            ) : (
-              <Composer
-                draft={floatingDraft}
-                onDraftChange={setFloatingDraft}
-                onSend={handleFloatingDemoPost}
-                multiline
-                placeholder="Write a post..."
-                inputLabel="Post"
-                sendLabel="Post"
-              />
-            )
+            <Composer
+              draft={floatingDraft}
+              onDraftChange={setFloatingDraft}
+              onSend={handleFloatingPost}
+              disabled={floatingPostBusy}
+              multiline
+              placeholder={quotedPost ? `Quote ${quotedPost.handle}...` : 'Write a post...'}
+              disabledPlaceholder="Posting..."
+              inputLabel="Post"
+              sendLabel="Post"
+            />
           )}
         </FloatingBar>
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
