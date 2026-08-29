@@ -9,9 +9,11 @@ type ConnectionsScreenProps = {
   activeFilter?: 'all' | 'followers' | 'following' | 'requests';
   onFilterChange?: (id: string) => void;
   incomingRequests?: ConnectionRequest[];
+  outgoingRequests?: ConnectionRequest[];
   requestActionBusyId?: string | null;
   onAcceptRequest?: (id: string) => void;
   onRejectRequest?: (id: string) => void;
+  onCancelRequest?: (id: string) => void;
   onRemoveFollower?: (username: string) => void;
   removeFollowerBusyHandle?: string | null;
 };
@@ -20,9 +22,11 @@ export function ConnectionsScreen({
   connections,
   activeFilter = 'all',
   incomingRequests = [],
+  outgoingRequests = [],
   requestActionBusyId = null,
   onAcceptRequest,
   onRejectRequest,
+  onCancelRequest,
   onRemoveFollower,
   removeFollowerBusyHandle = null,
 }: ConnectionsScreenProps) {
@@ -37,36 +41,57 @@ export function ConnectionsScreen({
   return (
     <PageSurface className="connections-screen" variant="list">
       <div className="connection-list">
-        {isRequestsView && incomingRequests.length > 0 ? (
-          incomingRequests.map((request) => (
-            <ListRow
-              key={request.id}
-              avatar={<span className="user-avatar avatar-mint">{request.initials}</span>}
-              title={request.name}
-              subtitle={request.handle}
-              trailing={
-                <span className="connection-request-actions">
-                  <button
-                    className="profile-action-button connection-accept"
-                    type="button"
-                    disabled={requestActionBusyId === request.id}
-                    onClick={() => onAcceptRequest?.(request.id)}
-                  >
-                    Accept
-                  </button>
+        {isRequestsView && (incomingRequests.length > 0 || outgoingRequests.length > 0) ? (
+          <>
+            {incomingRequests.map((request) => (
+              <ListRow
+                key={`incoming-${request.id}`}
+                avatar={<span className="user-avatar avatar-mint">{request.initials}</span>}
+                title={request.name}
+                subtitle={`${request.handle} requested to follow you`}
+                trailing={
+                  <span className="connection-request-actions">
+                    <button
+                      className="profile-action-button connection-accept"
+                      type="button"
+                      disabled={requestActionBusyId === request.id}
+                      onClick={() => onAcceptRequest?.(request.id)}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="icon-button"
+                      type="button"
+                      aria-label={`Reject ${request.name}`}
+                      disabled={requestActionBusyId === request.id}
+                      onClick={() => onRejectRequest?.(request.id)}
+                    >
+                      <i className="fa-solid fa-xmark" aria-hidden="true" />
+                    </button>
+                  </span>
+                }
+              />
+            ))}
+            {outgoingRequests.map((request) => (
+              <ListRow
+                key={`outgoing-${request.id}`}
+                avatar={<span className="user-avatar avatar-sage">{request.initials}</span>}
+                title={request.name}
+                subtitle={`Requested ${request.handle}`}
+                trailing={
                   <button
                     className="icon-button"
                     type="button"
-                    aria-label={`Reject ${request.name}`}
+                    aria-label={`Cancel request to ${request.name}`}
                     disabled={requestActionBusyId === request.id}
-                    onClick={() => onRejectRequest?.(request.id)}
+                    onClick={() => onCancelRequest?.(request.id)}
                   >
                     <i className="fa-solid fa-xmark" aria-hidden="true" />
                   </button>
-                </span>
-              }
-            />
-          ))
+                }
+              />
+            ))}
+          </>
         ) : visibleConnections.length > 0 ? (
           visibleConnections.map((connection) => (
             <ListRow

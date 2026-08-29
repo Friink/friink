@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from app.models.connection import FollowRequest, FollowRequestStatus
+from app.models.notification import NotificationType
 from app.models.user import User
 from app.schemas.connections import (
     ConnectionListResponse,
@@ -16,6 +17,7 @@ from app.schemas.connections import (
     SendFollowRequestPayload,
 )
 from app.services.auth import get_user_by_username
+from app.services.notifications import create_notification
 from app.services.session_ops import commit
 
 
@@ -25,6 +27,9 @@ def _now() -> datetime:
 
 DENIAL_COOLDOWN = timedelta(hours=24)
 FOLLOWER_REMOVAL_COOLDOWN = timedelta(hours=24)
+CANCEL_WINDOW = timedelta(hours=3)
+CANCEL_LOCKOUT = timedelta(hours=24)
+CANCEL_LOCKOUT_THRESHOLD = 3
 
 
 async def send_follow_request(session: Session, requester: User, payload: SendFollowRequestPayload) -> FollowRequest:
@@ -66,6 +71,7 @@ async def send_follow_request(session: Session, requester: User, payload: SendFo
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"You can send another follow request after {retry_at.isoformat()}.",
             )
+        await _raise_if_cancel_resend_locked(session, requester.id, recipient.id)
 
     request = FollowRequest(
         requester_id=requester.id,
@@ -74,6 +80,36 @@ async def send_follow_request(session: Session, requester: User, payload: SendFo
         responded_at=None if recipient.is_private else _now(),
     )
     session.add(request)
+    if recipient.is_private:
+        create_notification(
+            session,
+            recipient_user_id=requester.id,
+            actor_user_id=requester.id,
+            notification_type=NotificationType.request_sent,
+            payload=_connection_payload(requester, recipient, request.id),
+        )
+        create_notification(
+            session,
+            recipient_user_id=recipient.id,
+            actor_user_id=requester.id,
+            notification_type=NotificationType.request_received,
+            payload=_connection_payload(requester, recipient, request.id),
+        )
+    else:
+        create_notification(
+            session,
+            recipient_user_id=requester.id,
+            actor_user_id=requester.id,
+            notification_type=NotificationType.follow_sent_public,
+            payload=_connection_payload(requester, recipient, request.id),
+        )
+        create_notification(
+            session,
+            recipient_user_id=recipient.id,
+            actor_user_id=requester.id,
+            notification_type=NotificationType.new_follower,
+            payload=_connection_payload(requester, recipient, request.id),
+        )
     await commit(session)
     return await get_follow_request(session, request.id)
 
@@ -84,6 +120,13 @@ async def accept_follow_request(session: Session, actor: User, request_id: uuid.
     _require_pending(request, "Only pending follow requests can be accepted.")
     request.status = FollowRequestStatus.accepted
     request.responded_at = _now()
+    create_notification(
+        session,
+        recipient_user_id=request.requester_id,
+        actor_user_id=actor.id,
+        notification_type=NotificationType.request_accepted,
+        payload=_connection_payload(request.requester, request.recipient, request.id),
+    )
     await commit(session)
     return await get_follow_request(session, request.id)
 
@@ -228,6 +271,16 @@ def serialize_follow_request(request: FollowRequest) -> FollowRequestResponse:
     )
 
 
+def _connection_payload(requester: User, recipient: User, request_id: uuid.UUID) -> dict:
+    return {
+        "connection_id": str(request_id),
+        "requester_username": requester.username,
+        "requester_display_name": requester.display_name,
+        "recipient_username": recipient.username,
+        "recipient_display_name": recipient.display_name,
+    }
+
+
 async def _get_recipient(session: Session, payload: SendFollowRequestPayload) -> User:
     recipient = session.get(User, payload.recipient_id) if payload.recipient_id else None
     if not recipient and payload.recipient_username:
@@ -272,6 +325,49 @@ async def _get_latest_rejected_request(
         .order_by(FollowRequest.responded_at.desc(), FollowRequest.created_at.desc())
     )
     return result.scalars().first()
+
+
+async def _raise_if_cancel_resend_locked(session: Session, requester_id: uuid.UUID, recipient_id: uuid.UUID) -> None:
+    canceled_requests = await _get_canceled_sender_requests(session, requester_id, recipient_id)
+    if not canceled_requests:
+        return
+
+    now = _now()
+    latest_cancel = canceled_requests[0].responded_at
+    if not latest_cancel:
+        return
+    cycle_start = latest_cancel
+    cycle_count = 0
+    for request in canceled_requests:
+        if not request.responded_at:
+            continue
+        if cycle_start - request.responded_at <= CANCEL_WINDOW:
+            cycle_start = request.responded_at
+            cycle_count += 1
+        else:
+            break
+
+    if cycle_count >= CANCEL_LOCKOUT_THRESHOLD and cycle_start + CANCEL_LOCKOUT > now:
+        retry_at = cycle_start + CANCEL_LOCKOUT
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You can send another follow request after {retry_at.isoformat()}.",
+        )
+
+
+async def _get_canceled_sender_requests(session: Session, requester_id: uuid.UUID, recipient_id: uuid.UUID) -> list[FollowRequest]:
+    result = session.execute(
+        select(FollowRequest)
+        .where(
+            FollowRequest.requester_id == requester_id,
+            FollowRequest.recipient_id == recipient_id,
+            FollowRequest.status == FollowRequestStatus.canceled,
+            FollowRequest.removed_at.is_(None),
+            FollowRequest.responded_at.is_not(None),
+        )
+        .order_by(FollowRequest.responded_at.desc(), FollowRequest.created_at.desc())
+    )
+    return list(result.scalars().all())
 
 
 async def _get_latest_removed_follower_request(

@@ -6,9 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.connection import FollowRequest, FollowRequestStatus
+from app.models.notification import NotificationType
 from app.models.user import User
 from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
 from app.services.email import EmailService
+from app.services.notifications import create_notification
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
 
@@ -97,6 +99,18 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
         for request in pending_requests:
             request.status = FollowRequestStatus.accepted
             request.responded_at = now
+            create_notification(
+                session,
+                recipient_user_id=request.requester_id,
+                actor_user_id=user.id,
+                notification_type=NotificationType.request_accepted,
+                payload={
+                    "connection_id": str(request.id),
+                    "requester_username": request.requester.username if request.requester else None,
+                    "recipient_username": user.username,
+                    "recipient_display_name": user.display_name,
+                },
+            )
 
     if not changed:
         return user

@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.models.connection import FollowRequest, FollowRequestStatus
+from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.auth import UpdateCurrentUserRequest
 from app.services import auth as service
@@ -15,6 +16,11 @@ class FakeSession:
         self.commits = 0
         self.refreshed: User | None = None
         self.pending_requests: list[FollowRequest] = []
+        self.notifications: list[Notification] = []
+
+    def add(self, item) -> None:
+        if isinstance(item, Notification):
+            self.notifications.append(item)
 
     async def commit(self) -> None:
         self.commits += 1

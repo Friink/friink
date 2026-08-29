@@ -20,20 +20,21 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 ## Current State
 _Last updated: 2026-08-29_
 
-- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
-- [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
+- [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, rejected rows retain the 24-hour resend cooldown, and canceled rows retain sender-cancel history for the 3-hour/24-hour resend lockout cycle. Pending requests are auto-accepted when a private account flips public.
+- [api] In-app notifications are implemented with a `notifications` table, unread/feed/read endpoints, and synchronous notification creation for follow, request, accept, and private-to-public auto-accept events.
 - [web] The deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. `NEXT_PUBLIC_API_BASE_URL` must still be set in the Vercel **web** project to the deployed API base URL, but the app no longer silently falls back to `http://localhost:8000` in deployed browsers; missing config now fails clearly instead of surfacing as a misleading localhost network error. The subscribe section submits to Zoho Forms for real email collection.
 - [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
 - [web] The public landing page is now a native Next.js App Router route at `/`, not an iframe wrapper around `web/public/friink-site/index.html`. Landing styles are scoped in a CSS module, landing media assets live under top-level `web/public/brand` and `web/public/media`, and the old `web/public/friink-site/` folder has been removed.
 - [web] Page titles now use the `Friink | Page Name` format through route-level metadata. Dynamic profile titles use the known display name when available and fall back to `@username`; deleted demo route names are guarded so `/compose`, `/dev-settings`, and `/floating` return 404 instead of becoming profiles.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
-- [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
+- [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
 - [web] The Home/Explore feed now uses cursor-based loading for older posts, foreground-only polling for newer posts, top-of-feed manual refresh fallback, and local last-viewed post restore so the feed no longer depends on full-page reloads to update.
 - [web] Home feed restore now treats stale last-viewed post anchors as recoverable: if `/posts/context/{post_id}` fails, the client clears the saved anchor and falls back to the normal `/posts` feed load instead of showing `Could not load the Home feed.`.
 - [web] Chat now uses the shared `Tabs` component under the page navigation with `All`, `Muted`, and `Requests` filters.
-- [web] Connections `All` now combines live followers and following, while the `Requests` tab is hidden for public accounts using the existing `user.isPrivate`/`users.is_private` privacy flag.
+- [web] Connections `All` now combines live followers and following, while the private-account `Requests` tab shows both received pending requests with Accept/Reject actions and sent pending requests with Cancel actions.
 - [web] Connections tabs no longer fall back to sample/demo people when there are no live followers or following.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
@@ -51,9 +52,16 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Added
+- [api] Added the `notifications` table/model/schema/service/router with paginated `GET /notifications`, `GET /notifications/unread-count`, single-read, and read-all endpoints.
+- [api] Added synchronous in-app notification creation for public follows, new followers, sent/received private follow requests, request acceptance, and private-to-public auto-accept.
+- [api] Added sender-cancel resend cooldown logic: three cancels within a rolling 3-hour cycle lock resending until 24 hours from that cycle's first cancellation.
+- [web] Wired the notifications screen to the live API feed and connected the Connections Requests view to both incoming and outgoing pending requests.
 - [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
 
 ### Changed
+- [api] Enforced private-post visibility server-side for post fetches, feed/update/context serialization, replies, and quoted-post cards. Private authored posts now serialize quoted cards as `Content not available` for non-authorized viewers.
+- [api] Blocked quoting private-profile posts at post creation, including for the private-profile owner, matching the existing product decision.
+- [web] Authenticated post-read requests now include the saved bearer token when available so private-profile visibility can be evaluated by the API.
 - [web] Removed the demo-data fallback from Connections tabs so `All`, `Followers`, and `Following` only display real API data.
 - [web] Fixed Connections filtering so `All` shows both followers and following from live API data, with duplicate/mutual people de-duped into one row.
 - [web] Hid the Connections `Requests` tab for public profiles based on the existing DB-backed `is_private` account setting.
@@ -69,6 +77,12 @@ _Last updated: 2026-08-29_
 - [web] Added the new App Router post-detail route at `web/app/[username]/[postId]` and kept the old `/posts/{postId}` page as a compatibility redirect that resolves the post author and forwards to the canonical username-scoped path.
 
 ### Verified
+- [api] `api/.venv/Scripts/python.exe -m pytest` passed with 44 tests, including the requested reject/cancel cooldown coverage and private-post visibility checks.
+- [api] `api/.venv/Scripts/python.exe -m compileall app tests` passed.
+- [api] `alembic upgrade head` applied `20260829_0008`; `alembic current` now reports `20260829_0008 (head)` for the configured database.
+- [api] FastAPI TestClient `GET /posts?limit=1` returned HTTP 200 against the configured database after the migration.
+- [web] `npx tsc --noEmit` passed in `web`.
+- [web] `npm run build` passed in `web`.
 - [web] `npm run build` passed in `web` after removing the Connections tabs demo fallback; the first attempt hit a stale generated `.next` readlink error, then passed after clearing `web/.next`, and the follow-up broad removal also passed.
 - [web] `npm run build` passed in `web` after the Connections `All`/Requests visibility fix.
 - [web] `npm run build` passed in `web` after adding Chat tabs.

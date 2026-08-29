@@ -34,6 +34,47 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 18:10 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Implement private-profile follow request behavior, cooldowns, server-side content visibility, and in-app notifications after reading AGENTLOG and CHANGELOG.
+ - Changes:
+   - Confirmed the current schema before implementation: profile privacy lives on `users.is_private`, follows use the existing directional `follow_requests` table, posts/quotes/replies share the `posts` table, and backend notifications did not exist.
+   - Added backend in-app notification infrastructure: `Notification` model, notification schema/service/router, Alembic migration `20260829_0008`, and app router registration.
+   - Wired synchronous notification creation into public follows, private request send/receive, accept-request, and private-to-public auto-accept flows.
+   - Added sender-cancel cooldown handling using retained `canceled` follow request rows: three cancels in a rolling 3-hour cycle block resending until 24 hours from the first cancel in that cycle.
+   - Enforced private-post visibility server-side for feed/page/context/update reads, post detail reads, replies, reply creation, and quoted-post serialization; quote cards now return `Content not available` when the viewer cannot see the quoted post.
+   - Blocked quoting private-profile posts at creation time, including by the private account owner.
+   - Updated the web API client so authenticated post reads include the saved bearer token, added notification client helpers, wired the notifications screen to live data, and expanded the Connections Requests view to show received and sent pending requests with Accept/Reject/Cancel actions.
+   - Updated `CHANGELOG.md` current state and 2026-08-29 entries.
+ - Files:
+   - api/app/main.py
+   - api/app/models/__init__.py
+   - api/app/models/notification.py
+   - api/app/routers/notifications.py
+   - api/app/routers/posts.py
+   - api/app/schemas/notifications.py
+   - api/app/services/auth.py
+   - api/app/services/connections.py
+   - api/app/services/notifications.py
+   - api/app/services/posts.py
+   - api/alembic/versions/20260829_0008_create_notifications.py
+   - api/tests/test_auth_updates.py
+   - api/tests/test_connections.py
+   - api/tests/test_posts.py
+   - web/components/app-shell.tsx
+   - web/components/connections-screen.tsx
+   - web/components/notifications-screen.tsx
+   - web/lib/auth.ts
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The repo already had the correct privacy flag and a single directional follow table, so the safest path was to extend the existing `follow_requests` state machine and add only the missing notification table. Retained canceled rows already preserve enough cancellation history for the resend lockout without introducing a duplicate audit table.
+ - Notes:
+   - The externally visible active-follow state remains backed by the existing `accepted` enum value in `follow_requests`; the frontend maps that to `following` as before.
+   - The first `alembic upgrade head` attempt exposed a Postgres enum double-create issue in the new migration; the migration was corrected to use `create_type=False` for the table column, then upgraded successfully.
+   - `git status` still showed an unrelated pre-existing `token.txt` deletion; it was not touched.
+ - Verified Working?: yes — `api/.venv/Scripts/python.exe -m pytest` passed with 44 tests; `api/.venv/Scripts/python.exe -m compileall app tests` passed; `alembic current` reports `20260829_0008 (head)` after `alembic upgrade head`; FastAPI TestClient `GET /posts?limit=1` returned 200 against the configured database; `npx tsc --noEmit` and `npm run build` passed in `web`.
+
  - Date/Time: 2026-08-29 17:20 +05:00
  - Agent: Codex
  - Model: GPT-5

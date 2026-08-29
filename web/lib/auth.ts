@@ -267,6 +267,22 @@ export type ApiConnectionList = {
   count: number;
 };
 
+export type ApiNotification = {
+  id: string;
+  recipient_user_id: string;
+  actor_user_id: string | null;
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted';
+  payload: Record<string, unknown>;
+  read: boolean;
+  created_at: string;
+};
+
+export type ApiNotificationPage = {
+  items: ApiNotification[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
 export async function listPosts(input: { cursor?: string; limit?: number } = {}): Promise<ApiFeedPage> {
   const search = new URLSearchParams();
   if (input.cursor) {
@@ -277,8 +293,11 @@ export async function listPosts(input: { cursor?: string; limit?: number } = {})
   }
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  const session = loadAuthSession();
   return requestApi<ApiFeedPage>(`/posts${suffix}`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
@@ -291,8 +310,11 @@ export async function listNewerPosts(input: { afterCreatedAt: string; afterId: s
     search.set('limit', String(input.limit));
   }
 
+  const session = loadAuthSession();
   return requestApi<ApiPost[]>(`/posts/updates?${search.toString()}`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
@@ -306,20 +328,29 @@ export async function getFeedContext(postId: string, input: { beforeLimit?: numb
   }
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  const session = loadAuthSession();
   return requestApi<ApiFeedContext>(`/posts/context/${encodeURIComponent(postId)}${suffix}`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
 export async function getPost(postId: string): Promise<ApiPost> {
+  const session = loadAuthSession();
   return requestApi<ApiPost>(`/posts/${encodeURIComponent(postId)}`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
 export async function listPostReplies(postId: string): Promise<ApiPost[]> {
+  const session = loadAuthSession();
   return requestApi<ApiPost[]>(`/posts/${encodeURIComponent(postId)}/replies`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
@@ -421,6 +452,44 @@ export async function listOutgoingFollowRequests(accessToken: string): Promise<A
   });
 }
 
+export async function listNotifications(accessToken: string, input: { cursor?: string; limit?: number } = {}): Promise<ApiNotificationPage> {
+  const search = new URLSearchParams();
+  if (input.cursor) {
+    search.set('cursor', input.cursor);
+  }
+  if (input.limit) {
+    search.set('limit', String(input.limit));
+  }
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  return requestApi<ApiNotificationPage>(`/notifications${suffix}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function markNotificationRead(accessToken: string, notificationId: string): Promise<ApiNotification> {
+  return requestApi<ApiNotification>(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function markAllNotificationsRead(accessToken: string): Promise<void> {
+  await requestApi<void>('/notifications/read-all', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function listFollowers(username: string): Promise<ApiConnectionList> {
   return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/followers`, {
     method: 'GET',
@@ -462,6 +531,10 @@ async function requestApi<T>(path: string, init: RequestInit & { authContext?: A
 
   if (!response.ok) {
     throw new AuthApiError(await getApiErrorMessage(response), response.status);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;

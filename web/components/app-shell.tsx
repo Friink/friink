@@ -14,7 +14,7 @@ import { ContentBox } from '@/components/content-box';
 import { HomeScreen } from '@/components/home-screen';
 import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
-import { NotificationsScreen } from '@/components/notifications-screen';
+import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
@@ -28,6 +28,8 @@ import {
   listFollowers,
   listFollowing,
   listIncomingFollowRequests,
+  listNotifications,
+  listOutgoingFollowRequests,
   listPosts,
   loadAuthSession,
   rejectFollowRequest,
@@ -36,6 +38,7 @@ import {
   sendFollowRequest,
   type ApiConnectionUser,
   type ApiFollowRequest,
+  type ApiNotification,
   type ApiPost,
   type AuthUser,
 } from '@/lib/auth';
@@ -85,6 +88,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [followers, setFollowers] = useState<Connection[]>([]);
   const [following, setFollowing] = useState<Connection[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
@@ -274,10 +279,26 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
     listIncomingFollowRequests(session.accessToken)
       .then((requests) => {
-        setIncomingRequests(requests.map(mapApiFollowRequest));
+        setIncomingRequests(requests.map((request) => mapApiFollowRequest(request, 'incoming')));
       })
       .catch(() => {
         // Connections still renders with demo data if the API is unavailable.
+      });
+
+    listOutgoingFollowRequests(session.accessToken)
+      .then((requests) => {
+        setOutgoingRequests(requests.map((request) => mapApiFollowRequest(request, 'outgoing')));
+      })
+      .catch(() => {
+        setOutgoingRequests([]);
+      });
+
+    listNotifications(session.accessToken, { limit: 40 })
+      .then((page) => {
+        setNotifications(page.items.map(mapApiNotification));
+      })
+      .catch(() => {
+        setNotifications([]);
       });
 
     const targetUsername = user.username;
@@ -421,15 +442,55 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     };
   }
 
-  function mapApiFollowRequest(request: ApiFollowRequest): ConnectionRequest {
+  function mapApiFollowRequest(request: ApiFollowRequest, direction: 'incoming' | 'outgoing' = 'incoming'): ConnectionRequest {
+    const connectionUser = direction === 'incoming' ? request.requester : request.recipient;
     return {
       id: request.id,
-      name: request.requester.username,
-      handle: `@${request.requester.username}`,
-      initials: getInitials(request.requester.username),
+      name: connectionUser.username,
+      handle: `@${connectionUser.username}`,
+      initials: getInitials(connectionUser.username),
       status: 'pending',
       createdAt: request.created_at,
     };
+  }
+
+  function mapApiNotification(notification: ApiNotification): NotificationItem {
+    const payload = notification.payload;
+    const requesterUsername = typeof payload.requester_username === 'string' ? payload.requester_username : null;
+    const recipientUsername = typeof payload.recipient_username === 'string' ? payload.recipient_username : null;
+    const requesterName = typeof payload.requester_display_name === 'string' && payload.requester_display_name ? payload.requester_display_name : requesterUsername;
+    const recipientName = typeof payload.recipient_display_name === 'string' && payload.recipient_display_name ? payload.recipient_display_name : recipientUsername;
+    const actorName = requesterName || recipientName || 'Friink';
+    const actorHandle = requesterUsername || recipientUsername || 'friink';
+    return {
+      id: notification.id,
+      kind: notification.type.includes('request') ? 'request' : 'follow',
+      name: actorName || 'Friink',
+      handle: `@${actorHandle}`,
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername),
+      createdAt: notification.created_at,
+      initials: getInitials(actorName || actorHandle),
+      tone: notification.read ? 'sage' : 'mint',
+      unread: !notification.read,
+    };
+  }
+
+  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null) {
+    switch (type) {
+      case 'follow_sent_public':
+        return recipientUsername ? `You are now following @${recipientUsername}.` : 'You are now following this profile.';
+      case 'new_follower':
+        return requesterUsername ? `@${requesterUsername} started following you.` : 'Someone started following you.';
+      case 'request_sent':
+        return recipientUsername ? `You requested to follow @${recipientUsername}.` : 'You sent a follow request.';
+      case 'request_received':
+        return requesterUsername ? `@${requesterUsername} requested to follow you.` : 'Someone requested to follow you.';
+      case 'unfollow_confirmed':
+        return recipientUsername ? `You unfollowed @${recipientUsername}.` : 'You unfollowed this profile.';
+      case 'request_accepted':
+      default:
+        return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';
+    }
   }
 
   function mapConnectionUser(connectionUser: ApiConnectionUser, relationship: 'follower' | 'following') {
@@ -493,6 +554,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       const request = await sendFollowRequest(session.accessToken, profileUser.username);
       setProfileConnectionState(request.status === 'accepted' ? 'following' : 'requested');
       setProfileConnectionRequestId(request.id);
+      if (request.status === 'pending') {
+        setOutgoingRequests((current) => [mapApiFollowRequest(request, 'outgoing'), ...current]);
+      }
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Could not send follow request.');
     } finally {
@@ -509,6 +573,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       await cancelFollowRequest(session.accessToken, profileConnectionRequestId);
       setProfileConnectionState('none');
       setProfileConnectionRequestId(null);
+      setOutgoingRequests((current) => current.filter((request) => request.id !== profileConnectionRequestId));
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Could not cancel follow request.');
     } finally {
@@ -557,6 +622,21 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       setIncomingRequests((current) => current.filter((request) => request.id !== requestId));
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Could not reject request.');
+    } finally {
+      setRequestActionBusyId(null);
+    }
+  }
+
+  async function handleCancelSentRequest(requestId: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRequestActionBusyId(requestId);
+    try {
+      await cancelFollowRequest(session.accessToken, requestId);
+      setOutgoingRequests((current) => current.filter((request) => request.id !== requestId));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not cancel request.');
     } finally {
       setRequestActionBusyId(null);
     }
@@ -686,16 +766,18 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       activeFilter={connectionsFilter}
                       onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
+                      outgoingRequests={outgoingRequests}
                       requestActionBusyId={requestActionBusyId}
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
+                      onCancelRequest={handleCancelSentRequest}
                       onRemoveFollower={handleRemoveFollower}
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
                   {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} />}
                   {activeScreen === 'search' && <SearchScreen />}
-                  {activeScreen === 'notifications' && <NotificationsScreen />}
+                  {activeScreen === 'notifications' && <NotificationsScreen notifications={notifications} />}
                   {activeScreen === 'settings' && (
                     <SettingsScreen
                       user={user}
