@@ -2549,11 +2549,9 @@ textarea {
 }
 
 .profile-intro {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: 0.875rem;
-  padding: 1.25rem 0 1rem;
+  display: flex;
+  justify-content: flex-start;
+  padding: var(--space-content-inset-block) 0 0;
 }
 
 .profile-large-avatar {
@@ -2598,8 +2596,9 @@ textarea {
 
 .profile-stats {
   display: flex;
+  align-items: center;
   gap: 1.25rem;
-  padding: 0 0 1rem 5.875rem;
+  padding: 0;
   color: var(--color-muted);
   font-size: var(--text-xs);
 }
@@ -2617,9 +2616,10 @@ textarea {
 
 .profile-actions {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   justify-content: flex-end;
-  padding: 0 0 1rem;
+  padding: 0;
 }
 
 .profile-action-button {
@@ -2696,12 +2696,6 @@ textarea {
   display: grid;
 }
 
-.profile-intro {
-  display: flex;
-  justify-content: flex-start;
-  padding: 0.75rem 0 0;
-}
-
 .profile-bio {
   max-width: 34rem;
   margin: 0.6rem 0 0;
@@ -2710,11 +2704,25 @@ textarea {
   line-height: 1.45;
 }
 
-.profile-stats {
+.profile-meta-row {
   display: flex;
-  justify-content: flex-start;
-  gap: 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
   padding: 0.75rem 0 1rem;
+}
+
+@media (max-width: 767px) {
+  .profile-meta-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .profile-actions {
+    justify-content: flex-end;
+  }
 }
 
 .profile-empty {

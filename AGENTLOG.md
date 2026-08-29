@@ -37,6 +37,27 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Align profile stats and actions inside the content box.
+ - Changes:
+   - Confirmed `ProfileScreen` already renders inside `ContentBox` through `AppShell`.
+   - Wrapped profile statistics and profile actions in a shared `.profile-meta-row`.
+   - Updated profile CSS so desktop aligns stats left and actions right on one vertically centered row.
+   - Added mobile CSS so actions stack below stats and remain right-aligned.
+   - Updated `packages/design/design.md` and `CHANGELOG.md`.
+ - Files:
+   - web/components/profile-screen.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The profile header is a shared screen component; grouping stats and actions in component markup makes the desktop/mobile alignment explicit instead of relying on separate rows.
+ - Notes:
+   - Profile header content remains inside the existing `ContentBox`; no page-level wrapper or route-specific spacing was added.
+ - Verified Working?: Yes. `npx tsc --noEmit` passed in `web`; `npm run build` hit a Windows/OneDrive lock in generated `.next` output on the first attempt, then passed after removing only `web/.next`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Fix active header search layout on mobile and add close control.
  - Changes:
    - Added a close icon button to the active header search form.

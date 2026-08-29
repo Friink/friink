@@ -208,8 +208,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Fixed Internal Layout Order**:
   1. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
   2. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 29rem`.
-  3. Statistics Row (`.profile-stats`): Left-aligned (`padding-left: 5.875rem`), displaying `0 following` and `0 followers`.
-  4. Profile Actions Row (`.profile-actions`): **Always right-aligned** (`justify-content: flex-end`).
+  3. Profile Meta Row (`.profile-meta-row`): Contains statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
+     - Statistics (`.profile-stats`): Left-aligned, displaying `0 following` and `0 followers`.
+     - Actions (`.profile-actions`): Right-aligned. On desktop, actions are vertically centered with the statistics row. On mobile, actions move below the statistics and remain right-aligned.
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
