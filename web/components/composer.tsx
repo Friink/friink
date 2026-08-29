@@ -80,7 +80,7 @@ export function Composer({
         onSubmit={handleSubmit}
       >
         <button className="icon-plain" type="button" aria-label="Attach file" disabled={disabled}>
-          <i className="fa-solid fa-paperclip" aria-hidden="true" />
+          <i className="fa-solid fa-plus" aria-hidden="true" />
         </button>
         {multiline ? (
           <textarea

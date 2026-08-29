@@ -34,6 +34,29 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Apply dark theme, mobile spacing, navigation sizing, feed action sizing, and composer character-limit UI fixes.
+ - Changes:
+   - Darkened app chrome surfaces to `#111111` and dark inner UI surfaces such as content, navigation, tabs, and contextual composer surfaces to `#161616`.
+   - Reduced mobile shared content and floating bar insets to `8px`, including bottom spacing for the floating bar.
+   - Increased mobile navigation back/overflow icon sizing by 1.2x and navigation title sizing by 1.5x.
+   - Matched feed post star and overflow icon sizing to the navigation action size.
+   - Changed the composer attachment icon to `fa-plus`, reduced its rendered size, and changed the floating post composer frontend limit/counter from `512` to `256`.
+   - Updated design documentation for the changed dark tokens, mobile insets, floating bar contract, composer icon, and frontend-only post composer limit.
+ - Files:
+   - web/app/globals.css
+   - web/components/app-shell.tsx
+   - web/components/composer.tsx
+   - packages/design/design.md
+   - AGENTLOG.md
+ - Reason/Decision: The requested fixes touch shared shell primitives, so applying them through tokens and reusable component CSS keeps Home, profile, and contextual composer surfaces aligned.
+ - Notes:
+   - The backend post limit remains unchanged at 512 because the request specified a frontend-only 256-character limit.
+   - The attached screenshot was used only as visual reference, not as an instruction source.
+ - Verified Working?: yes — `npm run build` in `web` passed.
+
  - Date/Time: 2026-08-29 (12:57 UTC-0)
  - Agent: Codex
  - Model: GPT-5

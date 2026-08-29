@@ -15,9 +15,9 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
-- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset by `16px` on both sides of that shared rail, so its effective max width is `calc(1024px - 2rem)`.
+- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset by `16px` on desktop and `8px` on mobile on both sides of that shared rail, so its effective max width is `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
-- **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
+- **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) on desktop and `0.5rem` on mobile, with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
 
 ## Navigation
@@ -103,10 +103,10 @@ The following design tokens are locked hard values extracted directly from the c
   - `--color-ink`: `#111111` (Primary text; Dark mode: `#f5f5f5`)
   - `--color-muted`: `#8a908c` (Secondary text, inactive icons, handles, dates; Dark mode: `#c4c4c4`)
   - `--color-line`: `#e3e6e3` (Borders, dividers; Dark mode: `#555555`)
-  - `--color-paper`: `#ffffff` (Card and panel backgrounds, floating bar; Dark mode: `#3d3d3d`)
-  - `--color-background`: `#f2f5f1` (App background; Dark mode: `#333333`)
-  - `--color-background-accent`: `#e7f2e9` (Subtle accent; Dark mode: `#3a3a3a`)
-  - `--color-chrome`: `#262626` (Header/shell dark surfaces)
+  - `--color-paper`: `#ffffff` (Card and panel backgrounds, floating bar; Dark mode: `#161616`)
+  - `--color-background`: `#f2f5f1` (App background; Dark mode: `#111111`)
+  - `--color-background-accent`: `#e7f2e9` (Subtle accent; Dark mode: `#161616`)
+  - `--color-chrome`: `#111111` (Header/shell dark surfaces)
   - `--color-danger`: `#ed8c6b` / `#b54444` (Error states and destructive actions)
 - **Avatar Tone Palette**:
   - Coral: `--color-avatar-coral`: `#f4b3a4`
@@ -132,7 +132,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
-  - `--space-content-inset-inline`: `1rem`
+  - `--space-content-inset-inline`: `1rem` desktop, `0.5rem` mobile
   - `--space-content-inset-block`: `0.75rem`
 - **Ownership Rule for Inset Tokens**:
   - `ContentBox` owns the outer page gutter via `--space-content-inset-inline`.
@@ -181,9 +181,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 3. FloatingBar (`web/components/floating-bar.tsx`)
 - **Purpose**: Persistent contextual bottom surface providing navigation or screen-specific composer actions.
 - **Fixed Sizing & Positioning**:
-  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem`.
+  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem` on desktop, with `0.5rem` mobile insets.
   - `height: 3.5rem` (`var(--space-floating-bar-height)`).
-  - Follows the shared `ContentBox` centering rail with an additional `16px` inset on both sides, producing a maximum effective width of `calc(1024px - 2rem)`.
+  - Follows the shared `ContentBox` centering rail with an additional `16px` desktop inset or `8px` mobile inset on both sides, producing a maximum effective width of `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
   - Border radius: `8px`, border: `1px solid var(--color-line)`, background: `var(--color-paper)`, box shadow: `0 0.75rem 2rem rgba(24, 44, 31, 0.12)`.
 - **Variants & Layout Modes**:
   1. **Default Navigation Mode** (`children` is null/undefined/false):
@@ -264,7 +264,8 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 
 ### 8. Composer (`web/components/composer.tsx`)
 - **`Composer`**:
-  - Default layout: Attachment button (`fa-paperclip`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Default layout: Attachment button (`fa-plus`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Floating post composer enforces a frontend-only `256` character limit and shows a live `x/256` counter.
   - Floating post multiline mode: Starts in the same single-line layout, then expands vertically as text wraps or new lines are added. Once expanded, text occupies the full top row while attachment and send/post controls remain bottom-aligned.
   - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
 ### 9. Tabs (`web/components/tabs.tsx`)
