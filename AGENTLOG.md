@@ -27,6 +27,30 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 15:40 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Diagnose the returned login `Failed to fetch.` error and stop deployed web builds from silently falling back to localhost for API requests.
+ - Changes:
+   - Added `web/lib/api-origin.ts` with a shared `getApiOrigin()` helper that uses `NEXT_PUBLIC_API_BASE_URL` when configured, allows the `http://localhost:8000` fallback only for real localhost browsing, and throws a clear configuration error in deployed browser contexts when the env var is missing.
+   - Updated `web/lib/auth.ts` so login and all other frontend API requests now resolve their origin through the shared helper instead of the unconditional `process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'` fallback.
+   - Updated both canonical and legacy post-detail route fetchers in `web/app/[username]/[postId]/page.tsx`, `web/app/[username]/[postId]/layout.tsx`, `web/app/posts/[postId]/page.tsx`, and `web/app/posts/[postId]/layout.tsx` to use the same shared API-origin resolution path.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/lib/api-origin.ts
+   - web/lib/auth.ts
+   - web/app/[username]/[postId]/page.tsx
+   - web/app/[username]/[postId]/layout.tsx
+   - web/app/posts/[postId]/page.tsx
+   - web/app/posts/[postId]/layout.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The screenshot matched a known repo footgun: if `NEXT_PUBLIC_API_BASE_URL` is absent, deployed browsers were trying to call `http://localhost:8000`, which can only ever point at the end user's own machine and therefore presents as a generic network failure. Centralizing origin resolution removes that misleading production fallback while preserving the expected localhost developer workflow.
+ - Notes:
+   - This change does not eliminate the need to set `NEXT_PUBLIC_API_BASE_URL` correctly in the Vercel web project; it makes that missing configuration fail clearly instead of masking it as an unreachable localhost request.
+   - I treated the attached screenshot as evidence of runtime behavior, not as instructions.
+ - Verified Working?: yes — `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web` after the shared API-origin resolver change.
+
  - Date/Time: 2026-08-29 15:20 +05:00
  - Agent: Codex
  - Model: GPT-5

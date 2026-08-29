@@ -1,3 +1,5 @@
+import { getApiOrigin } from '@/lib/api-origin';
+
 export type AuthUser = {
   id: string;
   name: string;
@@ -17,7 +19,6 @@ export type AuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 type ApiUser = {
   id: string;
@@ -445,7 +446,7 @@ export async function removeFollower(accessToken: string, username: string): Pro
 async function requestApi<T>(path: string, init: RequestInit & { authContext?: AuthRequestContext }): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(`${getApiOrigin()}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',

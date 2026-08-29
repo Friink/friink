@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { getApiOrigin } from '@/lib/api-origin';
 import { getPostPath } from '@/lib/post-path';
 
 type PostPageProps = {
@@ -7,15 +8,13 @@ type PostPageProps = {
   };
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-
 type RedirectPostResponse = {
   author_username: string;
 };
 
 export default async function PostPage({ params }: PostPageProps) {
   try {
-    const response = await fetch(`${API_BASE_URL}/posts/${encodeURIComponent(params.postId)}`, {
+    const response = await fetch(`${getApiOrigin()}/posts/${encodeURIComponent(params.postId)}`, {
       cache: 'no-store',
     });
 

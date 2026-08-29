@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+import { getApiOrigin } from '@/lib/api-origin';
 
 type PostLayoutProps = {
   children: React.ReactNode;
@@ -16,7 +15,7 @@ type MetadataPostResponse = {
 
 export async function generateMetadata({ params }: PostLayoutProps): Promise<Metadata> {
   try {
-    const response = await fetch(`${API_BASE_URL}/posts/${encodeURIComponent(params.postId)}`, {
+    const response = await fetch(`${getApiOrigin()}/posts/${encodeURIComponent(params.postId)}`, {
       cache: 'no-store',
     });
 
