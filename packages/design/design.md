@@ -13,7 +13,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
   - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
-- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
@@ -44,9 +44,10 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 
 - **Home Timeline**: Offers two primary tabs: `Explore` (default public feed) and `Connections` (posts strictly from followed/connected users).
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
-- **Starred Feed**: A preset timeline view containing only starred posts.
+- **Starred Feed**: A preset saved-post view containing only starred posts. It uses the shared `ListRow` summary pattern instead of full feed cards, with post detail opening the full post surface.
 - **Starred Posts**: Starred posts display the brand-colored filled star icon (`fa-solid fa-star`).
 - **Post Detail Link Rule**: Feed cards always render a `Show more...` link to `/posts/[postId]`, even when the visible body is short enough to fit without overflow. The link is a consistent route affordance, not an overflow detector.
+- **Quote Placement Rule**: When a feed card includes a quoted-post block, the `Show more...` link is rendered below the quoted block, not between the main post body and the quoted content.
 
 ## Visual Language
 
@@ -127,7 +128,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
-- **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel. Avoid hardcoded page max-width rules for primary app content.
+- **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
   - `--space-content-inset-inline`: `1rem`
   - `--space-content-inset-block`: `0.75rem`
@@ -224,8 +225,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
      - More options button (`.feed-post-more`, `fa-ellipsis-vertical`).
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
-  4. Show More Link (`.feed-post-show-more`): Always rendered in feed contexts and routes to `/posts/[postId]`.
-  5. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
+  4. Quoted Post Block (`.feed-post-quote`, optional).
+  5. Show More Link (`.feed-post-show-more`): Always rendered in feed contexts and routes to `/posts/[postId]`. When a quoted-post block exists, this link sits beneath that block.
+  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
+- **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight route affordance rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:
   - `highlightedStar = true`: Brand filled star icon (`fa-solid fa-star`, `.feed-post-star-highlighted`).
@@ -283,11 +286,13 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
+- **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 
 ### 13. ContentBox (`web/components/content-box.tsx`)
 - **Purpose**: Canonical app-page content wrapper for primary logged-in surfaces.
 - **Ownership Rule**: Owns the page-level horizontal gutter and the default bottom breathing room for content above the floating bar.
+- **Desktop Width Rule**: Caps primary logged-in content at `1024px` and centers it within the main panel.
 - **Do Not Duplicate Rule**: Child screen wrappers must not add a second page-level left/right gutter, center themselves with a narrower default width, or compete with `ContentBox` over the outer responsive inset unless an explicit contract documents why.
 - **Allowed Responsibility Split**:
   - `ContentBox`: page gutter and bottom page spacing.

@@ -19,6 +19,49 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 09:55 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Finish the shared-row rollout for Starred, cap desktop app content width at 1024px, and move the Settings profile Name action inline with the field.
+- Changes:
+  - Confirmed `web/components/connections-screen.tsx` was already using the shared `ListRow` primitive, so no further Connections refactor was needed.
+  - Updated `web/components/starred-screen.tsx` to render Starred items as `ListRow` summaries linking to post detail, with lightweight inline reply/quote actions preserved inside the row body.
+  - Updated `web/app/globals.css` so the shared `content-box` now caps logged-in content at `1024px` on desktop and centers it, and added Starred-row styling.
+  - Updated `web/components/account-screens.tsx` so the Profile `Name` row puts the input and update button on the same horizontal field row instead of dropping the button below.
+  - Updated `packages/design/design.md` so the desktop content-width cap, `ContentBox` ownership of that cap, the row-based Starred direction, and the inline single-line settings field rule are explicit.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/starred-screen.tsx
+  - web/components/account-screens.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Connections already satisfied the shared-row requirement, so the remaining row-consistency work was Starred. The desktop width cap belongs in the shared container rather than in per-screen patches, and single-line settings fields read cleaner when the save action stays on the same row as the edited value.
+- Notes:
+  - Starred is now intentionally a row-summary surface rather than a full feed-card surface; post detail remains the place for the full post layout.
+- Verified Working?: yes — `npm run build` in `web` passed after the Starred/layout/settings updates.
+
+- Date/Time: 2026-08-29 09:40 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Adjust quote-post feed cards so `Show more...` appears below the quoted block and reduce the visual emphasis of that link, then sync docs and logs.
+- Changes:
+  - Updated `web/components/feed-post.tsx` so the feed `Show more...` link renders after the optional quoted-post block instead of before it.
+  - Updated `web/app/globals.css` so `Show more...` uses muted color and regular weight by default, with a darker hover/focus state instead of the earlier stronger emphasized look.
+  - Updated `packages/design/design.md` to record both the quote-placement rule and the lighter default styling contract for `Show more...`.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/feed-post.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: On quote cards, the quoted block is part of the content stack, so the route affordance should come after it. The link styling also needed to be quieter so it reads like secondary navigation rather than a primary content callout.
+- Notes:
+  - This only changes feed-card rendering; dedicated post pages still show the full post body without the extra feed link.
+- Verified Working?: yes — `npm run build` in `web` passed after the feed quote/link update.
+
 - Date/Time: 2026-08-29 09:30 +05:00
 - Agent: Codex
 - Model: GPT-5

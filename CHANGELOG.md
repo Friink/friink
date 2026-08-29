@@ -43,6 +43,23 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Changed
+- [web] Confirmed Connections was already on the shared `ListRow` primitive and converted the Starred screen to the same row-summary pattern, with rows opening post detail while keeping lightweight reply/quote actions available.
+- [web] Capped the shared logged-in `ContentBox` at `1024px` on desktop and centered it within the main panel so wide screens no longer stretch primary content awkwardly.
+- [web] Moved the Settings > Profile `Name` update button onto the same row as the input, matching the `Username` row pattern.
+- [docs] Updated `packages/design/design.md` so the `1024px` desktop content cap, Starred row-summary direction, and inline single-line settings field rule are explicit.
+
+### Verified
+- [web] `npm run build` passed in `web` after the Starred row conversion, desktop width cap, and inline Name-row update.
+
+### Fixed
+- [web] Quote posts now place the feed `Show more...` link below the quoted-post block instead of above it, so the quote card stays visually attached to the post body it belongs with.
+- [web] Softened the feed `Show more...` treatment from emphasized link styling to a lighter, regular-weight secondary affordance.
+- [docs] Updated `packages/design/design.md` to lock in the quoted-post `Show more...` placement rule and the lighter default link styling.
+
+### Verified
+- [web] `npm run build` passed in `web` after the quote-card `Show more...` placement and styling update.
+
+### Changed
 - [docs] Strengthened `packages/design/design.md` so page-gutter ownership is now an explicit contract: `ContentBox` owns the outer responsive inset, row/card primitives may reuse the inset token internally, and screen wrappers must not add duplicate page-width centering or side gutters unless a documented exception exists.
 
 ### Verified

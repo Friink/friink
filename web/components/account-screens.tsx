@@ -268,22 +268,22 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
             >
               <label className="settings-field">
                 <span className="settings-field-label">Name</span>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(event) => {
-                    setDisplayName(event.target.value);
-                    setNameStatus('');
-                  }}
-                  placeholder="Name"
-                  autoComplete="name"
-                />
+                <div className="settings-field-row">
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(event) => {
+                      setDisplayName(event.target.value);
+                      setNameStatus('');
+                    }}
+                    placeholder="Name"
+                    autoComplete="name"
+                  />
+                  <button className="settings-update-button" type="button" disabled={!canUpdateName} onClick={handleNameUpdate}>
+                    {isUpdatingName ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
               </label>
-              <div className="settings-field-actions">
-                <button className="settings-update-button" type="button" disabled={!canUpdateName} onClick={handleNameUpdate}>
-                  {isUpdatingName ? 'Updating...' : 'Update'}
-                </button>
-              </div>
               {nameStatus && <span className="settings-field-message" role="status">{nameStatus}</span>}
             </ListRow>
 

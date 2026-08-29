@@ -31,11 +31,6 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
         <small>{post.date}</small>
       </div>
       <p className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
-      {truncateBody && (
-        <Link className="feed-post-show-more" href={`/posts/${post.id}`} aria-label={`Show full post by ${post.name}`}>
-          Show more...
-        </Link>
-      )}
       {post.quotedPost && (
         <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
           {post.quotedPost.authorUsername ? (
@@ -50,6 +45,11 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
           <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}>{post.quotedPost.content}</p>
           {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
         </div>
+      )}
+      {truncateBody && (
+        <Link className="feed-post-show-more" href={`/posts/${post.id}`} aria-label={`Show full post by ${post.name}`}>
+          Show more...
+        </Link>
       )}
       <div className="feed-post-actions">
         <button type="button" aria-label={`Comment (${post.replies})`} onClick={() => onReply?.(post)}>
