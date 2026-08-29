@@ -1,5 +1,7 @@
 "use client";
 
+import Link from 'next/link';
+
 function getInitials(value: string) {
   return (
     value
@@ -19,10 +21,11 @@ type ProfileCardProps = {
   tone?: string;
   initials?: string;
   date?: string;
+  href?: string;
 };
 
-export function ProfileCard({ name, handle, tone = 'mint', initials, date }: ProfileCardProps) {
-  return (
+export function ProfileCard({ name, handle, tone = 'mint', initials, date, href }: ProfileCardProps) {
+  const content = (
     <div className="profile-card">
       <span className={`profile-card-avatar user-avatar avatar-${tone}`}>{initials ?? getInitials(name)}</span>
       <div className="profile-card-info">
@@ -31,5 +34,13 @@ export function ProfileCard({ name, handle, tone = 'mint', initials, date }: Pro
         {date && <span className="profile-card-date">{date}</span>}
       </div>
     </div>
+  );
+
+  if (!href) return content;
+
+  return (
+    <Link className="profile-card-link" href={href} aria-label={`Open ${name} profile`}>
+      {content}
+    </Link>
   );
 }

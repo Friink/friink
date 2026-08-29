@@ -147,7 +147,7 @@ The following design tokens are locked hard values extracted directly from the c
 Every shared/reusable component in the codebase must strictly satisfy the contracts below.
 
 ### 1. ProfileCard (`web/components/profile-card.tsx`)
-- **Purpose**: Canonical identity block displaying avatar, display name, handle, and optional date.
+- **Purpose**: Canonical identity block displaying avatar, display name, handle, and optional date. Whenever a user's profile identity is shown in app content or app lists, use `ProfileCard`; if the identity is meant to open a profile, pass `href` so the whole identity block links to that profile route.
 - **Fixed Internal Layout Order**:
   1. Horizontal flex container (`gap: 0.75rem`, `align-items: center`).
   2. Avatar (`.profile-card-avatar`): `2.5rem` x `2.5rem`, circular (`50%` radius), displaying initials (derived from name via `getInitials(name)`, max 2 uppercase chars, fallback `'FR'`). Tinted with `tone` prop (`coral`, `sage`, `sun`, `mint`).
@@ -162,6 +162,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `tone?: string` (optional, default `'mint'`)
   - `initials?: string` (optional, falls back to computed initials)
   - `date?: string` (optional)
+  - `href?: string` (optional; when provided, wraps the whole card in a profile link)
 
 ### 2. NavigationMenu (`web/components/navigation-menu.tsx`)
 - **Purpose**: Reusable contextual popover menu for page-level options, triggered by the three-dot overflow button in `NavigationBar`.
@@ -292,14 +293,19 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 
-### 13. PageSurface (`web/components/page-surface.tsx`)
+### 13. Profile Identity Rows (`web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`)
+- **Purpose**: List-style surfaces that show people or profile actors must reuse `ProfileCard` for the visible identity block instead of separately composing avatar, display name, and handle.
+- **Click Rule**: In Connections and Notifications, the visible `ProfileCard` links to `/[username]` through its `href` prop. Row-level actions such as Accept, Reject, Cancel, and Remove remain separate controls.
+- **HTML Rule**: Do not nest a profile link inside a row rendered as a button. If a row needs a different primary click target, keep profile navigation and row navigation as separate valid interactive elements.
+
+### 14. PageSurface (`web/components/page-surface.tsx`)
 - **Purpose**: Shared first-level screen wrapper used inside `ContentBox` so app pages inherit one layout contract instead of owning custom outer spacing.
 - **Ownership Rule**: `PageSurface` may define screen display mode such as stacked sections or list flow, but it must not introduce page-level side gutters, custom max-widths, or competing centering.
 - **Variant Rule**: Use the list variant for row/feed surfaces and the stack variant for forms or mixed vertical sections.
 - **Enforcement Rule**: Logged-in screens should mount a `PageSurface` directly inside `ContentBox` instead of hand-rolling a bespoke outer wrapper.
 - **Reuse Rule**: Prefer extending an existing shared layout primitive such as `PageSurface`, `ContentBox`, `ListRow`, or `FloatingBar` before creating a new wrapper component for a one-off page need.
 
-### 14. ContentBox (`web/components/content-box.tsx`)
+### 15. ContentBox (`web/components/content-box.tsx`)
 - **Purpose**: Canonical app-page content wrapper for primary logged-in surfaces.
 - **Ownership Rule**: Owns the page-level horizontal gutter and the default bottom breathing room for content above the floating bar.
 - **Desktop Width Rule**: Caps primary logged-in content at `1024px` and centers it within the main panel.

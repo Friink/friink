@@ -80,6 +80,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/lib/auth.ts`, `web/app/landing-auth-redirect.tsx`, `web/components/login-screen.tsx`
 - **Since:** 2026-08-27 (00:00 UTC-0)
 
+### Rule: Profile Identity Blocks Link To Profiles
+- **What:** Whenever app content shows a user's profile identity, the UI should use the shared `ProfileCard` instead of separately composing avatar/name/handle. In list surfaces such as Connections and Notifications, the visible profile card links to the user's profile route.
+- **Edge cases:** Row action buttons such as Accept, Reject, Cancel, Remove, and post/chat actions remain separate controls. Do not nest a profile link inside a row rendered as a button; keep interactive targets valid and distinct.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/profile-card.tsx`, `web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`
+- **Since:** 2026-08-29 (12:57 UTC-0)
+
 ## Privacy & Connections
 
 ### Rule: Directional Follow Relationships

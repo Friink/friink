@@ -34,6 +34,33 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 (12:57 UTC-0)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Make visible profile identities in app list surfaces use `ProfileCard` and link to profile routes.
+ - Changes:
+   - Read `packages/design/design.md` before editing shared UI, per the design system rule.
+   - Extended `ProfileCard` with an optional `href` prop that wraps the whole identity block in a Next.js profile link.
+   - Updated `ListRow` to support rich title content without wrapping non-text nodes in a `strong`, and to allow rows without a separate avatar slot.
+   - Updated Connections rows and request rows to render linked `ProfileCard` identity blocks while leaving Accept/Reject/Cancel/Remove actions separate.
+   - Updated Notifications rows to render linked `ProfileCard` actor identity blocks and keep notification text as the subtitle.
+   - Added shared CSS for linked profile cards and focus/hover states.
+   - Updated `RULES.md`, `packages/design/design.md`, and `CHANGELOG.md` to document the profile identity rule.
+ - Files:
+   - web/components/profile-card.tsx
+   - web/components/list-row.tsx
+   - web/components/connections-screen.tsx
+   - web/components/notifications-screen.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - RULES.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Profile identity should behave consistently wherever it appears, and using one linked shared primitive keeps profile navigation available without duplicating avatar/name/handle markup across list screens.
+ - Notes:
+   - Existing row-level button contexts were not converted to nested links because that would produce invalid interactive markup; the documented rule now calls that out explicitly.
+ - Verified Working?: yes — `npm run build` in `web` passed.
+
  - Date/Time: 2026-08-29 (12:23 UTC-0)
  - Agent: Codex
  - Model: GPT-5

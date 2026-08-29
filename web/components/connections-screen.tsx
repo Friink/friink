@@ -2,7 +2,12 @@
 
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { ProfileCard } from '@/components/profile-card';
 import type { Connection, ConnectionRequest } from '@/lib/data';
+
+function profileHref(handle: string) {
+  return `/${handle.replace('@', '')}`;
+}
 
 type ConnectionsScreenProps = {
   connections: Connection[];
@@ -46,9 +51,8 @@ export function ConnectionsScreen({
             {incomingRequests.map((request) => (
               <ListRow
                 key={`incoming-${request.id}`}
-                avatar={<span className="user-avatar avatar-mint">{request.initials}</span>}
-                title={request.name}
-                subtitle={`${request.handle} requested to follow you`}
+                title={<ProfileCard name={request.name} handle={request.handle} tone="mint" initials={request.initials} href={profileHref(request.handle)} />}
+                subtitle="Requested to follow you"
                 trailing={
                   <span className="connection-request-actions">
                     <button
@@ -75,9 +79,8 @@ export function ConnectionsScreen({
             {outgoingRequests.map((request) => (
               <ListRow
                 key={`outgoing-${request.id}`}
-                avatar={<span className="user-avatar avatar-sage">{request.initials}</span>}
-                title={request.name}
-                subtitle={`Requested ${request.handle}`}
+                title={<ProfileCard name={request.name} handle={request.handle} tone="sage" initials={request.initials} href={profileHref(request.handle)} />}
+                subtitle="Request sent"
                 trailing={
                   <button
                     className="icon-button"
@@ -96,9 +99,7 @@ export function ConnectionsScreen({
           visibleConnections.map((connection) => (
             <ListRow
               key={connection.id}
-              avatar={<span className={`user-avatar avatar-${connection.tone}`}>{connection.initials}</span>}
-              title={connection.name}
-              subtitle={connection.handle}
+              title={<ProfileCard name={connection.name} handle={connection.handle} tone={connection.tone} initials={connection.initials} href={profileHref(connection.handle)} />}
               trailing={
                 activeFilter === 'followers' && onRemoveFollower ? (
                   <button

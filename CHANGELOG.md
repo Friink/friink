@@ -62,6 +62,8 @@ _Last updated: 2026-08-29_
 - [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
 
 ### Changed
+- [web] Extended `ProfileCard` with an optional profile link and updated Connections and Notifications rows to render linked `ProfileCard` identity blocks instead of separate avatar/title/handle fragments.
+- [docs] Updated `RULES.md` and the design contract so profile identity shown in app content should use linked `ProfileCard` where profile navigation is intended.
 - [docs] Normalized `rules.md` `Since` timestamps and all `AGENTLOG.md` date lines to `YYYY-MM-DD (HH:MM UTC-0)`.
 - [api] Enforced private-post visibility server-side for post fetches, feed/update/context serialization, replies, and quoted-post cards. Private authored posts now serialize quoted cards as `Content not available` for non-authorized viewers.
 - [api] Blocked quoting private-profile posts at post creation, including for the private-profile owner, matching the existing product decision.

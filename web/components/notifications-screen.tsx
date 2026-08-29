@@ -2,6 +2,7 @@
 
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { ProfileCard } from '@/components/profile-card';
 import { formatRelativeTime } from '@/lib/time';
 
 type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow';
@@ -38,6 +39,10 @@ function getIcon(kind: NotificationKind) {
   }
 }
 
+function profileHref(handle: string) {
+  return `/${handle.replace('@', '')}`;
+}
+
 type NotificationsScreenProps = {
   notifications?: NotificationItem[];
 };
@@ -49,12 +54,18 @@ export function NotificationsScreen({ notifications = [] }: NotificationsScreenP
         {notifications.length > 0 ? notifications.map((notification) => (
           <ListRow
             key={notification.id}
-            avatar={<span className={`user-avatar avatar-${notification.tone}`}>{notification.initials}</span>}
-            title={notification.name}
+            title={
+              <ProfileCard
+                name={notification.name}
+                handle={notification.handle}
+                tone={notification.tone}
+                initials={notification.initials}
+                href={profileHref(notification.handle)}
+              />
+            }
             subtitle={
               <>
                 <span className="notification-copy-text">{notification.text}</span>
-                <span className="notification-copy-handle">{notification.handle}</span>
               </>
             }
             trailing={
