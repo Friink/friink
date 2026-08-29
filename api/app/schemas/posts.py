@@ -65,3 +65,16 @@ class PostResponse(BaseModel):
     quoted_post: QuotedPostResponse | None
     created_at: datetime
     updated_at: datetime
+
+
+class FeedPageResponse(BaseModel):
+    items: list[PostResponse]
+    next_cursor: str | None = None
+    has_more: bool
+
+
+class FeedContextResponse(BaseModel):
+    items: list[PostResponse]
+    anchor_post_id: uuid.UUID
+    next_cursor: str | None = None
+    has_more: bool

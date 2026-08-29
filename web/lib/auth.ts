@@ -227,6 +227,19 @@ export type ApiPost = {
   updated_at: string;
 };
 
+export type ApiFeedPage = {
+  items: ApiPost[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
+export type ApiFeedContext = {
+  items: ApiPost[];
+  anchor_post_id: string;
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
 export type ApiConnectionUser = {
   id: string;
   username: string;
@@ -253,8 +266,46 @@ export type ApiConnectionList = {
   count: number;
 };
 
-export async function listPosts(): Promise<ApiPost[]> {
-  return requestApi<ApiPost[]>('/posts', {
+export async function listPosts(input: { cursor?: string; limit?: number } = {}): Promise<ApiFeedPage> {
+  const search = new URLSearchParams();
+  if (input.cursor) {
+    search.set('cursor', input.cursor);
+  }
+  if (input.limit) {
+    search.set('limit', String(input.limit));
+  }
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  return requestApi<ApiFeedPage>(`/posts${suffix}`, {
+    method: 'GET',
+  });
+}
+
+export async function listNewerPosts(input: { afterCreatedAt: string; afterId: string; limit?: number }): Promise<ApiPost[]> {
+  const search = new URLSearchParams({
+    after_created_at: input.afterCreatedAt,
+    after_id: input.afterId,
+  });
+  if (input.limit) {
+    search.set('limit', String(input.limit));
+  }
+
+  return requestApi<ApiPost[]>(`/posts/updates?${search.toString()}`, {
+    method: 'GET',
+  });
+}
+
+export async function getFeedContext(postId: string, input: { beforeLimit?: number; afterLimit?: number } = {}): Promise<ApiFeedContext> {
+  const search = new URLSearchParams();
+  if (input.beforeLimit) {
+    search.set('before_limit', String(input.beforeLimit));
+  }
+  if (input.afterLimit) {
+    search.set('after_limit', String(input.afterLimit));
+  }
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  return requestApi<ApiFeedContext>(`/posts/context/${encodeURIComponent(postId)}${suffix}`, {
     method: 'GET',
   });
 }

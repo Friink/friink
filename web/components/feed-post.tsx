@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
+import { getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
 
 type FeedPostProps = {
@@ -48,7 +49,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
         </div>
       )}
       {truncateBody && (
-        <Link className="feed-post-show-more" href={`/posts/${post.id}`} aria-label={`Show full post by ${post.name}`}>
+        <Link className="feed-post-show-more" href={getPostPathForPost(post)} aria-label={`Show full post by ${post.name}`}>
           Show more...
         </Link>
       )}

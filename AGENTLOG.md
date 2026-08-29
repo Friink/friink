@@ -27,6 +27,64 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 15:05 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Implement a self-updating Home/Explore feed with cursor pagination, live polling, scroll anchoring, and last-viewed restore.
+ - Changes:
+   - Updated `api/app/schemas/posts.py`, `api/app/services/posts.py`, and `api/app/routers/posts.py` so `GET /posts` now returns a cursor-paginated feed page, `GET /posts/updates` returns posts newer than a top-of-feed anchor, and `GET /posts/context/{post_id}` returns an anchor-centered feed slice for restoring a saved reading position.
+   - Added feed cursor helper coverage in `api/tests/test_posts.py` and repaired the older serializer fixtures there so the file reflects current `Post` schema requirements (`kind`, `media_count`, `created_at`, `updated_at`).
+   - Updated `web/lib/auth.ts` to model the new feed page/context responses and expose `listPosts()`, `listNewerPosts()`, and `getFeedContext()` client helpers.
+   - Rebuilt `web/components/home-screen.tsx` into a client-side feed controller that handles initial restore, IntersectionObserver-based infinite scroll for older posts, 10-second foreground polling, deferred prepend while the user is actively scrolling, top-of-feed manual refresh fallback, and localStorage persistence of the top visible post.
+   - Updated `web/components/app-shell.tsx` so Home seeds the feed with existing post data and injects newly created posts into the Home controller without disturbing other screens.
+   - Extended `web/components/page-surface.tsx` to forward standard DOM props/refs and added feed state styling in `web/app/globals.css` for the new refresh/loading/end-of-feed states.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - api/app/schemas/posts.py
+   - api/app/services/posts.py
+   - api/app/routers/posts.py
+   - api/tests/test_posts.py
+   - web/lib/auth.ts
+   - web/components/home-screen.tsx
+   - web/components/app-shell.tsx
+   - web/components/page-surface.tsx
+   - web/app/globals.css
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The feed needed stable chronological paging and live prepend without reloads, which is not safe with offset pagination or one-shot fetch state stored only in the shell. A dedicated Home feed controller paired with cursor-based API endpoints keeps the behavior scoped to Explore/Home while leaving profile, connections, and posting flows intact.
+ - Notes:
+   - This pass intentionally did not change profile post lists or the Connections timeline path, even though they still rely on the simpler all-posts snapshot.
+   - The refresh fallback is intentionally conditional and top-of-feed only; it is not meant to replace the polling path.
+   - Full browser/manual verification for the requested scroll-gesture, background/foreground, and pull-to-refresh scenarios has not been completed from this shell, so the task was not committed yet.
+ - Verified Working?: partial — `api/.venv/Scripts/python.exe -m pytest tests/test_posts.py` passed, `python -m compileall api/app api/tests` passed, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`; Step 9 still needs real browser validation before commit.
+
+ - Date/Time: 2026-08-29 13:55 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Change post detail URLs from the old post-id path to author-scoped `/{username}/{postId}` slugs.
+ - Changes:
+   - Added `web/lib/post-path.ts` with shared `getPostPath()` and `getPostPathForPost()` helpers so post URLs are built from one canonical source instead of repeated string templates.
+   - Added a new App Router route at `web/app/[username]/[postId]/` with page, layout, and client modules so canonical post detail pages now live under the author username segment.
+   - Updated `web/components/feed-post.tsx` and `web/components/starred-screen.tsx` so post-opening links now route to the canonical username-scoped slug.
+   - Updated post-detail quote creation navigation in `web/app/[username]/[postId]/post-client.tsx` so newly created quote posts open on the canonical author-scoped URL.
+   - Reworked `web/app/posts/[postId]/page.tsx` into a compatibility redirect that fetches the post author and forwards legacy links to `/{username}/{postId}` instead of rendering a second canonical detail page.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/lib/post-path.ts
+   - web/app/[username]/[postId]/page.tsx
+   - web/app/[username]/[postId]/layout.tsx
+   - web/app/[username]/[postId]/post-client.tsx
+   - web/app/posts/[postId]/page.tsx
+   - web/components/feed-post.tsx
+   - web/components/starred-screen.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The app was still treating `/posts/{postId}` as the primary detail route, which made post URLs inconsistent with the rest of the user-scoped navigation model. Introducing a single helper plus a compatibility redirect keeps new links canonical without breaking existing shared links or bookmarks.
+ - Notes:
+   - The old `web/app/posts/[postId]/post-client.tsx` and metadata layout remain in the tree but are no longer used by the primary navigation path; the page itself now redirects to the canonical slug.
+   - Backend API fetches still use `/posts/{postId}` because those are internal API endpoints, not browser-facing slugs.
+ - Verified Working?: yes — `npm run build` passed in `web` and emitted `ƒ /[username]/[postId]`; `npx tsc --noEmit` also passed after the build regenerated `.next` route types.
+
  - Date/Time: 2026-08-29 13:20 +05:00
  - Agent: Codex
  - Model: GPT-5

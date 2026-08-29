@@ -77,6 +77,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [homeInjectedPost, setHomeInjectedPost] = useState<Post | null>(null);
   const [floatingDraft, setFloatingDraft] = useState('');
   const [floatingPostBusy, setFloatingPostBusy] = useState(false);
   const [composeContext, setComposeContext] = useState<ComposeContext>({ kind: 'post' });
@@ -246,9 +247,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }
 
   useEffect(() => {
-    listPosts()
-      .then((apiPosts) => {
-        setPosts(apiPosts.map(mapApiPost));
+    listPosts({ limit: 40 })
+      .then((page) => {
+        setPosts(page.items.map(mapApiPost));
       })
       .catch(() => {
         // Keep the timeline empty when the API is not running.
@@ -351,6 +352,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       const newPost = mapApiPost(apiPost);
       if (newPost.kind !== 'reply') {
         setPosts((current) => [newPost, ...current]);
+        setHomeInjectedPost(newPost);
       }
       setFloatingDraft('');
       setComposeContext({ kind: 'post' });
@@ -591,7 +593,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 children
               ) : (
                 <>
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onReply={handleReply} onQuote={handleQuote} />}
+                  {activeScreen === 'home' && (
+                    <HomeScreen
+                      posts={posts}
+                      activeFilter={homeFilter}
+                      onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                      onReply={handleReply}
+                      onQuote={handleQuote}
+                      injectedPost={homeInjectedPost}
+                      onInjectedPostConsumed={() => setHomeInjectedPost(null)}
+                    />
+                  )}
                   {activeScreen === 'profile' && (
                     <ProfileScreen
                       user={profileUser ?? user}
