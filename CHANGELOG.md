@@ -52,6 +52,7 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Added
+- [docs] Created `rules.md` as the root product/business rules contract, covering currently active code-backed behavior for auth, privacy/connections, posts/replies/quotes, notifications, web navigation/client behavior, and infrastructure.
 - [api] Added the `notifications` table/model/schema/service/router with paginated `GET /notifications`, `GET /notifications/unread-count`, single-read, and read-all endpoints.
 - [api] Added synchronous in-app notification creation for public follows, new followers, sent/received private follow requests, request acceptance, and private-to-public auto-accept.
 - [api] Added sender-cancel resend cooldown logic: three cancels within a rolling 3-hour cycle lock resending until 24 hours from that cycle's first cancellation.
@@ -59,6 +60,7 @@ _Last updated: 2026-08-29_
 - [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
 
 ### Changed
+- [docs] Normalized `rules.md` `Since` timestamps and all `AGENTLOG.md` date lines to `YYYY-MM-DD (HH:MM UTC-0)`.
 - [api] Enforced private-post visibility server-side for post fetches, feed/update/context serialization, replies, and quoted-post cards. Private authored posts now serialize quoted cards as `Content not available` for non-authorized viewers.
 - [api] Blocked quoting private-profile posts at post creation, including for the private-profile owner, matching the existing product decision.
 - [web] Authenticated post-read requests now include the saved bearer token when available so private-profile visibility can be evaluated by the API.
@@ -77,6 +79,8 @@ _Last updated: 2026-08-29_
 - [web] Added the new App Router post-detail route at `web/app/[username]/[postId]` and kept the old `/posts/{postId}` page as a compatibility redirect that resolves the post author and forwards to the canonical username-scoped path.
 
 ### Verified
+- [docs] Scanned `rules.md` `Since` fields and `AGENTLOG.md` date lines and confirmed they all use UTC-0 timestamps in 24-hour format.
+- [docs] Confirmed `rules.md` exists at the project root and follows the requested per-rule template.
 - [api] `api/.venv/Scripts/python.exe -m pytest` passed with 44 tests, including the requested reject/cancel cooldown coverage and private-post visibility checks.
 - [api] `api/.venv/Scripts/python.exe -m compileall app tests` passed.
 - [api] `alembic upgrade head` applied `20260829_0008`; `alembic current` now reports `20260829_0008 (head)` for the configured database.
