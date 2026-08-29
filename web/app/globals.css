@@ -1403,10 +1403,10 @@ textarea {
 
 .simple-screen {
   display: grid;
-  justify-items: center;
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 4rem 1rem;
+  justify-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 4rem 0;
   color: var(--color-muted);
   text-align: center;
 }
@@ -1415,7 +1415,7 @@ textarea {
 .settings-screen {
   padding-top: 0.5rem;
   justify-items: start;
-  width: min(100%, 30rem);
+  width: 100%;
 }
 
 .simple-screen > i {
@@ -1932,7 +1932,7 @@ textarea {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 1.25rem 1rem 6rem;
+  padding: 1.25rem 0 6rem;
 }
 
 .notifications-list {
@@ -2910,7 +2910,7 @@ input[type="search"]:focus {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0 0 3rem;
+  padding: 0 var(--space-content-inset-inline) 3rem;
   flex: 1 1 auto;
   min-height: 0;
   overflow: visible;

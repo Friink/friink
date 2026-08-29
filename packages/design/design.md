@@ -13,7 +13,8 @@ Friink is a calm, people-first social space centered on meaningful conversations
   - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
-- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
 
@@ -130,6 +131,10 @@ The following design tokens are locked hard values extracted directly from the c
 - **Shared Inset Tokens**:
   - `--space-content-inset-inline`: `1rem`
   - `--space-content-inset-block`: `0.75rem`
+- **Ownership Rule for Inset Tokens**:
+  - `ContentBox` owns the outer page gutter via `--space-content-inset-inline`.
+  - Row/card components such as `ListRow` and `FeedPost` may use the same token for their internal left/right content inset.
+  - Screen wrapper components must not also add a second outer gutter with the same token unless a contract explicitly calls for nested inset behavior.
 - **Desktop Breakpoint**: `768px` (`--breakpoint-desktop`: `768px`, `@media (max-width: 767px)` for mobile behaviors)
 
 ---
@@ -279,6 +284,14 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
+
+### 13. ContentBox (`web/components/content-box.tsx`)
+- **Purpose**: Canonical app-page content wrapper for primary logged-in surfaces.
+- **Ownership Rule**: Owns the page-level horizontal gutter and the default bottom breathing room for content above the floating bar.
+- **Do Not Duplicate Rule**: Child screen wrappers must not add a second page-level left/right gutter, center themselves with a narrower default width, or compete with `ContentBox` over the outer responsive inset unless an explicit contract documents why.
+- **Allowed Responsibility Split**:
+  - `ContentBox`: page gutter and bottom page spacing.
+  - Child screens: internal composition only, such as row grouping, cards, sections, and local vertical rhythm.
 
 ---
 

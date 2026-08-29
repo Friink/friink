@@ -43,6 +43,19 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Changed
+- [docs] Strengthened `packages/design/design.md` so page-gutter ownership is now an explicit contract: `ContentBox` owns the outer responsive inset, row/card primitives may reuse the inset token internally, and screen wrappers must not add duplicate page-width centering or side gutters unless a documented exception exists.
+
+### Verified
+- [web] `npm run build` passed in `web` after tightening the design-system ownership rule and syncing the repo logs.
+
+### Fixed
+- [web] Centralized the primary app-page horizontal gutter inside the shared `ContentBox` and removed competing screen-level side padding/width assumptions from Settings and Notifications, so Home, Settings, and Notifications now align to the same responsive content rails.
+- [docs] Updated `packages/design/design.md` to make `ContentBox` the owner of the standard app-page horizontal gutter instead of leaving inset control to individual screens.
+
+### Verified
+- [web] `npm run build` passed in `web` after the shared content-box gutter fix.
+
+### Changed
 - [web] Moved `Username` from Settings > Account into Settings > Profile, where `Name`, `Username`, and `About` now render as separate shared-row sections with independent update buttons and status messages.
 - [web] Changed the shared composer preview behavior so replies show the referenced post in the composer just like quotes, improving composition clarity on both the home timeline and dedicated post page.
 - [web] Added visible reply and quote counts beside the corresponding feed action icons, keeping the action bar aligned while making thread/citation activity scannable.

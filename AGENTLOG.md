@@ -19,6 +19,44 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 09:30 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Tighten the design-system rule so future agents cannot reintroduce competing page gutters, and sync all three project-tracking docs.
+- Changes:
+  - Strengthened `packages/design/design.md` with an explicit `Page Gutter Ownership Rule` under Layout.
+  - Added a matching token-ownership rule clarifying that `ContentBox` owns the outer page gutter, while row/card primitives may reuse the inset token only for internal content alignment.
+  - Added a dedicated `ContentBox` component contract spelling out the allowed responsibility split and prohibiting child screens from adding duplicate page-level gutters or default width narrowing.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The earlier note was directionally correct but still too easy to bypass. Converting it into an explicit ownership contract makes the spacing system much harder to accidentally fragment in future UI work.
+- Notes:
+  - No runtime code changed in this pass; the goal was to lock in the rule at the design-system level after the gutter fix.
+- Verified Working?: yes — `npm run build` in `web` passed after the design-doc tightening and log sync.
+
+- Date/Time: 2026-08-29 09:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the remaining inconsistent page width/padding issue by making the shared content container own the responsive horizontal gutter, then sync the logs.
+- Changes:
+  - Updated `web/app/globals.css` so `ContentBox` now owns the standard horizontal page gutter through shared inline padding, rather than leaving each screen to invent its own side inset.
+  - Flattened `.simple-screen` and `.settings-screen` to fill the shared container instead of imposing their own narrower centered width and duplicate horizontal padding.
+  - Removed the extra left/right padding from `.notifications-screen` so notifications now align to the same container rails as Home and Settings.
+  - Updated `packages/design/design.md` to document that `ContentBox` is the canonical owner of app-page horizontal gutters and child screens should fit responsively inside it.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The remaining misalignment was caused by spacing being controlled in too many places at once. Making the shared container own page gutters is the cleaner long-term rule because it keeps screen components focused on their internal layout instead of competing over page margins.
+- Notes:
+  - Feed rows, settings rows, and notification rows now all inherit the same outer page gutter from the shared container while keeping their own internal row padding contracts.
+- Verified Working?: yes — `npm run build` in `web` passed after the content-box gutter centralization.
+
 - Date/Time: 2026-08-29 09:10 +05:00
 - Agent: Codex
 - Model: GPT-5
