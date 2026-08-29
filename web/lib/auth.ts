@@ -4,6 +4,7 @@ export type AuthUser = {
   email: string;
   username: string;
   about: string;
+  isPrivate: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
 };
@@ -24,6 +25,7 @@ type ApiUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  is_private: boolean;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -34,6 +36,7 @@ type ApiPublicUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  is_private: boolean;
 };
 
 type ApiTokenResponse = {
@@ -65,6 +68,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
     about: '',
+    isPrivate: false,
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
     ...overrides,
@@ -153,7 +157,7 @@ export async function login(email: string, password: string): Promise<AuthSessio
 
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string },
+  input: { username?: string; email?: string; displayName?: string; about?: string; isPrivate?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
@@ -166,6 +170,7 @@ export async function updateCurrentUser(
       email: input.email,
       display_name: input.displayName,
       about: input.about,
+      is_private: input.isPrivate,
     }),
   });
 
@@ -184,7 +189,7 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about'>> {
+export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
   });
@@ -194,6 +199,7 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
     name: response.display_name || response.username,
     username: response.username,
     about: response.about ?? '',
+    isPrivate: response.is_private,
   };
 }
 
@@ -224,6 +230,7 @@ export type ApiPost = {
 export type ApiConnectionUser = {
   id: string;
   username: string;
+  is_private: boolean;
 };
 
 export type ApiFollowRequest = {
@@ -374,6 +381,16 @@ export async function listFollowing(username: string): Promise<ApiConnectionList
   });
 }
 
+export async function removeFollower(accessToken: string, username: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/followers/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
 async function requestApi<T>(path: string, init: RequestInit & { authContext?: AuthRequestContext }): Promise<T> {
   let response: Response;
   try {
@@ -436,6 +453,7 @@ function mapApiUser(user: ApiUser): AuthUser {
     email: user.email,
     username: user.username,
     about: user.about ?? '',
+    isPrivate: user.is_private,
     status: user.is_verified ? 'active' : 'pending_email_verification',
     emailVerifiedAt: user.is_verified ? user.updated_at : null,
   };

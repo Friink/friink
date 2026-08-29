@@ -56,7 +56,7 @@ export const currentUser = {
 };
 
 export type Connection = {
-  id: number;
+  id: string | number;
   name: string;
   handle: string;
   initials: string;

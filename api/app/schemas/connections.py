@@ -20,6 +20,7 @@ class SendFollowRequestPayload(BaseModel):
 class ConnectionUserResponse(BaseModel):
     id: uuid.UUID
     username: str
+    is_private: bool = False
 
 
 class FollowRequestResponse(BaseModel):

@@ -25,12 +25,16 @@ import {
   cancelFollowRequest,
   createPost,
   getConnectionStatus,
+  listFollowers,
+  listFollowing,
   listIncomingFollowRequests,
   listPosts,
   loadAuthSession,
   rejectFollowRequest,
   removeConnection,
+  removeFollower,
   sendFollowRequest,
+  type ApiConnectionUser,
   type ApiFollowRequest,
   type ApiPost,
   type AuthUser,
@@ -80,7 +84,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [followers, setFollowers] = useState<typeof initialConnections>([]);
+  const [following, setFollowing] = useState<typeof initialConnections>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
+  const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
@@ -259,6 +266,23 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       .catch(() => {
         // Connections still renders with demo data if the API is unavailable.
       });
+
+    const targetUsername = user.username;
+    listFollowers(targetUsername)
+      .then((response) => {
+        setFollowers(response.users.map((connectionUser) => mapConnectionUser(connectionUser, 'follower')));
+      })
+      .catch(() => {
+        setFollowers([]);
+      });
+
+    listFollowing(targetUsername)
+      .then((response) => {
+        setFollowing(response.users.map((connectionUser) => mapConnectionUser(connectionUser, 'following')));
+      })
+      .catch(() => {
+        setFollowing([]);
+      });
   }, [activeScreen]);
 
   useEffect(() => {
@@ -388,6 +412,18 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     };
   }
 
+  function mapConnectionUser(connectionUser: ApiConnectionUser, relationship: 'follower' | 'following') {
+    return {
+      id: connectionUser.id,
+      name: connectionUser.username,
+      handle: `@${connectionUser.username}`,
+      initials: getInitials(connectionUser.username),
+      tone: connectionUser.is_private ? 'sage' : 'mint',
+      relationship,
+      status: 'connected' as const,
+    };
+  }
+
   async function handleFollowProfile() {
     if (!profileUser) return;
     const session = loadAuthSession();
@@ -467,6 +503,21 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       addToast(error instanceof Error ? error.message : 'Could not reject request.');
     } finally {
       setRequestActionBusyId(null);
+    }
+  }
+
+  async function handleRemoveFollower(username: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRemoveFollowerBusyHandle(`@${username}`);
+    try {
+      await removeFollower(session.accessToken, username);
+      setFollowers((current) => current.filter((connection) => connection.handle !== `@${username}`));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not remove follower.');
+    } finally {
+      setRemoveFollowerBusyHandle(null);
     }
   }
 
@@ -558,13 +609,21 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   )}
                   {activeScreen === 'connections' && (
                     <ConnectionsScreen
-                      connections={initialConnections}
+                      connections={
+                        connectionsFilter === 'followers'
+                          ? (followers.length > 0 ? followers : initialConnections.filter((connection) => connection.relationship === 'follower'))
+                          : connectionsFilter === 'following'
+                            ? (following.length > 0 ? following : initialConnections.filter((connection) => connection.relationship === 'following' || connection.relationship === 'mutual'))
+                            : initialConnections
+                      }
                       activeFilter={connectionsFilter}
                       onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
                       requestActionBusyId={requestActionBusyId}
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
+                      onRemoveFollower={handleRemoveFollower}
+                      removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
                   {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} />}

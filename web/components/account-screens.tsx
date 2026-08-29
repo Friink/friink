@@ -25,6 +25,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
   const [about, setAbout] = useState(user.about);
+  const [isPrivate, setIsPrivate] = useState(user.isPrivate);
   const [usernameStatus, setUsernameStatus] = useState('');
   const [emailStatus, setEmailStatus] = useState('');
   const [nameStatus, setNameStatus] = useState('');
@@ -33,11 +34,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
     setDisplayName(user.name);
     setAbout(user.about);
+    setIsPrivate(user.isPrivate);
     setUsernameStatus('');
     setEmailStatus('');
     setNameStatus('');
@@ -54,8 +57,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const isAboutValid = about.length <= 256;
   const hasNameChanged = displayName.trim() !== user.name;
   const hasAboutChanged = about !== user.about;
+  const hasPrivacyChanged = isPrivate !== user.isPrivate;
   const canUpdateName = hasNameChanged && isDisplayNameValid && !isUpdatingName;
   const canUpdateAbout = hasAboutChanged && isAboutValid && !isUpdatingAbout;
+  const canUpdatePrivacy = hasPrivacyChanged && !isUpdatingPrivacy;
 
   async function handleUsernameUpdate() {
     if (!canUpdateUsername) {
@@ -178,6 +183,35 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update about text.');
     } finally {
       setIsUpdatingAbout(false);
+    }
+  }
+
+  async function handlePrivacyUpdate() {
+    if (!canUpdatePrivacy) {
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update your privacy setting.');
+      return;
+    }
+
+    setIsUpdatingPrivacy(true);
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, {
+        isPrivate,
+      });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setIsPrivate(updatedSession.user.isPrivate);
+      onToast?.(`Profile is now ${updatedSession.user.isPrivate ? 'private' : 'public'}.`);
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update privacy setting.');
+      setIsPrivate(user.isPrivate);
+    } finally {
+      setIsUpdatingPrivacy(false);
     }
   }
 
@@ -357,9 +391,26 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               avatar={<span className="settings-icon"><i className="fa-solid fa-lock" aria-hidden="true" /></span>}
               title="Private profile"
               subtitle="Only approved followers can view your public posts."
-              trailing={<button type="button" className="settings-toggle-pill active">On</button>}
+              trailing={
+                <button
+                  type="button"
+                  className={`settings-toggle-pill${isPrivate ? ' active' : ''}`}
+                  onClick={() => {
+                    setIsPrivate((current) => !current);
+                  }}
+                  aria-pressed={isPrivate}
+                >
+                  {isPrivate ? 'On' : 'Off'}
+                </button>
+              }
               className="settings-row"
-            />
+            >
+              <div className="settings-field-actions">
+                <button className="settings-update-button" type="button" disabled={!canUpdatePrivacy} onClick={handlePrivacyUpdate}>
+                  {isUpdatingPrivacy ? 'Updating...' : 'Update'}
+                </button>
+              </div>
+            </ListRow>
 
             <ListRow
               avatar={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}

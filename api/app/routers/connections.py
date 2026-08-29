@@ -16,6 +16,7 @@ from app.services.connections import (
     list_following,
     list_incoming_pending,
     list_outgoing_pending,
+    remove_follower,
     reject_follow_request,
     remove_connection,
     send_follow_request,
@@ -68,6 +69,15 @@ async def delete_connection(
     session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
     return serialize_follow_request(await remove_connection(session, current_user, request_id))
+
+
+@router.delete("/followers/{username}", response_model=FollowRequestResponse)
+async def delete_follower(
+    username: str,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> FollowRequestResponse:
+    return serialize_follow_request(await remove_follower(session, current_user, username))
 
 
 @router.get("/users/{username}/followers", response_model=ConnectionListResponse)

@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.user import User
 from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
 from app.services.email import EmailService
@@ -35,6 +36,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
         email=data.email.lower(),
         username=data.username,
         display_name=data.display_name or data.username,
+        is_private=False,
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
@@ -54,6 +56,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
 
 async def update_current_user(session: Session, user: User, data: UpdateCurrentUserRequest) -> User:
     changed = False
+    was_private = user.is_private
 
     if data.username is not None and data.username != user.username:
         existing_user = await get_user_by_username(session, data.username)
@@ -78,6 +81,22 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
     if data.about is not None and data.about != user.about:
         user.about = data.about
         changed = True
+
+    if data.is_private is not None and data.is_private != user.is_private:
+        user.is_private = data.is_private
+        changed = True
+
+    if was_private and data.is_private is False:
+        now = datetime.now(UTC)
+        pending_requests = session.execute(
+            select(FollowRequest).where(
+                FollowRequest.recipient_id == user.id,
+                FollowRequest.status == FollowRequestStatus.pending,
+            )
+        ).scalars().all()
+        for request in pending_requests:
+            request.status = FollowRequestStatus.accepted
+            request.responded_at = now
 
     if not changed:
         return user

@@ -43,6 +43,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
           name: publicUser.name,
           username: publicUser.username,
           about: publicUser.about,
+          isPrivate: publicUser.isPrivate,
           email: `${publicUser.username}@friink.local`,
         });
       })
@@ -53,6 +54,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
           name: `@${profileHandle}`,
           username: profileHandle,
           about: 'This profile has not added an about yet.',
+          isPrivate: false,
           email: `${profileHandle}@friink.local`,
         });
       });

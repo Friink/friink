@@ -42,6 +42,23 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Added
+- [api] Added account privacy support with a persisted `users.is_private` flag, public-account instant follow behavior, a 24-hour cooldown after denied private follow requests, transactional auto-accept of pending requests when a user switches from private to public, and a dedicated owner-side remove-follower action.
+- [web] Wired the Settings privacy toggle to the real account setting and added owner-side follower removal from the Connections follower list when API data is available.
+
+### Changed
+- [api] Kept `follow_requests` as the single directional relationship table and reused retained `rejected` rows plus `responded_at` for denial-cooldown tracking, avoiding a second audit table.
+- [api] Defaulted new accounts to public (`is_private = false`) unless the user explicitly turns privacy on later.
+- [web] Extended shared auth/profile types so privacy state flows through login, `/auth/me`, public profile lookup, and follower/following UI mapping.
+
+### Verified
+- [api] `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py tests/test_auth_updates.py` passed with 18 tests covering the new connection/privacy behavior.
+- [api] `python -m compileall api/app api/tests` passed after the connection/privacy changes.
+- [web] `npx tsc --noEmit` passed in `web`.
+- [web] `npm run build` passed in `web`.
+
+## 2026-08-29
+
 ### Changed
 - [web] Added a shared client-side `formatRelativeTime` utility in `web/lib/time.ts` and moved post, reply, thread, starred-row, notification, and chat timestamp rendering onto it so all user-facing timestamps now follow the same local-time rules.
 - [web] Refactored shared frontend post and mock-conversation data to carry raw ISO timestamps (`createdAt`) instead of preformatted display strings, preventing different screens from baking in conflicting date styles.

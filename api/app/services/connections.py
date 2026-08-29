@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -21,6 +21,9 @@ from app.services.session_ops import commit
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+DENIAL_COOLDOWN = timedelta(hours=24)
 
 
 async def send_follow_request(session: Session, requester: User, payload: SendFollowRequestPayload) -> FollowRequest:
@@ -46,10 +49,20 @@ async def send_follow_request(session: Session, requester: User, payload: SendFo
     if existing_accepted:
         return existing_accepted
 
+    if recipient.is_private:
+        latest_rejected = await _get_latest_rejected_request(session, requester.id, recipient.id)
+        if latest_rejected and latest_rejected.responded_at and latest_rejected.responded_at + DENIAL_COOLDOWN > _now():
+            retry_at = latest_rejected.responded_at + DENIAL_COOLDOWN
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You can send another follow request after {retry_at.isoformat()}.",
+            )
+
     request = FollowRequest(
         requester_id=requester.id,
         recipient_id=recipient.id,
-        status=FollowRequestStatus.pending,
+        status=FollowRequestStatus.pending if recipient.is_private else FollowRequestStatus.accepted,
+        responded_at=None if recipient.is_private else _now(),
     )
     session.add(request)
     await commit(session)
@@ -93,6 +106,21 @@ async def remove_connection(session: Session, actor: User, request_id: uuid.UUID
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only either party can remove this connection.")
     if request.status != FollowRequestStatus.accepted:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only accepted connections can be removed.")
+    request.status = FollowRequestStatus.canceled
+    request.responded_at = _now()
+    await commit(session)
+    return await get_follow_request(session, request.id)
+
+
+async def remove_follower(session: Session, actor: User, follower_username: str) -> FollowRequest:
+    follower = await get_user_by_username(session, follower_username)
+    if not follower:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Follower user was not found.")
+
+    request = await _get_pair_request(session, follower.id, actor.id, FollowRequestStatus.accepted)
+    if not request:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Follower relationship was not found.")
+
     request.status = FollowRequestStatus.canceled
     request.responded_at = _now()
     await commit(session)
@@ -172,7 +200,7 @@ async def get_follow_request(session: Session, request_id: uuid.UUID) -> FollowR
 
 
 def serialize_connection_user(user: User) -> ConnectionUserResponse:
-    return ConnectionUserResponse(id=user.id, username=user.username)
+    return ConnectionUserResponse(id=user.id, username=user.username, is_private=user.is_private)
 
 
 def serialize_follow_request(request: FollowRequest) -> FollowRequestResponse:
@@ -210,6 +238,24 @@ async def _get_pair_request(
             FollowRequest.status == request_status,
         )
         .order_by(FollowRequest.created_at.desc())
+    )
+    return result.scalars().first()
+
+
+async def _get_latest_rejected_request(
+    session: Session,
+    requester_id: uuid.UUID,
+    recipient_id: uuid.UUID,
+) -> FollowRequest | None:
+    result = session.execute(
+        select(FollowRequest)
+        .options(selectinload(FollowRequest.requester), selectinload(FollowRequest.recipient))
+        .where(
+            FollowRequest.requester_id == requester_id,
+            FollowRequest.recipient_id == recipient_id,
+            FollowRequest.status == FollowRequestStatus.rejected,
+        )
+        .order_by(FollowRequest.responded_at.desc(), FollowRequest.created_at.desc())
     )
     return result.scalars().first()
 

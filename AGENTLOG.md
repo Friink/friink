@@ -27,6 +27,44 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 13:05 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Update the directional follow system for public/private accounts, denial cooldowns, private-to-public auto-accept, and owner-side follower removal.
+ - Changes:
+   - Added Alembic migration `20260829_0006_add_private_accounts.py` and updated `api/app/models/user.py` so users now persist an `is_private` boolean, defaulting to public.
+   - Updated `api/app/schemas/auth.py`, `api/app/schemas/connections.py`, and `web/lib/auth.ts` so privacy state now flows through auth responses, public profile lookups, and frontend session typing.
+   - Updated `api/app/services/connections.py` so public accounts are followed immediately with an `accepted` directional edge, private accounts still use pending requests, denied private requests block re-request attempts for 24 hours using retained `rejected` rows and `responded_at`, and owners can remove active followers through a dedicated service path without applying cooldown.
+   - Updated `api/app/services/auth.py` so switching an account from private to public auto-accepts all pending inbound requests inside the same update transaction.
+   - Added `DELETE /connections/followers/{username}` in `api/app/routers/connections.py` for owner-side follower removal.
+   - Updated `web/components/account-screens.tsx` to make the Privacy tab's Private profile toggle real and persist it through `/auth/me`.
+   - Updated `web/components/app-shell.tsx`, `web/components/connections-screen.tsx`, and `web/app/[username]/profile-client.tsx` so the app carries privacy state in profile/session data, loads real follower/following lists for the signed-in user, and allows removing followers from the Followers filter.
+   - Expanded `api/tests/test_connections.py` and `api/tests/test_auth_updates.py` to cover public instant follow, private pending flow, acceptance, denial cooldown, cancel-without-cooldown, cooldown expiry, private-to-public auto-accept, and remove-follower behavior.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - api/alembic/versions/20260829_0006_add_private_accounts.py
+   - api/app/models/user.py
+   - api/app/schemas/auth.py
+   - api/app/schemas/connections.py
+   - api/app/services/auth.py
+   - api/app/services/connections.py
+   - api/app/routers/connections.py
+   - api/tests/test_connections.py
+   - api/tests/test_auth_updates.py
+   - web/lib/auth.ts
+   - web/components/account-screens.tsx
+   - web/components/app-shell.tsx
+   - web/components/connections-screen.tsx
+   - web/app/[username]/profile-client.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The existing system already modeled directional follow history in one table, so the least risky implementation was to keep that structure and branch behavior by recipient privacy rather than introducing a second relationship model. Because rejected and canceled rows are retained, `responded_at` was enough to distinguish denial cooldown from sender cancellation without adding another timestamp column.
+ - Notes:
+   - Existing dual-handshake logic now only applies when following a private account; it conflicts with the new spec for public accounts and was intentionally bypassed there.
+   - Owner-side follower removal is implemented with no notification and no cooldown for re-follow, matching the requested default assumption.
+   - The Settings copy still mentions post visibility, but this pass only implements the follow/privacy behavior requested here; post-read access rules remain separate work.
+ - Verified Working?: yes — `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py tests/test_auth_updates.py` passed (18 tests), `python -m compileall api/app api/tests` passed, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`.
+
  - Date/Time: 2026-08-29 12:20 +05:00
  - Agent: Codex
  - Model: GPT-5

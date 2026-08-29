@@ -1,6 +1,5 @@
- 'use client';
+'use client';
 
-import { useState } from 'react';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import type { Connection, ConnectionRequest } from '@/lib/data';
@@ -13,6 +12,8 @@ type ConnectionsScreenProps = {
   requestActionBusyId?: string | null;
   onAcceptRequest?: (id: string) => void;
   onRejectRequest?: (id: string) => void;
+  onRemoveFollower?: (username: string) => void;
+  removeFollowerBusyHandle?: string | null;
 };
 
 export function ConnectionsScreen({
@@ -22,19 +23,16 @@ export function ConnectionsScreen({
   requestActionBusyId = null,
   onAcceptRequest,
   onRejectRequest,
+  onRemoveFollower,
+  removeFollowerBusyHandle = null,
 }: ConnectionsScreenProps) {
-  const [pendingConnections, setPendingConnections] = useState(connections);
   const isRequestsView = activeFilter === 'requests';
-  const visibleConnections = pendingConnections.filter((connection) => {
+  const visibleConnections = connections.filter((connection) => {
     if (activeFilter === 'requests') return connection.status === 'request';
     if (activeFilter === 'followers') return connection.status === 'connected' && ['follower', 'mutual'].includes(connection.relationship);
     if (activeFilter === 'following') return connection.status === 'connected' && ['following', 'mutual'].includes(connection.relationship);
     return connection.status === 'connected';
   });
-
-  function removeRequest(id: number) {
-    setPendingConnections((current) => current.filter((connection) => connection.id !== id));
-  }
 
   return (
     <PageSurface className="connections-screen" variant="list">
@@ -77,7 +75,17 @@ export function ConnectionsScreen({
               title={connection.name}
               subtitle={connection.handle}
               trailing={
-                activeFilter === 'all' ? (
+                activeFilter === 'followers' && onRemoveFollower ? (
+                  <button
+                    className="icon-button connection-add"
+                    type="button"
+                    aria-label={`Remove follower ${connection.name}`}
+                    disabled={removeFollowerBusyHandle === connection.handle}
+                    onClick={() => onRemoveFollower(connection.handle.replace('@', ''))}
+                  >
+                    <i className="fa-solid fa-user-minus" aria-hidden="true" />
+                  </button>
+                ) : activeFilter === 'all' ? (
                   <button
                     className="icon-button connection-add"
                     type="button"
