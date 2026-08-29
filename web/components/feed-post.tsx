@@ -1,6 +1,8 @@
 "use client";
 
 import Link from 'next/link';
+import { type MouseEvent, useLayoutEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
@@ -16,8 +18,43 @@ type FeedPostProps = {
 };
 
 export function FeedPost({ post, highlightedStar = false, onReply, onQuote, truncateBody = true, truncateQuotedPost = true }: FeedPostProps) {
+  const router = useRouter();
+  const bodyRef = useRef<HTMLParagraphElement | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [bodyOverflows, setBodyOverflows] = useState(false);
+  const postPath = getPostPathForPost(post);
+  const shouldClampBody = !isExpanded;
+
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+
+    const measureBody = () => {
+      const lineHeight = Number.parseFloat(window.getComputedStyle(body).lineHeight);
+      const maxCollapsedHeight = Number.isFinite(lineHeight) ? lineHeight * 4 : 0;
+      setBodyOverflows(maxCollapsedHeight > 0 && body.scrollHeight > maxCollapsedHeight + 1);
+    };
+
+    measureBody();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measureBody);
+    observer.observe(body);
+    return () => observer.disconnect();
+  }, [post.text]);
+
+  function handleCardClick(event: MouseEvent<HTMLElement>) {
+    if ((event.target as HTMLElement).closest('a, button')) return;
+
+    router.push(postPath);
+  }
+
   return (
-    <article className="feed-post">
+    <article
+      className="feed-post feed-post-clickable"
+      onClick={handleCardClick}
+      aria-label={`Open post by ${post.name}`}
+    >
       <div className="feed-post-heading">
         <Link className="feed-post-profile-link" href={`/${post.handle.replace('@', '')}`} aria-label={`Open ${post.name} profile`}>
           <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} />
@@ -32,7 +69,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
       <div className="feed-post-date">
         <small>{formatRelativeTime(post.createdAt)}</small>
       </div>
-      <p className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
+      <p ref={bodyRef} className={`feed-post-body${shouldClampBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
       {post.quotedPost && (
         <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
           {post.quotedPost.authorUsername ? (
@@ -48,10 +85,15 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
           {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
         </div>
       )}
-      {truncateBody && (
-        <Link className="feed-post-show-more" href={getPostPathForPost(post)} aria-label={`Show full post by ${post.name}`}>
+      {bodyOverflows && !isExpanded && (
+        <button
+          className="feed-post-show-more"
+          type="button"
+          onClick={() => setIsExpanded(true)}
+          aria-label={`Show full post text by ${post.name}`}
+        >
           Show more...
-        </Link>
+        </button>
       )}
       <div className="feed-post-actions">
         <button type="button" aria-label={`Comment (${post.replies})`} onClick={() => onReply?.(post)}>

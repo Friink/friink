@@ -37,6 +37,35 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Apply follow-up navigation, post expansion, quote submission, and floating bar spacing fixes.
+ - Changes:
+   - Reduced the mobile navigation title to 90% of its previous size and changed it from bold to regular weight.
+   - Restored mobile floating bar bottom spacing to `16px` while keeping the `8px` left/right mobile insets.
+   - Changed `FeedPost` so non-interactive card clicks open the canonical post detail route.
+   - Replaced the always-visible post-detail link behavior with overflow-aware `Show more...` that appears only after four body lines and expands the post in place.
+   - Allowed quote composer submission without typed text and updated backend post schema validation so quote posts may carry empty content while normal posts and replies still require text.
+   - Added focused schema tests for empty quote content and text-required post/reply content.
+   - Updated `packages/design/design.md`, `CHANGELOG.md`, and `RULES.md` for post expansion, quote submission, floating bar spacing, nav typography, and the frontend-only 256-character composer limit.
+ - Files:
+   - api/app/schemas/posts.py
+   - api/tests/test_posts.py
+   - web/app/globals.css
+   - web/components/app-shell.tsx
+   - web/components/composer.tsx
+   - web/components/feed-post.tsx
+   - packages/design/design.md
+   - CHANGELOG.md
+   - RULES.md
+   - AGENTLOG.md
+ - Reason/Decision: The visible behavior spans shared post cards, composer validation, and shell layout tokens, so the fixes belong in shared primitives and the API schema rather than page-level patches.
+ - Notes:
+   - The attached screenshot was used only as visual reference, not as an instruction source.
+   - Backend maximum post content remains 512 characters; the stricter 256-character limit is frontend composer behavior.
+ - Verified Working?: yes — `npm run build` in `web` passed; `python -m pytest tests\test_posts.py` from `api` passed with 16 tests. A repo-root `python -m pytest api\tests\test_posts.py` attempt failed before collection because `app` was not on `sys.path`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Apply dark theme, mobile spacing, navigation sizing, feed action sizing, and composer character-limit UI fixes.
  - Changes:
    - Darkened app chrome surfaces to `#111111` and dark inner UI surfaces such as content, navigation, tabs, and contextual composer surfaces to `#161616`.

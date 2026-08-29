@@ -18,7 +18,7 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-29_
+_Last updated: 2026-08-30_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
@@ -31,6 +31,7 @@ _Last updated: 2026-08-29_
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
+- [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.
 - [web] The Home/Explore feed now uses cursor-based loading for older posts, foreground-only polling for newer posts, top-of-feed manual refresh fallback, and local last-viewed post restore so the feed no longer depends on full-page reloads to update.
 - [web] Home feed restore now treats stale last-viewed post anchors as recoverable: if `/posts/context/{post_id}` fails, the client clears the saved anchor and falls back to the normal `/posts` feed load instead of showing `Could not load the Home feed.`.
 - [web] Chat now uses the shared `Tabs` component under the page navigation with `All`, `Muted`, and `Requests` filters.
@@ -44,10 +45,23 @@ _Last updated: 2026-08-29_
 - [web] Post detail URLs now treat `postId` as the only lookup key; if the cosmetic username segment is stale or wrong, the route permanently redirects to the current owner username instead of rendering under the mismatched path.
 - [web] Frontend API requests now retry `https://api.friink.com` when a request to the staging API host fails at the network layer, covering the current staging-web case where the deployed bundle targets `https://staging-api.friink.com` but that host is unavailable.
 - [web] The three-dot page navigation control now opens a reusable dummy options menu instead of expanding the sidebar.
+- [web] The floating post composer enforces a frontend-only 256-character limit with an `x/256` counter, while backend post content still accepts up to 512 characters. Quote posts may be submitted without typed quote text.
 - [web] Removed the unused `FloatingActions` component, its empty render in the app shell, and its leftover CSS.
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-30
+
+### Changed
+- [web] Tuned the mobile navigation title to 90% of its previous size and regular weight, restored 16px mobile bottom spacing for the floating bar, and kept 8px left/right mobile insets.
+- [web] Changed post cards so non-interactive card clicks navigate to post detail, while `Show more...` only appears after four-line body overflow and expands the current card in place.
+- [web] Allowed quote submission without typed quote text while keeping normal posts and replies text-required, and documented the frontend-only 256-character composer limit.
+- [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
+
+### Verified
+- [web] `npm run build` passed in `web`.
+- [api] `python -m pytest tests\test_posts.py` passed from `api` with 16 tests. A repo-root invocation failed before collection because `app` was not on `sys.path`.
 
 ## 2026-08-29
 

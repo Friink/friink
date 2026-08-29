@@ -181,12 +181,12 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-29 (00:00 UTC-0)
 
 ### Rule: Post Content And Media Limits
-- **What:** Post content is required and capped at 512 characters. Media payloads validate at no more than 16 items, but media uploads are not currently supported by the creation service.
-- **Edge cases:** Any non-null `media` payload currently returns `400` with `Media uploads are not yet supported.`
+- **What:** Backend post content is capped at 512 characters. Normal posts and replies require non-blank content; quote posts may be created without typed quote text when `quoted_post_id` is present. The web floating post composer also applies a frontend-only 256-character entry limit and displays an `x/256` counter.
+- **Edge cases:** Any non-null `media` payload currently returns `400` with `Media uploads are not yet supported.` The frontend's 256-character composer limit is stricter than the backend's 512-character API maximum.
 - **Status:** Active
 - **Platform:** All
-- **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/components/app-shell.tsx`
-- **Since:** 2026-08-29 (00:00 UTC-0)
+- **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/components/app-shell.tsx`, `web/components/composer.tsx`
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Create Payload Must Match Post Kind
 - **What:** Reply posts require `parent_post_id`; non-replies may not set `parent_post_id`. Quote posts require `quoted_post_id`; non-quotes may not set `quoted_post_id`.
@@ -251,6 +251,14 @@ the entry, so history isn't lost.
 - **Platform:** Web only
 - **File(s):** `web/app/[username]/[postId]/page.tsx`, `web/app/posts/[postId]/page.tsx`, `web/lib/post-path.ts`
 - **Since:** 2026-08-29 (10:20 UTC-0)
+
+### Rule: Web Post Cards Navigate And Expand Text Locally
+- **What:** Clicking a non-interactive area of a web post card opens the canonical post detail page. `Show more...` appears only when the body text exceeds four visible lines and expands that card in place instead of navigating.
+- **Edge cases:** Profile links, reply/quote/like/share, star, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/feed-post.tsx`, `web/app/globals.css`
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ## Notifications
 

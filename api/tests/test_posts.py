@@ -21,6 +21,23 @@ def test_post_content_accepts_512_characters() -> None:
     assert CreatePostRequest(content="x" * 512).content == "x" * 512
 
 
+def test_post_content_is_required_for_posts_and_replies() -> None:
+    with pytest.raises(ValidationError):
+        CreatePostRequest(content="")
+
+    with pytest.raises(ValidationError):
+        CreatePostRequest(content=" ", kind="reply", parent_post_id=uuid.uuid4())
+
+
+def test_quote_content_can_be_empty() -> None:
+    quoted_post_id = uuid.uuid4()
+
+    payload = CreatePostRequest(content="", kind="quote", quoted_post_id=quoted_post_id)
+
+    assert payload.content == ""
+    assert payload.quoted_post_id == quoted_post_id
+
+
 def test_media_payload_validates_max_16_files() -> None:
     payload = [{"url": f"https://example.com/{index}.jpg"} for index in range(17)]
     with pytest.raises(ValidationError):

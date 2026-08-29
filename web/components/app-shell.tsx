@@ -372,7 +372,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     event.preventDefault();
 
     const trimmedText = floatingDraft.trim();
-    if (!trimmedText) return;
+    if (!trimmedText && composeContext.kind !== 'quote') return;
 
     const session = loadAuthSession();
     if (!session) {
@@ -813,6 +813,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 sendLabel="Post"
                 maxLength={256}
                 showCount
+                allowEmptySubmit={composeContext.kind === 'quote'}
                 contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
                 referencedPreview={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,

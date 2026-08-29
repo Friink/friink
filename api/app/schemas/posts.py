@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 POST_CONTENT_MAX_LENGTH = 512
 POST_MEDIA_MAX_FILES = 16
@@ -20,7 +20,7 @@ class PostMediaInput(BaseModel):
 
 
 class CreatePostRequest(BaseModel):
-    content: str = Field(min_length=1, max_length=POST_CONTENT_MAX_LENGTH)
+    content: str = Field(max_length=POST_CONTENT_MAX_LENGTH)
     kind: PostKind = PostKind.post
     quoted_post_id: uuid.UUID | None = None
     parent_post_id: uuid.UUID | None = None
@@ -39,6 +39,12 @@ class CreatePostRequest(BaseModel):
         if media and len(media) > POST_MEDIA_MAX_FILES:
             raise ValueError("Posts can include at most 16 media files.")
         return media
+
+    @model_validator(mode="after")
+    def validate_content_required_for_kind(self) -> "CreatePostRequest":
+        if self.kind != PostKind.quote and not self.content.strip():
+            raise ValueError("Post content is required.")
+        return self
 
 
 class QuotedPostResponse(BaseModel):

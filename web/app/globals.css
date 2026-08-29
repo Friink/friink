@@ -1277,8 +1277,8 @@ textarea {
   flex: 1 1 auto;
   min-width: 0;
   text-align: left;
-  font-size: 0.96rem;
-  font-weight: 700;
+  font-size: 0.864rem;
+  font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-ink);
@@ -2746,6 +2746,10 @@ textarea {
   border-bottom: 1px solid var(--color-line);
 }
 
+.feed-post-clickable {
+  cursor: pointer;
+}
+
 .feed-post-heading {
   position: relative;
   display: flex;
@@ -2853,9 +2857,12 @@ textarea {
 
 .feed-post-show-more {
   display: inline-block;
+  border: 0;
+  padding: 0;
   margin-top: -0.125rem;
   margin-bottom: 0.625rem;
   color: var(--color-muted);
+  background: transparent;
   font-size: var(--text-sm);
   font-weight: 400;
   text-decoration: none;
@@ -3094,7 +3101,7 @@ input[type="search"]:focus {
 .floating-bar {
   position: fixed;
   right: 0.5rem;
-  bottom: max(0.5rem, env(safe-area-inset-bottom));
+  bottom: max(1rem, env(safe-area-inset-bottom));
   left: 0.5rem;
   z-index: 3;
   display: flex;

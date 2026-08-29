@@ -15,7 +15,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
-- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset by `16px` on desktop and `8px` on mobile on both sides of that shared rail, so its effective max width is `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
+- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset horizontally by `16px` on desktop and `8px` on mobile, with `16px` bottom spacing on all viewports, so its effective max width is `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) on desktop and `0.5rem` on mobile, with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
@@ -48,7 +48,8 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
 - **Starred Feed**: A preset saved-post view containing only starred posts. It uses the shared `ListRow` summary pattern instead of full feed cards, with post detail opening the full post surface.
 - **Starred Posts**: Starred posts display the brand-colored filled star icon (`fa-solid fa-star`).
-- **Post Detail Link Rule**: Feed cards always render a `Show more...` link to `/posts/[postId]`, even when the visible body is short enough to fit without overflow. The link is a consistent route affordance, not an overflow detector.
+- **Post Card Navigation Rule**: Clicking a non-interactive area of a post card opens the canonical post detail page.
+- **Post Text Expansion Rule**: `Show more...` appears only when post body text overflows four visible lines on feed or post detail surfaces. Activating it expands that post card in place to show the full text; it does not navigate.
 - **Quote Placement Rule**: When a feed card includes a quoted-post block, the `Show more...` link is rendered below the quoted block, not between the main post body and the quoted content.
 
 ## Visual Language
@@ -181,9 +182,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 3. FloatingBar (`web/components/floating-bar.tsx`)
 - **Purpose**: Persistent contextual bottom surface providing navigation or screen-specific composer actions.
 - **Fixed Sizing & Positioning**:
-  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem` on desktop, with `0.5rem` mobile insets.
+  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem` on desktop, with `0.5rem` mobile left/right insets and `1rem` mobile bottom spacing.
   - `height: 3.5rem` (`var(--space-floating-bar-height)`).
-  - Follows the shared `ContentBox` centering rail with an additional `16px` desktop inset or `8px` mobile inset on both sides, producing a maximum effective width of `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
+  - Follows the shared `ContentBox` centering rail with an additional `16px` desktop horizontal inset or `8px` mobile horizontal inset, producing a maximum effective width of `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
   - Border radius: `8px`, border: `1px solid var(--color-line)`, background: `var(--color-paper)`, box shadow: `0 0.75rem 2rem rgba(24, 44, 31, 0.12)`.
 - **Variants & Layout Modes**:
   1. **Default Navigation Mode** (`children` is null/undefined/false):
@@ -230,9 +231,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional).
-  5. Show More Link (`.feed-post-show-more`): Always rendered in feed contexts and routes to `/posts/[postId]`. When a quoted-post block exists, this link sits beneath that block.
+  5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
   6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
-- **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight route affordance rather than a primary CTA.
+- **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls and profile links keep their own behavior.
+- **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:
   - `highlightedStar = true`: Brand filled star icon (`fa-solid fa-star`, `.feed-post-star-highlighted`).
@@ -250,6 +252,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Mobile / Sub-page `NavigationBar`**:
   - Left: History-aware Back button (`fa-arrow-left`) + Page Title (`.navigationbar-title`).
   - Right: Overflow menu button (`fa-ellipsis-vertical`) controlling `NavigationMenu`.
+  - Page title uses regular weight and compact uppercase sizing.
   - *Back Button Rule*: Back navigation is history-aware (`router.push`), disabled when on Home or without history (`window.history.length <= 1`). In-content back buttons are removed to prevent duplication.
 
 ### 7. SideDrawer (`web/components/side-drawer.tsx`)
@@ -266,6 +269,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **`Composer`**:
   - Default layout: Attachment button (`fa-plus`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
   - Floating post composer enforces a frontend-only `256` character limit and shows a live `x/256` counter.
+  - Quote mode may submit without typed text when a quoted post is selected; normal posts and replies still require text.
   - Floating post multiline mode: Starts in the same single-line layout, then expands vertically as text wraps or new lines are added. Once expanded, text occupies the full top row while attachment and send/post controls remain bottom-aligned.
   - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
 ### 9. Tabs (`web/components/tabs.tsx`)
