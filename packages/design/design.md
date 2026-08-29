@@ -249,7 +249,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search icon kept on the right as the submit button. The floating suggestions dropdown appears `8px` below the search input, matches the input width, and uses text-only rows without leading icons.
+  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search icon kept on the right as the submit button and a close (`fa-xmark`) button beside it. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, and shows up to four rows before scrolling.
   - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.
   - Notifications bell button (`fa-bell`) matches search icon height and opens `/notifications`, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.

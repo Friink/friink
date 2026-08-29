@@ -59,6 +59,7 @@ _Last updated: 2026-08-30_
 - [web] Added mobile swipe gestures to the shared Tabs component: right-to-left advances to the next tab and left-to-right returns to the previous tab.
 
 ### Changed
+- [web] Made active header search full-width on mobile with 8px side insets, added a close icon button beside the right-side submit icon, and capped the suggestions dropdown to four visible rows.
 - [web] Kept the expanded header search icon on the right as a submit button, removed suggestion-row icons, and wired Enter/search-button submission to `/search/{searched-string}`.
 - [web] Visiting the Notifications page now marks notifications read through the existing API helper and immediately clears the header unread badge state.
 - [web] Kept profile names color-stable when hovering identity links inside shared list rows, including Connections rows.
@@ -75,6 +76,8 @@ _Last updated: 2026-08-30_
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
+- [web] `npx tsc --noEmit` passed in `web` after the mobile header search layout fix.
+- [web] `npm run build` passed in `web` after the mobile header search layout fix.
 - [web] `npx tsc --noEmit` passed in `web` after the header search route/result layout change.
 - [web] `npm run build` passed in `web` after the header search route/result layout change.
 - [web] `npx tsc --noEmit` passed in `web` after wiring Notifications page visits to read-all badge clearing.

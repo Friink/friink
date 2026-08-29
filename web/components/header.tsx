@@ -66,6 +66,11 @@ export function Header({
     router.push(`/search/${encodeURIComponent(trimmedQuery)}`);
   }
 
+  function closeSearch() {
+    setSearchOpen(false);
+    setSearchQuery('');
+  }
+
   return (
     <header className="topbar">
       <div className="topbar-home">
@@ -94,6 +99,9 @@ export function Header({
                   aria-label="Search Friink"
                   autoFocus
                 />
+                <button className="topbar-search-panel-button" type="button" onClick={closeSearch} aria-label="Close search">
+                  <i className="fa-solid fa-xmark" aria-hidden="true" />
+                </button>
                 <button className="topbar-search-panel-button" type="submit" aria-label="Submit search">
                   <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
                 </button>

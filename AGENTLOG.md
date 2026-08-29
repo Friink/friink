@@ -37,6 +37,27 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Fix active header search layout on mobile and add close control.
+ - Changes:
+   - Added a close icon button to the active header search form.
+   - Changed active header search on mobile to a fixed full-width surface inset `8px` from left and right.
+   - Kept the search submit icon on the right side of the search form.
+   - Capped the floating suggestions dropdown to four visible rows before scrolling.
+   - Updated `packages/design/design.md` and `CHANGELOG.md`.
+ - Files:
+   - web/components/header.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The active search layout is a shared header state, so the mobile full-width behavior belongs in the header CSS rather than in route-level pages.
+ - Notes:
+   - Outside-click and Escape dismissal remain in place.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Adjust header search UI and route submitted searches to slug pages.
  - Changes:
    - Kept the expanded header search icon on the right as an icon submit button instead of moving it to the left of the input.
