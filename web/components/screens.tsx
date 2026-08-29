@@ -8,6 +8,7 @@ import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
+import { formatRelativeTime } from '@/lib/time';
 import { Tabs } from '@/components/tabs';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -33,7 +34,12 @@ export function MessagesScreen() {
     if (!text || !activeConversation) return;
 
     setConversations((current) => current.map((conversation) => conversation.id === activeConversation.id
-      ? { ...conversation, preview: text, time: 'Just now', messages: [...conversation.messages, { id: Date.now(), from: 'me', text, time: 'Just now' }] }
+      ? {
+          ...conversation,
+          preview: text,
+          createdAt: new Date().toISOString(),
+          messages: [...conversation.messages, { id: Date.now(), from: 'me', text, createdAt: new Date().toISOString() }],
+        }
       : conversation));
     setDraft('');
   }
@@ -54,12 +60,12 @@ export function MessagesScreen() {
           </button>
         </div>
         <div className="chat-messages">
-          <p className="chat-date">Today</p>
+          {activeConversation.messages.length > 0 && <p className="chat-date">{formatRelativeTime(activeConversation.messages[0].createdAt)}</p>}
           {activeConversation.messages.map((message) => (
             <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
               <div className="chat-bubble">
                 <p>{message.text}</p>
-                <small>{message.time}</small>
+                <small>{formatRelativeTime(message.createdAt)}</small>
               </div>
             </div>
           ))}
@@ -86,7 +92,7 @@ export function MessagesScreen() {
               </Link>
             }
             subtitle={conversation.preview}
-            meta={conversation.time}
+            meta={formatRelativeTime(conversation.createdAt)}
             trailing={conversation.unread ? <span className="unread-dot" /> : null}
             unread={conversation.unread}
             onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}

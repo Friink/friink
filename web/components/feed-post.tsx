@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
+import { formatRelativeTime } from '@/lib/time';
 
 type FeedPostProps = {
   post: Post;
@@ -28,7 +29,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
         </button>
       </div>
       <div className="feed-post-date">
-        <small>{post.date}</small>
+        <small>{formatRelativeTime(post.createdAt)}</small>
       </div>
       <p className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
       {post.quotedPost && (

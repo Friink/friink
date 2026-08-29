@@ -42,6 +42,33 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Changed
+- [web] Added a shared client-side `formatRelativeTime` utility in `web/lib/time.ts` and moved post, reply, thread, starred-row, notification, and chat timestamp rendering onto it so all user-facing timestamps now follow the same local-time rules.
+- [web] Refactored shared frontend post and mock-conversation data to carry raw ISO timestamps (`createdAt`) instead of preformatted display strings, preventing different screens from baking in conflicting date styles.
+
+### Verified
+- [web] `npx tsc --noEmit` passed in `web` after the timestamp refactor.
+- [web] `npm run build` passed in `web` after replacing the timestamp formatting logic.
+- [web] Ran direct formatter boundary checks for seconds, minutes, same-day time, next-day local-date rollover, and invalid-input fallback; outputs matched the new spec.
+
+## 2026-08-29
+
+### Added
+- [api] Added temporary, env-gated auth debug logging around JWT issuance and verification failure paths so staging can capture PyJWT exception type, unverified `iat`/`exp`, current server time, request path/method, auth flow context, and `VERCEL_GIT_COMMIT_SHA` without logging raw tokens.
+- [web] Added an `X-Friink-Auth-Context` header on authenticated frontend API calls so the backend debug logs can distinguish normal authenticated requests from refresh-exchange traffic during staging investigation.
+
+### Changed
+- [api] Gated the new auth debug logging behind `AUTH_DEBUG_LOGGING_ENABLED` so the extra token-claim logging can be enabled temporarily on staging and removed or left off before merge.
+
+### Verified
+- [api] `python -m compileall api/app` passed after the temporary auth-debug instrumentation was added.
+- [web] `npx tsc --noEmit` passed in `web` after adding the auth-context request metadata.
+
+### Pending
+- [api][web] Real staging deploy-boundary reproduction and evidence collection are still required before any root-cause fix is applied or any commit is made.
+
+## 2026-08-29
+
 ### Fixed
 - [api] Posts now return real `reply_count` and `quote_count` aggregates from the database instead of leaving the frontend to hardcode zeros.
 - [web] Home, Profile, and Post Detail now all read the same API-backed reply/quote counts through the shared `FeedPost` mapping path, so post action counts stay consistent across surfaces.

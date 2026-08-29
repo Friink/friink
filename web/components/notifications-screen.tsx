@@ -2,6 +2,7 @@
 
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { formatRelativeTime } from '@/lib/time';
 
 type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow';
 
@@ -11,11 +12,15 @@ type NotificationItem = {
   name: string;
   handle: string;
   text: string;
-  time: string;
+  createdAt: string;
   initials: string;
   tone: 'coral' | 'sage' | 'sun' | 'mint';
   unread?: boolean;
 };
+
+function isoOffsetFromNow(milliseconds: number): string {
+  return new Date(Date.now() - milliseconds).toISOString();
+}
 
 const notifications: NotificationItem[] = [
   {
@@ -24,7 +29,7 @@ const notifications: NotificationItem[] = [
     name: 'Maya Chen',
     handle: '@mayachen',
     text: 'sent a follow request.',
-    time: '57m',
+    createdAt: isoOffsetFromNow(57 * 60 * 1000),
     initials: 'MC',
     tone: 'coral',
     unread: true,
@@ -35,7 +40,7 @@ const notifications: NotificationItem[] = [
     name: 'Jon Bell',
     handle: '@jonbell',
     text: 'liked your post.',
-    time: '15:35',
+    createdAt: isoOffsetFromNow(4 * 60 * 60 * 1000),
     initials: 'JB',
     tone: 'sage',
   },
@@ -45,7 +50,7 @@ const notifications: NotificationItem[] = [
     name: 'Priya Shah',
     handle: '@priyashah',
     text: 'is interested in your service.',
-    time: 'Feb. 28, 2026',
+    createdAt: '2026-02-28T12:00:00Z',
     initials: 'PS',
     tone: 'sun',
   },
@@ -55,7 +60,7 @@ const notifications: NotificationItem[] = [
     name: 'Alina Ross',
     handle: '@alinaross',
     text: 'replied to your post.',
-    time: 'Jan. 31, 2026',
+    createdAt: '2026-01-31T09:15:00Z',
     initials: 'AR',
     tone: 'mint',
   },
@@ -65,7 +70,7 @@ const notifications: NotificationItem[] = [
     name: 'Friink Review',
     handle: '@friink',
     text: 'updated your verification status.',
-    time: 'Yesterday',
+    createdAt: isoOffsetFromNow(25 * 60 * 60 * 1000),
     initials: 'FR',
     tone: 'sage',
   },
@@ -75,7 +80,7 @@ const notifications: NotificationItem[] = [
     name: 'Friink Security',
     handle: '@friink',
     text: 'blocked a suspicious login attempt.',
-    time: 'Monday',
+    createdAt: '2026-08-24T08:30:00Z',
     initials: 'FR',
     tone: 'coral',
   },
@@ -119,7 +124,7 @@ export function NotificationsScreen() {
             trailing={
               <span className="notification-meta">
                 <i className={`fa-solid ${getIcon(notification.kind)}`} aria-hidden="true" />
-                <span>{notification.time}</span>
+                <span>{formatRelativeTime(notification.createdAt)}</span>
               </span>
             }
             unread={notification.unread}

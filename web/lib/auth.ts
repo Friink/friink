@@ -46,6 +46,8 @@ type ApiErrorBody = {
   detail?: string | Array<{ msg?: string }>;
 };
 
+type AuthRequestContext = 'fresh_login' | 'refresh_exchange' | 'authenticated_request';
+
 export class AuthApiError extends Error {
   status: number;
 
@@ -158,6 +160,7 @@ export async function updateCurrentUser(
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
     body: JSON.stringify({
       username: input.username,
       email: input.email,
@@ -175,6 +178,7 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 
   return mapApiUser(response);
@@ -266,6 +270,7 @@ export async function createPost(accessToken: string, input: { content: string; 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
     body: JSON.stringify({
       kind: input.kind ?? 'post',
       content: input.content,
@@ -282,6 +287,7 @@ export async function getConnectionStatus(accessToken: string, username: string)
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -291,6 +297,7 @@ export async function sendFollowRequest(accessToken: string, recipientUsername: 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
     body: JSON.stringify({ recipient_username: recipientUsername }),
   });
 }
@@ -301,6 +308,7 @@ export async function acceptFollowRequest(accessToken: string, requestId: string
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -310,6 +318,7 @@ export async function rejectFollowRequest(accessToken: string, requestId: string
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -319,6 +328,7 @@ export async function cancelFollowRequest(accessToken: string, requestId: string
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -328,6 +338,7 @@ export async function removeConnection(accessToken: string, requestId: string): 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -337,6 +348,7 @@ export async function listIncomingFollowRequests(accessToken: string): Promise<A
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -346,6 +358,7 @@ export async function listOutgoingFollowRequests(accessToken: string): Promise<A
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -361,13 +374,14 @@ export async function listFollowing(username: string): Promise<ApiConnectionList
   });
 }
 
-async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
+async function requestApi<T>(path: string, init: RequestInit & { authContext?: AuthRequestContext }): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        ...(init.authContext ? { 'X-Friink-Auth-Context': init.authContext } : {}),
         ...init.headers,
       },
       credentials: 'include',

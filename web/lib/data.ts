@@ -5,7 +5,7 @@ export type Post = {
   handle: string;
   initials: string;
   tone: string;
-  date: string;
+  createdAt: string;
   text: string;
   connectionType: 'followers' | 'following';
   isConnection: boolean;

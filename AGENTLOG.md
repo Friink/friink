@@ -27,6 +27,64 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 12:20 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Implement one shared relative-timestamp formatter and replace inconsistent per-screen timestamp formatting across posts, notifications, and chat surfaces.
+ - Changes:
+   - Added `web/lib/time.ts` with a shared `formatRelativeTime(timestamp)` helper that returns seconds for items under one minute old, minutes for items under one hour old, local time-of-day for same-local-calendar-day items at one hour or older, and a full local date once the local calendar day differs.
+   - Made `formatRelativeTime` fail safely with an empty string for invalid input instead of throwing during render.
+   - Updated the shared `Post` shape in `web/lib/data.ts` to carry raw `createdAt` values rather than a preformatted `date` string.
+   - Updated `web/components/app-shell.tsx` and `web/app/posts/[postId]/post-client.tsx` so API post mapping preserves the raw backend timestamp instead of formatting it early.
+   - Updated `web/components/feed-post.tsx` and `web/components/starred-screen.tsx` so feed, post-detail thread entries, and starred rows all render timestamps through `formatRelativeTime`.
+   - Updated `web/components/notifications-screen.tsx` so notification rows now store timestamps as ISO values and render them through the shared formatter instead of mixed literals like `57m`, `Yesterday`, and full dates with different punctuation.
+   - Updated `web/lib/mock-conversations.ts`, `web/components/screens.tsx`, and `web/app/[username]/chat/chat-client.tsx` so message-list and chat-bubble timestamps also use the shared formatter, removing the last user-visible hand-authored relative-time strings.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/lib/time.ts
+   - web/lib/data.ts
+   - web/components/app-shell.tsx
+   - web/app/posts/[postId]/post-client.tsx
+   - web/components/feed-post.tsx
+   - web/components/starred-screen.tsx
+   - web/components/notifications-screen.tsx
+   - web/lib/mock-conversations.ts
+   - web/components/screens.tsx
+   - web/app/[username]/chat/chat-client.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The inconsistency came from formatting timestamps too early and in multiple places. Moving every timestamp render onto one client-side helper keeps behavior aligned with the browser's local timezone and prevents each screen from inventing its own display style.
+ - Notes:
+   - API post timestamps were verified in code to come from timezone-aware SQLAlchemy/Postgres fields (`DateTime(timezone=True)`) and are serialized as datetimes, so no backend timestamp-storage change was needed in this pass.
+   - Toast timestamps still use a simple local time string and were left alone because they are transient UI feedback rather than post/event timeline timestamps from persisted data.
+   - No live ticking re-render was added; timestamps are computed at render time only, per task scope.
+   - Browser-based visual verification against a live dev session was not completed in this shell.
+ - Verified Working?: partial — `npx tsc --noEmit` and `npm run build` both passed in `web`, and direct formatter boundary checks matched the spec, including local-calendar-day rollover behavior.
+
+ - Date/Time: 2026-08-29 11:45 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Add temporary evidence-focused JWT debug logging for deploy-boundary invalid-token investigation, without changing auth behavior yet.
+ - Changes:
+   - Added `api/app/services/auth_debug.py` with env-gated structured logging helpers that record token issuance and JWT verification failures without logging full token strings.
+   - Added `api/app/services/token_context.py` so the API can read an optional `X-Friink-Auth-Context` header and include request-flow context in the debug logs.
+   - Updated `api/app/routers/auth.py` to log `fresh_login` token issuance, `refresh_exchange` access-token issuance, and every JWT verification failure in the refresh and access-token dependency paths with exception class, unverified `iat`/`exp`, server time, request path/method, and `VERCEL_GIT_COMMIT_SHA`.
+   - Updated `web/lib/auth.ts` so authenticated browser requests send `X-Friink-Auth-Context: authenticated_request`, letting staging logs distinguish ordinary bearer-token failures from refresh traffic while leaving behavior unchanged.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - api/app/services/auth_debug.py
+   - api/app/services/token_context.py
+   - api/app/routers/auth.py
+   - web/lib/auth.ts
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The intermittent deploy-boundary failure needs real evidence before we touch token validation semantics. Failure logs alone would not let us compare the deployment instance that minted a token with the one that later rejected it, so temporary issuance logs were added as well, still behind an env flag for staging-only use.
+ - Notes:
+   - No auth acceptance, expiry, refresh, logout, or cookie behavior changed in this pass.
+   - The new frontend header is observability-only; the backend falls back to `authenticated_request` when it is absent.
+   - Step 2 reproduction is still pending because staging deployment access and a real browser session against staging were not available from the current local repo context.
+ - Verified Working?: partial — `python -m compileall api/app` passed, and `npx tsc --noEmit` passed in `web`; real staging deploy-boundary validation has not been completed yet.
+
 - Date/Time: 2026-08-29 10:35 +05:00
 - Agent: Codex
 - Model: GPT-5

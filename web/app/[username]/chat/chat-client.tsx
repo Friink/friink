@@ -8,6 +8,7 @@ import { ProfileCard } from '@/components/profile-card';
 import { mockConversations } from '@/lib/mock-conversations';
 import { clearAuthSession, getConnectionStatus, getPublicUser, loadAuthSession, type AuthUser } from '@/lib/auth';
 import { getInitialsForUsername } from '@/lib/profile-display';
+import { formatRelativeTime } from '@/lib/time';
 
 type ChatClientProps = {
   username: string;
@@ -103,12 +104,12 @@ export function ChatClient({ username }: ChatClientProps) {
         </div>
 
         <div className="chat-messages">
-          {messages.length > 0 && <p className="chat-date">Today</p>}
+          {messages.length > 0 && <p className="chat-date">{formatRelativeTime(messages[0].createdAt)}</p>}
           {messages.map((message) => (
             <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
               <div className="chat-bubble">
                 <p>{message.text}</p>
-                <small>{message.time}</small>
+                <small>{formatRelativeTime(message.createdAt)}</small>
               </div>
             </div>
           ))}

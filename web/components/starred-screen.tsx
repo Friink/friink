@@ -4,6 +4,7 @@ import { Tabs } from '@/components/tabs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { Post } from '@/lib/data';
+import { formatRelativeTime } from '@/lib/time';
 
 type StarredScreenProps = {
   posts: Post[];
@@ -37,7 +38,7 @@ export function StarredScreen({ posts, onReply, onQuote }: StarredScreenProps) {
               avatar={<span className={`user-avatar avatar-${post.tone}`}>{post.initials}</span>}
               title={post.name}
               subtitle={post.text}
-              meta={post.date}
+              meta={formatRelativeTime(post.createdAt)}
               trailing={<i className="fa-solid fa-star starred-row-icon" aria-hidden="true" />}
               className="starred-row"
               onClick={() => router.push(`/posts/${post.id}`)}

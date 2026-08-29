@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import jwt
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -10,8 +10,10 @@ from app.db import get_session
 from app.models.user import User
 from app.schemas.auth import LoginRequest, PublicUserResponse, RefreshResponse, SignupRequest, TokenResponse, UpdateCurrentUserRequest, UserResponse
 from app.services.auth import authenticate_user, create_user, get_user_by_username, update_current_user, user_id_from_subject
+from app.services.auth_debug import log_token_issued, log_token_verification_failure
 from app.services.email import EmailService
 from app.services.security import create_access_token, create_refresh_token, decode_token
+from app.services.token_context import get_auth_flow_context
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -46,20 +48,33 @@ async def login(
     user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
+    log_token_issued(flow="fresh_login", token_type="access", token=access_token, user_id=str(user.id))
+    log_token_issued(flow="fresh_login", token_type="refresh", token=refresh_token, user_id=str(user.id))
     set_refresh_cookie(response, refresh_token, settings)
     return TokenResponse(access_token=access_token, user=UserResponse.model_validate(user))
 
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh(
+    request: Request,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> RefreshResponse:
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token.")
     try:
         payload = decode_token(refresh_token, "refresh")
     except jwt.PyJWTError as exc:
+        log_token_verification_failure(
+            flow="refresh_exchange",
+            token_type="refresh",
+            token=refresh_token,
+            exception=exc,
+            settings=settings,
+            request_path=str(request.url.path),
+            request_method=request.method,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.") from exc
 
     user_id = user_id_from_subject(str(payload.get("sub", "")))
@@ -67,7 +82,9 @@ async def refresh(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token.")
     # Optional v2 hardening: rotate refresh tokens and keep a denylist for explicit revocation.
-    return RefreshResponse(access_token=create_access_token(user.id))
+    access_token = create_access_token(user.id)
+    log_token_issued(flow="refresh_exchange", token_type="access", token=access_token, user_id=str(user.id))
+    return RefreshResponse(access_token=access_token)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -83,12 +100,24 @@ async def logout(response: Response, settings: Settings = Depends(get_settings))
 
 
 async def get_current_user(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+    auth_flow_context: str | None = Depends(get_auth_flow_context),
 ) -> User:
     try:
         payload = decode_token(token, "access")
     except jwt.PyJWTError as exc:
+        log_token_verification_failure(
+            flow=auth_flow_context or "authenticated_request",
+            token_type="access",
+            token=token,
+            exception=exc,
+            settings=settings,
+            request_path=str(request.url.path),
+            request_method=request.method,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token.") from exc
     user_id = user_id_from_subject(str(payload.get("sub", "")))
     user = session.get(User, user_id)
