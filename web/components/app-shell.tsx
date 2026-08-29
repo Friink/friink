@@ -361,8 +361,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       connectionType: 'following',
       isConnection: true,
       isStarred: false,
-      replies: 0,
-      quotes: 0,
+      replies: post.reply_count,
+      quotes: post.quote_count,
       reactions: 0,
       quotedPost: post.quoted_post
         ? {

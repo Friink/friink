@@ -42,6 +42,13 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Fixed
+- [api] Posts now return real `reply_count` and `quote_count` aggregates from the database instead of leaving the frontend to hardcode zeros.
+- [web] Home, Profile, and Post Detail now all read the same API-backed reply/quote counts through the shared `FeedPost` mapping path, so post action counts stay consistent across surfaces.
+
+### Verified
+- [web] `npm run build` passed in `web` after wiring real post counts through the API/frontend contract.
+
 ### Changed
 - [web] Kept the shared floating composer active on profile pages, and when viewing another user's profile it now seeds the post draft with their `@username` as an editable mention suggestion.
 - [docs] Updated `packages/design/design.md` to record the profile-page floating composer and removable mention-prefill rule.

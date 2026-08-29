@@ -82,6 +82,31 @@
 - Notes:
   - The mention prefill only applies in normal post mode with an empty draft; reply and quote composition continue to use their own explicit composer context.
 - Verified Working?: yes — `npm run build` in `web` passed after enabling the shared profile-page floating composer and mention-prefill behavior.
+
+- Date/Time: 2026-08-29 11:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace stubbed post reply/quote counts with real DB-backed values and ensure Profile uses the same shared post-count contract as Home.
+- Changes:
+  - Updated `api/app/models/post.py`, `api/app/schemas/posts.py`, and `api/app/services/posts.py` so post responses now include `reply_count` and `quote_count` loaded from correlated database aggregates.
+  - Added serialization coverage in `api/tests/test_posts.py` for the new aggregate count fields.
+  - Updated `web/lib/auth.ts`, `web/components/app-shell.tsx`, and `web/app/posts/[postId]/post-client.tsx` so the frontend maps real API counts instead of hardcoding `0`.
+  - Confirmed `web/components/profile-screen.tsx` already uses the shared `FeedPost` component, so no separate profile post component existed; the fix was to correct the shared data contract.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - api/app/models/post.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/tests/test_posts.py
+  - web/lib/auth.ts
+  - web/components/app-shell.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The UI inconsistency was rooted in missing backend aggregate fields, not in a separate profile-only post renderer. Putting the counts into the API keeps Home, Profile, and Post Detail aligned through the same shared post component.
+- Notes:
+  - Existing rows with no replies or quotes still correctly return `0`; counts now reflect actual non-deleted reply and quote rows in the posts table.
+- Verified Working?: partial — `npm run build` in `web` passed after the count wiring; targeted API test execution was attempted with `pytest api/tests/test_posts.py` but `pytest` is not installed or not available on this shell `PATH`, so backend test execution could not be completed here.
 - Date/Time: 2026-08-29 10:20 +05:00
 - Agent: Codex
 - Model: GPT-5

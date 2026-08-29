@@ -60,6 +60,8 @@ class PostResponse(BaseModel):
     media_count: int
     parent_post_id: uuid.UUID | None
     quoted_post_id: uuid.UUID | None
+    reply_count: int = 0
+    quote_count: int = 0
     quoted_post: QuotedPostResponse | None
     created_at: datetime
     updated_at: datetime
