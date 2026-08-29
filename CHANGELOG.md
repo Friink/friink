@@ -42,6 +42,13 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Changed
+- [web] Kept the shared floating composer active on profile pages, and when viewing another user's profile it now seeds the post draft with their `@username` as an editable mention suggestion.
+- [docs] Updated `packages/design/design.md` to record the profile-page floating composer and removable mention-prefill rule.
+
+### Verified
+- [web] `npm run build` passed in `web` after the profile floating-composer update.
+
 ### Fixed
 - [web] Corrected the mobile navigation back-button availability so it reflects real browser history instead of disabling itself just because the current screen is `Home`; returning to Home after visiting Connections, a profile, or a post now still leaves back navigation available.
 

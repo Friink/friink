@@ -63,6 +63,25 @@
 - Notes:
   - A first direct load with no prior history still remains correctly disabled.
 - Verified Working?: yes — `npm run build` in `web` passed after the back-button history fix.
+
+- Date/Time: 2026-08-29 10:55 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the floating composer active on profile pages and prefill another user's handle as a removable mention suggestion.
+- Changes:
+  - Updated `web/components/app-shell.tsx` so the shared floating composer remains visible on profile screens in addition to Home and explicit contextual states.
+  - Added profile-aware draft seeding for normal post mode: when viewing another user's profile with an empty draft, the composer now starts with `@username ` and remains fully editable so the mention can be removed.
+  - Updated `packages/design/design.md` to document the shared profile-page composer behavior and the removable mention-prefill rule.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Profiles are still first-class app surfaces, so hiding the global composer there breaks the shared posting flow. Prefilling a mention on other-user profiles helps the likely action while keeping the draft fully user-controlled.
+- Notes:
+  - The mention prefill only applies in normal post mode with an empty draft; reply and quote composition continue to use their own explicit composer context.
+- Verified Working?: yes — `npm run build` in `web` passed after enabling the shared profile-page floating composer and mention-prefill behavior.
 - Date/Time: 2026-08-29 10:20 +05:00
 - Agent: Codex
 - Model: GPT-5

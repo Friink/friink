@@ -90,7 +90,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || activeScreen === 'profile' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -287,6 +287,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         addToast(error instanceof Error ? error.message : 'Could not load connection state.');
       });
   }, [profileUser, user]);
+
+  useEffect(() => {
+    if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;
+    if (!profileUser || profileUser.username === user.username) return;
+    if (floatingDraft.trim().length > 0) return;
+
+    setFloatingDraft(`@${profileUser.username} `);
+  }, [activeScreen, composeContext.kind, floatingDraft, profileUser, user.username]);
 
   function handleReply(post: Post) {
     setComposeContext({ kind: 'reply', post });
