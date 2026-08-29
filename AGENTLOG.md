@@ -27,6 +27,25 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 15:20 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Make the `/{username}/{postId}` post route permanently redirect to the correct current username when the URL username is stale or mismatched.
+ - Changes:
+   - Updated `web/app/[username]/[postId]/page.tsx` so the route fetches the post by `postId` only, reads the current `author_username` from the API response, compares it against the requested username segment, and issues `permanentRedirect()` to the canonical current-owner URL when they differ.
+   - Preserved query parameters during the mismatch redirect and kept invalid/missing posts on the existing `notFound()` path instead of conflating not-found with username mismatch.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/app/[username]/[postId]/page.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Usernames can become stale or be reassigned, so the browser route cannot trust the username segment as an identity key. Using `postId` as the only lookup key and redirecting to the current owner handle avoids stale URLs resolving under the wrong visible username.
+ - Notes:
+   - The route already used `postId` only for rendering; this pass added the missing canonicalization step rather than changing data lookup semantics.
+   - `api/app/models/post.py` confirms `posts.id` is a UUID primary key, which is the uniqueness guarantee this redirect logic relies on.
+   - Full live verification of username-change and old-username-reclaimed scenarios still needs an integration test or manual browser pass against mutable user data, so no commit was made.
+ - Verified Working?: partial — `npx tsc --noEmit` and `npm run build` both passed in `web`; the requested live redirect scenarios involving username changes/reassignment were not executed from this shell.
+
  - Date/Time: 2026-08-29 15:05 +05:00
  - Agent: Codex
  - Model: GPT-5
