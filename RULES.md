@@ -9,6 +9,16 @@ area heading using the template below. If no matching heading exists, create one
 not remove entries - mark superseded/removed behavior as Deprecated rather than deleting
 the entry, so history isn't lost.
 
+## Web Architecture
+
+### Rule: Web UI Fixes Must Be Component-Level
+- **What:** Reusable web UI behavior, layout, spacing, and interaction fixes must be implemented in shared components, shared CSS contracts, or shell-level state owners rather than inline styles, route-only patches, or one-off page wrappers.
+- **Edge cases:** A route may be added to expose a feature URL, such as `/search/[query]`, but the route should delegate visible layout and behavior to shared shell/screen/row primitives. Page-specific overrides are allowed only when the behavior is genuinely unique to that page and documented in `packages/design/design.md`.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
+- **Since:** 2026-08-30 (Asia/Karachi)
+
 ## Authentication & Accounts
 
 ### Rule: Signup Creates Active Public Accounts

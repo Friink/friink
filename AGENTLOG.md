@@ -23,6 +23,11 @@
 > reusable shared components/contracts such as `ContentBox`, `PageSurface`,
 > `ListRow`, `FloatingBar`, or the relevant documented design token.
 >
+> SESSION AUDIT REMINDER: UI fixes made in the 2026-08-30 session were
+> verified as component-level changes in shared components, app shell state,
+> shared CSS, and documented contracts. Keep future fixes on those shared
+> surfaces unless `packages/design/design.md` documents a deliberate exception.
+>
 > DATABASE MIGRATION RULE: After any backend change that adds, removes, or
 > changes SQLAlchemy models, Alembic migrations, schemas, or DB-backed query
 > behavior, verify the target database is configured and migrated before
@@ -33,6 +38,48 @@
 > IMPORTANT: Do not add a `User` field to any entry. Entries should only
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Reapply and harden profile header content-box alignment request.
+ - Changes:
+   - Confirmed `/{username}` profile routes go through shared `AppShell` and `ProfileScreen`, and that `AppShell` wraps screen content in `ContentBox`.
+   - Added an explicit `.profile-summary` section in `ProfileScreen` around the profile card, about text, stats, and action buttons.
+   - Moved profile header spacing to `.profile-summary` so the profile header uses one standard component-level spacing boundary inside `ContentBox`.
+   - Kept desktop stats/actions horizontally aligned and vertically centered; mobile stacks actions below stats and right-aligns them.
+   - Updated `packages/design/design.md` and `CHANGELOG.md`.
+ - Files:
+   - web/components/profile-screen.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The earlier structure existed locally, but staging did not visually reflect the request clearly. Grouping the entire profile header into a named shared summary section makes the component-level ownership and spacing unambiguous.
+ - Notes:
+   - This is not a route-specific fix; the dynamic profile page still delegates to shared `ProfileScreen`.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Audit current-session UI fixes for component-level implementation and update governing docs.
+ - Changes:
+   - Audited current-session UI changes and confirmed they live in shared components/state owners and documented CSS contracts: `Header`, `Tabs`, `ProfileScreen`, `AppShell`, `ListRow`/`ProfileCard`, `ContentBox`/`PageSurface`, and shared `globals.css`.
+   - Added a README contributing rule requiring shared component/contract fixes for reusable UI behavior.
+   - Added an active `RULES.md` rule prohibiting inline, route-only, and page-specific quick fixes for global web UI behavior.
+   - Reinforced `packages/design/design.md` with a component-level fix rule.
+   - Updated `CHANGELOG.md`.
+ - Files:
+   - README.md
+   - RULES.md
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The session touched reusable UI behavior across search, tabs, profile layout, notifications, list-row hover, drawer/header, and app spacing, so the documentation now makes component-level ownership explicit.
+ - Notes:
+   - No inline styles or page-only spacing fixes were found in the audited session changes. The `/search/[query]` route is a route surface only; visible result layout is delegated to shared screen and row primitives.
+ - Verified Working?: Yes. Audited with `rg` for inline/page-only quick-fix patterns; current-session UI changes are in shared components/state owners or shared CSS contracts. Existing dynamic inline styles are component-owned measurements (`Tabs` indicator and Home pull-to-refresh height), not route-level fixes. `npx tsc --noEmit` and `npm run build` passed in `web`.
 
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex

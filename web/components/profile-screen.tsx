@@ -61,52 +61,54 @@ export function ProfileScreen({
 
   return (
     <PageSurface className="profile-screen">
-      <div className="profile-intro">
-        <ProfileCard
-          name={user.name}
-          handle={`@${user.username}`}
-          tone="mint"
-          initials={getInitials(user.name)}
-        />
-      </div>
-
-      <p className="profile-bio">
-        {user.about || (isOwnProfile ? 'Your signed-in account is now driving this profile view.' : 'This profile has not added an about yet.')}
-      </p>
-
-      <div className="profile-meta-row">
-        <div className="profile-stats" aria-label="Profile statistics">
-          <span><strong>0</strong> following</span>
-          <span><strong>0</strong> followers</span>
+      <section className="profile-summary" aria-label="Profile summary">
+        <div className="profile-intro">
+          <ProfileCard
+            name={user.name}
+            handle={`@${user.username}`}
+            tone="mint"
+            initials={getInitials(user.name)}
+          />
         </div>
 
-        <div className="profile-actions">
-          {isOwnProfile ? (
-            <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
-              <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
-              <span>Edit</span>
-            </button>
-          ) : (
-            <>
-              {action && (
-                <button
-                  className="profile-action-button"
-                  type="button"
-                  onClick={action.onClick}
-                  disabled={connectionActionBusy}
-                  aria-label={action.ariaLabel}
-                >
-                  <i className={action.icon} aria-hidden="true" />
-                  <span>{connectionActionBusy ? 'Updating' : action.label}</span>
-                </button>
-              )}
-              <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
-                <i className="fa-regular fa-paper-plane" aria-hidden="true" />
+        <p className="profile-bio">
+          {user.about || (isOwnProfile ? 'Your signed-in account is now driving this profile view.' : 'This profile has not added an about yet.')}
+        </p>
+
+        <div className="profile-meta-row">
+          <div className="profile-stats" aria-label="Profile statistics">
+            <span><strong>0</strong> following</span>
+            <span><strong>0</strong> followers</span>
+          </div>
+
+          <div className="profile-actions">
+            {isOwnProfile ? (
+              <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
+                <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
+                <span>Edit</span>
               </button>
-            </>
-          )}
+            ) : (
+              <>
+                {action && (
+                  <button
+                    className="profile-action-button"
+                    type="button"
+                    onClick={action.onClick}
+                    disabled={connectionActionBusy}
+                    aria-label={action.ariaLabel}
+                  >
+                    <i className={action.icon} aria-hidden="true" />
+                    <span>{connectionActionBusy ? 'Updating' : action.label}</span>
+                  </button>
+                )}
+                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
+                  <i className="fa-regular fa-paper-plane" aria-hidden="true" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
       <Tabs
         tabs={profileTabs}

@@ -18,6 +18,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset horizontally by `16px` on desktop and `8px` on mobile, with `16px` bottom spacing on all viewports, so its effective max width is `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) on desktop and `0.5rem` on mobile, with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
+- **Component-Level Fix Rule**: Global UI behavior and layout fixes must land in shared components, shell state owners, shared CSS selectors/tokens, or documented component contracts. Do not solve recurring UI issues with inline styles, page-only spacing overrides, or route-specific quick fixes.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
 
 ## Navigation
@@ -206,9 +207,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 4. ProfileScreen (`web/components/profile-screen.tsx`)
 - **Purpose**: Profile view for both signed-in user self-profile and browsable other-user profiles.
 - **Fixed Internal Layout Order**:
-  1. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
-  2. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 29rem`.
-  3. Profile Meta Row (`.profile-meta-row`): Contains statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
+  1. Profile Summary (`.profile-summary`): A single section inside `ContentBox` containing identity, about text, statistics, and profile actions with standard block spacing and no custom outer gutter.
+  2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
+  3. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 34rem`.
+  4. Profile Meta Row (`.profile-meta-row`): Contains statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
      - Statistics (`.profile-stats`): Left-aligned, displaying `0 following` and `0 followers`.
      - Actions (`.profile-actions`): Right-aligned. On desktop, actions are vertically centered with the statistics row. On mobile, actions move below the statistics and remain right-aligned.
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.

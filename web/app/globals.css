@@ -2548,10 +2548,17 @@ textarea {
   padding: 0;
 }
 
+.profile-summary {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  padding: var(--space-content-inset-block) 0 1rem;
+}
+
 .profile-intro {
   display: flex;
   justify-content: flex-start;
-  padding: var(--space-content-inset-block) 0 0;
+  padding: 0;
 }
 
 .profile-large-avatar {
@@ -2698,7 +2705,7 @@ textarea {
 
 .profile-bio {
   max-width: 34rem;
-  margin: 0.6rem 0 0;
+  margin: 0;
   color: var(--color-muted);
   font-size: var(--text-sm);
   line-height: 1.45;
@@ -2710,7 +2717,7 @@ textarea {
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
-  padding: 0.75rem 0 1rem;
+  padding: 0;
 }
 
 @media (max-width: 767px) {

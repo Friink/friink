@@ -74,7 +74,10 @@ from scratch.
    before starting any task.
 2. Read `rules.md` before changing product/business behavior.
 3. Read `packages/design/design.md` before any visual, layout, or styling change.
-4. After completing a change, append a dated entry to `CHANGELOG.md` and a
+4. Keep reusable behavior and layout fixes at the shared component/contract level
+   whenever the behavior appears in more than one place. Do not use inline styles,
+   route-only spacing patches, or page-specific quick fixes for global UI behavior.
+5. After completing a change, append a dated entry to `CHANGELOG.md` and a
    corresponding detailed entry to `AGENTLOG.md`. Do not remove old rule entries in
    `rules.md` — mark them Deprecated instead.
-5. Test and commit before switching agents or handing off work.
+6. Test and commit before switching agents or handing off work.
