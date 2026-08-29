@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
 import { ProfileScreen } from '@/components/profile-screen';
@@ -68,6 +68,7 @@ function getInitials(username: string) {
 
 export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange }: AppShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
@@ -89,17 +90,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || activeScreen === 'profile' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {
-      setCanGoBack(activeScreen !== 'home' && window.history.length > 1);
+      setCanGoBack(window.history.length > 1);
     };
 
     updateBackAvailability();
     window.addEventListener('popstate', updateBackAvailability);
     return () => window.removeEventListener('popstate', updateBackAvailability);
-  }, [activeScreen]);
+  }, [activeScreen, pathname]);
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 767px)');
@@ -287,6 +288,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       });
   }, [profileUser, user]);
 
+  useEffect(() => {
+    if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;
+    if (!profileUser || profileUser.username === user.username) return;
+    if (floatingDraft.trim().length > 0) return;
+
+    setFloatingDraft(`@${profileUser.username} `);
+  }, [activeScreen, composeContext.kind, floatingDraft, profileUser, user.username]);
+
   function handleReply(post: Post) {
     setComposeContext({ kind: 'reply', post });
   }
@@ -352,7 +361,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       connectionType: 'following',
       isConnection: true,
       isStarred: false,
-      replies: 0,
+      replies: post.reply_count,
+      quotes: post.quote_count,
       reactions: 0,
       quotedPost: post.quoted_post
         ? {
@@ -596,7 +606,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 maxLength={512}
                 showCount
                 contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
-                quotedPreview={composeContext.kind === 'quote' ? {
+                referencedPreview={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,
                   handle: composeContext.post.handle,
                   initials: composeContext.post.initials,

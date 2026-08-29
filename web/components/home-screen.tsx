@@ -1,7 +1,7 @@
- 'use client';
+'use client';
 
-import { useState } from 'react';
 import { FeedPost } from '@/components/feed-post';
+import { PageSurface } from '@/components/page-surface';
 import type { Post } from '@/lib/data';
 
 type HomeScreenProps = {
@@ -16,8 +16,8 @@ export function HomeScreen({ posts, activeFilter = 'all', onFilterChange, onRepl
   const filteredPosts = activeFilter === 'connections' ? posts.filter((post) => post.isConnection) : posts;
 
   return (
-    <div className="home-feed">
+    <PageSurface className="home-feed" variant="list">
       {filteredPosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} />)}
-    </div>
+    </PageSurface>
   );
 }

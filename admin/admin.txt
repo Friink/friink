@@ -1,0 +1,183 @@
+FRIINK — ADMIN MODULE: ARCHITECTURE & IMPLEMENTATION NOTES
+(Brainstormed 2026-08-29. Not yet built. Revisit when close to production.)
+
+=====================================================================
+1. CORE DECISION: NO SEPARATE APP / SUBDOMAIN
+=====================================================================
+
+Rejected: separate admin.friink.com deployment/app.
+Reason: overkill for current scale (one human admin, one likely future
+moderator). Adds deployment, routing, and auth complexity with no real
+payoff at this stage.
+
+Chosen: Admin module lives INSIDE the existing web app, reusing the
+current app shell, design system (packages/design/design.md), and
+auth session. It appears as a new tab/entry in the side drawer.
+
+Admin-specific BACKEND ROUTES are still kept in their own namespace
+(e.g. /api/admin/*) with their own server-side guard dependency —
+this part of separation IS worth doing regardless of frontend
+architecture, because it makes auditing and reasoning about admin
+surface area easy, and keeps a clean line between "normal app APIs"
+and "admin APIs" even though they ship from the same FastAPI app.
+
+=====================================================================
+2. TWO-TIER ACCESS MODEL: is_admin (gate) + role (scope)
+=====================================================================
+
+TIER 1 — is_admin (boolean, on user record)
+  - Controls whether the "Admin" entry even appears in the side
+    drawer, and whether the user can reach the admin module at all.
+  - This is the door. Binary. No nuance here.
+
+TIER 2 — role (enum, on user record — only meaningful if is_admin=true)
+  - Controls WHAT the user can see/do once inside the admin module.
+  - Initial values:
+      - "superadmin" — sees/does everything in the admin module.
+      - "moderator"  — scoped to specific sections only
+                        (e.g. SEO/content tools, or user reports —
+                        decide per-person at grant time).
+  - Keep this a FLAT enum for now. Do not build a generic permission-
+    bundling system, custom role builder, or granular per-feature
+    permission table until there are 3+ real distinct roles in
+    production. Two roles = two explicit checks in code is the
+    correct amount of engineering right now. Revisit if/when a third
+    role type is genuinely needed.
+
+Why two tiers instead of one flag: prevents having to choose between
+"give the SEO hire full admin power" or "give them nothing." The
+gate (is_admin) and the scope (role) are separate questions and
+should stay separate in the data model even while the UI/logic
+stays simple.
+
+=====================================================================
+3. AUTHENTICATION: STEP-UP AUTH (SECOND PASSWORD), NOT A SEPARATE LOGIN
+=====================================================================
+
+Flow:
+  1. Admin logs into friink.com normally (existing auth flow,
+     same session as any other user).
+  2. Side drawer shows "Admin" tab only if is_admin = true on their
+     account (checked server-side when rendering, not just hidden
+     via CSS/JS on the client).
+  3. Clicking "Admin" prompts for a SECOND password (distinct from
+     their login password) — a step-up auth prompt, same general
+     pattern as banking apps re-confirming a PIN before a sensitive
+     action.
+  4. On correct second password, backend issues a SHORT-LIVED,
+     admin-scoped session token/flag (not just a client-side
+     "unlocked: true" boolean). This is critical — every admin API
+     call must independently verify this admin-session token
+     server-side. The frontend hiding/showing the tab is UX only,
+     never the actual security boundary.
+  5. Admin-unlocked state should EXPIRE after a period of inactivity
+     (suggest 15–30 min) and re-prompt on a fresh session/browser
+     restart. Do not let "entered admin password once" persist
+     indefinitely.
+
+Per-person passwords: each admin/moderator sets their OWN second
+password (not a single shared secret across all admins). Simpler,
+more secure, avoids shared-secret rotation problems later.
+
+Security hardening to include at implementation time:
+  - Rate-limit / lockout on repeated failed second-password attempts
+    (small fixed attack surface since admin emails are known/limited
+    in number — worth protecting explicitly).
+  - Log every second-password attempt (success and failure) —
+    useful both for security review and as an early signal if
+    someone's account is being probed.
+
+=====================================================================
+4. BACKEND: ROUTE NAMESPACE + SERVER-SIDE GUARDS
+=====================================================================
+
+- All admin endpoints live under a dedicated router namespace,
+  e.g. api/app/routers/admin.py, mounted at /api/admin/*.
+- A shared FastAPI dependency (e.g. require_admin_session) wraps
+  every route in that router:
+    - Verifies the normal auth token (user is logged in).
+    - Verifies is_admin = true on the user record.
+    - Verifies the short-lived admin-session token from step-up
+      auth is present and not expired.
+    - For role-scoped routes (e.g. SEO-only), additionally checks
+      role == "superadmin" OR role == "moderator" as appropriate
+      per endpoint.
+- Never rely on frontend route guards alone. A hidden tab in the
+  UI is not a security boundary — someone with dev tools or a
+  captured request could hit /api/admin/* directly if the backend
+  doesn't independently check every time.
+- Watch for Next.js client-bundling of admin route code — ensure
+  admin-only frontend logic doesn't leak into the public JS bundle
+  in a way that reveals route structure or admin-only UI to anyone
+  inspecting the bundle, even if they can't authenticate into it.
+
+=====================================================================
+5. AUDIT LOGGING (BUILD FROM DAY ONE, NOT RETROFITTED)
+=====================================================================
+
+- Dedicated table, e.g. admin_action_log, separate from general
+  app logs.
+- Log at minimum: who (admin user id), what action (e.g.
+  "disabled_user", "edited_seo_keyword", "viewed_report"), target
+  (which user/post/resource), timestamp, and any relevant
+  before/after values for the change.
+- Log both successful actions AND failed/denied admin API attempts
+  (e.g. a moderator trying to hit a superadmin-only route) — denied
+  attempts are a useful signal.
+- Reason this matters: moderation and account-disable actions need
+  a reconstructable history for disputes, trust & safety review,
+  and (later) potential legal/compliance needs. Much cheaper to log
+  from the start than to reconstruct after the fact.
+
+=====================================================================
+6. KNOWN INITIAL USE CASES (drives what to build first)
+=====================================================================
+
+a) User moderation (superadmin, and possibly moderator scope):
+   - View reported/flagged users or content (violations).
+   - Enable / disable user accounts.
+
+b) SEO / content management (moderator scope, e.g. future SEO hire):
+   - Add/edit keywords on homepage or other public pages.
+   - Create new content sections.
+   - Likely needs its own admin sub-area distinct from user
+     moderation — keep these as separate permission checks even
+     though both fall under "moderator" role initially, since a
+     future third role might split them further.
+
+=====================================================================
+7. EXPLICITLY OUT OF SCOPE FOR NOW (avoid over-engineering)
+=====================================================================
+
+- No separate admin app/deployment/subdomain.
+- No generic/configurable permission system or role builder UI.
+- No support for arbitrary custom roles beyond superadmin/moderator.
+- No multi-admin approval workflows (e.g. "two admins must approve
+  a ban") — single-admin-approves model is fine at current scale.
+- Revisit ALL of the above only once there are genuinely 3+ distinct
+  admin/moderator roles in real use, or a second superadmin.
+
+=====================================================================
+8. SUGGESTED BUILD ORDER (when ready to implement)
+=====================================================================
+
+1. Add is_admin (bool) and role (enum: superadmin/moderator) to
+   user model + migration. Manually seed the one admin account.
+2. Add second-password field + step-up auth endpoint, issuing a
+   short-lived admin-session token. Add rate-limiting/lockout.
+3. Add admin_action_log table.
+4. Add /api/admin/* router with require_admin_session dependency
+   (+ role-based sub-checks where needed).
+5. Add side-drawer "Admin" tab (rendered only if is_admin=true,
+   verified via a server call, not a client-only check) + the
+   second-password prompt UI.
+6. Build first real admin screens: user moderation (view
+   violations, enable/disable users) — this is the more urgent of
+   the two known use cases.
+7. Build SEO/content admin screens once the SEO hire is closer to
+   onboarding — grant them is_admin=true, role=moderator, scoped
+   to this section only.
+
+=====================================================================
+END OF NOTES
+=====================================================================

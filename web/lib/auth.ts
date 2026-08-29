@@ -203,6 +203,8 @@ export type ApiPost = {
   media_count: number;
   parent_post_id: string | null;
   quoted_post_id: string | null;
+  reply_count: number;
+  quote_count: number;
   quoted_post: {
     id: string | null;
     author_username: string | null;

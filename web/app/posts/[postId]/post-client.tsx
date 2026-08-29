@@ -38,7 +38,8 @@ function mapApiPost(post: ApiPost): Post {
     connectionType: 'following',
     isConnection: true,
     isStarred: false,
-    replies: 0,
+    replies: post.reply_count,
+    quotes: post.quote_count,
     reactions: 0,
     quotedPost: post.quoted_post
       ? {
@@ -143,14 +144,14 @@ export function PostClient({ postId }: PostClientProps) {
           maxLength={512}
           showCount
           contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}
-          quotedPreview={composeContext.kind === 'quote' ? {
+          referencedPreview={{
             name: composeContext.post.name,
             handle: composeContext.post.handle,
             initials: composeContext.post.initials,
             tone: composeContext.post.tone,
             text: composeContext.post.text,
             mediaCount: 0,
-          } : null}
+          }}
         />
       ) : false}
     >

@@ -15,9 +15,235 @@
 > what the log describes — do not assume the log is authoritative over
 > the actual code.
 >
+> REUSE RULE: Do not create new components unnecessarily when an existing
+> shared primitive can be extended or reused.
+>
+> LAYOUT RULE: Inline fixes and targeted per-screen spacing patches are
+> strictly prohibited for global layout problems. Resolve them by updating
+> reusable shared components/contracts such as `ContentBox`, `PageSurface`,
+> `ListRow`, `FloatingBar`, or the relevant documented design token.
+>
 > IMPORTANT: Do not add a `User` field to any entry. Entries should only
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
+
+- Date/Time: 2026-08-29 10:35 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the floating bar to the shared content rail with a 16px side inset and add stronger reuse/no-targeted-fix reminders for future agents.
+- Changes:
+  - Updated `web/app/globals.css` so the persistent `floating-bar` now follows the same centered `ContentBox` rail, with `16px` inset on both sides and a `calc(1024px - 2rem)` desktop max width.
+  - Kept both default and contextual floating-bar variants inside that same shared rail instead of letting contextual mode expand wider than the content box.
+  - Updated `packages/design/design.md` to document the floating-bar rail rule plus a stricter prohibition against inline or targeted layout fixes when shared primitives should own the change.
+  - Added explicit top-of-file reminders in `AGENTLOG.md` to avoid unnecessary new components and to treat inline/per-screen layout fixes as prohibited for global spacing issues.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The floating bar is part of the same product shell as the page content, so letting it size off a separate viewport rule breaks the shared layout language. The additional log guidance reduces the chance of future drift toward one-off wrappers or patch CSS.
+- Notes:
+  - This pass changes the bar’s shell width contract only; composer behavior inside the bar remains unchanged.
+- Verified Working?: yes — `npm run build` in `web` passed after the floating-bar rail alignment and reuse-guardrail documentation update.
+
+- Date/Time: 2026-08-29 10:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the navigation back button so Home can still go back when actual browser history exists.
+- Changes:
+  - Updated `web/components/app-shell.tsx` to derive back-button availability from real browser history instead of forcing it off whenever the active screen is `home`.
+  - Hooked the back-state refresh to both screen changes and pathname changes so routed pages such as Home, Connections, profiles, and post detail stay in sync with browser navigation state.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The previous logic mixed a routing assumption into a browser-history control. That made Home incorrectly disable back navigation after legitimate in-app route changes.
+- Notes:
+  - A first direct load with no prior history still remains correctly disabled.
+- Verified Working?: yes — `npm run build` in `web` passed after the back-button history fix.
+
+- Date/Time: 2026-08-29 10:55 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the floating composer active on profile pages and prefill another user's handle as a removable mention suggestion.
+- Changes:
+  - Updated `web/components/app-shell.tsx` so the shared floating composer remains visible on profile screens in addition to Home and explicit contextual states.
+  - Added profile-aware draft seeding for normal post mode: when viewing another user's profile with an empty draft, the composer now starts with `@username ` and remains fully editable so the mention can be removed.
+  - Updated `packages/design/design.md` to document the shared profile-page composer behavior and the removable mention-prefill rule.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Profiles are still first-class app surfaces, so hiding the global composer there breaks the shared posting flow. Prefilling a mention on other-user profiles helps the likely action while keeping the draft fully user-controlled.
+- Notes:
+  - The mention prefill only applies in normal post mode with an empty draft; reply and quote composition continue to use their own explicit composer context.
+- Verified Working?: yes — `npm run build` in `web` passed after enabling the shared profile-page floating composer and mention-prefill behavior.
+
+- Date/Time: 2026-08-29 11:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace stubbed post reply/quote counts with real DB-backed values and ensure Profile uses the same shared post-count contract as Home.
+- Changes:
+  - Updated `api/app/models/post.py`, `api/app/schemas/posts.py`, and `api/app/services/posts.py` so post responses now include `reply_count` and `quote_count` loaded from correlated database aggregates.
+  - Added serialization coverage in `api/tests/test_posts.py` for the new aggregate count fields.
+  - Updated `web/lib/auth.ts`, `web/components/app-shell.tsx`, and `web/app/posts/[postId]/post-client.tsx` so the frontend maps real API counts instead of hardcoding `0`.
+  - Confirmed `web/components/profile-screen.tsx` already uses the shared `FeedPost` component, so no separate profile post component existed; the fix was to correct the shared data contract.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - api/app/models/post.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/tests/test_posts.py
+  - web/lib/auth.ts
+  - web/components/app-shell.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The UI inconsistency was rooted in missing backend aggregate fields, not in a separate profile-only post renderer. Putting the counts into the API keeps Home, Profile, and Post Detail aligned through the same shared post component.
+- Notes:
+  - Existing rows with no replies or quotes still correctly return `0`; counts now reflect actual non-deleted reply and quote rows in the posts table.
+- Verified Working?: partial — `npm run build` in `web` passed after the count wiring; targeted API test execution was attempted with `pytest api/tests/test_posts.py` but `pytest` is not installed or not available on this shell `PATH`, so backend test execution could not be completed here.
+- Date/Time: 2026-08-29 10:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Finish the spacing cleanup by removing page-owned content-box rules and enforcing one reusable outer layout wrapper across Home, Chat, Connections, Notifications, Settings, Starred, and Profile.
+- Changes:
+  - Reused `web/components/page-surface.tsx` as the shared first-level wrapper and mounted it from `home-screen.tsx`, `connections-screen.tsx`, `notifications-screen.tsx`, `starred-screen.tsx`, `screens.tsx`, `account-screens.tsx`, and `profile-screen.tsx`.
+  - Updated `web/app/globals.css` to strip remaining outer padding from `.messages-screen`, `.notifications-screen`, `.simple-screen`, and `.profile-screen`, and normalized shared inset usage for `chat-header` and `connection-tabs`.
+  - Removed the duplicate outer `profile-screen` spacing block so profile layout now inherits the shared page contract instead of overriding it mid-file.
+  - Updated `packages/design/design.md` with a dedicated `PageSurface` contract and tightened the `ContentBox` responsibility split so future screens do not reintroduce their own outer gutters or max-width rules.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/page-surface.tsx
+  - web/components/home-screen.tsx
+  - web/components/connections-screen.tsx
+  - web/components/notifications-screen.tsx
+  - web/components/starred-screen.tsx
+  - web/components/screens.tsx
+  - web/components/account-screens.tsx
+  - web/components/profile-screen.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The remaining width mismatch was still coming from screen wrappers and header/tab elements quietly owning their own page insets. A shared `PageSurface` plus a stricter `ContentBox` contract is the cleaner long-term fix because it leaves page-level width and gutter control in one place.
+- Notes:
+  - This pass keeps each screen's internal row/card structure intact; it only centralizes the outer surface contract and removes duplicate layout ownership.
+- Verified Working?: yes — `npm run build` in `web` passed after the shared `PageSurface` rollout and content-box spacing cleanup.
+
+- Date/Time: 2026-08-29 09:55 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Finish the shared-row rollout for Starred, cap desktop app content width at 1024px, and move the Settings profile Name action inline with the field.
+- Changes:
+  - Confirmed `web/components/connections-screen.tsx` was already using the shared `ListRow` primitive, so no further Connections refactor was needed.
+  - Updated `web/components/starred-screen.tsx` to render Starred items as `ListRow` summaries linking to post detail, with lightweight inline reply/quote actions preserved inside the row body.
+  - Updated `web/app/globals.css` so the shared `content-box` now caps logged-in content at `1024px` on desktop and centers it, and added Starred-row styling.
+  - Updated `web/components/account-screens.tsx` so the Profile `Name` row puts the input and update button on the same horizontal field row instead of dropping the button below.
+  - Updated `packages/design/design.md` so the desktop content-width cap, `ContentBox` ownership of that cap, the row-based Starred direction, and the inline single-line settings field rule are explicit.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/starred-screen.tsx
+  - web/components/account-screens.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Connections already satisfied the shared-row requirement, so the remaining row-consistency work was Starred. The desktop width cap belongs in the shared container rather than in per-screen patches, and single-line settings fields read cleaner when the save action stays on the same row as the edited value.
+- Notes:
+  - Starred is now intentionally a row-summary surface rather than a full feed-card surface; post detail remains the place for the full post layout.
+- Verified Working?: yes — `npm run build` in `web` passed after the Starred/layout/settings updates.
+
+- Date/Time: 2026-08-29 09:40 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Adjust quote-post feed cards so `Show more...` appears below the quoted block and reduce the visual emphasis of that link, then sync docs and logs.
+- Changes:
+  - Updated `web/components/feed-post.tsx` so the feed `Show more...` link renders after the optional quoted-post block instead of before it.
+  - Updated `web/app/globals.css` so `Show more...` uses muted color and regular weight by default, with a darker hover/focus state instead of the earlier stronger emphasized look.
+  - Updated `packages/design/design.md` to record both the quote-placement rule and the lighter default styling contract for `Show more...`.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/feed-post.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: On quote cards, the quoted block is part of the content stack, so the route affordance should come after it. The link styling also needed to be quieter so it reads like secondary navigation rather than a primary content callout.
+- Notes:
+  - This only changes feed-card rendering; dedicated post pages still show the full post body without the extra feed link.
+- Verified Working?: yes — `npm run build` in `web` passed after the feed quote/link update.
+
+- Date/Time: 2026-08-29 09:30 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Tighten the design-system rule so future agents cannot reintroduce competing page gutters, and sync all three project-tracking docs.
+- Changes:
+  - Strengthened `packages/design/design.md` with an explicit `Page Gutter Ownership Rule` under Layout.
+  - Added a matching token-ownership rule clarifying that `ContentBox` owns the outer page gutter, while row/card primitives may reuse the inset token only for internal content alignment.
+  - Added a dedicated `ContentBox` component contract spelling out the allowed responsibility split and prohibiting child screens from adding duplicate page-level gutters or default width narrowing.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The earlier note was directionally correct but still too easy to bypass. Converting it into an explicit ownership contract makes the spacing system much harder to accidentally fragment in future UI work.
+- Notes:
+  - No runtime code changed in this pass; the goal was to lock in the rule at the design-system level after the gutter fix.
+- Verified Working?: yes — `npm run build` in `web` passed after the design-doc tightening and log sync.
+
+- Date/Time: 2026-08-29 09:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the remaining inconsistent page width/padding issue by making the shared content container own the responsive horizontal gutter, then sync the logs.
+- Changes:
+  - Updated `web/app/globals.css` so `ContentBox` now owns the standard horizontal page gutter through shared inline padding, rather than leaving each screen to invent its own side inset.
+  - Flattened `.simple-screen` and `.settings-screen` to fill the shared container instead of imposing their own narrower centered width and duplicate horizontal padding.
+  - Removed the extra left/right padding from `.notifications-screen` so notifications now align to the same container rails as Home and Settings.
+  - Updated `packages/design/design.md` to document that `ContentBox` is the canonical owner of app-page horizontal gutters and child screens should fit responsively inside it.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The remaining misalignment was caused by spacing being controlled in too many places at once. Making the shared container own page gutters is the cleaner long-term rule because it keeps screen components focused on their internal layout instead of competing over page margins.
+- Notes:
+  - Feed rows, settings rows, and notification rows now all inherit the same outer page gutter from the shared container while keeping their own internal row padding contracts.
+- Verified Working?: yes — `npm run build` in `web` passed after the content-box gutter centralization.
+
+- Date/Time: 2026-08-29 09:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move Settings username editing into the Profile tab as its own row, make feed cards always show the post-detail link, show reply previews in the composer, and add reply/quote counts beside feed actions.
+- Changes:
+  - Updated `web/components/account-screens.tsx` so Settings > Profile now owns separate `Name`, `Username`, and `About` rows with independent update buttons and status messages, while Settings > Account now contains only `Email` and `User ID`.
+  - Extended `web/components/composer.tsx` from quote-only preview naming to a generic referenced-post preview so both reply and quote composition can show the target post inline.
+  - Updated `web/components/app-shell.tsx` and `web/app/posts/[postId]/post-client.tsx` so both reply and quote flows pass the referenced post into the composer preview surface.
+  - Updated `web/components/feed-post.tsx` so feed cards always render `Show more...` in feed contexts and display reply/quote counts beside their action icons.
+  - Extended `web/lib/data.ts` with a `quotes` field on the frontend `Post` model and initialized the current API-mapped values to `0` pending backend quote-count support.
+  - Updated `web/app/globals.css` and `packages/design/design.md` so the feed action bar, always-visible post-detail link rule, and revised settings tab ownership are documented and styled consistently.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/account-screens.tsx
+  - web/components/composer.tsx
+  - web/components/app-shell.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - web/components/feed-post.tsx
+  - web/lib/data.ts
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The settings split should match the product model instead of bundling unrelated editable fields behind one save path, and the feed needed a stable route affordance plus clearer social context around replies and quotes. Reusing the shared row and composer primitives keeps future UI changes cheaper.
+- Notes:
+  - Reply and quote counts are now rendered in the UI contract, but they currently initialize to `0` because the backend response does not yet expose aggregate counts.
+  - The always-visible `Show more...` rule applies to feed-card contexts; dedicated post detail surfaces still render the full post body without the extra self-link.
+- Verified Working?: yes — `npm run build` in `web` passed after the settings/profile split and feed/composer updates.
 
 - Date/Time: 2026-08-29 08:40 +05:00
 - Agent: Codex

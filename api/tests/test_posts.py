@@ -70,3 +70,23 @@ def test_post_serialization_includes_display_name() -> None:
 
     assert serialized.author_username == "author"
     assert serialized.author_display_name == "Author Name"
+
+
+def test_post_serialization_includes_reply_and_quote_counts() -> None:
+    author = User(
+        id=uuid.uuid4(),
+        email="author@example.com",
+        username="author",
+        display_name="Author Name",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+    post = Post(id=uuid.uuid4(), user_id=author.id, content="Hello")
+    post.user = author
+    post.reply_count = 3
+    post.quote_count = 2
+
+    serialized = serialize_post(post)
+
+    assert serialized.reply_count == 3
+    assert serialized.quote_count == 2

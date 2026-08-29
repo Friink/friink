@@ -1,0 +1,41 @@
+TASK: Fix intermittent "invalid token" errors that occur after a new build is deployed. Expected behavior: an already-logged-in user should remain seamlessly logged in across a deployment — no forced logout/re-login, no invalid-token errors — unless there's a deliberate reason to invalidate their session (e.g. a security-relevant auth change). Diagnose with real evidence first; do not guess-fix.
+
+CONTEXT
+- Auth flow: PyJWT access tokens + httpOnly refresh cookie; bcrypt for password hashing.
+- Hosted on Vercel serverless (separate web and API projects, each redeployed independently on push).
+- Staging and production currently share the same Neon Postgres database intentionally.
+- Symptom: after pushing a new build, some users intermittently get "invalid token" errors — not every user, not every deploy, not consistently reproducible on demand. Between deploys, sessions are stable.
+- Working theory (not yet confirmed): a JWT/session issue tied to the deploy boundary — e.g. Vercel serving old and new deployment instances simultaneously during rollover, causing a token signed/verified by one instance to be rejected by another. This is a theory to test, not an assumed root cause — confirm with evidence before fixing.
+
+STEP 1 — ADD TEMPORARY DEBUG LOGGING (no behavior changes yet)
+In the JWT verification / auth middleware path, add temporary structured logging on every verification failure capturing:
+  - The specific PyJWT exception type (ExpiredSignatureError, InvalidSignatureError, DecodeError, InvalidTokenError, etc.) — not just a generic "invalid token" message
+  - The token's `iat` / `exp` claims (decoded without verification, for logging only) vs. current server time
+  - Which deployment instance handled the request — use Vercel's built-in `VERCEL_GIT_COMMIT_SHA` env var (already available at build time, no new plumbing needed) and include it in the log line
+  - Whether the failing request was a fresh login, a refresh-token exchange, or a normal authenticated request using an existing access token
+Deploy this logging to staging before moving to Step 2.
+
+STEP 2 — REPRODUCE ACROSS A DEPLOY BOUNDARY AND COLLECT EVIDENCE
+- Log into staging normally, keep the session active, then trigger a new staging deployment (a trivial commit is fine).
+- Continue using the app across that deploy boundary and try to capture at least one real invalid-token occurrence with the Step 1 logging.
+- Report back: what exception type occurred, whether the `VERCEL_GIT_COMMIT_SHA` differed between when the token was issued vs. when it failed verification, and the timing relative to the deploy.
+- Do not proceed to Step 3 until this evidence is collected and reported.
+
+STEP 3 — FIX BASED ON EVIDENCE
+- If evidence shows signature/secret mismatch correlated with deploy SHA changes: confirm `JWT_SECRET` (or equivalent signing key) is a static Vercel env var that is NOT regenerated or derived differently per deployment/instance. This is the most likely fix if confirmed — a stable secret should mean tokens remain valid across deploys.
+- If evidence shows expired-token errors clustered right at deploy time: investigate whether the refresh-cookie renewal flow has a race condition when a request lands on a new instance mid-refresh; consider a small `leeway` on JWT verification, and/or a client-side retry-once-after-refresh pattern for a request that gets a 401.
+- If evidence shows it's isolated to users who had an old JS bundle loaded pre-deploy (stale client): this may not need a backend code fix — document it as expected behavior (resolves on page reload) rather than engineering around it, unless it's frequent enough to matter.
+- Apply only the fix indicated by the actual evidence — do not apply multiple speculative changes at once.
+
+STEP 4 — VERIFY EXPECTED BEHAVIOR EXPLICITLY
+- Confirm: a user logged in before a deploy remains logged in and functional immediately after that deploy completes, with no invalid-token error and no forced re-login, across at least 2-3 real deploy-boundary tests on staging.
+- If any scenario still requires a re-login after a deploy, state clearly which scenario and why (e.g. "only if the JWT payload structure itself changes, which is expected") rather than reporting full success.
+
+STEP 5 — CLEAN UP
+- Remove or gate the Step 1 debug logging behind an env flag before merging — do not leave verbose token claim logging on permanently in production (sensitive data).
+- Commit only after Step 4 verification passes.
+
+SCOPE / CONSTRAINTS
+- Do not touch the magic link / OTP dual-redemption login flow unless Step 2's evidence points there specifically.
+- Do not log full token strings or the signing secret itself, even temporarily — decoded claims only.
+- Do not add unrelated auth changes; keep this scoped to the deploy-boundary token issue.

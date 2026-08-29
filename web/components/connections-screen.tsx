@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ListRow } from '@/components/list-row';
+import { PageSurface } from '@/components/page-surface';
 import type { Connection, ConnectionRequest } from '@/lib/data';
 
 type ConnectionsScreenProps = {
@@ -36,7 +37,7 @@ export function ConnectionsScreen({
   }
 
   return (
-    <div className="connections-screen">
+    <PageSurface className="connections-screen" variant="list">
       <div className="connection-list">
         {isRequestsView && incomingRequests.length > 0 ? (
           incomingRequests.map((request) => (
@@ -96,6 +97,6 @@ export function ConnectionsScreen({
           </div>
         )}
       </div>
-    </div>
+    </PageSurface>
   );
 }

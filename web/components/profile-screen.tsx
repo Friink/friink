@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { FeedPost } from '@/components/feed-post';
 import { Tabs } from '@/components/tabs';
@@ -59,7 +60,7 @@ export function ProfileScreen({
   const action = getConnectionAction(connectionState, { onFollow, onCancelRequest, onUnfollow });
 
   return (
-    <section className="profile-screen">
+    <PageSurface className="profile-screen">
       <div className="profile-intro">
         <ProfileCard
           name={user.name}
@@ -123,7 +124,7 @@ export function ProfileScreen({
           </div>
         )}
       </div>
-    </section>
+    </PageSurface>
   );
 }
 

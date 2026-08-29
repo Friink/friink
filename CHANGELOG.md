@@ -30,7 +30,7 @@ _Last updated: 2026-08-29_
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
-- [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and the settings account username field now matches the signup prefix treatment.
+- [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
 - [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
 - [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
@@ -41,6 +41,83 @@ _Last updated: 2026-08-29_
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
 
 ## 2026-08-29
+
+### Fixed
+- [api] Posts now return real `reply_count` and `quote_count` aggregates from the database instead of leaving the frontend to hardcode zeros.
+- [web] Home, Profile, and Post Detail now all read the same API-backed reply/quote counts through the shared `FeedPost` mapping path, so post action counts stay consistent across surfaces.
+
+### Verified
+- [web] `npm run build` passed in `web` after wiring real post counts through the API/frontend contract.
+
+### Changed
+- [web] Kept the shared floating composer active on profile pages, and when viewing another user's profile it now seeds the post draft with their `@username` as an editable mention suggestion.
+- [docs] Updated `packages/design/design.md` to record the profile-page floating composer and removable mention-prefill rule.
+
+### Verified
+- [web] `npm run build` passed in `web` after the profile floating-composer update.
+
+### Fixed
+- [web] Corrected the mobile navigation back-button availability so it reflects real browser history instead of disabling itself just because the current screen is `Home`; returning to Home after visiting Connections, a profile, or a post now still leaves back navigation available.
+
+### Verified
+- [web] `npm run build` passed in `web` after the back-button history fix.
+
+### Changed
+- [web] Brought the persistent floating bar onto the same centered content rail as `ContentBox` and inset it by `16px` on both sides, so it no longer renders wider than the app content on large screens.
+- [docs] Updated `packages/design/design.md` and `AGENTLOG.md` with stricter reuse guidance: prefer shared layout primitives over new wrapper components, and avoid inline or targeted spacing fixes for global layout issues.
+
+### Verified
+- [web] `npm run build` passed in `web` after the floating-bar rail alignment and design/log guidance update.
+
+### Fixed
+- [web] Moved Home, Chat list, Notifications, Connections, Starred, Settings, and Profile onto a shared `PageSurface` wrapper so screen components no longer carry their own competing outer content-box spacing rules.
+- [web] Removed the remaining page-specific outer padding from the logged-in screens and normalized shared inset usage in headers and tabs, so the `ContentBox` contract now drives width and horizontal rhythm consistently across those surfaces.
+- [docs] Updated `packages/design/design.md` to make `PageSurface` the required first-level screen wrapper inside `ContentBox`, with `ContentBox` as the sole owner of app-page max width, centering, and side gutters.
+
+### Verified
+- [web] `npm run build` passed in `web` after the page-surface unification and spacing cleanup.
+
+### Changed
+- [web] Confirmed Connections was already on the shared `ListRow` primitive and converted the Starred screen to the same row-summary pattern, with rows opening post detail while keeping lightweight reply/quote actions available.
+- [web] Capped the shared logged-in `ContentBox` at `1024px` on desktop and centered it within the main panel so wide screens no longer stretch primary content awkwardly.
+- [web] Moved the Settings > Profile `Name` update button onto the same row as the input, matching the `Username` row pattern.
+- [docs] Updated `packages/design/design.md` so the `1024px` desktop content cap, Starred row-summary direction, and inline single-line settings field rule are explicit.
+
+### Verified
+- [web] `npm run build` passed in `web` after the Starred row conversion, desktop width cap, and inline Name-row update.
+
+### Fixed
+- [web] Quote posts now place the feed `Show more...` link below the quoted-post block instead of above it, so the quote card stays visually attached to the post body it belongs with.
+- [web] Softened the feed `Show more...` treatment from emphasized link styling to a lighter, regular-weight secondary affordance.
+- [docs] Updated `packages/design/design.md` to lock in the quoted-post `Show more...` placement rule and the lighter default link styling.
+
+### Verified
+- [web] `npm run build` passed in `web` after the quote-card `Show more...` placement and styling update.
+
+### Changed
+- [docs] Strengthened `packages/design/design.md` so page-gutter ownership is now an explicit contract: `ContentBox` owns the outer responsive inset, row/card primitives may reuse the inset token internally, and screen wrappers must not add duplicate page-width centering or side gutters unless a documented exception exists.
+
+### Verified
+- [web] `npm run build` passed in `web` after tightening the design-system ownership rule and syncing the repo logs.
+
+### Fixed
+- [web] Centralized the primary app-page horizontal gutter inside the shared `ContentBox` and removed competing screen-level side padding/width assumptions from Settings and Notifications, so Home, Settings, and Notifications now align to the same responsive content rails.
+- [docs] Updated `packages/design/design.md` to make `ContentBox` the owner of the standard app-page horizontal gutter instead of leaving inset control to individual screens.
+
+### Verified
+- [web] `npm run build` passed in `web` after the shared content-box gutter fix.
+
+### Changed
+- [web] Moved `Username` from Settings > Account into Settings > Profile, where `Name`, `Username`, and `About` now render as separate shared-row sections with independent update buttons and status messages.
+- [web] Changed the shared composer preview behavior so replies show the referenced post in the composer just like quotes, improving composition clarity on both the home timeline and dedicated post page.
+- [web] Added visible reply and quote counts beside the corresponding feed action icons, keeping the action bar aligned while making thread/citation activity scannable.
+- [docs] Updated `packages/design/design.md` so the settings tab ownership, always-visible feed `Show more...` rule, and feed action-count contract are explicit.
+
+### Fixed
+- [web] Feed cards now always render the `Show more...` link to the post detail route instead of showing it only when body overflow is detected.
+
+### Verified
+- [web] `npm run build` passed in `web` after the settings row split, composer reply-preview change, and feed action/show-more updates.
 
 ### Fixed
 - [web] Corrected drawer interaction behavior so the header hamburger persists the desktop open/collapsed state across route changes, while drawer item taps still close the drawer on mobile and outside clicks continue to dismiss it on mobile only.

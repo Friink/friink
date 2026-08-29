@@ -4,7 +4,7 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, query_expression, relationship
 
 from app.db import Base
 
@@ -54,6 +54,8 @@ class Post(Base):
     replies = relationship("Post", foreign_keys=[parent_post_id], back_populates="parent_post")
     quoted_post = relationship("Post", remote_side=[id], foreign_keys=[quoted_post_id])
     media = relationship("PostMedia", back_populates="post", cascade="all, delete-orphan")
+    reply_count: Mapped[int] = query_expression()
+    quote_count: Mapped[int] = query_expression()
 
 
 class PostMedia(Base):

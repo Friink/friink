@@ -19,6 +19,8 @@
   --space-home-nav-height: 2.5rem;
   --space-floating-bar-height: 3.5rem;
   --space-sidebar-collapsed-width: 4.5rem;
+  --space-content-inset-inline: 1rem;
+  --space-content-inset-block: 0.75rem;
 }
 
 html,
@@ -1401,19 +1403,17 @@ textarea {
 
 .simple-screen {
   display: grid;
-  justify-items: center;
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 4rem 1rem;
+  justify-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   color: var(--color-muted);
   text-align: center;
 }
 
-/* Settings screen: reduce top padding so tab bar sits under header */
 .settings-screen {
-  padding-top: 0.5rem;
   justify-items: start;
-  width: min(100%, 26rem);
+  width: 100%;
 }
 
 .simple-screen > i {
@@ -1483,32 +1483,48 @@ textarea {
 .settings-panel {
   display: grid;
   gap: 1rem;
-  width: min(100%, 26rem);
+  width: 100%;
 }
 
-.settings-preference {
+.settings-section {
   display: grid;
-  width: min(100%, 26rem);
+  width: 100%;
   margin-top: 1rem;
-  padding: 1.25rem;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-paper);
+}
+
+.settings-row {
+  min-height: 0;
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
+.settings-row:hover,
+.settings-row:focus-visible,
+.settings-row.list-row-unread {
+  background: transparent;
+}
+
+.settings-row .list-row-avatar {
+  align-self: flex-start;
+  padding-top: 0.125rem;
+}
+
+.settings-row-expanded .list-row-copy {
+  gap: 0.6rem;
+}
+
+.settings-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  background: var(--color-paper);
-  text-align: left;
-  gap: 1rem;
-}
-
-.settings-preference h3,
-.settings-toggle-item h4 {
-  margin: 0;
   color: var(--color-ink);
-  font-size: 1rem;
-}
-
-.settings-preference p,
-.settings-toggle-item p {
-  margin: 0.25rem 0 0;
-  color: var(--color-muted);
+  background: var(--color-paper);
 }
 
 
@@ -1697,23 +1713,6 @@ textarea {
   }
 }
 
-.settings-toggle-list {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.settings-toggle-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.35rem;
-}
-
-.settings-toggle-item > div {
-  flex: 1;
-}
-
 .settings-toggle-pill {
   min-width: 4.25rem;
   min-height: 2rem;
@@ -1762,7 +1761,7 @@ textarea {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 1.25rem 1rem 6rem;
+  padding: 0;
 }
 
 .messages-toolbar,
@@ -1837,7 +1836,7 @@ textarea {
   min-height: 4.5rem;
   border: 0;
   border-bottom: 1px solid var(--color-line);
-  padding: 0.75rem 1rem;
+  padding: var(--space-content-inset-block) var(--space-content-inset-inline);
   color: var(--color-ink);
   background: transparent;
   text-align: left;
@@ -1896,6 +1895,11 @@ textarea {
   white-space: nowrap;
 }
 
+.list-row-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .list-row-trailing {
   display: inline-flex;
   flex: 0 0 auto;
@@ -1926,7 +1930,7 @@ textarea {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 1.25rem 1rem 6rem;
+  padding: 0;
 }
 
 .notifications-list {
@@ -2004,7 +2008,7 @@ textarea {
 .chat-header {
   min-height: var(--space-topbar-height);
   margin: 0;
-  padding: 0 1rem;
+  padding: 0 var(--space-content-inset-inline);
   border-bottom: 1px solid var(--color-line);
   box-sizing: border-box;
   width: 100%;
@@ -2344,6 +2348,7 @@ textarea {
 .profile-screen {
   width: 100%;
   margin: 0;
+  padding: 0;
 }
 
 .profile-intro {
@@ -2351,7 +2356,7 @@ textarea {
   grid-template-columns: auto 1fr;
   align-items: start;
   gap: 0.875rem;
-  padding: 1.25rem 1rem 1rem;
+  padding: 1.25rem 0 1rem;
 }
 
 .profile-large-avatar {
@@ -2397,7 +2402,7 @@ textarea {
 .profile-stats {
   display: flex;
   gap: 1.25rem;
-  padding: 0 1rem 1rem 5.875rem;
+  padding: 0 0 1rem 5.875rem;
   color: var(--color-muted);
   font-size: var(--text-xs);
 }
@@ -2410,14 +2415,14 @@ textarea {
 .profile-edit-row {
   display: flex;
   justify-content: flex-end;
-  padding: 0 1rem 1rem 5.875rem;
+  padding: 0 0 1rem 5.875rem;
 }
 
 .profile-actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
-  padding: 0 1rem 1rem;
+  padding: 0 0 1rem;
 }
 
 .profile-action-button {
@@ -2494,16 +2499,10 @@ textarea {
   display: grid;
 }
 
-.profile-screen {
-  width: 100%;
-  margin: 0;
-  padding: 0.75rem 1rem 1rem;
-}
-
 .profile-intro {
   display: flex;
   justify-content: flex-start;
-  padding: 0;
+  padding: 0.75rem 0 0;
 }
 
 .profile-bio {
@@ -2561,7 +2560,7 @@ textarea {
   display: flex;
   gap: 0.25rem;
   overflow-x: auto;
-  padding: 0 1rem;
+  padding: 0 var(--space-content-inset-inline);
   border-bottom: 1px solid var(--color-line);
   scrollbar-width: none;
 }
@@ -2652,7 +2651,7 @@ textarea {
 }
 
 .feed-post {
-  padding: 0.75rem 1rem 0.5rem;
+  padding: var(--space-content-inset-block) var(--space-content-inset-inline) 0.5rem;
   border-bottom: 1px solid var(--color-line);
 }
 
@@ -2708,6 +2707,45 @@ textarea {
   width: 100%;
 }
 
+.starred-list {
+  display: grid;
+}
+
+.starred-row {
+  min-height: 0;
+}
+
+.starred-row .list-row-subtitle {
+  white-space: nowrap;
+}
+
+.starred-row-icon {
+  color: var(--color-brand);
+}
+
+.starred-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.starred-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  padding: 0;
+  color: var(--color-muted);
+  background: transparent;
+  font-size: var(--text-xs);
+}
+
+.starred-row-actions button:hover,
+.starred-row-actions button:focus-visible {
+  color: var(--color-ink);
+  outline: none;
+}
+
 .feed-post-body {
   margin: 0.625rem 0;
   font-size: var(--text-sm);
@@ -2726,14 +2764,15 @@ textarea {
   display: inline-block;
   margin-top: -0.125rem;
   margin-bottom: 0.625rem;
-  color: var(--color-brand);
+  color: var(--color-muted);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 400;
   text-decoration: none;
 }
 
 .feed-post-show-more:hover,
 .feed-post-show-more:focus-visible {
+  color: var(--color-ink);
   text-decoration: underline;
   outline: none;
 }
@@ -2795,11 +2834,20 @@ textarea {
 }
 
 .feed-post-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   border: 0;
   padding: 0.25rem;
   color: var(--color-ink);
   background: transparent;
   font-size: 1rem;
+}
+
+.feed-post-actions button span {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
 }
 
 .post-detail-screen {
@@ -2895,11 +2943,28 @@ input[type="search"]:focus {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0 0 3rem;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 var(--space-content-inset-inline) 3rem;
   flex: 1 1 auto;
   min-height: 0;
   overflow: visible;
   overscroll-behavior: contain;
+}
+
+.page-surface {
+  width: 100%;
+  margin: 0;
+  min-width: 0;
+}
+
+.page-surface-list {
+  display: grid;
+}
+
+.page-surface-stack {
+  display: grid;
+  gap: 1rem;
 }
 
 .home-filter {
@@ -2937,13 +3002,14 @@ input[type="search"]:focus {
 /* Contextual floating bar */
 .floating-bar {
   position: fixed;
-  right: 1.25rem;
+  right: 1rem;
   bottom: max(1rem, env(safe-area-inset-bottom));
-  left: 1.25rem;
+  left: 1rem;
   z-index: 3;
   display: flex;
   justify-content: space-between;
-  width: min(calc(100% - 2.5rem), 28rem);
+  width: calc(100% - 2rem);
+  max-width: calc(1024px - 2rem);
   height: var(--space-floating-bar-height);
   margin: 0 auto;
   padding: 0.375rem;
@@ -2955,13 +3021,14 @@ input[type="search"]:focus {
 
 .floating-bar-contextual {
   justify-content: stretch;
-  width: calc(100% - 2.5rem);
+  width: 100%;
+  max-width: none;
   height: auto;
   min-height: var(--space-floating-bar-height);
 }
 
 .floating-bar:not(.floating-bar-contextual) {
-  width: max-content;
+  width: min(max-content, 100%);
 }
 
 .floating-bar-item {
@@ -3026,19 +3093,21 @@ input[type="search"]:focus {
   .floating-bar {
     left: var(--desktop-sidebar-width);
     right: 0;
-    width: max-content;
+    width: calc(100% - 2rem);
+    max-width: calc(1024px - 2rem);
     transform: none;
   }
 
   .floating-bar.floating-bar-contextual {
-    left: calc(var(--desktop-sidebar-width) + 1.25rem);
-    right: 1.25rem;
-    width: auto;
+    left: var(--desktop-sidebar-width);
+    right: 0;
+    width: calc(100% - 2rem);
+    max-width: calc(1024px - 2rem);
     transform: none;
   }
 
   .floating-bar:not(.floating-bar-contextual) {
-    width: max-content;
+    width: min(max-content, calc(1024px - 2rem));
   }
 
   .sidebar {

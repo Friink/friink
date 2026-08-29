@@ -1,14 +1,53 @@
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import aliased, selectinload, with_expression
 
 from app.models.post import Post, PostKind
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh
+
+
+def post_count_expressions():
+    reply_post = aliased(Post)
+    quote_post = aliased(Post)
+    reply_count = (
+        select(func.count())
+        .select_from(reply_post)
+        .where(
+            reply_post.deleted_at.is_(None),
+            reply_post.kind == PostKind.REPLY,
+            reply_post.parent_post_id == Post.id,
+        )
+        .correlate(Post)
+        .scalar_subquery()
+    )
+    quote_count = (
+        select(func.count())
+        .select_from(quote_post)
+        .where(
+            quote_post.deleted_at.is_(None),
+            quote_post.kind == PostKind.QUOTE,
+            quote_post.quoted_post_id == Post.id,
+        )
+        .correlate(Post)
+        .scalar_subquery()
+    )
+    return reply_count, quote_count
+
+
+def post_load_options():
+    reply_count, quote_count = post_count_expressions()
+    return (
+        selectinload(Post.user),
+        selectinload(Post.quoted_post).selectinload(Post.user),
+        with_expression(Post.reply_count, reply_count),
+        with_expression(Post.quote_count, quote_count),
+    )
+
 
 async def create_post(session: Session, user: User, data: CreatePostRequest) -> Post:
     if data.media is not None:
@@ -52,7 +91,7 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
 async def get_posts(session: Session) -> list[Post]:
     result = session.execute(
         select(Post)
-        .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
+        .options(*post_load_options())
         .where(Post.deleted_at.is_(None), Post.kind != PostKind.REPLY)
         .order_by(Post.created_at.desc())
     )
@@ -62,7 +101,7 @@ async def get_posts(session: Session) -> list[Post]:
 async def get_post_replies(session: Session, post_id: uuid.UUID) -> list[Post]:
     result = session.execute(
         select(Post)
-        .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
+        .options(*post_load_options())
         .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY, Post.parent_post_id == post_id)
         .order_by(Post.created_at.asc())
     )
@@ -72,7 +111,7 @@ async def get_post_replies(session: Session, post_id: uuid.UUID) -> list[Post]:
 async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:
     result = session.execute(
         select(Post)
-        .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
+        .options(*post_load_options())
         .where(Post.id == post_id, Post.deleted_at.is_(None))
     )
     return result.scalar_one_or_none()
@@ -81,7 +120,7 @@ async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:
 async def get_post_for_response(session: Session, post_id: uuid.UUID) -> Post:
     result = session.execute(
         select(Post)
-        .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
+        .options(*post_load_options())
         .where(Post.id == post_id)
     )
     post = result.scalar_one()
@@ -99,6 +138,8 @@ def serialize_post(post: Post) -> PostResponse:
         media_count=post.media_count,
         parent_post_id=post.parent_post_id,
         quoted_post_id=post.quoted_post_id,
+        reply_count=post.reply_count or 0,
+        quote_count=post.quote_count or 0,
         quoted_post=serialize_quoted_post(post.quoted_post, post.quoted_post_id),
         created_at=post.created_at,
         updated_at=post.updated_at,
