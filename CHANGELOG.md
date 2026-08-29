@@ -42,6 +42,12 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Fixed
+- [web] Corrected the mobile navigation back-button availability so it reflects real browser history instead of disabling itself just because the current screen is `Home`; returning to Home after visiting Connections, a profile, or a post now still leaves back navigation available.
+
+### Verified
+- [web] `npm run build` passed in `web` after the back-button history fix.
+
 ### Changed
 - [web] Brought the persistent floating bar onto the same centered content rail as `ContentBox` and inset it by `16px` on both sides, so it no longer renders wider than the app content on large screens.
 - [docs] Updated `packages/design/design.md` and `AGENTLOG.md` with stricter reuse guidance: prefer shared layout primitives over new wrapper components, and avoid inline or targeted spacing fixes for global layout issues.

@@ -47,6 +47,22 @@
   - This pass changes the bar’s shell width contract only; composer behavior inside the bar remains unchanged.
 - Verified Working?: yes — `npm run build` in `web` passed after the floating-bar rail alignment and reuse-guardrail documentation update.
 
+- Date/Time: 2026-08-29 10:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the navigation back button so Home can still go back when actual browser history exists.
+- Changes:
+  - Updated `web/components/app-shell.tsx` to derive back-button availability from real browser history instead of forcing it off whenever the active screen is `home`.
+  - Hooked the back-state refresh to both screen changes and pathname changes so routed pages such as Home, Connections, profiles, and post detail stay in sync with browser navigation state.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The previous logic mixed a routing assumption into a browser-history control. That made Home incorrectly disable back navigation after legitimate in-app route changes.
+- Notes:
+  - A first direct load with no prior history still remains correctly disabled.
+- Verified Working?: yes — `npm run build` in `web` passed after the back-button history fix.
 - Date/Time: 2026-08-29 10:20 +05:00
 - Agent: Codex
 - Model: GPT-5

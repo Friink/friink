@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
 import { ProfileScreen } from '@/components/profile-screen';
@@ -68,6 +68,7 @@ function getInitials(username: string) {
 
 export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange }: AppShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
@@ -93,13 +94,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   useEffect(() => {
     const updateBackAvailability = () => {
-      setCanGoBack(activeScreen !== 'home' && window.history.length > 1);
+      setCanGoBack(window.history.length > 1);
     };
 
     updateBackAvailability();
     window.addEventListener('popstate', updateBackAvailability);
     return () => window.removeEventListener('popstate', updateBackAvailability);
-  }, [activeScreen]);
+  }, [activeScreen, pathname]);
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 767px)');
