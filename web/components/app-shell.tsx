@@ -30,6 +30,7 @@ import {
   listIncomingFollowRequests,
   listNotifications,
   listOutgoingFollowRequests,
+  markAllNotificationsRead,
   getUnreadNotificationCount,
   listPosts,
   loadAuthSession,
@@ -295,21 +296,40 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         setOutgoingRequests([]);
       });
 
+    const viewingNotifications = activeScreen === 'notifications';
+
     listNotifications(session.accessToken, { limit: 40 })
       .then((page) => {
-        setNotifications(page.items.map(mapApiNotification));
+        const notificationItems = page.items.map(mapApiNotification);
+        setNotifications(viewingNotifications ? notificationItems.map((notification) => ({ ...notification, tone: 'sage', unread: false })) : notificationItems);
       })
       .catch(() => {
         setNotifications([]);
       });
 
-    getUnreadNotificationCount(session.accessToken)
-      .then((response) => {
-        setUnreadNotificationCount(response.count);
-      })
-      .catch(() => {
-        setUnreadNotificationCount(0);
-      });
+    if (viewingNotifications) {
+      setUnreadNotificationCount(0);
+      setNotifications((current) => current.map((notification) => ({ ...notification, tone: 'sage', unread: false })));
+      markAllNotificationsRead(session.accessToken)
+        .catch(() => {
+          addToast('Could not mark notifications as read.');
+          return getUnreadNotificationCount(session.accessToken)
+            .then((response) => {
+              setUnreadNotificationCount(response.count);
+            })
+            .catch(() => {
+              setUnreadNotificationCount(0);
+            });
+        });
+    } else {
+      getUnreadNotificationCount(session.accessToken)
+        .then((response) => {
+          setUnreadNotificationCount(response.count);
+        })
+        .catch(() => {
+          setUnreadNotificationCount(0);
+        });
+    }
 
     const targetUsername = user.username;
     listFollowers(targetUsername)

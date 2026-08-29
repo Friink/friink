@@ -37,7 +37,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Starred (`fa-star` → `/starred`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
-   - Search (`fa-magnifying-glass` opens an inline header search box with suggestions)
+   - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
   - Notifications (`fa-bell` → `/notifications`, with unread count badge clamped to `99+`)
 
 ## Feed Behavior
@@ -249,7 +249,8 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input. The floating suggestions dropdown appears `8px` below the search input and matches the input width.
+  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search icon kept on the right as the submit button. The floating suggestions dropdown appears `8px` below the search input, matches the input width, and uses text-only rows without leading icons.
+  - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.
   - Notifications bell button (`fa-bell`) matches search icon height and opens `/notifications`, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
@@ -280,6 +281,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Purpose**: Reusable tab bar with animated sliding indicator line.
 - **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`). Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap.
 - **Props Contract**: `tabs?: Tab[]`, `activeId?: string`, `onChange?: (id: string) => void`, `ariaLabel?: string`, `className?: string`.
+- **Mobile Swipe Rule**: On mobile widths, horizontal swipes on the tab strip move one tab at a time: right-to-left selects the next tab, left-to-right selects the previous tab. Vertical scroll gestures must not trigger tab changes.
 
 ### 10. Form Inputs & Username Prefix Pattern (`InputField`, `account-screens.tsx`)
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.
@@ -310,6 +312,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Click Rule**: In Connections and Notifications, the visible `ProfileCard` links to `/[username]` through its `href` prop. Row-level actions such as Accept, Reject, Cancel, and Remove remain separate controls.
 - **Hover Rule**: Profile names inside `ListRow` identity links must not change color on hover or focus; only the row background and focus outline provide the interaction affordance.
 - **HTML Rule**: Do not nest a profile link inside a row rendered as a button. If a row needs a different primary click target, keep profile navigation and row navigation as separate valid interactive elements.
+- **Search Results Rule**: Search result pages must use `PageSurface` with shared `ListRow` rows and reusable identity blocks instead of bespoke result cards.
 
 ### 14. PageSurface (`web/components/page-surface.tsx`)
 - **Purpose**: Shared first-level screen wrapper used inside `ContentBox` so app pages inherit one layout contract instead of owning custom outer spacing.

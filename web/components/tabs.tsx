@@ -27,6 +27,7 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
   const active = activeId ?? internalActive;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
 
   useEffect(() => {
@@ -54,8 +55,46 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
     else setInternalActive(id);
   };
 
+  const handleSwipeTab = (direction: 'next' | 'previous') => {
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) return;
+
+    const activeIndex = tabsList.findIndex((tab) => tab.id === active);
+    if (activeIndex === -1) return;
+
+    const nextIndex = direction === 'next' ? activeIndex + 1 : activeIndex - 1;
+    const nextTab = tabsList[nextIndex];
+    if (!nextTab) return;
+
+    handleClick(nextTab.id);
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const touch = event.changedTouches[0];
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaY) > 40 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
+
+    handleSwipeTab(deltaX < 0 ? 'next' : 'previous');
+  };
+
   return (
-    <div className={`tabs ${className}`.trim()} ref={containerRef}>
+    <div
+      className={`tabs ${className}`.trim()}
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="tabs__inner" role="tablist" aria-label={ariaLabel}>
         {tabsList.map((t) => (
           <button

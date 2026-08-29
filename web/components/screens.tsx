@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Composer } from '@/components/composer';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { ProfileCard } from '@/components/profile-card';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
 import { formatRelativeTime } from '@/lib/time';
@@ -111,8 +112,79 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
   );
 }
 
+function getSearchParam(value: string | string[] | undefined) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw ? decodeURIComponent(raw) : '';
+}
+
 export function SearchScreen() {
-  return <><ScreenHeading eyebrow="Find your people" title="Search" copy="Look through your Friink space." /><div className="message-search">⌕ <span>Search Friink</span></div></>;
+  const params = useParams<{ query?: string | string[] }>();
+  const query = getSearchParam(params?.query);
+  const normalizedQuery = query.trim().toLowerCase();
+  const fallbackResults = [
+    {
+      id: 'people-muflah',
+      type: 'People',
+      name: 'Muflah',
+      handle: '@muflah',
+      initials: 'M',
+      tone: 'mint' as const,
+      summary: 'Profile result',
+    },
+    {
+      id: 'posts-dark-mode',
+      type: 'Posts',
+      name: 'Muflah',
+      handle: '@muflah',
+      initials: 'M',
+      tone: 'sage' as const,
+      summary: 'The dark mode should be darker.',
+    },
+    {
+      id: 'posts-connections',
+      type: 'Posts',
+      name: 'Muflah',
+      handle: '@muflah',
+      initials: 'M',
+      tone: 'sun' as const,
+      summary: 'Bug: Connections page ALL tab is not showing all connections.',
+    },
+  ];
+  const results = normalizedQuery
+    ? fallbackResults.filter((result) => `${result.type} ${result.name} ${result.handle} ${result.summary}`.toLowerCase().includes(normalizedQuery))
+    : [];
+
+  return (
+    <PageSurface className="search-screen" variant="list">
+      <div className="search-results-list">
+        {query ? (
+          results.length > 0 ? (
+            results.map((result) => (
+              <ListRow
+                key={result.id}
+                title={<ProfileCard name={result.name} handle={result.handle} initials={result.initials} tone={result.tone} href={`/${result.handle.replace('@', '')}`} />}
+                subtitle={result.summary}
+                meta={result.type}
+                className="search-result-row"
+              />
+            ))
+          ) : (
+            <div className="connections-empty">
+              <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+              <p>No results found.</p>
+              <span>Try another search.</span>
+            </div>
+          )
+        ) : (
+          <div className="connections-empty">
+            <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+            <p>Search Friink.</p>
+            <span>Use the header search to find people and posts.</span>
+          </div>
+        )}
+      </div>
+    </PageSurface>
+  );
 }
 
 export function CalendarScreen() {

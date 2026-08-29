@@ -54,7 +54,13 @@ _Last updated: 2026-08-30_
 
 ## 2026-08-30
 
+### Added
+- [web] Added the `/search/[query]` route so submitted header searches open canonical query URLs and render results using shared row layout primitives.
+- [web] Added mobile swipe gestures to the shared Tabs component: right-to-left advances to the next tab and left-to-right returns to the previous tab.
+
 ### Changed
+- [web] Kept the expanded header search icon on the right as a submit button, removed suggestion-row icons, and wired Enter/search-button submission to `/search/{searched-string}`.
+- [web] Visiting the Notifications page now marks notifications read through the existing API helper and immediately clears the header unread badge state.
 - [web] Kept profile names color-stable when hovering identity links inside shared list rows, including Connections rows.
 - [web] Locked the fixed mobile tab strip to the shared navigation bar height token so tabs begin on the next pixel after the navigation bar during slow scroll, preventing feed content from showing between them.
 - [web] Changed the header search action from route navigation to an inline search input with a same-width suggestions dropdown 8px below it, matched bell/search icon boxes, and adjusted notification badge spacing to avoid scrollbar clipping.
@@ -69,6 +75,12 @@ _Last updated: 2026-08-30_
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
+- [web] `npx tsc --noEmit` passed in `web` after the header search route/result layout change.
+- [web] `npm run build` passed in `web` after the header search route/result layout change.
+- [web] `npx tsc --noEmit` passed in `web` after wiring Notifications page visits to read-all badge clearing.
+- [web] `npm run build` passed in `web` after wiring Notifications page visits to read-all badge clearing.
+- [web] `npx tsc --noEmit` passed in `web` after the mobile tab swipe gesture change.
+- [web] `npm run build` passed in `web` after the mobile tab swipe gesture change.
 - [web] `npx tsc --noEmit` passed in `web` after the list-row profile-name hover fix.
 - [web] `npm run build` passed in `web` after the list-row profile-name hover fix.
 - [web] `npx tsc --noEmit` passed in `web` after the mobile navigation/tabs offset fix.

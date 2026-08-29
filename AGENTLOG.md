@@ -37,6 +37,67 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Adjust header search UI and route submitted searches to slug pages.
+ - Changes:
+   - Kept the expanded header search icon on the right as an icon submit button instead of moving it to the left of the input.
+   - Removed leading icons from the floating search suggestions dropdown.
+   - Added submit handling so clicking the search icon or pressing Enter routes to `/search/{searched-string}`.
+   - Added `web/app/search/[query]/page.tsx` and updated `SearchScreen` to read the slug and render results through `PageSurface`, `ListRow`, and `ProfileCard`.
+   - Updated `packages/design/design.md` and `CHANGELOG.md`.
+ - Files:
+   - web/components/header.tsx
+   - web/components/screens.tsx
+   - web/app/search/[query]/page.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Header search behavior belongs in the shared `Header`, while search result rendering should reuse the app's existing global row/list primitives.
+ - Notes:
+   - Search results currently use the available local/search screen data shape; backend search can be connected later behind the same route and row layout.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`; the build output includes the dynamic `/search/[query]` route.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Clear notification badge after visiting Notifications page.
+ - Changes:
+   - Wired `AppShell` to call the existing `markAllNotificationsRead` API helper when `activeScreen` is `notifications`.
+   - Optimistically clears `unreadNotificationCount` to `0` and marks local notification rows read while viewing the page.
+   - Refreshes the unread count and shows a toast if the read-all request fails.
+   - Updated `CHANGELOG.md`.
+ - Files:
+   - web/components/app-shell.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Badge state is owned by the shared app shell, so the read/clear behavior belongs beside notification loading and header count state.
+ - Notes:
+   - The API endpoint and frontend helper already existed; this change connects them to the screen-view lifecycle.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Add mobile swipe navigation between tabs.
+ - Changes:
+   - Added touch start/end handling to the shared `Tabs` component.
+   - Implemented mobile-only horizontal swipe thresholds so right-to-left selects the next tab and left-to-right selects the previous tab.
+   - Kept vertical gestures ignored so normal scrolling is not treated as tab navigation.
+   - Documented the mobile swipe rule in `packages/design/design.md` and updated `CHANGELOG.md`.
+ - Files:
+   - web/components/tabs.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Swipe tab changes are a shared tabs behavior, so the implementation lives in `Tabs` rather than individual screens.
+ - Notes:
+   - The handler moves only one tab per completed swipe and does nothing at either end of the tab list.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Stop Connections row profile names from changing color on hover.
  - Changes:
    - Added a shared `ListRow` override so linked `ProfileCard` names keep `var(--color-ink)` on hover/focus inside list rows.

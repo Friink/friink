@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+"use client";
+
+import { useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Screen } from '@/lib/data';
 
 type HeaderProps = {
@@ -14,6 +17,7 @@ export function Header({
   onToggleSidebar,
   notificationCount = 0,
 }: HeaderProps) {
+  const router = useRouter();
   const searchRef = useRef<HTMLDivElement | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,8 +25,8 @@ export function Header({
   const visibleNotificationCount = notificationCount > 99 ? '99+' : String(notificationCount);
   const suggestions = searchQuery.trim()
     ? [
-        `Search posts for "${searchQuery.trim()}"`,
-        `Search people for "${searchQuery.trim()}"`,
+        `Posts matching "${searchQuery.trim()}"`,
+        `People matching "${searchQuery.trim()}"`,
       ]
     : ['Search people', 'Search posts', 'Search conversations'];
 
@@ -50,6 +54,18 @@ export function Header({
     };
   }, [searchOpen]);
 
+  function submitSearch(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      setSearchOpen(true);
+      return;
+    }
+
+    setSearchOpen(false);
+    router.push(`/search/${encodeURIComponent(trimmedQuery)}`);
+  }
+
   return (
     <header className="topbar">
       <div className="topbar-home">
@@ -70,8 +86,7 @@ export function Header({
         <div className="topbar-actions">
           <div className={`topbar-search-wrap${searchOpen ? ' topbar-search-wrap-open' : ''}`} ref={searchRef}>
             {searchOpen ? (
-              <div className="topbar-search-panel">
-                <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+              <form className="topbar-search-panel" onSubmit={submitSearch} role="search">
                 <input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
@@ -79,7 +94,10 @@ export function Header({
                   aria-label="Search Friink"
                   autoFocus
                 />
-              </div>
+                <button className="topbar-search-panel-button" type="submit" aria-label="Submit search">
+                  <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                </button>
+              </form>
             ) : (
               <button className="topbar-search" type="button" onClick={() => setSearchOpen(true)} aria-label="Search">
                 <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
@@ -88,8 +106,7 @@ export function Header({
             {searchOpen ? (
               <div className="topbar-search-dropdown" role="listbox" aria-label="Search suggestions">
                 {suggestions.map((suggestion) => (
-                  <button key={suggestion} type="button" role="option">
-                    <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                  <button key={suggestion} type="button" role="option" onClick={() => submitSearch()}>
                     <span>{suggestion}</span>
                   </button>
                 ))}

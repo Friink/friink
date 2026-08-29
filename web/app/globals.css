@@ -1447,12 +1447,6 @@ textarea {
   background: var(--color-paper);
 }
 
-.topbar-search-panel i {
-  flex: 0 0 auto;
-  color: var(--color-muted);
-  font-size: 0.9rem;
-}
-
 .topbar-search-panel input {
   flex: 1;
   min-width: 0;
@@ -1465,6 +1459,27 @@ textarea {
   background: transparent;
   font-size: var(--text-sm);
   outline: none;
+}
+
+.topbar-search-panel-button {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  background: transparent;
+  padding: 0;
+}
+
+.topbar-search-panel-button i {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+  line-height: 1rem;
 }
 
 .topbar-search-dropdown {
@@ -1484,7 +1499,6 @@ textarea {
 .topbar-search-dropdown button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   min-height: 2.25rem;
   border: 0;
   padding: 0 0.55rem;
@@ -1498,11 +1512,6 @@ textarea {
 .topbar-search-dropdown button:focus-visible {
   background: var(--color-background);
   outline: none;
-}
-
-.topbar-search-dropdown i {
-  color: var(--color-muted);
-  font-size: 0.8rem;
 }
 
 .topbar-avatar {
@@ -1690,6 +1699,7 @@ textarea {
   margin: 0;
   background: var(--color-paper);
   border-bottom: 1px solid var(--color-line);
+  touch-action: pan-y;
 }
 
 .section-tabs {
