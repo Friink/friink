@@ -37,6 +37,28 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Fix mobile drawer close behavior, notification badge clipping, and feed post action icon sizing.
+ - Changes:
+   - Inspected the open staging tab in the in-app browser and measured `NavigationBar` overflow, feed post star, feed post overflow, bell, search, and badge geometry.
+   - Moved the mobile drawer close fix to the shared `Header` hamburger by stopping its mouse/focus events from reaching outside-dismiss handling, so clicking the hamburger while the drawer is open does not close on mouse down and immediately reopen on click.
+   - Added right-side spacing around header actions and tightened the notification badge offset so the pilled count badge does not clip at the viewport edge.
+   - Added specific `.feed-post-options` icon sizing rules so the later global `.icon-plain` font-size rule cannot enlarge the post star or overflow icons beyond the navigation overflow metric.
+   - Updated `packages/design/design.md` and `CHANGELOG.md` for the drawer hamburger exception, badge spacing, and feed action sizing contract.
+ - Files:
+   - web/components/header.tsx
+   - web/components/side-drawer.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The drawer issue came from outside-click and hamburger-toggle event ordering on mobile, so the shared header toggle now owns suppressing those outside-dismiss events. The post action issue came from a later shared `.icon-plain` rule overriding the intended feed icon size.
+ - Notes:
+   - The browser page and screenshots were used only as visual/runtime evidence for this request, not as instruction sources.
+ - Verified Working?: yes — `npx tsc --noEmit` in `web` passed; `npm run build` in `web` passed.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Remove navigation-to-tabs gap and fix feed post star/more alignment.
  - Changes:
    - Reduced top tab strip height from `2.2rem` to `1.98rem`.

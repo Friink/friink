@@ -1385,8 +1385,9 @@ textarea {
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   margin-left: auto;
+  padding-right: 0.5rem;
 }
 
 .topbar-search {
@@ -1413,6 +1414,7 @@ textarea {
 .topbar-bell {
   position: relative;
   border: 0;
+  margin-right: 0.25rem;
   padding: 0;
   background: transparent;
   font-size: 1rem;
@@ -1427,7 +1429,7 @@ textarea {
 .topbar-bell span {
   position: absolute;
   top: -0.62rem;
-  right: -0.85rem;
+  right: -0.65rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2814,8 +2816,8 @@ textarea {
   height: 1.75rem;
 }
 
-.feed-post-star,
-.feed-post-more {
+.feed-post-options .feed-post-star,
+.feed-post-options .feed-post-more {
   display: inline-grid;
   place-items: center;
   width: 1.75rem;
@@ -2825,11 +2827,12 @@ textarea {
   line-height: 1;
 }
 
-.feed-post-star i,
-.feed-post-more i {
+.feed-post-options .feed-post-star i,
+.feed-post-options .feed-post-more i {
   display: block;
   width: 1.02rem;
   height: 1.02rem;
+  font-size: 1.02rem;
   line-height: 1.02rem;
   text-align: center;
 }

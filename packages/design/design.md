@@ -249,7 +249,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell`) matching search icon height, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`.
+  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell`) matching search icon height, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
   - Height matches the tab strip at `2.2rem`.
@@ -266,7 +266,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`).
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
-  - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss.
+  - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
 
 ### 8. Composer (`web/components/composer.tsx`)
 - **`Composer`**:

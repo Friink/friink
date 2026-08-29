@@ -23,6 +23,8 @@ export function Header({
           <button
             className="topbar-menu"
             type="button"
+            onMouseDown={(event) => event.stopPropagation()}
+            onFocus={(event) => event.stopPropagation()}
             onClick={onToggleSidebar}
             aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
             aria-pressed={sidebarCollapsed}
