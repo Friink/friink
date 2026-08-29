@@ -27,6 +27,22 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 16:20 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Record the latest staging follow-up after login recovered but the Home feed still failed to load.
+ - Changes:
+   - Updated `CHANGELOG.md` with a short handoff note that staging login was reported working again, but the user then hit `Could not load the Home feed.` immediately after login.
+   - Added this `AGENTLOG.md` note to preserve the partial browser investigation state before the user paused the work.
+ - Files:
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The user paused the investigation and asked only for the logs to be updated. Capturing the new symptom separately avoids losing the fact that login recovery did not fully restore the staging logged-in flow.
+ - Notes:
+   - A browser repro against `https://staging.friink.com/home` was started, but navigation returned to `/login` and the turn was interrupted before the underlying feed request or auth/session state could be inspected further.
+   - This pending issue is likely separate from the original login `Failed to fetch.` symptom and still needs direct request-level diagnosis later.
+ - Verified Working?: n/a — no code changes were made in this logging-only pass.
+
  - Date/Time: 2026-08-29 16:10 +05:00
  - Agent: Codex
  - Model: GPT-5

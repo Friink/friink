@@ -64,6 +64,7 @@ _Last updated: 2026-08-29_
 - [web] `npx tsc --noEmit` passed in `web` after the fallback change.
 - [web] `npm run build` passed in `web` after replacing the silent deployed localhost fallback with the shared API-origin resolver.
 - [web] `npx tsc --noEmit` passed in `web` after the API-origin change.
+- [web] New staging follow-up evidence on 2026-08-29: login succeeded, but the user then reported `Could not load the Home feed.`; browser repro started but was interrupted before the failing feed request could be isolated, so this remains a separate pending staging issue.
 - [web] `npm run build` passed in `web` after adding the username-mismatch permanent redirect on the post detail route.
 - [web] `npx tsc --noEmit` passed in `web` after the mismatch-redirect update.
 - [api] `api/.venv/Scripts/python.exe -m pytest tests/test_posts.py` passed with cursor-helper coverage after the feed endpoint changes.
