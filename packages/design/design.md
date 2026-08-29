@@ -131,7 +131,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
-- **Mobile Navigation / Tabs Height**: `2.2rem` for `NavigationBar` and top tab strips.
+- **Mobile Navigation / Tabs Height**: `2.2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
   - `--space-content-inset-inline`: `1rem` desktop, `0.5rem` mobile
@@ -227,8 +227,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Fixed Internal Layout Order**:
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
-     - Star button (`.feed-post-star`, right-aligned) sized to match `NavigationBar` overflow.
-     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) sized to match `NavigationBar` overflow.
+     - Right action cluster (`.feed-post-options`) containing Star and More buttons with a visible fixed gap.
+     - Star button (`.feed-post-star`, right-aligned) uses the same button and icon box height as `NavigationBar` overflow.
+     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional).
@@ -276,7 +277,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with animated sliding indicator line.
-- **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`).
+- **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`). Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap.
 - **Props Contract**: `tabs?: Tab[]`, `activeId?: string`, `onChange?: (id: string) => void`, `ariaLabel?: string`, `className?: string`.
 
 ### 10. Form Inputs & Username Prefix Pattern (`InputField`, `account-screens.tsx`)

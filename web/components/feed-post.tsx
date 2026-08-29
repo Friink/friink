@@ -59,12 +59,14 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
         <Link className="feed-post-profile-link" href={`/${post.handle.replace('@', '')}`} aria-label={`Open ${post.name} profile`}>
           <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} />
         </Link>
-        <button className={`icon-plain feed-post-star${highlightedStar ? ' feed-post-star-highlighted' : ''}`} type="button" aria-label="Starred post">
-          <i className={highlightedStar ? 'fa-solid fa-star' : 'fa-regular fa-star'} aria-hidden="true" />
-        </button>
-        <button className="icon-plain feed-post-more" type="button" aria-label="Post options">
-          <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
-        </button>
+        <div className="feed-post-options" aria-label="Post actions">
+          <button className={`icon-plain feed-post-star${highlightedStar ? ' feed-post-star-highlighted' : ''}`} type="button" aria-label="Starred post">
+            <i className={highlightedStar ? 'fa-solid fa-star' : 'fa-regular fa-star'} aria-hidden="true" />
+          </button>
+          <button className="icon-plain feed-post-more" type="button" aria-label="Post options">
+            <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
+          </button>
+        </div>
       </div>
       <div className="feed-post-date">
         <small>{formatRelativeTime(post.createdAt)}</small>

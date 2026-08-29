@@ -55,6 +55,7 @@ _Last updated: 2026-08-30_
 ## 2026-08-30
 
 ### Changed
+- [web] Removed the visual gap between the mobile navigation bar and top tabs, reduced top tab height to 90% of the previous height, and grouped feed post star/more actions into one fixed-height spaced cluster matching the navigation overflow icon metrics.
 - [web] Matched feed post star/overflow action metrics to the navigation overflow icon, increased the navigation bar height to match the tab strip, and restored bold compact navigation title text at 95% of its previous size.
 - [web] Replaced the header notification dot with a numeric unread-count badge that clamps above 99.
 - [web] Replaced Settings text update buttons with icon-only tick buttons, right-aligned wrapped save controls, success toasts for saved fields, and immediate API saves for the Private Profile toggle.
@@ -64,8 +65,8 @@ _Last updated: 2026-08-30_
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
-- [web] `npx tsc --noEmit` passed in `web` after the settings/header refactor.
-- [web] `npm run build` passed in `web` after the latest UI settings/header changes.
+- [web] `npx tsc --noEmit` passed in `web` after the nav-tabs/feed-action adjustment.
+- [web] `npm run build` passed in `web` after the nav-tabs/feed-action adjustment.
 
 ## 2026-08-29
 

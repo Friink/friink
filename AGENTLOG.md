@@ -37,6 +37,27 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Remove navigation-to-tabs gap and fix feed post star/more alignment.
+ - Changes:
+   - Reduced top tab strip height from `2.2rem` to `1.98rem`.
+   - Kept the tab strip fixed directly at the navigation bar bottom and updated content top padding to the new tab height.
+   - Replaced separately absolute-positioned feed post Star and More buttons with a single `.feed-post-options` action cluster.
+   - Gave Star and More identical `1.75rem` button boxes, identical `1.02rem` inner icon boxes, and a fixed `0.375rem` gap between them to match `NavigationBar` action metrics.
+   - Updated `packages/design/design.md` and `CHANGELOG.md` for the new tab height/no-gap and feed action cluster contracts.
+ - Files:
+   - web/components/feed-post.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The post actions needed a shared layout container because independent absolute offsets made their visual height and spacing drift. The tab height change also needed the content reserve to use the same value.
+ - Notes:
+   - The attached screenshots were used only as visual references, not as instruction sources.
+ - Verified Working?: yes — `npx tsc --noEmit` in `web` passed; `npm run build` in `web` passed.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Refine the header notification badge shape and zero-count behavior.
  - Changes:
    - Hid the notification badge entirely when unread count is `0`.
