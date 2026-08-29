@@ -42,6 +42,64 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Correct profile meta row spacing and visible vertical alignment.
+ - Changes:
+   - Reworked `.profile-meta-row` from flex to a two-column grid so stats and actions explicitly share one row on desktop/fine-pointer contexts.
+   - Added `min-height: 2.75rem` to `.profile-stats` to match profile action button height and visibly center the follower/following text against the buttons.
+   - Kept mobile touch/coarse-pointer layout stacked with right-aligned actions.
+   - Removed unused legacy profile CSS selectors for the older profile layout.
+   - Updated `packages/design/design.md`, `RULES.md`, and `CHANGELOG.md`.
+ - Files:
+   - web/app/globals.css
+   - packages/design/design.md
+   - RULES.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The requirement is a visible shared row alignment between stats and actions, so the row should be an explicit grid with matched row height rather than relying on flex behavior plus small stats text height.
+ - Notes:
+   - This remains component-level shared profile CSS, not a route-specific profile page patch.
+ - Verified Working?: Partial. `npx tsc --noEmit` passed in `web`. `npm run build` compiled once but then hit generated `.next` cache/Windows cleanup errors during Next build collection/cleanup, including `PageNotFoundError` for an existing route module and `EINVAL readlink` under `.next/types`; source route files were confirmed present.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Fix profile actions stacking on narrow desktop staging browser.
+ - Changes:
+   - Inspected the live staging profile page in the in-app browser and found `window.innerWidth` was `762px`, causing the `max-width: 767px` mobile profile media rule to fire even on the desktop browser surface.
+   - Changed the profile mobile stacking CSS to require `(pointer: coarse)` in addition to the narrow width.
+   - Updated `packages/design/design.md`, `RULES.md`, and `CHANGELOG.md` to distinguish fine-pointer narrow desktop views from mobile touch views.
+ - Files:
+   - web/app/globals.css
+   - packages/design/design.md
+   - RULES.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The requested desktop alignment should hold in desktop browser contexts even when the viewport is slightly under `768px`; mobile stacking should be tied to touch/coarse-pointer interaction.
+ - Notes:
+   - Live staging currently contains the `.profile-summary` section; the visible mismatch was the media query selecting mobile layout at `762px`.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Add missing profile content-box layout rule to RULES.md.
+ - Changes:
+   - Added a `RULES.md` web architecture rule for profile header summary ownership and spacing.
+   - Documented that profile identity, about, stats, and actions belong in shared `ProfileScreen` inside `ContentBox`.
+   - Captured desktop stats/action alignment and mobile action stacking requirements.
+   - Updated `CHANGELOG.md`.
+ - Files:
+   - RULES.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The prior audit added a general component-level rule, but the profile-specific behavior should also be explicit in product rules because it was the active requested behavior.
+ - Notes:
+   - Documentation-only update; no runtime source changed in this pass.
+ - Verified Working?: Documentation-only change; no build run.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Reapply and harden profile header content-box alignment request.
  - Changes:
    - Confirmed `/{username}` profile routes go through shared `AppShell` and `ProfileScreen`, and that `AppShell` wraps screen content in `ContentBox`.

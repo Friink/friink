@@ -88,13 +88,13 @@ The following design tokens are locked hard values extracted directly from the c
 ### Corner Radius
 - **Buttons and Single-Line Inputs**: `8px` (`--radius-sm: 8px`). Per 2026-08-17 changelog decision, buttons, single-line inputs, search fields, toggle pills, and option menus use an `8px` corner radius, NOT a pill shape.
   - *Codebase `--radius-pill` status*: In `web/app/globals.css` and `web/theme.config.ts`, `--radius-pill` is hard-aliased to `8px` (`:root { --radius-pill: 8px; }`).
-  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-edit-button`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
+  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
 - **Radius Scale**:
   - `--radius-sm`: `8px` (Buttons, inputs, cards, dropdowns, floating bar)
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`, `.profile-large-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -210,9 +210,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   1. Profile Summary (`.profile-summary`): A single section inside `ContentBox` containing identity, about text, statistics, and profile actions with standard block spacing and no custom outer gutter.
   2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
   3. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 34rem`.
-  4. Profile Meta Row (`.profile-meta-row`): Contains statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
-     - Statistics (`.profile-stats`): Left-aligned, displaying `0 following` and `0 followers`.
-     - Actions (`.profile-actions`): Right-aligned. On desktop, actions are vertically centered with the statistics row. On mobile, actions move below the statistics and remain right-aligned.
+  4. Profile Meta Row (`.profile-meta-row`): A two-column grid containing statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
+     - Statistics (`.profile-stats`): Left-aligned, displaying `0 following` and `0 followers`, with a minimum row height matching profile action buttons so text centers vertically against the buttons.
+     - Actions (`.profile-actions`): Right-aligned. On desktop/fine-pointer views, actions share the same row as statistics and are vertically centered. On mobile touch/coarse-pointer views, actions move below the statistics and remain right-aligned.
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:

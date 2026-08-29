@@ -19,6 +19,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
+### Rule: Profile Header Summary Uses ContentBox Spacing
+- **What:** Web profile pages render profile identity, about text, follower/following stats, and edit/message/follow actions through the shared `ProfileScreen` inside `ContentBox`. These elements are grouped in the component-level profile summary section, not patched with route-specific spacing.
+- **Edge cases:** On desktop/fine-pointer views, profile stats stay left while edit/message/follow actions stay right in the same profile meta grid row; stats use the same minimum row height as the action buttons so the text centers vertically against them. On mobile touch/coarse-pointer views, actions move below the stats and remain right-aligned. The dynamic `/{username}` route must continue delegating to shared `AppShell` and `ProfileScreen`.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`
+- **Since:** 2026-08-30 (Asia/Karachi)
+
 ## Authentication & Accounts
 
 ### Rule: Signup Creates Active Public Accounts
