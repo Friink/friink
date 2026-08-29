@@ -142,7 +142,7 @@ export function PostClient({ postId }: PostClientProps) {
           sendLabel="Post"
           maxLength={512}
           showCount
-          contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : 'Quoting'}
+          contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}
           quotedPreview={composeContext.kind === 'quote' ? {
             name: composeContext.post.name,
             handle: composeContext.post.handle,

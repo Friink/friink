@@ -19,6 +19,24 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 08:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update quote composer context text so it includes the quoted user's display name, matching the reply label behavior.
+- Changes:
+  - Changed the main app shell quote composer label from `Quoting` to `Quoting {display name}`.
+  - Changed the post detail page quote composer label from `Quoting` to `Quoting {display name}`.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Reply and quote context labels should carry the same level of attribution so users can see exactly whose post they are acting on.
+- Notes:
+  - This is a text-only UI copy change.
+- Verified Working?: not run — skipped build because only composer display text changed.
+
 - Date/Time: 2026-08-29 08:10 +05:00
 - Agent: Codex
 - Model: GPT-5

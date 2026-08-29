@@ -142,6 +142,14 @@ _Last updated: 2026-08-29_
 - [api] Reproduced the failing ORM query locally against staging DB before the enum fix, then confirmed the feed query succeeds and a temporary post inserts as lowercase `post`; the temporary smoke-test row was deleted.
 - [api][web] Skipped frontend/browser verification and full web build per user direction; Vercel should build on deploy, and the user will test the browser flow.
 
+## 2026-08-29
+
+### Changed
+- [web] Updated quote composer context copy to include the target display name, matching the reply label pattern: `Quoting User Name`.
+
+### Verified
+- [web] Build not run; text-only composer label update.
+
 ### Verified
 - [web] `npm run build` passed in `web` after the reply/quote composer, post-thread updates, newline rendering, floating-bar visibility, and shared-composer/count updates, but runtime post loading/creation is currently reported broken and was not resolved in this pass.
 

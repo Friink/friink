@@ -595,7 +595,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 sendLabel="Post"
                 maxLength={512}
                 showCount
-                contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? 'Quoting' : null}
+                contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
                 quotedPreview={composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,
                   handle: composeContext.post.handle,
