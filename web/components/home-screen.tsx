@@ -145,6 +145,16 @@ function persistSavedFeedPosition(postId: string) {
   }
 }
 
+function clearSavedFeedPosition() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.removeItem(LAST_VIEWED_POST_KEY);
+  } catch {
+    // Ignore storage failures and continue with a fresh feed load.
+  }
+}
+
 function isWindowAtTop() {
   return typeof window !== 'undefined' ? window.scrollY <= 8 : true;
 }
@@ -318,19 +328,24 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
 
     try {
       if (savedPosition) {
-        const context = await getFeedContext(savedPosition.postId, {
-          beforeLimit: FEED_CONTEXT_BEFORE,
-          afterLimit: FEED_CONTEXT_AFTER,
-        });
-        const restoredPosts = dedupeAndSortPosts(context.items.map(mapApiPost));
-        updateFeedPage(context, restoredPosts);
-        setRestoreAnchorId(context.anchor_post_id);
-        setManualRefreshReason('resume_pending');
-      } else {
-        const page = await listPosts({ limit: FEED_PAGE_SIZE });
-        const initialPosts = dedupeAndSortPosts(page.items.map(mapApiPost));
-        updateFeedPage(page, initialPosts);
+        try {
+          const context = await getFeedContext(savedPosition.postId, {
+            beforeLimit: FEED_CONTEXT_BEFORE,
+            afterLimit: FEED_CONTEXT_AFTER,
+          });
+          const restoredPosts = dedupeAndSortPosts(context.items.map(mapApiPost));
+          updateFeedPage(context, restoredPosts);
+          setRestoreAnchorId(context.anchor_post_id);
+          setManualRefreshReason('resume_pending');
+          return;
+        } catch {
+          clearSavedFeedPosition();
+        }
       }
+
+      const page = await listPosts({ limit: FEED_PAGE_SIZE });
+      const initialPosts = dedupeAndSortPosts(page.items.map(mapApiPost));
+      updateFeedPage(page, initialPosts);
     } catch {
       if (initialSeedPosts.length > 0) {
         setFeedPosts(initialSeedPosts);

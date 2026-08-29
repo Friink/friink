@@ -27,6 +27,24 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 16:40 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Fix staging Home feed showing `Could not load the Home feed.` after login with the staging API configured.
+ - Changes:
+   - Updated `web/components/home-screen.tsx` so a failed last-viewed post restore no longer aborts the initial Home feed load.
+   - Added `clearSavedFeedPosition()` and made `loadInitialFeed()` clear a stale saved anchor, then retry the normal `GET /posts` page load.
+   - Updated `CHANGELOG.md` with synchronized current-state, change, and verification notes.
+ - Files:
+   - web/components/home-screen.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The Home component attempted `/posts/context/{savedPostId}` before `/posts`; if staging had a stale localStorage anchor from an older/deleted/reply post, any context failure surfaced the fatal Home feed message even though the ordinary feed could still load. Treating restore as opportunistic keeps the feed usable while preserving scroll restoration when the anchor is valid.
+ - Notes:
+   - Sandboxed live `curl` checks could not reach `staging.friink.com`, `staging-api.friink.com`, or `staging-api-friink.com` because the local proxy refused the connection, so this fix is based on the client failure path and repo history rather than a fresh live browser/network trace.
+   - This does not rule out a separate staging API/server/database issue if `GET /posts` itself is returning 500 in production infrastructure.
+ - Verified Working?: yes — `npm run build` in `web` passed after the fallback update.
+
  - Date/Time: 2026-08-29 16:20 +05:00
  - Agent: Codex
  - Model: GPT-5
