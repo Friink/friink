@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, type AuthUser } from '@/lib/auth';
+import type { ToastMessage } from '@/components/toast-stack';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'privacy';
@@ -15,7 +16,7 @@ type SettingsScreenProps = {
   activeTab?: SettingsTab;
   onTabChange?: (id: string) => void;
   onUserChange?: (user: AuthUser) => void;
-  onToast?: (message: string) => void;
+  onToast?: (message: string, tone?: ToastMessage['tone']) => void;
 };
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
@@ -25,6 +26,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
   const [about, setAbout] = useState(user.about);
+  const [isPrivate, setIsPrivate] = useState(user.isPrivate);
   const [usernameStatus, setUsernameStatus] = useState('');
   const [emailStatus, setEmailStatus] = useState('');
   const [nameStatus, setNameStatus] = useState('');
@@ -33,16 +35,18 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
     setDisplayName(user.name);
     setAbout(user.about);
+    setIsPrivate(user.isPrivate);
     setUsernameStatus('');
     setEmailStatus('');
     setNameStatus('');
     setAboutStatus('');
-  }, [user.username, user.email, user.name, user.about]);
+  }, [user.username, user.email, user.name, user.about, user.isPrivate]);
 
   const hasUsernameChanged = username !== user.username;
   const isUsernameValid = USERNAME_PATTERN.test(username);
@@ -80,6 +84,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onUserChange?.(updatedSession.user);
       setUsername(updatedSession.user.username);
       setUsernameStatus('Username updated.');
+      onToast?.('Username updated.', 'success');
     } catch (error) {
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update username.');
     } finally {
@@ -110,6 +115,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onUserChange?.(updatedSession.user);
       setEmail(updatedSession.user.email);
       setEmailStatus('Email updated.');
+      onToast?.('Email updated.', 'success');
     } catch (error) {
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update email.');
     } finally {
@@ -142,6 +148,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onUserChange?.(updatedSession.user);
       setDisplayName(updatedSession.user.name);
       setNameStatus('Name updated.');
+      onToast?.('Name updated.', 'success');
     } catch (error) {
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update name.');
     } finally {
@@ -174,10 +181,41 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onUserChange?.(updatedSession.user);
       setAbout(updatedSession.user.about);
       setAboutStatus('About updated.');
+      onToast?.('About updated.', 'success');
     } catch (error) {
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update about text.');
     } finally {
       setIsUpdatingAbout(false);
+    }
+  }
+
+  async function handlePrivacyUpdate(nextIsPrivate: boolean) {
+    if (nextIsPrivate === user.isPrivate || isUpdatingPrivacy) {
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update your privacy setting.');
+      return;
+    }
+
+    setIsUpdatingPrivacy(true);
+    setIsPrivate(nextIsPrivate);
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, {
+        isPrivate: nextIsPrivate,
+      });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setIsPrivate(updatedSession.user.isPrivate);
+      onToast?.(`Privacy setting updated. Profile is now ${updatedSession.user.isPrivate ? 'private' : 'public'}.`, 'success');
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update privacy setting.');
+      setIsPrivate(user.isPrivate);
+    } finally {
+      setIsUpdatingPrivacy(false);
     }
   }
 
@@ -235,9 +273,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                     aria-label="email"
                     autoComplete="email"
                   />
-                  <button className="settings-update-button" type="button" disabled={!canUpdateEmail} onClick={handleEmailUpdate}>
-                    {isUpdatingEmail ? 'Updating...' : 'Update'}
-                  </button>
+                  <SaveTickButton disabled={!canUpdateEmail} busy={isUpdatingEmail} onClick={handleEmailUpdate} label="Update email" />
                 </div>
                 {emailStatus && <span className="settings-field-message" role="status">{emailStatus}</span>}
               </label>
@@ -280,9 +316,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                     placeholder="Name"
                     autoComplete="name"
                   />
-                  <button className="settings-update-button" type="button" disabled={!canUpdateName} onClick={handleNameUpdate}>
-                    {isUpdatingName ? 'Updating...' : 'Update'}
-                  </button>
+                  <SaveTickButton disabled={!canUpdateName} busy={isUpdatingName} onClick={handleNameUpdate} label="Update name" />
                 </div>
               </label>
               {nameStatus && <span className="settings-field-message" role="status">{nameStatus}</span>}
@@ -311,9 +345,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                       autoComplete="off"
                     />
                   </div>
-                  <button className="settings-update-button" type="button" disabled={!canUpdateUsername} onClick={handleUsernameUpdate}>
-                    {isUpdatingUsername ? 'Updating...' : 'Update'}
-                  </button>
+                  <SaveTickButton disabled={!canUpdateUsername} busy={isUpdatingUsername} onClick={handleUsernameUpdate} label="Update username" />
                 </div>
                 {usernameStatus && <span className="settings-field-message" role="status">{usernameStatus}</span>}
               </label>
@@ -340,9 +372,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 <span className="settings-field-count">{about.length}/256</span>
               </label>
               <div className="settings-field-actions">
-                <button className="settings-update-button" type="button" disabled={!canUpdateAbout} onClick={handleAboutUpdate}>
-                  {isUpdatingAbout ? 'Updating...' : 'Update'}
-                </button>
+                <SaveTickButton disabled={!canUpdateAbout} busy={isUpdatingAbout} onClick={handleAboutUpdate} label="Update about" />
               </div>
               {aboutStatus && <span className="settings-field-message" role="status">{aboutStatus}</span>}
             </ListRow>
@@ -357,7 +387,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               avatar={<span className="settings-icon"><i className="fa-solid fa-lock" aria-hidden="true" /></span>}
               title="Private profile"
               subtitle="Only approved followers can view your public posts."
-              trailing={<button type="button" className="settings-toggle-pill active">On</button>}
+              trailing={
+                <button
+                  type="button"
+                  className={`settings-toggle-pill${isPrivate ? ' active' : ''}`}
+                  onClick={() => handlePrivacyUpdate(!isPrivate)}
+                  disabled={isUpdatingPrivacy}
+                  aria-pressed={isPrivate}
+                >
+                  {isPrivate ? 'On' : 'Off'}
+                </button>
+              }
               className="settings-row"
             />
 
@@ -365,7 +405,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               avatar={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
               title="Direct messages"
               subtitle="People you follow can message you."
-              trailing={<button type="button" className="settings-toggle-pill">Off</button>}
+              trailing={<button type="button" className="settings-toggle-pill" disabled>Off</button>}
               className="settings-row"
             />
 
@@ -373,12 +413,30 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               avatar={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
               title="Mentions"
               subtitle="Control who can mention you in conversations."
-              trailing={<button type="button" className="settings-toggle-pill active">On</button>}
+              trailing={<button type="button" className="settings-toggle-pill active" disabled>On</button>}
               className="settings-row"
             />
           </div>
         </div>
       )}
     </PageSurface>
+  );
+}
+
+function SaveTickButton({
+  disabled,
+  busy,
+  onClick,
+  label,
+}: {
+  disabled: boolean;
+  busy: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button className="settings-update-button" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>
+      <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" />
+    </button>
   );
 }

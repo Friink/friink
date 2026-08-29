@@ -33,6 +33,7 @@ class FollowRequest(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     requester = relationship("User", foreign_keys=[requester_id], back_populates="sent_follow_requests")
     recipient = relationship("User", foreign_keys=[recipient_id], back_populates="received_follow_requests")

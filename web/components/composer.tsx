@@ -15,6 +15,7 @@ type ComposerProps = {
   sendLabel?: string;
   maxLength?: number;
   showCount?: boolean;
+  allowEmptySubmit?: boolean;
   contextLabel?: string | null;
   referencedPreview?: {
     name: string;
@@ -38,6 +39,7 @@ export function Composer({
   sendLabel = 'Send message',
   maxLength,
   showCount = false,
+  allowEmptySubmit = false,
   contextLabel = null,
   referencedPreview = null,
 }: ComposerProps) {
@@ -57,7 +59,7 @@ export function Composer({
   }, [draft, multiline]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (disabled || !draft.trim() || isOverLimit) {
+    if (disabled || (!allowEmptySubmit && !draft.trim()) || isOverLimit) {
       event.preventDefault();
       return;
     }
@@ -80,7 +82,7 @@ export function Composer({
         onSubmit={handleSubmit}
       >
         <button className="icon-plain" type="button" aria-label="Attach file" disabled={disabled}>
-          <i className="fa-solid fa-paperclip" aria-hidden="true" />
+          <i className="fa-solid fa-plus" aria-hidden="true" />
         </button>
         {multiline ? (
           <textarea
@@ -108,7 +110,7 @@ export function Composer({
             {characterCount}/{maxLength}
           </span>
         )}
-        <button className="composer-send" type="submit" disabled={disabled || !draft.trim() || isOverLimit} aria-label={sendLabel}>
+        <button className="composer-send" type="submit" disabled={disabled || (!allowEmptySubmit && !draft.trim()) || isOverLimit} aria-label={sendLabel}>
           <i className="fa-solid fa-arrow-up" aria-hidden="true" />
         </button>
       </form>

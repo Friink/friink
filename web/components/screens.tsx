@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Composer } from '@/components/composer';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { ProfileCard } from '@/components/profile-card';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
-import { Tabs } from '@/components/tabs';
+import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
   return <div className="screen-heading"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="intro-copy">{copy}</p></div>;
@@ -18,7 +19,9 @@ export function QuestionsScreen() {
   return <><ScreenHeading eyebrow="Ask your people" title="Questions" copy="Small questions are a good way to start a conversation." /><div className="question-prompt"><span className="prompt-spark">✦</span><div><strong>What are you curious about?</strong><p>Ask your circle anything, big or small.</p></div><button className="primary-button">Ask a question</button></div><div className="section-heading"><h2>Recent questions</h2><button className="text-button">See all <span>→</span></button></div><div className="question-list"><div className="question-card"><div className="question-meta"><span className="avatar avatar-coral">MC</span><span><strong>Maya Chen</strong> asked <small>25 min ago</small></span></div><p>What is one place you would return to in a heartbeat?</p><div className="question-footer"><span>12 answers</span><button className="text-button">Answer →</button></div></div><div className="question-card"><div className="question-meta"><span className="avatar avatar-sage">JB</span><span><strong>Jon Bell</strong> asked <small>1 hr ago</small></span></div><p>What are you listening to on repeat this week?</p><div className="question-footer"><span>7 answers</span><button className="text-button">Answer →</button></div></div></div></>;
 }
 
-export function MessagesScreen() {
+type MessagesTab = 'all' | 'muted' | 'requests';
+
+export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
 
@@ -26,6 +29,11 @@ export function MessagesScreen() {
 
   const router = useRouter();
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
+  const visibleConversations = conversations.filter((conversation) => {
+    if (activeTab === 'muted') return conversation.muted === true;
+    if (activeTab === 'requests') return conversation.request === true;
+    return true;
+  });
 
   function sendMessage(event: React.FormEvent) {
     event.preventDefault();
@@ -33,7 +41,12 @@ export function MessagesScreen() {
     if (!text || !activeConversation) return;
 
     setConversations((current) => current.map((conversation) => conversation.id === activeConversation.id
-      ? { ...conversation, preview: text, time: 'Just now', messages: [...conversation.messages, { id: Date.now(), from: 'me', text, time: 'Just now' }] }
+      ? {
+          ...conversation,
+          preview: text,
+          createdAt: new Date().toISOString(),
+          messages: [...conversation.messages, { id: Date.now(), from: 'me', text, createdAt: new Date().toISOString() }],
+        }
       : conversation));
     setDraft('');
   }
@@ -54,12 +67,12 @@ export function MessagesScreen() {
           </button>
         </div>
         <div className="chat-messages">
-          <p className="chat-date">Today</p>
+          {activeConversation.messages.length > 0 && <p className="chat-date">{formatRelativeTime(activeConversation.messages[0].createdAt)}</p>}
           {activeConversation.messages.map((message) => (
             <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
               <div className="chat-bubble">
                 <p>{message.text}</p>
-                <small>{message.time}</small>
+                <small>{formatRelativeTime(message.createdAt)}</small>
               </div>
             </div>
           ))}
@@ -72,7 +85,7 @@ export function MessagesScreen() {
   return (
     <PageSurface className="messages-screen" variant="list">
       <div className="message-list">
-        {conversations.map((conversation) => (
+        {visibleConversations.map((conversation) => (
           <ListRow
             key={conversation.id}
             avatar={
@@ -86,20 +99,92 @@ export function MessagesScreen() {
               </Link>
             }
             subtitle={conversation.preview}
-            meta={conversation.time}
+            meta={formatRelativeTime(conversation.createdAt)}
             trailing={conversation.unread ? <span className="unread-dot" /> : null}
             unread={conversation.unread}
             onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
             ariaLabel={`Open chat with ${conversation.name}`}
           />
         ))}
+        {visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
       </div>
     </PageSurface>
   );
 }
 
+function getSearchParam(value: string | string[] | undefined) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw ? decodeURIComponent(raw) : '';
+}
+
 export function SearchScreen() {
-  return <><ScreenHeading eyebrow="Find your people" title="Search" copy="Look through your Friink space." /><div className="message-search">⌕ <span>Search Friink</span></div></>;
+  const params = useParams<{ query?: string | string[] }>();
+  const query = getSearchParam(params?.query);
+  const normalizedQuery = query.trim().toLowerCase();
+  const fallbackResults = [
+    {
+      id: 'people-muflah',
+      type: 'People',
+      name: 'Muflah',
+      handle: '@muflah',
+      initials: 'M',
+      tone: 'mint' as const,
+      summary: 'Profile result',
+    },
+    {
+      id: 'posts-dark-mode',
+      type: 'Posts',
+      name: 'Muflah',
+      handle: '@muflah',
+      initials: 'M',
+      tone: 'sage' as const,
+      summary: 'The dark mode should be darker.',
+    },
+    {
+      id: 'posts-connections',
+      type: 'Posts',
+      name: 'Muflah',
+      handle: '@muflah',
+      initials: 'M',
+      tone: 'sun' as const,
+      summary: 'Bug: Connections page ALL tab is not showing all connections.',
+    },
+  ];
+  const results = normalizedQuery
+    ? fallbackResults.filter((result) => `${result.type} ${result.name} ${result.handle} ${result.summary}`.toLowerCase().includes(normalizedQuery))
+    : [];
+
+  return (
+    <PageSurface className="search-screen" variant="list">
+      <div className="search-results-list">
+        {query ? (
+          results.length > 0 ? (
+            results.map((result) => (
+              <ListRow
+                key={result.id}
+                title={<ProfileCard name={result.name} handle={result.handle} initials={result.initials} tone={result.tone} href={`/${result.handle.replace('@', '')}`} />}
+                subtitle={result.summary}
+                meta={result.type}
+                className="search-result-row"
+              />
+            ))
+          ) : (
+            <div className="connections-empty">
+              <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+              <p>No results found.</p>
+              <span>Try another search.</span>
+            </div>
+          )
+        ) : (
+          <div className="connections-empty">
+            <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+            <p>Search Friink.</p>
+            <span>Use the header search to find people and posts.</span>
+          </div>
+        )}
+      </div>
+    </PageSurface>
+  );
 }
 
 export function CalendarScreen() {

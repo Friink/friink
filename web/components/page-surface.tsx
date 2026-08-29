@@ -1,14 +1,21 @@
 "use client";
 
-import type { ReactNode } from 'react';
+import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
 
-type PageSurfaceProps = {
+type PageSurfaceProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode;
   className?: string;
   variant?: 'list' | 'stack';
 };
 
-export function PageSurface({ children, className = '', variant = 'stack' }: PageSurfaceProps) {
+export const PageSurface = forwardRef<HTMLElement, PageSurfaceProps>(function PageSurface(
+  { children, className = '', variant = 'stack', ...props },
+  ref,
+) {
   const surfaceClassName = `page-surface page-surface-${variant}${className ? ` ${className}` : ''}`;
-  return <section className={surfaceClassName}>{children}</section>;
-}
+  return (
+    <section ref={ref} className={surfaceClassName} {...props}>
+      {children}
+    </section>
+  );
+});

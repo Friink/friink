@@ -14,24 +14,33 @@ import { ContentBox } from '@/components/content-box';
 import { HomeScreen } from '@/components/home-screen';
 import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
-import { NotificationsScreen } from '@/components/notifications-screen';
+import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastMessage } from '@/components/toast-stack';
-import { initialConnections, initialPosts, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
+import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
   cancelFollowRequest,
   createPost,
   getConnectionStatus,
+  listFollowers,
+  listFollowing,
   listIncomingFollowRequests,
+  listNotifications,
+  listOutgoingFollowRequests,
+  markAllNotificationsRead,
+  getUnreadNotificationCount,
   listPosts,
   loadAuthSession,
   rejectFollowRequest,
   removeConnection,
+  removeFollower,
   sendFollowRequest,
+  type ApiConnectionUser,
   type ApiFollowRequest,
+  type ApiNotification,
   type ApiPost,
   type AuthUser,
 } from '@/lib/auth';
@@ -73,6 +82,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [homeInjectedPost, setHomeInjectedPost] = useState<Post | null>(null);
   const [floatingDraft, setFloatingDraft] = useState('');
   const [floatingPostBusy, setFloatingPostBusy] = useState(false);
   const [composeContext, setComposeContext] = useState<ComposeContext>({ kind: 'post' });
@@ -80,14 +90,32 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [followers, setFollowers] = useState<Connection[]>([]);
+  const [following, setFollowing] = useState<Connection[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
+  const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
-  const [messagesTab, setMessagesTab] = useState('all');
+  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>('all');
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
+  const connectionsTabs = user.isPrivate
+    ? [
+        { id: 'all', label: 'All' },
+        { id: 'followers', label: 'Followers' },
+        { id: 'following', label: 'Following' },
+        { id: 'requests', label: 'Requests' },
+      ]
+    : [
+        { id: 'all', label: 'All' },
+        { id: 'followers', label: 'Followers' },
+        { id: 'following', label: 'Following' },
+      ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
   const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || activeScreen === 'profile' || (activeScreen === 'messages' && hasContextualFloatingBar));
@@ -226,9 +254,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     setToasts((current) => [
       ...current,
       {
-        id: now.getTime(),
-        message,
-        timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+      id: now.getTime(),
+      message,
+      timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
         tone,
       },
     ]);
@@ -239,9 +267,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }
 
   useEffect(() => {
-    listPosts()
-      .then((apiPosts) => {
-        setPosts(apiPosts.map(mapApiPost));
+    listPosts({ limit: 40 })
+      .then((page) => {
+        setPosts(page.items.map(mapApiPost));
       })
       .catch(() => {
         // Keep the timeline empty when the API is not running.
@@ -254,10 +282,70 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
     listIncomingFollowRequests(session.accessToken)
       .then((requests) => {
-        setIncomingRequests(requests.map(mapApiFollowRequest));
+        setIncomingRequests(requests.map((request) => mapApiFollowRequest(request, 'incoming')));
       })
       .catch(() => {
         // Connections still renders with demo data if the API is unavailable.
+      });
+
+    listOutgoingFollowRequests(session.accessToken)
+      .then((requests) => {
+        setOutgoingRequests(requests.map((request) => mapApiFollowRequest(request, 'outgoing')));
+      })
+      .catch(() => {
+        setOutgoingRequests([]);
+      });
+
+    const viewingNotifications = activeScreen === 'notifications';
+
+    listNotifications(session.accessToken, { limit: 40 })
+      .then((page) => {
+        const notificationItems = page.items.map(mapApiNotification);
+        setNotifications(viewingNotifications ? notificationItems.map((notification) => ({ ...notification, tone: 'sage', unread: false })) : notificationItems);
+      })
+      .catch(() => {
+        setNotifications([]);
+      });
+
+    if (viewingNotifications) {
+      setUnreadNotificationCount(0);
+      setNotifications((current) => current.map((notification) => ({ ...notification, tone: 'sage', unread: false })));
+      markAllNotificationsRead(session.accessToken)
+        .catch(() => {
+          addToast('Could not mark notifications as read.');
+          return getUnreadNotificationCount(session.accessToken)
+            .then((response) => {
+              setUnreadNotificationCount(response.count);
+            })
+            .catch(() => {
+              setUnreadNotificationCount(0);
+            });
+        });
+    } else {
+      getUnreadNotificationCount(session.accessToken)
+        .then((response) => {
+          setUnreadNotificationCount(response.count);
+        })
+        .catch(() => {
+          setUnreadNotificationCount(0);
+        });
+    }
+
+    const targetUsername = user.username;
+    listFollowers(targetUsername)
+      .then((response) => {
+        setFollowers(response.users.map((connectionUser) => mapConnectionUser(connectionUser, 'follower')));
+      })
+      .catch(() => {
+        setFollowers([]);
+      });
+
+    listFollowing(targetUsername)
+      .then((response) => {
+        setFollowing(response.users.map((connectionUser) => mapConnectionUser(connectionUser, 'following')));
+      })
+      .catch(() => {
+        setFollowing([]);
       });
   }, [activeScreen]);
 
@@ -289,6 +377,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }, [profileUser, user]);
 
   useEffect(() => {
+    if (!user.isPrivate && connectionsFilter === 'requests') {
+      setConnectionsFilter('all');
+    }
+  }, [connectionsFilter, user.isPrivate]);
+
+  useEffect(() => {
     if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;
     if (!profileUser || profileUser.username === user.username) return;
     if (floatingDraft.trim().length > 0) return;
@@ -308,7 +402,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     event.preventDefault();
 
     const trimmedText = floatingDraft.trim();
-    if (!trimmedText) return;
+    if (!trimmedText && composeContext.kind !== 'quote') return;
 
     const session = loadAuthSession();
     if (!session) {
@@ -327,6 +421,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       const newPost = mapApiPost(apiPost);
       if (newPost.kind !== 'reply') {
         setPosts((current) => [newPost, ...current]);
+        setHomeInjectedPost(newPost);
       }
       setFloatingDraft('');
       setComposeContext({ kind: 'post' });
@@ -356,7 +451,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       handle: `@${post.author_username}`,
       initials: getInitials(post.author_display_name || post.author_username),
       tone: 'mint',
-      date: new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+      createdAt: post.created_at,
       text: post.content,
       connectionType: 'following',
       isConnection: true,
@@ -377,15 +472,103 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     };
   }
 
-  function mapApiFollowRequest(request: ApiFollowRequest): ConnectionRequest {
+  function mapApiFollowRequest(request: ApiFollowRequest, direction: 'incoming' | 'outgoing' = 'incoming'): ConnectionRequest {
+    const connectionUser = direction === 'incoming' ? request.requester : request.recipient;
     return {
       id: request.id,
-      name: request.requester.username,
-      handle: `@${request.requester.username}`,
-      initials: getInitials(request.requester.username),
+      name: connectionUser.username,
+      handle: `@${connectionUser.username}`,
+      initials: getInitials(connectionUser.username),
       status: 'pending',
       createdAt: request.created_at,
     };
+  }
+
+  function mapApiNotification(notification: ApiNotification): NotificationItem {
+    const payload = notification.payload;
+    const requesterUsername = typeof payload.requester_username === 'string' ? payload.requester_username : null;
+    const recipientUsername = typeof payload.recipient_username === 'string' ? payload.recipient_username : null;
+    const requesterName = typeof payload.requester_display_name === 'string' && payload.requester_display_name ? payload.requester_display_name : requesterUsername;
+    const recipientName = typeof payload.recipient_display_name === 'string' && payload.recipient_display_name ? payload.recipient_display_name : recipientUsername;
+    const actorName = requesterName || recipientName || 'Friink';
+    const actorHandle = requesterUsername || recipientUsername || 'friink';
+    return {
+      id: notification.id,
+      kind: notification.type.includes('request') ? 'request' : 'follow',
+      name: actorName || 'Friink',
+      handle: `@${actorHandle}`,
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername),
+      createdAt: notification.created_at,
+      initials: getInitials(actorName || actorHandle),
+      tone: notification.read ? 'sage' : 'mint',
+      unread: !notification.read,
+    };
+  }
+
+  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null) {
+    switch (type) {
+      case 'follow_sent_public':
+        return recipientUsername ? `You are now following @${recipientUsername}.` : 'You are now following this profile.';
+      case 'new_follower':
+        return requesterUsername ? `@${requesterUsername} started following you.` : 'Someone started following you.';
+      case 'request_sent':
+        return recipientUsername ? `You requested to follow @${recipientUsername}.` : 'You sent a follow request.';
+      case 'request_received':
+        return requesterUsername ? `@${requesterUsername} requested to follow you.` : 'Someone requested to follow you.';
+      case 'unfollow_confirmed':
+        return recipientUsername ? `You unfollowed @${recipientUsername}.` : 'You unfollowed this profile.';
+      case 'request_accepted':
+      default:
+        return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';
+    }
+  }
+
+  function mapConnectionUser(connectionUser: ApiConnectionUser, relationship: 'follower' | 'following') {
+    return {
+      id: connectionUser.id,
+      name: connectionUser.username,
+      handle: `@${connectionUser.username}`,
+      initials: getInitials(connectionUser.username),
+      tone: connectionUser.is_private ? 'sage' : 'mint',
+      relationship,
+      status: 'connected' as const,
+    };
+  }
+
+  function getConnectionsForFilter() {
+    const liveConnections = mergeConnections(followers, following);
+
+    if (connectionsFilter === 'followers') {
+      return followers;
+    }
+
+    if (connectionsFilter === 'following') {
+      return following;
+    }
+
+    if (connectionsFilter === 'requests') {
+      return [];
+    }
+
+    return liveConnections;
+  }
+
+  function mergeConnections(left: Connection[], right: Connection[]) {
+    const merged = new Map<string, Connection>();
+
+    for (const connection of [...left, ...right]) {
+      const existing = merged.get(connection.handle);
+      if (existing) {
+        merged.set(connection.handle, {
+          ...existing,
+          relationship: existing.relationship === connection.relationship ? existing.relationship : 'mutual',
+        });
+      } else {
+        merged.set(connection.handle, connection);
+      }
+    }
+
+    return [...merged.values()];
   }
 
   async function handleFollowProfile() {
@@ -401,6 +584,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       const request = await sendFollowRequest(session.accessToken, profileUser.username);
       setProfileConnectionState(request.status === 'accepted' ? 'following' : 'requested');
       setProfileConnectionRequestId(request.id);
+      if (request.status === 'pending') {
+        setOutgoingRequests((current) => [mapApiFollowRequest(request, 'outgoing'), ...current]);
+      }
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Could not send follow request.');
     } finally {
@@ -417,6 +603,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       await cancelFollowRequest(session.accessToken, profileConnectionRequestId);
       setProfileConnectionState('none');
       setProfileConnectionRequestId(null);
+      setOutgoingRequests((current) => current.filter((request) => request.id !== profileConnectionRequestId));
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Could not cancel follow request.');
     } finally {
@@ -470,6 +657,36 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  async function handleCancelSentRequest(requestId: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRequestActionBusyId(requestId);
+    try {
+      await cancelFollowRequest(session.accessToken, requestId);
+      setOutgoingRequests((current) => current.filter((request) => request.id !== requestId));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not cancel request.');
+    } finally {
+      setRequestActionBusyId(null);
+    }
+  }
+
+  async function handleRemoveFollower(username: string) {
+    const session = loadAuthSession();
+    if (!session) return;
+
+    setRemoveFollowerBusyHandle(`@${username}`);
+    try {
+      await removeFollower(session.accessToken, username);
+      setFollowers((current) => current.filter((connection) => connection.handle !== `@${username}`));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not remove follower.');
+    } finally {
+      setRemoveFollowerBusyHandle(null);
+    }
+  }
+
   return (
     <main className="app-shell" data-theme={appearance}>
       <div className="app-layout">
@@ -486,6 +703,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           onNavigate={navigateTo}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
+          notificationCount={unreadNotificationCount}
         />
 
         <section className="main-panel">
@@ -511,15 +729,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
             )}
             {showTabs !== false && activeScreen === 'connections' && (
               <Tabs
-                tabs={[
-                  { id: 'all', label: 'All' },
-                  { id: 'followers', label: 'Followers' },
-                  { id: 'following', label: 'Following' },
-                  { id: 'requests', label: 'Requests' },
-                ]}
+                tabs={connectionsTabs}
                 activeId={connectionsFilter}
                 onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
                 ariaLabel="Connections filters"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'messages' && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'All' },
+                  { id: 'muted', label: 'Muted' },
+                  { id: 'requests', label: 'Requests' },
+                ]}
+                activeId={messagesTab}
+                onChange={(id) => setMessagesTab(id as 'all' | 'muted' | 'requests')}
+                ariaLabel="Chat filters"
               />
             )}
             {showTabs !== false && activeScreen === 'settings' && (
@@ -540,7 +765,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 children
               ) : (
                 <>
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onReply={handleReply} onQuote={handleQuote} />}
+                  {activeScreen === 'home' && (
+                    <HomeScreen
+                      posts={posts}
+                      activeFilter={homeFilter}
+                      onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                      onReply={handleReply}
+                      onQuote={handleQuote}
+                      injectedPost={homeInjectedPost}
+                      onInjectedPostConsumed={() => setHomeInjectedPost(null)}
+                    />
+                  )}
                   {activeScreen === 'profile' && (
                     <ProfileScreen
                       user={profileUser ?? user}
@@ -558,18 +793,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   )}
                   {activeScreen === 'connections' && (
                     <ConnectionsScreen
-                      connections={initialConnections}
+                      connections={getConnectionsForFilter()}
                       activeFilter={connectionsFilter}
                       onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
+                      outgoingRequests={outgoingRequests}
                       requestActionBusyId={requestActionBusyId}
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
+                      onCancelRequest={handleCancelSentRequest}
+                      onRemoveFollower={handleRemoveFollower}
+                      removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
                   {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} />}
                   {activeScreen === 'search' && <SearchScreen />}
-                  {activeScreen === 'notifications' && <NotificationsScreen />}
+                  {activeScreen === 'notifications' && <NotificationsScreen notifications={notifications} />}
                   {activeScreen === 'settings' && (
                     <SettingsScreen
                       user={user}
@@ -581,7 +820,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onToast={addToast}
                     />
                   )}
-                  {activeScreen === 'messages' && <MessagesScreen />}
+                  {activeScreen === 'messages' && <MessagesScreen activeTab={messagesTab} />}
                 </>
               )}
             </ContentBox>
@@ -603,8 +842,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 disabledPlaceholder="Posting..."
                 inputLabel="Post"
                 sendLabel="Post"
-                maxLength={512}
+                maxLength={256}
                 showCount
+                allowEmptySubmit={composeContext.kind === 'quote'}
                 contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
                 referencedPreview={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,

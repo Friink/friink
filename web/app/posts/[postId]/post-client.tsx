@@ -33,7 +33,7 @@ function mapApiPost(post: ApiPost): Post {
     handle: `@${post.author_username}`,
     initials: getInitials(post.author_display_name || post.author_username),
     tone: 'mint',
-    date: new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+    createdAt: post.created_at,
     text: post.content,
     connectionType: 'following',
     isConnection: true,

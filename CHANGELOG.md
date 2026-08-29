@@ -18,27 +18,210 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-29_
+_Last updated: 2026-08-30_
 
-- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
-- [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
-- [web] The Deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. The `NEXT_PUBLIC_API_BASE_URL` env var must be set in the Vercel **web** project to the deployed API base URL — if absent or stale the browser falls back to `http://localhost:8000`, which is unreachable from a deployed context and produces "Failed to fetch" errors. The subscribe section submits to Zoho Forms for real email collection.
+- [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, rejected rows retain the 24-hour resend cooldown, and canceled rows retain sender-cancel history for the 3-hour/24-hour resend lockout cycle. Pending requests are auto-accepted when a private account flips public.
+- [api] In-app notifications are implemented with a `notifications` table, unread/feed/read endpoints, and synchronous notification creation for follow, request, accept, and private-to-public auto-accept events.
+- [web] The deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. `NEXT_PUBLIC_API_BASE_URL` must still be set in the Vercel **web** project to the deployed API base URL, but the app no longer silently falls back to `http://localhost:8000` in deployed browsers; missing config now fails clearly instead of surfacing as a misleading localhost network error. The subscribe section submits to Zoho Forms for real email collection.
 - [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
 - [web] The public landing page is now a native Next.js App Router route at `/`, not an iframe wrapper around `web/public/friink-site/index.html`. Landing styles are scoped in a CSS module, landing media assets live under top-level `web/public/brand` and `web/public/media`, and the old `web/public/friink-site/` folder has been removed.
 - [web] Page titles now use the `Friink | Page Name` format through route-level metadata. Dynamic profile titles use the known display name when available and fall back to `@username`; deleted demo route names are guarded so `/compose`, `/dev-settings`, and `/floating` return 404 instead of becoming profiles.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
-- [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, and wired the header bell to open it. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
+- [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
+- [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.
+- [web] The Home/Explore feed now uses cursor-based loading for older posts, foreground-only polling for newer posts, top-of-feed manual refresh fallback, and local last-viewed post restore so the feed no longer depends on full-page reloads to update.
+- [web] Home feed restore now treats stale last-viewed post anchors as recoverable: if `/posts/context/{post_id}` fails, the client clears the saved anchor and falls back to the normal `/posts` feed load instead of showing `Could not load the Home feed.`.
+- [web] Chat now uses the shared `Tabs` component under the page navigation with `All`, `Muted`, and `Requests` filters.
+- [web] Connections `All` now combines live followers and following, while the private-account `Requests` tab shows both received pending requests with Accept/Reject actions and sent pending requests with Cancel actions.
+- [web] Connections tabs no longer fall back to sample/demo people when there are no live followers or following.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
 - [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
 - [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
+- [web] Canonical post detail URLs now use the author-scoped slug shape `/{username}/{postId}`. The legacy `/posts/{postId}` route remains only as a compatibility redirect to the canonical author-scoped URL.
+- [web] Post detail URLs now treat `postId` as the only lookup key; if the cosmetic username segment is stale or wrong, the route permanently redirects to the current owner username instead of rendering under the mismatched path.
+- [web] Frontend API requests now retry `https://api.friink.com` when a request to the staging API host fails at the network layer, covering the current staging-web case where the deployed bundle targets `https://staging-api.friink.com` but that host is unavailable.
 - [web] The three-dot page navigation control now opens a reusable dummy options menu instead of expanding the sidebar.
+- [web] The floating post composer enforces a frontend-only 256-character limit with an `x/256` counter, while backend post content still accepts up to 512 characters. Quote posts may be submitted without typed quote text.
+- [web] Header notifications show a numeric unread badge from `0` to `99`, then `99+`; Settings saves use icon-only tick buttons with success toasts, and the Private Profile toggle saves immediately through the API.
 - [web] Removed the unused `FloatingActions` component, its empty render in the app shell, and its leftover CSS.
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
 - [docs] Resolved `packages/design/design.md` historical discrepancies in Layout, Navigation, and Feed Behavior with dated changelog paper trails; verified all shared component contracts against live implementations; added the permanent design system standing instruction to `CHANGELOG.md` and `AGENTLOG.md`.
+
+## 2026-08-30
+
+### Added
+- [web] Added the `/search/[query]` route so submitted header searches open canonical query URLs and render results using shared row layout primitives.
+- [web] Added mobile swipe gestures to the shared Tabs component: right-to-left advances to the next tab and left-to-right returns to the previous tab.
+
+### Changed
+- [web] Tightened the profile meta row into a two-column grid with stats and actions sharing the same row, matched stats min-height to action button height for visible vertical centering, and removed legacy profile CSS that could confuse the cascade.
+- [web] Refined the profile meta-row breakpoint so the mobile stacked action layout only applies on narrow coarse-pointer/touch views; narrow desktop browser views keep stats and profile actions vertically aligned on one row.
+- [docs] Added the profile header/content-box spacing rule to `RULES.md`, covering desktop stats/action alignment, mobile stacking, and shared `ProfileScreen` ownership.
+- [web] Made the profile header summary explicit inside `ProfileScreen`, grouping profile card, about text, stats, and actions into one component-level section inside `ContentBox` with standard spacing.
+- [docs] Audited this session's UI fixes as component-level changes and added explicit README, rules, and design guidance prohibiting quick page-level or inline fixes for shared UI behavior.
+- [web] Reworked the profile header meta area so stats and edit/message/follow actions share one row inside the `ContentBox` on desktop, while mobile stacks actions below stats and keeps them right-aligned.
+- [web] Made active header search full-width on mobile with 8px side insets, added a close icon button beside the right-side submit icon, and capped the suggestions dropdown to four visible rows.
+- [web] Kept the expanded header search icon on the right as a submit button, removed suggestion-row icons, and wired Enter/search-button submission to `/search/{searched-string}`.
+- [web] Visiting the Notifications page now marks notifications read through the existing API helper and immediately clears the header unread badge state.
+- [web] Kept profile names color-stable when hovering identity links inside shared list rows, including Connections rows.
+- [web] Locked the fixed mobile tab strip to the shared navigation bar height token so tabs begin on the next pixel after the navigation bar during slow scroll, preventing feed content from showing between them.
+- [web] Changed the header search action from route navigation to an inline search input with a same-width suggestions dropdown 8px below it, matched bell/search icon boxes, and adjusted notification badge spacing to avoid scrollbar clipping.
+- [web] Fixed mobile drawer close behavior through the shared header hamburger event handling, tightened header notification badge spacing so the pill is not clipped, and made feed post star/more icon sizing override the shared icon font exactly.
+- [web] Removed the visual gap between the mobile navigation bar and top tabs, reduced top tab height to 90% of the previous height, and grouped feed post star/more actions into one fixed-height spaced cluster matching the navigation overflow icon metrics.
+- [web] Matched feed post star/overflow action metrics to the navigation overflow icon, increased the navigation bar height to match the tab strip, and restored bold compact navigation title text at 95% of its previous size.
+- [web] Replaced the header notification dot with a numeric unread-count badge that clamps above 99.
+- [web] Replaced Settings text update buttons with icon-only tick buttons, right-aligned wrapped save controls, success toasts for saved fields, and immediate API saves for the Private Profile toggle.
+- [web] Tuned the mobile navigation title to 90% of its previous size and regular weight, restored 16px mobile bottom spacing for the floating bar, and kept 8px left/right mobile insets.
+- [web] Changed post cards so non-interactive card clicks navigate to post detail, while `Show more...` only appears after four-line body overflow and expands the current card in place.
+- [web] Allowed quote submission without typed quote text while keeping normal posts and replies text-required, and documented the frontend-only 256-character composer limit.
+- [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
+
+### Verified
+- [web] `npx tsc --noEmit` passed in `web` after tightening profile meta-row grid alignment; `npm run build` is currently blocked by generated `.next` cache/Windows cleanup errors after source compilation.
+- [web] `npx tsc --noEmit` and `npm run build` passed in `web` after refining the profile meta-row mobile breakpoint.
+- [web] `npx tsc --noEmit` and `npm run build` passed in `web` after hardening the profile summary/content-box alignment source changes.
+- [docs] Component-level audit passed: current-session UI behavior lives in shared components/state owners or documented shared CSS contracts; only component-owned dynamic measurement styles remain (`Tabs` indicator and Home pull-to-refresh height).
+- [web] `npx tsc --noEmit` and `npm run build` passed in `web` after the component-level audit documentation updates.
+- [web] `npx tsc --noEmit` passed in `web` after the profile meta-row alignment change.
+- [web] `npm run build` passed in `web` after clearing the generated `.next` cache that had a Windows/OneDrive lock from the prior build attempt.
+- [web] `npx tsc --noEmit` passed in `web` after the mobile header search layout fix.
+- [web] `npm run build` passed in `web` after the mobile header search layout fix.
+- [web] `npx tsc --noEmit` passed in `web` after the header search route/result layout change.
+- [web] `npm run build` passed in `web` after the header search route/result layout change.
+- [web] `npx tsc --noEmit` passed in `web` after wiring Notifications page visits to read-all badge clearing.
+- [web] `npm run build` passed in `web` after wiring Notifications page visits to read-all badge clearing.
+- [web] `npx tsc --noEmit` passed in `web` after the mobile tab swipe gesture change.
+- [web] `npm run build` passed in `web` after the mobile tab swipe gesture change.
+- [web] `npx tsc --noEmit` passed in `web` after the list-row profile-name hover fix.
+- [web] `npm run build` passed in `web` after the list-row profile-name hover fix.
+- [web] `npx tsc --noEmit` passed in `web` after the mobile navigation/tabs offset fix.
+- [web] `npm run build` passed in `web` after the mobile navigation/tabs offset fix.
+- [web] `npx tsc --noEmit` passed in `web` after the header search/bell adjustment.
+- [web] `npm run build` passed in `web` after clearing the generated `.next` cache that had a Windows readlink cleanup error.
+
+## 2026-08-29
+
+### Added
+- [api] Added JWT/session resilience safeguards: required `JWT_SECRET_KEY`, API startup secret fingerprint logging, classified auth failure codes/logs, minimal JWT schema validation, Alembic `SESSION INVALIDATION:` migration convention, and focused token resilience tests.
+- [web] Added access-token resilience in the frontend auth client: proactive refresh at 80% of token lifetime, one silent refresh-and-retry on `TOKEN_EXPIRED`, and deduped concurrent refresh attempts.
+- [docs] Created `rules.md` as the root product/business rules contract, covering currently active code-backed behavior for auth, privacy/connections, posts/replies/quotes, notifications, web navigation/client behavior, and infrastructure.
+- [api] Added the `notifications` table/model/schema/service/router with paginated `GET /notifications`, `GET /notifications/unread-count`, single-read, and read-all endpoints.
+- [api] Added synchronous in-app notification creation for public follows, new followers, sent/received private follow requests, request acceptance, and private-to-public auto-accept.
+- [api] Added sender-cancel resend cooldown logic: three cancels within a rolling 3-hour cycle lock resending until 24 hours from that cycle's first cancellation.
+- [web] Wired the notifications screen to the live API feed and connected the Connections Requests view to both incoming and outgoing pending requests.
+- [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
+
+### Changed
+- [web] Extended `ProfileCard` with an optional profile link and updated Connections and Notifications rows to render linked `ProfileCard` identity blocks instead of separate avatar/title/handle fragments.
+- [docs] Updated `RULES.md` and the design contract so profile identity shown in app content should use linked `ProfileCard` where profile navigation is intended.
+- [docs] Normalized `rules.md` `Since` timestamps and all `AGENTLOG.md` date lines to `YYYY-MM-DD (HH:MM UTC-0)`.
+- [api] Enforced private-post visibility server-side for post fetches, feed/update/context serialization, replies, and quoted-post cards. Private authored posts now serialize quoted cards as `Content not available` for non-authorized viewers.
+- [api] Blocked quoting private-profile posts at post creation, including for the private-profile owner, matching the existing product decision.
+- [web] Authenticated post-read requests now include the saved bearer token when available so private-profile visibility can be evaluated by the API.
+- [web] Removed the demo-data fallback from Connections tabs so `All`, `Followers`, and `Following` only display real API data.
+- [web] Fixed Connections filtering so `All` shows both followers and following from live API data, with duplicate/mutual people de-duped into one row.
+- [web] Hid the Connections `Requests` tab for public profiles based on the existing DB-backed `is_private` account setting.
+- [web] Added shared top tabs to the Chat page and wired the message list to the selected `All`, `Muted`, or `Requests` filter.
+- [api] Applied pending staging database migrations `20260829_0006` and `20260829_0007`, adding `users.is_private` and `follow_requests.removed_at`; this fixed the live staging `GET /posts` 500 that surfaced in the web app as `Could not load the Home feed.`.
+- [web] Made Home feed last-viewed restoration resilient to stale staging/localStorage anchors by clearing a failed saved anchor and retrying the normal `GET /posts` initial load before surfacing the fatal feed error.
+- [web] Added a network-only API-origin fallback so browser requests that are compiled to `https://staging-api.friink.com` retry `https://api.friink.com` before surfacing `Failed to fetch.`, while successful requests and normal HTTP auth errors continue unchanged.
+- [web] Centralized frontend API-origin resolution so local development still defaults to `http://localhost:8000`, while deployed/browser contexts now require `NEXT_PUBLIC_API_BASE_URL` instead of silently attempting localhost and surfacing a generic `Failed to fetch.` on login.
+- [web] Added mismatch handling on the canonical `/{username}/{postId}` route so it fetches the post by `postId` only, compares the URL username with the post owner's current username, and issues a permanent redirect to the correct URL when they differ while preserving query params.
+- [web] Rebuilt the Home/Explore feed as a self-updating controller with IntersectionObserver-based older-post loading, 10-second foreground polling for newer posts, deferred prepends during active scrolling, local last-viewed post persistence/restore, and a top refresh fallback UI for missed/pending updates.
+- [web] Extended the frontend API client and shared page surface to support the new feed contract and top-of-feed interaction states without changing profile, connection, or post-creation logic.
+- [web] Added a shared `getPostPath()` helper and switched canonical post detail navigation from `/posts/{postId}` to `/{username}/{postId}` across feed cards, starred-post rows, and post-detail quote creation redirects.
+- [web] Added the new App Router post-detail route at `web/app/[username]/[postId]` and kept the old `/posts/{postId}` page as a compatibility redirect that resolves the post author and forwards to the canonical username-scoped path.
+
+### Verified
+- [docs] Scanned `rules.md` `Since` fields and `AGENTLOG.md` date lines and confirmed they all use UTC-0 timestamps in 24-hour format.
+- [docs] Confirmed `rules.md` exists at the project root and follows the requested per-rule template.
+- [api] `api/.venv/Scripts/python.exe -m pytest` passed with 44 tests, including the requested reject/cancel cooldown coverage and private-post visibility checks.
+- [api] `api/.venv/Scripts/python.exe -m compileall app tests` passed.
+- [api] `alembic upgrade head` applied `20260829_0008`; `alembic current` now reports `20260829_0008 (head)` for the configured database.
+- [api] FastAPI TestClient `GET /posts?limit=1` returned HTTP 200 against the configured database after the migration.
+- [web] `npx tsc --noEmit` passed in `web`.
+- [web] `npm run build` passed in `web`.
+- [web] `npm run build` passed in `web` after removing the Connections tabs demo fallback; the first attempt hit a stale generated `.next` readlink error, then passed after clearing `web/.next`, and the follow-up broad removal also passed.
+- [web] `npm run build` passed in `web` after the Connections `All`/Requests visibility fix.
+- [web] `npm run build` passed in `web` after adding Chat tabs.
+- [api] Before applying migrations, local ORM reproduction against `api/.env.staging` failed with `column users.is_private does not exist`; after `alembic upgrade head`, the same feed query returned 9 items.
+- [api] `alembic current` against staging now reports `20260829_0007 (head)`.
+- [api] Live `GET https://staging-api.friink.com/posts` now returns `200` with the paginated feed payload and CORS headers for `https://staging.friink.com`.
+- [web] `npm run build` passed in `web` after the stale Home feed restore fallback.
+- [web] Reproduced in the in-app browser that `https://staging.friink.com/login` showed `Failed to fetch.` after submit while `https://friink.com/login` reached the backend and returned `Invalid credentials.` for the same dummy payload; fetched the deployed login bundles and confirmed staging was compiled against `https://staging-api.friink.com` while production was compiled against `https://api.friink.com`.
+- [web] `npm run build` passed in `web` after adding the staging-to-production API network fallback.
+- [web] `npx tsc --noEmit` passed in `web` after the fallback change.
+- [web] `npm run build` passed in `web` after replacing the silent deployed localhost fallback with the shared API-origin resolver.
+- [web] `npx tsc --noEmit` passed in `web` after the API-origin change.
+- [web] New staging follow-up evidence on 2026-08-29: login succeeded, but the user then reported `Could not load the Home feed.`; browser repro started but was interrupted before the failing feed request could be isolated, so this remains a separate pending staging issue.
+- [web] `npm run build` passed in `web` after adding the username-mismatch permanent redirect on the post detail route.
+- [web] `npx tsc --noEmit` passed in `web` after the mismatch-redirect update.
+- [api] `api/.venv/Scripts/python.exe -m pytest tests/test_posts.py` passed with cursor-helper coverage after the feed endpoint changes.
+- [api] `python -m compileall api/app api/tests` passed after the feed pagination additions.
+- [web] `npm run build` passed in `web` after the Home feed controller rollout.
+- [web] `npx tsc --noEmit` passed in `web`.
+- [web] Manual browser verification is still pending for post-route scenarios that require live username changes and reassignment; no commit was made in this pass.
+- [web] `npm run build` passed in `web`, and the generated route manifest now includes `ƒ /[username]/[postId]` plus the legacy redirecting `ƒ /posts/[postId]`.
+- [web] `npx tsc --noEmit` passed in `web` after rebuilding `.next` types.
+
+## 2026-08-29
+
+### Changed
+- [api] Added a separate `removed_at` timestamp on `follow_requests` so owner-side follower removal now triggers its own 24-hour re-follow cooldown without affecting sender-canceled requests.
+- [api] Removed followers can no longer immediately re-follow a public or private account; re-follow attempts are blocked until 24 hours after the owner removed them.
+
+### Verified
+- [api] `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py` passed after adding the follower-removal cooldown rule.
+- [api] `python -m compileall api/app api/tests` passed after the follower-removal cooldown update.
+
+## 2026-08-29
+
+### Added
+- [api] Added account privacy support with a persisted `users.is_private` flag, public-account instant follow behavior, a 24-hour cooldown after denied private follow requests, transactional auto-accept of pending requests when a user switches from private to public, and a dedicated owner-side remove-follower action.
+- [web] Wired the Settings privacy toggle to the real account setting and added owner-side follower removal from the Connections follower list when API data is available.
+
+### Changed
+- [api] Kept `follow_requests` as the single directional relationship table and reused retained `rejected` rows plus `responded_at` for denial-cooldown tracking, avoiding a second audit table.
+- [api] Defaulted new accounts to public (`is_private = false`) unless the user explicitly turns privacy on later.
+- [web] Extended shared auth/profile types so privacy state flows through login, `/auth/me`, public profile lookup, and follower/following UI mapping.
+
+### Verified
+- [api] `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py tests/test_auth_updates.py` passed with 18 tests covering the new connection/privacy behavior.
+- [api] `python -m compileall api/app api/tests` passed after the connection/privacy changes.
+- [web] `npx tsc --noEmit` passed in `web`.
+- [web] `npm run build` passed in `web`.
+
+## 2026-08-29
+
+### Changed
+- [web] Added a shared client-side `formatRelativeTime` utility in `web/lib/time.ts` and moved post, reply, thread, starred-row, notification, and chat timestamp rendering onto it so all user-facing timestamps now follow the same local-time rules.
+- [web] Refactored shared frontend post and mock-conversation data to carry raw ISO timestamps (`createdAt`) instead of preformatted display strings, preventing different screens from baking in conflicting date styles.
+
+### Verified
+- [web] `npx tsc --noEmit` passed in `web` after the timestamp refactor.
+- [web] `npm run build` passed in `web` after replacing the timestamp formatting logic.
+- [web] Ran direct formatter boundary checks for seconds, minutes, same-day time, next-day local-date rollover, and invalid-input fallback; outputs matched the new spec.
+
+## 2026-08-29
+
+### Added
+- [api] Added temporary, env-gated auth debug logging around JWT issuance and verification failure paths so staging can capture PyJWT exception type, unverified `iat`/`exp`, current server time, request path/method, auth flow context, and `VERCEL_GIT_COMMIT_SHA` without logging raw tokens.
+- [web] Added an `X-Friink-Auth-Context` header on authenticated frontend API calls so the backend debug logs can distinguish normal authenticated requests from refresh-exchange traffic during staging investigation.
+
+### Changed
+- [api] Gated the new auth debug logging behind `AUTH_DEBUG_LOGGING_ENABLED` so the extra token-claim logging can be enabled temporarily on staging and removed or left off before merge.
+
+### Verified
+- [api] `python -m compileall api/app` passed after the temporary auth-debug instrumentation was added.
+- [web] `npx tsc --noEmit` passed in `web` after adding the auth-context request metadata.
+
+### Pending
+- [api][web] Real staging deploy-boundary reproduction and evidence collection are still required before any root-cause fix is applied or any commit is made.
 
 ## 2026-08-29
 

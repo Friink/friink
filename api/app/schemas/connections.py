@@ -20,6 +20,7 @@ class SendFollowRequestPayload(BaseModel):
 class ConnectionUserResponse(BaseModel):
     id: uuid.UUID
     username: str
+    is_private: bool = False
 
 
 class FollowRequestResponse(BaseModel):
@@ -29,6 +30,7 @@ class FollowRequestResponse(BaseModel):
     status: FollowRequestStatus
     created_at: datetime
     responded_at: datetime | None
+    removed_at: datetime | None = None
 
 
 class ConnectionStatusResponse(BaseModel):

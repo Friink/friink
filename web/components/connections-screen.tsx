@@ -1,83 +1,117 @@
- 'use client';
+'use client';
 
-import { useState } from 'react';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { ProfileCard } from '@/components/profile-card';
 import type { Connection, ConnectionRequest } from '@/lib/data';
+
+function profileHref(handle: string) {
+  return `/${handle.replace('@', '')}`;
+}
 
 type ConnectionsScreenProps = {
   connections: Connection[];
   activeFilter?: 'all' | 'followers' | 'following' | 'requests';
   onFilterChange?: (id: string) => void;
   incomingRequests?: ConnectionRequest[];
+  outgoingRequests?: ConnectionRequest[];
   requestActionBusyId?: string | null;
   onAcceptRequest?: (id: string) => void;
   onRejectRequest?: (id: string) => void;
+  onCancelRequest?: (id: string) => void;
+  onRemoveFollower?: (username: string) => void;
+  removeFollowerBusyHandle?: string | null;
 };
 
 export function ConnectionsScreen({
   connections,
   activeFilter = 'all',
   incomingRequests = [],
+  outgoingRequests = [],
   requestActionBusyId = null,
   onAcceptRequest,
   onRejectRequest,
+  onCancelRequest,
+  onRemoveFollower,
+  removeFollowerBusyHandle = null,
 }: ConnectionsScreenProps) {
-  const [pendingConnections, setPendingConnections] = useState(connections);
   const isRequestsView = activeFilter === 'requests';
-  const visibleConnections = pendingConnections.filter((connection) => {
+  const visibleConnections = connections.filter((connection) => {
     if (activeFilter === 'requests') return connection.status === 'request';
     if (activeFilter === 'followers') return connection.status === 'connected' && ['follower', 'mutual'].includes(connection.relationship);
     if (activeFilter === 'following') return connection.status === 'connected' && ['following', 'mutual'].includes(connection.relationship);
     return connection.status === 'connected';
   });
 
-  function removeRequest(id: number) {
-    setPendingConnections((current) => current.filter((connection) => connection.id !== id));
-  }
-
   return (
     <PageSurface className="connections-screen" variant="list">
       <div className="connection-list">
-        {isRequestsView && incomingRequests.length > 0 ? (
-          incomingRequests.map((request) => (
-            <ListRow
-              key={request.id}
-              avatar={<span className="user-avatar avatar-mint">{request.initials}</span>}
-              title={request.name}
-              subtitle={request.handle}
-              trailing={
-                <span className="connection-request-actions">
-                  <button
-                    className="profile-action-button connection-accept"
-                    type="button"
-                    disabled={requestActionBusyId === request.id}
-                    onClick={() => onAcceptRequest?.(request.id)}
-                  >
-                    Accept
-                  </button>
+        {isRequestsView && (incomingRequests.length > 0 || outgoingRequests.length > 0) ? (
+          <>
+            {incomingRequests.map((request) => (
+              <ListRow
+                key={`incoming-${request.id}`}
+                title={<ProfileCard name={request.name} handle={request.handle} tone="mint" initials={request.initials} href={profileHref(request.handle)} />}
+                subtitle="Requested to follow you"
+                trailing={
+                  <span className="connection-request-actions">
+                    <button
+                      className="profile-action-button connection-accept"
+                      type="button"
+                      disabled={requestActionBusyId === request.id}
+                      onClick={() => onAcceptRequest?.(request.id)}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="icon-button"
+                      type="button"
+                      aria-label={`Reject ${request.name}`}
+                      disabled={requestActionBusyId === request.id}
+                      onClick={() => onRejectRequest?.(request.id)}
+                    >
+                      <i className="fa-solid fa-xmark" aria-hidden="true" />
+                    </button>
+                  </span>
+                }
+              />
+            ))}
+            {outgoingRequests.map((request) => (
+              <ListRow
+                key={`outgoing-${request.id}`}
+                title={<ProfileCard name={request.name} handle={request.handle} tone="sage" initials={request.initials} href={profileHref(request.handle)} />}
+                subtitle="Request sent"
+                trailing={
                   <button
                     className="icon-button"
                     type="button"
-                    aria-label={`Reject ${request.name}`}
+                    aria-label={`Cancel request to ${request.name}`}
                     disabled={requestActionBusyId === request.id}
-                    onClick={() => onRejectRequest?.(request.id)}
+                    onClick={() => onCancelRequest?.(request.id)}
                   >
                     <i className="fa-solid fa-xmark" aria-hidden="true" />
                   </button>
-                </span>
-              }
-            />
-          ))
+                }
+              />
+            ))}
+          </>
         ) : visibleConnections.length > 0 ? (
           visibleConnections.map((connection) => (
             <ListRow
               key={connection.id}
-              avatar={<span className={`user-avatar avatar-${connection.tone}`}>{connection.initials}</span>}
-              title={connection.name}
-              subtitle={connection.handle}
+              title={<ProfileCard name={connection.name} handle={connection.handle} tone={connection.tone} initials={connection.initials} href={profileHref(connection.handle)} />}
               trailing={
-                activeFilter === 'all' ? (
+                activeFilter === 'followers' && onRemoveFollower ? (
+                  <button
+                    className="icon-button connection-add"
+                    type="button"
+                    aria-label={`Remove follower ${connection.name}`}
+                    disabled={removeFollowerBusyHandle === connection.handle}
+                    onClick={() => onRemoveFollower(connection.handle.replace('@', ''))}
+                  >
+                    <i className="fa-solid fa-user-minus" aria-hidden="true" />
+                  </button>
+                ) : activeFilter === 'all' ? (
                   <button
                     className="icon-button connection-add"
                     type="button"

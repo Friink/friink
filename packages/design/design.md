@@ -10,14 +10,15 @@ Friink is a calm, people-first social space centered on meaningful conversations
 
 - **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
 - **Top Headers**:
-  - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
-  - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
+  - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, and Notifications bell (`/notifications`).
+  - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
-- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset by `16px` on both sides of that shared rail, so its effective max width is `calc(1024px - 2rem)`.
+- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset horizontally by `16px` on desktop and `8px` on mobile, with `16px` bottom spacing on all viewports, so its effective max width is `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
-- **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
+- **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) on desktop and `0.5rem` on mobile, with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
+- **Component-Level Fix Rule**: Global UI behavior and layout fixes must land in shared components, shell state owners, shared CSS selectors/tokens, or documented component contracts. Do not solve recurring UI issues with inline styles, page-only spacing overrides, or route-specific quick fixes.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
 
 ## Navigation
@@ -37,8 +38,8 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Starred (`fa-star` → `/starred`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
-   - Search (`fa-magnifying-glass` → `/search`)
-   - Notifications (`fa-bell` → `/notifications`)
+   - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
+  - Notifications (`fa-bell` → `/notifications`, with unread count badge clamped to `99+`)
 
 ## Feed Behavior
 
@@ -48,7 +49,8 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
 - **Starred Feed**: A preset saved-post view containing only starred posts. It uses the shared `ListRow` summary pattern instead of full feed cards, with post detail opening the full post surface.
 - **Starred Posts**: Starred posts display the brand-colored filled star icon (`fa-solid fa-star`).
-- **Post Detail Link Rule**: Feed cards always render a `Show more...` link to `/posts/[postId]`, even when the visible body is short enough to fit without overflow. The link is a consistent route affordance, not an overflow detector.
+- **Post Card Navigation Rule**: Clicking a non-interactive area of a post card opens the canonical post detail page.
+- **Post Text Expansion Rule**: `Show more...` appears only when post body text overflows four visible lines on feed or post detail surfaces. Activating it expands that post card in place to show the full text; it does not navigate.
 - **Quote Placement Rule**: When a feed card includes a quoted-post block, the `Show more...` link is rendered below the quoted block, not between the main post body and the quoted content.
 
 ## Visual Language
@@ -86,13 +88,13 @@ The following design tokens are locked hard values extracted directly from the c
 ### Corner Radius
 - **Buttons and Single-Line Inputs**: `8px` (`--radius-sm: 8px`). Per 2026-08-17 changelog decision, buttons, single-line inputs, search fields, toggle pills, and option menus use an `8px` corner radius, NOT a pill shape.
   - *Codebase `--radius-pill` status*: In `web/app/globals.css` and `web/theme.config.ts`, `--radius-pill` is hard-aliased to `8px` (`:root { --radius-pill: 8px; }`).
-  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-edit-button`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
+  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
 - **Radius Scale**:
   - `--radius-sm`: `8px` (Buttons, inputs, cards, dropdowns, floating bar)
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`, `.profile-large-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -103,10 +105,10 @@ The following design tokens are locked hard values extracted directly from the c
   - `--color-ink`: `#111111` (Primary text; Dark mode: `#f5f5f5`)
   - `--color-muted`: `#8a908c` (Secondary text, inactive icons, handles, dates; Dark mode: `#c4c4c4`)
   - `--color-line`: `#e3e6e3` (Borders, dividers; Dark mode: `#555555`)
-  - `--color-paper`: `#ffffff` (Card and panel backgrounds, floating bar; Dark mode: `#3d3d3d`)
-  - `--color-background`: `#f2f5f1` (App background; Dark mode: `#333333`)
-  - `--color-background-accent`: `#e7f2e9` (Subtle accent; Dark mode: `#3a3a3a`)
-  - `--color-chrome`: `#262626` (Header/shell dark surfaces)
+  - `--color-paper`: `#ffffff` (Card and panel backgrounds, floating bar; Dark mode: `#161616`)
+  - `--color-background`: `#f2f5f1` (App background; Dark mode: `#111111`)
+  - `--color-background-accent`: `#e7f2e9` (Subtle accent; Dark mode: `#161616`)
+  - `--color-chrome`: `#111111` (Header/shell dark surfaces)
   - `--color-danger`: `#ed8c6b` / `#b54444` (Error states and destructive actions)
 - **Avatar Tone Palette**:
   - Coral: `--color-avatar-coral`: `#f4b3a4`
@@ -130,9 +132,10 @@ The following design tokens are locked hard values extracted directly from the c
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
+- **Mobile Navigation / Tabs Height**: `2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
-  - `--space-content-inset-inline`: `1rem`
+  - `--space-content-inset-inline`: `1rem` desktop, `0.5rem` mobile
   - `--space-content-inset-block`: `0.75rem`
 - **Ownership Rule for Inset Tokens**:
   - `ContentBox` owns the outer page gutter via `--space-content-inset-inline`.
@@ -147,7 +150,7 @@ The following design tokens are locked hard values extracted directly from the c
 Every shared/reusable component in the codebase must strictly satisfy the contracts below.
 
 ### 1. ProfileCard (`web/components/profile-card.tsx`)
-- **Purpose**: Canonical identity block displaying avatar, display name, handle, and optional date.
+- **Purpose**: Canonical identity block displaying avatar, display name, handle, and optional date. Whenever a user's profile identity is shown in app content or app lists, use `ProfileCard`; if the identity is meant to open a profile, pass `href` so the whole identity block links to that profile route.
 - **Fixed Internal Layout Order**:
   1. Horizontal flex container (`gap: 0.75rem`, `align-items: center`).
   2. Avatar (`.profile-card-avatar`): `2.5rem` x `2.5rem`, circular (`50%` radius), displaying initials (derived from name via `getInitials(name)`, max 2 uppercase chars, fallback `'FR'`). Tinted with `tone` prop (`coral`, `sage`, `sun`, `mint`).
@@ -162,6 +165,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `tone?: string` (optional, default `'mint'`)
   - `initials?: string` (optional, falls back to computed initials)
   - `date?: string` (optional)
+  - `href?: string` (optional; when provided, wraps the whole card in a profile link)
 
 ### 2. NavigationMenu (`web/components/navigation-menu.tsx`)
 - **Purpose**: Reusable contextual popover menu for page-level options, triggered by the three-dot overflow button in `NavigationBar`.
@@ -180,9 +184,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 3. FloatingBar (`web/components/floating-bar.tsx`)
 - **Purpose**: Persistent contextual bottom surface providing navigation or screen-specific composer actions.
 - **Fixed Sizing & Positioning**:
-  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem`.
+  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem` on desktop, with `0.5rem` mobile left/right insets and `1rem` mobile bottom spacing.
   - `height: 3.5rem` (`var(--space-floating-bar-height)`).
-  - Follows the shared `ContentBox` centering rail with an additional `16px` inset on both sides, producing a maximum effective width of `calc(1024px - 2rem)`.
+  - Follows the shared `ContentBox` centering rail with an additional `16px` desktop horizontal inset or `8px` mobile horizontal inset, producing a maximum effective width of `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
   - Border radius: `8px`, border: `1px solid var(--color-line)`, background: `var(--color-paper)`, box shadow: `0 0.75rem 2rem rgba(24, 44, 31, 0.12)`.
 - **Variants & Layout Modes**:
   1. **Default Navigation Mode** (`children` is null/undefined/false):
@@ -203,10 +207,12 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 4. ProfileScreen (`web/components/profile-screen.tsx`)
 - **Purpose**: Profile view for both signed-in user self-profile and browsable other-user profiles.
 - **Fixed Internal Layout Order**:
-  1. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
-  2. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 29rem`.
-  3. Statistics Row (`.profile-stats`): Left-aligned (`padding-left: 5.875rem`), displaying `0 following` and `0 followers`.
-  4. Profile Actions Row (`.profile-actions`): **Always right-aligned** (`justify-content: flex-end`).
+  1. Profile Summary (`.profile-summary`): A single section inside `ContentBox` containing identity, about text, statistics, and profile actions with standard block spacing and no custom outer gutter.
+  2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
+  3. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 34rem`.
+  4. Profile Meta Row (`.profile-meta-row`): A two-column grid containing statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
+     - Statistics (`.profile-stats`): Left-aligned, displaying `0 following` and `0 followers`, with a minimum row height matching profile action buttons so text centers vertically against the buttons.
+     - Actions (`.profile-actions`): Right-aligned. On desktop/fine-pointer views, actions share the same row as statistics and are vertically centered. On mobile touch/coarse-pointer views, actions move below the statistics and remain right-aligned.
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
@@ -224,14 +230,16 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Fixed Internal Layout Order**:
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
-     - Star button (`.feed-post-star`, right-aligned).
-     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`).
+     - Right action cluster (`.feed-post-options`) containing Star and More buttons with a visible fixed gap.
+     - Star button (`.feed-post-star`, right-aligned) uses the same button and icon box height as `NavigationBar` overflow.
+     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional).
-  5. Show More Link (`.feed-post-show-more`): Always rendered in feed contexts and routes to `/posts/[postId]`. When a quoted-post block exists, this link sits beneath that block.
+  5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
   6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
-- **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight route affordance rather than a primary CTA.
+- **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls and profile links keep their own behavior.
+- **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:
   - `highlightedStar = true`: Brand filled star icon (`fa-solid fa-star`, `.feed-post-star-highlighted`).
@@ -244,11 +252,15 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell` with indicator dot).
+  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search icon kept on the right as the submit button and a close (`fa-xmark`) button beside it. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, and shows up to four rows before scrolling.
+  - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.
+  - Notifications bell button (`fa-bell`) matches search icon height and opens `/notifications`, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
+  - Height is `2rem`.
   - Left: History-aware Back button (`fa-arrow-left`) + Page Title (`.navigationbar-title`).
   - Right: Overflow menu button (`fa-ellipsis-vertical`) controlling `NavigationMenu`.
+  - Page title uses bold compact uppercase sizing.
   - *Back Button Rule*: Back navigation is history-aware (`router.push`), disabled when on Home or without history (`window.history.length <= 1`). In-content back buttons are removed to prevent duplication.
 
 ### 7. SideDrawer (`web/components/side-drawer.tsx`)
@@ -259,17 +271,20 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`).
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
-  - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss.
+  - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
 
 ### 8. Composer (`web/components/composer.tsx`)
 - **`Composer`**:
-  - Default layout: Attachment button (`fa-paperclip`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Default layout: Attachment button (`fa-plus`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Floating post composer enforces a frontend-only `256` character limit and shows a live `x/256` counter.
+  - Quote mode may submit without typed text when a quoted post is selected; normal posts and replies still require text.
   - Floating post multiline mode: Starts in the same single-line layout, then expands vertically as text wraps or new lines are added. Once expanded, text occupies the full top row while attachment and send/post controls remain bottom-aligned.
   - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with animated sliding indicator line.
-- **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`).
+- **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`). Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap.
 - **Props Contract**: `tabs?: Tab[]`, `activeId?: string`, `onChange?: (id: string) => void`, `ariaLabel?: string`, `className?: string`.
+- **Mobile Swipe Rule**: On mobile widths, horizontal swipes on the tab strip move one tab at a time: right-to-left selects the next tab, left-to-right selects the previous tab. Vertical scroll gestures must not trigger tab changes.
 
 ### 10. Form Inputs & Username Prefix Pattern (`InputField`, `account-screens.tsx`)
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.
@@ -290,16 +305,26 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
+- **Save Control Rule**: Editable settings use an icon-only tick button in an `8px` radius box for saves. When the save control wraps below a field, it is right-aligned.
+- **Privacy Toggle Rule**: The Private Profile toggle saves immediately through the API on click and reverts if saving fails.
+- **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 
-### 13. PageSurface (`web/components/page-surface.tsx`)
+### 13. Profile Identity Rows (`web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`)
+- **Purpose**: List-style surfaces that show people or profile actors must reuse `ProfileCard` for the visible identity block instead of separately composing avatar, display name, and handle.
+- **Click Rule**: In Connections and Notifications, the visible `ProfileCard` links to `/[username]` through its `href` prop. Row-level actions such as Accept, Reject, Cancel, and Remove remain separate controls.
+- **Hover Rule**: Profile names inside `ListRow` identity links must not change color on hover or focus; only the row background and focus outline provide the interaction affordance.
+- **HTML Rule**: Do not nest a profile link inside a row rendered as a button. If a row needs a different primary click target, keep profile navigation and row navigation as separate valid interactive elements.
+- **Search Results Rule**: Search result pages must use `PageSurface` with shared `ListRow` rows and reusable identity blocks instead of bespoke result cards.
+
+### 14. PageSurface (`web/components/page-surface.tsx`)
 - **Purpose**: Shared first-level screen wrapper used inside `ContentBox` so app pages inherit one layout contract instead of owning custom outer spacing.
 - **Ownership Rule**: `PageSurface` may define screen display mode such as stacked sections or list flow, but it must not introduce page-level side gutters, custom max-widths, or competing centering.
 - **Variant Rule**: Use the list variant for row/feed surfaces and the stack variant for forms or mixed vertical sections.
 - **Enforcement Rule**: Logged-in screens should mount a `PageSurface` directly inside `ContentBox` instead of hand-rolling a bespoke outer wrapper.
 - **Reuse Rule**: Prefer extending an existing shared layout primitive such as `PageSurface`, `ContentBox`, `ListRow`, or `FloatingBar` before creating a new wrapper component for a one-off page need.
 
-### 14. ContentBox (`web/components/content-box.tsx`)
+### 15. ContentBox (`web/components/content-box.tsx`)
 - **Purpose**: Canonical app-page content wrapper for primary logged-in surfaces.
 - **Ownership Rule**: Owns the page-level horizontal gutter and the default bottom breathing room for content above the floating bar.
 - **Desktop Width Rule**: Caps primary logged-in content at `1024px` and centers it within the main panel.

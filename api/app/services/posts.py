@@ -1,14 +1,50 @@
 import uuid
+from base64 import urlsafe_b64decode, urlsafe_b64encode
+from datetime import datetime
+import json
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased, selectinload, with_expression
 
+from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.post import Post, PostKind
 from app.models.user import User
-from app.schemas.posts import CreatePostRequest, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
+from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh
+
+DEFAULT_FEED_LIMIT = 20
+MAX_FEED_LIMIT = 100
+
+
+def clamp_feed_limit(limit: int) -> int:
+    return max(1, min(limit, MAX_FEED_LIMIT))
+
+
+def encode_post_cursor(post: Post) -> str:
+    payload = json.dumps({"created_at": post.created_at.isoformat(), "id": str(post.id)}, separators=(",", ":")).encode("utf-8")
+    return urlsafe_b64encode(payload).decode("ascii")
+
+
+def decode_post_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
+    try:
+        padding = "=" * (-len(cursor) % 4)
+        payload = json.loads(urlsafe_b64decode(f"{cursor}{padding}").decode("utf-8"))
+        created_at = datetime.fromisoformat(payload["created_at"])
+        post_id = uuid.UUID(payload["id"])
+    except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid feed cursor.")
+
+    return created_at, post_id
+
+
+def build_older_than_filter(created_at: datetime, post_id: uuid.UUID):
+    return or_(Post.created_at < created_at, and_(Post.created_at == created_at, Post.id < post_id))
+
+
+def build_newer_than_filter(created_at: datetime, post_id: uuid.UUID):
+    return or_(Post.created_at > created_at, and_(Post.created_at == created_at, Post.id > post_id))
 
 
 def post_count_expressions():
@@ -58,12 +94,17 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
         quoted_post = session.get(Post, data.quoted_post_id)
         if not quoted_post:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quoted post was not found.")
+        quote_author = quoted_post.user or session.get(User, quoted_post.user_id)
+        if quote_author and quote_author.is_private:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Private posts cannot be quoted.")
 
     parent_post: Post | None = None
     if data.parent_post_id:
         parent_post = session.get(Post, data.parent_post_id)
         if not parent_post:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parent post was not found.")
+        if not can_view_post(session, user, parent_post):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot reply to this post.")
 
     if data.kind == PostKindSchema.reply and not parent_post:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Replies require a parent post.")
@@ -88,24 +129,93 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
     return post
 
 
-async def get_posts(session: Session) -> list[Post]:
-    result = session.execute(
+def post_feed_base_query():
+    return (
         select(Post)
         .options(*post_load_options())
         .where(Post.deleted_at.is_(None), Post.kind != PostKind.REPLY)
-        .order_by(Post.created_at.desc())
     )
-    return list(result.scalars().all())
 
 
-async def get_post_replies(session: Session, post_id: uuid.UUID) -> list[Post]:
+async def get_posts_page(session: Session, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None, viewer: User | None = None) -> FeedPageResponse:
+    clamped_limit = clamp_feed_limit(limit)
+    query = post_feed_base_query().order_by(Post.created_at.desc(), Post.id.desc())
+
+    if cursor:
+        created_at, post_id = decode_post_cursor(cursor)
+        query = query.where(build_older_than_filter(created_at, post_id))
+
+    result = session.execute(query.limit(clamped_limit + 1))
+    posts = list(result.scalars().all())
+    has_more = len(posts) > clamped_limit
+    page_items = posts[:clamped_limit]
+
+    return FeedPageResponse(
+        items=[serialize_post(post, viewer=viewer, session=session) for post in page_items if can_view_post(session, viewer, post)],
+        next_cursor=encode_post_cursor(page_items[-1]) if has_more and page_items else None,
+        has_more=has_more,
+    )
+
+
+async def get_newer_posts(session: Session, after_created_at: datetime, after_post_id: uuid.UUID, limit: int = DEFAULT_FEED_LIMIT, viewer: User | None = None) -> list[Post]:
+    clamped_limit = clamp_feed_limit(limit)
+    result = session.execute(
+        post_feed_base_query()
+        .where(build_newer_than_filter(after_created_at, after_post_id))
+        .order_by(Post.created_at.desc(), Post.id.desc())
+        .limit(clamped_limit)
+    )
+    return [post for post in result.scalars().all() if can_view_post(session, viewer, post)]
+
+
+async def get_feed_context(session: Session, anchor_post_id: uuid.UUID, before_limit: int = 10, after_limit: int = 10, viewer: User | None = None) -> FeedContextResponse | None:
+    anchor_post = await get_post(session, anchor_post_id)
+    if not anchor_post or anchor_post.kind == PostKind.REPLY or not can_view_post(session, viewer, anchor_post):
+        return None
+
+    newer_limit = clamp_feed_limit(before_limit)
+    older_limit = clamp_feed_limit(after_limit)
+
+    newer_result = session.execute(
+        post_feed_base_query()
+        .where(build_newer_than_filter(anchor_post.created_at, anchor_post.id))
+        .order_by(Post.created_at.asc(), Post.id.asc())
+        .limit(newer_limit)
+    )
+    older_result = session.execute(
+        post_feed_base_query()
+        .where(build_older_than_filter(anchor_post.created_at, anchor_post.id))
+        .order_by(Post.created_at.desc(), Post.id.desc())
+        .limit(older_limit + 1)
+    )
+
+    newer_posts = list(newer_result.scalars().all())
+    newer_posts.reverse()
+    older_posts = list(older_result.scalars().all())
+    has_more = len(older_posts) > older_limit
+    visible_older_posts = older_posts[:older_limit]
+    items = [*newer_posts, anchor_post, *visible_older_posts]
+
+    visible_items = [post for post in items if can_view_post(session, viewer, post)]
+    return FeedContextResponse(
+        items=[serialize_post(post, viewer=viewer, session=session) for post in visible_items],
+        anchor_post_id=anchor_post.id,
+        next_cursor=encode_post_cursor(items[-1]) if has_more and items else None,
+        has_more=has_more,
+    )
+
+
+async def get_post_replies(session: Session, post_id: uuid.UUID, viewer: User | None = None) -> list[Post]:
+    parent = await get_post(session, post_id)
+    if not parent or not can_view_post(session, viewer, parent):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
     result = session.execute(
         select(Post)
         .options(*post_load_options())
         .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY, Post.parent_post_id == post_id)
         .order_by(Post.created_at.asc())
     )
-    return list(result.scalars().all())
+    return [post for post in result.scalars().all() if can_view_post(session, viewer, post)]
 
 
 async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:
@@ -127,7 +237,27 @@ async def get_post_for_response(session: Session, post_id: uuid.UUID) -> Post:
     return post
 
 
-def serialize_post(post: Post) -> PostResponse:
+def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:
+    author = post.user or session.get(User, post.user_id)
+    if not author:
+        return False
+    if not author.is_private:
+        return True
+    if viewer and viewer.id == post.user_id:
+        return True
+    if not viewer:
+        return False
+    result = session.execute(
+        select(FollowRequest.id).where(
+            FollowRequest.requester_id == viewer.id,
+            FollowRequest.recipient_id == post.user_id,
+            FollowRequest.status == FollowRequestStatus.accepted,
+        )
+    )
+    return result.scalar_one_or_none() is not None
+
+
+def serialize_post(post: Post, viewer: User | None = None, session: Session | None = None) -> PostResponse:
     return PostResponse(
         id=post.id,
         user_id=post.user_id,
@@ -140,13 +270,13 @@ def serialize_post(post: Post) -> PostResponse:
         quoted_post_id=post.quoted_post_id,
         reply_count=post.reply_count or 0,
         quote_count=post.quote_count or 0,
-        quoted_post=serialize_quoted_post(post.quoted_post, post.quoted_post_id),
+        quoted_post=serialize_quoted_post(post.quoted_post, post.quoted_post_id, viewer=viewer, session=session),
         created_at=post.created_at,
         updated_at=post.updated_at,
     )
 
 
-def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | None) -> QuotedPostResponse | None:
+def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | None, viewer: User | None = None, session: Session | None = None) -> QuotedPostResponse | None:
     if not quoted_post_id:
         return None
     if not quoted_post or quoted_post.deleted_at is not None:
@@ -155,6 +285,14 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
             author_username=None,
             author_display_name=None,
             content="Original post unavailable.",
+            unavailable=True,
+        )
+    if quoted_post.user and quoted_post.user.is_private and (not session or not can_view_post(session, viewer, quoted_post)):
+        return QuotedPostResponse(
+            id=quoted_post.id,
+            author_username=None,
+            author_display_name=None,
+            content="Content not available",
             unavailable=True,
         )
     return QuotedPostResponse(

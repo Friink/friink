@@ -1,9 +1,12 @@
+import { fetchApi } from '@/lib/api-origin';
+
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
   username: string;
   about: string;
+  isPrivate: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
 };
@@ -12,11 +15,13 @@ export type AuthSession = {
   accessToken: string;
   tokenType: 'Bearer';
   user: AuthUser;
+  accessTokenExpiresAt?: number;
 };
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const TOKEN_REFRESH_LIFETIME_FRACTION = 0.8;
+let refreshPromise: Promise<AuthSession> | null = null;
 
 type ApiUser = {
   id: string;
@@ -24,6 +29,7 @@ type ApiUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  is_private: boolean;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -34,6 +40,7 @@ type ApiPublicUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  is_private: boolean;
 };
 
 type ApiTokenResponse = {
@@ -42,17 +49,31 @@ type ApiTokenResponse = {
   user: ApiUser;
 };
 
+type AuthErrorCode =
+  | 'TOKEN_EXPIRED'
+  | 'TOKEN_INVALID'
+  | 'TOKEN_MALFORMED'
+  | 'TOKEN_SIGNATURE_MISMATCH'
+  | 'TOKEN_SCHEMA_INVALID'
+  | 'SESSION_NOT_FOUND'
+  | 'REFRESH_TOKEN_MISSING'
+  | 'REFRESH_TOKEN_INVALID';
+
 type ApiErrorBody = {
-  detail?: string | Array<{ msg?: string }>;
+  detail?: string | { message?: string; code?: AuthErrorCode } | Array<{ msg?: string }>;
 };
+
+type AuthRequestContext = 'fresh_login' | 'refresh_exchange' | 'authenticated_request';
 
 export class AuthApiError extends Error {
   status: number;
+  code?: AuthErrorCode;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code?: AuthErrorCode) {
     super(message);
     this.name = 'AuthApiError';
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -63,6 +84,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
     about: '',
+    isPrivate: false,
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
     ...overrides,
@@ -105,7 +127,7 @@ export async function signUp(input: {
 
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(withAccessTokenExpiry(session)));
 }
 
 export function loadAuthSession(): AuthSession | null {
@@ -149,20 +171,50 @@ export async function login(email: string, password: string): Promise<AuthSessio
   return mapTokenResponse(response);
 }
 
+export async function refreshAuthSession(): Promise<AuthSession> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const currentSession = loadPersistedAuthSession();
+    const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
+      method: 'POST',
+      authContext: 'refresh_exchange',
+      skipAuthRefresh: true,
+    });
+    if (!currentSession) {
+      throw new AuthApiError('Please log in again.', 401, 'SESSION_NOT_FOUND');
+    }
+
+    const nextSession = withAccessTokenExpiry({
+      ...currentSession,
+      accessToken: response.access_token,
+      tokenType: 'Bearer',
+    });
+    saveAuthSession(nextSession);
+    return nextSession;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string },
+  input: { username?: string; email?: string; displayName?: string; about?: string; isPrivate?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
     body: JSON.stringify({
       username: input.username,
       email: input.email,
       display_name: input.displayName,
       about: input.about,
+      is_private: input.isPrivate,
     }),
   });
 
@@ -175,12 +227,13 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about'>> {
+export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
   });
@@ -190,6 +243,7 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
     name: response.display_name || response.username,
     username: response.username,
     about: response.about ?? '',
+    isPrivate: response.is_private,
   };
 }
 
@@ -217,9 +271,23 @@ export type ApiPost = {
   updated_at: string;
 };
 
+export type ApiFeedPage = {
+  items: ApiPost[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
+export type ApiFeedContext = {
+  items: ApiPost[];
+  anchor_post_id: string;
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
 export type ApiConnectionUser = {
   id: string;
   username: string;
+  is_private: boolean;
 };
 
 export type ApiFollowRequest = {
@@ -242,21 +310,90 @@ export type ApiConnectionList = {
   count: number;
 };
 
-export async function listPosts(): Promise<ApiPost[]> {
-  return requestApi<ApiPost[]>('/posts', {
+export type ApiNotification = {
+  id: string;
+  recipient_user_id: string;
+  actor_user_id: string | null;
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted';
+  payload: Record<string, unknown>;
+  read: boolean;
+  created_at: string;
+};
+
+export type ApiNotificationPage = {
+  items: ApiNotification[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
+export async function listPosts(input: { cursor?: string; limit?: number } = {}): Promise<ApiFeedPage> {
+  const search = new URLSearchParams();
+  if (input.cursor) {
+    search.set('cursor', input.cursor);
+  }
+  if (input.limit) {
+    search.set('limit', String(input.limit));
+  }
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  const session = loadAuthSession();
+  return requestApi<ApiFeedPage>(`/posts${suffix}`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
+  });
+}
+
+export async function listNewerPosts(input: { afterCreatedAt: string; afterId: string; limit?: number }): Promise<ApiPost[]> {
+  const search = new URLSearchParams({
+    after_created_at: input.afterCreatedAt,
+    after_id: input.afterId,
+  });
+  if (input.limit) {
+    search.set('limit', String(input.limit));
+  }
+
+  const session = loadAuthSession();
+  return requestApi<ApiPost[]>(`/posts/updates?${search.toString()}`, {
+    method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
+  });
+}
+
+export async function getFeedContext(postId: string, input: { beforeLimit?: number; afterLimit?: number } = {}): Promise<ApiFeedContext> {
+  const search = new URLSearchParams();
+  if (input.beforeLimit) {
+    search.set('before_limit', String(input.beforeLimit));
+  }
+  if (input.afterLimit) {
+    search.set('after_limit', String(input.afterLimit));
+  }
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  const session = loadAuthSession();
+  return requestApi<ApiFeedContext>(`/posts/context/${encodeURIComponent(postId)}${suffix}`, {
+    method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
 export async function getPost(postId: string): Promise<ApiPost> {
+  const session = loadAuthSession();
   return requestApi<ApiPost>(`/posts/${encodeURIComponent(postId)}`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
 export async function listPostReplies(postId: string): Promise<ApiPost[]> {
+  const session = loadAuthSession();
   return requestApi<ApiPost[]>(`/posts/${encodeURIComponent(postId)}/replies`, {
     method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
   });
 }
 
@@ -266,6 +403,7 @@ export async function createPost(accessToken: string, input: { content: string; 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
     body: JSON.stringify({
       kind: input.kind ?? 'post',
       content: input.content,
@@ -282,6 +420,7 @@ export async function getConnectionStatus(accessToken: string, username: string)
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -291,6 +430,7 @@ export async function sendFollowRequest(accessToken: string, recipientUsername: 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
     body: JSON.stringify({ recipient_username: recipientUsername }),
   });
 }
@@ -301,6 +441,7 @@ export async function acceptFollowRequest(accessToken: string, requestId: string
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -310,6 +451,7 @@ export async function rejectFollowRequest(accessToken: string, requestId: string
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -319,6 +461,7 @@ export async function cancelFollowRequest(accessToken: string, requestId: string
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -328,6 +471,7 @@ export async function removeConnection(accessToken: string, requestId: string): 
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -337,6 +481,7 @@ export async function listIncomingFollowRequests(accessToken: string): Promise<A
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -346,6 +491,55 @@ export async function listOutgoingFollowRequests(accessToken: string): Promise<A
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function listNotifications(accessToken: string, input: { cursor?: string; limit?: number } = {}): Promise<ApiNotificationPage> {
+  const search = new URLSearchParams();
+  if (input.cursor) {
+    search.set('cursor', input.cursor);
+  }
+  if (input.limit) {
+    search.set('limit', String(input.limit));
+  }
+  const suffix = search.size > 0 ? `?${search.toString()}` : '';
+  return requestApi<ApiNotificationPage>(`/notifications${suffix}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function getUnreadNotificationCount(accessToken: string): Promise<{ count: number }> {
+  return requestApi<{ count: number }>('/notifications/unread-count', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function markNotificationRead(accessToken: string, notificationId: string): Promise<ApiNotification> {
+  return requestApi<ApiNotification>(`/notifications/${encodeURIComponent(notificationId)}/read`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function markAllNotificationsRead(accessToken: string): Promise<void> {
+  await requestApi<void>('/notifications/read-all', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
   });
 }
 
@@ -361,14 +555,36 @@ export async function listFollowing(username: string): Promise<ApiConnectionList
   });
 }
 
-async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
+export async function removeFollower(accessToken: string, username: string): Promise<ApiFollowRequest> {
+  return requestApi<ApiFollowRequest>(`/connections/followers/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
+async function requestApi<T>(
+  path: string,
+  init: RequestInit & { authContext?: AuthRequestContext; skipAuthRefresh?: boolean; retryingAfterRefresh?: boolean },
+): Promise<T> {
+  const requestInit = { ...init };
+  if (!requestInit.skipAuthRefresh && requestInit.authContext === 'authenticated_request') {
+    const refreshedToken = await getProactivelyRefreshedAccessToken(requestInit.headers);
+    if (refreshedToken) {
+      requestInit.headers = withAuthorizationHeader(requestInit.headers, refreshedToken);
+    }
+  }
+
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
+    response = await fetchApi(path, {
+      ...requestInit,
       headers: {
         'Content-Type': 'application/json',
-        ...init.headers,
+        ...(requestInit.authContext ? { 'X-Friink-Auth-Context': requestInit.authContext } : {}),
+        ...requestInit.headers,
       },
       credentials: 'include',
     });
@@ -378,7 +594,31 @@ async function requestApi<T>(path: string, init: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    throw new AuthApiError(await getApiErrorMessage(response), response.status);
+    const apiError = await getApiError(response);
+    if (
+      !requestInit.skipAuthRefresh &&
+      !requestInit.retryingAfterRefresh &&
+      response.status === 401 &&
+      apiError.code === 'TOKEN_EXPIRED' &&
+      requestInit.authContext === 'authenticated_request'
+    ) {
+      try {
+        const refreshedSession = await refreshAuthSession();
+        return requestApi<T>(path, {
+          ...requestInit,
+          headers: withAuthorizationHeader(requestInit.headers, refreshedSession.accessToken),
+          retryingAfterRefresh: true,
+        });
+      } catch {
+        clearAuthSession();
+        throw new AuthApiError('Please log in again.', 401, 'REFRESH_TOKEN_INVALID');
+      }
+    }
+    throw new AuthApiError(apiError.message, response.status, apiError.code);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -390,29 +630,35 @@ function ensureTerminalPeriod(message: string): string {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
-async function getApiErrorMessage(response: Response): Promise<string> {
+async function getApiError(response: Response): Promise<{ message: string; code?: AuthErrorCode }> {
   try {
     const body = (await response.json()) as ApiErrorBody;
     if (typeof body.detail === 'string') {
-      return body.detail;
+      return { message: body.detail };
+    }
+    if (body.detail && !Array.isArray(body.detail) && typeof body.detail === 'object') {
+      return {
+        message: body.detail.message || `Friink API request failed with ${response.status}.`,
+        code: body.detail.code,
+      };
     }
     if (Array.isArray(body.detail)) {
       const firstMessage = body.detail.find((item) => item.msg)?.msg;
-      if (firstMessage) return firstMessage;
+      if (firstMessage) return { message: firstMessage };
     }
   } catch {
     // Fall through to the generic status message below.
   }
 
-  return `Friink API request failed with ${response.status}.`;
+  return { message: `Friink API request failed with ${response.status}.` };
 }
 
 function mapTokenResponse(response: ApiTokenResponse): AuthSession {
-  return {
+  return withAccessTokenExpiry({
     accessToken: response.access_token,
     tokenType: 'Bearer',
     user: mapApiUser(response.user),
-  };
+  });
 }
 
 function mapApiUser(user: ApiUser): AuthUser {
@@ -422,7 +668,63 @@ function mapApiUser(user: ApiUser): AuthUser {
     email: user.email,
     username: user.username,
     about: user.about ?? '',
+    isPrivate: user.is_private,
     status: user.is_verified ? 'active' : 'pending_email_verification',
     emailVerifiedAt: user.is_verified ? user.updated_at : null,
   };
+}
+
+function withAccessTokenExpiry(session: AuthSession): AuthSession {
+  return {
+    ...session,
+    accessTokenExpiresAt: getJwtTimestampMs(session.accessToken, 'exp') ?? session.accessTokenExpiresAt,
+  };
+}
+
+function getJwtTimestampMs(token: string, claim: 'iat' | 'exp'): number | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const [, payload] = token.split('.');
+  if (!payload) return undefined;
+  try {
+    const decoded = JSON.parse(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
+    return typeof decoded[claim] === 'number' ? decoded[claim] * 1000 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function getProactivelyRefreshedAccessToken(headers: HeadersInit | undefined): Promise<string | null> {
+  const session = loadPersistedAuthSession();
+  if (!session?.accessTokenExpiresAt) return null;
+  const authorization = getAuthorizationHeader(headers);
+  if (!authorization || authorization !== `Bearer ${session.accessToken}`) return null;
+
+  const issuedAt = getJwtTimestampMs(session.accessToken, 'iat');
+  if (!issuedAt) return null;
+  const refreshAt = issuedAt + (session.accessTokenExpiresAt - issuedAt) * TOKEN_REFRESH_LIFETIME_FRACTION;
+  if (Date.now() < refreshAt) return null;
+
+  const refreshedSession = await refreshAuthSession();
+  return refreshedSession.accessToken;
+}
+
+function getAuthorizationHeader(headers: HeadersInit | undefined): string | null {
+  if (!headers) return null;
+  if (headers instanceof Headers) return headers.get('Authorization') || headers.get('authorization');
+  if (Array.isArray(headers)) {
+    return headers.find(([key]) => key.toLowerCase() === 'authorization')?.[1] ?? null;
+  }
+  return headers.Authorization ?? headers.authorization ?? null;
+}
+
+function withAuthorizationHeader(headers: HeadersInit | undefined, accessToken: string): HeadersInit {
+  if (headers instanceof Headers) {
+    const next = new Headers(headers);
+    next.set('Authorization', `Bearer ${accessToken}`);
+    return next;
+  }
+  if (Array.isArray(headers)) {
+    return [...headers.filter(([key]) => key.toLowerCase() !== 'authorization'), ['Authorization', `Bearer ${accessToken}`]];
+  }
+  return { ...headers, Authorization: `Bearer ${accessToken}` };
 }

@@ -5,9 +5,13 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.connection import FollowRequest, FollowRequestStatus
+from app.models.notification import NotificationType
 from app.models.user import User
 from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
+from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
+from app.services.notifications import create_notification
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
 
@@ -35,6 +39,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
         email=data.email.lower(),
         username=data.username,
         display_name=data.display_name or data.username,
+        is_private=False,
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
@@ -54,6 +59,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
 
 async def update_current_user(session: Session, user: User, data: UpdateCurrentUserRequest) -> User:
     changed = False
+    was_private = user.is_private
 
     if data.username is not None and data.username != user.username:
         existing_user = await get_user_by_username(session, data.username)
@@ -78,6 +84,34 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
     if data.about is not None and data.about != user.about:
         user.about = data.about
         changed = True
+
+    if data.is_private is not None and data.is_private != user.is_private:
+        user.is_private = data.is_private
+        changed = True
+
+    if was_private and data.is_private is False:
+        now = datetime.now(UTC)
+        pending_requests = session.execute(
+            select(FollowRequest).where(
+                FollowRequest.recipient_id == user.id,
+                FollowRequest.status == FollowRequestStatus.pending,
+            )
+        ).scalars().all()
+        for request in pending_requests:
+            request.status = FollowRequestStatus.accepted
+            request.responded_at = now
+            create_notification(
+                session,
+                recipient_user_id=request.requester_id,
+                actor_user_id=user.id,
+                notification_type=NotificationType.request_accepted,
+                payload={
+                    "connection_id": str(request.id),
+                    "requester_username": request.requester.username if request.requester else None,
+                    "recipient_username": user.username,
+                    "recipient_display_name": user.display_name,
+                },
+            )
 
     if not changed:
         return user
@@ -122,4 +156,7 @@ def user_id_from_subject(subject: str) -> uuid.UUID:
     try:
         return uuid.UUID(subject)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Invalid token.", AuthErrorCode.TOKEN_SCHEMA_INVALID),
+        ) from exc

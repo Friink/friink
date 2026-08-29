@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 
 type ListRowProps = {
-  avatar: ReactNode;
+  avatar?: ReactNode;
   title: ReactNode;
   subtitle?: ReactNode;
   meta?: ReactNode;
@@ -17,12 +17,13 @@ type ListRowProps = {
 
 export function ListRow({ avatar, title, subtitle, meta, trailing, children, onClick, ariaLabel, unread = false, className = '' }: ListRowProps) {
   const rowClassName = `list-row${unread ? ' list-row-unread' : ''}${className ? ` ${className}` : ''}`;
+  const renderedTitle = typeof title === 'string' || typeof title === 'number' ? <strong>{title}</strong> : title;
   const content = (
     <>
-      <span className="list-row-avatar">{avatar}</span>
+      {avatar ? <span className="list-row-avatar">{avatar}</span> : null}
       <span className="list-row-copy">
         <span className="list-row-header">
-          <strong>{title}</strong>
+          {renderedTitle}
           {meta ? <small>{meta}</small> : null}
         </span>
         {subtitle ? <span className="list-row-subtitle">{subtitle}</span> : null}

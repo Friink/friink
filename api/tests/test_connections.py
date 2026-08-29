@@ -1,10 +1,11 @@
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from fastapi import HTTPException
 
 from app.models.connection import FollowRequest, FollowRequestStatus
+from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.connections import SendFollowRequestPayload
 from app.services import connections as service
@@ -13,11 +14,15 @@ from app.services import connections as service
 class FakeSession:
     def __init__(self) -> None:
         self.added: FollowRequest | None = None
+        self.notifications: list[Notification] = []
         self.commits = 0
 
-    def add(self, request: FollowRequest) -> None:
-        request.id = request.id or uuid.uuid4()
-        self.added = request
+    def add(self, item) -> None:
+        item.id = item.id or uuid.uuid4()
+        if isinstance(item, FollowRequest):
+            self.added = item
+        elif isinstance(item, Notification):
+            self.notifications.append(item)
 
     async def commit(self) -> None:
         self.commits += 1
@@ -28,6 +33,7 @@ def make_user(username: str) -> User:
         id=uuid.uuid4(),
         email=f"{username}@example.com",
         username=username,
+        is_private=False,
         password_hash="hash",
         date_of_birth=date(2000, 1, 1),
     )
@@ -74,11 +80,83 @@ async def test_duplicate_pending_request_returns_existing(monkeypatch: pytest.Mo
     async def fake_pair(session, requester_id, recipient_id, request_status):
         return existing if request_status == FollowRequestStatus.pending else None
 
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
     monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
 
     result = await service.send_follow_request(FakeSession(), requester, SendFollowRequestPayload(recipient_username="recipient"))
 
     assert result is existing
+
+
+@pytest.mark.asyncio
+async def test_follow_public_account_creates_immediate_relationship(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    recipient.is_private = False
+    fake_session = FakeSession()
+
+    async def fake_recipient(session, payload):
+        return recipient
+
+    async def fake_pair(session, requester_id, recipient_id, request_status):
+        return None
+
+    async def fake_get_follow_request(session, request_id):
+        return fake_session.added
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
+    monkeypatch.setattr(service, "_get_recipient", fake_recipient)
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "get_follow_request", fake_get_follow_request)
+
+    created = await service.send_follow_request(fake_session, requester, SendFollowRequestPayload(recipient_username="recipient"))
+
+    assert created.status == FollowRequestStatus.accepted
+    assert created.responded_at is not None
+
+
+@pytest.mark.asyncio
+async def test_follow_private_account_creates_pending_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    recipient.is_private = True
+    fake_session = FakeSession()
+
+    async def fake_recipient(session, payload):
+        return recipient
+
+    async def fake_pair(session, requester_id, recipient_id, request_status):
+        return None
+
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_cancel_resend_locked(session, requester_id, recipient_id):
+        return None
+
+    async def fake_get_follow_request(session, request_id):
+        return fake_session.added
+
+    monkeypatch.setattr(service, "_get_recipient", fake_recipient)
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "_raise_if_cancel_resend_locked", fake_cancel_resend_locked)
+    monkeypatch.setattr(service, "get_follow_request", fake_get_follow_request)
+
+    created = await service.send_follow_request(fake_session, requester, SendFollowRequestPayload(recipient_username="recipient"))
+
+    assert created.status == FollowRequestStatus.pending
+    assert created.responded_at is None
 
 
 @pytest.mark.asyncio
@@ -139,6 +217,7 @@ async def test_cancel_by_non_requester_rejected(monkeypatch: pytest.MonkeyPatch)
 async def test_cancel_then_resend_creates_fresh_pending_request(monkeypatch: pytest.MonkeyPatch) -> None:
     requester = make_user("requester")
     recipient = make_user("recipient")
+    recipient.is_private = True
     request = make_request(requester, recipient)
     fake_session = FakeSession()
 
@@ -154,8 +233,20 @@ async def test_cancel_then_resend_creates_fresh_pending_request(monkeypatch: pyt
     async def fake_pair(session, requester_id, recipient_id, request_status):
         return None
 
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_cancel_resend_locked(session, requester_id, recipient_id):
+        return None
+
     monkeypatch.setattr(service, "_get_recipient", fake_recipient)
     monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "_raise_if_cancel_resend_locked", fake_cancel_resend_locked)
 
     resent = await service.send_follow_request(fake_session, requester, SendFollowRequestPayload(recipient_username="recipient"))
 
@@ -166,16 +257,19 @@ async def test_cancel_then_resend_creates_fresh_pending_request(monkeypatch: pyt
 
 
 @pytest.mark.asyncio
-async def test_decline_then_resend_creates_fresh_pending_request(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_decline_then_resend_is_blocked_for_24_hours(monkeypatch: pytest.MonkeyPatch) -> None:
     requester = make_user("requester")
     recipient = make_user("recipient")
+    recipient.is_private = True
     request = make_request(requester, recipient)
     fake_session = FakeSession()
+    denied_at = datetime(2026, 8, 29, 10, 0, tzinfo=UTC)
 
     async def fake_get_follow_request(session, request_id):
         return request if request_id == request.id else fake_session.added
 
     monkeypatch.setattr(service, "get_follow_request", fake_get_follow_request)
+    monkeypatch.setattr(service, "_now", lambda: denied_at)
     await service.reject_follow_request(fake_session, recipient, request.id)
 
     async def fake_recipient(session, payload):
@@ -184,14 +278,158 @@ async def test_decline_then_resend_creates_fresh_pending_request(monkeypatch: py
     async def fake_pair(session, requester_id, recipient_id, request_status):
         return None
 
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return request
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
     monkeypatch.setattr(service, "_get_recipient", fake_recipient)
     monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+
+    with pytest.raises(HTTPException) as error:
+        await service.send_follow_request(fake_session, requester, SendFollowRequestPayload(recipient_username="recipient"))
+
+    assert request.status == FollowRequestStatus.rejected
+    assert error.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_decline_after_24_hours_allows_new_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    recipient.is_private = True
+    request = make_request(requester, recipient, FollowRequestStatus.rejected)
+    request.responded_at = datetime(2026, 8, 28, 8, 0, tzinfo=UTC)
+    fake_session = FakeSession()
+
+    async def fake_recipient(session, payload):
+        return recipient
+
+    async def fake_pair(session, requester_id, recipient_id, request_status):
+        return None
+
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return request
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_get_follow_request(session, request_id):
+        return fake_session.added
+
+    async def fake_cancel_resend_locked(session, requester_id, recipient_id):
+        return None
+
+    monkeypatch.setattr(service, "_get_recipient", fake_recipient)
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "get_follow_request", fake_get_follow_request)
+    monkeypatch.setattr(service, "_raise_if_cancel_resend_locked", fake_cancel_resend_locked)
+    monkeypatch.setattr(service, "_now", lambda: request.responded_at + timedelta(hours=25))
 
     resent = await service.send_follow_request(fake_session, requester, SendFollowRequestPayload(recipient_username="recipient"))
 
-    assert request.status == FollowRequestStatus.rejected
-    assert resent is fake_session.added
     assert resent.status == FollowRequestStatus.pending
+
+
+@pytest.mark.asyncio
+async def test_reject_resend_before_24_hours_is_blocked(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    rejected = make_request(requester, recipient, FollowRequestStatus.rejected)
+    rejected.responded_at = datetime(2026, 8, 29, 8, 0, tzinfo=UTC)
+
+    async def fake_recipient(session, payload):
+        return recipient
+
+    async def fake_pair(session, requester_id, recipient_id, request_status):
+        return None
+
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return rejected
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
+    monkeypatch.setattr(service, "_get_recipient", fake_recipient)
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "_now", lambda: rejected.responded_at + timedelta(hours=23))
+    recipient.is_private = True
+
+    with pytest.raises(HTTPException) as error:
+        await service.send_follow_request(FakeSession(), requester, SendFollowRequestPayload(recipient_username=recipient.username))
+
+    assert error.value.status_code == 403
+    assert "after" in str(error.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_cancel_three_times_then_fourth_attempt_is_blocked(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    first = datetime(2026, 8, 29, 8, 0, tzinfo=UTC)
+    cancels = [
+        make_request(requester, recipient, FollowRequestStatus.canceled),
+        make_request(requester, recipient, FollowRequestStatus.canceled),
+        make_request(requester, recipient, FollowRequestStatus.canceled),
+    ]
+    for index, request in enumerate(cancels):
+        request.responded_at = first + timedelta(minutes=index * 30)
+
+    async def fake_canceled_requests(session, requester_id, recipient_id):
+        return list(reversed(cancels))
+
+    monkeypatch.setattr(service, "_get_canceled_sender_requests", fake_canceled_requests)
+    monkeypatch.setattr(service, "_now", lambda: first + timedelta(hours=2))
+
+    with pytest.raises(HTTPException) as error:
+        await service._raise_if_cancel_resend_locked(FakeSession(), requester.id, recipient.id)
+
+    assert error.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_cancel_three_times_then_wait_24_hours_allows_resend(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    first = datetime(2026, 8, 29, 8, 0, tzinfo=UTC)
+    cancels = [
+        make_request(requester, recipient, FollowRequestStatus.canceled),
+        make_request(requester, recipient, FollowRequestStatus.canceled),
+        make_request(requester, recipient, FollowRequestStatus.canceled),
+    ]
+    for index, request in enumerate(cancels):
+        request.responded_at = first + timedelta(minutes=index * 30)
+
+    async def fake_canceled_requests(session, requester_id, recipient_id):
+        return list(reversed(cancels))
+
+    monkeypatch.setattr(service, "_get_canceled_sender_requests", fake_canceled_requests)
+    monkeypatch.setattr(service, "_now", lambda: first + timedelta(hours=24, minutes=1))
+
+    await service._raise_if_cancel_resend_locked(FakeSession(), requester.id, recipient.id)
+
+
+@pytest.mark.asyncio
+async def test_single_cancel_does_not_lock_out_resend(monkeypatch: pytest.MonkeyPatch) -> None:
+    requester = make_user("requester")
+    recipient = make_user("recipient")
+    canceled = make_request(requester, recipient, FollowRequestStatus.canceled)
+    canceled.responded_at = datetime(2026, 8, 29, 8, 0, tzinfo=UTC)
+
+    async def fake_canceled_requests(session, requester_id, recipient_id):
+        return [canceled]
+
+    monkeypatch.setattr(service, "_get_canceled_sender_requests", fake_canceled_requests)
+    monkeypatch.setattr(service, "_now", lambda: canceled.responded_at + timedelta(hours=1))
+
+    await service._raise_if_cancel_resend_locked(FakeSession(), requester.id, recipient.id)
 
 
 @pytest.mark.asyncio
@@ -214,6 +452,7 @@ async def test_unfollow_removes_active_edge_without_stale_accepted_row(monkeypat
 async def test_refollow_after_unfollow_requires_fresh_request(monkeypatch: pytest.MonkeyPatch) -> None:
     requester = make_user("requester")
     recipient = make_user("recipient")
+    recipient.is_private = True
     old_request = make_request(requester, recipient, FollowRequestStatus.accepted)
     fake_session = FakeSession()
 
@@ -229,14 +468,114 @@ async def test_refollow_after_unfollow_requires_fresh_request(monkeypatch: pytes
     async def fake_pair(session, requester_id, recipient_id, request_status):
         return None
 
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_cancel_resend_locked(session, requester_id, recipient_id):
+        return None
+
     monkeypatch.setattr(service, "_get_recipient", fake_recipient)
     monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "_raise_if_cancel_resend_locked", fake_cancel_resend_locked)
 
     fresh = await service.send_follow_request(fake_session, requester, SendFollowRequestPayload(recipient_username="recipient"))
 
     assert old_request.status == FollowRequestStatus.canceled
     assert fresh.status == FollowRequestStatus.pending
     assert fresh.id != old_request.id
+
+
+@pytest.mark.asyncio
+async def test_removed_follower_is_blocked_for_24_hours(monkeypatch: pytest.MonkeyPatch) -> None:
+    owner = make_user("owner")
+    follower = make_user("follower")
+    owner.is_private = False
+    accepted = make_request(follower, owner, FollowRequestStatus.accepted)
+    fake_session = FakeSession()
+    removed_at = datetime(2026, 8, 29, 11, 0, tzinfo=UTC)
+
+    async def fake_get_follow_request(session, request_id):
+        return accepted if request_id == accepted.id else fake_session.added
+
+    async def fake_get_user_by_username(session, username):
+        return follower if username == follower.username else None
+
+    async def fake_pair(session, requester_id, recipient_id, request_status):
+        if requester_id == follower.id and recipient_id == owner.id and request_status == FollowRequestStatus.accepted:
+            return accepted
+        return None
+
+    async def fake_recipient(session, payload):
+        return owner
+
+    monkeypatch.setattr(service, "get_follow_request", fake_get_follow_request)
+    monkeypatch.setattr(service, "get_user_by_username", fake_get_user_by_username)
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_recipient", fake_recipient)
+    monkeypatch.setattr(service, "_now", lambda: removed_at)
+
+    removed = await service.remove_follower(fake_session, owner, follower.username)
+
+    async def fake_pair_after_removal(session, requester_id, recipient_id, request_status):
+        return None
+
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return removed
+
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair_after_removal)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+
+    with pytest.raises(HTTPException) as error:
+        await service.send_follow_request(fake_session, follower, SendFollowRequestPayload(recipient_username=owner.username))
+
+    assert removed.status == FollowRequestStatus.canceled
+    assert removed.removed_at == removed_at
+    assert error.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_removed_follower_can_follow_again_after_24_hours(monkeypatch: pytest.MonkeyPatch) -> None:
+    owner = make_user("owner")
+    follower = make_user("follower")
+    owner.is_private = False
+    removed = make_request(follower, owner, FollowRequestStatus.canceled)
+    removed.removed_at = datetime(2026, 8, 28, 8, 0, tzinfo=UTC)
+    fake_session = FakeSession()
+
+    async def fake_recipient(session, payload):
+        return owner
+
+    async def fake_pair(session, requester_id, recipient_id, request_status):
+        return None
+
+    async def fake_latest_rejected_request(session, requester_id, recipient_id):
+        return None
+
+    async def fake_latest_removed_follower_request(session, requester_id, recipient_id):
+        return removed
+
+    async def fake_get_follow_request(session, request_id):
+        return fake_session.added
+
+    monkeypatch.setattr(service, "_get_recipient", fake_recipient)
+    monkeypatch.setattr(service, "_get_pair_request", fake_pair)
+    monkeypatch.setattr(service, "_get_latest_rejected_request", fake_latest_rejected_request)
+    monkeypatch.setattr(service, "_get_latest_removed_follower_request", fake_latest_removed_follower_request)
+    monkeypatch.setattr(service, "get_follow_request", fake_get_follow_request)
+    monkeypatch.setattr(service, "_now", lambda: removed.removed_at + timedelta(hours=25))
+
+    new_follow = await service.send_follow_request(fake_session, follower, SendFollowRequestPayload(recipient_username=owner.username))
+
+    assert new_follow.status == FollowRequestStatus.accepted
 
 
 def test_directional_follow_does_not_create_reverse_edge() -> None:

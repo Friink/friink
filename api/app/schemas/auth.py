@@ -71,6 +71,7 @@ class UpdateCurrentUserRequest(BaseModel):
     email: EmailStr | None = None
     display_name: str | None = Field(default=None, min_length=1, max_length=120)
     about: str | None = Field(default=None, max_length=256)
+    is_private: bool | None = None
 
     @field_validator("username")
     @classmethod
@@ -86,6 +87,7 @@ class UserResponse(BaseModel):
     username: str
     display_name: str | None
     about: str | None
+    is_private: bool
     date_of_birth: date
     location: str | None
     is_verified: bool
@@ -100,6 +102,7 @@ class PublicUserResponse(BaseModel):
     username: str
     display_name: str | None
     about: str | None
+    is_private: bool
 
     model_config = {"from_attributes": True}
 
