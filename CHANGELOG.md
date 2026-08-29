@@ -32,6 +32,9 @@ _Last updated: 2026-08-29_
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
 - [web] The Home/Explore feed now uses cursor-based loading for older posts, foreground-only polling for newer posts, top-of-feed manual refresh fallback, and local last-viewed post restore so the feed no longer depends on full-page reloads to update.
 - [web] Home feed restore now treats stale last-viewed post anchors as recoverable: if `/posts/context/{post_id}` fails, the client clears the saved anchor and falls back to the normal `/posts` feed load instead of showing `Could not load the Home feed.`.
+- [web] Chat now uses the shared `Tabs` component under the page navigation with `All`, `Muted`, and `Requests` filters.
+- [web] Connections `All` now combines live followers and following, while the `Requests` tab is hidden for public accounts using the existing `user.isPrivate`/`users.is_private` privacy flag.
+- [web] Connections tabs no longer fall back to sample/demo people when there are no live followers or following.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
 - [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
@@ -51,6 +54,10 @@ _Last updated: 2026-08-29_
 - [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
 
 ### Changed
+- [web] Removed the demo-data fallback from Connections tabs so `All`, `Followers`, and `Following` only display real API data.
+- [web] Fixed Connections filtering so `All` shows both followers and following from live API data, with duplicate/mutual people de-duped into one row.
+- [web] Hid the Connections `Requests` tab for public profiles based on the existing DB-backed `is_private` account setting.
+- [web] Added shared top tabs to the Chat page and wired the message list to the selected `All`, `Muted`, or `Requests` filter.
 - [api] Applied pending staging database migrations `20260829_0006` and `20260829_0007`, adding `users.is_private` and `follow_requests.removed_at`; this fixed the live staging `GET /posts` 500 that surfaced in the web app as `Could not load the Home feed.`.
 - [web] Made Home feed last-viewed restoration resilient to stale staging/localStorage anchors by clearing a failed saved anchor and retrying the normal `GET /posts` initial load before surfacing the fatal feed error.
 - [web] Added a network-only API-origin fallback so browser requests that are compiled to `https://staging-api.friink.com` retry `https://api.friink.com` before surfacing `Failed to fetch.`, while successful requests and normal HTTP auth errors continue unchanged.
@@ -62,6 +69,9 @@ _Last updated: 2026-08-29_
 - [web] Added the new App Router post-detail route at `web/app/[username]/[postId]` and kept the old `/posts/{postId}` page as a compatibility redirect that resolves the post author and forwards to the canonical username-scoped path.
 
 ### Verified
+- [web] `npm run build` passed in `web` after removing the Connections tabs demo fallback; the first attempt hit a stale generated `.next` readlink error, then passed after clearing `web/.next`, and the follow-up broad removal also passed.
+- [web] `npm run build` passed in `web` after the Connections `All`/Requests visibility fix.
+- [web] `npm run build` passed in `web` after adding Chat tabs.
 - [api] Before applying migrations, local ORM reproduction against `api/.env.staging` failed with `column users.is_private does not exist`; after `alembic upgrade head`, the same feed query returned 9 items.
 - [api] `alembic current` against staging now reports `20260829_0007 (head)`.
 - [api] Live `GET https://staging-api.friink.com/posts` now returns `200` with the paginated feed payload and CORS headers for `https://staging.friink.com`.

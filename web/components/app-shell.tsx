@@ -19,7 +19,7 @@ import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastMessage } from '@/components/toast-stack';
-import { initialConnections, initialPosts, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
+import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
   cancelFollowRequest,
@@ -85,17 +85,29 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
-  const [followers, setFollowers] = useState<typeof initialConnections>([]);
-  const [following, setFollowing] = useState<typeof initialConnections>([]);
+  const [followers, setFollowers] = useState<Connection[]>([]);
+  const [following, setFollowing] = useState<Connection[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
   const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
-  const [messagesTab, setMessagesTab] = useState('all');
+  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>('all');
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
+  const connectionsTabs = user.isPrivate
+    ? [
+        { id: 'all', label: 'All' },
+        { id: 'followers', label: 'Followers' },
+        { id: 'following', label: 'Following' },
+        { id: 'requests', label: 'Requests' },
+      ]
+    : [
+        { id: 'all', label: 'All' },
+        { id: 'followers', label: 'Followers' },
+        { id: 'following', label: 'Following' },
+      ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
   const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || activeScreen === 'profile' || (activeScreen === 'messages' && hasContextualFloatingBar));
@@ -314,6 +326,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }, [profileUser, user]);
 
   useEffect(() => {
+    if (!user.isPrivate && connectionsFilter === 'requests') {
+      setConnectionsFilter('all');
+    }
+  }, [connectionsFilter, user.isPrivate]);
+
+  useEffect(() => {
     if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;
     if (!profileUser || profileUser.username === user.username) return;
     if (floatingDraft.trim().length > 0) return;
@@ -424,6 +442,42 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       relationship,
       status: 'connected' as const,
     };
+  }
+
+  function getConnectionsForFilter() {
+    const liveConnections = mergeConnections(followers, following);
+
+    if (connectionsFilter === 'followers') {
+      return followers;
+    }
+
+    if (connectionsFilter === 'following') {
+      return following;
+    }
+
+    if (connectionsFilter === 'requests') {
+      return [];
+    }
+
+    return liveConnections;
+  }
+
+  function mergeConnections(left: Connection[], right: Connection[]) {
+    const merged = new Map<string, Connection>();
+
+    for (const connection of [...left, ...right]) {
+      const existing = merged.get(connection.handle);
+      if (existing) {
+        merged.set(connection.handle, {
+          ...existing,
+          relationship: existing.relationship === connection.relationship ? existing.relationship : 'mutual',
+        });
+      } else {
+        merged.set(connection.handle, connection);
+      }
+    }
+
+    return [...merged.values()];
   }
 
   async function handleFollowProfile() {
@@ -564,15 +618,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
             )}
             {showTabs !== false && activeScreen === 'connections' && (
               <Tabs
-                tabs={[
-                  { id: 'all', label: 'All' },
-                  { id: 'followers', label: 'Followers' },
-                  { id: 'following', label: 'Following' },
-                  { id: 'requests', label: 'Requests' },
-                ]}
+                tabs={connectionsTabs}
                 activeId={connectionsFilter}
                 onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
                 ariaLabel="Connections filters"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'messages' && (
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'All' },
+                  { id: 'muted', label: 'Muted' },
+                  { id: 'requests', label: 'Requests' },
+                ]}
+                activeId={messagesTab}
+                onChange={(id) => setMessagesTab(id as 'all' | 'muted' | 'requests')}
+                ariaLabel="Chat filters"
               />
             )}
             {showTabs !== false && activeScreen === 'settings' && (
@@ -621,13 +682,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   )}
                   {activeScreen === 'connections' && (
                     <ConnectionsScreen
-                      connections={
-                        connectionsFilter === 'followers'
-                          ? (followers.length > 0 ? followers : initialConnections.filter((connection) => connection.relationship === 'follower'))
-                          : connectionsFilter === 'following'
-                            ? (following.length > 0 ? following : initialConnections.filter((connection) => connection.relationship === 'following' || connection.relationship === 'mutual'))
-                            : initialConnections
-                      }
+                      connections={getConnectionsForFilter()}
                       activeFilter={connectionsFilter}
                       onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
@@ -652,7 +707,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onToast={addToast}
                     />
                   )}
-                  {activeScreen === 'messages' && <MessagesScreen />}
+                  {activeScreen === 'messages' && <MessagesScreen activeTab={messagesTab} />}
                 </>
               )}
             </ContentBox>

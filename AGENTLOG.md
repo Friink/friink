@@ -34,6 +34,63 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 17:20 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Remove demo fallback data from the Connections tabs.
+ - Changes:
+   - Updated `web/components/app-shell.tsx` so the Connections `All` tab returns only the live merged followers/following list.
+   - Removed the static `initialConnections` fallback from `All`, `Followers`, and `Following` so every Connections tab displays only real API data or the empty state.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/components/app-shell.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Connections tabs should represent real connection data now that followers/following API calls are wired; showing old sample people in any tab is misleading.
+ - Notes:
+   - The first `npm run build` attempt failed before compilation because Next.js hit a stale generated `.next/server/font-manifest.json` readlink error. Cleared `web/.next` after verifying the path was inside the web workspace, then reran the build successfully.
+ - Verified Working?: yes — `npm run build` in `web` passed after clearing generated output and rerunning; the follow-up broad removal from Followers/Following also passed.
+
+ - Date/Time: 2026-08-29 17:15 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Fix Connections All tab and hide Requests for public profiles; confirm privacy DB variable.
+ - Changes:
+   - Updated `web/components/app-shell.tsx` so Connections `All` combines live followers and following instead of falling back to the static sample connection list.
+   - Added de-duping for people present in both lists, marking the merged relationship as `mutual`.
+   - Made the Connections tab list conditional on `user.isPrivate`, hiding `Requests` for public accounts and resetting an active `requests` filter back to `all` if the account is public.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/components/app-shell.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The API already exposes `users.is_private` as `is_private`, and `web/lib/auth.ts` maps it to `AuthUser.isPrivate`, so the UI can use the existing DB-backed privacy flag without adding schema. Requests are only relevant for private account approval flow, while public accounts accept follows immediately and should not show that tab.
+ - Notes:
+   - Confirmed `api/app/models/user.py` includes `is_private`, `api/app/schemas/auth.py` exposes it on user/public-user responses, and the frontend auth model already carries `isPrivate`.
+   - This same privacy flag is the right backend primitive for future feed visibility rules; feed filtering itself was not changed in this pass.
+ - Verified Working?: yes — `npm run build` in `web` passed after the Connections filter and Requests visibility update.
+
+ - Date/Time: 2026-08-29 17:05 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Add shared global tabs to the Chat page for All, Muted, and Requests.
+ - Changes:
+   - Updated `web/components/app-shell.tsx` to render the shared `Tabs` component for the Chat screen in the same top position used by Home, Connections, and Settings.
+   - Added Chat tab state for `All`, `Muted`, and `Requests`, and passed the selected tab into `MessagesScreen`.
+   - Updated `web/components/screens.tsx` so the message list filters by the selected Chat tab and renders an empty list message when a filter has no conversations.
+   - Added explicit `muted` and `request` flags to `web/lib/mock-conversations.ts` so the new filters have stable data fields without inventing muted/request conversations.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/components/app-shell.tsx
+   - web/components/screens.tsx
+   - web/lib/mock-conversations.ts
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Chat should use the same shared tab strip placement and behavior as Home, directly under the page navigation. The current mock chat data has no real muted/request conversations, so the new filters are wired for the future data shape while keeping the present list truthful.
+ - Notes:
+   - No CSS changes were needed because the existing shared `Tabs` component and message list spacing already match the requested placement.
+ - Verified Working?: yes — `npm run build` in `web` passed after the Chat tabs update.
+
  - Date/Time: 2026-08-29 16:55 +05:00
  - Agent: Codex
  - Model: GPT-5

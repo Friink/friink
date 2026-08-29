@@ -9,7 +9,6 @@ import { PageSurface } from '@/components/page-surface';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
 import { formatRelativeTime } from '@/lib/time';
-import { Tabs } from '@/components/tabs';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
   return <div className="screen-heading"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="intro-copy">{copy}</p></div>;
@@ -19,7 +18,9 @@ export function QuestionsScreen() {
   return <><ScreenHeading eyebrow="Ask your people" title="Questions" copy="Small questions are a good way to start a conversation." /><div className="question-prompt"><span className="prompt-spark">✦</span><div><strong>What are you curious about?</strong><p>Ask your circle anything, big or small.</p></div><button className="primary-button">Ask a question</button></div><div className="section-heading"><h2>Recent questions</h2><button className="text-button">See all <span>→</span></button></div><div className="question-list"><div className="question-card"><div className="question-meta"><span className="avatar avatar-coral">MC</span><span><strong>Maya Chen</strong> asked <small>25 min ago</small></span></div><p>What is one place you would return to in a heartbeat?</p><div className="question-footer"><span>12 answers</span><button className="text-button">Answer →</button></div></div><div className="question-card"><div className="question-meta"><span className="avatar avatar-sage">JB</span><span><strong>Jon Bell</strong> asked <small>1 hr ago</small></span></div><p>What are you listening to on repeat this week?</p><div className="question-footer"><span>7 answers</span><button className="text-button">Answer →</button></div></div></div></>;
 }
 
-export function MessagesScreen() {
+type MessagesTab = 'all' | 'muted' | 'requests';
+
+export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
 
@@ -27,6 +28,11 @@ export function MessagesScreen() {
 
   const router = useRouter();
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
+  const visibleConversations = conversations.filter((conversation) => {
+    if (activeTab === 'muted') return conversation.muted === true;
+    if (activeTab === 'requests') return conversation.request === true;
+    return true;
+  });
 
   function sendMessage(event: React.FormEvent) {
     event.preventDefault();
@@ -78,7 +84,7 @@ export function MessagesScreen() {
   return (
     <PageSurface className="messages-screen" variant="list">
       <div className="message-list">
-        {conversations.map((conversation) => (
+        {visibleConversations.map((conversation) => (
           <ListRow
             key={conversation.id}
             avatar={
@@ -99,6 +105,7 @@ export function MessagesScreen() {
             ariaLabel={`Open chat with ${conversation.name}`}
           />
         ))}
+        {visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
       </div>
     </PageSurface>
   );
