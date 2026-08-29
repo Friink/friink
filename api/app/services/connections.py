@@ -24,6 +24,7 @@ def _now() -> datetime:
 
 
 DENIAL_COOLDOWN = timedelta(hours=24)
+FOLLOWER_REMOVAL_COOLDOWN = timedelta(hours=24)
 
 
 async def send_follow_request(session: Session, requester: User, payload: SendFollowRequestPayload) -> FollowRequest:
@@ -48,6 +49,14 @@ async def send_follow_request(session: Session, requester: User, payload: SendFo
     )
     if existing_accepted:
         return existing_accepted
+
+    latest_removed = await _get_latest_removed_follower_request(session, requester.id, recipient.id)
+    if latest_removed and latest_removed.removed_at and latest_removed.removed_at + FOLLOWER_REMOVAL_COOLDOWN > _now():
+        retry_at = latest_removed.removed_at + FOLLOWER_REMOVAL_COOLDOWN
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You can follow this account again after {retry_at.isoformat()}.",
+        )
 
     if recipient.is_private:
         latest_rejected = await _get_latest_rejected_request(session, requester.id, recipient.id)
@@ -85,6 +94,7 @@ async def reject_follow_request(session: Session, actor: User, request_id: uuid.
     _require_pending(request, "Only pending follow requests can be rejected.")
     request.status = FollowRequestStatus.rejected
     request.responded_at = _now()
+    request.removed_at = None
     await commit(session)
     return await get_follow_request(session, request.id)
 
@@ -96,6 +106,7 @@ async def cancel_follow_request(session: Session, actor: User, request_id: uuid.
     _require_pending(request, "Only pending follow requests can be canceled.")
     request.status = FollowRequestStatus.canceled
     request.responded_at = _now()
+    request.removed_at = None
     await commit(session)
     return await get_follow_request(session, request.id)
 
@@ -108,6 +119,7 @@ async def remove_connection(session: Session, actor: User, request_id: uuid.UUID
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only accepted connections can be removed.")
     request.status = FollowRequestStatus.canceled
     request.responded_at = _now()
+    request.removed_at = None
     await commit(session)
     return await get_follow_request(session, request.id)
 
@@ -123,6 +135,7 @@ async def remove_follower(session: Session, actor: User, follower_username: str)
 
     request.status = FollowRequestStatus.canceled
     request.responded_at = _now()
+    request.removed_at = request.responded_at
     await commit(session)
     return await get_follow_request(session, request.id)
 
@@ -211,6 +224,7 @@ def serialize_follow_request(request: FollowRequest) -> FollowRequestResponse:
         status=request.status,
         created_at=request.created_at,
         responded_at=request.responded_at,
+        removed_at=request.removed_at,
     )
 
 
@@ -256,6 +270,24 @@ async def _get_latest_rejected_request(
             FollowRequest.status == FollowRequestStatus.rejected,
         )
         .order_by(FollowRequest.responded_at.desc(), FollowRequest.created_at.desc())
+    )
+    return result.scalars().first()
+
+
+async def _get_latest_removed_follower_request(
+    session: Session,
+    requester_id: uuid.UUID,
+    recipient_id: uuid.UUID,
+) -> FollowRequest | None:
+    result = session.execute(
+        select(FollowRequest)
+        .options(selectinload(FollowRequest.requester), selectinload(FollowRequest.recipient))
+        .where(
+            FollowRequest.requester_id == requester_id,
+            FollowRequest.recipient_id == recipient_id,
+            FollowRequest.removed_at.is_not(None),
+        )
+        .order_by(FollowRequest.removed_at.desc(), FollowRequest.created_at.desc())
     )
     return result.scalars().first()
 

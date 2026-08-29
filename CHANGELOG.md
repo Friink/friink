@@ -42,6 +42,16 @@ _Last updated: 2026-08-29_
 
 ## 2026-08-29
 
+### Changed
+- [api] Added a separate `removed_at` timestamp on `follow_requests` so owner-side follower removal now triggers its own 24-hour re-follow cooldown without affecting sender-canceled requests.
+- [api] Removed followers can no longer immediately re-follow a public or private account; re-follow attempts are blocked until 24 hours after the owner removed them.
+
+### Verified
+- [api] `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py` passed after adding the follower-removal cooldown rule.
+- [api] `python -m compileall api/app api/tests` passed after the follower-removal cooldown update.
+
+## 2026-08-29
+
 ### Added
 - [api] Added account privacy support with a persisted `users.is_private` flag, public-account instant follow behavior, a 24-hour cooldown after denied private follow requests, transactional auto-accept of pending requests when a user switches from private to public, and a dedicated owner-side remove-follower action.
 - [web] Wired the Settings privacy toggle to the real account setting and added owner-side follower removal from the Connections follower list when API data is available.

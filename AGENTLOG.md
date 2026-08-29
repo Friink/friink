@@ -27,6 +27,29 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 13:20 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Change owner-side follower removal so it also enforces a 24-hour re-follow cooldown.
+ - Changes:
+   - Added Alembic migration `20260829_0007_add_removed_at_to_follow_requests.py` and updated `api/app/models/connection.py` plus `api/app/schemas/connections.py` so follow rows can distinguish owner-side removals from sender-canceled requests.
+   - Updated `api/app/services/connections.py` so `remove_follower()` stamps `removed_at`, normal cancel/unfollow paths clear it, and new follow attempts are blocked for 24 hours when the latest owner-removal for that requester/recipient pair is still within the cooldown window.
+   - Updated `api/tests/test_connections.py` so owner-side removal now asserts a 24-hour block instead of immediate re-follow, while still confirming sender cancellation remains exempt and re-follow works again after 24 hours.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - api/alembic/versions/20260829_0007_add_removed_at_to_follow_requests.py
+   - api/app/models/connection.py
+   - api/app/schemas/connections.py
+   - api/app/services/connections.py
+   - api/tests/test_connections.py
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Once owner-removal needed the same 24-hour restriction as denial, the previous reuse of `status='canceled'` was no longer enough because sender-cancel must still be exempt. A dedicated `removed_at` timestamp is the smallest durable distinction that preserves the existing single-table relationship model.
+ - Notes:
+   - This cooldown now applies to re-following both public and private accounts after owner-side removal.
+   - Sender-canceled pending requests still do not trigger cooldown.
+ - Verified Working?: yes — `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py` passed (16 tests) and `python -m compileall api/app api/tests` passed after the update.
+
  - Date/Time: 2026-08-29 13:05 +05:00
  - Agent: Codex
  - Model: GPT-5
