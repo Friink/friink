@@ -19,6 +19,25 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 08:40 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Perform a read-only audit of whether reply and quote relationships are properly separated or incorrectly collapsed into one post FK column.
+- Changes:
+  - Inspected `api/alembic/versions/20260829_0005_add_post_kind_and_parent.py` and confirmed it adds `posts.kind` plus `posts.parent_post_id`, while quote support remains on the pre-existing `posts.quoted_post_id` column.
+  - Inspected `api/app/models/post.py` and confirmed `parent_post_id` backs `parent_post`/`replies`, while `quoted_post_id` backs the distinct `quoted_post` relationship.
+  - Inspected `api/app/schemas/posts.py`, `api/app/services/posts.py`, and `api/app/routers/posts.py` and confirmed reply creation requires `parent_post_id`, quote creation requires `quoted_post_id`, and normal posts reject both relationship fields.
+  - Inspected frontend data/API/component paths and confirmed quote preview rendering uses nested `quotedPost`, while reply thread rendering uses the separate `/posts/{post_id}/replies` response.
+  - Updated `CHANGELOG.md` with synchronized audit notes.
+- Files:
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The audit found the schema already models reply threading and quote citation as separate relationships, so no code change was warranted for this concern.
+- Notes:
+  - No files other than logs were modified.
+  - Future delete semantics remain unresolved: quoted-post deletion and reply-parent deletion likely need different behavior, but that is a later product/schema decision rather than evidence of relationship conflation.
+- Verified Working?: read-only audit only — no build or tests run.
+
 - Date/Time: 2026-08-29 08:25 +05:00
 - Agent: Codex
 - Model: GPT-5

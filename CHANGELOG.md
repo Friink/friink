@@ -150,6 +150,17 @@ _Last updated: 2026-08-29_
 ### Verified
 - [web] Build not run; text-only composer label update.
 
+## 2026-08-29
+
+### Audited
+- [api][web] Confirmed reply threading and quote citation are not collapsed into one relationship: replies use `parent_post_id`, while quotes continue to use the separate `quoted_post_id` relationship and nested `quoted_post` response data.
+
+### Notes
+- [api] No code change needed for the relationship-separation concern. Future delete semantics still need an explicit product decision because both reply parents and quoted posts are self-referential post links with different likely behaviors.
+
+### Verified
+- [api][web] Read-only audit only; no build or tests run.
+
 ### Verified
 - [web] `npm run build` passed in `web` after the reply/quote composer, post-thread updates, newline rendering, floating-bar visibility, and shared-composer/count updates, but runtime post loading/creation is currently reported broken and was not resolved in this pass.
 
