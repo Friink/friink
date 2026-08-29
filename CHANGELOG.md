@@ -51,6 +51,7 @@ _Last updated: 2026-08-29_
 - [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
 
 ### Changed
+- [api] Applied pending staging database migrations `20260829_0006` and `20260829_0007`, adding `users.is_private` and `follow_requests.removed_at`; this fixed the live staging `GET /posts` 500 that surfaced in the web app as `Could not load the Home feed.`.
 - [web] Made Home feed last-viewed restoration resilient to stale staging/localStorage anchors by clearing a failed saved anchor and retrying the normal `GET /posts` initial load before surfacing the fatal feed error.
 - [web] Added a network-only API-origin fallback so browser requests that are compiled to `https://staging-api.friink.com` retry `https://api.friink.com` before surfacing `Failed to fetch.`, while successful requests and normal HTTP auth errors continue unchanged.
 - [web] Centralized frontend API-origin resolution so local development still defaults to `http://localhost:8000`, while deployed/browser contexts now require `NEXT_PUBLIC_API_BASE_URL` instead of silently attempting localhost and surfacing a generic `Failed to fetch.` on login.
@@ -61,6 +62,9 @@ _Last updated: 2026-08-29_
 - [web] Added the new App Router post-detail route at `web/app/[username]/[postId]` and kept the old `/posts/{postId}` page as a compatibility redirect that resolves the post author and forwards to the canonical username-scoped path.
 
 ### Verified
+- [api] Before applying migrations, local ORM reproduction against `api/.env.staging` failed with `column users.is_private does not exist`; after `alembic upgrade head`, the same feed query returned 9 items.
+- [api] `alembic current` against staging now reports `20260829_0007 (head)`.
+- [api] Live `GET https://staging-api.friink.com/posts` now returns `200` with the paginated feed payload and CORS headers for `https://staging.friink.com`.
 - [web] `npm run build` passed in `web` after the stale Home feed restore fallback.
 - [web] Reproduced in the in-app browser that `https://staging.friink.com/login` showed `Failed to fetch.` after submit while `https://friink.com/login` reached the backend and returned `Invalid credentials.` for the same dummy payload; fetched the deployed login bundles and confirmed staging was compiled against `https://staging-api.friink.com` while production was compiled against `https://api.friink.com`.
 - [web] `npm run build` passed in `web` after adding the staging-to-production API network fallback.

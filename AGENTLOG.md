@@ -23,9 +23,49 @@
 > reusable shared components/contracts such as `ContentBox`, `PageSurface`,
 > `ListRow`, `FloatingBar`, or the relevant documented design token.
 >
+> DATABASE MIGRATION RULE: After any backend change that adds, removes, or
+> changes SQLAlchemy models, Alembic migrations, schemas, or DB-backed query
+> behavior, verify the target database is configured and migrated before
+> treating staging/prod as healthy. Run/check `alembic current`, apply
+> `alembic upgrade head` for the intended environment when needed, and verify
+> at least one live ORM-backed endpoint, not only `/health/db`.
+>
 > IMPORTANT: Do not add a `User` field to any entry. Entries should only
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
+
+ - Date/Time: 2026-08-29 16:55 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Add a permanent AGENTLOG header rule to prevent future staging/prod schema drift after backend changes.
+ - Changes:
+   - Added a `DATABASE MIGRATION RULE` to the `AGENTLOG.md` header requiring agents to verify target DB configuration and Alembic state after DB-backed backend/model/schema/query changes.
+ - Files:
+   - AGENTLOG.md
+ - Reason/Decision: The staging Home feed outage happened because API code expected columns from newer migrations while the staging DB was still behind. Making migration verification a standing header rule should keep future agents from stopping at code deploy/build verification.
+ - Notes:
+   - The rule explicitly calls out `alembic current`, `alembic upgrade head`, and verifying a live ORM-backed endpoint because `/health/db` can pass even when ORM-backed routes crash on missing columns.
+ - Verified Working?: n/a — documentation/log instruction change only.
+
+ - Date/Time: 2026-08-29 16:50 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Resolve the still-failing staging Home feed after the frontend stale-anchor fallback did not fix it.
+ - Changes:
+   - Confirmed live `GET https://staging-api.friink.com/posts` returned `500 Internal Server Error` while `https://api.friink.com/posts` returned `200`, narrowing the issue to staging API/database state.
+   - Verified staging API root and `/health/db` returned `200`, so DNS, Vercel routing, and basic DB connectivity were not the blocker.
+   - Reproduced the backend feed failure locally against `api/.env.staging`: SQLAlchemy crashed while loading post authors because `users.is_private` did not exist.
+   - Checked Alembic state and found staging was at `20260829_0005`; applied pending migrations `20260829_0006` and `20260829_0007`.
+   - Re-ran the local ORM feed query against staging DB successfully and confirmed live staging `/posts` now returns `200` with CORS headers for `https://staging.friink.com`.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The deployed staging API was running model code that selected `users.is_private`, but the staging database had not been migrated past `20260829_0005`. Applying the committed Alembic migrations was the correct fix; changing the frontend or relaxing the model would have hidden a schema drift problem.
+ - Notes:
+   - No source code changes were required for this second fix; the earlier `web/components/home-screen.tsx` stale-anchor recovery remains useful but was not the root cause of the live staging 500.
+   - Production `https://api.friink.com/posts` returned a feed successfully before this migration pass, so the observed outage was specific to staging API/database state.
+ - Verified Working?: yes — staging Alembic current reports `20260829_0007 (head)`, local ORM feed query against staging returns 9 items, and live staging `/posts` returns HTTP 200 with expected CORS headers.
 
  - Date/Time: 2026-08-29 16:40 +05:00
  - Agent: Codex
