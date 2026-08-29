@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
@@ -9,12 +9,6 @@ from app.models.post import Post, PostKind
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh
-
-
-def normalize_post_kind(kind: PostKind | None) -> PostKindSchema:
-    if kind is None:
-        return PostKindSchema.post
-    return PostKindSchema(kind.value)
 
 async def create_post(session: Session, user: User, data: CreatePostRequest) -> Post:
     if data.media is not None:
@@ -59,7 +53,7 @@ async def get_posts(session: Session) -> list[Post]:
     result = session.execute(
         select(Post)
         .options(selectinload(Post.user), selectinload(Post.quoted_post).selectinload(Post.user))
-        .where(Post.deleted_at.is_(None), or_(Post.kind.is_(None), Post.kind != PostKind.REPLY))
+        .where(Post.deleted_at.is_(None), Post.kind != PostKind.REPLY)
         .order_by(Post.created_at.desc())
     )
     return list(result.scalars().all())
@@ -98,7 +92,7 @@ def serialize_post(post: Post) -> PostResponse:
     return PostResponse(
         id=post.id,
         user_id=post.user_id,
-        kind=normalize_post_kind(post.kind),
+        kind=PostKindSchema(post.kind.value),
         author_username=post.user.username,
         author_display_name=post.user.display_name,
         content=post.content,

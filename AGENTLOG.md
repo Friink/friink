@@ -19,6 +19,29 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 08:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the post loading/post creation regression without adding legacy NULL-kind compatibility, apply the missing staging migration, and fix the enum binding bug behind the server-side `500`.
+- Changes:
+  - Inspected staging DB directly using `api/.env.staging`; found `alembic_version` was still `20260828_0004`, `posts` only had the older `quoted_post_id` and `content` columns from the inspected subset, and the `post_kind` enum did not exist.
+  - Ran `alembic upgrade head` against the staging database, applying `20260829_0005`.
+  - Re-inspected staging DB and confirmed `alembic_version` is now `20260829_0005`, `posts.kind` exists as non-null `post_kind` with default `'post'::post_kind`, `posts.parent_post_id` exists, and `post_kind` values are `post`, `quote`, `reply`.
+  - Hit `GET https://staging-api.friink.com/posts` directly and confirmed it returned HTTP `500 Internal Server Error`, proving the browser `failed to fetch` symptom was server-side and not a frontend diagnosis.
+  - Reproduced the actual Python/SQLAlchemy error locally against staging DB: `invalid input value for enum post_kind: "REPLY"` from `Post.kind != PostKind.REPLY`.
+  - Updated `api/app/models/post.py` so SQLAlchemy `Enum(PostKind, name="post_kind")` uses enum values via `values_callable`, binding lowercase `post`, `quote`, and `reply` to match the Postgres enum.
+  - Ran a narrow ORM smoke check against staging DB confirming the feed query succeeds, a temporary post inserts with kind `post`, and the temporary row was deleted.
+- Files:
+  - api/app/models/post.py
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The staging database schema first had to match the migration chain, then the real crash was a case-sensitive enum contract mismatch. SQLAlchemy stores Python enum names by default unless told to use values, while the migration intentionally created lowercase Postgres enum values.
+- Notes:
+  - No backward-compatibility handling for legacy or NULL `kind` values was added or reintroduced.
+  - The direct API `500` was confirmed before the model fix; because this local code change still needs deployment before staging API behavior changes, browser verification was intentionally left to the user per instruction.
+  - `web/.env.local` still points to `http://localhost:8000`; deployed/staging frontend behavior depends on Vercel `NEXT_PUBLIC_API_BASE_URL`, not that local file.
+- Verified Working?: partial — direct DB migration state is fixed and ORM-level list/create behavior now works against staging DB; skipped `npm run build`, curl-level post-create after deploy, frontend browser verification, and commit per user direction.
+
 - Date/Time: 2026-08-29 07:25 +05:00
 - Agent: Codex
 - Model: GPT-5
@@ -56,7 +79,7 @@
 - Notes:
   - Quote previews currently render text-first and already carry the shape needed for future media preview support, but real media attachment rendering still depends on the later media pipeline work.
   - The dedicated post page now acts as the thread surface: quotes still resolve to a post page because they are posts, while replies stay scoped to that thread view.
-  - Follow-up regression note: after this change set, the user reported that existing posts no longer load and new posts no longer publish. A small compatibility patch was then applied so null legacy `kind` values are treated as `post` in both the API serializer/query path and frontend mappers, but the next agent should still check whether the database migration was applied and whether live post list/create requests are failing due to schema drift.
+  - Follow-up regression note: after this change set, the user reported that existing posts no longer load and new posts no longer publish. A small compatibility patch for null legacy `kind` values was tried in the API/frontend mapping path and then reverted after the user confirmed it did not fix the issue. The next agent should start with migration/application state and live post list/create request failures instead of retrying that fallback.
 - Verified Working?: yes — `npm run build` in `web` passed after the reply/quote composer, thread-loading, and post-kind updates.
 
 - Date/Time: 2026-08-29 06:35 +05:00

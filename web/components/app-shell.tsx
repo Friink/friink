@@ -342,7 +342,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
-      kind: post.kind ?? 'post',
+      kind: post.kind,
       name: post.author_display_name || post.author_username,
       handle: `@${post.author_username}`,
       initials: getInitials(post.author_display_name || post.author_username),

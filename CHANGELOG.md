@@ -129,10 +129,18 @@ _Last updated: 2026-08-29_
 - [web] Feed post bodies and quoted post content now preserve newline formatting instead of collapsing multi-line posts into a single rendered line.
 - [web] Added a 512-character limit and live character count to the floating post composer, matching the settings profile `About` field pattern.
 - [web] Adjusted the compact multiline post composer textarea spacing so the `Write a post...` placeholder sits vertically centered before expansion.
-- [api][web] Added a compatibility fallback so legacy or mixed-data posts with a missing `kind` are treated as normal posts instead of disappearing from the feed or breaking frontend mapping.
 
 ### Known Issue
-- [api][web] After the reply/quote post model changes, the app has been reported as failing to show existing posts and failing to create new posts. A fallback for null legacy `kind` values has now been added, but if the issue persists treat migration/application state and live API contract drift as the first things to investigate in the next pass.
+- [api][web] After the reply/quote post model changes, the app has been reported as failing to show existing posts and failing to create new posts. A temporary compatibility fallback for null legacy `kind` values was tried and then reverted because it did not resolve the issue. Treat migration/application state and live API contract drift as the first things to investigate in the next pass.
+
+### Fixed
+- [api] Applied Alembic migration `20260829_0005` to the staging database after direct inspection showed staging was still at `20260828_0004` and the `posts.kind`, `posts.parent_post_id`, and `post_kind` enum objects were missing.
+- [api] Fixed the SQLAlchemy `Post.kind` enum mapping so it binds lowercase enum values (`post`, `quote`, `reply`) instead of Python enum member names (`POST`, `QUOTE`, `REPLY`), which was causing `GET /posts` to crash with `invalid input value for enum post_kind: "REPLY"`.
+
+### Verified
+- [api] Direct staging DB inspection now reports Alembic `20260829_0005`, `posts.kind`, `posts.parent_post_id`, and `post_kind` values `post`, `quote`, `reply`.
+- [api] Reproduced the failing ORM query locally against staging DB before the enum fix, then confirmed the feed query succeeds and a temporary post inserts as lowercase `post`; the temporary smoke-test row was deleted.
+- [api][web] Skipped frontend/browser verification and full web build per user direction; Vercel should build on deploy, and the user will test the browser flow.
 
 ### Verified
 - [web] `npm run build` passed in `web` after the reply/quote composer, post-thread updates, newline rendering, floating-bar visibility, and shared-composer/count updates, but runtime post loading/creation is currently reported broken and was not resolved in this pass.
