@@ -513,6 +513,16 @@ export async function listNotifications(accessToken: string, input: { cursor?: s
   });
 }
 
+export async function getUnreadNotificationCount(accessToken: string): Promise<{ count: number }> {
+  return requestApi<{ count: number }>('/notifications/unread-count', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function markNotificationRead(accessToken: string, notificationId: string): Promise<ApiNotification> {
   return requestApi<ApiNotification>(`/notifications/${encodeURIComponent(notificationId)}/read`, {
     method: 'POST',

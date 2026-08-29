@@ -46,6 +46,7 @@ _Last updated: 2026-08-30_
 - [web] Frontend API requests now retry `https://api.friink.com` when a request to the staging API host fails at the network layer, covering the current staging-web case where the deployed bundle targets `https://staging-api.friink.com` but that host is unavailable.
 - [web] The three-dot page navigation control now opens a reusable dummy options menu instead of expanding the sidebar.
 - [web] The floating post composer enforces a frontend-only 256-character limit with an `x/256` counter, while backend post content still accepts up to 512 characters. Quote posts may be submitted without typed quote text.
+- [web] Header notifications show a numeric unread badge from `0` to `99`, then `99+`; Settings saves use icon-only tick buttons with success toasts, and the Private Profile toggle saves immediately through the API.
 - [web] Removed the unused `FloatingActions` component, its empty render in the app shell, and its leftover CSS.
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
 - [docs] Hardened `packages/design/design.md` into an enforceable component contract doc by adding concrete Tokens, Component Contracts, and Unresolved subsections.
@@ -54,14 +55,17 @@ _Last updated: 2026-08-30_
 ## 2026-08-30
 
 ### Changed
+- [web] Matched feed post star/overflow action metrics to the navigation overflow icon, increased the navigation bar height to match the tab strip, and restored bold compact navigation title text at 95% of its previous size.
+- [web] Replaced the header notification dot with a numeric unread-count badge that clamps above 99.
+- [web] Replaced Settings text update buttons with icon-only tick buttons, right-aligned wrapped save controls, success toasts for saved fields, and immediate API saves for the Private Profile toggle.
 - [web] Tuned the mobile navigation title to 90% of its previous size and regular weight, restored 16px mobile bottom spacing for the floating bar, and kept 8px left/right mobile insets.
 - [web] Changed post cards so non-interactive card clicks navigate to post detail, while `Show more...` only appears after four-line body overflow and expands the current card in place.
 - [web] Allowed quote submission without typed quote text while keeping normal posts and replies text-required, and documented the frontend-only 256-character composer limit.
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
-- [web] `npm run build` passed in `web`.
-- [api] `python -m pytest tests\test_posts.py` passed from `api` with 16 tests. A repo-root invocation failed before collection because `app` was not on `sys.path`.
+- [web] `npx tsc --noEmit` passed in `web` after the settings/header refactor.
+- [web] `npm run build` passed in `web` after the latest UI settings/header changes.
 
 ## 2026-08-29
 

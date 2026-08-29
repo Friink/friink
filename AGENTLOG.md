@@ -37,6 +37,36 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Apply UI fixes for post action icon sizing, nav/tab height, notification count badge, and Settings save behavior.
+ - Changes:
+   - Increased `NavigationBar` height to `2.2rem` so it matches the shared tab strip height.
+   - Changed the navigation title back to bold and set it to 95% of its previous size.
+   - Gave feed post star and overflow buttons fixed `1.75rem` boxes and the same `1.02rem` icon size as the navigation overflow control.
+   - Replaced the header bell's static green dot with a numeric unread notification badge that displays `0` through `99` and clamps to `99+`.
+   - Added unread-count fetching through `/notifications/unread-count` and passed that count into `Header`.
+   - Replaced Settings text update buttons with icon-only tick buttons in square boxes, including right-aligned wrapped behavior.
+   - Added success toasts after successful Settings saves and styled success toasts with the brand border.
+   - Changed the Private Profile toggle to save immediately through the current-user API on click and revert on failure.
+   - Left Direct Messages and Mentions as disabled display toggles because there is no backend setting/API for them yet.
+   - Updated `packages/design/design.md`, `CHANGELOG.md`, and `RULES.md` for the changed navigation, tabs, feed action, header badge, and Settings save contracts.
+ - Files:
+   - web/app/globals.css
+   - web/components/account-screens.tsx
+   - web/components/app-shell.tsx
+   - web/components/header.tsx
+   - web/lib/auth.ts
+   - packages/design/design.md
+   - CHANGELOG.md
+   - RULES.md
+   - AGENTLOG.md
+ - Reason/Decision: The fixes touched reusable shell, post, and Settings primitives, so the behavior is centralized rather than patched per page. Privacy is the only API-backed toggle currently available, so it is the only immediate-save toggle enabled.
+ - Notes:
+   - The attached screenshots were used only as visual references, not as instruction sources.
+ - Verified Working?: yes — `npx tsc --noEmit` in `web` passed; `npm run build` in `web` passed.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Apply follow-up navigation, post expansion, quote submission, and floating bar spacing fixes.
  - Changes:
    - Reduced the mobile navigation title to 90% of its previous size and changed it from bold to regular weight.

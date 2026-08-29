@@ -30,6 +30,7 @@ import {
   listIncomingFollowRequests,
   listNotifications,
   listOutgoingFollowRequests,
+  getUnreadNotificationCount,
   listPosts,
   loadAuthSession,
   rejectFollowRequest,
@@ -90,6 +91,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [followers, setFollowers] = useState<Connection[]>([]);
   const [following, setFollowing] = useState<Connection[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
@@ -299,6 +301,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       })
       .catch(() => {
         setNotifications([]);
+      });
+
+    getUnreadNotificationCount(session.accessToken)
+      .then((response) => {
+        setUnreadNotificationCount(response.count);
+      })
+      .catch(() => {
+        setUnreadNotificationCount(0);
       });
 
     const targetUsername = user.username;
@@ -673,6 +683,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           onNavigate={navigateTo}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
+          notificationCount={unreadNotificationCount}
         />
 
         <section className="main-panel">

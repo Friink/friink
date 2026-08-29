@@ -11,7 +11,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
 - **Top Headers**:
   - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
-  - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
+  - Mobile and sub-pages use `NavigationBar` (`2.2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
@@ -38,7 +38,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` → `/search`)
-   - Notifications (`fa-bell` → `/notifications`)
+  - Notifications (`fa-bell` → `/notifications`, with unread count badge clamped to `99+`)
 
 ## Feed Behavior
 
@@ -131,6 +131,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
+- **Mobile Navigation / Tabs Height**: `2.2rem` for `NavigationBar` and top tab strips.
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
   - `--space-content-inset-inline`: `1rem` desktop, `0.5rem` mobile
@@ -226,8 +227,8 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Fixed Internal Layout Order**:
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
-     - Star button (`.feed-post-star`, right-aligned).
-     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`).
+     - Star button (`.feed-post-star`, right-aligned) sized to match `NavigationBar` overflow.
+     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) sized to match `NavigationBar` overflow.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional).
@@ -247,12 +248,13 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell` with indicator dot).
+  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell`) with a numeric unread badge from `0` to `99`, then `99+`.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
+  - Height matches the tab strip at `2.2rem`.
   - Left: History-aware Back button (`fa-arrow-left`) + Page Title (`.navigationbar-title`).
   - Right: Overflow menu button (`fa-ellipsis-vertical`) controlling `NavigationMenu`.
-  - Page title uses regular weight and compact uppercase sizing.
+  - Page title uses bold compact uppercase sizing.
   - *Back Button Rule*: Back navigation is history-aware (`router.push`), disabled when on Home or without history (`window.history.length <= 1`). In-content back buttons are removed to prevent duplication.
 
 ### 7. SideDrawer (`web/components/side-drawer.tsx`)
@@ -296,6 +298,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
+- **Save Control Rule**: Editable settings use an icon-only tick button in an `8px` radius box for saves. When the save control wraps below a field, it is right-aligned.
+- **Privacy Toggle Rule**: The Private Profile toggle saves immediately through the API on click and reverts if saving fails.
+- **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 
 ### 13. Profile Identity Rows (`web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`)

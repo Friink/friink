@@ -175,7 +175,7 @@ textarea {
   display: inline-grid;
   place-items: center;
   width: 2rem;
-  height: 2rem;
+  height: 2.2rem;
   border: 1px solid var(--color-ink);
   border-radius: 50%;
   font-size: 0.625rem;
@@ -1277,8 +1277,8 @@ textarea {
   flex: 1 1 auto;
   min-width: 0;
   text-align: left;
-  font-size: 0.864rem;
-  font-weight: 400;
+  font-size: 0.8208rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-ink);
@@ -1414,7 +1414,7 @@ textarea {
   border: 0;
   padding: 0;
   background: transparent;
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
 .topbar-bell i {
@@ -1423,13 +1423,21 @@ textarea {
 
 .topbar-bell span {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 0.375rem;
-  height: 0.375rem;
+  top: -0.55rem;
+  right: -0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.22rem;
   border: 1px solid var(--color-paper);
   border-radius: 50%;
   background: var(--color-brand);
+  color: var(--color-paper);
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .main-content {
@@ -1588,7 +1596,7 @@ textarea {
 
 .main-content > .tabs {
   position: fixed;
-  top: calc(var(--space-topbar-height) + 2rem);
+  top: calc(var(--space-topbar-height) + 2.2rem);
   left: 0;
   right: 0;
   z-index: 9;
@@ -1723,14 +1731,17 @@ textarea {
 
 .settings-update-button {
   flex: 0 0 auto;
-  min-width: 5.75rem;
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  min-width: 2.75rem;
   min-height: 2.75rem;
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 0.7rem 0.9rem;
+  padding: 0;
   color: var(--color-paper);
   background: var(--color-brand);
-  font-size: var(--text-sm);
+  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -1751,7 +1762,7 @@ textarea {
   }
 
   .settings-update-button {
-    width: 100%;
+    align-self: flex-end;
   }
 }
 
@@ -1771,6 +1782,11 @@ textarea {
   color: var(--color-paper);
   background: var(--color-brand);
   border-color: var(--color-brand);
+}
+
+.settings-toggle-pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .appearance-toggle {
@@ -2267,6 +2283,10 @@ textarea {
   background: var(--color-paper);
   box-shadow: 0 0.75rem 2rem rgba(24, 44, 31, 0.14);
   pointer-events: auto;
+}
+
+.toast-success {
+  border-left-color: var(--color-brand);
 }
 
 .toast-copy {
@@ -2783,7 +2803,12 @@ textarea {
 .feed-post-more {
   position: absolute;
   top: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
   font-size: 1.02rem;
+  line-height: 1;
 }
 
 .feed-post-more {

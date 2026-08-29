@@ -72,6 +72,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/components/account-screens.tsx`
 - **Since:** 2026-08-29 (07:15 UTC-0)
 
+### Rule: Web Settings Saves Confirm And Persist Through API
+- **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
+- **Edge cases:** If the Private Profile API save fails, the UI reverts to the last known saved value. Direct Messages and Mentions toggles remain disabled display controls until real backend settings exist.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/account-screens.tsx`, `web/app/globals.css`
+- **Since:** 2026-08-30 (Asia/Karachi)
+
 ### Rule: Web Session Persistence
 - **What:** The web client stores authenticated sessions in `localStorage` under `friink-auth-session`; logout clears that stored session.
 - **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions.

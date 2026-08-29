@@ -4,13 +4,17 @@ type HeaderProps = {
   onNavigate: (screen: Screen) => void;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
+  notificationCount?: number;
 };
 
 export function Header({
   onNavigate,
   sidebarCollapsed,
   onToggleSidebar,
+  notificationCount = 0,
 }: HeaderProps) {
+  const visibleNotificationCount = notificationCount > 99 ? '99+' : String(notificationCount);
+
   return (
     <header className="topbar">
       <div className="topbar-home">
@@ -30,9 +34,9 @@ export function Header({
           <button className="topbar-search" type="button" onClick={() => onNavigate('search')} aria-label="Search">
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
           </button>
-          <button className="topbar-bell" type="button" onClick={() => onNavigate('notifications')} aria-label="Notifications">
+          <button className="topbar-bell" type="button" onClick={() => onNavigate('notifications')} aria-label={`${visibleNotificationCount} notifications`}>
             <i className="fa-regular fa-bell" aria-hidden="true" />
-            <span />
+            <span>{visibleNotificationCount}</span>
           </button>
         </div>
       </div>
