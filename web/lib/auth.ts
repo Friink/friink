@@ -1,4 +1,4 @@
-import { getApiOrigin } from '@/lib/api-origin';
+import { fetchApi } from '@/lib/api-origin';
 
 export type AuthUser = {
   id: string;
@@ -446,7 +446,7 @@ export async function removeFollower(accessToken: string, username: string): Pro
 async function requestApi<T>(path: string, init: RequestInit & { authContext?: AuthRequestContext }): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${getApiOrigin()}${path}`, {
+    response = await fetchApi(path, {
       ...init,
       headers: {
         'Content-Type': 'application/json',

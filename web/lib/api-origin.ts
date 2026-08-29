@@ -1,13 +1,23 @@
 const LOCAL_API_ORIGIN = 'http://localhost:8000';
+const PRODUCTION_API_ORIGIN = 'https://api.friink.com';
+const STAGING_API_ORIGIN = 'https://staging-api.friink.com';
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, '');
 }
 
-export function getApiOrigin() {
+function getConfiguredApiOrigin() {
   const configuredOrigin = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
   if (configuredOrigin) {
     return trimTrailingSlash(configuredOrigin);
+  }
+  return null;
+}
+
+export function getApiOrigin() {
+  const configuredOrigin = getConfiguredApiOrigin();
+  if (configuredOrigin) {
+    return configuredOrigin;
   }
 
   if (typeof window === 'undefined') {
@@ -20,4 +30,29 @@ export function getApiOrigin() {
   }
 
   throw new Error('Friink API is not configured for this environment. Set NEXT_PUBLIC_API_BASE_URL on the web deployment.');
+}
+
+export function getApiOriginCandidates() {
+  const primaryOrigin = getApiOrigin();
+  const candidates = [primaryOrigin];
+
+  if (primaryOrigin === STAGING_API_ORIGIN) {
+    candidates.push(PRODUCTION_API_ORIGIN);
+  }
+
+  return candidates;
+}
+
+export async function fetchApi(path: string, init?: RequestInit) {
+  let lastError: Error | null = null;
+
+  for (const origin of getApiOriginCandidates()) {
+    try {
+      return await fetch(`${origin}${path}`, init);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  throw lastError ?? new Error('Friink API request failed.');
 }

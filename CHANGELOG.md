@@ -37,6 +37,7 @@ _Last updated: 2026-08-29_
 - [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
 - [web] Canonical post detail URLs now use the author-scoped slug shape `/{username}/{postId}`. The legacy `/posts/{postId}` route remains only as a compatibility redirect to the canonical author-scoped URL.
 - [web] Post detail URLs now treat `postId` as the only lookup key; if the cosmetic username segment is stale or wrong, the route permanently redirects to the current owner username instead of rendering under the mismatched path.
+- [web] Frontend API requests now retry `https://api.friink.com` when a request to the staging API host fails at the network layer, covering the current staging-web case where the deployed bundle targets `https://staging-api.friink.com` but that host is unavailable.
 - [web] The three-dot page navigation control now opens a reusable dummy options menu instead of expanding the sidebar.
 - [web] Removed the unused `FloatingActions` component, its empty render in the app shell, and its leftover CSS.
 - [docs] Cleaned up the `AGENTLOG.md` component registry so it no longer singles out specific page modules as uniquely reusable.
@@ -49,6 +50,7 @@ _Last updated: 2026-08-29_
 - [api] Added feed pagination and restore endpoints: `GET /posts` now returns cursor-based pages with `next_cursor` and `has_more`, `GET /posts/updates` returns posts newer than the current top item, and `GET /posts/context/{post_id}` returns anchor-centered feed context for last-read restoration.
 
 ### Changed
+- [web] Added a network-only API-origin fallback so browser requests that are compiled to `https://staging-api.friink.com` retry `https://api.friink.com` before surfacing `Failed to fetch.`, while successful requests and normal HTTP auth errors continue unchanged.
 - [web] Centralized frontend API-origin resolution so local development still defaults to `http://localhost:8000`, while deployed/browser contexts now require `NEXT_PUBLIC_API_BASE_URL` instead of silently attempting localhost and surfacing a generic `Failed to fetch.` on login.
 - [web] Added mismatch handling on the canonical `/{username}/{postId}` route so it fetches the post by `postId` only, compares the URL username with the post owner's current username, and issues a permanent redirect to the correct URL when they differ while preserving query params.
 - [web] Rebuilt the Home/Explore feed as a self-updating controller with IntersectionObserver-based older-post loading, 10-second foreground polling for newer posts, deferred prepends during active scrolling, local last-viewed post persistence/restore, and a top refresh fallback UI for missed/pending updates.
@@ -57,6 +59,9 @@ _Last updated: 2026-08-29_
 - [web] Added the new App Router post-detail route at `web/app/[username]/[postId]` and kept the old `/posts/{postId}` page as a compatibility redirect that resolves the post author and forwards to the canonical username-scoped path.
 
 ### Verified
+- [web] Reproduced in the in-app browser that `https://staging.friink.com/login` showed `Failed to fetch.` after submit while `https://friink.com/login` reached the backend and returned `Invalid credentials.` for the same dummy payload; fetched the deployed login bundles and confirmed staging was compiled against `https://staging-api.friink.com` while production was compiled against `https://api.friink.com`.
+- [web] `npm run build` passed in `web` after adding the staging-to-production API network fallback.
+- [web] `npx tsc --noEmit` passed in `web` after the fallback change.
 - [web] `npm run build` passed in `web` after replacing the silent deployed localhost fallback with the shared API-origin resolver.
 - [web] `npx tsc --noEmit` passed in `web` after the API-origin change.
 - [web] `npm run build` passed in `web` after adding the username-mismatch permanent redirect on the post detail route.

@@ -1,5 +1,5 @@
 import { notFound, permanentRedirect } from 'next/navigation';
-import { getApiOrigin } from '@/lib/api-origin';
+import { fetchApi } from '@/lib/api-origin';
 import { getPostPath } from '@/lib/post-path';
 import { PostClient } from './post-client';
 
@@ -42,7 +42,7 @@ function buildQueryString(searchParams: PostPageProps['searchParams']) {
 
 export default async function PostPage({ params, searchParams }: PostPageProps) {
   try {
-    const response = await fetch(`${getApiOrigin()}/posts/${encodeURIComponent(params.postId)}`, {
+    const response = await fetchApi(`/posts/${encodeURIComponent(params.postId)}`, {
       cache: 'no-store',
     });
 

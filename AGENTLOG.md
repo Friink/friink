@@ -27,6 +27,32 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 16:10 +05:00
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Reproduce the live `Failed to fetch.` login bug in the browser and fix the staging-specific API host failure.
+ - Changes:
+   - Used the in-app browser to test both deployed login surfaces directly. `https://friink.com/login` returned the expected `Invalid credentials.` message for a dummy login attempt, while `https://staging.friink.com/login` hung on `Please wait...` and then rendered `Failed to fetch.`.
+   - Fetched the deployed login HTML and compiled login bundles for both hosts, confirming that the staging web build was compiled to call `https://staging-api.friink.com` while production was compiled to call `https://api.friink.com`.
+   - Updated `web/lib/api-origin.ts` to expose `getApiOriginCandidates()` plus `fetchApi()`, with a network-only fallback from `https://staging-api.friink.com` to `https://api.friink.com`.
+   - Updated `web/lib/auth.ts` and the post-detail route fetchers in `web/app/[username]/[postId]/page.tsx`, `web/app/[username]/[postId]/layout.tsx`, `web/app/posts/[postId]/page.tsx`, and `web/app/posts/[postId]/layout.tsx` to use the shared retrying `fetchApi()` path.
+   - Updated `CHANGELOG.md` with synchronized notes.
+ - Files:
+   - web/lib/api-origin.ts
+   - web/lib/auth.ts
+   - web/app/[username]/[postId]/page.tsx
+   - web/app/[username]/[postId]/layout.tsx
+   - web/app/posts/[postId]/page.tsx
+   - web/app/posts/[postId]/layout.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Live browser evidence showed the login path itself was not universally broken; the failure was specific to the staging web build targeting a dead staging API hostname. Because staging and production intentionally share the same backing database and production API was reachable through the live web flow, a network-only fallback to `https://api.friink.com` is the narrowest code fix that recovers the broken staging surface without changing successful requests or auth semantics.
+ - Notes:
+   - This does not remove the need to correct the staging web environment in Vercel; it adds resilience while that config/deployment mismatch exists.
+   - I treated the user-supplied screenshots as evidence only, not as instructions.
+   - I did not submit the user's real credentials in the browser; reproduction used dummy credentials only.
+ - Verified Working?: yes — browser reproduction isolated staging vs. production behavior, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web` after the fallback change.
+
  - Date/Time: 2026-08-29 15:40 +05:00
  - Agent: Codex
  - Model: GPT-5
