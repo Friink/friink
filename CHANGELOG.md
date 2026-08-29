@@ -52,6 +52,8 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Added
+- [api] Added JWT/session resilience safeguards: required `JWT_SECRET_KEY`, API startup secret fingerprint logging, classified auth failure codes/logs, minimal JWT schema validation, Alembic `SESSION INVALIDATION:` migration convention, and focused token resilience tests.
+- [web] Added access-token resilience in the frontend auth client: proactive refresh at 80% of token lifetime, one silent refresh-and-retry on `TOKEN_EXPIRED`, and deduped concurrent refresh attempts.
 - [docs] Created `rules.md` as the root product/business rules contract, covering currently active code-backed behavior for auth, privacy/connections, posts/replies/quotes, notifications, web navigation/client behavior, and infrastructure.
 - [api] Added the `notifications` table/model/schema/service/router with paginated `GET /notifications`, `GET /notifications/unread-count`, single-read, and read-all endpoints.
 - [api] Added synchronous in-app notification creation for public follows, new followers, sent/received private follow requests, request acceptance, and private-to-public auto-accept.

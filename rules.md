@@ -41,12 +41,28 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27 (00:00 UTC-0)
 
 ### Rule: JWT Sessions
-- **What:** Login returns a bearer access token and sets an HTTP-only refresh-token cookie. Access tokens default to 30 minutes; refresh tokens default to 14 days. Token payloads must match the expected `typ` value (`access` or `refresh`).
-- **Edge cases:** Refresh tokens are not rotated or denylisted yet. Logout deletes the refresh cookie and returns `204`.
+- **What:** Login returns a bearer access token and sets an HTTP-only refresh-token cookie. Access tokens default to 30 minutes; refresh tokens default to 14 days. Token payloads are minimal and stable: `sub`, `typ`, `iat`, and `exp`; payloads must match the expected `typ` value (`access` or `refresh`) and `sub` must be a valid user UUID.
+- **Edge cases:** Refresh tokens are not rotated or denylisted yet. Logout deletes the refresh cookie and returns `204`. Token failures are classified server-side as expired, malformed, signature mismatch, schema invalid, or session/user not found; client responses keep details generic but include a machine-readable code.
 - **Status:** Active
 - **Platform:** All
-- **File(s):** `api/app/routers/auth.py`, `api/app/services/security.py`, `api/app/config.py`, `web/lib/auth.ts`
-- **Since:** 2026-08-27 (00:00 UTC-0)
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/security.py`, `api/app/services/auth_errors.py`, `api/app/config.py`, `web/lib/auth.ts`, `api/tests/test_token_resilience.py`
+- **Since:** 2026-08-29 (12:23 UTC-0)
+
+### Rule: JWT Secret Configuration Fails Loud
+- **What:** `JWT_SECRET_KEY` is required at API settings load and has no application default or generated fallback. API startup logs only an 8-character SHA256 fingerprint of the configured secret so deploys can confirm secret stability without exposing the secret.
+- **Edge cases:** Missing `JWT_SECRET_KEY` prevents startup through Pydantic settings validation. Vercel web/API and staging/production secret values must be verified in deployment settings when environments share a database.
+- **Status:** Active
+- **Platform:** API only
+- **File(s):** `api/app/config.py`, `api/app/main.py`, `api/tests/test_token_resilience.py`
+- **Since:** 2026-08-29 (12:23 UTC-0)
+
+### Rule: Web Auth Refresh Is Silent For Expired Access Tokens
+- **What:** Authenticated web API calls proactively refresh access tokens at about 80% of the token lifetime. If an authenticated request receives `TOKEN_EXPIRED`, the client refreshes via the refresh cookie and retries the original request once.
+- **Edge cases:** Concurrent refresh attempts share one in-flight refresh promise. If refresh fails because the refresh token is missing, invalid, expired, or the session/user is not found, the stored web session is cleared and the user must log in again.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/lib/auth.ts`
+- **Since:** 2026-08-29 (12:23 UTC-0)
 
 ### Rule: Current User Updates
 - **What:** Authenticated users may update username, email, display name, about text, and privacy status. Username/email updates reject conflicts with another user.

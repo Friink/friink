@@ -15,6 +15,10 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+# Migration convention: any migration that intentionally invalidates existing
+# auth sessions/tokens must include a comment beginning with
+# "SESSION INVALIDATION:" explaining the deliberate user-facing impact.
+
 
 def get_url() -> str:
     return get_settings().async_database_url

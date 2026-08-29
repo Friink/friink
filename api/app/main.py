@@ -1,3 +1,6 @@
+import hashlib
+import logging
+
 import psycopg
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +13,8 @@ from app.routers.notifications import router as notifications_router
 from app.routers.posts import router as posts_router
 
 settings = get_settings()
+logger = logging.getLogger("friink.auth")
+logger.info("JWT secret fingerprint: %s", hashlib.sha256(settings.jwt_secret_key.encode("utf-8")).hexdigest()[:8])
 
 app = FastAPI(title="Friink API")
 # Allowed CORS origins.

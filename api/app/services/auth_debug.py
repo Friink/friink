@@ -7,6 +7,7 @@ from typing import Any
 import jwt
 
 from app.config import Settings
+from app.services.auth_errors import AuthErrorCode
 
 logger = logging.getLogger("friink.auth")
 
@@ -79,6 +80,34 @@ def log_token_verification_failure(
                 "jwt_algorithm": settings.jwt_algorithm,
                 "iat": timestamps["iat"],
                 "exp": timestamps["exp"],
+                "server_time": int(datetime.now(UTC).timestamp()),
+                "request_path": request_path,
+                "request_method": request_method,
+            }
+        )
+    )
+
+
+def log_auth_failure(
+    *,
+    flow: str,
+    token_type: str,
+    code: AuthErrorCode,
+    reason: str,
+    settings: Settings,
+    request_path: str | None = None,
+    request_method: str | None = None,
+) -> None:
+    logger.warning(
+        json.dumps(
+            {
+                "event": "auth_failure_classified",
+                "flow": flow,
+                "token_type": token_type,
+                "code": code.value,
+                "reason": reason,
+                "deployment_sha": get_deployment_sha(),
+                "jwt_algorithm": settings.jwt_algorithm,
                 "server_time": int(datetime.now(UTC).timestamp()),
                 "request_path": request_path,
                 "request_method": request_method,

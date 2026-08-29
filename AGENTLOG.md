@@ -34,6 +34,37 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+ - Date/Time: 2026-08-29 (12:23 UTC-0)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Implement standard session/token resilience safeguards for JWT auth, refresh handling, classified token failures, frontend silent refresh, and migration session-invalidating conventions.
+ - Changes:
+   - Audited the existing auth flow before edits: `JWT_SECRET_KEY` loaded in `api/app/config.py`, token creation/validation in `api/app/services/security.py`, refresh cookie handling in `api/app/routers/auth.py`, and frontend API calls in `web/lib/auth.ts`.
+   - Made `JWT_SECRET_KEY` required with no default fallback and added an API startup log line that emits only the first 8 chars of the secret's SHA256 fingerprint.
+   - Added token validation classification for expired tokens, malformed tokens, signature mismatch/wrong secret, token schema failures, and missing user/session cases, with machine-readable client error codes.
+   - Kept JWT payloads minimal and schema-decoupled (`sub`, `typ`, `iat`, `exp`) and added UUID subject validation during decoding.
+   - Added frontend silent refresh behavior: proactive refresh at 80% of access-token lifetime, reactive refresh-and-retry once on `TOKEN_EXPIRED`, and shared refresh promise deduping concurrent refresh attempts.
+   - Reviewed refresh/session migration robustness: refresh currently depends on stable `users.id` only, not a DB session table; added an Alembic convention comment requiring `SESSION INVALIDATION:` notes for deliberate future auth/session-breaking migrations.
+   - Added focused token resilience tests for missing JWT secret, expired token classification, malformed token classification, wrong-secret classification, and valid token behavior after unrelated schema evolution.
+ - Files:
+   - api/app/config.py
+   - api/app/main.py
+   - api/app/routers/auth.py
+   - api/app/services/auth.py
+   - api/app/services/auth_debug.py
+   - api/app/services/auth_errors.py
+   - api/app/services/security.py
+   - api/alembic/env.py
+   - api/tests/test_token_resilience.py
+   - web/lib/auth.ts
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Deploy-boundary invalid-token failures should fail loudly when caused by missing secrets, classify precisely when caused by token/session problems, and be handled invisibly for routine access-token expiry instead of interrupting users.
+ - Notes:
+   - Actual Vercel project environment values were not accessible from the repo. Because staging and production reportedly share the same Neon DB, verify in Vercel that `JWT_SECRET_KEY` is set and intentionally stable anywhere users/sessions are shared; different secrets across environments sharing the same DB will make tokens from one environment invalid in the other.
+   - Existing deleted docs in the working tree were unrelated and left untouched.
+ - Verified Working?: yes — `python -m pytest api\tests\test_token_resilience.py api\tests\test_auth_updates.py` passed with 8 tests; `npm run build` in `web` passed; `python -m compileall api\app api\tests` passed.
+
  - Date/Time: 2026-08-29 (12:00 UTC-0)
  - Agent: Codex
  - Model: GPT-5

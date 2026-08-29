@@ -9,6 +9,7 @@ from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.user import User
 from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
+from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.notifications import create_notification
 from app.services.session_ops import commit, refresh
@@ -155,4 +156,7 @@ def user_id_from_subject(subject: str) -> uuid.UUID:
     try:
         return uuid.UUID(subject)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Invalid token.", AuthErrorCode.TOKEN_SCHEMA_INVALID),
+        ) from exc
