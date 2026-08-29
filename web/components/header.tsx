@@ -13,6 +13,7 @@ export function Header({
   onToggleSidebar,
   notificationCount = 0,
 }: HeaderProps) {
+  const shouldShowNotificationBadge = notificationCount > 0;
   const visibleNotificationCount = notificationCount > 99 ? '99+' : String(notificationCount);
 
   return (
@@ -36,7 +37,7 @@ export function Header({
           </button>
           <button className="topbar-bell" type="button" onClick={() => onNavigate('notifications')} aria-label={`${visibleNotificationCount} notifications`}>
             <i className="fa-regular fa-bell" aria-hidden="true" />
-            <span>{visibleNotificationCount}</span>
+            {shouldShowNotificationBadge ? <span>{visibleNotificationCount}</span> : null}
           </button>
         </div>
       </div>

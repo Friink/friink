@@ -248,7 +248,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell`) with a numeric unread badge from `0` to `99`, then `99+`.
+  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell`) matching search icon height, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
   - Height matches the tab strip at `2.2rem`.

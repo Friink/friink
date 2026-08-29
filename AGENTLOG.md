@@ -37,6 +37,25 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Refine the header notification badge shape and zero-count behavior.
+ - Changes:
+   - Hid the notification badge entirely when unread count is `0`.
+   - Changed the unread badge from a tiny circular dot-like shape to a pilled count badge that can overlap the bell's top-right.
+   - Matched the bell icon size/line-height to the search icon.
+   - Updated `packages/design/design.md` to document the pilled badge and zero-count hiding behavior.
+ - Files:
+   - web/components/header.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - AGENTLOG.md
+ - Reason/Decision: The badge should read as a count, not a status dot, and should stay visually aligned with the existing header action icons.
+ - Notes:
+   - The attached screenshot was used only as visual reference, not as an instruction source.
+ - Verified Working?: yes — `npm run build` in `web` passed; a parallel `npx tsc --noEmit` first raced with `.next/types` regeneration and failed on missing generated files, then passed after the build completed.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Apply UI fixes for post action icon sizing, nav/tab height, notification count badge, and Settings save behavior.
  - Changes:
    - Increased `NavigationBar` height to `2.2rem` so it matches the shared tab strip height.

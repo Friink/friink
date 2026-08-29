@@ -1395,6 +1395,7 @@ textarea {
   color: var(--color-ink);
   background: transparent;
   font-size: 1rem;
+  line-height: 1;
 }
 
 .topbar-avatar {
@@ -1415,27 +1416,29 @@ textarea {
   padding: 0;
   background: transparent;
   font-size: 1rem;
+  line-height: 1;
 }
 
 .topbar-bell i {
   color: var(--color-ink);
+  font-size: 1rem;
 }
 
 .topbar-bell span {
   position: absolute;
-  top: -0.55rem;
-  right: -0.75rem;
+  top: -0.62rem;
+  right: -0.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.05rem;
-  height: 1.05rem;
-  padding: 0 0.22rem;
+  min-width: 1.1rem;
+  height: 0.95rem;
+  padding: 0 0.3rem;
   border: 1px solid var(--color-paper);
-  border-radius: 50%;
+  border-radius: 999px;
   background: var(--color-brand);
   color: var(--color-paper);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 800;
   line-height: 1;
 }
