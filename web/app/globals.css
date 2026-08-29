@@ -19,6 +19,8 @@
   --space-home-nav-height: 2.5rem;
   --space-floating-bar-height: 3.5rem;
   --space-sidebar-collapsed-width: 4.5rem;
+  --space-content-inset-inline: 1rem;
+  --space-content-inset-block: 0.75rem;
 }
 
 html,
@@ -1413,7 +1415,7 @@ textarea {
 .settings-screen {
   padding-top: 0.5rem;
   justify-items: start;
-  width: min(100%, 26rem);
+  width: min(100%, 30rem);
 }
 
 .simple-screen > i {
@@ -1483,32 +1485,48 @@ textarea {
 .settings-panel {
   display: grid;
   gap: 1rem;
-  width: min(100%, 26rem);
+  width: 100%;
 }
 
-.settings-preference {
+.settings-section {
   display: grid;
-  width: min(100%, 26rem);
+  width: 100%;
   margin-top: 1rem;
-  padding: 1.25rem;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-paper);
+}
+
+.settings-row {
+  min-height: 0;
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
+.settings-row:hover,
+.settings-row:focus-visible,
+.settings-row.list-row-unread {
+  background: transparent;
+}
+
+.settings-row .list-row-avatar {
+  align-self: flex-start;
+  padding-top: 0.125rem;
+}
+
+.settings-row-expanded .list-row-copy {
+  gap: 0.6rem;
+}
+
+.settings-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  background: var(--color-paper);
-  text-align: left;
-  gap: 1rem;
-}
-
-.settings-preference h3,
-.settings-toggle-item h4 {
-  margin: 0;
   color: var(--color-ink);
-  font-size: 1rem;
-}
-
-.settings-preference p,
-.settings-toggle-item p {
-  margin: 0.25rem 0 0;
-  color: var(--color-muted);
+  background: var(--color-paper);
 }
 
 
@@ -1697,23 +1715,6 @@ textarea {
   }
 }
 
-.settings-toggle-list {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.settings-toggle-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.35rem;
-}
-
-.settings-toggle-item > div {
-  flex: 1;
-}
-
 .settings-toggle-pill {
   min-width: 4.25rem;
   min-height: 2rem;
@@ -1837,7 +1838,7 @@ textarea {
   min-height: 4.5rem;
   border: 0;
   border-bottom: 1px solid var(--color-line);
-  padding: 0.75rem 1rem;
+  padding: var(--space-content-inset-block) var(--space-content-inset-inline);
   color: var(--color-ink);
   background: transparent;
   text-align: left;
@@ -1894,6 +1895,11 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.list-row-body {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .list-row-trailing {
@@ -2652,7 +2658,7 @@ textarea {
 }
 
 .feed-post {
-  padding: 0.75rem 1rem 0.5rem;
+  padding: var(--space-content-inset-block) var(--space-content-inset-inline) 0.5rem;
   border-bottom: 1px solid var(--color-line);
 }
 

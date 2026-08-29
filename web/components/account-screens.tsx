@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { ListRow } from '@/components/list-row';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, type AuthUser } from '@/lib/auth';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
@@ -152,177 +153,181 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
 
       {activeTab === 'general' && (
         <div className="settings-panel">
-          <div className="settings-preference">
-            <div>
-              <h3>Theme</h3>
-              <p>Choose how Friink looks on this device.</p>
-            </div>
-            <div className="appearance-toggle" role="group" aria-label="Appearance preference">
-              {(['system', 'light', 'dark'] as const).map((option) => (
-                <button
-                  className={appearance === option ? 'active' : ''}
-                  key={option}
-                  type="button"
-                  onClick={() => onAppearanceChange(option)}
-                  aria-pressed={appearance === option}
-                >
-                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                </button>
-              ))}
-            </div>
+          <div className="settings-section">
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-palette" aria-hidden="true" /></span>}
+              title="Theme"
+              subtitle="Choose how Friink looks on this device."
+              className="settings-row settings-row-expanded"
+            >
+              <span className="appearance-toggle" role="group" aria-label="Appearance preference">
+                {(['system', 'light', 'dark'] as const).map((option) => (
+                  <button
+                    className={appearance === option ? 'active' : ''}
+                    key={option}
+                    type="button"
+                    onClick={() => onAppearanceChange(option)}
+                    aria-pressed={appearance === option}
+                  >
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </button>
+                ))}
+              </span>
+            </ListRow>
           </div>
         </div>
       )}
 
       {activeTab === 'account' && (
         <div className="settings-panel">
-          <div className="settings-preference">
-            <div>
-              <h3>Email</h3>
-              <p>Update the email address for this account.</p>
-            </div>
-            <label className="settings-field">
-              <span className="settings-field-label">Email</span>
-              <div className="settings-field-row">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setEmailStatus('');
-                  }}
-                  placeholder="you@example.com"
-                  aria-label="email"
-                  autoComplete="email"
-                />
-                <button className="settings-update-button" type="button" disabled={!canUpdateEmail} onClick={handleEmailUpdate}>
-                  {isUpdatingEmail ? 'Updating...' : 'Update'}
-                </button>
-              </div>
-              {emailStatus && <span className="settings-field-message" role="status">{emailStatus}</span>}
-            </label>
-          </div>
-
-          <div className="settings-preference">
-            <div>
-              <h3>Username</h3>
-              <p>Update the name people see on your profile.</p>
-            </div>
-            <label className="settings-field">
-              <span className="settings-field-label">Username</span>
-              <div className="settings-field-row">
-                <div className="input-with-prefix">
-                  <span className="input-prefix">@</span>
+          <div className="settings-section">
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-envelope" aria-hidden="true" /></span>}
+              title="Email"
+              subtitle="Update the email address for this account."
+              className="settings-row settings-row-expanded"
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Email</span>
+                <div className="settings-field-row">
                   <input
-                    type="text"
-                    value={username}
+                    type="email"
+                    value={email}
                     onChange={(event) => {
-                      setUsername(event.target.value.replace(/^@+/, ''));
-                      setUsernameStatus('');
+                      setEmail(event.target.value);
+                      setEmailStatus('');
                     }}
-                    placeholder="username"
-                    aria-label="username"
-                    autoComplete="off"
+                    placeholder="you@example.com"
+                    aria-label="email"
+                    autoComplete="email"
                   />
+                  <button className="settings-update-button" type="button" disabled={!canUpdateEmail} onClick={handleEmailUpdate}>
+                    {isUpdatingEmail ? 'Updating...' : 'Update'}
+                  </button>
                 </div>
-                <button className="settings-update-button" type="button" disabled={!canUpdateUsername} onClick={handleUsernameUpdate}>
-                  {isUpdatingUsername ? 'Updating...' : 'Update'}
-                </button>
-              </div>
-              {usernameStatus && <span className="settings-field-message" role="status">{usernameStatus}</span>}
-            </label>
-          </div>
+                {emailStatus && <span className="settings-field-message" role="status">{emailStatus}</span>}
+              </label>
+            </ListRow>
 
-          <div className="settings-preference">
-            <div>
-              <h3>User ID</h3>
-              <p>This unique identifier can’t be changed by you.</p>
-            </div>
-            <label className="settings-field">
-              <span className="settings-field-label">Unique user ID</span>
-              <input type="text" value={user.id} readOnly aria-readonly="true" />
-            </label>
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
+              title="Username"
+              subtitle="Update the name people see on your profile."
+              className="settings-row settings-row-expanded"
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Username</span>
+                <div className="settings-field-row">
+                  <div className="input-with-prefix">
+                    <span className="input-prefix">@</span>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(event) => {
+                        setUsername(event.target.value.replace(/^@+/, ''));
+                        setUsernameStatus('');
+                      }}
+                      placeholder="username"
+                      aria-label="username"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <button className="settings-update-button" type="button" disabled={!canUpdateUsername} onClick={handleUsernameUpdate}>
+                    {isUpdatingUsername ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
+                {usernameStatus && <span className="settings-field-message" role="status">{usernameStatus}</span>}
+              </label>
+            </ListRow>
+
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-fingerprint" aria-hidden="true" /></span>}
+              title="User ID"
+              subtitle="This unique identifier can't be changed by you."
+              className="settings-row settings-row-expanded"
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Unique user ID</span>
+                <input type="text" value={user.id} readOnly aria-readonly="true" />
+              </label>
+            </ListRow>
           </div>
         </div>
       )}
 
       {activeTab === 'profile' && (
         <div className="settings-panel">
-          <div className="settings-preference">
-            <div>
-              <h3>Profile</h3>
-              <p>Update the public details shown on your profile.</p>
-            </div>
-            <label className="settings-field">
-              <span className="settings-field-label">Name</span>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(event) => {
-                  setDisplayName(event.target.value);
-                  setProfileStatus('');
-                }}
-                placeholder="Name"
-                autoComplete="name"
-              />
-            </label>
-            <label className="settings-field">
-              <span className="settings-field-label">About</span>
-              <textarea
-                className="settings-about-field"
-                value={about}
-                maxLength={256}
-                onChange={(event) => {
-                  setAbout(event.target.value);
-                  setProfileStatus('');
-                }}
-                placeholder="About"
-              />
-              <span className="settings-field-count">{about.length}/256</span>
-            </label>
-            <div className="settings-field-actions">
-              <button className="settings-update-button" type="button" disabled={!canUpdateProfile} onClick={handleProfileUpdate}>
-                {isUpdatingProfile ? 'Updating...' : 'Update'}
-              </button>
-            </div>
-            {profileStatus && <span className="settings-field-message" role="status">{profileStatus}</span>}
+          <div className="settings-section">
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-user-pen" aria-hidden="true" /></span>}
+              title="Profile"
+              subtitle="Update the public details shown on your profile."
+              className="settings-row settings-row-expanded"
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Name</span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(event) => {
+                    setDisplayName(event.target.value);
+                    setProfileStatus('');
+                  }}
+                  placeholder="Name"
+                  autoComplete="name"
+                />
+              </label>
+              <label className="settings-field">
+                <span className="settings-field-label">About</span>
+                <textarea
+                  className="settings-about-field"
+                  value={about}
+                  maxLength={256}
+                  onChange={(event) => {
+                    setAbout(event.target.value);
+                    setProfileStatus('');
+                  }}
+                  placeholder="About"
+                />
+                <span className="settings-field-count">{about.length}/256</span>
+              </label>
+              <div className="settings-field-actions">
+                <button className="settings-update-button" type="button" disabled={!canUpdateProfile} onClick={handleProfileUpdate}>
+                  {isUpdatingProfile ? 'Updating...' : 'Update'}
+                </button>
+              </div>
+              {profileStatus && <span className="settings-field-message" role="status">{profileStatus}</span>}
+            </ListRow>
           </div>
         </div>
       )}
 
       {activeTab === 'privacy' && (
         <div className="settings-panel">
-          <div className="settings-preference">
-            <div>
-              <h3>Privacy & Safety</h3>
-              <p>Control the basics of how your account is shared.</p>
-            </div>
+          <div className="settings-section">
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-lock" aria-hidden="true" /></span>}
+              title="Private profile"
+              subtitle="Only approved followers can view your public posts."
+              trailing={<button type="button" className="settings-toggle-pill active">On</button>}
+              className="settings-row"
+            />
 
-            <div className="settings-toggle-list">
-              <div className="settings-toggle-item">
-                <div>
-                  <h4>Private profile</h4>
-                  <p>Only approved followers can view your public posts.</p>
-                </div>
-                <button type="button" className="settings-toggle-pill active">On</button>
-              </div>
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
+              title="Direct messages"
+              subtitle="People you follow can message you."
+              trailing={<button type="button" className="settings-toggle-pill">Off</button>}
+              className="settings-row"
+            />
 
-              <div className="settings-toggle-item">
-                <div>
-                  <h4>Direct messages</h4>
-                  <p>People you follow can message you.</p>
-                </div>
-                <button type="button" className="settings-toggle-pill">Off</button>
-              </div>
-
-              <div className="settings-toggle-item">
-                <div>
-                  <h4>Mentions</h4>
-                  <p>Control who can mention you in conversations.</p>
-                </div>
-                <button type="button" className="settings-toggle-pill active">On</button>
-              </div>
-            </div>
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
+              title="Mentions"
+              subtitle="Control who can mention you in conversations."
+              trailing={<button type="button" className="settings-toggle-pill active">On</button>}
+              className="settings-row"
+            />
           </div>
         </div>
       )}

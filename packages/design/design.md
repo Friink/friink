@@ -14,6 +14,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name` and `About`; Account edits login/account identifiers such as email, username, and user ID.
 
 ## Navigation
@@ -50,6 +51,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Primary brand color is used for active states, selected tabs, links, and important actions.
 - Ink and muted gray provide the primary text hierarchy.
 - Thin lines separate navigation, tabs, feed posts, and directory rows.
+- Settings should follow the same divider-based row rhythm as chat and notifications; avoid individual boxed cards around every setting item unless a future component contract explicitly calls for a standalone card.
 - Avatars use circular shapes and soft color variations.
 - Controls should remain compact, clear, and usable on narrow screens.
 - Typography should feel soft, human, and modern; Nunito is used for headings and action-driven text.
@@ -124,6 +126,9 @@ The following design tokens are locked hard values extracted directly from the c
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel. Avoid hardcoded page max-width rules for primary app content.
+- **Shared Inset Tokens**:
+  - `--space-content-inset-inline`: `1rem`
+  - `--space-content-inset-block`: `0.75rem`
 - **Desktop Breakpoint**: `768px` (`--breakpoint-desktop`: `768px`, `@media (max-width: 767px)` for mobile behaviors)
 
 ---
@@ -214,6 +219,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`), Quote (`fa-quote-right`), Like (`fa-heart`), Share (`fa-share-nodes`).
+- **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:
   - `highlightedStar = true`: Brand filled star icon (`fa-solid fa-star`, `.feed-post-star-highlighted`).
   - `highlightedStar = false`: Outline star icon (`fa-regular fa-star`).
@@ -264,6 +270,12 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop Placement**: Fixed lower-right, above the floating bar, stacking vertically with newest toast appended at the bottom.
 - **Mobile Placement**: Fixed bottom center, above the floating bar, stacking upward from the bottom while center-aligned.
 - **Content Contract**: Each toast shows the message, a timestamp, and a dismiss icon button.
+
+### 12. Settings Rows (`web/components/account-screens.tsx`, `web/components/list-row.tsx`)
+- **Purpose**: Settings reuses the shared `ListRow` primitive for navigational and editable rows so spacing, dividers, and typography stay consistent with notifications and chat.
+- **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
+- **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
+- **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 
 ---
 
