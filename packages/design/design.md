@@ -10,8 +10,8 @@ Friink is a calm, people-first social space centered on meaningful conversations
 
 - **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
 - **Top Headers**:
-  - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
-  - Mobile and sub-pages use `NavigationBar` (`2.2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
+  - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, and Notifications bell (`/notifications`).
+  - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
@@ -37,7 +37,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Starred (`fa-star` → `/starred`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
-   - Search (`fa-magnifying-glass` → `/search`)
+   - Search (`fa-magnifying-glass` opens an inline header search box with suggestions)
   - Notifications (`fa-bell` → `/notifications`, with unread count badge clamped to `99+`)
 
 ## Feed Behavior
@@ -131,7 +131,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
-- **Mobile Navigation / Tabs Height**: `2.2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
+- **Mobile Navigation / Tabs Height**: `2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
   - `--space-content-inset-inline`: `1rem` desktop, `0.5rem` mobile
@@ -249,10 +249,11 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) + Notifications bell button (`fa-bell`) matching search icon height, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
+  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input. The floating suggestions dropdown appears `8px` below the search input and matches the input width.
+  - Notifications bell button (`fa-bell`) matches search icon height and opens `/notifications`, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
-  - Height matches the tab strip at `2.2rem`.
+  - Height is `2rem`.
   - Left: History-aware Back button (`fa-arrow-left`) + Page Title (`.navigationbar-title`).
   - Right: Overflow menu button (`fa-ellipsis-vertical`) controlling `NavigationMenu`.
   - Page title uses bold compact uppercase sizing.
@@ -307,6 +308,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 13. Profile Identity Rows (`web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`)
 - **Purpose**: List-style surfaces that show people or profile actors must reuse `ProfileCard` for the visible identity block instead of separately composing avatar, display name, and handle.
 - **Click Rule**: In Connections and Notifications, the visible `ProfileCard` links to `/[username]` through its `href` prop. Row-level actions such as Accept, Reject, Cancel, and Remove remain separate controls.
+- **Hover Rule**: Profile names inside `ListRow` identity links must not change color on hover or focus; only the row background and focus outline provide the interaction affordance.
 - **HTML Rule**: Do not nest a profile link inside a row rendered as a button. If a row needs a different primary click target, keep profile navigation and row navigation as separate valid interactive elements.
 
 ### 14. PageSurface (`web/components/page-surface.tsx`)

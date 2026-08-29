@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Screen } from '@/lib/data';
 
 type HeaderProps = {
@@ -13,8 +14,41 @@ export function Header({
   onToggleSidebar,
   notificationCount = 0,
 }: HeaderProps) {
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const shouldShowNotificationBadge = notificationCount > 0;
   const visibleNotificationCount = notificationCount > 99 ? '99+' : String(notificationCount);
+  const suggestions = searchQuery.trim()
+    ? [
+        `Search posts for "${searchQuery.trim()}"`,
+        `Search people for "${searchQuery.trim()}"`,
+      ]
+    : ['Search people', 'Search posts', 'Search conversations'];
+
+  useEffect(() => {
+    if (!searchOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [searchOpen]);
 
   return (
     <header className="topbar">
@@ -34,9 +68,34 @@ export function Header({
           <img className="topbar-full-logo" src="/brand/logoFullBrand.svg" alt="Friink" />
         </div>
         <div className="topbar-actions">
-          <button className="topbar-search" type="button" onClick={() => onNavigate('search')} aria-label="Search">
-            <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-          </button>
+          <div className={`topbar-search-wrap${searchOpen ? ' topbar-search-wrap-open' : ''}`} ref={searchRef}>
+            {searchOpen ? (
+              <div className="topbar-search-panel">
+                <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search"
+                  aria-label="Search Friink"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <button className="topbar-search" type="button" onClick={() => setSearchOpen(true)} aria-label="Search">
+                <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+              </button>
+            )}
+            {searchOpen ? (
+              <div className="topbar-search-dropdown" role="listbox" aria-label="Search suggestions">
+                {suggestions.map((suggestion) => (
+                  <button key={suggestion} type="button" role="option">
+                    <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                    <span>{suggestion}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <button className="topbar-bell" type="button" onClick={() => onNavigate('notifications')} aria-label={`${visibleNotificationCount} notifications`}>
             <i className="fa-regular fa-bell" aria-hidden="true" />
             {shouldShowNotificationBadge ? <span>{visibleNotificationCount}</span> : null}

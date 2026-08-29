@@ -55,6 +55,9 @@ _Last updated: 2026-08-30_
 ## 2026-08-30
 
 ### Changed
+- [web] Kept profile names color-stable when hovering identity links inside shared list rows, including Connections rows.
+- [web] Locked the fixed mobile tab strip to the shared navigation bar height token so tabs begin on the next pixel after the navigation bar during slow scroll, preventing feed content from showing between them.
+- [web] Changed the header search action from route navigation to an inline search input with a same-width suggestions dropdown 8px below it, matched bell/search icon boxes, and adjusted notification badge spacing to avoid scrollbar clipping.
 - [web] Fixed mobile drawer close behavior through the shared header hamburger event handling, tightened header notification badge spacing so the pill is not clipped, and made feed post star/more icon sizing override the shared icon font exactly.
 - [web] Removed the visual gap between the mobile navigation bar and top tabs, reduced top tab height to 90% of the previous height, and grouped feed post star/more actions into one fixed-height spaced cluster matching the navigation overflow icon metrics.
 - [web] Matched feed post star/overflow action metrics to the navigation overflow icon, increased the navigation bar height to match the tab strip, and restored bold compact navigation title text at 95% of its previous size.
@@ -66,8 +69,12 @@ _Last updated: 2026-08-30_
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
-- [web] `npx tsc --noEmit` passed in `web` after the drawer/badge/feed icon adjustment.
-- [web] `npm run build` passed in `web` after the drawer/badge/feed icon adjustment.
+- [web] `npx tsc --noEmit` passed in `web` after the list-row profile-name hover fix.
+- [web] `npm run build` passed in `web` after the list-row profile-name hover fix.
+- [web] `npx tsc --noEmit` passed in `web` after the mobile navigation/tabs offset fix.
+- [web] `npm run build` passed in `web` after the mobile navigation/tabs offset fix.
+- [web] `npx tsc --noEmit` passed in `web` after the header search/bell adjustment.
+- [web] `npm run build` passed in `web` after clearing the generated `.next` cache that had a Windows readlink cleanup error.
 
 ## 2026-08-29
 

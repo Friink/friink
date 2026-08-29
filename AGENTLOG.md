@@ -37,6 +37,64 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Stop Connections row profile names from changing color on hover.
+ - Changes:
+   - Added a shared `ListRow` override so linked `ProfileCard` names keep `var(--color-ink)` on hover/focus inside list rows.
+   - Documented the identity-row hover contract in `packages/design/design.md`.
+   - Updated `CHANGELOG.md`.
+ - Files:
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Connections rows are built from shared `ListRow` and `ProfileCard` primitives, so the fix belongs at the row/profile-card CSS boundary rather than inside the Connections page.
+ - Notes:
+   - Row hover background remains intact; only the name color shift is suppressed.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Remove scroll-time gap between mobile navigation bar and tabs.
+ - Changes:
+   - Added shared CSS height tokens for `NavigationBar` and top tabs.
+   - Updated fixed tab positioning to use the navigation height token instead of a stale hard-coded height.
+   - Gave the mobile navigation wrapper the same paper background so no scrolled content can paint through around the fixed navigation surface.
+   - Updated `packages/design/design.md` and `CHANGELOG.md` for the flush navigation/tabs contract.
+ - Files:
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The visual gap came from positioning tabs against an outdated `2.2rem` navigation height while the rendered navigation bar was `2rem`.
+ - Notes:
+   - This is a component-level CSS fix for all top app tabs, not a page-specific feed patch.
+ - Verified Working?: Yes. `npx tsc --noEmit` and `npm run build` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Fix header bell/search sizing and add inline header search suggestions.
+ - Changes:
+   - Changed the shared `Header` search button from navigating to Search into an inline search input managed by the `Header` component.
+   - Added a floating header suggestions dropdown positioned `8px` below the search input with matching width.
+   - Normalized closed search and bell buttons to identical `2rem` action boxes with identical `1rem` inner icon boxes.
+   - Pulled the pilled notification badge inward and reserved additional right padding in the header actions so the badge does not clip under the scrollbar edge.
+   - Updated `packages/design/design.md` and `CHANGELOG.md` for the new header search and notification badge contracts.
+ - Files:
+   - web/components/header.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Header search is a global utility, so opening the input/dropdown inside the shared `Header` keeps the behavior consistent everywhere the header appears.
+ - Notes:
+   - The ambient browser state was not treated as an instruction; this change follows the user's typed request.
+ - Verified Working?: Yes. `npx tsc --noEmit` passed in `web`; `npm run build` initially hit a Windows readlink cleanup error in the generated `.next` cache, then passed after removing only `web/.next`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Fix mobile drawer close behavior, notification badge clipping, and feed post action icon sizing.
  - Changes:
    - Inspected the open staging tab in the in-app browser and measured `NavigationBar` overflow, feed post star, feed post overflow, bell, search, and badge geometry.
