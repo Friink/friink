@@ -1,14 +1,39 @@
+"use client";
+
 import Link from 'next/link';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
 
 type FeedPostProps = {
   post: Post;
   highlightedStar?: boolean;
+  onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
+  truncateBody?: boolean;
+  truncateQuotedPost?: boolean;
 };
 
-export function FeedPost({ post, highlightedStar = false, onQuote }: FeedPostProps) {
+export function FeedPost({ post, highlightedStar = false, onReply, onQuote, truncateBody = true, truncateQuotedPost = true }: FeedPostProps) {
+  const bodyRef = useRef<HTMLParagraphElement | null>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!truncateBody || !bodyRef.current) {
+      setIsOverflowing(false);
+      return;
+    }
+
+    const element = bodyRef.current;
+    const updateOverflow = () => {
+      setIsOverflowing(element.scrollHeight > element.clientHeight + 1);
+    };
+
+    updateOverflow();
+    window.addEventListener('resize', updateOverflow);
+    return () => window.removeEventListener('resize', updateOverflow);
+  }, [post.text, truncateBody]);
+
   return (
     <article className="feed-post">
       <div className="feed-post-heading">
@@ -25,15 +50,29 @@ export function FeedPost({ post, highlightedStar = false, onQuote }: FeedPostPro
       <div className="feed-post-date">
         <small>{post.date}</small>
       </div>
-      <p className="feed-post-body">{post.text}</p>
+      <p ref={bodyRef} className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
+      {truncateBody && isOverflowing && (
+        <Link className="feed-post-show-more" href={`/posts/${post.id}`} aria-label={`Show full post by ${post.name}`}>
+          Show more...
+        </Link>
+      )}
       {post.quotedPost && (
         <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
-          <strong>{post.quotedPost.authorUsername ? `@${post.quotedPost.authorUsername}` : 'Original post unavailable'}</strong>
-          <p>{post.quotedPost.content}</p>
+          {post.quotedPost.authorUsername ? (
+            <ProfileCard
+              name={post.quotedPost.authorDisplayName || `@${post.quotedPost.authorUsername}`}
+              handle={`@${post.quotedPost.authorUsername}`}
+              tone="mint"
+            />
+          ) : (
+            <strong>Original post unavailable</strong>
+          )}
+          <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}>{post.quotedPost.content}</p>
+          {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
         </div>
       )}
       <div className="feed-post-actions">
-        <button type="button" aria-label="Comment">
+        <button type="button" aria-label="Comment" onClick={() => onReply?.(post)}>
           <i className="fa-regular fa-comment" aria-hidden="true" />
         </button>
         <button type="button" aria-label="Quote" onClick={() => onQuote?.(post)}>

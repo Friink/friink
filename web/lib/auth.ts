@@ -29,6 +29,13 @@ type ApiUser = {
   updated_at: string;
 };
 
+type ApiPublicUser = {
+  id: string;
+  username: string;
+  display_name: string | null;
+  about: string | null;
+};
+
 type ApiTokenResponse = {
   access_token: string;
   token_type: string;
@@ -173,17 +180,35 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
+export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about'>> {
+  const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
+    method: 'GET',
+  });
+
+  return {
+    id: response.id,
+    name: response.display_name || response.username,
+    username: response.username,
+    about: response.about ?? '',
+  };
+}
+
 export type ApiPost = {
   id: string;
   user_id: string;
+  kind: 'post' | 'quote' | 'reply';
   author_username: string;
+  author_display_name: string | null;
   content: string;
   media_count: number;
+  parent_post_id: string | null;
   quoted_post_id: string | null;
   quoted_post: {
     id: string | null;
     author_username: string | null;
+    author_display_name: string | null;
     content: string;
+    media_count: number;
     unavailable: boolean;
   } | null;
   created_at: string;
@@ -221,15 +246,29 @@ export async function listPosts(): Promise<ApiPost[]> {
   });
 }
 
-export async function createPost(accessToken: string, input: { content: string; quotedPostId?: string | null; media?: unknown[] }): Promise<ApiPost> {
+export async function getPost(postId: string): Promise<ApiPost> {
+  return requestApi<ApiPost>(`/posts/${encodeURIComponent(postId)}`, {
+    method: 'GET',
+  });
+}
+
+export async function listPostReplies(postId: string): Promise<ApiPost[]> {
+  return requestApi<ApiPost[]>(`/posts/${encodeURIComponent(postId)}/replies`, {
+    method: 'GET',
+  });
+}
+
+export async function createPost(accessToken: string, input: { content: string; kind?: 'post' | 'quote' | 'reply'; quotedPostId?: string | null; parentPostId?: string | null; media?: unknown[] }): Promise<ApiPost> {
   return requestApi<ApiPost>('/posts', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
+      kind: input.kind ?? 'post',
       content: input.content,
       quoted_post_id: input.quotedPostId ?? null,
+      parent_post_id: input.parentPostId ?? null,
       media: input.media,
     }),
   });

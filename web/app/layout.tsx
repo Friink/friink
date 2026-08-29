@@ -3,7 +3,10 @@ import { themeToCssVars } from '@/theme.config';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Friink - A place for humans.',
+  title: {
+    default: 'Friink',
+    template: 'Friink | %s',
+  },
   description: 'A calmer social space unlike anything you have seen so far.',
   icons: {
     icon: '/favicon.png',

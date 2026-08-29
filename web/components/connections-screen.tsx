@@ -1,6 +1,7 @@
  'use client';
 
 import { useState } from 'react';
+import { ListRow } from '@/components/list-row';
 import type { Connection, ConnectionRequest } from '@/lib/data';
 
 type ConnectionsScreenProps = {
@@ -39,51 +40,53 @@ export function ConnectionsScreen({
       <div className="connection-list">
         {isRequestsView && incomingRequests.length > 0 ? (
           incomingRequests.map((request) => (
-            <article className="connection-row" key={request.id}>
-              <span className="user-avatar avatar-mint">{request.initials}</span>
-              <div className="connection-person">
-                <strong>{request.name}</strong>
-                <small>{request.handle}</small>
-              </div>
-              <div className="connection-request-actions">
-                <button
-                  className="profile-action-button connection-accept"
-                  type="button"
-                  disabled={requestActionBusyId === request.id}
-                  onClick={() => onAcceptRequest?.(request.id)}
-                >
-                  Accept
-                </button>
-                <button
-                  className="icon-button"
-                  type="button"
-                  aria-label={`Reject ${request.name}`}
-                  disabled={requestActionBusyId === request.id}
-                  onClick={() => onRejectRequest?.(request.id)}
-                >
-                  <i className="fa-solid fa-xmark" aria-hidden="true" />
-                </button>
-              </div>
-            </article>
+            <ListRow
+              key={request.id}
+              avatar={<span className="user-avatar avatar-mint">{request.initials}</span>}
+              title={request.name}
+              subtitle={request.handle}
+              trailing={
+                <span className="connection-request-actions">
+                  <button
+                    className="profile-action-button connection-accept"
+                    type="button"
+                    disabled={requestActionBusyId === request.id}
+                    onClick={() => onAcceptRequest?.(request.id)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    aria-label={`Reject ${request.name}`}
+                    disabled={requestActionBusyId === request.id}
+                    onClick={() => onRejectRequest?.(request.id)}
+                  >
+                    <i className="fa-solid fa-xmark" aria-hidden="true" />
+                  </button>
+                </span>
+              }
+            />
           ))
         ) : visibleConnections.length > 0 ? (
           visibleConnections.map((connection) => (
-            <article className="connection-row" key={connection.id}>
-              <span className={`user-avatar avatar-${connection.tone}`}>{connection.initials}</span>
-              <div className="connection-person">
-                <strong>{connection.name}</strong>
-                <small>{connection.handle}</small>
-              </div>
-              {activeFilter === 'all' && (
-                <button
-                  className="icon-button connection-add"
-                  type="button"
-                  aria-label={`Add ${connection.name}`}
-                >
-                  <i className="fa-solid fa-user-plus" aria-hidden="true" />
-                </button>
-              )}
-            </article>
+            <ListRow
+              key={connection.id}
+              avatar={<span className={`user-avatar avatar-${connection.tone}`}>{connection.initials}</span>}
+              title={connection.name}
+              subtitle={connection.handle}
+              trailing={
+                activeFilter === 'all' ? (
+                  <button
+                    className="icon-button connection-add"
+                    type="button"
+                    aria-label={`Add ${connection.name}`}
+                  >
+                    <i className="fa-solid fa-user-plus" aria-hidden="true" />
+                  </button>
+                ) : null
+              }
+            />
           ))
         ) : (
           <div className="connections-empty">

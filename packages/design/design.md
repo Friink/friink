@@ -12,7 +12,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Top Headers**:
   - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, Search entry point (`/search`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
-- **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) provides the compact Post creation affordance in default mode and seamlessly expands to host full-width contextual composers (e.g. `ChatComposer`, `PostComposerControls`).
+- **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. It does not impose a fixed maximum page width. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name` and `About`; Account edits login/account identifiers such as email, username, and user ID.
 
@@ -23,7 +23,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 Navigation is partitioned across dedicated functional surfaces rather than a single flat list:
 
 1. **FloatingBar (Core Post Action)**:
-   - Post (`fa-pen` → `/compose`)
+   - Post composer (`Composer`) submits posts directly from the floating bar.
 2. **SideDrawer (Personal Identity & Network)**:
    - Signed-in User Identity Block (`ProfileCard` at top)
    - Profile (`fa-user` → `/[username]`)
@@ -79,13 +79,13 @@ The following design tokens are locked hard values extracted directly from the c
 ### Corner Radius
 - **Buttons and Single-Line Inputs**: `8px` (`--radius-sm: 8px`). Per 2026-08-17 changelog decision, buttons, single-line inputs, search fields, toggle pills, and option menus use an `8px` corner radius, NOT a pill shape.
   - *Codebase `--radius-pill` status*: In `web/app/globals.css` and `web/theme.config.ts`, `--radius-pill` is hard-aliased to `8px` (`:root { --radius-pill: 8px; }`).
-  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.chat-composer input`, `.profile-edit-button`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
+  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-edit-button`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
 - **Radius Scale**:
   - `--radius-sm`: `8px` (Buttons, inputs, cards, dropdowns, floating bar)
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`, `.profile-large-avatar`), circular action icons (`.chat-send`, `.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`, `.profile-large-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -176,10 +176,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
      - Active item highlighted with `color: var(--color-brand)` and `background: var(--color-brand-soft)`.
   2. **Contextual Composer Mode** (`children` is provided):
      - Width: Spans available page width (`width: calc(100% - 2.5rem)`, `.floating-bar-contextual`).
-     - Hosts contextual composers (`ChatComposer` or `PostComposerControls`).
+     - Hosts contextual composers (`Composer`).
 - **Layout Constraints**:
   - Page content containers reserve bottom space via `padding-bottom: calc(var(--space-floating-bar-height) + 2rem)` so the persistent bar never obscures page content.
-  - Post composer textareas end strictly above the floating bar without triggering nested scrollbars.
+  - Floating composer textareas expand with content without triggering nested page scroll containers.
 - **Props Contract**:
   - `activeScreen: Screen` (required)
   - `onNavigate: (screen: Screen) => void` (required)
@@ -242,12 +242,11 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
   - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss.
 
-### 8. ChatComposer (`web/components/chat-composer.tsx`) & PostComposerControls (`web/components/post-composer-controls.tsx`)
-- **`ChatComposer`**:
-  - Layout: Attachment button (`fa-paperclip`) on left, message input (`border-radius: 8px`) in middle, circular Send button (`fa-arrow-up`, `50%` radius, disabled when empty) on right.
-- **`PostComposerControls`**:
-  - Layout: Circular Attachment button (`fa-paperclip`, `.post-option`) on left, primary "Post" button (`8px` radius, `.post-submit`) on right.
-
+### 8. Composer (`web/components/composer.tsx`)
+- **`Composer`**:
+  - Default layout: Attachment button (`fa-paperclip`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Floating post multiline mode: Starts in the same single-line layout, then expands vertically as text wraps or new lines are added. Once expanded, text occupies the full top row while attachment and send/post controls remain bottom-aligned.
+  - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with animated sliding indicator line.
 - **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`).

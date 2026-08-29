@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Composer } from '@/components/composer';
+import { ListRow } from '@/components/list-row';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
 import { Tabs } from '@/components/tabs';
@@ -61,15 +63,7 @@ export function MessagesScreen() {
             </div>
           ))}
         </div>
-        <form className="chat-composer" onSubmit={sendMessage}>
-          <button className="icon-plain" type="button" aria-label="Attach file">
-            <i className="fa-solid fa-paperclip" aria-hidden="true" />
-          </button>
-          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message..." aria-label="Message" />
-          <button className="chat-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
-            <i className="fa-solid fa-arrow-up" aria-hidden="true" />
-          </button>
-        </form>
+        <Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
       </section>
     );
   }
@@ -78,26 +72,25 @@ export function MessagesScreen() {
     <section className="messages-screen">
       <div className="message-list">
         {conversations.map((conversation) => (
-          <button
-            className={`message-row${conversation.unread ? ' unread' : ''}`}
+          <ListRow
             key={conversation.id}
-            type="button"
-              onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
-          >
-            <Link className="message-row-profile" href={`/${conversation.handle.replace('@', '')}`} aria-label={`Open ${conversation.name} profile`}>
-              <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
-            </Link>
-            <span className="message-row-copy">
-              <span className="message-title">
-                <Link className="message-profile-link" href={`/${conversation.handle.replace('@', '')}`}>
-                  <strong>{conversation.name}</strong>
-                </Link>
-                <small>{conversation.time}</small>
-              </span>
-              <span className="message-preview">{conversation.preview}</span>
-            </span>
-            {conversation.unread && <span className="unread-dot" />}
-          </button>
+            avatar={
+              <Link className="message-row-profile" href={`/${conversation.handle.replace('@', '')}`} aria-label={`Open ${conversation.name} profile`}>
+                <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
+              </Link>
+            }
+            title={
+              <Link className="message-profile-link" href={`/${conversation.handle.replace('@', '')}`}>
+                {conversation.name}
+              </Link>
+            }
+            subtitle={conversation.preview}
+            meta={conversation.time}
+            trailing={conversation.unread ? <span className="unread-dot" /> : null}
+            unread={conversation.unread}
+            onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
+            ariaLabel={`Open chat with ${conversation.name}`}
+          />
         ))}
       </div>
     </section>
@@ -109,11 +102,11 @@ export function SearchScreen() {
 }
 
 export function CalendarScreen() {
-  return <><ScreenHeading eyebrow="Make time" title="Calendar" copy="A gentle view of the moments you have planned." /><div className="calendar-top"><button className="icon-button">‹</button><strong>August 2026</strong><button className="icon-button">›</button></div><div className="calendar-grid">{['S','M','T','W','T','F','S'].map((day, index) => <span className="calendar-weekday" key={`${day}-${index}`}>{day}</span>)}{Array.from({ length: 31 }, (_, index) => <span className={`calendar-day${[5, 11, 17, 22].includes(index + 1) ? ' has-event' : ''}${index + 1 === 11 ? ' today' : ''}`} key={index}>{index + 1}</span>)}</div><div className="section-heading"><h2>Coming up</h2><button className="primary-button">＋ Add event</button></div><div className="event-list"><div className="event-row"><span className="event-date">17<span>MON</span></span><div><strong>Sunday market</strong><small>10:00 AM · With Maya</small></div><span className="event-dot coral-dot" /></div><div className="event-row"><span className="event-date">22<span>SAT</span></span><div><strong>Dinner at Luma</strong><small>7:30 PM · With your circle</small></div><span className="event-dot green-dot" /></div></div></>;
+  return <><ScreenHeading eyebrow="Make time" title="Calendar" copy="A gentle view of the moments you have planned." /><div className="calendar-top"><button className="icon-button">‹</button><strong>August 2026</strong><button className="icon-button">›</button></div><div className="calendar-grid">{['S','M','T','W','T','F','S'].map((day, index) => <span className="calendar-weekday" key={`${day}-${index}`}>{day}</span>)}{Array.from({ length: 31 }, (_, index) => <span className={`calendar-day${[5, 11, 17, 22].includes(index + 1) ? ' has-event' : ''}${index + 1 === 11 ? ' today' : ''}`} key={index}>{index + 1}</span>)}</div><div className="section-heading"><h2>Coming up</h2><button className="primary-button">＋ Add event</button></div><div className="event-list"><ListRow avatar={<span className="event-date">17<span>MON</span></span>} title="Sunday market" subtitle="10:00 AM · With Maya" trailing={<span className="event-dot coral-dot" />} className="event-row" /><ListRow avatar={<span className="event-date">22<span>SAT</span></span>} title="Dinner at Luma" subtitle="7:30 PM · With your circle" trailing={<span className="event-dot green-dot" />} className="event-row" /></div></>;
 }
 
 export function DirectoryScreen() {
-  return <><ScreenHeading eyebrow="Your people" title="Directory" copy="Everyone you care about, easy to find." /><div className="message-search">⌕ <span>Search your directory</span></div><div className="directory-section"><p className="directory-label">A · 2 people</p><div className="directory-row"><span className="avatar avatar-mint">AM</span><div><strong>Alex Morgan</strong><small>You · 34 connections</small></div><button className="icon-button">···</button></div><div className="directory-row"><span className="avatar avatar-coral">AL</span><div><strong>Alina Ross</strong><small>12 shared connections</small></div><button className="icon-button">···</button></div></div><div className="directory-section"><p className="directory-label">J · 1 person</p><div className="directory-row"><span className="avatar avatar-sage">JB</span><div><strong>Jon Bell</strong><small>8 shared connections</small></div><button className="icon-button">···</button></div></div></>;
+  return <><ScreenHeading eyebrow="Your people" title="Directory" copy="Everyone you care about, easy to find." /><div className="message-search">⌕ <span>Search your directory</span></div><div className="directory-section"><p className="directory-label">A · 2 people</p><ListRow avatar={<span className="avatar avatar-mint">AM</span>} title="Alex Morgan" subtitle="You · 34 connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /><ListRow avatar={<span className="avatar avatar-coral">AL</span>} title="Alina Ross" subtitle="12 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div><div className="directory-section"><p className="directory-label">J · 1 person</p><ListRow avatar={<span className="avatar avatar-sage">JB</span>} title="Jon Bell" subtitle="8 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div></>;
 }
 
 export function ScreenForNav({ activeNav }: { activeNav: string }) {

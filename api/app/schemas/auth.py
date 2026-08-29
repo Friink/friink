@@ -95,6 +95,15 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PublicUserResponse(BaseModel):
+    id: uuid.UUID
+    username: str
+    display_name: str | None
+    about: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

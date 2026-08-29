@@ -1,5 +1,7 @@
 'use client';
 
+import { ListRow } from '@/components/list-row';
+
 type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow';
 
 type NotificationItem = {
@@ -103,19 +105,25 @@ export function NotificationsScreen() {
     <section className="notifications-screen">
       <div className="notifications-list">
         {notifications.map((notification) => (
-          <article className={`notification-row${notification.unread ? ' unread' : ''}`} key={notification.id}>
-            <span className={`user-avatar avatar-${notification.tone}`}>{notification.initials}</span>
-            <div className="notification-copy">
-              <p>
-                <strong>{notification.name}</strong> {notification.text}
-              </p>
-              <small>{notification.handle}</small>
-            </div>
-            <div className="notification-meta">
-              <i className={`fa-solid ${getIcon(notification.kind)}`} aria-hidden="true" />
-              <span>{notification.time}</span>
-            </div>
-          </article>
+          <ListRow
+            key={notification.id}
+            avatar={<span className={`user-avatar avatar-${notification.tone}`}>{notification.initials}</span>}
+            title={notification.name}
+            subtitle={
+              <>
+                <span className="notification-copy-text">{notification.text}</span>
+                <span className="notification-copy-handle">{notification.handle}</span>
+              </>
+            }
+            trailing={
+              <span className="notification-meta">
+                <i className={`fa-solid ${getIcon(notification.kind)}`} aria-hidden="true" />
+                <span>{notification.time}</span>
+              </span>
+            }
+            unread={notification.unread}
+            className="notification-row"
+          />
         ))}
       </div>
     </section>

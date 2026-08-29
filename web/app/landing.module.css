@@ -1,0 +1,443 @@
+.page {
+  min-height: 100dvh;
+  color: #1a1c1c;
+  background: #f9f9f9;
+}
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 100%;
+  border-bottom: 1px solid #cfc4c5;
+  background: rgba(249, 249, 249, 0.9);
+  backdrop-filter: blur(14px);
+}
+
+.navInner,
+.sectionInner,
+.footerInner {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  padding-right: 1.25rem;
+  padding-left: 1.25rem;
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 5rem;
+}
+
+.logoFull {
+  display: block;
+  width: auto;
+  height: 3.5rem;
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navLink {
+  color: #5f5e5e;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  color: #33aa55;
+  outline: none;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 3rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  color: #ffffff;
+  background: #33aa55;
+  font-family: "Nunito Local", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+  white-space: nowrap;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  color: #ffffff;
+  background: #000000;
+  outline: none;
+}
+
+.secondaryCta {
+  border-color: #33aa55;
+  color: #33aa55;
+  background: transparent;
+}
+
+.hero {
+  padding-top: 5rem;
+}
+
+.heroInner {
+  display: flex;
+  min-height: 620px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  border-bottom: 1px solid #cfc4c5;
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.heroCopy {
+  max-width: 56rem;
+}
+
+.hero h1,
+.vision h2,
+.subscribe h2,
+.progress h2 {
+  margin: 0;
+  font-family: "Nunito Local", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.hero h1 {
+  max-width: 48rem;
+  font-size: clamp(3rem, 7vw, 4.5rem);
+  line-height: 1.08;
+}
+
+.hero p {
+  max-width: 42rem;
+  margin: 2rem 0 0;
+  color: #5f5e5e;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.ctaIcon {
+  flex: 0 0 auto;
+  transition: transform 180ms ease;
+}
+
+.cta:hover .ctaIcon,
+.cta:focus-visible .ctaIcon {
+  transform: translateX(0.25rem);
+}
+
+.progress {
+  padding: 8rem 0;
+}
+
+.progressCard {
+  max-width: 56rem;
+  margin: 0 auto;
+  border: 1px solid #cfc4c5;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #ffffff;
+}
+
+.progressHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.progress h2 {
+  font-size: 1.5rem;
+}
+
+.progress p {
+  margin: 0.5rem 0 0;
+  color: #5f5e5e;
+}
+
+.progressValue {
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+.progressTrack {
+  height: 0.75rem;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #e8e8e8;
+}
+
+.progressFill {
+  width: 25%;
+  height: 100%;
+  border-radius: inherit;
+  background: #33aa55;
+}
+
+.vision {
+  padding-bottom: 8rem;
+}
+
+.visionGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: 2rem;
+}
+
+.visionImage {
+  order: 2;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid #cfc4c5;
+  border-radius: 8px;
+}
+
+.visionImage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  object-fit: cover;
+}
+
+.visionCopy {
+  order: 1;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-radius: 8px;
+  padding: 0.25rem 0.75rem;
+  color: #33aa55;
+  background: rgba(51, 170, 85, 0.1);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.eyebrowIcon {
+  flex: 0 0 auto;
+}
+
+.vision h2 {
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  line-height: 1.15;
+}
+
+.vision p {
+  margin: 1.5rem 0 0;
+  color: #5f5e5e;
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.subscribe {
+  border-top: 1px solid #cfc4c5;
+  border-bottom: 1px solid #cfc4c5;
+  background: #f3f3f4;
+}
+
+.subscribeInner {
+  max-width: 48rem;
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+  text-align: center;
+}
+
+.drop {
+  display: block;
+  margin: 0 auto 1.5rem;
+  color: #33aa55;
+}
+
+.subscribe h2 {
+  font-size: clamp(1.875rem, 3vw, 2.25rem);
+}
+
+.subscribe p {
+  margin: 1rem 0 0;
+  color: #5f5e5e;
+  font-size: 1.125rem;
+}
+
+.form {
+  display: flex;
+  max-width: 36rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 2rem auto 0;
+}
+
+.form input {
+  flex: 1;
+  min-height: 3rem;
+  border: 1px solid #cfc4c5;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #1a1c1c;
+  background: #ffffff;
+  font: inherit;
+}
+
+.form input:focus {
+  border-color: #33aa55;
+  outline: 1px solid #33aa55;
+}
+
+.confirmation {
+  margin-top: 1rem;
+  color: #33aa55;
+  font-weight: 700;
+}
+
+.hiddenFrame,
+.hidden {
+  display: none;
+}
+
+.footer {
+  border-top: 1px solid #cfc4c5;
+  background: #f9f9f9;
+}
+
+.footerInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.footerLogo {
+  display: block;
+  width: auto;
+  height: 2.25rem;
+}
+
+.footer p {
+  margin: 0;
+  color: #5f5e5e;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .form {
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 768px) {
+  .navInner,
+  .sectionInner,
+  .footerInner {
+    padding-right: 4rem;
+    padding-left: 4rem;
+  }
+
+  .navActions {
+    gap: 2rem;
+  }
+
+  .visionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .visionImage {
+    order: 1;
+  }
+
+  .visionCopy {
+    order: 2;
+    padding-left: 2rem;
+  }
+
+  .footerInner {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 767px) {
+  .navLink {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .page,
+  .footer {
+    color: #f1f3f2;
+    background: #111414;
+  }
+
+  .nav {
+    border-color: #46514c;
+    background: rgba(17, 20, 20, 0.9);
+  }
+
+  .heroInner,
+  .visionImage,
+  .subscribe,
+  .footer {
+    border-color: #46514c;
+  }
+
+  .hero p,
+  .progress p,
+  .vision p,
+  .subscribe p,
+  .footer p,
+  .navLink {
+    color: #b8c3bf;
+  }
+
+  .progressCard,
+  .form input {
+    border-color: #46514c;
+    color: #f1f3f2;
+    background: #1c201f;
+  }
+
+  .progressTrack,
+  .subscribe {
+    background: #171b1a;
+  }
+
+  .cta:hover,
+  .cta:focus-visible {
+    color: #000000;
+    background: #ffffff;
+  }
+}

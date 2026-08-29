@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FriinkLogo } from '@/components/friink-logo';
 
@@ -12,6 +13,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   const code = resolveErrorCode(error);
+
+  useEffect(() => {
+    document.title = `Friink | Error (${code})`;
+  }, [code]);
 
   // apply theme on client only to avoid hydration mismatch
   // cookie wins, otherwise use system preference

@@ -51,6 +51,19 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     };
   }, [collapsed, onToggleCollapsed]);
 
+  function handleNavigate(screen: Screen) {
+    onNavigate(screen);
+
+    try {
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      if (isMobile && !collapsed) {
+        onToggleCollapsed();
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
@@ -63,21 +76,27 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
             className={`nav-item${activeScreen === item.id ? ' active' : ''}`}
             key={item.id}
             type="button"
-            onClick={() => onNavigate(item.id)}
+            onClick={() => handleNavigate(item.id)}
           >
-            <i className={item.icon} aria-hidden="true" />
+            <span className="nav-item-icon" aria-hidden="true">
+              <i className={item.icon} />
+            </span>
             <span>{item.label}</span>
           </button>
         ))}
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-action" type="button" onClick={() => onNavigate('settings')}>
-          <i className="fa-solid fa-gear" aria-hidden="true" />
+        <button className="sidebar-action" type="button" onClick={() => handleNavigate('settings')}>
+          <span className="nav-item-icon" aria-hidden="true">
+            <i className="fa-solid fa-gear" />
+          </span>
           <span>Settings</span>
         </button>
         <button className="sidebar-action" type="button" onClick={onLogout}>
-          <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
+          <span className="nav-item-icon" aria-hidden="true">
+            <i className="fa-solid fa-right-from-bracket" />
+          </span>
           <span>Log out</span>
         </button>
       </div>

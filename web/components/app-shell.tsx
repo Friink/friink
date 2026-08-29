@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -12,10 +12,9 @@ import { NavigationBar } from '@/components/navigationbar';
 import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
 import { HomeScreen } from '@/components/home-screen';
+import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen } from '@/components/notifications-screen';
-import { PostComposerControls } from '@/components/post-composer-controls';
-import { PostScreen } from '@/components/post-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
@@ -45,8 +44,14 @@ type AppShellProps = {
   children?: React.ReactNode;
   floatingBarContent?: React.ReactNode;
   showTabs?: boolean;
+  showFloatingBar?: boolean;
   onUserChange?: (user: AuthUser) => void;
 };
+
+type ComposeContext =
+  | { kind: 'post' }
+  | { kind: 'reply'; post: Post }
+  | { kind: 'quote'; post: Post };
 
 function getInitials(username: string) {
   return (
@@ -61,18 +66,15 @@ function getInitials(username: string) {
   );
 }
 
-function getDisplayName(user: AuthUser) {
-  return user.name.trim() || user.username;
-}
-
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, onUserChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange }: AppShellProps) {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [postDraft, setPostDraft] = useState('');
-  const [quotedPost, setQuotedPost] = useState<Post | null>(null);
+  const [floatingDraft, setFloatingDraft] = useState('');
+  const [floatingPostBusy, setFloatingPostBusy] = useState(false);
+  const [composeContext, setComposeContext] = useState<ComposeContext>({ kind: 'post' });
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
@@ -85,6 +87,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
+  const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
+  const hasComposerContext = composeContext.kind !== 'post';
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -172,8 +177,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return 'Connections';
       case 'starred':
         return 'Starred';
-      case 'post':
-        return 'Post';
       case 'search':
         return 'Search';
       case 'messages':
@@ -182,8 +185,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return 'Notifications';
       case 'settings':
         return 'Settings';
-      case 'floating':
-        return 'Floating';
       default:
         return 'Friink';
     }
@@ -208,17 +209,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       case 'settings':
         router.push('/settings');
         break;
-      case 'post':
-        router.push('/compose');
-        break;
       case 'messages':
         router.push('/chat');
         break;
       case 'notifications':
         router.push('/notifications');
-        break;
-      case 'floating':
-        router.push('/floating');
         break;
       default:
         break;
@@ -292,13 +287,18 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       });
   }, [profileUser, user]);
 
-  function handleQuote(post: Post) {
-    setQuotedPost(post);
-    navigateTo('post');
+  function handleReply(post: Post) {
+    setComposeContext({ kind: 'reply', post });
   }
 
-  async function handlePost(text: string) {
-    const trimmedText = text.trim();
+  function handleQuote(post: Post) {
+    setComposeContext({ kind: 'quote', post });
+  }
+
+  async function handleFloatingPost(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedText = floatingDraft.trim();
     if (!trimmedText) return;
 
     const session = loadAuthSession();
@@ -307,21 +307,30 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       return;
     }
 
+    setFloatingPostBusy(true);
     try {
       const apiPost = await createPost(session.accessToken, {
+        kind: composeContext.kind,
         content: trimmedText,
-        quotedPostId: quotedPost?.id ?? null,
+        quotedPostId: composeContext.kind === 'quote' ? composeContext.post.id : null,
+        parentPostId: composeContext.kind === 'reply' ? composeContext.post.id : null,
       });
       const newPost = mapApiPost(apiPost);
-      setPosts((current) => [newPost, ...current]);
-      setPostDraft('');
-      setQuotedPost(null);
-      setActiveScreen('home');
-      router.push('/home');
-      return;
+      if (newPost.kind !== 'reply') {
+        setPosts((current) => [newPost, ...current]);
+      }
+      setFloatingDraft('');
+      setComposeContext({ kind: 'post' });
+      if (newPost.kind !== 'reply') {
+        setHomeFilter('all');
+        setActiveScreen('home');
+        router.push('/home');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create post.';
       addToast(message);
+    } finally {
+      setFloatingPostBusy(false);
     }
   }
 
@@ -333,9 +342,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
-      name: post.author_username,
+      kind: post.kind,
+      name: post.author_display_name || post.author_username,
       handle: `@${post.author_username}`,
-      initials: getInitials(post.author_username),
+      initials: getInitials(post.author_display_name || post.author_username),
       tone: 'mint',
       date: new Date(post.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
       text: post.content,
@@ -348,7 +358,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         ? {
             id: post.quoted_post.id,
             authorUsername: post.quoted_post.author_username,
+            authorDisplayName: post.quoted_post.author_display_name,
             content: post.quoted_post.content,
+            mediaCount: post.quoted_post.media_count,
             unavailable: post.quoted_post.unavailable,
           }
         : null,
@@ -463,7 +475,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         <Header
           onNavigate={navigateTo}
           sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => setSidebarCollapsed((current) => !current)}
+          onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
         />
 
         <section className="main-panel">
@@ -476,7 +488,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           </div>
 
           <div className="main-content">
-            {showTabs !== false && (activeScreen === 'home' || activeScreen === 'floating') && (
+            {showTabs !== false && activeScreen === 'home' && (
               <Tabs
                 tabs={[
                   { id: 'all', label: 'Explore' },
@@ -518,12 +530,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 children
               ) : (
                 <>
-                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onQuote={handleQuote} />}
+                  {activeScreen === 'home' && <HomeScreen posts={posts} activeFilter={homeFilter} onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')} onReply={handleReply} onQuote={handleQuote} />}
                   {activeScreen === 'profile' && (
                     <ProfileScreen
                       user={profileUser ?? user}
                       posts={posts}
                       isOwnProfile={!profileUser}
+                      onReply={handleReply}
                       onQuote={handleQuote}
                       onEditProfile={openProfileSettings}
                       connectionState={profileConnectionState}
@@ -544,17 +557,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onRejectRequest={handleRejectRequest}
                     />
                   )}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} onQuote={handleQuote} />}
-                  {activeScreen === 'post' && (
-                    <PostScreen
-                      user={user}
-                      text={postDraft}
-                      onTextChange={(text) => {
-                        setPostDraft(text);
-                      }}
-                      quotedPost={quotedPost ? { handle: quotedPost.handle, text: quotedPost.text } : null}
-                    />
-                  )}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} />}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen />}
                   {activeScreen === 'settings' && (
@@ -575,11 +578,36 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           </div>
         </section>
 
-        <FloatingBar activeScreen={activeScreen} onNavigate={navigateTo}>
-          {floatingBarContent ?? (activeScreen === 'post' && (
-            <PostComposerControls disabled={!postDraft.trim()} onPost={() => handlePost(postDraft)} />
-          ))}
-        </FloatingBar>
+        {shouldShowFloatingBar && (
+          <FloatingBar>
+            {hasContextualFloatingBar ? (
+              floatingBarContent
+            ) : (
+              <Composer
+                draft={floatingDraft}
+                onDraftChange={setFloatingDraft}
+                onSend={handleFloatingPost}
+                disabled={floatingPostBusy}
+                multiline
+                placeholder={composeContext.kind === 'reply' ? 'Write a reply...' : composeContext.kind === 'quote' ? 'Add your quote...' : 'Write a post...'}
+                disabledPlaceholder="Posting..."
+                inputLabel="Post"
+                sendLabel="Post"
+                maxLength={512}
+                showCount
+                contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
+                quotedPreview={composeContext.kind === 'quote' ? {
+                  name: composeContext.post.name,
+                  handle: composeContext.post.handle,
+                  initials: composeContext.post.initials,
+                  tone: composeContext.post.tone,
+                  text: composeContext.post.text,
+                  mediaCount: 0,
+                } : null}
+              />
+            )}
+          </FloatingBar>
+        )}
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
     </main>

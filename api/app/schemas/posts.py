@@ -1,10 +1,17 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
 POST_CONTENT_MAX_LENGTH = 512
 POST_MEDIA_MAX_FILES = 16
+
+
+class PostKind(str, Enum):
+    post = "post"
+    quote = "quote"
+    reply = "reply"
 
 
 class PostMediaInput(BaseModel):
@@ -14,7 +21,9 @@ class PostMediaInput(BaseModel):
 
 class CreatePostRequest(BaseModel):
     content: str = Field(min_length=1, max_length=POST_CONTENT_MAX_LENGTH)
+    kind: PostKind = PostKind.post
     quoted_post_id: uuid.UUID | None = None
+    parent_post_id: uuid.UUID | None = None
     media: list[PostMediaInput] | None = None
 
     @field_validator("content")
@@ -35,16 +44,21 @@ class CreatePostRequest(BaseModel):
 class QuotedPostResponse(BaseModel):
     id: uuid.UUID | None
     author_username: str | None
+    author_display_name: str | None = None
     content: str
+    media_count: int = 0
     unavailable: bool = False
 
 
 class PostResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
+    kind: PostKind
     author_username: str
+    author_display_name: str | None = None
     content: str
     media_count: int
+    parent_post_id: uuid.UUID | None
     quoted_post_id: uuid.UUID | None
     quoted_post: QuotedPostResponse | None
     created_at: datetime

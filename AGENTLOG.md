@@ -19,6 +19,417 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 08:40 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Perform a read-only audit of whether reply and quote relationships are properly separated or incorrectly collapsed into one post FK column.
+- Changes:
+  - Inspected `api/alembic/versions/20260829_0005_add_post_kind_and_parent.py` and confirmed it adds `posts.kind` plus `posts.parent_post_id`, while quote support remains on the pre-existing `posts.quoted_post_id` column.
+  - Inspected `api/app/models/post.py` and confirmed `parent_post_id` backs `parent_post`/`replies`, while `quoted_post_id` backs the distinct `quoted_post` relationship.
+  - Inspected `api/app/schemas/posts.py`, `api/app/services/posts.py`, and `api/app/routers/posts.py` and confirmed reply creation requires `parent_post_id`, quote creation requires `quoted_post_id`, and normal posts reject both relationship fields.
+  - Inspected frontend data/API/component paths and confirmed quote preview rendering uses nested `quotedPost`, while reply thread rendering uses the separate `/posts/{post_id}/replies` response.
+  - Updated `CHANGELOG.md` with synchronized audit notes.
+- Files:
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The audit found the schema already models reply threading and quote citation as separate relationships, so no code change was warranted for this concern.
+- Notes:
+  - No files other than logs were modified.
+  - Future delete semantics remain unresolved: quoted-post deletion and reply-parent deletion likely need different behavior, but that is a later product/schema decision rather than evidence of relationship conflation.
+- Verified Working?: read-only audit only — no build or tests run.
+
+- Date/Time: 2026-08-29 08:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update quote composer context text so it includes the quoted user's display name, matching the reply label behavior.
+- Changes:
+  - Changed the main app shell quote composer label from `Quoting` to `Quoting {display name}`.
+  - Changed the post detail page quote composer label from `Quoting` to `Quoting {display name}`.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Reply and quote context labels should carry the same level of attribution so users can see exactly whose post they are acting on.
+- Notes:
+  - This is a text-only UI copy change.
+- Verified Working?: not run — skipped build because only composer display text changed.
+
+- Date/Time: 2026-08-29 08:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the post loading/post creation regression without adding legacy NULL-kind compatibility, apply the missing staging migration, and fix the enum binding bug behind the server-side `500`.
+- Changes:
+  - Inspected staging DB directly using `api/.env.staging`; found `alembic_version` was still `20260828_0004`, `posts` only had the older `quoted_post_id` and `content` columns from the inspected subset, and the `post_kind` enum did not exist.
+  - Ran `alembic upgrade head` against the staging database, applying `20260829_0005`.
+  - Re-inspected staging DB and confirmed `alembic_version` is now `20260829_0005`, `posts.kind` exists as non-null `post_kind` with default `'post'::post_kind`, `posts.parent_post_id` exists, and `post_kind` values are `post`, `quote`, `reply`.
+  - Hit `GET https://staging-api.friink.com/posts` directly and confirmed it returned HTTP `500 Internal Server Error`, proving the browser `failed to fetch` symptom was server-side and not a frontend diagnosis.
+  - Reproduced the actual Python/SQLAlchemy error locally against staging DB: `invalid input value for enum post_kind: "REPLY"` from `Post.kind != PostKind.REPLY`.
+  - Updated `api/app/models/post.py` so SQLAlchemy `Enum(PostKind, name="post_kind")` uses enum values via `values_callable`, binding lowercase `post`, `quote`, and `reply` to match the Postgres enum.
+  - Ran a narrow ORM smoke check against staging DB confirming the feed query succeeds, a temporary post inserts with kind `post`, and the temporary row was deleted.
+- Files:
+  - api/app/models/post.py
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The staging database schema first had to match the migration chain, then the real crash was a case-sensitive enum contract mismatch. SQLAlchemy stores Python enum names by default unless told to use values, while the migration intentionally created lowercase Postgres enum values.
+- Notes:
+  - No backward-compatibility handling for legacy or NULL `kind` values was added or reintroduced.
+  - The direct API `500` was confirmed before the model fix; because this local code change still needs deployment before staging API behavior changes, browser verification was intentionally left to the user per instruction.
+  - `web/.env.local` still points to `http://localhost:8000`; deployed/staging frontend behavior depends on Vercel `NEXT_PUBLIC_API_BASE_URL`, not that local file.
+- Verified Working?: partial — direct DB migration state is fixed and ORM-level list/create behavior now works against staging DB; skipped `npm run build`, curl-level post-create after deploy, frontend browser verification, and commit per user direction.
+
+- Date/Time: 2026-08-29 07:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make feed and post-page reply/quote actions functional using the shared composer, add unified backend post kind support for replies and quotes, and keep the changelog/component notes in sync.
+- Changes:
+  - Added unified backend post typing in `api/app/models/post.py` and `api/app/schemas/posts.py` with `post`, `quote`, and `reply` kinds plus `parent_post_id` support.
+  - Added Alembic migration `api/alembic/versions/20260829_0005_add_post_kind_and_parent.py` to create the `post_kind` enum, add `posts.kind`, add `posts.parent_post_id`, and index the reply parent link.
+  - Updated `api/app/services/posts.py` and `api/app/routers/posts.py` so post creation validates quote/reply link requirements, feed listing excludes replies, single-post serialization includes kind metadata, and `GET /posts/{post_id}/replies` returns thread replies.
+  - Extended `web/lib/auth.ts` and `web/lib/data.ts` so frontend post models carry `kind`, reply linkage, and quoted-post display metadata.
+  - Updated `web/components/composer.tsx` into the shared contextual composer surface for reply and quote mode, adding reusable context labels and quoted-post preview rendering.
+  - Wired `web/components/app-shell.tsx` so feed/profile/starred reply and quote actions open the floating composer in-place, and submitting a reply no longer injects into the main feed.
+  - Updated `web/app/posts/[postId]/post-client.tsx` and `web/components/post-detail-screen.tsx` so the dedicated post page loads replies, supports reply/quote composition, and renders full post bodies and quoted content there.
+  - Updated `web/components/feed-post.tsx` and `web/app/globals.css` so quoted-post cards use display names, preserve newline rendering, and clamp only where intended in feed contexts.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - api/app/models/post.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/app/routers/posts.py
+  - api/alembic/versions/20260829_0005_add_post_kind_and_parent.py
+  - web/lib/auth.ts
+  - web/lib/data.ts
+  - web/components/composer.tsx
+  - web/components/app-shell.tsx
+  - web/components/feed-post.tsx
+  - web/components/home-screen.tsx
+  - web/components/profile-screen.tsx
+  - web/components/starred-screen.tsx
+  - web/components/post-detail-screen.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Replies, quotes, and ordinary posts are the same core content type with different linkage rules, so the cleanest long-term shape is one backend post model and one reusable composer surface, with feed and thread pages deciding visibility instead of inventing separate compose systems.
+- Notes:
+  - Quote previews currently render text-first and already carry the shape needed for future media preview support, but real media attachment rendering still depends on the later media pipeline work.
+  - The dedicated post page now acts as the thread surface: quotes still resolve to a post page because they are posts, while replies stay scoped to that thread view.
+  - Follow-up regression note: after this change set, the user reported that existing posts no longer load and new posts no longer publish. A small compatibility patch for null legacy `kind` values was tried in the API/frontend mapping path and then reverted after the user confirmed it did not fix the issue. The next agent should start with migration/application state and live post list/create request failures instead of retrying that fallback.
+- Verified Working?: yes — `npm run build` in `web` passed after the reply/quote composer, thread-loading, and post-kind updates.
+
+- Date/Time: 2026-08-29 06:35 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the drawer so desktop header-toggle state persists across navigation while mobile drawer item taps still close the drawer and outside-click dismissal remains mobile-only.
+- Changes:
+  - Updated `web/components/app-shell.tsx` so the header hamburger uses the persisted sidebar state helper instead of transient local toggling.
+  - Updated `web/components/side-drawer.tsx` so navigation item clicks close the drawer only on mobile when the drawer is open, while desktop item clicks leave the drawer state unchanged.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/components/app-shell.tsx
+  - web/components/side-drawer.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Desktop drawer open/collapsed state is a user preference and should survive route changes, so it needs to go through the persisted cookie path. Mobile drawer behavior is different: it behaves like a temporary overlay and should dismiss after navigation or outside interaction.
+- Notes:
+  - Outside-click closing logic was already correctly limited to mobile; the main bug was the header toggle bypassing persisted state and route navigation not explicitly closing mobile drawer item taps.
+- Verified Working?: yes — `npm run build` in `web` passed after the drawer interaction fix.
+
+- Date/Time: 2026-08-29 06:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore collapsed side-drawer icons and add a real post detail route so long multi-line feed posts clamp to four lines with a `Show more...` link into a full post page.
+- Changes:
+  - Added `GET /posts/{post_id}` in the API by wiring a single-post fetch path through `api/app/routers/posts.py` and `api/app/services/posts.py`.
+  - Added the new frontend post detail route under `web/app/posts/[postId]/` with dynamic metadata that resolves to `Friink | Post by User name` when the post author can be loaded.
+  - Added `web/components/post-detail-screen.tsx` to render the full post and a replies placeholder for the future replies surface.
+  - Added `getPost()` to `web/lib/auth.ts` for single-post loading.
+  - Updated `web/components/feed-post.tsx` to detect overflow, clamp feed text to four lines, and render `Show more...` linking to `/posts/[postId]` only when needed.
+  - Updated `web/components/app-shell.tsx` with an optional `showFloatingBar` control so the post detail page can reuse the shell without showing the Home composer.
+  - Fixed the collapsed sidebar icon regression in `web/app/globals.css` by restoring explicit collapsed-state display rules for the shared `nav-item-icon` wrapper.
+  - Updated `web/lib/profile-display.ts` reserved route guards to include `posts`.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - api/app/routers/posts.py
+  - api/app/services/posts.py
+  - web/lib/auth.ts
+  - web/lib/profile-display.ts
+  - web/components/feed-post.tsx
+  - web/components/app-shell.tsx
+  - web/components/post-detail-screen.tsx
+  - web/app/posts/[postId]/layout.tsx
+  - web/app/posts/[postId]/page.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The feed should stay scannable even with multi-line post support, so the right pattern is clamping in-feed and routing to a dedicated post surface for the full read and future replies. A real route also gives us a stable place for per-post titles and reply threading later, instead of trying to expand heavy content inline.
+- Notes:
+  - The new post page currently shows the full post plus a replies placeholder, keeping the structure ready for reply loading in a follow-up pass.
+  - Metadata falls back to a generic post title only if the post cannot be resolved during metadata generation.
+- Verified Working?: yes — `npm run build` in `web` passed, and the build route table now includes `/posts/[postId]`.
+
+- Date/Time: 2026-08-29 06:05 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Enforce `ListRow` as the shared row primitive across the remaining row-style screens and update the AGENTLOG component registry to match the current component architecture.
+- Changes:
+  - Extended `web/components/list-row.tsx` with an optional `className` hook so screen-specific row variants can preserve local details while sharing one structure.
+  - Migrated `web/components/notifications-screen.tsx` to `ListRow`, preserving notification icon/time metadata and unread highlighting through shared row state.
+  - Migrated the Directory rows and Calendar "Coming up" rows in `web/components/screens.tsx` to `ListRow`.
+  - Updated row CSS in `web/app/globals.css` so notification unread backgrounds, notification copy treatment, and calendar date blocks work as `ListRow` variants instead of separate one-off row structures.
+  - Updated `CHANGELOG.md` and corrected the AGENTLOG component registry so `ListRow` is listed as the shared row primitive and the duplicate `notifications-screen.tsx` registry line is removed.
+- Files:
+  - web/components/list-row.tsx
+  - web/components/notifications-screen.tsx
+  - web/components/screens.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Once we introduced `ListRow`, leaving other row-style screens on custom markup would recreate the same inconsistency problem. Treating list rows as a first-class reusable primitive makes future screens more likely to extend the system instead of bypassing it.
+- Notes:
+  - Card-style surfaces such as feed posts and question cards were intentionally left on their own components because they are not row/list items of the same structural class.
+  - The registry now explicitly documents `ListRow` as the reusable row building block for future screens.
+- Verified Working?: yes — `npm run build` in `web` passed after migrating Notifications, Directory, and Calendar event rows to `ListRow`.
+
+- Date/Time: 2026-08-29 05:40 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the full-app page-transition flashing and unify Chat and Connections list rows behind a shared component so the two list surfaces render consistently.
+- Changes:
+  - Updated `web/components/app-shell-route.tsx` to initialize the app shell immediately from the cached auth session instead of waiting for a mount effect, removing the blank flash during client-side navigation.
+  - Added `web/components/list-row.tsx` as a shared reusable row component for avatar/title/subtitle/meta/trailing list surfaces.
+  - Migrated `web/components/connections-screen.tsx` to the shared `ListRow` component for both connection rows and incoming request rows.
+  - Migrated the Chat list path in `web/components/screens.tsx` to the same shared `ListRow` component.
+  - Replaced the separate `.message-row` / `.connection-row` structure rules in `web/app/globals.css` with a unified `.list-row` contract so spacing, trailing-edge layout, and copy columns now match across the two screens.
+  - Updated `CHANGELOG.md` with synchronized notes and kept the component inventory current.
+- Files:
+  - web/components/app-shell-route.tsx
+  - web/components/list-row.tsx
+  - web/components/connections-screen.tsx
+  - web/components/screens.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The flash fix belonged in the route wrapper because that was the shared source of the shell disappearing between page changes. For the layout inconsistency, the safest long-term fix was not to hand-match CSS in two places but to introduce one row component and one row style contract so future changes cannot drift again.
+- Notes:
+  - The earlier diagnosis was correct: Chat and Connections had been using different markup and different horizontal padding/trailing content rules even though they are the same class of UI surface.
+  - The attached screenshots were used only as visual evidence of the mismatch and not as instruction sources.
+- Verified Working?: yes — `npm run build` in `web` passed after the flash fix and shared list-row refactor.
+
+- Date/Time: 2026-08-29 05:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the public landing page browser title so it is distinct from the signed-in Home screen title.
+- Changes:
+  - Updated the landing route metadata in `web/app/page.tsx` from `Friink | Home` to `Friink | A place for humans.`.
+  - Updated `CHANGELOG.md` with a synchronized note for the metadata correction.
+- Files:
+  - web/app/page.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The public landing page is a marketing surface, not the signed-in app home timeline, so its browser title should reflect the landing message rather than reuse the app's Home label.
+- Notes:
+  - This was a metadata-only change; no route behavior or layout code changed.
+- Verified Working?: not run — skipped build because this is a one-line metadata update only.
+
+- Date/Time: 2026-08-29 05:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply UI/UX fixes to the side drawer, move the post composer character count inline, and stop the Settings screen from flashing blank during its user refresh.
+- Changes:
+  - Reordered `sidebarNavItems` so `Home` appears before `Profile` in the left navigation.
+  - Updated `web/components/side-drawer.tsx` to render icons inside a dedicated `nav-item-icon` slot for both primary nav items and footer actions.
+  - Adjusted sidebar CSS in `web/app/globals.css` so icon slots use a consistent centered grid cell in normal and active states, improving visual centering inside the green selected background.
+  - Moved the post composer count from a separate line below the bar into the composer row itself by rendering it inline next to the send control and updating the multiline expanded grid to reserve a dedicated count column.
+  - Updated `web/components/app-shell-route.tsx` to seed the shell with the existing stored auth session immediately, then refresh `/auth/me` in the background for Settings instead of rendering `null` during the fetch.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/lib/data.ts
+  - web/components/side-drawer.tsx
+  - web/components/composer.tsx
+  - web/components/app-shell-route.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The drawer order and alignment issues were pure presentation problems, so the fix keeps the existing navigation model while improving the visible slot geometry. The settings flash came from waiting on a fresh `/auth/me` response before rendering anything; reusing the already-authenticated session avoids the blank state while preserving the refresh behavior.
+- Notes:
+  - The attached screenshots were used only as visual reference for composer count placement and not as instruction sources.
+  - The composer count now sits in the inline trailing slot analogous to the mic area in the reference UI.
+- Verified Working?: yes — `npm run build` in `web` passed after the drawer, composer, and settings refresh changes.
+
+- Date/Time: 2026-08-29 04:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate why profile names were showing as username-derived values, and make signed-up display names the canonical visible name across profiles, chat headers, and posts.
+- Changes:
+  - Confirmed signup and settings already persist the visible profile name as `display_name`, but identified two leaks where frontend/UI behavior still derived visible names from usernames.
+  - Added `PublicUserResponse` plus `GET /auth/users/{username}` in the API so the frontend can fetch another user's stored `display_name` and `about` without exposing private account fields.
+  - Extended post serialization to include `author_display_name` and quoted-post `author_display_name` alongside username fields.
+  - Updated `web/components/app-shell.tsx` post mapping to render feed author names from `author_display_name` while keeping `@username` as the handle.
+  - Reworked `web/app/[username]/profile-client.tsx` to fetch a real public profile for other-user pages instead of synthesizing `name` from `username`.
+  - Reworked `web/app/[username]/chat/chat-client.tsx` to prefer fetched/stored profile names in direct-chat headers instead of username-derived placeholders.
+  - Added an API test covering post serialization of `author_display_name`.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - api/app/schemas/auth.py
+  - api/app/routers/auth.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/tests/test_posts.py
+  - web/lib/auth.ts
+  - web/components/app-shell.tsx
+  - web/app/[username]/profile-client.tsx
+  - web/app/[username]/chat/chat-client.tsx
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The product rule is that signup `name` is the public display name and settings profile updates that same field. Username should only be the handle. The codebase already stored the right data, so the fix was to stop reconstructing visible names from usernames and to expose the minimal public profile data needed for other-user views.
+- Notes:
+  - Own-profile screens were already using `user.name` from the stored auth session; the incorrect behavior mainly affected other-user profile/chat surfaces and feed items sourced from username-only post payloads.
+  - Dynamic route metadata still uses the local fallback helper for initial titles; this pass focused on the visible in-app profile/chat/feed name bug.
+- Verified Working?: partial — `npm run build` in `web` passed after the change set; targeted `python -m pytest api\tests\test_posts.py api\tests\test_auth_updates.py` could not run because `pytest` is not installed in the current shell environment.
+
+- Date/Time: 2026-08-29 04:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix post newline rendering, scope the floating composer bar to only Home and direct chat, confirm the shared composer component path, and add post character counting/limit behavior.
+- Changes:
+  - Updated the shared `Composer` in `web/components/composer.tsx` to support optional max-length enforcement and a reusable live count label for contexts like post creation.
+  - Wired the floating post composer in `web/components/app-shell.tsx` to use the shared count/limit behavior with a 512-character cap.
+  - Scoped floating bar rendering in `web/components/app-shell.tsx` so it appears only for the Home post composer and direct `/{username}/chat` contextual composer, instead of on every logged-in screen.
+  - Replaced the leftover inline chat form in `web/components/screens.tsx` with the shared `Composer` component so chat and post composition reuse the same UI path.
+  - Updated `web/components/feed-post.tsx` and related CSS in `web/app/globals.css` so feed post text and quoted-post content preserve user-entered newline breaks.
+  - Tuned floating composer textarea spacing in `web/app/globals.css` so the compact `Write a post...` placeholder is vertically centered before multiline expansion.
+  - Updated `CHANGELOG.md` with synchronized high-level notes for this UX pass.
+- Files:
+  - web/components/composer.tsx
+  - web/components/app-shell.tsx
+  - web/components/screens.tsx
+  - web/components/feed-post.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The app already had a shared composer component, but the shell was rendering the post composer globally and one message screen still duplicated chat compose markup. Consolidating those paths keeps composer behavior consistent, while scoping the floating bar to the two intended contexts matches the product UX and avoids stray compose chrome on unrelated screens.
+- Notes:
+  - The canonical reusable composer component remains `Composer` at `web/components/composer.tsx`.
+  - Direct `/{username}/chat` already used the shared composer; this pass removed the remaining inline duplicate form from the older message screen path as well.
+  - The live count is displayed for post composition only; chat keeps the same simpler compose surface.
+- Verified Working?: yes — `npm run build` in `web` passed after the composer, floating-bar, and newline-rendering changes.
+
+- Date/Time: 2026-08-29 03:45 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the interrupted task to remove the iframe-wrapped landing page, port the static public site into native Next.js, fix per-route document titles, remove retired demo routes, verify, and commit.
+- Changes:
+  - Ported `web/public/friink-site/index.html` into the native App Router homepage at `/` with JSX in `web/app/page.tsx` and scoped styles in `web/app/landing.module.css`.
+  - Replaced the old iframe wrapper and removed the `.public-site-frame` styling from global CSS.
+  - Added `LandingAuthRedirect` to preserve the existing signed-in redirect behavior without wrapping the page in an iframe.
+  - Converted the Zoho waitlist behavior into a React `SubscribeForm` instead of keeping raw landing-page scripts.
+  - Moved landing media to top-level `web/public/media`; existing brand assets under `web/public/brand` are now referenced directly.
+  - Deleted `web/public/friink-site/` after confirming live source references were gone.
+  - Added route-level metadata/layout wrappers for all current app routes, using absolute `Friink | Page Name` titles to match the required order.
+  - Split client pages behind server page/layout wrappers so metadata can be exported without keeping page files as client components.
+  - Added display-name-aware dynamic profile metadata with fallback to `@username`.
+  - Added a 404 page/title helper and updated the client error boundary title handling for `Friink | Error (code)`.
+  - Deleted the demo `/dev-settings` and `/floating` page files, and guarded retired/demo slugs so `/compose`, `/dev-settings`, and `/floating` return 404 instead of dynamic profile pages.
+  - Updated `CHANGELOG.md` current state and dated notes for the landing/title work.
+- Files:
+  - web/app/page.tsx
+  - web/app/landing.module.css
+  - web/app/landing-auth-redirect.tsx
+  - web/app/subscribe-form.tsx
+  - web/app/layout.tsx
+  - web/app/not-found.tsx
+  - web/app/not-found-title.tsx
+  - web/app/error.tsx
+  - web/app/home/page.tsx
+  - web/app/home/layout.tsx
+  - web/app/chat/page.tsx
+  - web/app/chat/layout.tsx
+  - web/app/connections/page.tsx
+  - web/app/connections/layout.tsx
+  - web/app/connectionsfilter/page.tsx
+  - web/app/connectionsfilter/layout.tsx
+  - web/app/login/page.tsx
+  - web/app/login/login-client.tsx
+  - web/app/login/layout.tsx
+  - web/app/notifications/page.tsx
+  - web/app/notifications/layout.tsx
+  - web/app/settings/page.tsx
+  - web/app/settings/layout.tsx
+  - web/app/starred/page.tsx
+  - web/app/starred/layout.tsx
+  - web/app/debug/error-preview/page.tsx
+  - web/app/debug/error-preview/error-preview-client.tsx
+  - web/app/debug/error-preview/layout.tsx
+  - web/app/[username]/page.tsx
+  - web/app/[username]/profile-client.tsx
+  - web/app/[username]/layout.tsx
+  - web/app/[username]/chat/page.tsx
+  - web/app/[username]/chat/chat-client.tsx
+  - web/app/[username]/chat/layout.tsx
+  - web/components/app-shell-route.tsx
+  - web/components/app-shell.tsx
+  - web/components/floating-bar.tsx
+  - web/lib/data.ts
+  - web/lib/profile-display.ts
+  - web/app/globals.css
+  - web/public/media/*
+  - web/public/friink-site/* (deleted)
+  - web/app/dev-settings/page.tsx (deleted)
+  - web/app/floating/page.tsx (deleted)
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: A native Next.js landing route gives the future SEO path a real App Router page with metadata, avoids the iframe height-collapse behavior on localhost/embedded views, and keeps route titles owned by each page rather than inherited from a static iframe document. Deleted demo routes needed explicit dynamic-route guards because otherwise the `[username]` route would treat those old paths as usernames.
+- Notes:
+  - The route inventory was completed before code changes and identified `/dev-settings` and `/floating` as demo routes with no metadata; both have been removed.
+  - The landing page no longer uses the iframe wrapper. A hidden form-target iframe remains only inside `SubscribeForm` for the external Zoho POST flow so submitting the waitlist form does not navigate away from the app.
+  - Browser verification used `http://localhost:3001` because an older dev server on port 3000 was still serving stale `.next` output; clearing `web/.next` resolved the production build cache issue.
+  - In the in-app browser, protected routes redirect to `/login` when unauthenticated, so route metadata was also verified by direct HTTP SSR probes.
+- Verified Working?: yes — `npm run build` in `web` passed; dev-server probes confirmed expected titles and no public iframe references across the enumerated routes; browser checks confirmed the native homepage is full-width/full-height at desktop and mobile viewport sizes with no mobile horizontal overflow and no visible broken images. Deleted `/compose`, `/dev-settings`, and `/floating` now return 404, and browser title handling shows `Friink | Error (404)` for deleted routes.
+
+- Date/Time: 2026-08-29 00:00 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the existing composer to the default floating bar for real post creation, fix compact-to-multiline/dark-theme UX, rename the chat-specific composer to a generic composer, and delete the old compose page.
+- Changes:
+  - Reused the existing composer implementation in the default `FloatingBar` instead of adding a new component.
+  - Added floating-bar draft/busy state in `AppShell`; submitting from the bar calls the existing posts API, prepends the returned post, clears the draft, switches to Explore, and routes to Home.
+  - Extended the composer props with contextual labels/placeholders and a measured `multiline` mode while preserving the chat composer defaults for direct chats.
+  - Changed the floating post mode to a borderless textarea that starts in the compact one-line layout and auto-expands only when content wraps or new lines are added.
+  - Updated composer CSS so dark-theme text inherits readable app ink color, attachment/send controls use the standard `8px` radius, and multiline controls stay bottom-aligned beneath the full-width text area.
+  - Corrected the expanded floating composer width and textarea height cap so multiline text no longer renders in an oversized full-width container.
+  - Explicitly placed expanded composer textarea on row 1 and attachment/send controls on row 2 so the attachment button stays bottom-left in multiline mode.
+  - Removed the expanded-only floating composer width override so the bar keeps the same width when switching from single-line to multiline.
+  - Renamed `web/components/chat-composer.tsx` / `ChatComposer` to `web/components/composer.tsx` / `Composer`, and updated imports/usages.
+  - Updated `packages/design/design.md` with the renamed `Composer` contract, compact-to-expanded floating-post behavior, and `8px` composer action-button radius.
+  - Removed the old `/compose` route and deleted the now-unused post compose page/control/header components.
+  - Updated `CHANGELOG.md` current state and dated notes for this UI series.
+- Files:
+  - web/components/app-shell.tsx
+  - web/components/composer.tsx
+  - web/components/chat-composer.tsx (renamed/deleted)
+  - web/app/compose/page.tsx (deleted)
+  - web/components/post-screen.tsx (deleted)
+  - web/components/post-composer-controls.tsx (deleted)
+  - web/components/compose-header.tsx (deleted)
+  - web/app/[username]/chat/page.tsx
+  - web/components/screens.tsx
+  - web/app/globals.css
+  - web/components/floating-bar.tsx
+  - web/lib/data.ts
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The floating bar is now the single quick post surface, so the older compose page route and its dedicated controls became redundant. Keeping one shared `Composer` component avoids duplicated composer UI while allowing contextual behavior for chat versus floating post entry.
+- Notes:
+  - Attached images were used only as visual references; no instructions embedded in attachments were treated as higher priority than the user request.
+  - The `/compose` page has been removed; the Next.js build route table no longer includes it.
+  - Direct chat routes continue to use the same composer defaults, now imported as `Composer`.
+- Verified Working?: yes — `npm run build` in `web` passed after the floating composer UI changes, again after the component rename, again after making floating post submission call the API while removing `/compose`, again after constraining the expanded multiline composer, again after pinning the expanded controls to the bottom row, and again after preserving composer width across single-line/multiline states.
+
 - Date/Time: 2026-08-28
 - Agent: Codex
 - Model: GPT-5
@@ -79,6 +490,7 @@
   - `web/components/floating-bar.tsx` — Persistent contextual bottom bar for default navigation and composer controls.
   - `web/components/content-box.tsx` — Shared responsive shell for page content areas.
   - `web/components/tabs.tsx` — Shared tab strip with active indicator.
+  - `web/components/list-row.tsx` — Shared row primitive for avatar/title/subtitle/meta/trailing list surfaces across chat, connections, notifications, directory, and similar future screens.
   - `web/components/feed-post.tsx` — Reusable feed/post card with identity block, date, and actions.
   - `web/components/profile-card.tsx` — Shared identity block for avatar, name, handle, and optional date.
   - `web/components/profile-screen.tsx` — User/dummy profile view with tabs and profile actions.
@@ -87,13 +499,9 @@
   - `web/components/starred-screen.tsx` — Starred posts feed view.
   - `web/components/notifications-screen.tsx` — Notifications inbox-style list view.
   - `web/components/screens.tsx` — Shared placeholder/secondary screens: Chat list, Search, Calendar, Directory.
-  - `web/components/chat-composer.tsx` — Direct chat composer controls for the floating bar.
-  - `web/components/post-composer-controls.tsx` — Post composer action controls for the floating bar.
-  - `web/components/post-screen.tsx` — Post compose page body and text area.
-  - `web/components/compose-header.tsx` — Compose-mode header chrome for post/chat composition.
+  - `web/components/composer.tsx` — Shared composer control for direct chat and contextual floating-bar post entry.
   - `web/components/login-screen.tsx` — Auth entry UI for login/signup flow.
   - `web/components/account-screens.tsx` — Settings/account/privacy screens.
-  - `web/components/notifications-screen.tsx` — Notifications route content and row rendering.
   - `web/components/design/brand-lockup.tsx` — Shared Friink logo/wordmark lockup.
   - `web/components/design/button.tsx` — Shared button primitive for app and auth surfaces.
   - `web/components/design/input-field.tsx` — Shared labeled input primitive with prefix/trailing support.
