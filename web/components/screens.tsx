@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Composer } from '@/components/composer';
 import { ListRow } from '@/components/list-row';
+import { PageSurface } from '@/components/page-surface';
 import { navItems } from '@/lib/data';
 import { mockConversations } from '@/lib/mock-conversations';
 import { Tabs } from '@/components/tabs';
@@ -39,7 +40,7 @@ export function MessagesScreen() {
 
   if (activeConversation) {
     return (
-      <section className="messages-screen chat-screen">
+      <PageSurface className="messages-screen chat-screen">
         <div className="chat-header">
           <Link className="chat-contact-link" href={`/${activeConversation.handle.replace('@', '')}`}>
             <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
@@ -64,12 +65,12 @@ export function MessagesScreen() {
           ))}
         </div>
         <Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
-      </section>
+      </PageSurface>
     );
   }
 
   return (
-    <section className="messages-screen">
+    <PageSurface className="messages-screen" variant="list">
       <div className="message-list">
         {conversations.map((conversation) => (
           <ListRow
@@ -93,7 +94,7 @@ export function MessagesScreen() {
           />
         ))}
       </div>
-    </section>
+    </PageSurface>
   );
 }
 

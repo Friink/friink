@@ -1,4 +1,5 @@
 import { ListRow } from '@/components/list-row';
+import { PageSurface } from '@/components/page-surface';
 import { Tabs } from '@/components/tabs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -17,7 +18,7 @@ export function StarredScreen({ posts, onReply, onQuote }: StarredScreenProps) {
   const starredPosts = posts.filter((post) => post.isStarred);
 
   return (
-    <div className="starred-feed">
+    <PageSurface className="starred-feed" variant="list">
       <Tabs
         tabs={[
           { id: 'all', label: 'All' },
@@ -62,6 +63,6 @@ export function StarredScreen({ posts, onReply, onQuote }: StarredScreenProps) {
           </div>
         )}
       </div>
-    </div>
+    </PageSurface>
   );
 }

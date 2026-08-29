@@ -43,6 +43,21 @@ _Last updated: 2026-08-29_
 ## 2026-08-29
 
 ### Changed
+- [web] Brought the persistent floating bar onto the same centered content rail as `ContentBox` and inset it by `16px` on both sides, so it no longer renders wider than the app content on large screens.
+- [docs] Updated `packages/design/design.md` and `AGENTLOG.md` with stricter reuse guidance: prefer shared layout primitives over new wrapper components, and avoid inline or targeted spacing fixes for global layout issues.
+
+### Verified
+- [web] `npm run build` passed in `web` after the floating-bar rail alignment and design/log guidance update.
+
+### Fixed
+- [web] Moved Home, Chat list, Notifications, Connections, Starred, Settings, and Profile onto a shared `PageSurface` wrapper so screen components no longer carry their own competing outer content-box spacing rules.
+- [web] Removed the remaining page-specific outer padding from the logged-in screens and normalized shared inset usage in headers and tabs, so the `ContentBox` contract now drives width and horizontal rhythm consistently across those surfaces.
+- [docs] Updated `packages/design/design.md` to make `PageSurface` the required first-level screen wrapper inside `ContentBox`, with `ContentBox` as the sole owner of app-page max width, centering, and side gutters.
+
+### Verified
+- [web] `npm run build` passed in `web` after the page-surface unification and spacing cleanup.
+
+### Changed
 - [web] Confirmed Connections was already on the shared `ListRow` primitive and converted the Starred screen to the same row-summary pattern, with rows opening post detail while keeping lightweight reply/quote actions available.
 - [web] Capped the shared logged-in `ContentBox` at `1024px` on desktop and centered it within the main panel so wide screens no longer stretch primary content awkwardly.
 - [web] Moved the Settings > Profile `Name` update button onto the same row as the input, matching the `Username` row pattern.

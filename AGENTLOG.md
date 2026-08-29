@@ -15,9 +15,65 @@
 > what the log describes — do not assume the log is authoritative over
 > the actual code.
 >
+> REUSE RULE: Do not create new components unnecessarily when an existing
+> shared primitive can be extended or reused.
+>
+> LAYOUT RULE: Inline fixes and targeted per-screen spacing patches are
+> strictly prohibited for global layout problems. Resolve them by updating
+> reusable shared components/contracts such as `ContentBox`, `PageSurface`,
+> `ListRow`, `FloatingBar`, or the relevant documented design token.
+>
 > IMPORTANT: Do not add a `User` field to any entry. Entries should only
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
+
+- Date/Time: 2026-08-29 10:35 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the floating bar to the shared content rail with a 16px side inset and add stronger reuse/no-targeted-fix reminders for future agents.
+- Changes:
+  - Updated `web/app/globals.css` so the persistent `floating-bar` now follows the same centered `ContentBox` rail, with `16px` inset on both sides and a `calc(1024px - 2rem)` desktop max width.
+  - Kept both default and contextual floating-bar variants inside that same shared rail instead of letting contextual mode expand wider than the content box.
+  - Updated `packages/design/design.md` to document the floating-bar rail rule plus a stricter prohibition against inline or targeted layout fixes when shared primitives should own the change.
+  - Added explicit top-of-file reminders in `AGENTLOG.md` to avoid unnecessary new components and to treat inline/per-screen layout fixes as prohibited for global spacing issues.
+  - Updated `CHANGELOG.md` with synchronized notes.
+- Files:
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The floating bar is part of the same product shell as the page content, so letting it size off a separate viewport rule breaks the shared layout language. The additional log guidance reduces the chance of future drift toward one-off wrappers or patch CSS.
+- Notes:
+  - This pass changes the bar’s shell width contract only; composer behavior inside the bar remains unchanged.
+- Verified Working?: yes — `npm run build` in `web` passed after the floating-bar rail alignment and reuse-guardrail documentation update.
+
+- Date/Time: 2026-08-29 10:20 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Finish the spacing cleanup by removing page-owned content-box rules and enforcing one reusable outer layout wrapper across Home, Chat, Connections, Notifications, Settings, Starred, and Profile.
+- Changes:
+  - Reused `web/components/page-surface.tsx` as the shared first-level wrapper and mounted it from `home-screen.tsx`, `connections-screen.tsx`, `notifications-screen.tsx`, `starred-screen.tsx`, `screens.tsx`, `account-screens.tsx`, and `profile-screen.tsx`.
+  - Updated `web/app/globals.css` to strip remaining outer padding from `.messages-screen`, `.notifications-screen`, `.simple-screen`, and `.profile-screen`, and normalized shared inset usage for `chat-header` and `connection-tabs`.
+  - Removed the duplicate outer `profile-screen` spacing block so profile layout now inherits the shared page contract instead of overriding it mid-file.
+  - Updated `packages/design/design.md` with a dedicated `PageSurface` contract and tightened the `ContentBox` responsibility split so future screens do not reintroduce their own outer gutters or max-width rules.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/page-surface.tsx
+  - web/components/home-screen.tsx
+  - web/components/connections-screen.tsx
+  - web/components/notifications-screen.tsx
+  - web/components/starred-screen.tsx
+  - web/components/screens.tsx
+  - web/components/account-screens.tsx
+  - web/components/profile-screen.tsx
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The remaining width mismatch was still coming from screen wrappers and header/tab elements quietly owning their own page insets. A shared `PageSurface` plus a stricter `ContentBox` contract is the cleaner long-term fix because it leaves page-level width and gutter control in one place.
+- Notes:
+  - This pass keeps each screen's internal row/card structure intact; it only centralizes the outer surface contract and removes duplicate layout ownership.
+- Verified Working?: yes — `npm run build` in `web` passed after the shared `PageSurface` rollout and content-box spacing cleanup.
 
 - Date/Time: 2026-08-29 09:55 +05:00
 - Agent: Codex

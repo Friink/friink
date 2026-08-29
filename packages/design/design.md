@@ -14,6 +14,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
   - Mobile and sub-pages use `NavigationBar` containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset by `16px` on both sides of that shared rail, so its effective max width is `calc(1024px - 2rem)`.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and user ID.
@@ -178,16 +179,17 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 3. FloatingBar (`web/components/floating-bar.tsx`)
 - **Purpose**: Persistent contextual bottom surface providing navigation or screen-specific composer actions.
 - **Fixed Sizing & Positioning**:
-  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1.25rem`, `right: 1.25rem`.
+  - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem`.
   - `height: 3.5rem` (`var(--space-floating-bar-height)`).
+  - Follows the shared `ContentBox` centering rail with an additional `16px` inset on both sides, producing a maximum effective width of `calc(1024px - 2rem)`.
   - Border radius: `8px`, border: `1px solid var(--color-line)`, background: `var(--color-paper)`, box shadow: `0 0.75rem 2rem rgba(24, 44, 31, 0.12)`.
 - **Variants & Layout Modes**:
   1. **Default Navigation Mode** (`children` is null/undefined/false):
-     - Width: Compact natural width (`width: max-content`, max `28rem`), horizontally centered (`margin: 0 auto`).
+     - Width: Compact natural width constrained by the shared rail (`width: min(max-content, 100%)`), horizontally centered (`margin: 0 auto`).
      - Fixed Navigation Item: Post (`fa-pen`).
      - Active item highlighted with `color: var(--color-brand)` and `background: var(--color-brand-soft)`.
   2. **Contextual Composer Mode** (`children` is provided):
-     - Width: Spans available page width (`width: calc(100% - 2.5rem)`, `.floating-bar-contextual`).
+     - Width: Spans the shared content rail, not the full viewport (`width: 100%` within the centered floating shell).
      - Hosts contextual composers (`Composer`).
 - **Layout Constraints**:
   - Page content containers reserve bottom space via `padding-bottom: calc(var(--space-floating-bar-height) + 2rem)` so the persistent bar never obscures page content.
@@ -289,14 +291,23 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 
-### 13. ContentBox (`web/components/content-box.tsx`)
+### 13. PageSurface (`web/components/page-surface.tsx`)
+- **Purpose**: Shared first-level screen wrapper used inside `ContentBox` so app pages inherit one layout contract instead of owning custom outer spacing.
+- **Ownership Rule**: `PageSurface` may define screen display mode such as stacked sections or list flow, but it must not introduce page-level side gutters, custom max-widths, or competing centering.
+- **Variant Rule**: Use the list variant for row/feed surfaces and the stack variant for forms or mixed vertical sections.
+- **Enforcement Rule**: Logged-in screens should mount a `PageSurface` directly inside `ContentBox` instead of hand-rolling a bespoke outer wrapper.
+- **Reuse Rule**: Prefer extending an existing shared layout primitive such as `PageSurface`, `ContentBox`, `ListRow`, or `FloatingBar` before creating a new wrapper component for a one-off page need.
+
+### 14. ContentBox (`web/components/content-box.tsx`)
 - **Purpose**: Canonical app-page content wrapper for primary logged-in surfaces.
 - **Ownership Rule**: Owns the page-level horizontal gutter and the default bottom breathing room for content above the floating bar.
 - **Desktop Width Rule**: Caps primary logged-in content at `1024px` and centers it within the main panel.
 - **Do Not Duplicate Rule**: Child screen wrappers must not add a second page-level left/right gutter, center themselves with a narrower default width, or compete with `ContentBox` over the outer responsive inset unless an explicit contract documents why.
 - **Allowed Responsibility Split**:
-  - `ContentBox`: page gutter and bottom page spacing.
-  - Child screens: internal composition only, such as row grouping, cards, sections, and local vertical rhythm.
+  - `ContentBox`: page gutter, desktop width cap, centering, and bottom page spacing.
+  - `PageSurface`: first-level screen flow only.
+  - Child screens and rows: internal composition only, such as row grouping, cards, sections, and local vertical rhythm.
+- **Strict Prohibition Rule**: Do not patch page alignment with inline styles, targeted per-screen spacing overrides, or duplicate one-off wrapper components when the issue can be solved by updating the shared layout primitives and their documented contracts.
 
 ---
 

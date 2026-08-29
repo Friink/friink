@@ -1,6 +1,7 @@
 'use client';
 
 import { ListRow } from '@/components/list-row';
+import { PageSurface } from '@/components/page-surface';
 
 type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow';
 
@@ -102,7 +103,7 @@ function getIcon(kind: NotificationKind) {
 
 export function NotificationsScreen() {
   return (
-    <section className="notifications-screen">
+    <PageSurface className="notifications-screen" variant="list">
       <div className="notifications-list">
         {notifications.map((notification) => (
           <ListRow
@@ -126,6 +127,6 @@ export function NotificationsScreen() {
           />
         ))}
       </div>
-    </section>
+    </PageSurface>
   );
 }

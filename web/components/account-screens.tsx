@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ListRow } from '@/components/list-row';
+import { PageSurface } from '@/components/page-surface';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, type AuthUser } from '@/lib/auth';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
@@ -181,7 +182,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   }
 
   return (
-    <section className="simple-screen settings-screen">
+    <PageSurface className="simple-screen settings-screen">
       <div className="settings-header" />
 
       {activeTab === 'general' && (
@@ -378,6 +379,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
           </div>
         </div>
       )}
-    </section>
+    </PageSurface>
   );
 }
