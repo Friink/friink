@@ -196,7 +196,7 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
 export type ApiPost = {
   id: string;
   user_id: string;
-  kind: 'post' | 'quote' | 'reply';
+  kind: 'post' | 'quote' | 'reply' | null;
   author_username: string;
   author_display_name: string | null;
   content: string;

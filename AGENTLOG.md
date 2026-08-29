@@ -19,6 +19,46 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 07:25 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make feed and post-page reply/quote actions functional using the shared composer, add unified backend post kind support for replies and quotes, and keep the changelog/component notes in sync.
+- Changes:
+  - Added unified backend post typing in `api/app/models/post.py` and `api/app/schemas/posts.py` with `post`, `quote`, and `reply` kinds plus `parent_post_id` support.
+  - Added Alembic migration `api/alembic/versions/20260829_0005_add_post_kind_and_parent.py` to create the `post_kind` enum, add `posts.kind`, add `posts.parent_post_id`, and index the reply parent link.
+  - Updated `api/app/services/posts.py` and `api/app/routers/posts.py` so post creation validates quote/reply link requirements, feed listing excludes replies, single-post serialization includes kind metadata, and `GET /posts/{post_id}/replies` returns thread replies.
+  - Extended `web/lib/auth.ts` and `web/lib/data.ts` so frontend post models carry `kind`, reply linkage, and quoted-post display metadata.
+  - Updated `web/components/composer.tsx` into the shared contextual composer surface for reply and quote mode, adding reusable context labels and quoted-post preview rendering.
+  - Wired `web/components/app-shell.tsx` so feed/profile/starred reply and quote actions open the floating composer in-place, and submitting a reply no longer injects into the main feed.
+  - Updated `web/app/posts/[postId]/post-client.tsx` and `web/components/post-detail-screen.tsx` so the dedicated post page loads replies, supports reply/quote composition, and renders full post bodies and quoted content there.
+  - Updated `web/components/feed-post.tsx` and `web/app/globals.css` so quoted-post cards use display names, preserve newline rendering, and clamp only where intended in feed contexts.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - api/app/models/post.py
+  - api/app/schemas/posts.py
+  - api/app/services/posts.py
+  - api/app/routers/posts.py
+  - api/alembic/versions/20260829_0005_add_post_kind_and_parent.py
+  - web/lib/auth.ts
+  - web/lib/data.ts
+  - web/components/composer.tsx
+  - web/components/app-shell.tsx
+  - web/components/feed-post.tsx
+  - web/components/home-screen.tsx
+  - web/components/profile-screen.tsx
+  - web/components/starred-screen.tsx
+  - web/components/post-detail-screen.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - web/app/globals.css
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: Replies, quotes, and ordinary posts are the same core content type with different linkage rules, so the cleanest long-term shape is one backend post model and one reusable composer surface, with feed and thread pages deciding visibility instead of inventing separate compose systems.
+- Notes:
+  - Quote previews currently render text-first and already carry the shape needed for future media preview support, but real media attachment rendering still depends on the later media pipeline work.
+  - The dedicated post page now acts as the thread surface: quotes still resolve to a post page because they are posts, while replies stay scoped to that thread view.
+  - Follow-up regression note: after this change set, the user reported that existing posts no longer load and new posts no longer publish. A small compatibility patch was then applied so null legacy `kind` values are treated as `post` in both the API serializer/query path and frontend mappers, but the next agent should still check whether the database migration was applied and whether live post list/create requests are failing due to schema drift.
+- Verified Working?: yes — `npm run build` in `web` passed after the reply/quote composer, thread-loading, and post-kind updates.
+
 - Date/Time: 2026-08-29 06:35 +05:00
 - Agent: Codex
 - Model: GPT-5

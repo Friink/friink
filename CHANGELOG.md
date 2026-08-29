@@ -20,8 +20,8 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 ## Current State
 _Last updated: 2026-08-29_
 
-- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, text-only post and quote-post creation, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
-- [api] Posts and quote-posts use a single `posts` table with nullable `quoted_post_id`; media schema is reserved through minimal `post_media` storage placeholders, but upload/compression/storage remains pending an object storage decision.
+- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, dual-handshake follow requests/connections, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, and cancel/unfollow converts the row out of the active set so future follows require a fresh request cycle.
 - [web] The Deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. The `NEXT_PUBLIC_API_BASE_URL` env var must be set in the Vercel **web** project to the deployed API base URL — if absent or stale the browser falls back to `http://localhost:8000`, which is unreachable from a deployed context and produces "Failed to fetch" errors. The subscribe section submits to Zoho Forms for real email collection.
 - [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
@@ -118,14 +118,24 @@ _Last updated: 2026-08-29_
 ### Changed
 - [web] Scoped the shared `FloatingBar` so it only renders on `/home` for post creation and on direct `/{username}/chat` routes for message composition, instead of appearing across every logged-in screen.
 - [web] Standardized the remaining in-screen chat compose path to use the shared `web/components/composer.tsx` `Composer` component so post and chat composition both flow through the same reusable surface.
+- [api] Added unified reply and quote support to post creation by introducing a `kind` field plus `parent_post_id`, and exposed `GET /posts/{post_id}/replies` for thread loading.
+- [web] Added shared composer context states for replying and quoting from both the feed and post detail page, keeping the user on the current screen while the floating composer switches mode.
+- [web] Extended the shared `Composer` with reusable context labels and quoted-post preview cards so post, reply, and quote composition use one component contract.
+- [web] Updated the post detail screen to render real reply rows under the main post and to show full quoted-post content there instead of the feed clamp treatment.
 
 ### Fixed
+- [web] Preserved post kind and quoted-post display metadata through the post thread mapper so replies stay in-thread and quote previews show the correct display name.
+- [web] Cleaned up quote preview clamping so quoted content stays single-line only where intended instead of depending on brittle sibling selectors.
 - [web] Feed post bodies and quoted post content now preserve newline formatting instead of collapsing multi-line posts into a single rendered line.
 - [web] Added a 512-character limit and live character count to the floating post composer, matching the settings profile `About` field pattern.
 - [web] Adjusted the compact multiline post composer textarea spacing so the `Write a post...` placeholder sits vertically centered before expansion.
+- [api][web] Added a compatibility fallback so legacy or mixed-data posts with a missing `kind` are treated as normal posts instead of disappearing from the feed or breaking frontend mapping.
+
+### Known Issue
+- [api][web] After the reply/quote post model changes, the app has been reported as failing to show existing posts and failing to create new posts. A fallback for null legacy `kind` values has now been added, but if the issue persists treat migration/application state and live API contract drift as the first things to investigate in the next pass.
 
 ### Verified
-- [web] `npm run build` passed in `web` after the post newline rendering, floating-bar visibility, and shared-composer/count updates.
+- [web] `npm run build` passed in `web` after the reply/quote composer, post-thread updates, newline rendering, floating-bar visibility, and shared-composer/count updates, but runtime post loading/creation is currently reported broken and was not resolved in this pass.
 
 ## 2026-08-29
 

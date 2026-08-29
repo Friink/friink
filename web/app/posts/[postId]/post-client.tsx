@@ -28,7 +28,7 @@ function getInitials(value: string) {
 function mapApiPost(post: ApiPost): Post {
   return {
     id: post.id,
-    kind: post.kind,
+    kind: post.kind ?? 'post',
     name: post.author_display_name || post.author_username,
     handle: `@${post.author_username}`,
     initials: getInitials(post.author_display_name || post.author_username),
