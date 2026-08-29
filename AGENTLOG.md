@@ -19,6 +19,35 @@
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
 
+- Date/Time: 2026-08-29 09:10 +05:00
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move Settings username editing into the Profile tab as its own row, make feed cards always show the post-detail link, show reply previews in the composer, and add reply/quote counts beside feed actions.
+- Changes:
+  - Updated `web/components/account-screens.tsx` so Settings > Profile now owns separate `Name`, `Username`, and `About` rows with independent update buttons and status messages, while Settings > Account now contains only `Email` and `User ID`.
+  - Extended `web/components/composer.tsx` from quote-only preview naming to a generic referenced-post preview so both reply and quote composition can show the target post inline.
+  - Updated `web/components/app-shell.tsx` and `web/app/posts/[postId]/post-client.tsx` so both reply and quote flows pass the referenced post into the composer preview surface.
+  - Updated `web/components/feed-post.tsx` so feed cards always render `Show more...` in feed contexts and display reply/quote counts beside their action icons.
+  - Extended `web/lib/data.ts` with a `quotes` field on the frontend `Post` model and initialized the current API-mapped values to `0` pending backend quote-count support.
+  - Updated `web/app/globals.css` and `packages/design/design.md` so the feed action bar, always-visible post-detail link rule, and revised settings tab ownership are documented and styled consistently.
+  - Updated `CHANGELOG.md` with synchronized release notes.
+- Files:
+  - web/components/account-screens.tsx
+  - web/components/composer.tsx
+  - web/components/app-shell.tsx
+  - web/app/posts/[postId]/post-client.tsx
+  - web/components/feed-post.tsx
+  - web/lib/data.ts
+  - web/app/globals.css
+  - packages/design/design.md
+  - CHANGELOG.md
+  - AGENTLOG.md
+- Reason/Decision: The settings split should match the product model instead of bundling unrelated editable fields behind one save path, and the feed needed a stable route affordance plus clearer social context around replies and quotes. Reusing the shared row and composer primitives keeps future UI changes cheaper.
+- Notes:
+  - Reply and quote counts are now rendered in the UI contract, but they currently initialize to `0` because the backend response does not yet expose aggregate counts.
+  - The always-visible `Show more...` rule applies to feed-card contexts; dedicated post detail surfaces still render the full post body without the extra self-link.
+- Verified Working?: yes — `npm run build` in `web` passed after the settings/profile split and feed/composer updates.
+
 - Date/Time: 2026-08-29 08:40 +05:00
 - Agent: Codex
 - Model: GPT-5

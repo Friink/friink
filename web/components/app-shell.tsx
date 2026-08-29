@@ -353,6 +353,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       isConnection: true,
       isStarred: false,
       replies: 0,
+      quotes: 0,
       reactions: 0,
       quotedPost: post.quoted_post
         ? {
@@ -596,7 +597,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 maxLength={512}
                 showCount
                 contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
-                quotedPreview={composeContext.kind === 'quote' ? {
+                referencedPreview={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,
                   handle: composeContext.post.handle,
                   initials: composeContext.post.initials,

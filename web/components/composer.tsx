@@ -16,7 +16,7 @@ type ComposerProps = {
   maxLength?: number;
   showCount?: boolean;
   contextLabel?: string | null;
-  quotedPreview?: {
+  referencedPreview?: {
     name: string;
     handle: string;
     initials: string;
@@ -39,7 +39,7 @@ export function Composer({
   maxLength,
   showCount = false,
   contextLabel = null,
-  quotedPreview = null,
+  referencedPreview = null,
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -68,11 +68,11 @@ export function Composer({
   return (
     <div className="composer-stack">
       {contextLabel ? <div className="composer-context-label">{contextLabel}</div> : null}
-      {quotedPreview ? (
+      {referencedPreview ? (
         <div className="composer-quoted-preview">
-          <ProfileCard name={quotedPreview.name} handle={quotedPreview.handle} tone={quotedPreview.tone} initials={quotedPreview.initials} />
-          <p className="composer-quoted-preview-text">{quotedPreview.text}</p>
-          {quotedPreview.mediaCount ? <span className="composer-quoted-preview-media">Media attached</span> : null}
+          <ProfileCard name={referencedPreview.name} handle={referencedPreview.handle} tone={referencedPreview.tone} initials={referencedPreview.initials} />
+          <p className="composer-quoted-preview-text">{referencedPreview.text}</p>
+          {referencedPreview.mediaCount ? <span className="composer-quoted-preview-media">Media attached</span> : null}
         </div>
       ) : null}
       <form

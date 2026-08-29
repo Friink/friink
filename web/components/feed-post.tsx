@@ -1,7 +1,6 @@
 "use client";
 
 import Link from 'next/link';
-import { useLayoutEffect, useRef, useState } from 'react';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
 
@@ -15,25 +14,6 @@ type FeedPostProps = {
 };
 
 export function FeedPost({ post, highlightedStar = false, onReply, onQuote, truncateBody = true, truncateQuotedPost = true }: FeedPostProps) {
-  const bodyRef = useRef<HTMLParagraphElement | null>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-
-  useLayoutEffect(() => {
-    if (!truncateBody || !bodyRef.current) {
-      setIsOverflowing(false);
-      return;
-    }
-
-    const element = bodyRef.current;
-    const updateOverflow = () => {
-      setIsOverflowing(element.scrollHeight > element.clientHeight + 1);
-    };
-
-    updateOverflow();
-    window.addEventListener('resize', updateOverflow);
-    return () => window.removeEventListener('resize', updateOverflow);
-  }, [post.text, truncateBody]);
-
   return (
     <article className="feed-post">
       <div className="feed-post-heading">
@@ -50,8 +30,8 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
       <div className="feed-post-date">
         <small>{post.date}</small>
       </div>
-      <p ref={bodyRef} className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
-      {truncateBody && isOverflowing && (
+      <p className={`feed-post-body${truncateBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
+      {truncateBody && (
         <Link className="feed-post-show-more" href={`/posts/${post.id}`} aria-label={`Show full post by ${post.name}`}>
           Show more...
         </Link>
@@ -72,11 +52,13 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
         </div>
       )}
       <div className="feed-post-actions">
-        <button type="button" aria-label="Comment" onClick={() => onReply?.(post)}>
+        <button type="button" aria-label={`Comment (${post.replies})`} onClick={() => onReply?.(post)}>
           <i className="fa-regular fa-comment" aria-hidden="true" />
+          <span>{post.replies}</span>
         </button>
-        <button type="button" aria-label="Quote" onClick={() => onQuote?.(post)}>
+        <button type="button" aria-label={`Quote (${post.quotes})`} onClick={() => onQuote?.(post)}>
           <i className="fa-solid fa-quote-right" aria-hidden="true" />
+          <span>{post.quotes}</span>
         </button>
         <button type="button" aria-label="Like">
           <i className="fa-regular fa-heart" aria-hidden="true" />

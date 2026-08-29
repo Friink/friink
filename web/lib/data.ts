@@ -11,6 +11,7 @@ export type Post = {
   isConnection: boolean;
   isStarred: boolean;
   replies: number;
+  quotes: number;
   reactions: number;
   quotedPost?: {
     id: string | null;

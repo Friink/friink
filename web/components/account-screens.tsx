@@ -26,10 +26,12 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [about, setAbout] = useState(user.about);
   const [usernameStatus, setUsernameStatus] = useState('');
   const [emailStatus, setEmailStatus] = useState('');
-  const [profileStatus, setProfileStatus] = useState('');
+  const [nameStatus, setNameStatus] = useState('');
+  const [aboutStatus, setAboutStatus] = useState('');
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
@@ -37,7 +39,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setAbout(user.about);
     setUsernameStatus('');
     setEmailStatus('');
-    setProfileStatus('');
+    setNameStatus('');
+    setAboutStatus('');
   }, [user.username, user.email, user.name, user.about]);
 
   const hasUsernameChanged = username !== user.username;
@@ -46,10 +49,12 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const hasEmailChanged = email.trim().toLowerCase() !== user.email.toLowerCase();
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canUpdateEmail = hasEmailChanged && isEmailValid && !isUpdatingEmail;
-  const hasProfileChanged = displayName.trim() !== user.name || about !== user.about;
   const isDisplayNameValid = displayName.trim().length > 0 && displayName.trim().length <= 120;
   const isAboutValid = about.length <= 256;
-  const canUpdateProfile = hasProfileChanged && isDisplayNameValid && isAboutValid && !isUpdatingProfile;
+  const hasNameChanged = displayName.trim() !== user.name;
+  const hasAboutChanged = about !== user.about;
+  const canUpdateName = hasNameChanged && isDisplayNameValid && !isUpdatingName;
+  const canUpdateAbout = hasAboutChanged && isAboutValid && !isUpdatingAbout;
 
   async function handleUsernameUpdate() {
     if (!canUpdateUsername) {
@@ -111,11 +116,41 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     }
   }
 
-  async function handleProfileUpdate() {
-    if (!canUpdateProfile) {
-      if (!isDisplayNameValid) {
+  async function handleNameUpdate() {
+    if (!canUpdateName) {
+      if (hasNameChanged && !isDisplayNameValid) {
         onToast?.('Name is required and must be 120 characters or fewer.');
-      } else if (!isAboutValid) {
+      }
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update your name.');
+      return;
+    }
+
+    setIsUpdatingName(true);
+    setNameStatus('');
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, {
+        displayName: displayName.trim(),
+      });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setDisplayName(updatedSession.user.name);
+      setNameStatus('Name updated.');
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update name.');
+    } finally {
+      setIsUpdatingName(false);
+    }
+  }
+
+  async function handleAboutUpdate() {
+    if (!canUpdateAbout) {
+      if (hasAboutChanged && !isAboutValid) {
         onToast?.('About must be 256 characters or fewer.');
       }
       return;
@@ -123,27 +158,25 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
 
     const session = loadAuthSession();
     if (!session) {
-      onToast?.('Please log in again to update your profile.');
+      onToast?.('Please log in again to update your about text.');
       return;
     }
 
-    setIsUpdatingProfile(true);
-    setProfileStatus('');
+    setIsUpdatingAbout(true);
+    setAboutStatus('');
     try {
       const updatedUser = await updateCurrentUser(session.accessToken, {
-        displayName: displayName.trim(),
         about,
       });
       const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
       saveAuthSession(updatedSession);
       onUserChange?.(updatedSession.user);
-      setDisplayName(updatedSession.user.name);
       setAbout(updatedSession.user.about);
-      setProfileStatus('Profile updated.');
+      setAboutStatus('About updated.');
     } catch (error) {
-      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update profile.');
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update about text.');
     } finally {
-      setIsUpdatingProfile(false);
+      setIsUpdatingAbout(false);
     }
   }
 
@@ -210,9 +243,54 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
             </ListRow>
 
             <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-fingerprint" aria-hidden="true" /></span>}
+              title="User ID"
+              subtitle="This unique identifier can't be changed by you."
+              className="settings-row settings-row-expanded"
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Unique user ID</span>
+                <input type="text" value={user.id} readOnly aria-readonly="true" />
+              </label>
+            </ListRow>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'profile' && (
+        <div className="settings-panel">
+          <div className="settings-section">
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-signature" aria-hidden="true" /></span>}
+              title="Name"
+              subtitle="Update the public name shown on your profile."
+              className="settings-row settings-row-expanded"
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Name</span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(event) => {
+                    setDisplayName(event.target.value);
+                    setNameStatus('');
+                  }}
+                  placeholder="Name"
+                  autoComplete="name"
+                />
+              </label>
+              <div className="settings-field-actions">
+                <button className="settings-update-button" type="button" disabled={!canUpdateName} onClick={handleNameUpdate}>
+                  {isUpdatingName ? 'Updating...' : 'Update'}
+                </button>
+              </div>
+              {nameStatus && <span className="settings-field-message" role="status">{nameStatus}</span>}
+            </ListRow>
+
+            <ListRow
               avatar={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
               title="Username"
-              subtitle="Update the name people see on your profile."
+              subtitle="Update the username people use to find and mention you."
               className="settings-row settings-row-expanded"
             >
               <label className="settings-field">
@@ -241,42 +319,11 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
             </ListRow>
 
             <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-fingerprint" aria-hidden="true" /></span>}
-              title="User ID"
-              subtitle="This unique identifier can't be changed by you."
-              className="settings-row settings-row-expanded"
-            >
-              <label className="settings-field">
-                <span className="settings-field-label">Unique user ID</span>
-                <input type="text" value={user.id} readOnly aria-readonly="true" />
-              </label>
-            </ListRow>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'profile' && (
-        <div className="settings-panel">
-          <div className="settings-section">
-            <ListRow
               avatar={<span className="settings-icon"><i className="fa-solid fa-user-pen" aria-hidden="true" /></span>}
-              title="Profile"
-              subtitle="Update the public details shown on your profile."
+              title="About"
+              subtitle="Update the short public bio shown on your profile."
               className="settings-row settings-row-expanded"
             >
-              <label className="settings-field">
-                <span className="settings-field-label">Name</span>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(event) => {
-                    setDisplayName(event.target.value);
-                    setProfileStatus('');
-                  }}
-                  placeholder="Name"
-                  autoComplete="name"
-                />
-              </label>
               <label className="settings-field">
                 <span className="settings-field-label">About</span>
                 <textarea
@@ -285,18 +332,18 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   maxLength={256}
                   onChange={(event) => {
                     setAbout(event.target.value);
-                    setProfileStatus('');
+                    setAboutStatus('');
                   }}
                   placeholder="About"
                 />
                 <span className="settings-field-count">{about.length}/256</span>
               </label>
               <div className="settings-field-actions">
-                <button className="settings-update-button" type="button" disabled={!canUpdateProfile} onClick={handleProfileUpdate}>
-                  {isUpdatingProfile ? 'Updating...' : 'Update'}
+                <button className="settings-update-button" type="button" disabled={!canUpdateAbout} onClick={handleAboutUpdate}>
+                  {isUpdatingAbout ? 'Updating...' : 'Update'}
                 </button>
               </div>
-              {profileStatus && <span className="settings-field-message" role="status">{profileStatus}</span>}
+              {aboutStatus && <span className="settings-field-message" role="status">{aboutStatus}</span>}
             </ListRow>
           </div>
         </div>
