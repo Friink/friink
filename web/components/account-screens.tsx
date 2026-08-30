@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
@@ -21,6 +21,31 @@ type SettingsScreenProps = {
   onUserChange?: (user: AuthUser) => void;
   onToast?: (message: ToastInput, tone?: ToastMessage['tone']) => void;
 };
+
+type SettingsRowProps = {
+  icon: ReactNode;
+  title: ReactNode;
+  subtitle: ReactNode;
+  children?: ReactNode;
+  className?: string;
+  trailing?: ReactNode;
+  save?: { disabled: boolean; busy: boolean; onClick: () => void; label: string };
+};
+
+function SettingsRow({ icon, title, subtitle, children, className = 'settings-row settings-row-expanded', trailing, save }: SettingsRowProps) {
+  const saveControl = save ? <SaveTickButton disabled={save.disabled} busy={save.busy} onClick={save.onClick} label={save.label} /> : null;
+  return (
+    <ListRow
+      avatar={icon}
+      title={title}
+      subtitle={subtitle}
+      trailing={trailing ?? saveControl}
+      className={className}
+    >
+      {children}
+    </ListRow>
+  );
+}
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
@@ -72,19 +97,23 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  const [appearanceDraft, setAppearanceDraft] = useState(appearance);
+  const [privacyDraft, setPrivacyDraft] = useState(user.isPrivate);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
     setDisplayName(user.name);
     setAbout(user.about);
     setIsPrivate(user.isPrivate);
+    setPrivacyDraft(user.isPrivate);
+    setAppearanceDraft(appearance);
     setProfilePicturePreview(user.profilePictureUrl);
     setProfilePictureFile(null);
     setUsernameStatus('');
     setEmailStatus('');
     setNameStatus('');
     setAboutStatus('');
-  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl]);
+  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl, appearance]);
 
   const hasUsernameChanged = username !== user.username;
   const isUsernameValid = USERNAME_PATTERN.test(username);
@@ -98,6 +127,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const hasAboutChanged = about !== user.about;
   const canUpdateName = hasNameChanged && isDisplayNameValid && !isUpdatingName;
   const canUpdateAbout = hasAboutChanged && isAboutValid && !isUpdatingAbout;
+  const canUpdateAppearance = appearanceDraft !== appearance;
+  const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
 
   async function handleUsernameUpdate() {
     if (!canUpdateUsername) {
@@ -227,8 +258,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     }
   }
 
-  async function handlePrivacyUpdate(nextIsPrivate: boolean) {
-    if (nextIsPrivate === user.isPrivate || isUpdatingPrivacy) {
+  async function handlePrivacyUpdate() {
+    if (!canUpdatePrivacy) {
       return;
     }
 
@@ -239,19 +270,20 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     }
 
     setIsUpdatingPrivacy(true);
-    setIsPrivate(nextIsPrivate);
     try {
       const updatedUser = await updateCurrentUser(session.accessToken, {
-        isPrivate: nextIsPrivate,
+        isPrivate: privacyDraft,
       });
       const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
       saveAuthSession(updatedSession);
       onUserChange?.(updatedSession.user);
       setIsPrivate(updatedSession.user.isPrivate);
+      setPrivacyDraft(updatedSession.user.isPrivate);
       onToast?.(`Privacy setting updated. Profile is now ${updatedSession.user.isPrivate ? 'private' : 'public'}.`, 'success');
     } catch (error) {
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update privacy setting.');
       setIsPrivate(user.isPrivate);
+      setPrivacyDraft(user.isPrivate);
     } finally {
       setIsUpdatingPrivacy(false);
     }
@@ -365,26 +397,27 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       {activeTab === 'general' && (
         <div className="settings-panel">
           <div className="settings-section">
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-palette" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-palette" aria-hidden="true" /></span>}
               title="Theme"
               subtitle="Choose how Friink looks on this device."
               className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateAppearance, busy: false, onClick: () => onAppearanceChange(appearanceDraft), label: 'Update theme' }}
             >
               <span className="appearance-toggle" role="group" aria-label="Appearance preference">
                 {(['system', 'light', 'dark'] as const).map((option) => (
                   <button
-                    className={appearance === option ? 'active' : ''}
+                    className={appearanceDraft === option ? 'active' : ''}
                     key={option}
                     type="button"
-                    onClick={() => onAppearanceChange(option)}
-                    aria-pressed={appearance === option}
+                    onClick={() => setAppearanceDraft(option)}
+                    aria-pressed={appearanceDraft === option}
                   >
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </button>
                 ))}
               </span>
-            </ListRow>
+            </SettingsRow>
           </div>
         </div>
       )}
@@ -392,11 +425,12 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       {activeTab === 'account' && (
         <div className="settings-panel">
           <div className="settings-section">
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-envelope" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-envelope" aria-hidden="true" /></span>}
               title="Email"
               subtitle="Update the email address for this account."
               className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateEmail, busy: isUpdatingEmail, onClick: handleEmailUpdate, label: 'Update email' }}
             >
               <label className="settings-field">
                 <span className="settings-field-label">Email</span>
@@ -412,14 +446,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                     aria-label="email"
                     autoComplete="email"
                   />
-                  <SaveTickButton disabled={!canUpdateEmail} busy={isUpdatingEmail} onClick={handleEmailUpdate} label="Update email" />
                 </div>
                 {emailStatus && <span className="settings-field-message" role="status">{emailStatus}</span>}
               </label>
-            </ListRow>
+            </SettingsRow>
 
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-fingerprint" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-fingerprint" aria-hidden="true" /></span>}
               title="User ID"
               subtitle="This unique identifier can't be changed by you."
               className="settings-row settings-row-expanded"
@@ -428,7 +461,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 <span className="settings-field-label">Unique user ID</span>
                 <input type="text" value={user.id} readOnly aria-readonly="true" />
               </label>
-            </ListRow>
+            </SettingsRow>
           </div>
         </div>
       )}
@@ -436,11 +469,12 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       {activeTab === 'profile' && (
         <div className="settings-panel">
           <div className="settings-section">
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-camera" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-camera" aria-hidden="true" /></span>}
               title="Profile picture"
               subtitle="Choose an optional JPG, PNG, or WebP picture for your profile."
               className="settings-row settings-row-expanded"
+              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" onClick={() => profilePictureInputRef.current?.click()}>Upload</button>}
             >
               <div className="profile-picture-picker">
                 <div className="profile-picture-preview" aria-hidden="true">
@@ -448,7 +482,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 </div>
                 <div className="profile-picture-controls">
                   <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
-                  <button className="settings-secondary-button" type="button" onClick={() => profilePictureInputRef.current?.click()}>Upload</button>
                 </div>
                 {cropSource && (
                   <div className="profile-picture-crop-modal" role="dialog" aria-modal="true" aria-labelledby="profile-picture-crop-title" onMouseDown={(event) => { if (event.target === event.currentTarget) handleCropCancel(); }}>
@@ -489,13 +522,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   </span>
                 )}
               </div>
-            </ListRow>
+            </SettingsRow>
 
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-signature" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-signature" aria-hidden="true" /></span>}
               title="Name"
               subtitle="Update the public name shown on your profile."
               className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateName, busy: isUpdatingName, onClick: handleNameUpdate, label: 'Update name' }}
             >
               <label className="settings-field">
                 <span className="settings-field-label">Name</span>
@@ -510,17 +544,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                     placeholder="Name"
                     autoComplete="name"
                   />
-                  <SaveTickButton disabled={!canUpdateName} busy={isUpdatingName} onClick={handleNameUpdate} label="Update name" />
                 </div>
               </label>
               {nameStatus && <span className="settings-field-message" role="status">{nameStatus}</span>}
-            </ListRow>
+            </SettingsRow>
 
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
               title="Username"
               subtitle="Update the username people use to find and mention you."
               className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateUsername, busy: isUpdatingUsername, onClick: handleUsernameUpdate, label: 'Update username' }}
             >
               <label className="settings-field">
                 <span className="settings-field-label">Username</span>
@@ -539,17 +573,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                       autoComplete="off"
                     />
                   </div>
-                  <SaveTickButton disabled={!canUpdateUsername} busy={isUpdatingUsername} onClick={handleUsernameUpdate} label="Update username" />
                 </div>
                 {usernameStatus && <span className="settings-field-message" role="status">{usernameStatus}</span>}
               </label>
-            </ListRow>
+            </SettingsRow>
 
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-user-pen" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-user-pen" aria-hidden="true" /></span>}
               title="About"
               subtitle="Update the short public bio shown on your profile."
               className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateAbout, busy: isUpdatingAbout, onClick: handleAboutUpdate, label: 'Update about' }}
             >
               <label className="settings-field">
                 <span className="settings-field-label">About</span>
@@ -567,11 +601,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   <span className="settings-field-count">{about.length}/128</span>
                 </div>
               </label>
-              <div className="settings-field-actions">
-                <SaveTickButton disabled={!canUpdateAbout} busy={isUpdatingAbout} onClick={handleAboutUpdate} label="Update about" />
-              </div>
               {aboutStatus && <span className="settings-field-message" role="status">{aboutStatus}</span>}
-            </ListRow>
+            </SettingsRow>
           </div>
         </div>
       )}
@@ -579,34 +610,34 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       {activeTab === 'privacy' && (
         <div className="settings-panel">
           <div className="settings-section">
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-lock" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-lock" aria-hidden="true" /></span>}
               title="Private profile"
               subtitle="Only approved followers can view your public posts."
-              trailing={
-                <button
-                  type="button"
-                  className={`settings-toggle-pill${isPrivate ? ' active' : ''}`}
-                  onClick={() => handlePrivacyUpdate(!isPrivate)}
-                  disabled={isUpdatingPrivacy}
-                  aria-pressed={isPrivate}
-                >
-                  {isPrivate ? 'On' : 'Off'}
-                </button>
-              }
               className="settings-row"
-            />
+              save={{ disabled: !canUpdatePrivacy, busy: isUpdatingPrivacy, onClick: handlePrivacyUpdate, label: 'Update private profile' }}
+            >
+              <button
+                type="button"
+                className={`settings-toggle-pill${privacyDraft ? ' active' : ''}`}
+                onClick={() => setPrivacyDraft((value) => !value)}
+                disabled={isUpdatingPrivacy}
+                aria-pressed={privacyDraft}
+              >
+                {privacyDraft ? 'On' : 'Off'}
+              </button>
+            </SettingsRow>
 
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
               title="Direct messages"
               subtitle="People you follow can message you."
               trailing={<button type="button" className="settings-toggle-pill" disabled>Off</button>}
               className="settings-row"
             />
 
-            <ListRow
-              avatar={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
               title="Mentions"
               subtitle="Control who can mention you in conversations."
               trailing={<button type="button" className="settings-toggle-pill active" disabled>On</button>}
