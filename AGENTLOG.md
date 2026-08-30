@@ -3848,3 +3848,20 @@
 - Reason/Decision: URL-owned tab state makes each section directly addressable and preserves expected refresh, bookmark, and browser-history behavior.
 - Verification: `npm exec tsc -- --noEmit --incremental false` and `npm run build` passed; generated route output includes all canonical tab paths.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make profile-picture upload confirmation non-optimistic and modal-owned.
+- Changes Made:
+  - Removed preview updates during file selection, cropping, and compression so the last server-confirmed avatar remains visible until API confirmation succeeds.
+  - Made the crop-modal tick run crop, compression, upload, and confirmation as one flow; it closes the modal only on success.
+  - Removed the separate `Upload profile picture` button beside the file picker and removed the `No picture selected.` message.
+  - Updated the design and product rules to document the confirmation invariant.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
+- Reason/Decision: An optimistic avatar implies an account update before the backend has committed it, and two adjacent upload controls made the interaction ambiguous. The modal confirmation is now the single authoritative upload action.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+

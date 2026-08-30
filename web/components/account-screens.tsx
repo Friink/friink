@@ -279,7 +279,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       setZoom(1);
       setMaxZoom(Math.max(1, shorterEdge / 128));
       setCroppedAreaPixels(null);
-      setProfilePicturePreview(sourceUrl);
     } catch (error) {
       onToast?.(error instanceof Error ? error.message : 'This image could not be read. Please choose another image.');
     } finally {
@@ -292,10 +291,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setIsProcessingProfilePicture(true);
     try {
       const croppedFile = await createCroppedImage(cropSource, croppedAreaPixels, profilePictureFile.name);
-      setProfilePictureFile(croppedFile);
-      setProfilePicturePreview(URL.createObjectURL(croppedFile));
-      setCropSource(null);
-      onToast?.('Crop confirmed. Ready to upload.', 'success');
+      await handleProfilePictureUpload(croppedFile);
     } catch (error) {
       onToast?.(error instanceof Error ? error.message : 'Could not crop this image.');
     } finally {
@@ -309,8 +305,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setProfilePicturePreview(user.profilePictureUrl);
   }
 
-  async function handleProfilePictureUpload() {
-    if (!profilePictureFile || cropSource || isUploadingProfilePicture) return;
+  async function handleProfilePictureUpload(fileToUpload = profilePictureFile) {
+    if (!fileToUpload || isUploadingProfilePicture) return;
     const session = loadAuthSession();
     if (!session) {
       onToast?.('Please log in again to update your profile picture.');
@@ -318,8 +314,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     }
     setIsProcessingProfilePicture(true);
     try {
-      const compressedFile = await compressImage(profilePictureFile, 'avatar');
-      setProfilePicturePreview(URL.createObjectURL(compressedFile));
+      const compressedFile = await compressImage(fileToUpload, 'avatar');
       setIsProcessingProfilePicture(false);
       setIsUploadingProfilePicture(true);
       const updatedUser = await uploadProfilePicture(session.accessToken, compressedFile);
@@ -328,6 +323,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onUserChange?.(updatedSession.user);
       setProfilePictureFile(null);
       setProfilePicturePreview(updatedSession.user.profilePictureUrl);
+      setCropSource(null);
       onToast?.('Profile picture updated.', 'success');
     } catch (error) {
       if (error instanceof AuthApiError) {
@@ -453,9 +449,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 <div className="profile-picture-controls">
                   <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
                   <button className="settings-secondary-button" type="button" onClick={() => profilePictureInputRef.current?.click()}>Upload</button>
-                  <button className="settings-secondary-button profile-picture-upload" type="button" disabled={!profilePictureFile || cropSource !== null || isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleProfilePictureUpload}>
-                    {isProcessingProfilePicture ? 'Processing...' : isUploadingProfilePicture ? 'Uploading...' : 'Upload profile picture'}
-                  </button>
                 </div>
                 {cropSource && (
                   <div className="profile-picture-crop-modal" role="dialog" aria-modal="true" aria-labelledby="profile-picture-crop-title" onMouseDown={(event) => { if (event.target === event.currentTarget) handleCropCancel(); }}>
@@ -485,12 +478,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                       </label>
                       <div className="profile-picture-crop-actions">
                         <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture} onClick={handleCropCancel}>Cancel</button>
-                        <SaveTickButton disabled={isProcessingProfilePicture} busy={isProcessingProfilePicture} onClick={handleCropConfirm} label="Confirm crop" />
+                        <SaveTickButton disabled={isProcessingProfilePicture || isUploadingProfilePicture} busy={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropConfirm} label="Upload profile picture" />
                       </div>
                     </div>
                   </div>
                 )}
-                <span className="settings-field-message" role="status">{isProcessingProfilePicture ? 'Processing image...' : isUploadingProfilePicture ? 'Uploading profile picture...' : cropSource ? 'Confirm your crop to continue.' : profilePictureFile ? 'Ready to upload.' : 'No picture selected.'}</span>
+                {(isProcessingProfilePicture || isUploadingProfilePicture || cropSource || profilePictureFile) && (
+                  <span className="settings-field-message" role="status">
+                    {isProcessingProfilePicture ? 'Processing image...' : isUploadingProfilePicture ? 'Uploading profile picture...' : cropSource ? 'Adjust your crop, then confirm to upload.' : 'Ready to upload.'}
+                  </span>
+                )}
               </div>
             </ListRow>
 
