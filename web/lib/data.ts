@@ -6,6 +6,7 @@ export type Post = {
   name: string;
   handle: string;
   initials: string;
+  imageUrl?: string | null;
   tone: string;
   createdAt: string;
   text: string;

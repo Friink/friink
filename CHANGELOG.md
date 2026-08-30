@@ -997,3 +997,4 @@ _Last updated: 2026-08-30_
 - [api] Fixed the profile-picture confirmation `500`: the route accidentally resolved `refresh(...)` to the `/auth/refresh` handler after committing the new picture. Confirmation now returns the committed result directly.
 - [api/security] Kept FastAPI API documentation available in staging while disabling Swagger, ReDoc, and OpenAPI routes in production.
 - [verification] Confirmed the staging profile-picture upload succeeds end to end after aligning the web client, FastAPI confirmation route, R2 verification, database persistence, and mandatory previous-object deletion.
+- [api/web] Included each post author's profile-picture URL in post responses and preserved it through feed, live-update, post-detail, and reply mapping so shared feed profile cards render uploaded avatars for other users.

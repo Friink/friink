@@ -64,6 +64,7 @@ class PostResponse(BaseModel):
     kind: PostKind
     author_username: str
     author_display_name: str | None = None
+    profile_picture_url: str | None = None
     content: str
     media_count: int
     parent_post_id: uuid.UUID | None

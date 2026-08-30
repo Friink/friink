@@ -3815,3 +3815,19 @@
 - Reason/Decision: Client-side navigation reuses the profile client component, so prior state can otherwise render the old/self profile for one or more frames before the new API result arrives.
 - Verification: Targeted TypeScript/source review completed; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show uploaded profile pictures in feed post profile cards.
+- Changes Made:
+  - Added nullable `profile_picture_url` to `PostResponse` and populated it from the eagerly loaded post author.
+  - Extended the frontend `ApiPost` and `Post` models with the image URL.
+  - Preserved the URL in Home, AppShell, post-detail, and reply mappers, then passed it to the shared `ProfileCard` in `FeedPost`.
+- Files/Scope Touched: `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`, `web/components/feed-post.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `CHANGELOG.md`.
+- Reason/Decision: Profile pages already received profile-picture data through the public-user response, but post responses omitted the same field, causing feed cards to fall back to the default image.
+- Verification: `git diff --check` passed; targeted TypeScript verification follows.
+

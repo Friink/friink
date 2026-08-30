@@ -375,6 +375,7 @@ export type ApiPost = {
   kind: 'post' | 'quote' | 'reply';
   author_username: string;
   author_display_name: string | null;
+  profile_picture_url: string | null;
   content: string;
   media_count: number;
   parent_post_id: string | null;

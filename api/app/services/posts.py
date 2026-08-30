@@ -275,6 +275,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         kind=PostKindSchema(post.kind.value),
         author_username=post.user.username,
         author_display_name=post.user.display_name,
+        profile_picture_url=post.user.profile_picture_url,
         content=post.content,
         media_count=post.media_count,
         parent_post_id=post.parent_post_id,
