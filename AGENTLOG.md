@@ -42,6 +42,24 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Correct profile summary padding to maintain the minimum 8px spacing inside the ContentBox.
+ - Changes:
+   - Updated `.profile-summary` in `web/app/globals.css` to use the shared `--space-content-inset-inline` token for left and right padding.
+   - This shifts the profile card, About text, and follower/following statistics inward by 8px and keeps the Edit/profile action controls 8px in from the right edge.
+   - Updated `CHANGELOG.md` to record the CSS-only fix and verification scope.
+ - Files:
+   - web/app/globals.css
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The profile summary was flush with the ContentBox content edge, leaving no inner spacing for the left-aligned content and placing the right-aligned actions too close to the opposite edge. Reusing the existing shared inset token preserves the documented spacing system.
+ - Notes:
+   - `packages/design/design.md` was not changed because its existing Shared Content Inset Rule and ProfileScreen contract already describe this spacing behavior.
+   - No build was required for this CSS-only adjustment.
+ - Verified Working?: Yes — confirmed live at `http://localhost:3000/muflah`; profile summary content measured 8px inward from the ContentBox content edges.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Correct profile meta row spacing and visible vertical alignment.
  - Changes:
    - Reworked `.profile-meta-row` from flex to a two-column grid so stats and actions explicitly share one row on desktop/fine-pointer contexts.

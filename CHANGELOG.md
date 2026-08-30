@@ -38,6 +38,7 @@ _Last updated: 2026-08-30_
 - [web] Connections `All` now combines live followers and following, while the private-account `Requests` tab shows both received pending requests with Accept/Reject actions and sent pending requests with Cancel actions.
 - [web] Connections tabs no longer fall back to sample/demo people when there are no live followers or following.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
+- [web] Profile summary content now uses the shared 8px inline inset so the profile card, About text, follower/following stats, and profile actions maintain the minimum spacing inside the ContentBox.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
 - [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
 - [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
@@ -60,6 +61,7 @@ _Last updated: 2026-08-30_
 
 ### Changed
 - [web] Tightened the profile meta row into a two-column grid with stats and actions sharing the same row, matched stats min-height to action button height for visible vertical centering, and removed legacy profile CSS that could confuse the cascade.
+- [web] Added the shared inline content inset to `.profile-summary`, moving profile summary content 8px inward from the ContentBox edges for consistent minimum spacing.
 - [web] Refined the profile meta-row breakpoint so the mobile stacked action layout only applies on narrow coarse-pointer/touch views; narrow desktop browser views keep stats and profile actions vertically aligned on one row.
 - [docs] Added the profile header/content-box spacing rule to `RULES.md`, covering desktop stats/action alignment, mobile stacking, and shared `ProfileScreen` ownership.
 - [web] Made the profile header summary explicit inside `ProfileScreen`, grouping profile card, about text, stats, and actions into one component-level section inside `ContentBox` with standard spacing.
@@ -88,6 +90,7 @@ _Last updated: 2026-08-30_
 - [docs] Component-level audit passed: current-session UI behavior lives in shared components/state owners or documented shared CSS contracts; only component-owned dynamic measurement styles remain (`Tabs` indicator and Home pull-to-refresh height).
 - [web] `npx tsc --noEmit` and `npm run build` passed in `web` after the component-level audit documentation updates.
 - [web] `npx tsc --noEmit` passed in `web` after the profile meta-row alignment change.
+- [web] Verified the profile padding adjustment live at `http://localhost:3000/muflah`; no build was required because this was a CSS-only update to `web/app/globals.css`.
 - [web] `npm run build` passed in `web` after clearing the generated `.next` cache that had a Windows/OneDrive lock from the prior build attempt.
 - [web] `npx tsc --noEmit` passed in `web` after the mobile header search layout fix.
 - [web] `npm run build` passed in `web` after the mobile header search layout fix.
