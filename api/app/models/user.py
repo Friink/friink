@@ -16,6 +16,8 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     about: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    profile_picture_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    profile_picture_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_private: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)

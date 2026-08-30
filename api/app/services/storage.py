@@ -1,0 +1,95 @@
+from __future__ import annotations
+
+import uuid
+from dataclasses import dataclass
+
+from app.config import Settings
+
+
+class StorageNotConfiguredError(RuntimeError):
+    """Raised when R2 credentials have not been supplied for the environment."""
+
+
+class StorageObjectError(RuntimeError):
+    """Raised when an R2 object cannot be inspected or deleted."""
+
+
+MAX_PROFILE_PICTURE_BYTES = 3 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class UploadUrl:
+    upload_url: str
+    public_url: str
+    object_key: str
+
+
+class StorageService:
+    def __init__(self, settings: Settings):
+        self.settings = settings
+
+    def _client(self):
+        values = (
+            self.settings.r2_account_id,
+            self.settings.r2_access_key_id,
+            self.settings.r2_secret_access_key,
+            self.settings.r2_bucket_name,
+            self.settings.r2_public_url,
+        )
+        if not all(value.strip() for value in values):
+            raise StorageNotConfiguredError("R2 storage is not configured.")
+
+        try:
+            import boto3
+        except ImportError as exc:  # pragma: no cover - dependency is installed in deployed environments
+            raise StorageNotConfiguredError("R2 storage client dependency is not installed.") from exc
+
+        return boto3.client(
+            "s3",
+            endpoint_url=f"https://{self.settings.r2_account_id}.r2.cloudflarestorage.com",
+            aws_access_key_id=self.settings.r2_access_key_id,
+            aws_secret_access_key=self.settings.r2_secret_access_key,
+            region_name="auto",
+        )
+
+    def generate_upload_url(self, user_id: uuid.UUID, content_type: str) -> UploadUrl:
+        if not content_type.lower().startswith("image/"):
+            raise ValueError("Profile pictures must use an image content type.")
+        extension = content_type.split("/", 1)[1].lower().replace("jpeg", "jpg")
+        object_key = f"profile-pictures/{user_id}/{uuid.uuid4().hex}.{extension}"
+        client = self._client()
+        upload_url = client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": self.settings.r2_bucket_name, "Key": object_key, "ContentType": content_type},
+            ExpiresIn=900,
+            HttpMethod="PUT",
+        )
+        public_url = f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
+        return UploadUrl(upload_url=upload_url, public_url=public_url, object_key=object_key)
+
+    def confirm_object(self, object_key: str, user_id: uuid.UUID) -> None:
+        self._validate_user_key(object_key, user_id)
+        try:
+            metadata = self._client().head_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
+            if int(metadata.get("ContentLength", 0)) > MAX_PROFILE_PICTURE_BYTES:
+                raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
+        except StorageNotConfiguredError:
+            raise
+        except StorageObjectError:
+            raise
+        except Exception as exc:
+            raise StorageObjectError("The profile picture upload could not be verified.") from exc
+
+    def delete_object(self, object_key: str, user_id: uuid.UUID) -> None:
+        self._validate_user_key(object_key, user_id)
+        try:
+            self._client().delete_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
+        except StorageNotConfiguredError:
+            raise
+        except Exception as exc:
+            raise StorageObjectError("The previous profile picture could not be removed.") from exc
+
+    @staticmethod
+    def _validate_user_key(object_key: str, user_id: uuid.UUID) -> None:
+        if not object_key.startswith(f"profile-pictures/{user_id}/") or object_key.count("/") != 2:
+            raise ValueError("Profile picture object key is invalid.")

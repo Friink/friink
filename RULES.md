@@ -117,6 +117,12 @@ the entry, so history isn't lost.
 ### Rule: Web Settings Saves Confirm And Persist Through API
 - **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
 - **Edge cases:** If the Private Profile API save fails, the UI reverts to the last known saved value. Direct Messages and Mentions toggles remain disabled display controls until real backend settings exist.
+
+### Rule: Profile Pictures Are Optional
+- **What:** Users may upload an optional profile picture through the authenticated profile settings flow. When `profile_picture_url` is null, all supported profile identity surfaces use the shared `web/public/media/profile.jpg` default profile picture.
+- **Edge cases:** A profile picture is only persisted after the backend verifies the user-scoped object upload. Missing R2 configuration produces a clear service-unavailable error; no fake storage or default credential behavior is allowed.
+- **Processing:** The client accepts JPG/JPEG, PNG, and WebP, compresses to JPEG before requesting an upload URL, rejects HEIC/HEIF and other unsupported formats, and the confirmation backstop rejects objects over 3 MB.
+- **Crop and sizing:** Profile pictures require a square crop in a modal dialog before compression. Sources with a shorter edge below 128px are rejected before cropping, and crop zoom is capped at `shorterEdge / 128` so a smaller crop cannot be selected. The avatar output targets 512px square and approximately 250KB, but never upscales a crop smaller than 512px. The reusable post-media preset targets 1024px maximum longest edge and approximately 500KB, but remains unwired until post-media uploads are implemented.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/account-screens.tsx`, `web/app/globals.css`

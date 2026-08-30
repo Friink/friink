@@ -1,4 +1,5 @@
 alembic
+boto3
 bcrypt
 email-validator
 fastapi

@@ -3421,6 +3421,138 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Prepare profile picture media schema and interface layer before R2 credentials are available.
+- Changes Made:
+  - Added nullable `profile_picture_url` and `profile_picture_updated_at` fields to `User` plus Alembic migration `20260830_0010`.
+  - Added `api/app/services/storage.py` with a real boto3 Cloudflare R2 integration for scoped presigned uploads, object verification, and deletion; missing configuration returns a deliberate service-level error.
+  - Added R2 settings and blank placeholders for the five requested R2 environment variables.
+  - Added JWT-protected `/auth/me/profile-picture/upload-url` and `/auth/me/profile-picture/confirm` endpoints.
+  - Added profile settings picker/preview/upload UI with graceful toast errors, extended API user mapping, and updated shared `ProfileCard`, profile, and sidebar rendering to use the image URL or retain initials fallback.
+- Files/Scope Touched: `api/app/config.py`, `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/storage.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260830_0010_add_profile_picture_to_users.py`, `api/.env.example`, `api/requirements.txt`, `web/lib/auth.ts`, `web/components/profile-card.tsx`, `web/components/profile-screen.tsx`, `web/components/side-drawer.tsx`, `web/components/account-screens.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `CHANGELOG.md`.
+- Reason/Decision: Profile pictures are optional; confirmation verifies a user-scoped object before persisting it. Old-object deletion is best effort after the new URL is committed so cleanup failure cannot lose the new picture.
+- Notes: RULES.md did not need a new product rule because existing avatar/default-placeholder guidance already describes this behavior. Once credentials arrive, only the five R2 environment values need to be added; no code changes are expected.
+- Verification: `npx tsc --noEmit --incremental false` passed; `python -m alembic upgrade head` applied cleanly and `python -m alembic current` reports `20260830_0010 (head)`; OpenAPI exposes both endpoints and unauthenticated upload-url access returns `401`; API suite reports 52 passes and one unrelated existing missing-JWT-secret test failure caused by this environment loading a secret from its `.env`.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify required documentation coverage for the R2 profile-picture changes.
+- Changes Made: Added the new `ProfileCard.imageUrl`/initials fallback contract and Settings profile-picture UI contract to `packages/design/design.md`; added the optional profile-picture/default-avatar behavior and missing-R2 error rule to `RULES.md`; synchronized both changes into `CHANGELOG.md` and this log.
+- Files/Scope Touched: `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: README.md requires design documentation for altered shared UI patterns and rules documentation for changed platform behavior. The initial R2 implementation updated only the history logs, so these governing documents needed to be completed.
+- Verification: Documentation references match the implemented `ProfileCard`, Settings picker, and R2 error behavior; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add client-side image compression before profile-picture uploads.
+- Changes Made:
+  - Added `web/lib/image-compression.ts` using the browser Canvas API as a dependency-free equivalent to a compression library; presets are parameterized with `avatar` (600px longest edge, ~250KB target) and a reserved `postMedia` shape for future use.
+  - Restricted the picker to JPG/JPEG, PNG, and WebP, explicitly rejected HEIC/HEIF and other unsupported types, normalized accepted input to JPEG, and flattened transparency to white.
+  - Wired compression before the upload-url request and added a visible processing state distinct from upload progress; compression failures do not fall back to uploading the original file.
+  - Added a 3MB server-side confirmation safety net based on the R2 object `ContentLength`.
+  - Corrected the profile-picture settings row to live under Settings > Profile rather than General.
+- Files/Scope Touched: `web/lib/image-compression.ts`, `web/components/account-screens.tsx`, `api/app/services/storage.py`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The requested third-party package was not available in the local npm cache, so the native browser Canvas API keeps the feature self-contained while preserving a reusable preset interface. Video and post-media flows remain out of scope.
+- Notes: HEIC/HEIF is deliberately rejected rather than decoded or converted. PNG/WebP transparency becomes white in the JPEG output and should be revisited if logo-style profile images become important.
+- Verification: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed; Python bytecode compilation passed. An npm install attempt for `browser-image-compression` was blocked by the environment’s offline-only npm cache, so no package or lockfile change was made.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add square profile-picture cropping and the future post-media compression preset.
+- Changes Made: Added `react-easy-crop` for draggable/zoomable square crop selection; added `web/lib/crop-image.ts` to extract the selected crop before compression; updated the avatar preset from 600px longest edge to a 512px square target with no upscaling and the same ~250KB JPEG target; added the unwired `postMedia` preset at 1024px longest edge, preserved aspect ratio, JPEG, and ~500KB; restricted the picker and retained explicit HEIC/HEIF rejection; added the 3MB confirmation backstop documentation.
+- Files/Scope Touched: `web/package.json`, `web/package-lock.json`, `web/lib/image-compression.ts`, `web/lib/crop-image.ts`, `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: `react-easy-crop` provides maintained crop interaction and keeps drag/zoom behavior out of hand-rolled UI logic. Cropping precedes compression to preserve source detail. A 512px avatar remains appropriate for circular profile rendering and the prior 250KB ceiling is retained because the smaller normalized canvas reduces dimensions; post media uses 500KB as a reasonable starting point for arbitrary 1024px JPEG images.
+- Notes: HEIC/HEIF remains deliberately unsupported. PNG/WebP transparency still flattens to white. Post-media compression is implemented only as a reusable preset and is not connected to any upload flow.
+- Verification: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed; `react-easy-crop` installed successfully and updated both package files. Browser crop interaction and actual image-size checks remain staging/manual verification items.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the user-provided `profile.jpg` as the default profile picture.
+- Changes Made: Located the provided image at the repository root, copied it unchanged to `web/public/media/profile.jpg`, and updated the shared `ProfileCard` to render `/media/profile.jpg` whenever `imageUrl` is null or empty.
+- Files/Scope Touched: `profile.jpg`, `web/public/media/profile.jpg`, `web/components/profile-card.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The user explicitly requested the supplied image rather than a generated replacement. The static public-media location makes it available to every Next.js avatar surface while preserving uploaded pictures when present.
+- Verification: Confirmed the source and copied image render identically; `git diff --check` passed. The generated replacement image was not used.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Enforce minimum profile-picture source size through cropper zoom limits.
+- Changes Made: Added pre-crop image dimension inspection with a clear rejection for source images whose shorter edge is below 128px; calculated and applied `react-easy-crop` `maxZoom` as `shorterEdge / 128`; synchronized the visible zoom range; and retained the avatar/post-media preset behavior from the previous task.
+- Files/Scope Touched: `web/lib/crop-image.ts`, `web/components/account-screens.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The minimum usable source size is enforced before the crop UI and by the cropper’s zoom ceiling, so invalid small crops cannot be selected and no post-crop rejection path is needed. No backend dimension validation or storage changes were added.
+- Verification: Targeted source review and TypeScript check completed; `git diff --check` passed. Manual browser verification of under-128 rejection and max-zoom crop dimensions remains pending.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the profile-picture crop tool into a modal popup.
+- Changes Made: Converted the inline crop surface into a fixed accessible dialog with a dimmed backdrop, title/help text, close/cancel controls, explicit Confirm crop action, and preserved `react-easy-crop` drag/zoom behavior.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Cropping is a focused intermediate step and should temporarily take over the interaction surface without expanding the Settings row layout. Backdrop click and explicit cancel both discard the unconfirmed crop.
+- Verification: `git diff --check` passed; targeted TypeScript verification remains to be run after this UI-only change.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Full verification pass for the profile-picture upload pipeline before R2 credentials.
+- Changes Made: Audited all seven requested areas against current code and migration state. Found and fixed a genuine frontend bypass: the profile-picture upload action could run while the crop modal was open, so it is now disabled and guarded until crop confirmation. Converted raw avatar renderers in chat, starred, Questions, and Directory surfaces to the shared `ProfileCard` fallback path.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/components/screens.tsx`, `web/components/starred-screen.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The upload sequence must be selection → validation/dimension check → crop → compression → presigned upload; allowing upload during crop violated that invariant. Shared `ProfileCard` ensures every active avatar surface uses the default image when no uploaded URL exists.
+- Notes: No server-side minimum dimension check was added; frontend-only enforcement remains intentional per scope. No R2 credentials, storage behavior, or post-media wiring changed.
+- Verification: Database is at `20260830_0010 (head)` with one profile-picture migration; one profile-picture migration file exists. `npx tsc --noEmit --incremental false` and `git diff --check` pass. The R2 service references all five env vars and enforces a 3MB confirmation ceiling. Missing R2 credentials remain the only runtime integration blocker.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Configure supplied staging R2 credentials locally.
+- Changes Made: Added the supplied account ID, Access Key ID, Secret Access Key, and `friink-staging` bucket name to ignored `api/.env`; left `R2_PUBLIC_URL` blank because the provided S3 endpoint is not a public object URL. The supplied Cloudflare Token Value was not stored because the boto3 S3 integration does not use it.
+- Files/Scope Touched: Ignored local `api/.env`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep staging credentials out of tracked files while configuring the values required by the existing R2 service. A public `r2.dev` URL or custom domain is still needed for persisted public profile-picture URLs.
+- Notes: Credentials were not printed or repeated in logs. If these credentials are shared outside the intended private context, revoke and rotate them in Cloudflare.
+- Verification: Confirmed the four supplied credential/bucket values load from `api/.env`; the service correctly reports configuration incomplete until `R2_PUBLIC_URL` is supplied.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Make the profile statistic number follow the label hover color.
 - Changes Made:
   - Added hover/focus inheritance for `.profile-stats a strong` so the complete number-and-label link changes to the brand color together.

@@ -6,6 +6,8 @@ export type AuthUser = {
   email: string;
   username: string;
   about: string;
+  profilePictureUrl: string | null;
+  profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
@@ -33,6 +35,8 @@ type ApiUser = {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  profile_picture_url: string | null;
+  profile_picture_updated_at: string | null;
 };
 
 type ApiPublicUser = {
@@ -40,6 +44,8 @@ type ApiPublicUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  profile_picture_url: string | null;
+  profile_picture_updated_at: string | null;
   is_private: boolean;
 };
 
@@ -84,6 +90,8 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
     about: '',
+    profilePictureUrl: null,
+    profilePictureUpdatedAt: null,
     isPrivate: false,
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
@@ -233,7 +241,7 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate'>> {
+export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
   });
@@ -244,6 +252,49 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
     username: response.username,
     about: response.about ?? '',
     isPrivate: response.is_private,
+    profilePictureUrl: response.profile_picture_url,
+    profilePictureUpdatedAt: response.profile_picture_updated_at,
+  };
+}
+
+export type ProfilePictureUpload = {
+  upload_url: string;
+  public_url: string;
+  object_key: string;
+};
+
+export async function uploadProfilePicture(accessToken: string, file: File): Promise<AuthUser> {
+  const upload = await requestApi<ProfilePictureUpload>('/auth/me/profile-picture/upload-url', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ content_type: file.type }),
+  });
+
+  const uploadResponse = await fetch(upload.upload_url, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!uploadResponse.ok) {
+    throw new AuthApiError(`Profile picture upload failed with ${uploadResponse.status}.`, uploadResponse.status);
+  }
+
+  const confirmed = await requestApi<{ profile_picture_url: string; profile_picture_updated_at: string }>(
+    '/auth/me/profile-picture/confirm',
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      authContext: 'authenticated_request',
+      body: JSON.stringify({ object_key: upload.object_key }),
+    },
+  );
+  const session = loadAuthSession();
+  if (!session) throw new AuthApiError('Please log in again.', 401);
+  return {
+    ...session.user,
+    profilePictureUrl: confirmed.profile_picture_url,
+    profilePictureUpdatedAt: confirmed.profile_picture_updated_at,
   };
 }
 
@@ -679,6 +730,8 @@ function mapApiUser(user: ApiUser): AuthUser {
     email: user.email,
     username: user.username,
     about: user.about ?? '',
+    profilePictureUrl: user.profile_picture_url,
+    profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,
     status: user.is_verified ? 'active' : 'pending_email_verification',
     emailVerifiedAt: user.is_verified ? user.updated_at : null,

@@ -72,6 +72,7 @@ export function ProfileScreen({
             handle={`@${user.username}`}
             tone="mint"
             initials={getInitials(user.name)}
+            imageUrl={user.profilePictureUrl}
           />
         </div>
 

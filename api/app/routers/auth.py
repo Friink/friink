@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -7,13 +9,27 @@ from sqlalchemy.orm import Session
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models.user import User
-from app.schemas.auth import LoginRequest, PublicUserResponse, RefreshResponse, SignupRequest, TokenResponse, UpdateCurrentUserRequest, UserResponse
+from app.schemas.auth import (
+    LoginRequest,
+    ProfilePictureConfirmRequest,
+    ProfilePictureConfirmResponse,
+    ProfilePictureUploadUrlRequest,
+    ProfilePictureUploadUrlResponse,
+    PublicUserResponse,
+    RefreshResponse,
+    SignupRequest,
+    TokenResponse,
+    UpdateCurrentUserRequest,
+    UserResponse,
+)
 from app.services.auth import authenticate_user, create_user, get_user_by_username, update_current_user, user_id_from_subject
 from app.services.auth_debug import log_auth_failure, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.security import TokenValidationError, create_access_token, create_refresh_token, decode_token
 from app.services.token_context import get_auth_flow_context
+from app.services.session_ops import commit, refresh
+from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -209,3 +225,64 @@ async def update_me(
     session: Session = Depends(get_session),
 ) -> User:
     return await update_current_user(session, current_user, payload)
+
+
+@router.post("/me/profile-picture/upload-url", response_model=ProfilePictureUploadUrlResponse)
+async def create_profile_picture_upload_url(
+    payload: ProfilePictureUploadUrlRequest,
+    current_user: User = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+) -> ProfilePictureUploadUrlResponse:
+    try:
+        upload = StorageService(settings).generate_upload_url(current_user.id, payload.content_type)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except StorageNotConfiguredError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    return ProfilePictureUploadUrlResponse(
+        upload_url=upload.upload_url,
+        public_url=upload.public_url,
+        object_key=upload.object_key,
+    )
+
+
+@router.post("/me/profile-picture/confirm", response_model=ProfilePictureConfirmResponse)
+async def confirm_profile_picture_upload(
+    payload: ProfilePictureConfirmRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> ProfilePictureConfirmResponse:
+    storage = StorageService(settings)
+    try:
+        storage.confirm_object(payload.object_key, current_user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except StorageNotConfiguredError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except StorageObjectError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+    previous_key = None
+    if current_user.profile_picture_url and settings.r2_public_url:
+        prefix = f"{settings.r2_public_url.rstrip('/')}/"
+        if current_user.profile_picture_url.startswith(prefix):
+            previous_key = current_user.profile_picture_url[len(prefix):]
+
+    updated_at = datetime.now(UTC)
+    current_user.profile_picture_url = f"{settings.r2_public_url.rstrip('/')}/{payload.object_key}"
+    current_user.profile_picture_updated_at = updated_at
+    await commit(session)
+    await refresh(session, current_user)
+
+    if previous_key and previous_key != payload.object_key:
+        try:
+            storage.delete_object(previous_key, current_user.id)
+        except StorageObjectError:
+            # The new profile picture is already authoritative; stale cleanup is best effort.
+            pass
+
+    return ProfilePictureConfirmResponse(
+        profile_picture_url=current_user.profile_picture_url,
+        profile_picture_updated_at=current_user.profile_picture_updated_at,
+    )

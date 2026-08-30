@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 
+const DEFAULT_PROFILE_IMAGE = '/media/profile.jpg';
+
 function getInitials(value: string) {
   return (
     value
@@ -22,12 +24,16 @@ type ProfileCardProps = {
   initials?: string;
   date?: string;
   href?: string;
+  imageUrl?: string | null;
 };
 
-export function ProfileCard({ name, handle, tone = 'mint', initials, date, href }: ProfileCardProps) {
+export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl }: ProfileCardProps) {
+  const resolvedImageUrl = imageUrl || DEFAULT_PROFILE_IMAGE;
   const content = (
     <div className="profile-card">
-      <span className={`profile-card-avatar user-avatar avatar-${tone}`}>{initials ?? getInitials(name)}</span>
+      <span className={`profile-card-avatar user-avatar avatar-${tone} profile-card-avatar-image`}>
+        <img src={resolvedImageUrl} alt="" />
+      </span>
       <div className="profile-card-info">
         <strong>{name}</strong>
         <span className="profile-card-handle">{handle}</span>

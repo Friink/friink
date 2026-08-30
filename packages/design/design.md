@@ -153,7 +153,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Purpose**: Canonical identity block displaying avatar, display name, handle, and optional date. Whenever a user's profile identity is shown in app content or app lists, use `ProfileCard`; if the identity is meant to open a profile, pass `href` so the whole identity block links to that profile route.
 - **Fixed Internal Layout Order**:
   1. Horizontal flex container (`gap: 0.75rem`, `align-items: center`).
-  2. Avatar (`.profile-card-avatar`): `2.5rem` x `2.5rem`, circular (`50%` radius), displaying initials (derived from name via `getInitials(name)`, max 2 uppercase chars, fallback `'FR'`). Tinted with `tone` prop (`coral`, `sage`, `sun`, `mint`).
+  2. Avatar (`.profile-card-avatar`): `2.5rem` x `2.5rem`, circular (`50%` radius). Render `imageUrl` when present; otherwise render the shared `/media/profile.jpg` default image as a full-bleed `object-fit: cover` image. The `tone` prop remains available for surfaces that later opt into a tinted non-image avatar.
   3. Info Cluster (`.profile-card-info`): Vertical column (`align-items: flex-start`, `gap: 0.12rem`).
      - Display Name (`strong`): `0.95rem`, `font-weight: 700`, `color: var(--color-ink)`.
      - Handle (`span.profile-card-handle`): `0.8rem`, `color: var(--color-muted)`.
@@ -166,6 +166,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `initials?: string` (optional, falls back to computed initials)
   - `date?: string` (optional)
   - `href?: string` (optional; when provided, wraps the whole card in a profile link)
+  - `imageUrl?: string | null` (optional; profile picture URL, with `/media/profile.jpg` fallback when null)
 
 ### 2. NavigationMenu (`web/components/navigation-menu.tsx`)
 - **Purpose**: Reusable contextual popover menu for page-level options, triggered by the three-dot overflow button in `NavigationBar`.
@@ -316,6 +317,9 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Privacy Toggle Rule**: The Private Profile toggle saves immediately through the API on click and reverts if saving fails.
 - **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
+- **Profile Picture Rule**: Settings > Profile includes an optional profile-picture picker with a circular preview, explicit choose/upload controls, and visible loading/error feedback. Uploads remain disabled until a file is selected; the existing default avatar remains the fallback when no picture URL exists.
+- **Profile Picture Processing Rule**: The picker accepts JPG/JPEG, PNG, and WebP inputs, rejects source images whose shorter edge is below 128px before opening the cropper, and presents the draggable/zoomable square crop step in an accessible modal dialog with backdrop, title, cancel, and confirm controls. The cropper maximum zoom is calculated as `shorterEdge / 128`. It then displays a processing state while normalizing the crop to JPEG at the shared avatar compression preset before upload. HEIC/HEIF and other formats are rejected with a specific message; transparent pixels flatten to white. The avatar preset targets 512px square and ~250KB without upscaling smaller crops.
+- **Post Media Compression Rule**: The shared compression utility also exposes a `postMedia` preset targeting a maximum 1024px longest edge, preserved aspect ratio, JPEG output, and ~500KB. It is preparation only and must not be wired into a post-media upload flow until that flow exists.
 
 ### 13. Profile Identity Rows (`web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`)
 - **Purpose**: List-style surfaces that show people or profile actors must reuse `ProfileCard` for the visible identity block instead of separately composing avatar, display name, and handle.

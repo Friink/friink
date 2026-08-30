@@ -87,6 +87,8 @@ class UserResponse(BaseModel):
     username: str
     display_name: str | None
     about: str | None
+    profile_picture_url: str | None
+    profile_picture_updated_at: datetime | None
     is_private: bool
     date_of_birth: date
     location: str | None
@@ -102,6 +104,8 @@ class PublicUserResponse(BaseModel):
     username: str
     display_name: str | None
     about: str | None
+    profile_picture_url: str | None
+    profile_picture_updated_at: datetime | None
     is_private: bool
 
     model_config = {"from_attributes": True}
@@ -116,3 +120,22 @@ class TokenResponse(BaseModel):
 class RefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class ProfilePictureUploadUrlRequest(BaseModel):
+    content_type: str = Field(min_length=1, max_length=100)
+
+
+class ProfilePictureUploadUrlResponse(BaseModel):
+    upload_url: str
+    public_url: str
+    object_key: str
+
+
+class ProfilePictureConfirmRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=512)
+
+
+class ProfilePictureConfirmResponse(BaseModel):
+    profile_picture_url: str
+    profile_picture_updated_at: datetime

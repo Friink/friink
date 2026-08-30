@@ -67,7 +67,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
-        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} />
+        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} imageUrl={user.profilePictureUrl} />
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">

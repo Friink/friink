@@ -52,6 +52,8 @@ export function ProfileClient({ username }: ProfileClientProps) {
           username: publicUser.username,
           about: publicUser.about,
           isPrivate: publicUser.isPrivate,
+          profilePictureUrl: publicUser.profilePictureUrl,
+          profilePictureUpdatedAt: publicUser.profilePictureUpdatedAt,
           email: `${publicUser.username}@friink.local`,
         });
         setProfileStatus('ready');

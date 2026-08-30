@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, type AuthUser } from '@/lib/auth';
+import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
 import type { ToastMessage } from '@/components/toast-stack';
+import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
+import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
+import Cropper from 'react-easy-crop';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'privacy';
@@ -27,6 +30,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [displayName, setDisplayName] = useState(user.name);
   const [about, setAbout] = useState(user.about);
   const [isPrivate, setIsPrivate] = useState(user.isPrivate);
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(user.profilePictureUrl);
+  const [isUploadingProfilePicture, setIsUploadingProfilePicture] = useState(false);
+  const [isProcessingProfilePicture, setIsProcessingProfilePicture] = useState(false);
+  const [cropSource, setCropSource] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [maxZoom, setMaxZoom] = useState(3);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropPixels | null>(null);
+  const profilePictureInputRef = useRef<HTMLInputElement | null>(null);
   const [usernameStatus, setUsernameStatus] = useState('');
   const [emailStatus, setEmailStatus] = useState('');
   const [nameStatus, setNameStatus] = useState('');
@@ -42,11 +55,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setDisplayName(user.name);
     setAbout(user.about);
     setIsPrivate(user.isPrivate);
+    setProfilePicturePreview(user.profilePictureUrl);
+    setProfilePictureFile(null);
     setUsernameStatus('');
     setEmailStatus('');
     setNameStatus('');
     setAboutStatus('');
-  }, [user.username, user.email, user.name, user.about, user.isPrivate]);
+  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl]);
 
   const hasUsernameChanged = username !== user.username;
   const isUsernameValid = USERNAME_PATTERN.test(username);
@@ -219,6 +234,86 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     }
   }
 
+  async function handleProfilePictureSelected(file: File | undefined) {
+    if (!file) return;
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      onToast?.(validationError);
+      return;
+    }
+    setIsProcessingProfilePicture(true);
+    try {
+      const dimensions = await getImageDimensions(file);
+      const shorterEdge = Math.min(dimensions.width, dimensions.height);
+      if (shorterEdge < 128) {
+        onToast?.('This image is too small — please choose a photo at least 128x128px.');
+        return;
+      }
+      setProfilePictureFile(file);
+      const sourceUrl = URL.createObjectURL(file);
+      setCropSource(sourceUrl);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setMaxZoom(Math.max(1, shorterEdge / 128));
+      setCroppedAreaPixels(null);
+      setProfilePicturePreview(sourceUrl);
+    } catch (error) {
+      onToast?.(error instanceof Error ? error.message : 'This image could not be read. Please choose another image.');
+    } finally {
+      setIsProcessingProfilePicture(false);
+    }
+  }
+
+  async function handleCropConfirm() {
+    if (!cropSource || !croppedAreaPixels || !profilePictureFile) return;
+    setIsProcessingProfilePicture(true);
+    try {
+      const croppedFile = await createCroppedImage(cropSource, croppedAreaPixels, profilePictureFile.name);
+      setProfilePictureFile(croppedFile);
+      setProfilePicturePreview(URL.createObjectURL(croppedFile));
+      setCropSource(null);
+      onToast?.('Crop confirmed. Ready to upload.', 'success');
+    } catch (error) {
+      onToast?.(error instanceof Error ? error.message : 'Could not crop this image.');
+    } finally {
+      setIsProcessingProfilePicture(false);
+    }
+  }
+
+  function handleCropCancel() {
+    setCropSource(null);
+    setProfilePictureFile(null);
+    setProfilePicturePreview(user.profilePictureUrl);
+  }
+
+  async function handleProfilePictureUpload() {
+    if (!profilePictureFile || cropSource || isUploadingProfilePicture) return;
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update your profile picture.');
+      return;
+    }
+    setIsProcessingProfilePicture(true);
+    try {
+      const compressedFile = await compressImage(profilePictureFile, 'avatar');
+      setProfilePicturePreview(URL.createObjectURL(compressedFile));
+      setIsProcessingProfilePicture(false);
+      setIsUploadingProfilePicture(true);
+      const updatedUser = await uploadProfilePicture(session.accessToken, compressedFile);
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setProfilePictureFile(null);
+      setProfilePicturePreview(updatedSession.user.profilePictureUrl);
+      onToast?.('Profile picture updated.', 'success');
+    } catch (error) {
+      onToast?.(error instanceof ImageCompressionError || error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not upload profile picture.');
+    } finally {
+      setIsProcessingProfilePicture(false);
+      setIsUploadingProfilePicture(false);
+    }
+  }
+
   return (
     <PageSurface className="simple-screen settings-screen">
       <div className="settings-header" />
@@ -297,6 +392,61 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       {activeTab === 'profile' && (
         <div className="settings-panel">
           <div className="settings-section">
+            <ListRow
+              avatar={<span className="settings-icon"><i className="fa-solid fa-camera" aria-hidden="true" /></span>}
+              title="Profile picture"
+              subtitle="Choose an optional JPG, PNG, or WebP picture for your profile."
+              className="settings-row settings-row-expanded"
+            >
+              <div className="profile-picture-picker">
+                <div className="profile-picture-preview" aria-hidden="true">
+                  {profilePicturePreview ? <img src={profilePicturePreview} alt="" /> : <i className="fa-regular fa-user" />}
+                </div>
+                <div className="profile-picture-controls">
+                  <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
+                  <button className="settings-secondary-button" type="button" onClick={() => profilePictureInputRef.current?.click()}>Choose image</button>
+                  <button className="settings-update-button profile-picture-upload" type="button" disabled={!profilePictureFile || cropSource !== null || isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleProfilePictureUpload}>
+                    <i className={isProcessingProfilePicture || isUploadingProfilePicture ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-check'} aria-hidden="true" />
+                    <span className="sr-only">{isProcessingProfilePicture ? 'Processing profile picture' : isUploadingProfilePicture ? 'Uploading profile picture' : 'Upload profile picture'}</span>
+                  </button>
+                </div>
+                {cropSource && (
+                  <div className="profile-picture-crop-modal" role="dialog" aria-modal="true" aria-labelledby="profile-picture-crop-title" onMouseDown={(event) => { if (event.target === event.currentTarget) handleCropCancel(); }}>
+                    <div className="profile-picture-crop-dialog">
+                      <div className="profile-picture-crop-header">
+                        <h2 id="profile-picture-crop-title">Crop profile picture</h2>
+                        <button className="profile-picture-crop-close" type="button" aria-label="Cancel crop" onClick={handleCropCancel}>×</button>
+                      </div>
+                      <p className="profile-picture-crop-help">Drag the image and adjust the zoom to choose a square crop.</p>
+                      <div className="profile-picture-crop-stage">
+                        <Cropper
+                          image={cropSource}
+                          crop={crop}
+                          zoom={zoom}
+                          maxZoom={maxZoom}
+                          aspect={1}
+                          cropShape="rect"
+                          showGrid
+                          onCropChange={setCrop}
+                          onZoomChange={setZoom}
+                          onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+                        />
+                      </div>
+                      <label className="profile-picture-zoom">
+                        <span>Zoom</span>
+                        <input type="range" min={1} max={maxZoom} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
+                      </label>
+                      <div className="profile-picture-crop-actions">
+                        <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture} onClick={handleCropCancel}>Cancel</button>
+                        <button className="settings-update-button" type="button" disabled={isProcessingProfilePicture} onClick={handleCropConfirm}>{isProcessingProfilePicture ? 'Cropping...' : 'Confirm crop'}</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <span className="settings-field-message" role="status">{isProcessingProfilePicture ? 'Processing image...' : isUploadingProfilePicture ? 'Uploading profile picture...' : cropSource ? 'Confirm your crop to continue.' : profilePictureFile ? 'Ready to upload.' : 'No picture selected.'}</span>
+              </div>
+            </ListRow>
+
             <ListRow
               avatar={<span className="settings-icon"><i className="fa-solid fa-signature" aria-hidden="true" /></span>}
               title="Name"
