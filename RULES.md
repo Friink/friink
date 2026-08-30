@@ -27,6 +27,22 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
+### Rule: Contextual Header Lists Use Shared Dropdown
+- **What:** Floating Search and Notifications lists must use the shared `ContextualDropdown` shell for their container, list spacing, footer treatment, and empty state. The shared empty state displays `Nothing to show.` with centered whitespace; list-specific row content and footer actions may remain specialized.
+- **Edge cases:** Search may show fewer than four query-specific suggestions, Notifications may show fewer than four recent items, and zero unread notifications must hide the count pill while retaining the All Notifications action.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/contextual-dropdown.tsx`, `web/components/header.tsx`, `web/app/globals.css`, `packages/design/design.md`
+- **Since:** 2026-08-30 (Asia/Karachi)
+
+### Rule: Public Post URLs Use Public IDs
+- **What:** Post detail URLs use the author username, an on-the-fly slug from the first eight content words capped at 64 characters, and an 8-character random mixed-case alphanumeric `public_id`. Empty slugs omit the slug text.
+- **Edge cases:** The username and slug are cosmetic; the trailing `public_id` is authoritative for lookup. The UUID primary key and all UUID foreign-key relationships remain unchanged. Existing rows receive IDs through the Alembic backfill migration.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/models/post.py`, `api/app/services/post_slug.py`, `api/app/routers/posts.py`, `api/alembic/versions/20260830_0009_add_public_id_to_posts.py`, `web/lib/post-path.ts`
+- **Since:** 2026-08-30 (Asia/Karachi)
+
 ## Authentication & Accounts
 
 ### Rule: Signup Creates Active Public Accounts

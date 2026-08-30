@@ -2,24 +2,28 @@
 
 A place for humans.
 
-Friink is a social microblogging and verified-professional-discovery platform for the
+Friink is a social microblogging and professional discovery platform for the
 Pakistani mental wellness space, with regional and global ambitions. It combines a
 community/feed layer with a professional directory. There is no in-platform booking,
 calendar, or service marketplace — that is permanently out of scope.
 
 ## Stack
 
-- **Web:** Next.js 14, React 18, TypeScript, Font Awesome — hosted on Vercel
-- **API:** FastAPI, Uvicorn — hosted on Vercel (separate project)
-- **DB:** Postgres via Neon
-- **ORM / Migrations:** SQLAlchemy (sync sessions via psycopg3), Alembic
-- **Auth & Session:** PyJWT access tokens + httpOnly refresh cookie; bcrypt password hashing
-- **Validation / Settings:** Pydantic, pydantic-settings, email-validator
-- **Testing:** pytest, pytest-asyncio (API); Next.js build/type checks (web)
-- **Search & Indexing:** Postgres, for now
-- **Mobile client, object storage, payments, push notifications, notification provider:** TBD
-
-See `stack.md` for the full, current source of truth on infrastructure.
+- **Web client:** Next.js 14, React 18, TypeScript, Font Awesome — hosted on Vercel
+- **Mobile client:** TBD
+- **API:** FastAPI with Uvicorn — hosted on Vercel as a separate project
+- **Database:** PostgreSQL via Neon
+- **ORM / migrations:** SQLAlchemy with synchronous `Session`/psycopg3 connections, Alembic
+- **Object storage:** TBD; post media currently uses minimal database placeholders
+- **Authentication and session:** FastAPI routes, PyJWT access tokens, HTTP-only refresh-token cookie, bcrypt password hashing
+- **Validation and settings:** Pydantic, pydantic-settings, email-validator
+- **Notifications:** In-app notification records and API endpoints are implemented; email delivery provider remains TBD
+- **Payments:** TBD
+- **Search and indexing:** PostgreSQL for now
+- **Push notifications:** TBD
+- **Hosting:** Two Vercel projects, one deployed from `web/` and one from `api/` (`api/api/index.py`)
+- **Local development:** `localhost/localhost.ps1`, Next.js on port 3000, FastAPI on port 8000
+- **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
 
 ## Local Development
 
@@ -55,7 +59,7 @@ This repo is governed by a small set of living documents rather than a static PR
 **The Product Requirements Document is not the source of truth for what's built —
 these files, and the live implementation, are:**
 
-- **`rules.md`** — active product/business logic rules, organized by feature area.
+- **`RULES.md`** — active product/business logic rules, organized by feature area.
   Read before changing behavior.
 - **`packages/design/design.md`** — binding design tokens and component contracts.
   Read before any visual/UI/layout change.
@@ -63,21 +67,45 @@ these files, and the live implementation, are:**
   at the top. Read first for project history and current state.
 - **`AGENTLOG.md`** — detailed per-change entries (agent, model, prompt summary,
   files touched, reasoning). Updated alongside every `CHANGELOG.md` entry.
-- **`stack.md`** — current infrastructure and tooling stack.
 
 When these were prepared, this set was considered sufficient to fully rebuild Friink
 from scratch.
 
-## Contributing (Agents & Humans)
+## For AI Agents — Keep Documentation Current
 
-1. Read `CHANGELOG.md` (current state) and `AGENTLOG.md` (recent detailed context)
-   before starting any task.
-2. Read `rules.md` before changing product/business behavior.
-3. Read `packages/design/design.md` before any visual, layout, or styling change.
-4. Keep reusable behavior and layout fixes at the shared component/contract level
-   whenever the behavior appears in more than one place. Do not use inline styles,
-   route-only spacing patches, or page-specific quick fixes for global UI behavior.
-5. After completing a change, append a dated entry to `CHANGELOG.md` and a
-   corresponding detailed entry to `AGENTLOG.md`. Do not remove old rule entries in
-   `rules.md` — mark them Deprecated instead.
-6. Test and commit before switching agents or handing off work.
+### Always do this
+
+- Read `CHANGELOG.md` and `AGENTLOG.md` before starting any task.
+- Read `RULES.md` before changing product or business behavior.
+- Read `packages/design/design.md` before making any visual, layout, or styling change.
+- Keep reusable behavior and layout fixes at the shared component or documented
+  contract level. Do not use inline styles, route-only patches, or page-specific
+  quick fixes for global UI behavior.
+
+### After finishing a task
+
+- Every task or prompt processed must update the project documentation before the task
+  is considered complete — no change is too minor to log. Append a dated entry to
+  `CHANGELOG.md` and a corresponding detailed entry to `AGENTLOG.md` for every task.
+
+- Update `packages/design/design.md` as needed whenever a change adds, removes, or
+  alters a visual token, component contract, or shared UI pattern that future agents
+  need to know in order to build consistent UI. Changes that do not alter a visual
+  contract do not require a design entry; do not add noise entries for non-visual work.
+
+- Update `RULES.md` as needed whenever a change adds, removes, or alters product,
+  business, or platform behavior, such as monetization rules, verification requirements,
+  or privacy constraints. Pure implementation details, refactors, and bug fixes that do
+  not change platform behavior do not require a rules entry. Never delete old rules;
+  mark superseded rules as Deprecated instead.
+
+- Read `README.md` once at the start of each work session. For any task involving the
+  stack, infrastructure, environment setup, or deployment configuration, check this
+  README first because its Stack section is the authoritative source. A full README
+  re-read is not required before every task.
+
+- Commit before switching agents or handing off work. Do not run a full build or
+  test suite automatically as a matter of course — verification is done manually.
+  Only run a targeted check (for example, a single affected test or a type-check on
+  changed files) if the task specifically requires it or you are uncertain a change
+  compiles.

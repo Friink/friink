@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, query_expression, relationship
 
 from app.db import Base
+from app.services.post_ids import generate_public_id
 
 
 class PostKind(str, PyEnum):
@@ -27,6 +28,7 @@ class Post(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    public_id: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True, default=generate_public_id)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     kind: Mapped[PostKind] = mapped_column(
         Enum(PostKind, name="post_kind", values_callable=enum_values),

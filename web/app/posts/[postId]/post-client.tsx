@@ -7,6 +7,7 @@ import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
 import { clearAuthSession, createPost, getPost, listPostReplies, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
+import { getPostPathForPost } from '@/lib/post-path';
 
 type PostClientProps = {
   postId: string;
@@ -28,6 +29,8 @@ function getInitials(value: string) {
 function mapApiPost(post: ApiPost): Post {
   return {
     id: post.id,
+    publicId: post.public_id,
+    slug: post.slug,
     kind: post.kind,
     name: post.author_display_name || post.author_username,
     handle: `@${post.author_username}`,
@@ -112,7 +115,7 @@ export function PostClient({ postId }: PostClientProps) {
       if (mapped.kind === 'reply') {
         setReplies((current) => [...current, mapped]);
       } else {
-        router.push(`/posts/${mapped.id}`);
+        router.push(getPostPathForPost(mapped));
       }
       setDraft('');
       setComposeContext(null);

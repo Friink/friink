@@ -1,6 +1,6 @@
 import { notFound, permanentRedirect } from 'next/navigation';
 import { fetchApi } from '@/lib/api-origin';
-import { getPostPath } from '@/lib/post-path';
+import { getPostPath, getPublicIdFromPostSegment } from '@/lib/post-path';
 import { PostClient } from './post-client';
 
 type PostPageProps = {
@@ -12,7 +12,10 @@ type PostPageProps = {
 };
 
 type RoutePostResponse = {
+  id: string;
   author_username: string;
+  public_id: string;
+  slug: string;
 };
 
 function normalizeUsername(value: string) {
@@ -41,8 +44,12 @@ function buildQueryString(searchParams: PostPageProps['searchParams']) {
 }
 
 export default async function PostPage({ params, searchParams }: PostPageProps) {
+  const publicId = getPublicIdFromPostSegment(params.postId);
+  if (!publicId) notFound();
+
+  let post: RoutePostResponse;
   try {
-    const response = await fetchApi(`/posts/${encodeURIComponent(params.postId)}`, {
+    const response = await fetchApi(`/posts/public/${encodeURIComponent(publicId)}`, {
       cache: 'no-store',
     });
 
@@ -50,16 +57,16 @@ export default async function PostPage({ params, searchParams }: PostPageProps) 
       notFound();
     }
 
-    const post = (await response.json()) as RoutePostResponse;
-    const canonicalUsername = normalizeUsername(post.author_username);
-    const requestedUsername = normalizeUsername(params.username);
-
-    if (requestedUsername !== canonicalUsername) {
-      permanentRedirect(`${getPostPath(post.author_username, params.postId)}${buildQueryString(searchParams)}`);
-    }
+    post = (await response.json()) as RoutePostResponse;
   } catch {
     notFound();
   }
 
-  return <PostClient postId={params.postId} />;
+  const canonicalPath = getPostPath(post.author_username, post.slug, post.public_id);
+  const requestedPath = `/${encodeURIComponent(params.username)}/${encodeURIComponent(params.postId)}`;
+  if (requestedPath.toLowerCase() !== canonicalPath.toLowerCase()) {
+    permanentRedirect(`${canonicalPath}${buildQueryString(searchParams)}`);
+  }
+
+  return <PostClient postId={post.id} />;
 }

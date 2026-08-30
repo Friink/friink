@@ -249,6 +249,8 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
 
 export type ApiPost = {
   id: string;
+  public_id: string;
+  slug: string;
   user_id: string;
   kind: 'post' | 'quote' | 'reply';
   author_username: string;
@@ -382,6 +384,15 @@ export async function getFeedContext(postId: string, input: { beforeLimit?: numb
 export async function getPost(postId: string): Promise<ApiPost> {
   const session = loadAuthSession();
   return requestApi<ApiPost>(`/posts/${encodeURIComponent(postId)}`, {
+    method: 'GET',
+    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
+    authContext: session ? 'authenticated_request' : undefined,
+  });
+}
+
+export async function getPostByPublicId(publicId: string): Promise<ApiPost> {
+  const session = loadAuthSession();
+  return requestApi<ApiPost>(`/posts/public/${encodeURIComponent(publicId)}`, {
     method: 'GET',
     headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
     authContext: session ? 'authenticated_request' : undefined,

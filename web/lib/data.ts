@@ -1,5 +1,7 @@
 export type Post = {
   id: string;
+  publicId?: string;
+  slug?: string;
   kind?: 'post' | 'quote' | 'reply';
   name: string;
   handle: string;

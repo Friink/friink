@@ -244,6 +244,9 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       case 'notifications':
         router.push('/notifications');
         break;
+      case 'search':
+        router.push('/search');
+        break;
       default:
         break;
     }
@@ -446,6 +449,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
+      publicId: post.public_id,
+      slug: post.slug,
       kind: post.kind,
       name: post.author_display_name || post.author_username,
       handle: `@${post.author_username}`,
@@ -704,6 +709,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
           notificationCount={unreadNotificationCount}
+          notifications={notifications}
         />
 
         <section className="main-panel">

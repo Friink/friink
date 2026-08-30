@@ -10,6 +10,8 @@ type PostPageProps = {
 
 type RedirectPostResponse = {
   author_username: string;
+  public_id: string;
+  slug: string;
 };
 
 export default async function PostPage({ params }: PostPageProps) {
@@ -23,7 +25,7 @@ export default async function PostPage({ params }: PostPageProps) {
     }
 
     const post = (await response.json()) as RedirectPostResponse;
-    redirect(getPostPath(post.author_username, params.postId));
+    redirect(getPostPath(post.author_username, post.slug, post.public_id));
   } catch {
     notFound();
   }

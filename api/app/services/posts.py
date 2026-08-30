@@ -13,6 +13,8 @@ from app.models.post import Post, PostKind
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh
+from app.services.post_slug import generate_post_slug
+from app.services.post_ids import generate_public_id
 
 DEFAULT_FEED_LIMIT = 20
 MAX_FEED_LIMIT = 100
@@ -227,6 +229,13 @@ async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:
     return result.scalar_one_or_none()
 
 
+async def get_post_by_public_id(session: Session, public_id: str) -> Post | None:
+    result = session.execute(
+        select(Post).options(*post_load_options()).where(Post.public_id == public_id, Post.deleted_at.is_(None))
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_post_for_response(session: Session, post_id: uuid.UUID) -> Post:
     result = session.execute(
         select(Post)
@@ -260,6 +269,8 @@ def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:
 def serialize_post(post: Post, viewer: User | None = None, session: Session | None = None) -> PostResponse:
     return PostResponse(
         id=post.id,
+        public_id=post.public_id or generate_public_id(),
+        slug=generate_post_slug(post.content),
         user_id=post.user_id,
         kind=PostKindSchema(post.kind.value),
         author_username=post.user.username,

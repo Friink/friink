@@ -11,7 +11,7 @@ from app.routers.auth import get_current_user
 from app.services.security import decode_token
 from app.services.auth import user_id_from_subject
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostResponse
-from app.services.posts import can_view_post, create_post, get_feed_context, get_newer_posts, get_post, get_post_for_response, get_post_replies, get_posts_page, serialize_post
+from app.services.posts import can_view_post, create_post, get_feed_context, get_newer_posts, get_post, get_post_by_public_id, get_post_for_response, get_post_replies, get_posts_page, serialize_post
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
@@ -65,6 +65,14 @@ async def get_post_context(
     if not context:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
     return context
+
+
+@router.get("/public/{public_id}", response_model=PostResponse)
+async def get_public_post_route(public_id: str, current_user: User | None = Depends(get_optional_current_user), session: Session = Depends(get_session)) -> PostResponse:
+    post = await get_post_by_public_id(session, public_id)
+    if not post or not can_view_post(session, current_user, post):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
+    return serialize_post(post, viewer=current_user, session=session)
 
 
 @router.get("/{post_id}", response_model=PostResponse)

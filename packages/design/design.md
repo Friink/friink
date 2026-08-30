@@ -39,7 +39,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
-  - Notifications (`fa-bell` → `/notifications`, with unread count badge clamped to `99+`)
+  - Notifications (`fa-bell`) opens a floating recent-notifications dropdown with up to four items, a green unread indicator on the bell, an unread-count pill, and an `All Notifications` link to `/notifications`.
 
 ## Feed Behavior
 
@@ -252,9 +252,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Desktop `Header`**:
   - Fixed top bar (`height: 3.75rem`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search icon kept on the right as the submit button and a close (`fa-xmark`) button beside it. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, and shows up to four rows before scrolling.
+  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search submit icon before the close (`fa-xmark`) button. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown uses the shared `ContextualDropdown`, appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, shows up to four rows, and includes an `Open Search` link to `/search`; it stays naturally sized without a scrollbar when four or fewer rows are present.
   - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.
-  - Notifications bell button (`fa-bell`) matches search icon height and opens `/notifications`, with a pilled numeric unread badge from `1` to `99`, then `99+`; no badge is shown at `0`. Header spacing must reserve room so the pilled badge is not clipped at the viewport edge.
+  - Notifications bell button (`fa-bell`) matches search icon height, stays aligned at the right edge of the header actions, and opens a floating dropdown anchored to the bell. The dropdown shows up to four recent notifications, an `x new` pill using the actual unread count (`99+` when above 99), and an `All Notifications` link to `/notifications`. The bell shows a small green dot only when unread notifications exist; the dot is hidden at `0`. Header spacing must reserve room so the indicator is not clipped at the viewport edge.
+  - Both header dropdowns use the shared `ContextualDropdown`, including the same bordered footer-bar treatment for `Open Search` and `All Notifications`, and render a centered `Nothing to show.` empty state with whitespace when their item list is empty.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
 - **Mobile / Sub-page `NavigationBar`**:
   - Height is `2rem`.

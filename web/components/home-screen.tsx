@@ -51,6 +51,8 @@ function getInitials(value: string) {
 function mapApiPost(post: ApiPost): Post {
   return {
     id: post.id,
+    publicId: post.public_id,
+    slug: post.slug,
     kind: post.kind,
     name: post.author_display_name || post.author_username,
     handle: `@${post.author_username}`,

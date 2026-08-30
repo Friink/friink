@@ -42,6 +42,141 @@
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
  - Model: GPT-5
+ - Prompt Summary: Restore the header search action order and add a floating recent-notifications dropdown.
+ - Changes:
+   - Updated `web/components/header.tsx` so the search submit icon appears before the close icon.
+   - Added a shared notification dropdown anchored to the right-aligned bell, rendering up to four recent notification items, an unread-count pill, and an `All Notifications` link.
+   - Restored the green unread dot on the bell and passed existing notification items from `AppShell` into `Header`.
+   - Added shared dropdown and indicator styles in `web/app/globals.css`.
+   - Updated `packages/design/design.md` with the Header notification and search contracts, and synchronized `CHANGELOG.md`.
+ - Files:
+   - web/components/header.tsx
+   - web/components/app-shell.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The existing notification count was attached directly to the bell and the bell navigated away immediately. Keeping the existing notification state in `AppShell` while moving the presentation into the shared `Header` supports a compact preview flow without duplicating notification data or changing the full Notifications screen.
+ - Notes:
+   - Notification items remain read/unread until the user opens the full Notifications screen; opening the dropdown does not mark them read.
+ - Verified Working?: Yes — `npx tsc --noEmit` passed in `web`, and the live dropdown/search behavior was confirmed at `http://localhost:3000/muflah`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Remove the search-dropdown scrollbar, add Open Search, and hide the zero-unread notification pill.
+ - Changes:
+   - Removed the fixed search dropdown height and vertical overflow so four or fewer suggestions render without a scrollbar.
+   - Added an `Open Search` footer action and a new `/search` route backed by `AppShellRoute`.
+   - Updated `AppShell.navigateTo` to route the Search screen to `/search`.
+   - Made the notification dropdown footer count pill render only when unread count is at least 1; empty notification lists now remain visually empty while retaining the All Notifications link.
+   - Updated `packages/design/design.md` and synchronized `CHANGELOG.md`.
+ - Files:
+   - web/components/header.tsx
+   - web/components/app-shell.tsx
+   - web/app/search/page.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The dropdowns should size to their actual content rather than reserve a scroll container for a maximum of four short rows. The notification count is meaningful only when positive, while the bell dot remains the unread-state indicator.
+ - Notes:
+   - Existing query-specific search suggestions may intentionally show fewer than four rows.
+ - Verified Working?: Yes — localhost confirmed four search options with `overflow-y: visible`, Open Search routing to `/search`, and no notification count pill or empty placeholder at zero unread/recent items. `npx tsc --noEmit --incremental false` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Consolidate header search and notification dropdowns into one contextual component and add a shared empty state.
+ - Changes:
+   - Added `web/components/contextual-dropdown.tsx` as the shared dropdown shell for list content, optional footers, and empty-state handling.
+   - Updated `web/components/header.tsx` so search suggestions and recent notifications both render through `ContextualDropdown`.
+   - Removed separate notification list overflow behavior and unified the dropdown container/list/footer styling in `web/app/globals.css`.
+   - Added centered whitespace with the exact `Nothing to show.` message when a dropdown has no items.
+   - Updated `packages/design/design.md` and synchronized `CHANGELOG.md`.
+ - Files:
+   - web/components/contextual-dropdown.tsx
+   - web/components/header.tsx
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: Search and notification panels share the same contextual floating-list behavior, so one reusable shell avoids duplicated empty-state and container markup while preserving the notifications panel's preferred cosmetic treatment through shared base styles.
+ - Notes:
+   - Search and notification row content remains specialized, and both dropdowns still retain their own anchored placement and footer actions.
+ - Verified Working?: Yes — localhost confirmed both dropdowns use `contextual-dropdown`; search has four rows without a scrollbar, and the empty notification state shows centered `Nothing to show.` whitespace. `npx tsc --noEmit --incremental false` passed in `web`.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Match the search dropdown footer styling to the notifications footer.
+ - Changes:
+   - Scoped search suggestion row CSS to direct list-row buttons so the `Open Search` footer action no longer inherits row height and padding.
+   - Unified `Open Search` and `All Notifications` under the shared contextual footer-link styling.
+   - Updated `packages/design/design.md` and synchronized `CHANGELOG.md`.
+ - Files:
+   - web/app/globals.css
+   - packages/design/design.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The shared dropdown shell was correct, but a broad search button selector made its footer bar taller and visually different from Notifications. Scoping the selector preserves identical footer geometry while keeping search rows specialized.
+ - Notes:
+   - No component structure or build output was changed in this styling-only correction.
+ - Verified Working?: Yes — refreshed localhost and confirmed the shared footer control metrics no longer receive search-row styles; `git diff --check` passed.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Document the shared ContextualDropdown rule in RULES.md.
+ - Changes:
+   - Added an active Web Architecture rule requiring floating Search and Notifications lists to use `ContextualDropdown` for shared container, spacing, footer, and empty-state behavior.
+   - Documented the permitted list-specific row/footer differences and the zero-unread notification count-pill behavior.
+   - Synchronized `CHANGELOG.md`.
+ - Files:
+   - RULES.md
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The new reusable dropdown component is an architectural ownership rule, not only a visual detail, so it belongs in RULES.md alongside the existing component-level UI rule.
+ - Notes:
+   - Documentation-only update; no runtime source changed in this pass.
+ - Verified Working?: Yes — documentation changes applied and `git diff --check` passed.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Align the header bell's right edge with the navigation bar three-dots control.
+ - Changes:
+   - Removed the duplicate `padding-right: 1rem` from `.topbar-actions` in `web/app/globals.css`.
+   - Kept the shared `.topbar-home` and `.navigationbar` 8px edge insets as the single alignment boundary.
+   - Updated `CHANGELOG.md` with the CSS correction and live measurement.
+ - Files:
+   - web/app/globals.css
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The bell was 16px short of the navigation overflow control because `.topbar-home` already supplied the header's 8px edge inset and `.topbar-actions` added an unnecessary second 16px right inset. Removing the duplicate inset aligns the actual button box edges.
+ - Notes:
+   - This is a shared header spacing correction; no route-specific or inline styling was added.
+ - Verified Working?: Yes — refreshed localhost and measured the bell and navigation three-dots right edges at a `0px` difference.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
+ - Prompt Summary: Restore the fourth default recommendation in the floating search box.
+ - Changes:
+   - Added `Search hashtags` to the default suggestions array in `web/components/header.tsx`.
+   - Updated `CHANGELOG.md` to record the four-row search suggestion correction.
+ - Files:
+   - web/components/header.tsx
+   - CHANGELOG.md
+   - AGENTLOG.md
+ - Reason/Decision: The dropdown CSS and design contract support four visible recommendations, but the default header data only supplied three. Restoring the fourth item makes the live state match the documented capacity.
+ - Notes:
+   - Query-specific suggestions remain intentionally limited to the two matching-result options.
+ - Verified Working?: Yes — refreshed localhost and confirmed four default recommendation rows render in the floating search dropdown.
+
+ - Date/Time: 2026-08-30 (Asia/Karachi)
+ - Agent: Codex
+ - Model: GPT-5
  - Prompt Summary: Correct profile summary padding to maintain the minimum 8px spacing inside the ContentBox.
  - Changes:
    - Updated `.profile-summary` in `web/app/globals.css` to use the shared `--space-content-inset-inline` token for left and right padding.
@@ -1680,6 +1815,24 @@
 
 ### Entry
 
+- Date/Time: 2026-08-30
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace raw UUID post URLs with short public IDs and capped content slugs.
+- Audit Findings: `Post.id` remains the UUID primary key used by `parent_post_id`, `quoted_post_id`, and `post_media.post_id`. Existing frontend links flowed through `web/lib/post-path.ts`; canonical detail routing was `web/app/[username]/[postId]`, resolving through the UUID API endpoint and redirecting only username mismatches. A legacy `/posts/{uuid}` route also remained.
+- Changes Made:
+  - Added random eight-character mixed-case alphanumeric `posts.public_id` generation, migration backfill, unique constraint, and index.
+  - Added a shared backend slug utility implementing the first-eight-words and 64-character boundary algorithm, generated on response rather than persisted to avoid a second content-derived column.
+  - Added public-id lookup and updated canonical/legacy route redirects, metadata, feed mappings, and post creation links.
+  - Added focused slug-generation tests.
+- Files/Scope Touched: `api/app/models/post.py`, `api/app/services/post_ids.py`, `api/app/services/post_slug.py`, `api/app/services/posts.py`, `api/app/routers/posts.py`, `api/app/schemas/posts.py`, `api/alembic/versions/20260830_0009_add_public_id_to_posts.py`, frontend post path/types/mappers/routes, `api/tests/test_post_slug.py`.
+- Reason/Decision: Keep UUIDs authoritative for relational integrity and use a separately generated public ID for compact URLs. Generate the slug on the fly from current content so edits naturally produce a canonical current URL without storing or enforcing slug uniqueness.
+- Verified Working?: `npm run build` passed. Backend tests passed 49 tests; two existing serialization fixtures initially exposed unset model defaults and were made compatible with direct in-memory serialization. One unrelated pre-existing JWT settings test remains failing because the local environment supplies a fallback secret.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-28 (00:51 UTC-0)
 - Agent: Antigravity
 - Model: Gemini 3.5 Flash
@@ -3062,4 +3215,121 @@
 - Reason/Decision: Establish a lightweight, persistent audit trail so future agents read the project history before making changes and append their own log entries.
 - Notes for next agent: No runtime code changes were made in this step.
 - Verified Working?: untested
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close out documentation for public post slugs and the Neon migration.
+- Changes Made:
+  - Updated `README.md` with the public post URL format and UUID compatibility note.
+  - Added the active public-post-URL rule to `RULES.md`.
+  - Updated `CHANGELOG.md` current state and dated entries.
+  - Recorded that Neon migration `20260830_0009` completed and existing posts were backfilled.
+- Files/Scope Touched: `README.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Preserve the routing and migration decisions in the project’s operational documentation before ending the work session. `design.md` was not changed because this change affects routing and persistence, not visual tokens or component contracts.
+- Verified Working?: Yes — Neon reports `20260830_0009 (head)` and `GET /posts?limit=2` returned HTTP 200 with public IDs and slugs.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Consolidate stack documentation and add standing agent-update instructions.
+- Changes Made:
+  - Audited the obsolete stack reference against the actual FastAPI, SQLAlchemy, psycopg3, Neon, authentication, hosting, notification, and testing implementation.
+  - Merged the complete verified stack reference into `README.md`, including the correction from async to synchronous SQLAlchemy sessions.
+  - Deleted the obsolete stack reference file and removed all repository references to it.
+  - Added explicit README instructions covering mandatory CHANGELOG/AGENTLOG entries and conditional design/rules updates.
+  - Updated `CHANGELOG.md` and recorded this documentation task.
+- Files/Scope Touched: `README.md`, obsolete stack reference file (deleted), `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep one authoritative stack reference and make documentation upkeep an explicit repository rule. `RULES.md` was not changed in this pass because the user explicitly limited it to the standing instruction in README; existing routing rules remain intact. `packages/design/design.md` was not changed because no visual contract changed.
+- Verification: Confirmed the obsolete stack file no longer exists and repository-wide case-insensitive search returns no references to its former filename. Spot-checked sync SQLAlchemy/psycopg3 in `api/app/db.py`, PyJWT/bcrypt in `api/app/services/security.py`, FastAPI/Uvicorn entrypoints, Neon configuration, and Vercel deployment files.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Final README cleanup for filename casing, duplicated guidance, and the changelog pointer.
+- Changes Made:
+  - Corrected all README references from lowercase `rules.md` to the actual `RULES.md` filename.
+  - Removed the redundant trailing design/rules update bullet from the consolidated agent section.
+  - Confirmed the existing CHANGELOG.md pointer instructs agents to read README.md for stack-related work; no pointer addition was needed.
+  - Added a missing paragraph break in Project Documentation for readability.
+  - Updated `CHANGELOG.md` for this documentation-only task.
+- Files/Scope Touched: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep README references valid on case-sensitive filesystems and maintain one authoritative statement for each agent workflow rule without changing any application, rules, or design content.
+- Verification: Read README.md end to end, confirmed exactly one AI-agent instruction section and no duplicate trailing rule, verified actual filenames `README.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md`, and confirmed the README-read pointer is present in `CHANGELOG.md`.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix missing Markdown hyphens in README.md.
+- Changes Made:
+  - Added list markers to the design update, rules update, and README-read instructions under “After finishing a task”.
+  - Updated `CHANGELOG.md` and recorded the documentation-only correction here.
+- Files/Scope Touched: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep the consolidated agent guidance consistently formatted as one Markdown list without changing its wording or meaning.
+- Verification: Reviewed the README agent section and confirmed all after-task instructions now render as list items.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct README Markdown continuation indentation.
+- Changes Made:
+  - Indented the continuation lines for the design, rules, README-read, and handoff list items.
+  - Updated `CHANGELOG.md` and recorded the formatting correction here.
+- Files/Scope Touched: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Ensure the newly normalized agent guidance renders as proper Markdown list items rather than detached paragraphs.
+- Verification: Reviewed the final section and ran `git diff --check` successfully.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the misplaced public post URL note from README.md.
+- Changes Made:
+  - Verified the complete public-ID/slug routing rule already exists in `RULES.md` under “Public Post URLs Use Public IDs”.
+  - Verified the implementation and URL shape are also recorded in `CHANGELOG.md`.
+  - Removed only the duplicated URL paragraph from README’s Local Development section.
+  - Updated `CHANGELOG.md` for this documentation-only change.
+- Files/Scope Touched: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep Local Development focused on setup instructions while retaining routing behavior in its governing product/routing documentation.
+- Verification: Confirmed the paragraph no longer appears in `README.md`; `RULES.md` remains the authoritative detailed location and `CHANGELOG.md` retains the implementation history. No application, design, or rules files were changed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Consolidate README agent guidance and add a README-read pointer to CHANGELOG.md.
+- Changes Made:
+  - Merged the overlapping AI-agent and contributing instructions in `README.md` into one clearly separated always/after-task section.
+  - Preserved the precise conditional definitions for updating `packages/design/design.md` and `RULES.md`.
+  - Replaced blanket automatic testing guidance with targeted verification guidance while preserving the commit-before-handoff requirement.
+  - Added a stack-task README pointer to `CHANGELOG.md` and documented this task in both history files.
+- Files/Scope Touched: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Make the mandatory reading chain reachable from the already-required changelog, eliminate duplicate agent rules, and keep human-facing setup information ahead of agent-specific guidance.
+- Verification: Read the final README top to bottom, confirmed one AI-agent instruction section remains, and confirmed the design/rules “as needed” definitions remain present.
 

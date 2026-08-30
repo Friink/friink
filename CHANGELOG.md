@@ -1,5 +1,9 @@
 # Changelog
 
+> README.md is the authoritative source for the stack. Read it once per work session,
+> and always before tasks involving stack, infrastructure, environment setup, or
+> deployment configuration.
+
 > INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file
 > for project history and current state. After completing any change to the
 > codebase, add a dated entry here summarizing what changed and why. Also
@@ -39,6 +43,29 @@ _Last updated: 2026-08-30_
 - [web] Connections tabs no longer fall back to sample/demo people when there are no live followers or following.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
 - [web] Profile summary content now uses the shared 8px inline inset so the profile card, About text, follower/following stats, and profile actions maintain the minimum spacing inside the ContentBox.
+- [web] Header search controls now place the magnifier before the close icon, and the notification bell stays right-aligned while opening a recent-notifications dropdown with an unread dot, count pill, and All Notifications link.
+- [web] Removed the duplicate header action right inset so the bell aligns exactly with the right edge of the mobile navigation three-dots control.
+- [web] Restored the fourth default recommendation in the floating search suggestions dropdown.
+- [web] Removed the unnecessary search-dropdown scrollbar, added the Open Search footer link, and hid the notification count pill and empty placeholder when there are zero unread/recent items.
+- [api/web] Post URLs now use an 8-character random `public_id` plus an on-the-fly, eight-word/64-character content slug; UUID primary and foreign keys remain unchanged, and stale username/slug segments redirect to the canonical URL.
+- [api] Neon database migration `20260830_0009` has been applied successfully and existing posts have been backfilled with public IDs.
+- [docs] README is now the single source of truth for the verified stack, and it contains standing instructions for keeping CHANGELOG, AGENTLOG, design, and rules documentation current.
+
+## 2026-08-30
+
+### Added
+
+- [api] Added the `posts.public_id` migration, unique/indexed storage, public-id lookup endpoint, and centralized slug generation utility.
+
+### Changed
+
+- [web] Updated feed, profile, detail, creation, metadata, and legacy post links to use `/{username}/{slug}-{public_id}` or `/{username}/{public_id}` for empty slugs.
+- [docs] Documented public post URL rules and the completed Neon migration in `README.md` and `RULES.md`.
+- [docs] Merged the audited stack reference into `README.md`, removed the obsolete duplicate stack file, and corrected the ORM/session reference to synchronous SQLAlchemy with psycopg3.
+- [docs] Removed the post URL explanation from the Local Development section after confirming the complete routing rule already lives in `RULES.md` and the implementation history is recorded above.
+- [web] Consolidated the search and notification floating lists into the shared `ContextualDropdown` component with a centered “Nothing to show.” empty state.
+- [web] Matched the search dropdown footer styling to the notifications footer by scoping search row styles away from the Open Search action.
+- [docs] Added a RULES.md architecture rule requiring shared ContextualDropdown usage for floating Search and Notifications lists.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
 - [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
 - [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
@@ -60,6 +87,15 @@ _Last updated: 2026-08-30_
 - [web] Added mobile swipe gestures to the shared Tabs component: right-to-left advances to the next tab and left-to-right returns to the previous tab.
 
 ### Changed
+- [docs] Documented shared ContextualDropdown ownership, common empty-state behavior, and the allowed Search/Notifications row-specific exceptions in RULES.md.
+- [web] Unified contextual dropdown footer controls so Search and Notifications share the same compact border, spacing, and link treatment.
+- [web] Reused one contextual dropdown component for header search and notifications, keeping notification styling as the shared base while allowing each list's row content and footer to vary.
+- [web] Made search and notification dropdowns naturally size from zero to four visible items, added `/search` navigation from the search footer, and limited the notification count pill to unread counts of at least 1 (`99+` above 99).
+- [web] Added the missing fourth default search suggestion, `Search hashtags`, so the floating search dropdown uses its documented four-row capacity.
+- [web] Corrected `.topbar-actions` right-edge spacing by removing its extra 16px padding; the shared topbar and navigation bar now resolve to the same 8px right inset.
+- [web] Updated the shared Header notification flow to pass recent notification items from AppShell, show up to four items in a floating dropdown, and navigate to the full Notifications screen from the footer or an item.
+- [web] Restored the bell's green unread dot indicator and moved the actual unread count into the dropdown footer; no numeric badge is shown on the bell itself.
+- [web] Reordered the search panel actions so the magnifying-glass submit control appears before the close control.
 - [web] Tightened the profile meta row into a two-column grid with stats and actions sharing the same row, matched stats min-height to action button height for visible vertical centering, and removed legacy profile CSS that could confuse the cascade.
 - [web] Added the shared inline content inset to `.profile-summary`, moving profile summary content 8px inward from the ContentBox edges for consistent minimum spacing.
 - [web] Refined the profile meta-row breakpoint so the mobile stacked action layout only applies on narrow coarse-pointer/touch views; narrow desktop browser views keep stats and profile actions vertically aligned on one row.
@@ -84,6 +120,9 @@ _Last updated: 2026-08-30_
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
+- [web] `npx tsc --noEmit --incremental false` passed in `web`; live localhost verification confirmed four search options without a scrollbar, Open Search routing to `/search`, and no notification count pill or empty placeholder at zero unread/recent items.
+- [web] Live localhost measurement confirmed the header bell and navigation three-dots right edges match at `0px` delta on the profile/post-detail viewport.
+- [web] `npx tsc --noEmit` passed in `web`; live localhost verification confirmed the search action order and notification dropdown at `http://localhost:3000/muflah`.
 - [web] `npx tsc --noEmit` passed in `web` after tightening profile meta-row grid alignment; `npm run build` is currently blocked by generated `.next` cache/Windows cleanup errors after source compilation.
 - [web] `npx tsc --noEmit` and `npm run build` passed in `web` after refining the profile meta-row mobile breakpoint.
 - [web] `npx tsc --noEmit` and `npm run build` passed in `web` after hardening the profile summary/content-box alignment source changes.
@@ -895,3 +934,12 @@ _Last updated: 2026-08-30_
 - This is the baseline snapshot for the monorepo so future work can be traced by app and date.
 - Local demo flow is testable after restarting the API with the correct JWT env values and applying the DB migration.
 - Added local startup check scripts to confirm the API and web app both run on the expected ports before verification.
+
+## 2026-08-30
+
+### Changed
+
+- [docs] Consolidated the overlapping README agent guidance into one section, clarified targeted verification versus handoff commits, and added the README stack-read pointer to this file.
+- [docs] Final README cleanup corrected `RULES.md` filename casing, removed a duplicated documentation instruction, and retained the existing README-read pointer.
+- [docs] Fixed missing Markdown list markers in the README agent-instructions section so all “after finishing” guidance renders consistently.
+- [docs] Indented multiline continuations in those list items so the README renders as valid, consistently formatted Markdown.

@@ -58,6 +58,8 @@ class QuotedPostResponse(BaseModel):
 
 class PostResponse(BaseModel):
     id: uuid.UUID
+    public_id: str
+    slug: str
     user_id: uuid.UUID
     kind: PostKind
     author_username: str
