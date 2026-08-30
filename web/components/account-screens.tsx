@@ -404,10 +404,9 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 </div>
                 <div className="profile-picture-controls">
                   <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
-                  <button className="settings-secondary-button" type="button" onClick={() => profilePictureInputRef.current?.click()}>Choose image</button>
-                  <button className="settings-update-button profile-picture-upload" type="button" disabled={!profilePictureFile || cropSource !== null || isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleProfilePictureUpload}>
-                    <i className={isProcessingProfilePicture || isUploadingProfilePicture ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-check'} aria-hidden="true" />
-                    <span className="sr-only">{isProcessingProfilePicture ? 'Processing profile picture' : isUploadingProfilePicture ? 'Uploading profile picture' : 'Upload profile picture'}</span>
+                  <button className="settings-secondary-button" type="button" onClick={() => profilePictureInputRef.current?.click()}>Upload</button>
+                  <button className="settings-secondary-button profile-picture-upload" type="button" disabled={!profilePictureFile || cropSource !== null || isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleProfilePictureUpload}>
+                    {isProcessingProfilePicture ? 'Processing...' : isUploadingProfilePicture ? 'Uploading...' : 'Upload profile picture'}
                   </button>
                 </div>
                 {cropSource && (
@@ -438,7 +437,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                       </label>
                       <div className="profile-picture-crop-actions">
                         <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture} onClick={handleCropCancel}>Cancel</button>
-                        <button className="settings-update-button" type="button" disabled={isProcessingProfilePicture} onClick={handleCropConfirm}>{isProcessingProfilePicture ? 'Cropping...' : 'Confirm crop'}</button>
+                        <SaveTickButton disabled={isProcessingProfilePicture} busy={isProcessingProfilePicture} onClick={handleCropConfirm} label="Confirm crop" />
                       </div>
                     </div>
                   </div>

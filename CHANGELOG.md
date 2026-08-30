@@ -985,3 +985,4 @@ _Last updated: 2026-08-30_
 - [web] Moved the profile-picture cropper into an accessible modal/popup with backdrop dismissal, cancel/close controls, title/help text, and explicit Confirm crop action.
 - [web] Added contextual profile-picture upload errors that distinguish API startup, R2 transfer/CORS, and API confirmation failures, including relevant HTTP status and staging configuration guidance.
 - [docs] Clarified in `api/.env.example` that staging R2 values belong in Vercel Preview and must not be committed.
+- [web] Renamed the profile-picture file picker action to `Upload`, moved the tick confirmation control into the crop modal, made the final upload action explicit, and removed crop-dialog horizontal overflow.

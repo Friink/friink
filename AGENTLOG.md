@@ -3445,6 +3445,23 @@
 
 ---
 
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Refine profile-picture crop modal controls and remove its horizontal scrollbar.
+- Changes Made:
+  - Renamed the file-selection action from `Choose image` to `Upload`.
+  - Moved the tick confirmation control into the crop modal and changed the final upload action to an explicit text button.
+  - Constrained the crop dialog and stage to prevent horizontal overflow and the unnecessary bottom scrollbar.
+  - Updated the shared design contract and changelog.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The crop modal should make the confirmation affordance visually consistent with other settings saves, while file selection and final upload should remain clearly distinguishable actions. Horizontal overflow was a layout defect caused by the scroll container allowing crop content to widen the dialog.
+- Verification: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+---
+
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
