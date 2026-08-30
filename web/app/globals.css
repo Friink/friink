@@ -2092,12 +2092,20 @@ textarea {
   min-height: 7rem;
   resize: vertical;
   line-height: 1.45;
+  padding-bottom: 2rem;
+}
+
+.settings-about-control {
+  position: relative;
 }
 
 .settings-field-count {
-  justify-self: end;
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.65rem;
   color: var(--color-muted);
   font-size: var(--text-xs);
+  pointer-events: none;
 }
 
 .settings-field-actions {
@@ -2872,6 +2880,11 @@ textarea {
   display: flex;
   justify-content: flex-start;
   padding: 0;
+}
+
+.profile-intro .profile-card-avatar {
+  width: 5rem;
+  height: 5rem;
 }
 
 .profile-stats {

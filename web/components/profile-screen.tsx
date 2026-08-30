@@ -66,6 +66,7 @@ export function ProfileScreen({
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
   useEffect(() => setActiveTab(initialTab), [initialTab]);
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
+  const aboutText = user.about?.trim();
   const action = getConnectionAction(connectionState, { onFollow, onCancelRequest, onUnfollow });
 
   return (
@@ -82,7 +83,7 @@ export function ProfileScreen({
         </div>
 
         <p className="profile-bio">
-          {user.about || (isOwnProfile ? 'Your signed-in account is now driving this profile view.' : 'This profile has not added an about yet.')}
+          {aboutText || (isOwnProfile ? 'Add about in settings.' : '')}
         </p>
 
         <div className="profile-meta-row">

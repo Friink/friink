@@ -553,17 +553,19 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
             >
               <label className="settings-field">
                 <span className="settings-field-label">About</span>
-                <textarea
-                  className="settings-about-field"
-                  value={about}
-                  maxLength={256}
-                  onChange={(event) => {
-                    setAbout(event.target.value);
-                    setAboutStatus('');
-                  }}
-                  placeholder="About"
-                />
-                <span className="settings-field-count">{about.length}/256</span>
+                <div className="settings-about-control">
+                  <textarea
+                    className="settings-about-field"
+                    value={about}
+                    maxLength={128}
+                    onChange={(event) => {
+                      setAbout(event.target.value);
+                      setAboutStatus('');
+                    }}
+                    placeholder="About"
+                  />
+                  <span className="settings-field-count">{about.length}/128</span>
+                </div>
               </label>
               <div className="settings-field-actions">
                 <SaveTickButton disabled={!canUpdateAbout} busy={isUpdatingAbout} onClick={handleAboutUpdate} label="Update about" />

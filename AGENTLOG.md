@@ -3865,3 +3865,52 @@
 - Reason/Decision: An optimistic avatar implies an account update before the backend has committed it, and two adjacent upload controls made the interaction ambiguous. The modal confirmation is now the single authoritative upload action.
 - Verification: Targeted TypeScript check and `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Limit the Settings About field to 128 characters and place its counter inside the field.
+- Changes Made:
+  - Changed the About textarea `maxLength` and counter from 256 to 128.
+  - Added a positioned wrapper so the counter sits inside the textarea at the lower-right without intercepting input.
+  - Documented the frontend limit and retained the backend's broader 256-character safety ceiling.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
+- Reason/Decision: The About field is intended as a short profile bio; placing the count inside the control keeps its relationship to the limit clear without adding another row.
+- Verification: Targeted TypeScript check and `git diff --check` follow.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Double the profile-page avatar size.
+- Changes Made:
+  - Added a profile-intro-only avatar override from `2.5rem` to `5rem`.
+  - Kept feed, sidebar, settings, and list identity avatars unchanged.
+  - Updated the profile design contract and project history.
+- Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`.
+- Reason/Decision: The request applies to the profile page identity surface only, so the shared ProfileCard default remains unchanged for other contexts.
+- Verification: Targeted TypeScript check and `git diff --check` follow.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep empty About content blank for visitors and show an owner-only settings prompt.
+- Changes Made:
+  - Updated `ProfileScreen` to trim About text and render no visitor-facing fallback when it is empty.
+  - Added the exact owner-only placeholder `Add about in settings.`.
+  - Confirmed the API/user model already defaults About to nullable empty (`None`) for new accounts and permits deletion.
+  - Updated the rules, design contract, changelog, and agent log.
+- Files/Scope Touched: `web/components/profile-screen.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
+- Reason/Decision: Empty profile metadata should not invent copy for visitors, while owners need a clear path to complete their profile.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+

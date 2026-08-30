@@ -221,7 +221,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Profile Resolution State**: The route waits for the requested username to resolve before rendering profile content. While pending it shows `Loading profile...`; if the username cannot be resolved, it renders `Does not exist or unavailable.` and must not synthesize a demo identity.
 - **Fixed Internal Layout Order**:
   1. Profile Summary (`.profile-summary`): A single section inside `ContentBox` containing identity, about text, statistics, and profile actions with standard block spacing and no custom outer gutter.
-  2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
+  2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`5rem` large avatar, twice the standard `2.5rem` profile-card avatar).
   3. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 34rem`.
   4. Profile Meta Row (`.profile-meta-row`): A single-column grid with statistics first and profile actions on the next row, using the shared `ContentBox` inset rather than custom profile gutters.
      - Statistics (`.profile-stats`): Left-aligned and inline, displaying API-backed following and follower counts. Each complete number-and-label statistic is an ununderlined link that opens the matching Connections tab; self-profile links use `/connections`, while another profile uses `/{username}/connections`. Hover and focus color the complete link, including the number.
@@ -324,6 +324,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
+- **About Field Rule**: The About textarea enforces a 128-character frontend limit and displays an `x/128` counter inside the lower-right corner of the field.
 - **Save Control Rule**: Editable settings use an icon-only tick button in an `8px` radius box for saves. When the save control wraps below a field, it is right-aligned.
 - **Privacy Toggle Rule**: The Private Profile toggle saves immediately through the API on click and reverts if saving fails.
 - **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.

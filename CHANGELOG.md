@@ -1000,3 +1000,6 @@ _Last updated: 2026-08-30_
 - [api/web] Included each post author's profile-picture URL in post responses and preserved it through feed, live-update, post-detail, and reply mapping so shared feed profile cards render uploaded avatars for other users.
 - [web] Made tab state URL-addressable with canonical paths for Home, Connections, Chat, Settings, and Profile tabs; legacy tab roots redirect to their default tab.
 - [web] Kept the server-confirmed profile picture visible during selection, cropping, processing, and upload; the crop-modal tick now performs the upload and closes only after success, with the duplicate upload button and empty-selection copy removed.
+- [web] Changed empty About rendering so visitors see no placeholder, while the signed-in owner sees `Add about in settings.`; new accounts already retain an empty About by default.
+- [web] Limited the Settings About textarea to 128 frontend characters and moved the live `x/128` counter inside the field's lower-right corner.
+- [web] Enlarged the profile-page avatar to `5rem`, twice the standard ProfileCard avatar size, without changing feed or list avatars.

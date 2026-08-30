@@ -109,6 +109,7 @@ the entry, so history isn't lost.
 ### Rule: Current User Updates
 - **What:** Authenticated users may update username, email, display name, about text, and privacy status. Username/email updates reject conflicts with another user.
 - **Edge cases:** If no submitted value changes the user, the API returns the existing user without committing. `about` is capped at 256 characters and display name at 120.
+- **Web input limit:** The Settings About textarea limits input to 128 characters and shows the live `x/128` count inside the lower-right of the field; the API's broader 256-character ceiling remains a backend safety limit.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/components/account-screens.tsx`
@@ -117,6 +118,13 @@ the entry, so history isn't lost.
 ### Rule: Web Settings Saves Confirm And Persist Through API
 - **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
 - **Edge cases:** If the Private Profile API save fails, the UI reverts to the last known saved value. Direct Messages and Mentions toggles remain disabled display controls until real backend settings exist.
+
+### Rule: Empty About Is Owner-Only Prompt
+- **What:** New accounts and profiles with a deleted About keep the stored About value empty. Visitors see no placeholder text; the signed-in owner sees `Add about in settings.` instead.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/profile-screen.tsx`
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Profile Pictures Are Optional
 - **What:** Users may upload an optional profile picture through the authenticated profile settings flow. When `profile_picture_url` is null, all supported profile identity surfaces use the shared `web/public/media/profile.jpg` default profile picture.
