@@ -3421,6 +3421,22 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Record successful end-to-end staging verification of profile-picture uploads and R2 configuration.
+- Changes Made:
+  - Updated the maintained current-state and dated changelog records with the successful staging result.
+  - Documented the active rule that profile-picture replacement deletes the previous R2 object, including legacy flat keys.
+  - Confirmed that no design contract changed; the existing crop-modal, avatar fallback, and upload-feedback contracts remain accurate.
+- Files/Scope Touched: `CHANGELOG.md`, `RULES.md`, `AGENTLOG.md`.
+- Reason/Decision: The staging flow now works end to end, so project documentation must record the verified R2 upload, confirmation, persistence, and replacement behavior for future work.
+- Verification: Documentation changes reviewed and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Fix the profile-picture confirmation error that occurred after the picture was saved.
 - Changes Made:
   - Removed the erroneous post-commit call to `refresh(...)`.
