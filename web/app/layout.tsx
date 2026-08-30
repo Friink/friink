@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import { themeToCssVars } from '@/theme.config';
 import './globals.css';
 
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           referrerPolicy="no-referrer"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
