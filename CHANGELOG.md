@@ -984,3 +984,4 @@ _Last updated: 2026-08-30_
 - [local] Added the supplied staging R2 account, access key, secret key, and bucket name to ignored `api/.env`; `R2_PUBLIC_URL` remains blank pending the bucket public URL/custom domain and no secret values were added to tracked files.
 - [web] Moved the profile-picture cropper into an accessible modal/popup with backdrop dismissal, cancel/close controls, title/help text, and explicit Confirm crop action.
 - [web] Added contextual profile-picture upload errors that distinguish API startup, R2 transfer/CORS, and API confirmation failures, including relevant HTTP status and staging configuration guidance.
+- [docs] Clarified in `api/.env.example` that staging R2 values belong in Vercel Preview and must not be committed.
