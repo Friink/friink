@@ -90,6 +90,8 @@ Fallback and error screens should be quiet, centered, and branded.
 
 Standard app surfaces should be reusable components. Page-specific content may remain local when it is not reused elsewhere.
 
+- **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, top-right cross close control, and a bottom action ribbon for adjacent actions.
+
 ---
 
 ## Tokens
@@ -319,14 +321,15 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Content Contract**: Each toast shows a message, timestamp, and dismiss icon button. Structured errors may additionally show a plain-language title, stable error code, and smaller muted detail summary. End-user detail must describe what happened and the next user action in plain language; deployment, API, storage, and framework terminology must not appear in the primary or detail copy.
 
 ### 12. Settings Rows (`web/components/account-screens.tsx`, `web/components/list-row.tsx`)
-- **Purpose**: Settings reuses the shared `ListRow` primitive for navigational and editable rows so spacing, dividers, and typography stay consistent with notifications and chat.
+- **Purpose**: Settings uses a shared `SettingsRow` wrapper around `ListRow` for every setting so spacing, dividers, typography, leading icons, field content, and right-side actions stay consistent.
 - **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
+- **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.
 - **About Field Rule**: The About textarea enforces a 128-character frontend limit and displays an `x/128` counter inside the lower-right corner of the field.
-- **Save Control Rule**: Editable settings use an icon-only tick button in an `8px` radius box for saves. When the save control wraps below a field, it is right-aligned.
-- **Privacy Toggle Rule**: The Private Profile toggle saves immediately through the API on click and reverts if saving fails.
+- **Save Control Rule**: Editable settings use an icon-only `2.25rem` square tick button in an `8px` radius box, matching the leading settings icon. The profile-picture Upload action uses the same right-side rail.
+- **Privacy Toggle Rule**: Privacy toggles use draft values and require the right-side tick to save; API-backed Private Profile changes revert to the last saved value if saving fails.
 - **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 - **Profile Picture Rule**: Settings > Profile includes an optional profile-picture picker with a circular preview, a file-selection `Upload` control, and visible loading/error feedback. The preview must remain the last server-confirmed image until the complete crop, processing, transfer, and API confirmation flow succeeds. The crop modal's icon-only tick is the sole upload action after file selection; it closes only after successful confirmation. The existing default avatar remains the fallback when no picture URL exists. Upload failures must identify the failed stage (API start, R2 transfer, or API confirmation) and include an actionable configuration or session hint when the failure is environment-related.

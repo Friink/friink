@@ -117,7 +117,7 @@ the entry, so history isn't lost.
 
 ### Rule: Web Settings Saves Confirm And Persist Through API
 - **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
-- **Edge cases:** If the Private Profile API save fails, the UI reverts to the last known saved value. Direct Messages and Mentions toggles remain disabled display controls until real backend settings exist.
+- **Edge cases:** If an API-backed save fails, the UI reverts to the last known saved value. Theme and privacy changes require an explicit tick confirmation. Direct Messages and Mentions currently use client-side draft/save controls until corresponding backend settings exist.
 
 ### Rule: Empty About Is Owner-Only Prompt
 - **What:** New accounts and profiles with a deleted About keep the stored About value empty. Visitors see no placeholder text; the signed-in owner sees `Add about in settings.` instead.

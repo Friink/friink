@@ -3872,6 +3872,40 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Standardize Settings rows and right-side save controls.
+- Changes Made:
+  - Added a reusable `SettingsRow` wrapper around `ListRow` for consistent setting structure.
+  - Moved Email, Name, Username, and About save ticks into the shared right-side action rail.
+  - Added Theme draft/save behavior and changed Private Profile to draft/save behavior.
+  - Aligned profile-picture Upload with the right-side action rail and made Direct Messages/Mentions two-way local draft controls with save ticks pending backend settings.
+  - Sized save ticks to match the leading settings icon and documented the pattern.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
+- Reason/Decision: A shared row contract makes setting controls predictable and keeps save actions aligned regardless of field type.
+- Verification: Targeted TypeScript check and `git diff --check` follow.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move crop-modal Cancel beside the tick and create a reusable modal component.
+- Changes Made:
+  - Added the global `Modal` component with accessible dialog semantics, backdrop/Escape dismissal, top-right cross close control, and bottom action ribbon.
+  - Replaced the profile-picture crop wrapper with `Modal`; Cancel and the upload tick now sit together in the bottom ribbon.
+  - Added shared modal styling and documented the component contract.
+- Files/Scope Touched: `web/components/modal.tsx`, `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`.
+- Reason/Decision: Modal behavior and action placement should be consistent across future flows instead of being implemented as a profile-picture-specific wrapper.
+- Verification: Targeted TypeScript check and `git diff --check` follow.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Limit the Settings About field to 128 characters and place its counter inside the field.
 - Changes Made:
   - Changed the About textarea `maxLength` and counter from 256 to 128.

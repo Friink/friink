@@ -8,6 +8,7 @@ import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
 import Cropper from 'react-easy-crop';
+import { Modal } from '@/components/modal';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'privacy';
@@ -99,6 +100,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [appearanceDraft, setAppearanceDraft] = useState(appearance);
   const [privacyDraft, setPrivacyDraft] = useState(user.isPrivate);
+  const [directMessagesDraft, setDirectMessagesDraft] = useState(false);
+  const [directMessagesSaved, setDirectMessagesSaved] = useState(false);
+  const [mentionsDraft, setMentionsDraft] = useState(true);
+  const [mentionsSaved, setMentionsSaved] = useState(true);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
@@ -129,6 +134,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const canUpdateAbout = hasAboutChanged && isAboutValid && !isUpdatingAbout;
   const canUpdateAppearance = appearanceDraft !== appearance;
   const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
+  const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
+  const canUpdateMentions = mentionsDraft !== mentionsSaved;
 
   async function handleUsernameUpdate() {
     if (!canUpdateUsername) {
@@ -484,12 +491,12 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
                 </div>
                 {cropSource && (
-                  <div className="profile-picture-crop-modal" role="dialog" aria-modal="true" aria-labelledby="profile-picture-crop-title" onMouseDown={(event) => { if (event.target === event.currentTarget) handleCropCancel(); }}>
-                    <div className="profile-picture-crop-dialog">
-                      <div className="profile-picture-crop-header">
-                        <h2 id="profile-picture-crop-title">Crop profile picture</h2>
-                        <button className="profile-picture-crop-close" type="button" aria-label="Cancel crop" onClick={handleCropCancel}>×</button>
-                      </div>
+                  <Modal title="Crop profile picture" onClose={handleCropCancel} closeLabel="Cancel crop" className="profile-picture-crop-dialog" actions={
+                    <>
+                      <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropCancel}>Cancel</button>
+                      <SaveTickButton disabled={isProcessingProfilePicture || isUploadingProfilePicture} busy={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropConfirm} label="Upload profile picture" />
+                    </>
+                  }>
                       <p className="profile-picture-crop-help">Drag the image and adjust the zoom to choose a square crop.</p>
                       <div className="profile-picture-crop-stage">
                         <Cropper
@@ -509,12 +516,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                         <span>Zoom</span>
                         <input type="range" min={1} max={maxZoom} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
                       </label>
-                      <div className="profile-picture-crop-actions">
-                        <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture} onClick={handleCropCancel}>Cancel</button>
-                        <SaveTickButton disabled={isProcessingProfilePicture || isUploadingProfilePicture} busy={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropConfirm} label="Upload profile picture" />
-                      </div>
-                    </div>
-                  </div>
+                  </Modal>
                 )}
                 {(isProcessingProfilePicture || isUploadingProfilePicture || cropSource || profilePictureFile) && (
                   <span className="settings-field-message" role="status">
@@ -632,16 +634,30 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               icon={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
               title="Direct messages"
               subtitle="People you follow can message you."
-              trailing={<button type="button" className="settings-toggle-pill" disabled>Off</button>}
               className="settings-row"
+              trailing={
+                <>
+                  <button type="button" className={`settings-toggle-pill${directMessagesDraft ? ' active' : ''}`} onClick={() => setDirectMessagesDraft((value) => !value)} aria-pressed={directMessagesDraft}>
+                    {directMessagesDraft ? 'On' : 'Off'}
+                  </button>
+                  <SaveTickButton disabled={!canUpdateDirectMessages} busy={false} onClick={() => { setDirectMessagesSaved(directMessagesDraft); onToast?.('Direct messages setting updated.', 'success'); }} label="Update direct messages" />
+                </>
+              }
             />
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
               title="Mentions"
               subtitle="Control who can mention you in conversations."
-              trailing={<button type="button" className="settings-toggle-pill active" disabled>On</button>}
               className="settings-row"
+              trailing={
+                <>
+                  <button type="button" className={`settings-toggle-pill${mentionsDraft ? ' active' : ''}`} onClick={() => setMentionsDraft((value) => !value)} aria-pressed={mentionsDraft}>
+                    {mentionsDraft ? 'On' : 'Off'}
+                  </button>
+                  <SaveTickButton disabled={!canUpdateMentions} busy={false} onClick={() => { setMentionsSaved(mentionsDraft); onToast?.('Mentions setting updated.', 'success'); }} label="Update mentions" />
+                </>
+              }
             />
           </div>
         </div>

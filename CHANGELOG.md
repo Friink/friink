@@ -1003,3 +1003,5 @@ _Last updated: 2026-08-30_
 - [web] Changed empty About rendering so visitors see no placeholder, while the signed-in owner sees `Add about in settings.`; new accounts already retain an empty About by default.
 - [web] Limited the Settings About textarea to 128 frontend characters and moved the live `x/128` counter inside the field's lower-right corner.
 - [web] Enlarged the profile-page avatar to `5rem`, twice the standard ProfileCard avatar size, without changing feed or list avatars.
+- [web] Standardized Settings around a shared `SettingsRow` with matching leading-icon/right-action dimensions, moved field save ticks to the common rail, added Theme and Privacy confirmation ticks, and aligned profile-picture Upload with that rail.
+- [web] Extracted the profile-picture crop dialog into a reusable global `Modal` with a top-right close cross and bottom action ribbon, placing Cancel beside the upload tick.
