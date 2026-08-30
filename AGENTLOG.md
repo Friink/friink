@@ -3467,6 +3467,40 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Fix profile-picture confirmation failures so successful R2 uploads can be persisted.
+- Changes Made:
+  - Kept the authenticated R2 metadata check as the primary verification path.
+  - Added a public-object `HEAD` fallback using the configured profile-picture delivery URL when the S3-compatible metadata check is unavailable in the hosted runtime.
+  - Preserved the 3 MB size guard when R2 returns `Content-Length`.
+  - Converted unexpected confirmation failures into a handled `502` response instead of exposing a raw `500`.
+  - Synchronized the changelog.
+- Files/Scope Touched: `api/app/services/storage.py`, `api/app/routers/auth.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Staging logs showed the upload URL step succeeding but the server-side R2 `HEAD` verification failing. The public delivery URL is already required for profile-picture persistence, so it provides a safe fallback verification path while keeping ownership scoping and the size ceiling intact.
+- Verification: `python -m compileall -q api/app`, `npx tsc --noEmit --incremental false`, and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent a failed profile-picture confirmation from appearing successful through the local preview.
+- Changes Made:
+  - Restored the last server-confirmed profile picture whenever the upload or confirmation request fails.
+  - Documented that optimistic previews must not remain visible as if persisted after a failed upload.
+  - Synchronized the changelog.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The flow previews the cropped/compressed image before the API confirmation completes, which can make a failed save look successful. Restoring the persisted image keeps client state honest while allowing the selected file to be retried.
+- Verification: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Make profile-picture upload error details understandable to end users.
 - Changes Made:
   - Kept a support-facing error code while replacing API, deployment, R2, and CORS terminology in the visible detail summary.

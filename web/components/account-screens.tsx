@@ -352,6 +352,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
           detail: error instanceof Error ? error.message : 'Please try again.',
         });
       }
+      // The preview is optimistic while the file is being sent. Restore the
+      // last server-confirmed image so a failed confirmation cannot look like
+      // a successful profile update.
+      setProfilePicturePreview(user.profilePictureUrl);
     } finally {
       setIsProcessingProfilePicture(false);
       setIsUploadingProfilePicture(false);

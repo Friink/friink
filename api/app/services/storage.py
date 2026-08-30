@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from app.config import Settings
 
@@ -78,7 +80,21 @@ class StorageService:
         except StorageObjectError:
             raise
         except Exception as exc:
-            raise StorageObjectError("The profile picture upload could not be verified.") from exc
+            # R2's public development URL is already the persisted delivery
+            # path for profile pictures. Use it as a verification fallback
+            # when the S3-compatible HEAD request is unavailable in a hosted
+            # runtime, while still enforcing the object-size ceiling when the
+            # public response provides Content-Length.
+            public_url = f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
+            try:
+                response = urlopen(Request(public_url, method="HEAD"), timeout=10)
+                content_length = response.headers.get("Content-Length")
+                if content_length and int(content_length) > MAX_PROFILE_PICTURE_BYTES:
+                    raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
+            except StorageObjectError:
+                raise
+            except (HTTPError, URLError, TimeoutError, ValueError) as public_exc:
+                raise StorageObjectError("The profile picture upload could not be verified.") from public_exc
 
     def delete_object(self, object_key: str, user_id: uuid.UUID) -> None:
         self._validate_user_key(object_key, user_id)

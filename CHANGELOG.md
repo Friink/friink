@@ -988,3 +988,5 @@ _Last updated: 2026-08-30_
 - [web] Renamed the profile-picture file picker action to `Upload`, moved the tick confirmation control into the crop modal, made the final upload action explicit, and removed crop-dialog horizontal overflow.
 - [web] Structured profile-picture failure toasts with a plain-language title, stable code, user-facing summary, and smaller diagnostic detail beneath it.
 - [web] Replaced developer-oriented profile-picture failure details with plain-language summaries and next steps while retaining a support code.
+- [web] Restored the last server-confirmed profile picture after a failed upload so an optimistic local preview cannot imply that the account was updated.
+- [api] Hardened profile-picture confirmation with a public-object verification fallback and safe handling for unexpected confirmation failures.
