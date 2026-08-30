@@ -3421,6 +3421,22 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Fix the profile-picture confirmation error that occurred after the picture was saved.
+- Changes Made:
+  - Removed the erroneous post-commit call to `refresh(...)`.
+  - The name resolved to the `/auth/refresh` route handler rather than a session refresh helper, causing the confirmation request to fail after the database update.
+  - Confirmation now returns the values that were committed successfully.
+- Files/Scope Touched: `api/app/routers/auth.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The database update succeeded before the wrong refresh handler was invoked, exactly matching the observed “picture updated but error shown” behavior.
+- Verification: Python compile check, web TypeScript check, and diff check run after implementation.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Make old profile-picture deletion mandatory during replacement.
 - Changes Made:
   - Delete the previously stored profile-picture object before committing the new profile URL.

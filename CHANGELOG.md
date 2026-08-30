@@ -993,4 +993,5 @@ _Last updated: 2026-08-30_
 - [api] Made R2 confirmation resilient when the public development endpoint does not support `HEAD`: confirmation now falls back to a bounded `GET` while preserving the 3 MB object-size limit.
 - [api] Made previous profile-picture cleanup fully best-effort so legacy object keys cannot cause a successful replacement to return an error after the database update.
 - [api] Changed profile-picture replacement cleanup to mandatory deletion before the new database URL is committed, with support for deleting legacy flat object keys.
+- [api] Fixed the profile-picture confirmation `500`: the route accidentally resolved `refresh(...)` to the `/auth/refresh` handler after committing the new picture. Confirmation now returns the committed result directly.
 - [api/security] Kept FastAPI API documentation available in staging while disabling Swagger, ReDoc, and OpenAPI routes in production.

@@ -28,7 +28,7 @@ from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.security import TokenValidationError, create_access_token, create_refresh_token, decode_token
 from app.services.token_context import get_auth_flow_context
-from app.services.session_ops import commit, refresh
+from app.services.session_ops import commit
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -283,7 +283,6 @@ async def confirm_profile_picture_upload(
     current_user.profile_picture_url = f"{settings.r2_public_url.rstrip('/')}/{payload.object_key}"
     current_user.profile_picture_updated_at = updated_at
     await commit(session)
-    await refresh(session, current_user)
 
     return ProfilePictureConfirmResponse(
         profile_picture_url=current_user.profile_picture_url,
