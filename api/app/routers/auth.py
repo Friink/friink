@@ -271,18 +271,19 @@ async def confirm_profile_picture_upload(
         if current_user.profile_picture_url.startswith(prefix):
             previous_key = current_user.profile_picture_url[len(prefix):]
 
+    if previous_key and previous_key != payload.object_key:
+        try:
+            storage.delete_object(previous_key, current_user.id, allow_legacy_key=True)
+        except StorageNotConfiguredError as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+        except (StorageObjectError, ValueError) as exc:
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The previous profile picture could not be removed.") from exc
+
     updated_at = datetime.now(UTC)
     current_user.profile_picture_url = f"{settings.r2_public_url.rstrip('/')}/{payload.object_key}"
     current_user.profile_picture_updated_at = updated_at
     await commit(session)
     await refresh(session, current_user)
-
-    if previous_key and previous_key != payload.object_key:
-        try:
-            storage.delete_object(previous_key, current_user.id)
-        except StorageObjectError:
-            # The new profile picture is already authoritative; stale cleanup is best effort.
-            pass
 
     return ProfilePictureConfirmResponse(
         profile_picture_url=current_user.profile_picture_url,

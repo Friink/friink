@@ -107,8 +107,11 @@ class StorageService:
             except Exception as public_exc:
                 raise StorageObjectError("The profile picture upload could not be verified.") from public_exc
 
-    def delete_object(self, object_key: str, user_id: uuid.UUID) -> None:
-        self._validate_user_key(object_key, user_id)
+    def delete_object(self, object_key: str, user_id: uuid.UUID, *, allow_legacy_key: bool = False) -> None:
+        if allow_legacy_key:
+            self._validate_stored_profile_key(object_key)
+        else:
+            self._validate_user_key(object_key, user_id)
         try:
             self._client().delete_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
         except StorageNotConfiguredError:
@@ -120,3 +123,11 @@ class StorageService:
     def _validate_user_key(object_key: str, user_id: uuid.UUID) -> None:
         if not object_key.startswith(f"profile-pictures/{user_id}/") or object_key.count("/") != 2:
             raise ValueError("Profile picture object key is invalid.")
+
+    @staticmethod
+    def _validate_stored_profile_key(object_key: str) -> None:
+        # Older uploads used a flat object key. This is safe here because the
+        # key comes from the authenticated user's previously stored URL, not
+        # from the confirmation request.
+        if not object_key or object_key.startswith(("/", "\\")) or ".." in object_key or "\\" in object_key:
+            raise ValueError("Stored profile picture object key is invalid.")

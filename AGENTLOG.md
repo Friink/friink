@@ -3421,6 +3421,37 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Make old profile-picture deletion mandatory during replacement.
+- Changes Made:
+  - Delete the previously stored profile-picture object before committing the new profile URL.
+  - Added safe support for legacy flat object keys created by earlier upload builds.
+  - Return a clear API failure if the old object cannot be removed, rather than silently retaining it.
+- Files/Scope Touched: `api/app/routers/auth.py`, `api/app/services/storage.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Profile pictures are single-value media and old files should not accumulate in paid storage. Deletion therefore must complete before the replacement is considered successful.
+- Verification: Python compile check, web TypeScript check, and diff check run after implementation.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent successful profile-picture replacements from returning an error during stale-object cleanup.
+- Changes Made:
+  - Made deletion of the previous profile-picture object fully best-effort.
+  - Legacy or malformed previous object keys are now ignored after the new profile URL and database record are already authoritative.
+- Files/Scope Touched: `api/app/routers/auth.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Staging showed the new picture was updated while confirmation returned HTTP 500. The cleanup path could reject an older key format after the database update; cleanup must not report the overall upload as failed.
+- Verification: Python compile check, web TypeScript check, and diff check run after implementation.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Fix the profile-picture upload confirmation failure against staging R2.
 - Changes Made:
   - Kept the existing S3-compatible R2 metadata verification as the first path.
