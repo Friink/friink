@@ -16,7 +16,12 @@ settings = get_settings()
 logger = logging.getLogger("friink.auth")
 logger.info("JWT secret fingerprint: %s", hashlib.sha256(settings.jwt_secret_key.encode("utf-8")).hexdigest()[:8])
 
-app = FastAPI(title="Friink API")
+app = FastAPI(
+    title="Friink API",
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
+)
 # Allowed CORS origins.
 # - FRONTEND_URL env var: set to the deployed web origin per environment
 #   (e.g. https://staging.friink.com for staging, https://friink.com for prod).

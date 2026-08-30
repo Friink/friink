@@ -83,17 +83,28 @@ class StorageService:
             # R2's public development URL is already the persisted delivery
             # path for profile pictures. Use it as a verification fallback
             # when the S3-compatible HEAD request is unavailable in a hosted
-            # runtime, while still enforcing the object-size ceiling when the
-            # public response provides Content-Length.
+            # runtime. Some R2 public endpoints do not reliably implement
+            # HEAD, so fall back to a bounded GET while still enforcing the
+            # object-size ceiling.
             public_url = f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
             try:
-                response = urlopen(Request(public_url, method="HEAD"), timeout=10)
-                content_length = response.headers.get("Content-Length")
-                if content_length and int(content_length) > MAX_PROFILE_PICTURE_BYTES:
-                    raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
+                try:
+                    with urlopen(Request(public_url, method="HEAD"), timeout=10) as response:
+                        content_length = response.headers.get("Content-Length")
+                        if content_length and int(content_length) > MAX_PROFILE_PICTURE_BYTES:
+                            raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
+                except (HTTPError, URLError, TimeoutError, ValueError):
+                    # A GET is needed for providers/CDN configurations that
+                    # answer HEAD with 404/405 even though the object is live.
+                    with urlopen(Request(public_url, method="GET"), timeout=10) as response:
+                        content_length = response.headers.get("Content-Length")
+                        if content_length and int(content_length) > MAX_PROFILE_PICTURE_BYTES:
+                            raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
+                        if not content_length and len(response.read(MAX_PROFILE_PICTURE_BYTES + 1)) > MAX_PROFILE_PICTURE_BYTES:
+                            raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
             except StorageObjectError:
                 raise
-            except (HTTPError, URLError, TimeoutError, ValueError) as public_exc:
+            except Exception as public_exc:
                 raise StorageObjectError("The profile picture upload could not be verified.") from public_exc
 
     def delete_object(self, object_key: str, user_id: uuid.UUID) -> None:

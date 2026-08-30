@@ -990,3 +990,5 @@ _Last updated: 2026-08-30_
 - [web] Replaced developer-oriented profile-picture failure details with plain-language summaries and next steps while retaining a support code.
 - [web] Restored the last server-confirmed profile picture after a failed upload so an optimistic local preview cannot imply that the account was updated.
 - [api] Hardened profile-picture confirmation with a public-object verification fallback and safe handling for unexpected confirmation failures.
+- [api] Made R2 confirmation resilient when the public development endpoint does not support `HEAD`: confirmation now falls back to a bounded `GET` while preserving the 3 MB object-size limit.
+- [api/security] Kept FastAPI API documentation available in staging while disabling Swagger, ReDoc, and OpenAPI routes in production.

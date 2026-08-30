@@ -3421,6 +3421,22 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Fix the profile-picture upload confirmation failure against staging R2.
+- Changes Made:
+  - Kept the existing S3-compatible R2 metadata verification as the first path.
+  - Added a bounded public-object `GET` fallback for R2 endpoints where `HEAD` is unavailable or unreliable.
+  - Preserved the 3 MB profile-picture limit and the existing user-scoped object-key validation.
+- Files/Scope Touched: `api/app/services/storage.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Staging evidence showed the image reached R2, but confirmation failed during the R2 `HEAD` check. The public object URL is the configured delivery path, so a bounded `GET` verifies the uploaded object without removing ownership or size safeguards.
+- Verification: Python compile check, web TypeScript check, and diff check run after implementation.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Clarify where staging R2 environment values belong.
 - Changes Made: Updated `api/.env.example` to state that staging R2 values belong in Vercel Preview and must not be committed.
 - Files/Scope Touched: `api/.env.example`, `CHANGELOG.md`, `AGENTLOG.md`.
@@ -3476,6 +3492,21 @@
   - Synchronized the changelog.
 - Files/Scope Touched: `api/app/services/storage.py`, `api/app/routers/auth.py`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: Staging logs showed the upload URL step succeeding but the server-side R2 `HEAD` verification failing. The public delivery URL is already required for profile-picture persistence, so it provides a safe fallback verification path while keeping ownership scoping and the size ceiling intact.
+- Verification: `python -m compileall -q api/app`, `npx tsc --noEmit --incremental false`, and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restrict public API documentation to staging.
+- Changes Made:
+  - Configured FastAPI to expose Swagger, ReDoc, and OpenAPI only when the environment is not production.
+  - Added the production documentation-security rule and synchronized the changelog.
+- Files/Scope Touched: `api/app/main.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Staging needs the interactive docs for diagnostics, while production should not publicly advertise its API surface. Protected endpoint authentication remains unchanged.
 - Verification: `python -m compileall -q api/app`, `npx tsc --noEmit --incremental false`, and `git diff --check` passed.
 
 ---
