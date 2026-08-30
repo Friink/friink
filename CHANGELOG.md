@@ -53,6 +53,7 @@ _Last updated: 2026-08-30_
 - [web] Updated the login/signup screen dark-mode background to `#161616`, kept the auth form fluid with a `31rem` maximum width, and aligned mobile auth controls to the right.
 - [docs] Documented the login/signup responsive-width, dark-mode, and mobile action-alignment contracts in `packages/design/design.md`.
 - [dev] Restarted the local Next.js server after a generated `.next` stylesheet cache caused the landing page CSS asset to return 404; the landing source was unchanged and styles were verified loading again.
+- [web] Kept the mobile Forgot password control left-aligned while retaining right-aligned mobile auth action groups.
 
 ## 2026-08-30
 

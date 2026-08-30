@@ -595,7 +595,7 @@ textarea {
   }
 
   .forgot-password {
-    justify-self: end;
+    justify-self: start;
   }
 
   .signup-actions {

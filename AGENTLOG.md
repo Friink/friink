@@ -3350,3 +3350,19 @@
 - Reason/Decision: Preserve the repository’s required per-task documentation trail while recording the responsive auth contract and distinguishing the transient local dev-server failure from a landing-page code regression.
 - Verification: Repository `npm run build` passed; live localhost verification confirmed landing CTA styles loaded and `scrollWidth` remained below the viewport width.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the mobile Forgot password control left-aligned on the login screen.
+- Changes Made:
+  - Changed the mobile `.forgot-password` alignment back to `justify-self: start`.
+  - Updated the login/signup design contract to distinguish left-aligned Forgot password from right-aligned auth action groups.
+  - Synchronized `CHANGELOG.md` and `AGENTLOG.md`.
+- Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The Forgot password control is a separate helper action and should retain its left edge on mobile; only the grouped Back/Continue/Login actions follow the right-alignment requirement.
+- Verification: `git diff --check` passed.
+

@@ -297,7 +297,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 ### 10a. Login & Signup Screen (`web/components/login-screen.tsx`)
 - **Responsive Width Rule**: The auth form fills the available viewport width, caps at `31rem` on larger screens, and must remain shrinkable on narrow devices without horizontal overflow.
 - **Dark Mode Rule**: When the system prefers dark mode, the auth screen background is `#161616`.
-- **Mobile Action Rule**: At widths up to `480px`, auth actions and the Forgot password control are right-aligned, matching the desktop action direction.
+- **Mobile Action Rule**: At widths up to `480px`, auth action groups are right-aligned, while the Forgot password control remains left-aligned.
 
 ### 11. ToastStack (`web/components/toast-stack.tsx`)
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.
