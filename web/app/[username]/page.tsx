@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { ProfileClient } from './profile-client';
+import { permanentRedirect } from 'next/navigation';
 import { isReservedProfileRoute } from '@/lib/profile-display';
 
 type ProfilePageProps = {
@@ -13,5 +13,5 @@ export default function UserProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
 
-  return <ProfileClient username={params.username} />;
+  permanentRedirect(`/${encodeURIComponent(params.username)}/posts`);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { FeedPost } from '@/components/feed-post';
@@ -22,6 +22,8 @@ type ProfileScreenProps = {
   onFollow?: () => void;
   onCancelRequest?: () => void;
   onUnfollow?: () => void;
+  initialTab?: ProfileTab;
+  onTabChange?: (tab: ProfileTab) => void;
 };
 
 type ProfileTab = 'posts' | 'replies';
@@ -58,8 +60,11 @@ export function ProfileScreen({
   onFollow,
   onCancelRequest,
   onUnfollow,
+  initialTab = 'posts',
+  onTabChange,
 }: ProfileScreenProps) {
-  const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+  const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
+  useEffect(() => setActiveTab(initialTab), [initialTab]);
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
   const action = getConnectionAction(connectionState, { onFollow, onCancelRequest, onUnfollow });
 
@@ -82,10 +87,10 @@ export function ProfileScreen({
 
         <div className="profile-meta-row">
           <div className="profile-stats" aria-label="Profile statistics">
-            <a href={`${profileConnectionsBasePath}?tab=following`}>
+            <a href={`${profileConnectionsBasePath}/following`}>
               <strong>{profileStats?.following ?? '—'}</strong> following
             </a>
-            <a href={`${profileConnectionsBasePath}?tab=followers`}>
+            <a href={`${profileConnectionsBasePath}/followers`}>
               <strong>{profileStats?.followers ?? '—'}</strong> followers
             </a>
           </div>
@@ -122,7 +127,11 @@ export function ProfileScreen({
       <Tabs
         tabs={profileTabs}
         activeId={activeTab}
-        onChange={(id) => setActiveTab(id as ProfileTab)}
+        onChange={(id) => {
+          const tab = id as ProfileTab;
+          setActiveTab(tab);
+          onTabChange?.(tab);
+        }}
         ariaLabel="Profile tabs"
         className="section-tabs"
       />

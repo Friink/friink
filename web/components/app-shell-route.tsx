@@ -11,9 +11,12 @@ type AppShellRouteProps = {
   refreshCurrentUser?: boolean;
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
+  initialHomeFilter?: 'all' | 'connections';
+  initialMessagesTab?: 'all' | 'muted' | 'requests';
+  initialSettingsTab?: 'general' | 'profile' | 'account' | 'privacy';
 };
 
-export function AppShellRoute({ initialScreen, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all' }: AppShellRouteProps) {
+export function AppShellRoute({ initialScreen, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general' }: AppShellRouteProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
 
@@ -49,5 +52,5 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
 
   if (!user) return null;
 
-  return <AppShell user={user} onLogout={handleLogout} initialScreen={initialScreen} onUserChange={refreshCurrentUser ? setUser : undefined} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} />;
+  return <AppShell user={user} onLogout={handleLogout} initialScreen={initialScreen} onUserChange={refreshCurrentUser ? setUser : undefined} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} />;
 }

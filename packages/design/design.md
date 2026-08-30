@@ -41,6 +41,16 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
   - Notifications (`fa-bell`) opens a floating recent-notifications dropdown with up to four items, a green unread indicator on the bell, an unread-count pill, and an `All Notifications` link to `/notifications`.
 
+### Tab URL Contract
+
+- Every tab is addressable by its own path segment so tabs can be bookmarked, refreshed, and navigated with browser history.
+- Home uses `/home/explore` and `/home/connections`.
+- Connections uses `/connections/all`, `/connections/followers`, `/connections/following`, and `/connections/requests`; another user's directory uses `/{username}/connections/{tab}`.
+- Chat uses `/chat/all`, `/chat/muted`, and `/chat/requests`.
+- Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
+- Profile content uses `/{username}/posts` and `/{username}/replies`.
+- Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
+
 ## Feed Behavior
 
 > Updated to match shipped behavior as of 2026-08-26 — see CHANGELOG.md entry 2026-08-26

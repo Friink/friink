@@ -3831,3 +3831,20 @@
 - Reason/Decision: Profile pages already received profile-picture data through the public-user response, but post responses omitted the same field, causing feed cards to fall back to the default image.
 - Verification: `git diff --check` passed; targeted TypeScript verification follows.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Give every tab its own URL path.
+- Changes Made:
+  - Added canonical tab routes for Home, Connections, another user's Connections, Chat, Settings, and Profile Posts/Replies.
+  - Made tab changes push route paths instead of query parameters or local-only state.
+  - Updated profile statistic links and the Edit action to use canonical tab paths.
+  - Kept legacy root routes as redirects to their default tabs.
+- Files/Scope Touched: `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/components/profile-screen.tsx`, `web/app/home/[tab]/page.tsx`, `web/app/connections/[tab]/page.tsx`, `web/app/[username]/connections/[tab]/page.tsx`, `web/app/chat/[tab]/page.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/[username]/posts/page.tsx`, `web/app/[username]/replies/page.tsx`, `web/app/home/page.tsx`, `web/app/connections/page.tsx`, `web/app/chat/page.tsx`, `web/app/settings/page.tsx`, `web/app/[username]/page.tsx`, `packages/design/design.md`, `CHANGELOG.md`.
+- Reason/Decision: URL-owned tab state makes each section directly addressable and preserves expected refresh, bookmark, and browser-history behavior.
+- Verification: `npm exec tsc -- --noEmit --incremental false` and `npm run build` passed; generated route output includes all canonical tab paths.
+

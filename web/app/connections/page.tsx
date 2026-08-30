@@ -1,4 +1,4 @@
-import { AppShellRoute } from '@/components/app-shell-route';
+import { permanentRedirect } from 'next/navigation';
 
 type ConnectionsPageProps = {
   searchParams?: { tab?: string };
@@ -9,5 +9,5 @@ function getInitialFilter(tab?: string): 'all' | 'followers' | 'following' | 're
 }
 
 export default function ConnectionsPage({ searchParams }: ConnectionsPageProps) {
-  return <AppShellRoute initialScreen="connections" initialConnectionsFilter={getInitialFilter(searchParams?.tab)} />;
+  permanentRedirect(`/connections/${getInitialFilter(searchParams?.tab)}`);
 }

@@ -59,6 +59,11 @@ type AppShellProps = {
   profileConnectionsBasePath?: string;
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
+  initialHomeFilter?: 'all' | 'connections';
+  initialMessagesTab?: 'all' | 'muted' | 'requests';
+  initialSettingsTab?: 'general' | 'profile' | 'account' | 'privacy';
+  profileTab?: 'posts' | 'replies';
+  onProfileTabChange?: (tab: 'posts' | 'replies') => void;
 };
 
 type ComposeContext =
@@ -79,7 +84,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all' }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -102,11 +107,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
   const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
+  const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>(initialHomeFilter);
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
-  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>('all');
-  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
+  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>(initialMessagesTab);
+  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>(initialSettingsTab);
   const [canGoBack, setCanGoBack] = useState(false);
+  useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
+  useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
+  useEffect(() => setMessagesTab(initialMessagesTab), [initialMessagesTab]);
+  useEffect(() => setSettingsTab(initialSettingsTab), [initialSettingsTab]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
   const connectionsTabs = !viewingOtherConnections && user.isPrivate
@@ -229,22 +238,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     // route to pages that have their own app route
     switch (screen) {
       case 'home':
-        router.push('/home');
+        router.push('/home/explore');
         break;
       case 'profile':
         router.push(`/${user.username}`);
         break;
       case 'connections':
-        router.push('/connections');
+        router.push('/connections/all');
         break;
       case 'starred':
         router.push('/starred');
         break;
       case 'settings':
-        router.push('/settings');
+        router.push('/settings/general');
         break;
       case 'messages':
-        router.push('/chat');
+        router.push('/chat/all');
         break;
       case 'notifications':
         router.push('/notifications');
@@ -259,8 +268,23 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   function handleConnectionsFilterChange(filter: 'all' | 'followers' | 'following' | 'requests') {
     setConnectionsFilter(filter);
-    const nextUrl = filter === 'all' ? pathname : `${pathname}?tab=${filter}`;
-    router.replace(nextUrl, { scroll: false });
+    const basePath = viewingOtherConnections ? `/${encodeURIComponent(connectionsUsername!)}/connections` : '/connections';
+    router.push(`${basePath}/${filter}`, { scroll: false });
+  }
+
+  function handleHomeFilterChange(filter: 'all' | 'connections') {
+    setHomeFilter(filter);
+    router.push(`/home/${filter === 'all' ? 'explore' : 'connections'}`, { scroll: false });
+  }
+
+  function handleMessagesTabChange(tab: 'all' | 'muted' | 'requests') {
+    setMessagesTab(tab);
+    router.push(`/chat/${tab}`, { scroll: false });
+  }
+
+  function handleSettingsTabChange(tab: 'general' | 'profile' | 'account' | 'privacy') {
+    setSettingsTab(tab);
+    router.push(`/settings/${tab}`, { scroll: false });
   }
 
   function addToast(input: ToastInput, tone: ToastMessage['tone'] = 'error') {
@@ -454,7 +478,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   function openProfileSettings() {
     setSettingsTab('profile');
-    navigateTo('settings');
+    router.push('/settings/profile');
   }
 
   function mapApiPost(post: ApiPost): Post {
@@ -741,7 +765,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'connections', label: 'Connections' },
                 ]}
                 activeId={homeFilter}
-                onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                onChange={(id) => handleHomeFilterChange(id as 'all' | 'connections')}
                 ariaLabel="Home quick tabs"
               />
             )}
@@ -761,7 +785,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'requests', label: 'Requests' },
                 ]}
                 activeId={messagesTab}
-                onChange={(id) => setMessagesTab(id as 'all' | 'muted' | 'requests')}
+                onChange={(id) => handleMessagesTabChange(id as 'all' | 'muted' | 'requests')}
                 ariaLabel="Chat filters"
               />
             )}
@@ -774,7 +798,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'privacy', label: 'Privacy & Safety' },
                 ]}
                 activeId={settingsTab}
-                onChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
+                onChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'privacy')}
                 ariaLabel="Settings sections"
               />
             )}
@@ -787,7 +811,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <HomeScreen
                       posts={posts}
                       activeFilter={homeFilter}
-                      onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                      onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'connections')}
                       onReply={handleReply}
                       onQuote={handleQuote}
                       injectedPost={homeInjectedPost}
@@ -804,6 +828,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onReply={handleReply}
                       onQuote={handleQuote}
                       onEditProfile={openProfileSettings}
+                      initialTab={profileTab}
+                      onTabChange={onProfileTabChange}
                       connectionState={profileConnectionState}
                       connectionActionBusy={connectionActionBusy}
                       onFollow={handleFollowProfile}
@@ -835,7 +861,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       appearance={appearance}
                       onAppearanceChange={(a) => persistAppearance(a)}
                       activeTab={settingsTab}
-                      onTabChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
+                      onTabChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'privacy')}
                       onUserChange={onUserChange}
                       onToast={addToast}
                     />

@@ -7,9 +7,10 @@ import { clearAuthSession, getPublicUser, listFollowers, listFollowing, loadAuth
 
 type ProfileClientProps = {
   username: string;
+  initialTab?: 'posts' | 'replies';
 };
 
-export function ProfileClient({ username }: ProfileClientProps) {
+export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profileUser, setProfileUser] = useState<AuthUser | null>(null);
@@ -115,6 +116,8 @@ export function ProfileClient({ username }: ProfileClientProps) {
       profileConnectionsBasePath={profileConnectionsBasePath}
       onLogout={handleLogout}
       initialScreen="profile"
+      profileTab={initialTab}
+      onProfileTabChange={(tab) => router.push(`/${encodeURIComponent(profileHandle)}/${tab}`)}
     >
       {resolvedProfile ? undefined : (
         <section className="profile-unavailable" aria-live="polite">
