@@ -3333,3 +3333,20 @@
 - Reason/Decision: Make the mandatory reading chain reachable from the already-required changelog, eliminate duplicate agent rules, and keep human-facing setup information ahead of agent-specific guidance.
 - Verification: Read the final README top to bottom, confirmed one AI-agent instruction section remains, and confirmed the design/rules “as needed” definitions remain present.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documentation for the login/signup responsive styling session and local landing-page stylesheet recovery.
+- Changes Made:
+  - Read `README.md` and followed its documentation chain through `CHANGELOG.md`, `AGENTLOG.md`, `RULES.md`, and the full design contract.
+  - Added a login/signup visual contract covering fluid width, the `31rem` desktop cap, `#161616` dark-mode background, and right-aligned mobile auth controls.
+  - Added synchronized changelog entries for the auth CSS changes and the local Next.js stylesheet-cache recovery.
+  - Recorded that the landing-page source was unchanged; the apparent regression was a stale generated `.next` CSS asset returning 404 until the dev server restarted.
+- Files/Scope Touched: `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Preserve the repository’s required per-task documentation trail while recording the responsive auth contract and distinguishing the transient local dev-server failure from a landing-page code regression.
+- Verification: Repository `npm run build` passed; live localhost verification confirmed landing CTA styles loaded and `scrollWidth` remained below the viewport width.
+

@@ -50,6 +50,22 @@ _Last updated: 2026-08-30_
 - [api/web] Post URLs now use an 8-character random `public_id` plus an on-the-fly, eight-word/64-character content slug; UUID primary and foreign keys remain unchanged, and stale username/slug segments redirect to the canonical URL.
 - [api] Neon database migration `20260830_0009` has been applied successfully and existing posts have been backfilled with public IDs.
 - [docs] README is now the single source of truth for the verified stack, and it contains standing instructions for keeping CHANGELOG, AGENTLOG, design, and rules documentation current.
+- [web] Updated the login/signup screen dark-mode background to `#161616`, kept the auth form fluid with a `31rem` maximum width, and aligned mobile auth controls to the right.
+- [docs] Documented the login/signup responsive-width, dark-mode, and mobile action-alignment contracts in `packages/design/design.md`.
+- [dev] Restarted the local Next.js server after a generated `.next` stylesheet cache caused the landing page CSS asset to return 404; the landing source was unchanged and styles were verified loading again.
+
+## 2026-08-30
+
+### Changed
+
+- [web] Refined login/signup responsive styling: dark-mode auth background is `#161616`, the form is explicitly fluid up to `31rem`, and mobile auth controls remain right-aligned.
+- [docs] Added the login/signup visual contract to `packages/design/design.md`.
+- [dev] Recovered localhost landing-page styling by restarting Next.js after a stale generated CSS asset returned 404; no landing-page source changes were needed.
+
+### Verified
+
+- [web] `npm run build` passed at the repository root; Next.js compiled, type-checked, and generated all routes successfully.
+- [dev] Live `http://localhost:3000/` verification confirmed landing CTA styles loaded and `scrollWidth` remained below the viewport width.
 
 ## 2026-08-30
 

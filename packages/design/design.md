@@ -294,6 +294,11 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - Height `3rem`, corner radius `8px` (`.pill-button`).
   - Variants: `brand` (`.pill-button-brand`, background `#33aa55`, color white), `quiet` (`.pill-button-quiet`, background `#eaf5ed`, color ink), and hollow outline (`.signup-back-button`).
 
+### 10a. Login & Signup Screen (`web/components/login-screen.tsx`)
+- **Responsive Width Rule**: The auth form fills the available viewport width, caps at `31rem` on larger screens, and must remain shrinkable on narrow devices without horizontal overflow.
+- **Dark Mode Rule**: When the system prefers dark mode, the auth screen background is `#161616`.
+- **Mobile Action Rule**: At widths up to `480px`, auth actions and the Forgot password control are right-aligned, matching the desktop action direction.
+
 ### 11. ToastStack (`web/components/toast-stack.tsx`)
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.
 - **Desktop Placement**: Fixed lower-right, above the floating bar, stacking vertically with newest toast appended at the bottom.
