@@ -3421,6 +3421,19 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Clarify where staging R2 environment values belong.
+- Changes Made: Updated `api/.env.example` to state that staging R2 values belong in Vercel Preview and must not be committed.
+- Files/Scope Touched: `api/.env.example`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep the tracked environment template useful without implying that staging secrets should be stored in the repository.
+- Verification: Confirmed the actual staging credentials remain in the ignored local env file only; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Make profile-picture upload errors contextual instead of showing generic browser/API messages.
 - Changes Made:
   - Added stage-aware error handling around profile-picture upload URL creation, direct R2 transfer, and API confirmation.
