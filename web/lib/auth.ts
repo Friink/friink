@@ -263,32 +263,97 @@ export type ProfilePictureUpload = {
   object_key: string;
 };
 
-export async function uploadProfilePicture(accessToken: string, file: File): Promise<AuthUser> {
-  const upload = await requestApi<ProfilePictureUpload>('/auth/me/profile-picture/upload-url', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    authContext: 'authenticated_request',
-    body: JSON.stringify({ content_type: file.type }),
-  });
+function profilePictureUploadError(stage: 'start' | 'transfer' | 'confirm', error: unknown): AuthApiError {
+  const apiError = error instanceof AuthApiError ? error : null;
+  const status = apiError?.status ?? 0;
 
-  const uploadResponse = await fetch(upload.upload_url, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type },
-    body: file,
-  });
-  if (!uploadResponse.ok) {
-    throw new AuthApiError(`Profile picture upload failed with ${uploadResponse.status}.`, uploadResponse.status);
+  if (stage === 'start') {
+    if (status === 404) {
+      return new AuthApiError('The staging API could not find the profile-picture upload endpoint (404). Redeploy the FastAPI staging project with the latest code.', status);
+    }
+    if (status === 503) {
+      return new AuthApiError('The staging API is missing its R2 configuration. Check the five R2 variables in the FastAPI project’s Preview environment, then redeploy.', status);
+    }
+    if (status === 401) {
+      return new AuthApiError('Your login session is no longer valid. Please log in again before uploading a profile picture.', status);
+    }
+    if (status === 0) {
+      return new AuthApiError('The staging API could not be reached while starting the profile-picture upload. Check that NEXT_PUBLIC_API_BASE_URL points to https://staging-api.friink.com.', status);
+    }
+    return new AuthApiError(`The staging API could not start the profile-picture upload (${status}). ${apiError?.message || 'Check the FastAPI deployment logs.'}`, status);
   }
 
-  const confirmed = await requestApi<{ profile_picture_url: string; profile_picture_updated_at: string }>(
-    '/auth/me/profile-picture/confirm',
-    {
+  if (stage === 'transfer') {
+    if (status === 0) {
+      return new AuthApiError('The image could not be sent to R2. The browser blocked the storage request; check that the R2 bucket CORS policy allows https://staging.friink.com to use PUT with the Content-Type header.', status);
+    }
+    if (status === 403) {
+      return new AuthApiError('R2 rejected the image upload (403). Check the staging R2 access keys, bucket permissions, and CORS policy.', status);
+    }
+    if (status === 404) {
+      return new AuthApiError('R2 could not find the staging upload target (404). Check the R2 account ID, bucket name, and generated upload URL.', status);
+    }
+    return new AuthApiError(`R2 could not accept the profile picture (${status}). Check the R2 bucket configuration and CORS policy.`, status);
+  }
+
+  if (status === 404) {
+    return new AuthApiError('The image reached R2, but the staging API could not find the upload-confirmation endpoint (404). Redeploy the FastAPI staging project with the latest code.', status);
+  }
+  if (status === 502) {
+    return new AuthApiError('The image was uploaded, but the API could not verify it in R2. Check the staging bucket, access keys, and object permissions.', status);
+  }
+  if (status === 503) {
+    return new AuthApiError('The image was uploaded, but the staging API is missing its R2 configuration. Check the five R2 variables in the FastAPI project’s Preview environment, then redeploy.', status);
+  }
+  if (status === 401) {
+    return new AuthApiError('The image was uploaded, but your login session expired before confirmation. Please log in again.', status);
+  }
+  if (status === 0) {
+    return new AuthApiError('The image was uploaded to R2, but the staging API could not be reached to confirm it. Check https://staging-api.friink.com and its deployment status.', status);
+  }
+  return new AuthApiError(`The image was uploaded, but the API could not confirm it (${status}). ${apiError?.message || 'Check the FastAPI deployment logs.'}`, status);
+}
+
+export async function uploadProfilePicture(accessToken: string, file: File): Promise<AuthUser> {
+  let upload: ProfilePictureUpload;
+  try {
+    upload = await requestApi<ProfilePictureUpload>('/auth/me/profile-picture/upload-url', {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
       authContext: 'authenticated_request',
-      body: JSON.stringify({ object_key: upload.object_key }),
-    },
-  );
+      body: JSON.stringify({ content_type: file.type }),
+    });
+  } catch (error) {
+    throw profilePictureUploadError('start', error);
+  }
+
+  try {
+    const uploadResponse = await fetch(upload.upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    });
+    if (!uploadResponse.ok) {
+      throw new AuthApiError(`R2 returned HTTP ${uploadResponse.status}.`, uploadResponse.status);
+    }
+  } catch (error) {
+    throw profilePictureUploadError('transfer', error);
+  }
+
+  let confirmed: { profile_picture_url: string; profile_picture_updated_at: string };
+  try {
+    confirmed = await requestApi<{ profile_picture_url: string; profile_picture_updated_at: string }>(
+      '/auth/me/profile-picture/confirm',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ object_key: upload.object_key }),
+      },
+    );
+  } catch (error) {
+    throw profilePictureUploadError('confirm', error);
+  }
   const session = loadAuthSession();
   if (!session) throw new AuthApiError('Please log in again.', 401);
   return {

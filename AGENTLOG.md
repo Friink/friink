@@ -3421,6 +3421,20 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Make profile-picture upload errors contextual instead of showing generic browser/API messages.
+- Changes Made:
+  - Added stage-aware error handling around profile-picture upload URL creation, direct R2 transfer, and API confirmation.
+  - Added specific guidance for missing R2 Preview variables, incorrect staging API routing, expired sessions, R2 403/404 responses, failed CORS requests, and post-upload confirmation failures.
+  - Documented the contextual error-message contract for profile-picture uploads in the design system.
+- Files/Scope Touched: `web/lib/auth.ts`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The previous generic `Failed to fetch` and `Not Found` messages did not identify which stage failed or whether the fix belonged in the web deployment, FastAPI deployment, or R2 bucket configuration. The upload pipeline now preserves that context for the user.
+- Verification: `npx tsc --noEmit --incremental false` passed in `web`.
+
+---
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Prepare profile picture media schema and interface layer before R2 credentials are available.
 - Changes Made:
   - Added nullable `profile_picture_url` and `profile_picture_updated_at` fields to `User` plus Alembic migration `20260830_0010`.
