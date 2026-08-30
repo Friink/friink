@@ -3366,3 +3366,115 @@
 - Reason/Decision: The Forgot password control is a separate helper action and should retain its left edge on mobile; only the grouped Back/Continue/Login actions follow the right-alignment requirement.
 - Verification: `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the Connections tab query parameter synchronized after tab changes.
+- Changes Made:
+  - Added shared AppShell URL synchronization for Connections tab changes, preserving the current self/other-user route.
+  - The `All` tab removes `?tab`, while Followers, Following, and Requests write their active tab.
+  - Documented and logged the URL-state behavior.
+- Files/Scope Touched: `web/components/app-shell.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The URL should reflect the visible tab so refreshes, navigation history, and shared links remain accurate after switching tabs.
+- Verification: `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move profile action buttons below follower/following counts and align them left.
+- Changes Made:
+  - Updated shared profile CSS so the profile meta area uses a single-column layout: inline statistics first, then a left-aligned actions row.
+  - Updated the ProfileScreen design contract and profile header rule to describe the new all-viewport layout.
+  - Synchronized `CHANGELOG.md` and `AGENTLOG.md`.
+- Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Keep follower/following information grouped on its own line and make profile actions consistently discoverable from the left edge on desktop and mobile.
+- Verification: `git diff --check` passed; targeted CSS/source review confirmed the meta row is single-column and actions are left-aligned, with no redundant pointer-specific override.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show an unavailable message for random or unknown profile usernames.
+- Changes Made:
+  - Replaced the synthetic missing-user fallback in `ProfileClient` with an explicit `loading`/`ready`/`unavailable` state.
+  - Added the exact message `Does not exist or unavailable.` and prevented the signed-in profile from flashing while an unknown profile lookup is pending.
+  - Updated shared styling and synchronized the ProfileScreen/design and profile-route rules documentation.
+- Files/Scope Touched: `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Unknown usernames represent unavailable profiles, not demo users; the UI must communicate that state without inventing identity data.
+- Verification: Targeted TypeScript/source review completed; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the profile statistic number follow the label hover color.
+- Changes Made:
+  - Added hover/focus inheritance for `.profile-stats a strong` so the complete number-and-label link changes to the brand color together.
+  - Updated the ProfileScreen design contract and synchronized the changelog.
+- Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The number had a more specific ink color than its parent link, making the hover state visually incomplete.
+- Verification: `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Link profile stats and support another user's Connections directory.
+- Changes Made:
+  - Converted the complete follower/following statistic into an ununderlined route link with a tab query parameter.
+  - Added `/{username}/connections` using the shared AppShell/Connections screen, loading that username's followers and following while exposing the three directory tabs.
+  - Preserved `/connections` for the signed-in user's own data and request behavior.
+  - Updated the design and rules documentation and synchronized the changelog and agent log.
+- Files/Scope Touched: `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/app/connections/page.tsx`, `web/app/[username]/connections/page.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Profile statistics should be direct navigation links, and browsing another user's connections must not silently substitute the signed-in user's network.
+- Verification: Targeted TypeScript/source review completed; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Integrate live profile follower/following counts and link them to Connections tabs.
+- Changes Made:
+  - Connected `listFollowers` and `listFollowing` API counts to `ProfileScreen` for self and other-user profiles.
+  - Converted each statistic into an accessible button and wired AppShell navigation to select Followers or Following before routing to Connections.
+  - Updated design/rules documentation and synchronized the changelog and agent log.
+- Files/Scope Touched: `web/app/[username]/profile-client.tsx`, `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Profile counts must reflect accepted API connections and provide a direct path to the relevant directory tab.
+- Verification: Targeted TypeScript/source review completed; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent the current profile from flashing before the requested profile loads.
+- Changes Made:
+  - Gated profile-shell rendering by the requested username matching the resolved profile, rather than trusting the previous `ready` state.
+  - Added a `Loading profile...` state and ignored stale asynchronous lookup results after username navigation.
+  - Synchronized the design, rules, changelog, and agent log documentation.
+- Files/Scope Touched: `web/app/[username]/profile-client.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Client-side navigation reuses the profile client component, so prior state can otherwise render the old/self profile for one or more frames before the new API result arrives.
+- Verification: Targeted TypeScript/source review completed; `git diff --check` passed.
+

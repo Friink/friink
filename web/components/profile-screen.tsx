@@ -11,6 +11,8 @@ import type { Post } from '@/lib/data';
 type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
+  profileStats?: { followers: number; following: number } | null;
+  profileConnectionsBasePath?: string;
   isOwnProfile?: boolean;
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
@@ -45,6 +47,8 @@ function getInitials(value: string) {
 export function ProfileScreen({
   user,
   posts,
+  profileStats = null,
+  profileConnectionsBasePath = '/connections',
   isOwnProfile = true,
   onReply,
   onQuote,
@@ -77,8 +81,12 @@ export function ProfileScreen({
 
         <div className="profile-meta-row">
           <div className="profile-stats" aria-label="Profile statistics">
-            <span><strong>0</strong> following</span>
-            <span><strong>0</strong> followers</span>
+            <a href={`${profileConnectionsBasePath}?tab=following`}>
+              <strong>{profileStats?.following ?? '—'}</strong> following
+            </a>
+            <a href={`${profileConnectionsBasePath}?tab=followers`}>
+              <strong>{profileStats?.followers ?? '—'}</strong> followers
+            </a>
           </div>
 
           <div className="profile-actions">

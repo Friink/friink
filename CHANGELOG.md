@@ -54,6 +54,18 @@ _Last updated: 2026-08-30_
 - [docs] Documented the login/signup responsive-width, dark-mode, and mobile action-alignment contracts in `packages/design/design.md`.
 - [dev] Restarted the local Next.js server after a generated `.next` stylesheet cache caused the landing page CSS asset to return 404; the landing source was unchanged and styles were verified loading again.
 - [web] Kept the mobile Forgot password control left-aligned while retaining right-aligned mobile auth action groups.
+- [web] Moved profile edit/message/follow actions to a left-aligned row below the inline follower/following statistics across all viewport types.
+- [docs] Updated the profile layout contracts in `packages/design/design.md` and `RULES.md` to record the stacked, left-aligned action row.
+- [web] Unknown username routes now show `Does not exist or unavailable.` instead of rendering a synthetic demo profile, including while the lookup is pending.
+- [docs] Documented the unavailable-profile behavior in `RULES.md` and the ProfileScreen contract.
+- [web] Fixed client-side profile navigation so a previously loaded profile cannot flash while the new username is resolving; stale lookup results are ignored and a loading state is shown.
+- [docs] Documented the profile loading and stale-request handling contract.
+- [web] Replaced hardcoded profile follower/following zeros with API-backed counts and made each statistic open the matching Connections tab.
+- [docs] Documented the profile count and statistic-navigation contract.
+- [web] Made the complete profile statistics ununderlined links, with self-profile links targeting `/connections` and other-profile links targeting `/{username}/connections`; the shared Connections screen now loads the requested user's data.
+- [docs] Documented profile-specific Connections routes and three-tab behavior for other users.
+- [web] Updated profile statistic hover/focus styling so the number and its following/followers label change color together.
+- [web] Connections tab changes now update the current URL's `tab` query parameter, removing it when returning to `All`.
 
 ## 2026-08-30
 

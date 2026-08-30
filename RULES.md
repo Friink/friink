@@ -21,10 +21,18 @@ the entry, so history isn't lost.
 
 ### Rule: Profile Header Summary Uses ContentBox Spacing
 - **What:** Web profile pages render profile identity, about text, follower/following stats, and edit/message/follow actions through the shared `ProfileScreen` inside `ContentBox`. These elements are grouped in the component-level profile summary section, not patched with route-specific spacing.
-- **Edge cases:** On desktop/fine-pointer views, profile stats stay left while edit/message/follow actions stay right in the same profile meta grid row; stats use the same minimum row height as the action buttons so the text centers vertically against them. On mobile touch/coarse-pointer views, actions move below the stats and remain right-aligned. The dynamic `/{username}` route must continue delegating to shared `AppShell` and `ProfileScreen`.
+- **Edge cases:** Profile stats are API-backed, remain inline and left-aligned, and each complete number-and-label statistic is an ununderlined link. Self-profile links use `/connections?tab=...`; another profile uses `/{username}/connections?tab=...`. Edit/message/follow actions move to a dedicated left-aligned row below them on all viewports. The dynamic `/{username}` route must continue delegating to shared `AppShell` and `ProfileScreen`.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`
+- **Since:** 2026-08-30 (Asia/Karachi)
+
+### Rule: Unknown Profile Routes Show Unavailable State
+- **What:** A username route that does not resolve to a public user must render `Does not exist or unavailable.` and must not create or display a synthetic/demo profile.
+- **Edge cases:** The signed-in user's own username continues to render the self-profile, and a real public user continues to render the browsable profile. While a non-own profile lookup is pending, the route shows `Loading profile...` and must not fall back to the signed-in user's profile. Stale results from an earlier username lookup must be ignored.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Contextual Header Lists Use Shared Dropdown
@@ -378,7 +386,8 @@ the entry, so history isn't lost.
 
 ### Rule: Profile Identity And Actions Are Client-Mapped
 - **What:** The web profile screen treats the signed-in user's profile as self and other username routes as other-user profiles. Self-profile shows Edit; other-user profiles show follow/request/following state plus a message icon.
-- **Edge cases:** Profile follower/following counts are currently rendered as `0` in the profile component; live counts are shown on the Connections page instead.
+- **Edge cases:** Counts include accepted connections only, matching the Connections endpoints; pending, rejected, and canceled relationships are excluded. Self-profile Connections shows the signed-in user's data and request behavior; `/{username}/connections` shows the requested user's three-tab follower/following directory without the signed-in user's request tab.
+- **URL State:** Changing the active Connections tab updates the current route's `tab` query parameter; selecting `All` removes the parameter while preserving the current Connections route.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`

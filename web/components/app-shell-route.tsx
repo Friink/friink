@@ -9,9 +9,11 @@ import type { Screen } from '@/lib/data';
 type AppShellRouteProps = {
   initialScreen?: Screen;
   refreshCurrentUser?: boolean;
+  connectionsUsername?: string;
+  initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
 };
 
-export function AppShellRoute({ initialScreen, refreshCurrentUser = false }: AppShellRouteProps) {
+export function AppShellRoute({ initialScreen, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all' }: AppShellRouteProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
 
@@ -47,5 +49,5 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false }: App
 
   if (!user) return null;
 
-  return <AppShell user={user} onLogout={handleLogout} initialScreen={initialScreen} onUserChange={refreshCurrentUser ? setUser : undefined} />;
+  return <AppShell user={user} onLogout={handleLogout} initialScreen={initialScreen} onUserChange={refreshCurrentUser ? setUser : undefined} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} />;
 }

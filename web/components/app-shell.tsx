@@ -55,6 +55,10 @@ type AppShellProps = {
   showTabs?: boolean;
   showFloatingBar?: boolean;
   onUserChange?: (user: AuthUser) => void;
+  profileStats?: { followers: number; following: number } | null;
+  profileConnectionsBasePath?: string;
+  connectionsUsername?: string;
+  initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
 };
 
 type ComposeContext =
@@ -75,7 +79,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all' }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -99,12 +103,13 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
-  const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
+  const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
   const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>('all');
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
   const [canGoBack, setCanGoBack] = useState(false);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
-  const connectionsTabs = user.isPrivate
+  const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
+  const connectionsTabs = !viewingOtherConnections && user.isPrivate
     ? [
         { id: 'all', label: 'All' },
         { id: 'followers', label: 'Followers' },
@@ -252,6 +257,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  function handleConnectionsFilterChange(filter: 'all' | 'followers' | 'following' | 'requests') {
+    setConnectionsFilter(filter);
+    const nextUrl = filter === 'all' ? pathname : `${pathname}?tab=${filter}`;
+    router.replace(nextUrl, { scroll: false });
+  }
+
   function addToast(message: string, tone: ToastMessage['tone'] = 'error') {
     const now = new Date();
     setToasts((current) => [
@@ -334,7 +345,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         });
     }
 
-    const targetUsername = user.username;
+    const targetUsername = viewingOtherConnections ? connectionsUsername! : user.username;
     listFollowers(targetUsername)
       .then((response) => {
         setFollowers(response.users.map((connectionUser) => mapConnectionUser(connectionUser, 'follower')));
@@ -350,7 +361,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       .catch(() => {
         setFollowing([]);
       });
-  }, [activeScreen]);
+  }, [activeScreen, connectionsUsername, viewingOtherConnections]);
 
   useEffect(() => {
     const viewedUser = profileUser ?? user;
@@ -737,7 +748,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
               <Tabs
                 tabs={connectionsTabs}
                 activeId={connectionsFilter}
-                onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
+                onChange={(id) => handleConnectionsFilterChange(id as 'all' | 'followers' | 'following' | 'requests')}
                 ariaLabel="Connections filters"
               />
             )}
@@ -786,6 +797,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <ProfileScreen
                       user={profileUser ?? user}
                       posts={posts}
+                      profileStats={profileStats}
+                      profileConnectionsBasePath={profileConnectionsBasePath}
                       isOwnProfile={!profileUser}
                       onReply={handleReply}
                       onQuote={handleQuote}
@@ -801,14 +814,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <ConnectionsScreen
                       connections={getConnectionsForFilter()}
                       activeFilter={connectionsFilter}
-                      onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
+                      onFilterChange={(id) => handleConnectionsFilterChange(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
                       outgoingRequests={outgoingRequests}
                       requestActionBusyId={requestActionBusyId}
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
                       onCancelRequest={handleCancelSentRequest}
-                      onRemoveFollower={handleRemoveFollower}
+                      onRemoveFollower={viewingOtherConnections ? undefined : handleRemoveFollower}
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}

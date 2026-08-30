@@ -206,13 +206,14 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 
 ### 4. ProfileScreen (`web/components/profile-screen.tsx`)
 - **Purpose**: Profile view for both signed-in user self-profile and browsable other-user profiles.
+- **Profile Resolution State**: The route waits for the requested username to resolve before rendering profile content. While pending it shows `Loading profile...`; if the username cannot be resolved, it renders `Does not exist or unavailable.` and must not synthesize a demo identity.
 - **Fixed Internal Layout Order**:
   1. Profile Summary (`.profile-summary`): A single section inside `ContentBox` containing identity, about text, statistics, and profile actions with standard block spacing and no custom outer gutter.
   2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`4rem` large avatar).
   3. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 34rem`.
-  4. Profile Meta Row (`.profile-meta-row`): A two-column grid containing statistics on the left and profile actions on the right, using the shared `ContentBox` inset rather than custom profile gutters.
-     - Statistics (`.profile-stats`): Left-aligned, displaying `0 following` and `0 followers`, with a minimum row height matching profile action buttons so text centers vertically against the buttons.
-     - Actions (`.profile-actions`): Right-aligned. On desktop/fine-pointer views, actions share the same row as statistics and are vertically centered. On mobile touch/coarse-pointer views, actions move below the statistics and remain right-aligned.
+  4. Profile Meta Row (`.profile-meta-row`): A single-column grid with statistics first and profile actions on the next row, using the shared `ContentBox` inset rather than custom profile gutters.
+     - Statistics (`.profile-stats`): Left-aligned and inline, displaying API-backed following and follower counts. Each complete number-and-label statistic is an ununderlined link that opens the matching Connections tab; self-profile links use `/connections`, while another profile uses `/{username}/connections`. Hover and focus color the complete link, including the number.
+     - Actions (`.profile-actions`): Left-aligned on a dedicated row below the inline statistics on all viewports.
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
