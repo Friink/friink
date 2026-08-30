@@ -3462,6 +3462,23 @@
 
 ---
 
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix profile-picture confirmation diagnostics and make upload errors user-facing.
+- Changes Made:
+  - Confirmed the FastAPI confirmation route is declared at `POST /auth/me/profile-picture/confirm` and registered through the auth router; the staging 404 is therefore a deployment exposure/configuration issue rather than a missing source decorator.
+  - Added structured toast fields for title, stable code, user-facing summary, and secondary detail text.
+  - Updated profile-picture upload failures to use plain-language summaries while retaining actionable diagnostic detail for API, R2, CORS, session, and confirmation failures.
+  - Updated the shared toast design contract and changelog.
+- Files/Scope Touched: `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/components/app-shell.tsx`, `web/components/toast-stack.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Users need a readable explanation first, with enough structured information to report or troubleshoot the failure without exposing raw developer-oriented text as the primary message. The existing confirmation route should be fixed at the FastAPI Vercel project’s source/root deployment configuration, not duplicated in application code.
+- Verification: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+---
+
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5

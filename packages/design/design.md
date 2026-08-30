@@ -305,7 +305,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.
 - **Desktop Placement**: Fixed lower-right, above the floating bar, stacking vertically with newest toast appended at the bottom.
 - **Mobile Placement**: Fixed bottom center, above the floating bar, stacking upward from the bottom while center-aligned.
-- **Content Contract**: Each toast shows the message, a timestamp, and a dismiss icon button.
+- **Content Contract**: Each toast shows a message, timestamp, and dismiss icon button. Structured errors may additionally show a plain-language title, stable error code, and smaller muted detail summary; technical detail must remain secondary to the user-facing message.
 
 ### 12. Settings Rows (`web/components/account-screens.tsx`, `web/components/list-row.tsx`)
 - **Purpose**: Settings reuses the shared `ListRow` primitive for navigational and editable rows so spacing, dividers, and typography stay consistent with notifications and chat.

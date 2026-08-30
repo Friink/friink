@@ -74,12 +74,16 @@ type AuthRequestContext = 'fresh_login' | 'refresh_exchange' | 'authenticated_re
 export class AuthApiError extends Error {
   status: number;
   code?: AuthErrorCode;
+  displayCode?: string;
+  detail: string;
 
-  constructor(message: string, status: number, code?: AuthErrorCode) {
+  constructor(message: string, status: number, code?: AuthErrorCode, options?: { displayCode?: string; detail?: string }) {
     super(message);
     this.name = 'AuthApiError';
     this.status = status;
     this.code = code;
+    this.displayCode = options?.displayCode ?? code ?? (status > 0 ? `HTTP_${status}` : 'CLIENT_ERROR');
+    this.detail = options?.detail ?? message;
   }
 }
 

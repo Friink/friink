@@ -18,7 +18,7 @@ import { NotificationsScreen, type NotificationItem } from '@/components/notific
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
-import { ToastStack, type ToastMessage } from '@/components/toast-stack';
+import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
@@ -263,15 +263,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     router.replace(nextUrl, { scroll: false });
   }
 
-  function addToast(message: string, tone: ToastMessage['tone'] = 'error') {
+  function addToast(input: ToastInput, tone: ToastMessage['tone'] = 'error') {
     const now = new Date();
+    const toast = typeof input === 'string' ? { message: input, tone } : input;
     setToasts((current) => [
       ...current,
       {
-      id: now.getTime(),
-      message,
-      timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
-        tone,
+        id: now.getTime(),
+        ...toast,
+        timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
       },
     ]);
   }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
-import type { ToastMessage } from '@/components/toast-stack';
+import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
 import Cropper from 'react-easy-crop';
@@ -19,7 +19,7 @@ type SettingsScreenProps = {
   activeTab?: SettingsTab;
   onTabChange?: (id: string) => void;
   onUserChange?: (user: AuthUser) => void;
-  onToast?: (message: string, tone?: ToastMessage['tone']) => void;
+  onToast?: (message: ToastInput, tone?: ToastMessage['tone']) => void;
 };
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
@@ -307,7 +307,28 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       setProfilePicturePreview(updatedSession.user.profilePictureUrl);
       onToast?.('Profile picture updated.', 'success');
     } catch (error) {
-      onToast?.(error instanceof ImageCompressionError || error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not upload profile picture.');
+      if (error instanceof AuthApiError) {
+        onToast?.({
+          title: 'Profile picture upload failed',
+          message: 'We couldn’t update your profile picture.',
+          code: error.displayCode ?? 'PROFILE_PICTURE_UPLOAD_UNKNOWN',
+          detail: error.detail,
+        });
+      } else if (error instanceof ImageCompressionError) {
+        onToast?.({
+          title: 'Profile picture processing failed',
+          message: 'We couldn’t prepare this image for upload.',
+          code: 'PROFILE_PICTURE_PROCESSING',
+          detail: error.message,
+        });
+      } else {
+        onToast?.({
+          title: 'Profile picture upload failed',
+          message: 'We couldn’t update your profile picture.',
+          code: 'PROFILE_PICTURE_UPLOAD_UNKNOWN',
+          detail: error instanceof Error ? error.message : 'Please try again.',
+        });
+      }
     } finally {
       setIsProcessingProfilePicture(false);
       setIsUploadingProfilePicture(false);
