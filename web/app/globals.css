@@ -302,7 +302,7 @@ textarea {
 @media (prefers-color-scheme: dark) {
   .login-screen {
     color: #f5f5f5;
-    background: #333333;
+    background: #161616;
   }
 
   .login-screen .pill-field input {
@@ -327,7 +327,9 @@ textarea {
   position: relative;
   display: grid;
   align-content: center;
-  width: min(100%, 31rem);
+  width: 100%;
+  max-width: 31rem;
+  min-width: 0;
   min-height: 100vh;
   padding: 3rem clamp(1.25rem, 5vw, 3rem) 5rem;
   text-align: center;
@@ -593,11 +595,11 @@ textarea {
   }
 
   .forgot-password {
-    justify-self: center;
+    justify-self: end;
   }
 
   .signup-actions {
-    justify-content: center;
+    justify-content: flex-end;
     flex-wrap: wrap;
   }
 }
