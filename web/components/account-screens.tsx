@@ -48,6 +48,15 @@ function SettingsRow({ icon, title, subtitle, children, className = 'settings-ro
   );
 }
 
+function SettingsToggle({ value, onChange, disabled = false }: { value: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
+  return (
+    <span className="settings-toggle" role="group" aria-label="Setting state">
+      <button type="button" className={value ? 'active' : ''} onClick={() => onChange(true)} disabled={disabled} aria-pressed={value}>On</button>
+      <button type="button" className={!value ? 'active' : ''} onClick={() => onChange(false)} disabled={disabled} aria-pressed={!value}>Off</button>
+    </span>
+  );
+}
+
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 function getProfilePictureErrorDetail(error: AuthApiError) {
@@ -481,7 +490,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               title="Profile picture"
               subtitle="Choose an optional JPG, PNG, or WebP picture for your profile."
               className="settings-row settings-row-expanded"
-              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" onClick={() => profilePictureInputRef.current?.click()}>Upload</button>}
+              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /></button>}
             >
               <div className="profile-picture-picker">
                 <div className="profile-picture-preview" aria-hidden="true">
@@ -617,18 +626,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               title="Private profile"
               subtitle="Only approved followers can view your public posts."
               className="settings-row"
-              save={{ disabled: !canUpdatePrivacy, busy: isUpdatingPrivacy, onClick: handlePrivacyUpdate, label: 'Update private profile' }}
-            >
-              <button
-                type="button"
-                className={`settings-toggle-pill${privacyDraft ? ' active' : ''}`}
-                onClick={() => setPrivacyDraft((value) => !value)}
-                disabled={isUpdatingPrivacy}
-                aria-pressed={privacyDraft}
-              >
-                {privacyDraft ? 'On' : 'Off'}
-              </button>
-            </SettingsRow>
+              trailing={
+                <>
+                  <SettingsToggle value={privacyDraft} onChange={setPrivacyDraft} disabled={isUpdatingPrivacy} />
+                  <SaveTickButton disabled={!canUpdatePrivacy} busy={isUpdatingPrivacy} onClick={handlePrivacyUpdate} label="Update private profile" />
+                </>
+              }
+            />
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
@@ -637,9 +641,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               className="settings-row"
               trailing={
                 <>
-                  <button type="button" className={`settings-toggle-pill${directMessagesDraft ? ' active' : ''}`} onClick={() => setDirectMessagesDraft((value) => !value)} aria-pressed={directMessagesDraft}>
-                    {directMessagesDraft ? 'On' : 'Off'}
-                  </button>
+                  <SettingsToggle value={directMessagesDraft} onChange={setDirectMessagesDraft} />
                   <SaveTickButton disabled={!canUpdateDirectMessages} busy={false} onClick={() => { setDirectMessagesSaved(directMessagesDraft); onToast?.('Direct messages setting updated.', 'success'); }} label="Update direct messages" />
                 </>
               }
@@ -652,9 +654,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               className="settings-row"
               trailing={
                 <>
-                  <button type="button" className={`settings-toggle-pill${mentionsDraft ? ' active' : ''}`} onClick={() => setMentionsDraft((value) => !value)} aria-pressed={mentionsDraft}>
-                    {mentionsDraft ? 'On' : 'Off'}
-                  </button>
+                  <SettingsToggle value={mentionsDraft} onChange={setMentionsDraft} />
                   <SaveTickButton disabled={!canUpdateMentions} busy={false} onClick={() => { setMentionsSaved(mentionsDraft); onToast?.('Mentions setting updated.', 'success'); }} label="Update mentions" />
                 </>
               }

@@ -3421,6 +3421,22 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Document the verified R2 configuration process for production setup.
+- Changes Made:
+  - Added `R2.md` with separate-bucket guidance, public URL setup, CORS policies, least-privilege S3 credentials, Vercel environment scopes, deployment order, verification, and troubleshooting.
+  - Updated the README stack summary to identify R2 as the profile-picture object store while keeping post media as future work.
+  - Documented that no real credentials belong in tracked files or the guide.
+- Files/Scope Touched: `R2.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The staging setup required several configuration corrections across Cloudflare, R2, and two Vercel projects. A single repeatable guide reduces the risk of repeating those mistakes for production.
+- Verification: Documentation reviewed and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Record successful end-to-end staging verification of profile-picture uploads and R2 configuration.
 - Changes Made:
   - Updated the maintained current-state and dated changelog records with the successful staging result.
@@ -3881,6 +3897,39 @@
   - Sized save ticks to match the leading settings icon and documented the pattern.
 - Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
 - Reason/Decision: A shared row contract makes setting controls predictable and keeps save actions aligned regardless of field type.
+- Verification: Targeted TypeScript check and `git diff --check` follow.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the profile-picture Upload text with an icon.
+- Changes Made:
+  - Changed the Settings > Profile file-selection control to use the Font Awesome upload icon.
+  - Retained an accessible `aria-label` and tooltip identifying the action as Upload profile picture.
+  - Updated the profile-picture design contract and history.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `CHANGELOG.md`.
+- Reason/Decision: The compact icon matches the shared Settings action language while preserving discoverability through accessible naming and hover text.
+- Verification: Targeted TypeScript check and `git diff --check` follow.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct Privacy settings toggle layout and action alignment.
+- Changes Made:
+  - Added a shared two-state `SettingsToggle` with On on the left and Off on the right.
+  - Moved Private Profile's toggle from the row body into the right action rail beside its save tick.
+  - Applied the same toggle control to Direct Messages and Mentions.
+  - Top-aligned the Settings action rail with the leading icon and documented the contract.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`.
+- Reason/Decision: The body-mounted Private Profile toggle was stretching across the row and causing vertical misalignment; all privacy controls now share one compact action pattern.
 - Verification: Targeted TypeScript check and `git diff --check` follow.
 
 ---
