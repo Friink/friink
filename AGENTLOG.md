@@ -3467,6 +3467,22 @@
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Make profile-picture upload error details understandable to end users.
+- Changes Made:
+  - Kept a support-facing error code while replacing API, deployment, R2, and CORS terminology in the visible detail summary.
+  - Added plain-language next steps for connection, session, temporary-service, permission, and post-upload-save failures.
+  - Tightened the shared toast design contract so technical infrastructure terms remain out of end-user copy.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: End users need to understand what happened and what they can do next; support codes can remain available without exposing implementation details.
+- Verification: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-30 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Fix profile-picture confirmation diagnostics and make upload errors user-facing.
 - Changes Made:
   - Confirmed the FastAPI confirmation route is declared at `POST /auth/me/profile-picture/confirm` and registered through the auth router; the staging 404 is therefore a deployment exposure/configuration issue rather than a missing source decorator.

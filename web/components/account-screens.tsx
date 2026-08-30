@@ -24,6 +24,29 @@ type SettingsScreenProps = {
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
+function getProfilePictureErrorDetail(error: AuthApiError) {
+  const detail = error.detail.toLowerCase();
+  if (detail.includes('reached r2')) {
+    return 'Your image was uploaded, but we couldn’t finish saving it to your profile. Please try again.';
+  }
+  if (detail.includes('browser blocked') || detail.includes('could not be reached')) {
+    return 'We couldn’t reach the upload service. Check your connection and try again.';
+  }
+  if (detail.includes('session') || error.status === 401) {
+    return 'Your sign-in may have expired. Please sign in again and retry.';
+  }
+  if (error.status === 403) {
+    return 'The image upload was not accepted. Please try again with the same or another image.';
+  }
+  if (error.status === 404) {
+    return 'The upload service was temporarily unavailable. Please try again in a moment.';
+  }
+  if (error.status === 502 || error.status === 503) {
+    return 'Profile picture uploads are temporarily unavailable. Please try again shortly.';
+  }
+  return 'We couldn’t finish updating your profile picture. Please try again.';
+}
+
 export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general', onUserChange, onToast }: SettingsScreenProps) {
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
@@ -312,7 +335,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
           title: 'Profile picture upload failed',
           message: 'We couldn’t update your profile picture.',
           code: error.displayCode ?? 'PROFILE_PICTURE_UPLOAD_UNKNOWN',
-          detail: error.detail,
+          detail: getProfilePictureErrorDetail(error),
         });
       } else if (error instanceof ImageCompressionError) {
         onToast?.({

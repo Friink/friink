@@ -987,3 +987,4 @@ _Last updated: 2026-08-30_
 - [docs] Clarified in `api/.env.example` that staging R2 values belong in Vercel Preview and must not be committed.
 - [web] Renamed the profile-picture file picker action to `Upload`, moved the tick confirmation control into the crop modal, made the final upload action explicit, and removed crop-dialog horizontal overflow.
 - [web] Structured profile-picture failure toasts with a plain-language title, stable code, user-facing summary, and smaller diagnostic detail beneath it.
+- [web] Replaced developer-oriented profile-picture failure details with plain-language summaries and next steps while retaining a support code.
