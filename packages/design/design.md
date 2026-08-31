@@ -90,7 +90,7 @@ Fallback and error screens should be quiet, centered, and branded.
 
 Standard app surfaces should be reusable components. Page-specific content may remain local when it is not reused elsewhere.
 
-- **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, top-right cross close control, and a bottom action ribbon for adjacent actions.
+- **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, an optional left-side back-arrow control, a top-right cross close control, and a bottom action ribbon for adjacent actions. The back arrow is shown only when `onBack` is provided and must perform the flow's previous-step action without replacing the close control.
 
 ---
 

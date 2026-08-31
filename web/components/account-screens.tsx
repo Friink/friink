@@ -500,7 +500,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
                 </div>
                 {cropSource && (
-                  <Modal title="Crop profile picture" onClose={handleCropCancel} closeLabel="Cancel crop" className="profile-picture-crop-dialog" actions={
+                  <Modal title="Crop profile picture" onClose={handleCropCancel} onBack={handleCropCancel} backLabel="Back to profile picture" closeLabel="Cancel crop" className="profile-picture-crop-dialog" actions={
                     <>
                       <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropCancel}>Cancel</button>
                       <SaveTickButton disabled={isProcessingProfilePicture || isUploadingProfilePicture} busy={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropConfirm} label="Upload profile picture" />

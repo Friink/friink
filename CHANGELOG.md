@@ -22,7 +22,7 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
 
 ## Current State
-_Last updated: 2026-08-30_
+_Last updated: 2026-08-31_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
@@ -68,6 +68,7 @@ _Last updated: 2026-08-30_
 - [docs] Documented profile-specific Connections routes and three-tab behavior for other users.
 - [web] Updated profile statistic hover/focus styling so the number and its following/followers label change color together.
 - [web] Connections tab changes now update the current URL's `tab` query parameter, removing it when returning to `All`.
+- [web] The reusable `Modal` now supports an optional left-side back arrow; the profile-picture crop modal uses it to return to the previous profile-picture step.
 
 ## 2026-08-30
 

@@ -1954,6 +1954,7 @@ textarea {
   font-size: var(--text-lg);
 }
 
+.modal-back,
 .modal-close {
   display: inline-grid;
   width: 2rem;
@@ -1965,6 +1966,11 @@ textarea {
   background: transparent;
   font-size: 1.5rem;
   line-height: 1;
+}
+
+.modal-back {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
 }
 
 .modal-body {

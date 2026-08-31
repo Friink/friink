@@ -7,11 +7,13 @@ type ModalProps = {
   children: ReactNode;
   actions?: ReactNode;
   onClose: () => void;
+  onBack?: () => void;
   closeLabel?: string;
+  backLabel?: string;
   className?: string;
 };
 
-export function Modal({ title, children, actions, onClose, closeLabel = 'Close', className = '' }: ModalProps) {
+export function Modal({ title, children, actions, onClose, onBack, closeLabel = 'Close', backLabel = 'Back', className = '' }: ModalProps) {
   const titleId = useId();
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -25,6 +27,7 @@ export function Modal({ title, children, actions, onClose, closeLabel = 'Close',
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className={`modal-dialog${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="modal-header">
+          {onBack ? <button className="modal-back" type="button" aria-label={backLabel} title={backLabel} onClick={onBack}><i className="fa-solid fa-arrow-left" aria-hidden="true" /></button> : <span aria-hidden="true" />}
           <h2 id={titleId}>{title}</h2>
           <button className="modal-close" type="button" aria-label={closeLabel} onClick={onClose}>×</button>
         </header>

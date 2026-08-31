@@ -3885,6 +3885,23 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a back arrow to the profile-picture crop modal and identify the reusable modal for the account setup wizard.
+- Changes Made:
+  - Added optional `onBack` and `backLabel` props to the shared `Modal` component.
+  - Rendered an accessible left-side arrow button when a modal supplies a back action, while retaining the independent top-right close control.
+  - Wired the profile-picture crop modal's back arrow to its existing crop-cancel/reset flow.
+  - Updated the shared design contract and current-state changelog.
+- Files/Scope Touched: `web/components/modal.tsx`, `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The back affordance belongs in the reusable modal primitive so the account setup wizard and future multi-step dialogs can use the same header pattern without duplicating modal markup. The crop flow reuses its existing cancel behavior so an unconfirmed crop is discarded consistently.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed from `web/`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
