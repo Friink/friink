@@ -4433,3 +4433,21 @@
 - Reason/Decision: A single portal-based, fixed-position menu avoids clipping and can intelligently flip or clamp for triggers near any viewport edge without duplicating menu components or adding a positioning dependency.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add public plan previews to the landing page and create the `/subscriptions` page.
+- Changes Made:
+  - Added a concise three-card Plans section to the landing page with a Compare all plans link.
+  - Added the public `/subscriptions` route with Free, Pro, and Pro+ plan details.
+  - Kept paid plan actions in a Coming soon state because billing, checkout, and entitlements are not implemented yet.
+  - Added responsive and dark-mode styling using the existing landing visual language.
+  - Updated the design contract, product rules, changelog, and agent log.
+- Files/Scope Touched: `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing.module.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Showing a concise plan preview on the landing page supports conversion, while a dedicated `/subscriptions` page provides a stable, shareable comparison surface before billing is ready.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+

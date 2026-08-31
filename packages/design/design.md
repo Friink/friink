@@ -350,6 +350,12 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Profile Picture Processing Rule**: The picker accepts JPG/JPEG, PNG, and WebP inputs, rejects source images whose shorter edge is below 128px before opening the cropper, and presents the draggable/zoomable square crop step in an accessible modal dialog with backdrop, title, cancel, and icon-only tick confirmation controls. The file-selection action is labeled `Upload`, while the subsequent upload action is labeled `Upload profile picture`. The cropper maximum zoom is calculated as `shorterEdge / 128`. It then displays a processing state while normalizing the crop to JPEG at the shared avatar compression preset before upload. HEIC/HEIF and other formats are rejected with a specific message; transparent pixels flatten to white. The avatar preset targets 512px square and ~250KB without upscaling smaller crops. The crop dialog must not introduce horizontal overflow or a bottom scrollbar.
 - **Post Media Compression Rule**: The shared compression utility also exposes a `postMedia` preset targeting a maximum 1024px longest edge, preserved aspect ratio, JPEG output, and ~500KB. It is preparation only and must not be wired into a post-media upload flow until that flow exists.
 
+### Public Plans (`web/app/page.tsx`, `web/app/subscriptions/page.tsx`)
+- The landing page includes a concise three-card Plans section with a `Compare all plans` link to `/subscriptions`.
+- `/subscriptions` is the full public plan-comparison surface for Friink Free, Friink Pro, and Friink Pro+.
+- Paid cards use a non-action `Coming soon` state until billing exists; the Free card links to `/login`.
+- Plan cards use the landing visual language: `8px` corners, shared green brand accent, responsive one-column-to-three-column layout, and dark-mode equivalents.
+
 ### 13. Profile Identity Rows (`web/components/list-row.tsx`, `web/components/connections-screen.tsx`, `web/components/notifications-screen.tsx`)
 - **Purpose**: List-style surfaces that show people or profile actors must reuse `ProfileCard` for the visible identity block instead of separately composing avatar, display name, and handle.
 - **Click Rule**: In Connections and Notifications, the visible `ProfileCard` links to `/[username]` through its `href` prop. Row-level actions such as Accept, Reject, Cancel, and Remove remain separate controls.

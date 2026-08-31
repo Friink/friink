@@ -419,6 +419,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/app/page.tsx`, `web/app/landing-auth-redirect.tsx`, `web/lib/auth.ts`
 - **Since:** 2026-08-27 (00:00 UTC-0)
 
+### Rule: Public Plans Are Informational Until Billing Exists
+- **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
+- **Edge cases:** This page does not create subscriptions, process payments, or grant paid entitlements. The displayed plan benefits and prices are marketing content and must be updated with the subscription implementation before paid launch.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing.module.css`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ### Rule: Landing Newsletter Uses Zoho Form Submission
 - **What:** The landing-page subscribe form submits the `Email` field to the configured Zoho Forms endpoint through a hidden iframe target and then disables the form with a submitted state.
 - **Edge cases:** The submitted state is deferred briefly so the native form submission includes the email input.

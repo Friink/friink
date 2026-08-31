@@ -110,6 +110,8 @@
 
 .hero h1,
 .vision h2,
+.plans h2,
+.plansPage h1,
 .subscribe h2,
 .progress h2 {
   margin: 0;
@@ -261,6 +263,169 @@
   line-height: 1.7;
 }
 
+.plans {
+  border-top: 1px solid #cfc4c5;
+  border-bottom: 1px solid #cfc4c5;
+  background: #f3f3f4;
+}
+
+.plansInner,
+.plansPageInner {
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+  text-align: center;
+}
+
+.plans h2,
+.plansPage h1 {
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  line-height: 1.15;
+}
+
+.plansIntro {
+  max-width: 42rem;
+  margin: 1rem auto 0;
+  color: #5f5e5e;
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.plansGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  text-align: left;
+}
+
+.planCard {
+  position: relative;
+  display: flex;
+  min-height: 28rem;
+  flex-direction: column;
+  border: 1px solid #cfc4c5;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #ffffff;
+}
+
+.planCardFeatured {
+  border-color: #33aa55;
+  box-shadow: 0 0.75rem 2rem rgba(51, 170, 85, 0.12);
+}
+
+.planBadge {
+  align-self: flex-start;
+  margin-bottom: 1.25rem;
+  border-radius: 8px;
+  padding: 0.3rem 0.65rem;
+  color: #ffffff;
+  background: #33aa55;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.planName {
+  margin: 0;
+  color: #5f5e5e;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.planPrice {
+  margin: 0.65rem 0 0;
+  color: #1a1c1c;
+  font-family: "Nunito Local", sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.planPrice span {
+  color: #5f5e5e;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.planDescription {
+  min-height: 3.4rem;
+  margin: 0.75rem 0 0;
+  color: #5f5e5e;
+  line-height: 1.5;
+}
+
+.planList {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1.5rem 0 2rem;
+  padding: 0;
+  color: #1a1c1c;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  list-style: none;
+}
+
+.planList li {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.planList li::before {
+  position: absolute;
+  top: 0.2rem;
+  left: 0;
+  color: #33aa55;
+  content: "✓";
+  font-weight: 800;
+}
+
+.planCard .cta {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.planComingSoon {
+  margin-top: auto;
+  color: #33aa55;
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.plansLink {
+  display: inline-flex;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  color: #33aa55;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.plansLink:hover,
+.plansLink:focus-visible {
+  color: #1a1c1c;
+  outline: none;
+}
+
+.plansPage {
+  min-height: calc(100dvh - 9rem);
+  padding-top: 5rem;
+}
+
+.plansPageInner {
+  max-width: 86rem;
+}
+
+.plansNote {
+  margin: 2rem 0 0;
+  color: #5f5e5e;
+  font-size: 0.875rem;
+}
+
 .subscribe {
   border-top: 1px solid #cfc4c5;
   border-bottom: 1px solid #cfc4c5;
@@ -384,6 +549,10 @@
     padding-left: 2rem;
   }
 
+  .plansGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .footerInner {
     flex-direction: row;
   }
@@ -409,6 +578,7 @@
 
   .heroInner,
   .visionImage,
+  .plans,
   .subscribe,
   .footer {
     border-color: #46514c;
@@ -417,6 +587,11 @@
   .hero p,
   .progress p,
   .vision p,
+  .plansIntro,
+  .planName,
+  .planDescription,
+  .planPrice span,
+  .plansNote,
   .subscribe p,
   .footer p,
   .navLink {
@@ -424,6 +599,7 @@
   }
 
   .progressCard,
+  .planCard,
   .form input {
     border-color: #46514c;
     color: #f1f3f2;
@@ -431,6 +607,7 @@
   }
 
   .progressTrack,
+  .plans,
   .subscribe {
     background: #171b1a;
   }
