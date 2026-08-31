@@ -924,9 +924,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   handle: composeContext.post.handle,
                   initials: composeContext.post.initials,
                   tone: composeContext.post.tone,
+                  imageUrl: composeContext.post.imageUrl,
                   text: composeContext.post.text,
                   mediaCount: 0,
                 } : null}
+                onClearContext={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? () => setComposeContext({ kind: 'post' }) : undefined}
               />
             )}
           </FloatingBar>

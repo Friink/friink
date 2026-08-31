@@ -159,9 +159,11 @@ export function PostClient({ postId }: PostClientProps) {
             handle: composeContext.post.handle,
             initials: composeContext.post.initials,
             tone: composeContext.post.tone,
+            imageUrl: composeContext.post.imageUrl,
             text: composeContext.post.text,
             mediaCount: 0,
           }}
+          onClearContext={() => setComposeContext(null)}
         />
       ) : false}
     >

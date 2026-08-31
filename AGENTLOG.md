@@ -4297,6 +4297,23 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T23:12:05Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix three shared composer issues: dismissible reply/quote context, empty mention-editor caret state, and missing profile pictures in reply/quote previews.
+- Changes Made:
+  - Added a top-right Font Awesome close control to the referenced composer preview; it clears reply/quote context and returns to a normal post composer.
+  - Updated `MentionInput` to blur itself when its value becomes empty, preventing a blinking caret from appearing at the end of the visual placeholder.
+  - Extended the shared referenced-preview contract with `imageUrl` and passed each target post's resolved `imageUrl` into `ProfileCard`, covering both floating-shell and post-detail reply/quote composers.
+  - Updated the shared composer design contract, changelog, and agent log.
+- Files/Scope Touched: `web/components/composer.tsx`, `web/components/mention-input.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The fixes live in the reusable Composer and MentionInput paths, with profile data propagated from the existing post model rather than duplicating avatar logic or adding route-specific UI patches.
+- Verification: `tsc -p web/tsconfig.json --noEmit --incremental false` passed; `git diff --check` passed. Runtime visual verification was not available in this local command-only pass.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T23:03:03Z
 - Agent: Codex
 - Model: GPT-5

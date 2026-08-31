@@ -3141,12 +3141,34 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .composer-quoted-preview {
+  position: relative;
   display: grid;
   gap: 0.45rem;
   padding: 0.75rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   background: var(--color-background);
+}
+
+.composer-context-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.composer-context-close:hover,
+.composer-context-close:focus-visible {
+  color: var(--color-ink);
+  background: var(--color-background-accent);
 }
 
 .composer-quoted-preview .profile-card {

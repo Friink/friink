@@ -77,6 +77,7 @@ export function MentionInput({ value, onChange, placeholder, ariaLabel, disabled
     });
 
     const nextValue = editor.textContent ?? '';
+    if (!nextValue) editor.blur();
     if (typeof maxLength === 'number' && nextValue.length > maxLength) {
       editor.textContent = nextValue.slice(0, maxLength);
       lastValueRef.current = editor.textContent;

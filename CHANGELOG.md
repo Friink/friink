@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Fixed composer context dismissal, empty mention-editor caret behavior, and missing author avatars in reply/quote previews by reusing the target post's resolved profile-picture URL.
+
 - [api/web] Implemented submit-time post-image uploads: up to 8 locally previewed/cropped images are compressed with the shared `postMedia` preset, uploaded to R2 under `post-media/{user_id}/`, server-validated and associated atomically with the post; failed attempts clean up uploaded objects and post deletion removes associated objects.
 
 - [audit] Completed the Phase 1 post-media upload audit: confirmed the composer workflow is client-only, the API rejects media payloads, `post_media` is currently a placeholder, and no post-media R2 upload, association, or cleanup path exists. Implementation is deferred pending review.
