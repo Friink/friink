@@ -105,6 +105,9 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState('');
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
@@ -132,6 +135,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setEmailStatus('');
     setNameStatus('');
     setAboutStatus('');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+    setPasswordStatus('');
   }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl, appearance]);
 
   const hasUsernameChanged = username !== user.username;
@@ -515,17 +525,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
             </SettingsRow>
 
             <SettingsRow
-              icon={<span className="settings-icon"><i className="fa-solid fa-fingerprint" aria-hidden="true" /></span>}
-              title="User ID"
-              subtitle="This unique identifier can't be changed by you."
-              className="settings-row settings-row-expanded"
-            >
-              <label className="settings-field">
-                <input type="text" value={user.id} readOnly aria-readonly="true" aria-label="Unique user ID" />
-              </label>
-            </SettingsRow>
-
-            <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-key" aria-hidden="true" /></span>}
               title="Password"
               subtitle="Change the password you use to sign in."
@@ -535,15 +534,30 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               <div className="settings-password-fields">
                 <label className="settings-field">
                   <span>Current password</span>
-                  <input type="password" value={currentPassword} onChange={(event) => { setCurrentPassword(event.target.value); setPasswordStatus(''); }} autoComplete="current-password" />
+                  <div className="settings-password-input">
+                    <input name="change-current-password" type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={(event) => { setCurrentPassword(event.target.value); setPasswordStatus(''); }} autoComplete="current-password" />
+                    <button className="password-toggle" type="button" onClick={() => setShowCurrentPassword((current) => !current)} aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'} aria-pressed={showCurrentPassword}>
+                      <i className={`fa-regular ${showCurrentPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
+                    </button>
+                  </div>
                 </label>
                 <label className="settings-field">
                   <span>New password</span>
-                  <input type="password" value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" />
+                  <div className="settings-password-input">
+                    <input name="change-new-password" type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" />
+                    <button className="password-toggle" type="button" onClick={() => setShowNewPassword((current) => !current)} aria-label={showNewPassword ? 'Hide new password' : 'Show new password'} aria-pressed={showNewPassword}>
+                      <i className={`fa-regular ${showNewPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
+                    </button>
+                  </div>
                 </label>
                 <label className="settings-field">
                   <span>Confirm new password</span>
-                  <input type="password" value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" />
+                  <div className="settings-password-input">
+                    <input name="change-confirm-password" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" />
+                    <button className="password-toggle" type="button" onClick={() => setShowConfirmPassword((current) => !current)} aria-label={showConfirmPassword ? 'Hide new password confirmation' : 'Show new password confirmation'} aria-pressed={showConfirmPassword}>
+                      <i className={`fa-regular ${showConfirmPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
+                    </button>
+                  </div>
                 </label>
                 {passwordStatus && <span className="settings-field-message" role="status">{passwordStatus}</span>}
               </div>

@@ -4296,6 +4296,70 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:12:08Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the underline from SideDrawer anchor navigation items.
+- Changes Made:
+  - Added shared `text-decoration: none` styling for `.nav-item` and `.sidebar-action` so anchor-based drawer routes retain the button-like appearance.
+  - Preserved real `href` destinations so browser hover previews and new-tab behavior continue to work.
+  - Updated the changelog.
+- Files/Scope Touched: `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Route-previewable anchors should visually match the existing navigation controls; the underline was browser link styling leaking through the shared component.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T21:11:21Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the standard password-manager autocomplete behavior for Settings > Account.
+- Changes Made:
+  - Changed the current-password field from `autocomplete="off"` to `autocomplete="current-password"`.
+  - Updated the password design contract and changelog to document the standard browser/password-manager behavior.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Standard password metadata lets browsers and password managers offer saved credentials; the controlled React field still starts empty unless the browser or user fills it.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T21:09:37Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the internal UUID from Settings > Account and clarify password-manager behavior.
+- Changes Made:
+  - Removed the read-only User ID/UUID row from the normal Account settings screen.
+  - Updated the design contract and changelog to record that internal database identifiers are not user-facing.
+  - Retained the current-password autofill opt-out for this request; browser password-manager compatibility remains a documented UX tradeoff for follow-up.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Database UUIDs are implementation identifiers with little user value; hiding them keeps Account focused and avoids exposing internal data-model details.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T21:07:01Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Improve password settings input behavior to match Login and Signup.
+- Changes Made:
+  - Kept all password settings fields empty when the Account screen is entered or the user record changes.
+  - Added eye visibility toggles with accessible labels to Current password, New password, and Confirm new password.
+  - Opted the current-password field out of browser autofill and added password-manager-resistant field names.
+  - Updated the password change design contract and changelog.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Password entry should never expose or prefill the existing credential, while users should have the same visibility affordance available in authentication forms.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:03:15Z
 - Agent: Codex
 - Model: GPT-5

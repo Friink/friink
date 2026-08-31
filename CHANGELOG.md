@@ -93,6 +93,14 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Removed default link underlines from SideDrawer anchor destinations while preserving real browser-previewable routes.
+
+- [web] Restored standard `autocomplete="current-password"` on Settings > Account so browser password managers can offer saved credentials.
+
+- [web] Removed the internal UUID from the normal Settings > Account screen; users see account controls rather than database implementation identifiers.
+
+- [web] Matched Settings > Account password fields to Login/Signup with empty-on-entry current password, eye visibility toggles, and autofill prevention for the current-password field.
+
 - [web] Updated the shared public header so signed-in avatars open an ActionMenu with the user profile, Feed, Settings, and Log out; removed the redundant subscriptions-page Home link and reused the app Font Awesome icons.
 
 - [api/web] Added password change in Settings > Account with current-password verification, standard password validation, matching confirmation, and session-preserving hash replacement.

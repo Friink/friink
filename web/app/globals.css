@@ -126,6 +126,11 @@ button {
   cursor: pointer;
 }
 
+.nav-item,
+.sidebar-action {
+  text-decoration: none;
+}
+
 input,
 textarea {
   border: 1px solid var(--color-line);
@@ -2237,6 +2242,19 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+}
+
+.settings-password-input {
+  position: relative;
+}
+
+.settings-password-input input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
+.settings-password-input .password-toggle {
+  right: 0.85rem;
 }
 
 .settings-field-row {
