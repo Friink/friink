@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getCurrentUser, loadAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getCurrentUser, loadAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -39,9 +39,14 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
         saveAuthSession({ ...session, user: currentUser });
         setUser(currentUser);
       })
-      .catch(() => {
-        clearAuthSession();
-        router.replace('/login');
+      .catch((error) => {
+        // Only an explicit unauthorized response proves that the session is
+        // invalid. Keep the local session for network, API, or deployment
+        // failures so a temporary outage cannot sign users out.
+        if (error instanceof AuthApiError && error.status === 401) {
+          clearAuthSession();
+          router.replace('/login');
+        }
       });
   }, [refreshCurrentUser, router]);
 

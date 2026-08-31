@@ -138,6 +138,11 @@ the entry, so history isn't lost.
 - **What:** New accounts open the two-step profile setup flow after authentication. The flow is headed `Let's update your settings` and contains optional Profile picture and About steps.
 - **Progress:** The current setup step and completion state are persisted on the user record. Skipping a step marks that step done and advances; closing the setup preserves the current step. An incomplete setup resumes from its persisted step on a later login.
 - **Completion:** The setup is complete after the About step is saved or skipped. Existing accounts migrated after this flow was introduced are treated as already complete.
+
+### Rule: Preserve Sessions During Recoverable API Failures
+- **What:** Authenticated route bootstrap may clear the local session and redirect to login only after an explicit `401 Unauthorized` response.
+- **Do not:** Network failures, API `5xx` responses, deployment errors, or database migration mismatches must not be treated as proof that a user's credentials are invalid.
+- **Deployment:** Additive database migrations must be applied and verified before deploying code that reads the new fields; the client-side guard remains required as a second line of protection.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/account-screens.tsx`, `web/app/globals.css`

@@ -71,6 +71,7 @@ _Last updated: 2026-08-31_
 - [web] The reusable `Modal` now supports an optional left-side back arrow; the profile-picture crop modal uses it to return to the previous profile-picture step.
 - [web] Settings update controls and modal save ticks now use the shared platform button height of `3rem`.
 - [api/web] Added persisted profile setup state and a resumable two-step setup wizard for new accounts, covering optional profile picture and About steps with skip, close, and completion behavior.
+- [web] Authenticated bootstrap now clears sessions only for explicit `401` responses, preserving valid sessions during network, API, deployment, or migration failures.
 
 ## 2026-08-30
 

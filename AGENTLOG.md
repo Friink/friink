@@ -3921,6 +3921,22 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent recoverable API or deployment failures from signing users out.
+- Changes Made:
+  - Hardened `AppShellRoute` so it clears the local session and redirects only when the current-user request returns an explicit `401`.
+  - Preserved authenticated local state for network errors, API failures, deployment problems, and schema migration mismatches.
+  - Added the session-preservation rule and deployment sequencing guidance to `RULES.md` and `CHANGELOG.md`.
+- Files/Scope Touched: `web/components/app-shell-route.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: A failed bootstrap request does not establish that credentials are invalid. Restricting logout to an explicit unauthorized response prevents temporary infrastructure or release-order failures from forcing users through login again.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed from `web/`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
