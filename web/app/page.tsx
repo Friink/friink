@@ -49,6 +49,46 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section id="progress" className={styles.progress}>
+          <div className={styles.sectionInner}>
+            <div className={styles.progressCard}>
+              <div className={styles.progressHeader}>
+                <div>
+                  <h2>Under Development</h2>
+                  <p>Laying the foundation for a better space.</p>
+                </div>
+                <span className={styles.progressValue}>25%</span>
+              </div>
+              <div className={styles.progressTrack} role="progressbar" aria-label="Development progress" aria-valuenow={25} aria-valuemin={0} aria-valuemax={100}>
+                <div className={styles.progressFill} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="vision" className={styles.vision}>
+          <div className={`${styles.sectionInner} ${styles.visionGrid}`}>
+            <div className={styles.visionImage}>
+              <Image src="/media/pexels-ryank-17841014.jpg" alt="An abstract image representing clarity emerging from chaos" width={900} height={620} />
+            </div>
+            <div className={styles.visionCopy}>
+              <span className={styles.eyebrow}>
+                <svg className={styles.eyebrowIcon} aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 12C4.8 7.5 8.06 5.25 12 5.25C15.94 5.25 19.2 7.5 22 12C19.2 16.5 15.94 18.75 12 18.75C8.06 18.75 4.8 16.5 2 12Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.9" />
+                </svg>
+                Our vision
+              </span>
+              <h2>Designing for clarity, and peace.</h2>
+              <p>
+                Social spaces are noisy, overwhelming, and built to keep you scrolling. We are building Friink with a different philosophy.
+                It is a space designed to support your active life, offering a refreshing digital environment that respects you and your
+                well-being. The goal is to create a social space that promotes human connection.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section id="plans" className={styles.plans}>
           <div className={`${styles.sectionInner} ${styles.plansInner}`}>
             <span className={styles.eyebrow}>Plans</span>
@@ -93,46 +133,6 @@ export default function HomePage() {
               </article>
             </div>
             <Link href="/subscriptions" className={styles.plansLink}>Compare all plans <span aria-hidden="true">→</span></Link>
-          </div>
-        </section>
-
-        <section id="progress" className={styles.progress}>
-          <div className={styles.sectionInner}>
-            <div className={styles.progressCard}>
-              <div className={styles.progressHeader}>
-                <div>
-                  <h2>Under Development</h2>
-                  <p>Laying the foundation for a better space.</p>
-                </div>
-                <span className={styles.progressValue}>25%</span>
-              </div>
-              <div className={styles.progressTrack} role="progressbar" aria-label="Development progress" aria-valuenow={25} aria-valuemin={0} aria-valuemax={100}>
-                <div className={styles.progressFill} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="vision" className={styles.vision}>
-          <div className={`${styles.sectionInner} ${styles.visionGrid}`}>
-            <div className={styles.visionImage}>
-              <Image src="/media/pexels-ryank-17841014.jpg" alt="An abstract image representing clarity emerging from chaos" width={900} height={620} />
-            </div>
-            <div className={styles.visionCopy}>
-              <span className={styles.eyebrow}>
-                <svg className={styles.eyebrowIcon} aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M2 12C4.8 7.5 8.06 5.25 12 5.25C15.94 5.25 19.2 7.5 22 12C19.2 16.5 15.94 18.75 12 18.75C8.06 18.75 4.8 16.5 2 12Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.9" />
-                </svg>
-                Our vision
-              </span>
-              <h2>Designing for clarity, and peace.</h2>
-              <p>
-                Social spaces are noisy, overwhelming, and built to keep you scrolling. We are building Friink with a different philosophy.
-                It is a space designed to support your active life, offering a refreshing digital environment that respects you and your
-                well-being. The goal is to create a social space that promotes human connection.
-              </p>
-            </div>
           </div>
         </section>
 

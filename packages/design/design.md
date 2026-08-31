@@ -353,6 +353,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### Public Plans (`web/app/page.tsx`, `web/app/subscriptions/page.tsx`)
 - The landing page includes a concise three-card Plans section with a `Compare all plans` link to `/subscriptions`.
+- Landing section order is Hero, Development progress, Our vision, Plans, then Newsletter so visitors understand Friink before seeing pricing.
 - `/subscriptions` is the full public plan-comparison surface for Friink Free, Friink Pro, and Friink Pro+.
 - Paid cards use a non-action `Coming soon` state until billing exists; the Free card links to `/login`.
 - Plan cards use the landing visual language: `8px` corners, shared green brand accent, responsive one-column-to-three-column layout, and dark-mode equivalents.

@@ -4468,3 +4468,19 @@
 - Reason/Decision: A dedicated tab gives subscriptions a stable home now and leaves room for future plan status, billing, renewal, upgrade, downgrade, and cancellation controls without crowding Account.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reorder landing-page sections so Plans follows Vision.
+- Changes Made:
+  - Moved Development progress and Our vision ahead of the landing Plans section.
+  - Kept Plans immediately before the newsletter CTA.
+  - Updated the marketing layout contract and changelog.
+- Files/Scope Touched: `web/app/page.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Visitors should understand Friink’s purpose and credibility before encountering plan choices; the order now follows What is it? → Why does it exist? → Is it real? → Which plan fits? → What next?
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
