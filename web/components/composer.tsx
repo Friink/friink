@@ -196,7 +196,8 @@ export function Composer({
   }, [draft, multiline]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (disabled || (!allowEmptySubmit && !draft.trim()) || isOverLimit) {
+    const canSubmitWithoutText = allowEmptySubmit || media.length > 0;
+    if (disabled || (!canSubmitWithoutText && !draft.trim()) || isOverLimit) {
       event.preventDefault();
       return;
     }
@@ -287,7 +288,7 @@ export function Composer({
             {characterCount}/{maxLength}
           </span>
         )}
-        <button className="composer-send" type="submit" disabled={disabled || (!allowEmptySubmit && !draft.trim()) || isOverLimit} aria-label={sendLabel}>
+        <button className="composer-send" type="submit" disabled={disabled || ((!allowEmptySubmit && media.length === 0) && !draft.trim()) || isOverLimit} aria-label={sendLabel}>
           <i className="fa-solid fa-arrow-up" aria-hidden="true" />
         </button>
       </form>

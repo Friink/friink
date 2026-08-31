@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-31T23:36:05Z
+
+- [api] Hardened post-media confirmation to fall back from unreliable R2 S3 `HEAD` metadata calls to bounded public-object HEAD/GET verification, matching the working profile-picture flow while retaining JPEG and 500KB checks.
+- [diagnostic] Reproduced staging `Failed to fetch` with two attached images; attachments remained intact and no console errors appeared. The live deployment must be redeployed before this fix can be tested there.
+
+## 2026-08-31T23:30:08Z
+
+- [web/api] Allowed media-only posts by enabling submission when attachments exist and relaxing the API's non-quote empty-content validation; added a regression test and corrected the post-media compression documentation comment.
+- [diagnostic] Reproduced staging post-media submission failure: two attached images remained after the UI showed `Failed to fetch`. No console errors were emitted; source-level attachment retention is working, but staging API/R2 deployment or configuration still requires verification.
+
 > README.md is the authoritative source for the stack. Read it once per work session,
 > and always before tasks involving stack, infrastructure, environment setup, or
 > deployment configuration.

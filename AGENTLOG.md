@@ -1,3 +1,18 @@
+## 2026-08-31T23:30:08Z — Post-media staging diagnosis and media-only composer fix
+
+- Prompt Summary: Reproduce the staging `Failed to fetch` post-media failure and remove the unnecessary caption requirement when media is attached.
+- Browser evidence: The signed-in staging composer contained two attached images. After entering `Media upload diagnostic test` and submitting, the composer remained on `/home/explore`, displayed `Failed to fetch`, and retained both attachments. No browser console errors were emitted. This confirms the local attachment-preservation behavior works, while the deployed upload/API path still needs staging deployment/configuration investigation; profile-picture success does not prove the post-media endpoint and R2 PUT path are deployed/configured.
+- Root-cause boundary: The live failure could not be isolated to an HTTP response because the browser exposed no network inspector and direct access to `staging-api.friink.com` was blocked in this environment. The repository's post-media flow uses a new `/posts/media/upload-url` endpoint and direct presigned R2 PUTs; staging must be redeployed with the API and web commits and have the documented R2 CORS/configuration in place.
+- Changes: media posts may now submit with an empty caption in `web/components/composer.tsx`, `web/components/app-shell.tsx`, and `api/app/schemas/posts.py`; added a regression test in `api/tests/test_posts.py`; corrected the stale post-media compression comment in `web/lib/image-compression.ts`.
+- Verification: API suite `60 passed, 2 warnings`; web TypeScript check passed; `git diff --check` passed. A live staging upload attempt still failed with `Failed to fetch`, so the deployment/configuration issue is not claimed resolved by source changes alone.
+
+## 2026-08-31T23:36:05Z — Diagnosed post-media failure and hardened R2 confirmation
+
+- Live staging reproduction confirmed the signed-in composer had two images attached; submitting a diagnostic caption resulted in `Failed to fetch`, with both attachments retained and no console errors. This rules out the attachment reset path.
+- Root-cause comparison found the post-media confirmation path used only the S3-compatible R2 `head_object`, while the working profile-picture path already falls back to bounded public-URL HEAD/GET verification when R2 metadata HEAD is unavailable. Post creation therefore could fail after the browser upload succeeded.
+- Fixed `api/app/services/storage.py` to use the same bounded public-URL fallback for post media, preserving JPEG content-type and 500KB size enforcement. Also completed the previously requested media-only-post behavior in the frontend/API and added its regression test.
+- Verification: API suite `61 passed, 2 warnings`; Python compileall passed; web TypeScript check passed; `git diff --check` passed. Staging must be redeployed with the API and web changes before live re-test; source changes cannot alter the already-running deployment.
+
 > INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file —
 > especially the most recent 3-5 entries — to understand exactly what
 > the last agent(s) did, including which files or scope they touched.

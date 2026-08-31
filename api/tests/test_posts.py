@@ -42,6 +42,13 @@ def test_quote_content_can_be_empty() -> None:
     assert payload.quoted_post_id == quoted_post_id
 
 
+def test_media_post_can_have_an_empty_caption() -> None:
+    payload = CreatePostRequest(content="", media=[{"storage_key": "post-media/user/image.jpg"}])
+
+    assert payload.content == ""
+    assert len(payload.media or []) == 1
+
+
 def test_media_payload_validates_max_8_files() -> None:
     payload = [{"storage_key": f"post-media/user/{index}.jpg"} for index in range(9)]
     with pytest.raises(ValidationError):

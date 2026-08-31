@@ -93,11 +93,50 @@ class StorageService:
         except StorageNotConfiguredError:
             raise
         except Exception as exc:
-            raise StorageObjectError("The post image could not be verified.") from exc
-        if str(metadata.get("ContentType", "")).lower() != "image/jpeg":
+            # R2 public endpoints can reject or fail S3-compatible HEAD even
+            # when the object is available. Match profile-picture confirmation
+            # by verifying the bounded public URL instead of rejecting a valid
+            # upload solely because the metadata endpoint is unavailable.
+            public_url = self.public_url(object_key)
+            try:
+                self._verify_public_object(public_url, MAX_POST_MEDIA_BYTES, expected_content_type="image/jpeg")
+                return
+            except Exception as public_exc:
+                raise StorageObjectError("The post image could not be verified.") from public_exc
+        self._validate_uploaded_metadata(metadata, MAX_POST_MEDIA_BYTES, expected_content_type="image/jpeg")
+
+    @staticmethod
+    def _validate_uploaded_metadata(metadata: dict, max_bytes: int, *, expected_content_type: str | None = None) -> None:
+        if expected_content_type and str(metadata.get("ContentType", "")).lower() != expected_content_type:
             raise StorageObjectError("Post images must be JPEG files.")
-        if int(metadata.get("ContentLength", 0)) > MAX_POST_MEDIA_BYTES:
+        if int(metadata.get("ContentLength", 0)) > max_bytes:
             raise StorageObjectError("Post images must be 500 KB or smaller.")
+
+    @staticmethod
+    def _verify_public_object(public_url: str, max_bytes: int, *, expected_content_type: str | None = None) -> None:
+        try:
+            with urlopen(Request(public_url, method="HEAD"), timeout=10) as response:
+                content_type = response.headers.get("Content-Type", "").split(";", 1)[0].lower()
+                content_length = response.headers.get("Content-Length")
+                if expected_content_type and content_type != expected_content_type:
+                    raise StorageObjectError("Post images must be JPEG files.")
+                if content_length and int(content_length) > max_bytes:
+                    raise StorageObjectError("Post images must be 500 KB or smaller.")
+                return
+        except StorageObjectError:
+            raise
+        except (HTTPError, URLError, TimeoutError, ValueError):
+            pass
+
+        with urlopen(Request(public_url, method="GET"), timeout=10) as response:
+            content_type = response.headers.get("Content-Type", "").split(";", 1)[0].lower()
+            if expected_content_type and content_type != expected_content_type:
+                raise StorageObjectError("Post images must be JPEG files.")
+            content_length = response.headers.get("Content-Length")
+            if content_length and int(content_length) > max_bytes:
+                raise StorageObjectError("Post images must be 500 KB or smaller.")
+            if not content_length and len(response.read(max_bytes + 1)) > max_bytes:
+                raise StorageObjectError("Post images must be 500 KB or smaller.")
 
     def delete_post_media_object(self, object_key: str, user_id: uuid.UUID) -> None:
         self._validate_post_media_key(object_key, user_id)
@@ -125,22 +164,8 @@ class StorageService:
             # runtime. Some R2 public endpoints do not reliably implement
             # HEAD, so fall back to a bounded GET while still enforcing the
             # object-size ceiling.
-            public_url = f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
             try:
-                try:
-                    with urlopen(Request(public_url, method="HEAD"), timeout=10) as response:
-                        content_length = response.headers.get("Content-Length")
-                        if content_length and int(content_length) > MAX_PROFILE_PICTURE_BYTES:
-                            raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
-                except (HTTPError, URLError, TimeoutError, ValueError):
-                    # A GET is needed for providers/CDN configurations that
-                    # answer HEAD with 404/405 even though the object is live.
-                    with urlopen(Request(public_url, method="GET"), timeout=10) as response:
-                        content_length = response.headers.get("Content-Length")
-                        if content_length and int(content_length) > MAX_PROFILE_PICTURE_BYTES:
-                            raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
-                        if not content_length and len(response.read(MAX_PROFILE_PICTURE_BYTES + 1)) > MAX_PROFILE_PICTURE_BYTES:
-                            raise StorageObjectError("Profile picture exceeds the 3 MB maximum size.")
+                self._verify_public_object(self.public_url(object_key), MAX_PROFILE_PICTURE_BYTES)
             except StorageObjectError:
                 raise
             except Exception as public_exc:

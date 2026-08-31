@@ -449,7 +449,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     event.preventDefault();
 
     const trimmedText = floatingDraft.trim();
-    if (!trimmedText && composeContext.kind !== 'quote') return;
+    if (!trimmedText && !media.length && composeContext.kind !== 'quote') return;
 
     const session = loadAuthSession();
     if (!session) {

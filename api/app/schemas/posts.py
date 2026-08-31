@@ -60,7 +60,7 @@ class CreatePostRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_content_required_for_kind(self) -> "CreatePostRequest":
-        if self.kind != PostKind.quote and not self.content.strip():
+        if self.kind != PostKind.quote and not self.content.strip() and not self.media:
             raise ValueError("Post content is required.")
         return self
 

@@ -9,7 +9,8 @@ type CompressionOptions = {
 
 const PRESETS: Record<ImageCompressionPreset, CompressionOptions> = {
   avatar: { fixedDimension: 512, maxBytes: 250 * 1024, initialQuality: 0.88 },
-  // Reserved for future post-media work; it is intentionally not wired to any UI yet.
+  // Post media uses the same normalized JPEG pipeline as avatars, with a
+  // larger canvas and byte ceiling suitable for feed images.
   postMedia: { maxDimension: 1024, maxBytes: 500 * 1024, initialQuality: 0.85 },
 };
 
