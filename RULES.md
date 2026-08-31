@@ -419,13 +419,29 @@ the entry, so history isn't lost.
 - **File(s):** `web/lib/api-origin.ts`, `web/lib/auth.ts`
 - **Since:** 2026-08-29T10:40:00Z
 
-### Rule: Landing Page Redirects Authenticated Users
-- **What:** The public landing page redirects users with a persisted non-demo auth session to `/home`.
-- **Edge cases:** Demo sessions are ignored for this redirect.
+### Rule: Public Pages Remain Accessible To Authenticated Users
+- **What:** The public landing page and `/subscriptions` remain accessible when a user has a persisted non-demo auth session; authenticated visitors are not forcibly redirected to `/home`.
+- **Edge cases:** The shared public `Header` reflects the session state and provides app navigation without replacing the public page. Demo sessions are not treated as signed-in public sessions.
 - **Status:** Active
 - **Platform:** Web only
-- **File(s):** `web/app/page.tsx`, `web/app/landing-auth-redirect.tsx`, `web/lib/auth.ts`
-- **Since:** 2026-08-27T00:00:00Z
+- **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/lib/auth.ts`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
+### Rule: Public Header Uses Signed-In Account Menu
+- **What:** The shared public header shows `Login` to signed-out visitors and the signed-in user's profile picture to authenticated visitors. Clicking the picture opens the reusable account menu with the user's `@username` profile link, Feed (`/home`), Settings (`/settings`), and Log out.
+- **Edge cases:** The Friink logo remains the public landing-page link; the public header does not add a redundant Home link. Logout clears the persisted client session and leaves the user on the public site.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/public-header.tsx`, `web/components/action-menu.tsx`, `web/lib/auth.ts`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
+### Rule: Internal Account Identifiers Are Not User-Facing
+- **What:** Database UUIDs and other internal implementation identifiers are not displayed in the normal Settings > Account screen.
+- **Edge cases:** If support tooling later needs an account identifier, it should be provided through a deliberate support/advanced flow rather than the default account settings surface.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/account-screens.tsx`
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Public Plans Are Informational Until Billing Exists
 - **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.

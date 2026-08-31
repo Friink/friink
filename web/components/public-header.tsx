@@ -59,8 +59,15 @@ export function Header({ page = 'landing' }: HeaderProps) {
               open={accountMenuOpen}
               anchorRef={accountTriggerRef}
               ariaLabel="Account menu"
+              className="public-account-menu"
+              anchorGap={-24}
+              header={
+                <div className="action-menu-profile">
+                  <strong>{session.user.name || session.user.username}</strong>
+                  <span>@{session.user.username}</span>
+                </div>
+              }
               items={[
-                { label: `@${session.user.username}`, icon: 'fa-user', href: `/${encodeURIComponent(session.user.username)}` },
                 { label: 'Feed', icon: 'fa-house', href: '/home' },
                 { label: 'Settings', icon: 'fa-gear', href: '/settings' },
                 {

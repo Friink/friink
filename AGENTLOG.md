@@ -4296,6 +4296,39 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:18:00Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the public-header profile-picture dropdown layering, overlap, and theme styling.
+- Changes Made:
+  - Extended the reusable `ActionMenu` with an optional header, custom class, and anchor gap so callers can define contextual presentation without duplicating menu behavior.
+  - Positioned the public account menu over the avatar with a high shared menu stacking level, while preserving viewport flipping and clamping.
+  - Added a profile-information header showing display name and secondary `@username`, followed by the existing three account actions.
+  - Added explicit light and dark public-surface colors and documented the updated contract.
+- Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/public-header.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The account menu is contextual to the avatar, so it should remain visually attached to that control, sit above the public header, and use the public site’s own theme tokens rather than app-shell defaults.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T21:14:00Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Bring RULES.md up to date with recent public navigation and account settings behavior.
+- Changes Made:
+  - Replaced the stale active rule that redirected authenticated visitors from the landing page with the current rule allowing public-page browsing while signed in.
+  - Documented the shared signed-in public-header account menu and its profile, Feed, Settings, and logout destinations.
+  - Documented that internal database UUIDs are not shown in normal Account settings.
+- Files/Scope Touched: `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Rules must describe shipped product behavior so future implementation work does not reintroduce the removed public-site redirect or expose internal identifiers.
+- Verification: Documentation-only update; confirmed the new rules match `web/components/public-header.tsx`, `web/components/action-menu.tsx`, and `web/components/account-screens.tsx`.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:12:08Z
 - Agent: Codex
 - Model: GPT-5

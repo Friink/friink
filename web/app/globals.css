@@ -1339,7 +1339,7 @@ textarea {
 
 .action-menu {
   position: fixed;
-  z-index: 30;
+  z-index: 1000;
   display: grid;
   width: min(13.5rem, calc(100vw - 1rem));
   padding: 0.35rem;
@@ -1347,6 +1347,57 @@ textarea {
   border-radius: var(--radius-sm);
   background: var(--color-paper);
   box-shadow: 0 1rem 2rem rgba(18, 28, 23, 0.14);
+}
+
+.public-account-menu {
+  width: min(17rem, calc(100vw - 1rem));
+  border-color: #cfc4c5;
+  color: #1a1c1c;
+  background: #ffffff;
+  box-shadow: 0 1rem 2rem rgba(18, 28, 23, 0.2);
+}
+
+.action-menu-profile {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.2rem 0.35rem 0.35rem;
+  padding: 0.6rem 0.4rem 0.75rem;
+  border-bottom: 1px solid #cfc4c5;
+}
+
+.action-menu-profile strong {
+  color: inherit;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+}
+
+.action-menu-profile span {
+  color: #5f5e5e;
+  font-size: var(--text-xs);
+}
+
+.public-account-menu .action-menu-item {
+  color: #1a1c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  .public-account-menu {
+    border-color: #46514c;
+    color: #f1f3f2;
+    background: #1c201f;
+  }
+
+  .action-menu-profile {
+    border-color: #46514c;
+  }
+
+  .action-menu-profile span {
+    color: #b8c3bf;
+  }
+
+  .public-account-menu .action-menu-item {
+    color: #f1f3f2;
+  }
 }
 
 .action-menu-item {

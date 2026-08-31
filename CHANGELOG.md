@@ -93,6 +93,10 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Fixed the public signed-in account menu layering and theme treatment: it now renders above the header, overlaps the visible avatar, and shows display name plus secondary handle before the three account actions.
+
+- [docs] Updated RULES.md to reflect that authenticated users may browse public pages, the shared public account menu, and the hidden internal UUID policy; superseded the old authenticated-landing redirect rule.
+
 - [web] Removed default link underlines from SideDrawer anchor destinations while preserving real browser-previewable routes.
 
 - [web] Restored standard `autocomplete="current-password"` on Settings > Account so browser password managers can offer saved credentials.

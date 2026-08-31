@@ -2,7 +2,7 @@
 
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { type RefObject, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from 'react';
 
 export type ActionMenuItem = {
   label: string;
@@ -14,9 +14,12 @@ export type ActionMenuItem = {
 type ActionMenuProps = {
   open: boolean;
   items?: ActionMenuItem[];
+  header?: ReactNode;
   ariaLabel?: string;
   anchorRef: RefObject<HTMLElement>;
   align?: 'start' | 'end';
+  anchorGap?: number;
+  className?: string;
   onClose?: () => void;
 };
 
@@ -36,7 +39,7 @@ type MenuPosition = {
 const VIEWPORT_MARGIN = 8;
 const ANCHOR_GAP = 7;
 
-export function ActionMenu({ open, items = defaultMenuItems, ariaLabel = 'More options', anchorRef, align = 'end', onClose }: ActionMenuProps) {
+export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel = 'More options', anchorRef, align = 'end', anchorGap = ANCHOR_GAP, className = '', onClose }: ActionMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState<MenuPosition>({ top: 0, left: 0, ready: false });
 
@@ -53,10 +56,10 @@ export function ActionMenu({ open, items = defaultMenuItems, ariaLabel = 'More o
       const maxLeft = Math.max(VIEWPORT_MARGIN, window.innerWidth - menuRect.width - VIEWPORT_MARGIN);
       const preferredLeft = align === 'start' ? anchorRect.left : anchorRect.right - menuRect.width;
       const left = Math.min(Math.max(preferredLeft, VIEWPORT_MARGIN), maxLeft);
-      const spaceBelow = window.innerHeight - anchorRect.bottom - ANCHOR_GAP - VIEWPORT_MARGIN;
-      const spaceAbove = anchorRect.top - ANCHOR_GAP - VIEWPORT_MARGIN;
+      const spaceBelow = window.innerHeight - anchorRect.bottom - anchorGap - VIEWPORT_MARGIN;
+      const spaceAbove = anchorRect.top - anchorGap - VIEWPORT_MARGIN;
       const opensAbove = spaceBelow < menuRect.height && spaceAbove > spaceBelow;
-      const preferredTop = opensAbove ? anchorRect.top - ANCHOR_GAP - menuRect.height : anchorRect.bottom + ANCHOR_GAP;
+      const preferredTop = opensAbove ? anchorRect.top - anchorGap - menuRect.height : anchorRect.bottom + anchorGap;
       const maxTop = Math.max(VIEWPORT_MARGIN, window.innerHeight - menuRect.height - VIEWPORT_MARGIN);
       const top = Math.min(Math.max(preferredTop, VIEWPORT_MARGIN), maxTop);
 
@@ -70,7 +73,7 @@ export function ActionMenu({ open, items = defaultMenuItems, ariaLabel = 'More o
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [align, anchorRef, open]);
+  }, [align, anchorGap, anchorRef, open]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -99,11 +102,12 @@ export function ActionMenu({ open, items = defaultMenuItems, ariaLabel = 'More o
   return createPortal(
     <div
       ref={menuRef}
-      className="action-menu"
+      className={`action-menu${className ? ` ${className}` : ''}`}
       role="menu"
       aria-label={ariaLabel}
       style={{ top: position.top, left: position.left, visibility: position.ready ? 'visible' : 'hidden' }}
     >
+      {header}
       {items.map((item) => (
         item.href ? (
           <Link
