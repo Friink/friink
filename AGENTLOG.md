@@ -4296,6 +4296,38 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:46:00Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make in-app ActionMenu instances follow the selected app dark theme.
+- Changes Made:
+  - Added portal-safe light and dark surface, foreground, border, and secondary-text rules for app menus.
+  - Scoped the dark overrides to menus associated with `.app-shell`, leaving the explicit public account-menu theme unchanged.
+  - Documented that portaled menus cannot rely on inherited app-shell CSS variables.
+- Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: `ActionMenu` renders under `document.body`, outside `.app-shell`; explicit theme-aware selectors preserve the existing shared menu without duplicating a component or changing menu behavior.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T21:43:13Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match the public account dropdown to the requested avatar-in-menu geometry.
+- Changes Made:
+  - Positioned the reusable public account menu directly below the unchanged avatar with a 2px gap and 2px right offset.
+  - Kept the menu above the public header while preserving the existing avatar position and layering.
+  - Added header spacing for the profile information and updated the product/design contracts.
+- Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/public-header.tsx`, `web/app/landing.module.css`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The requested geometry is achieved by positioning the menu relative to the existing header avatar, without moving or duplicating the avatar.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:39:15Z
 - Agent: Codex
 - Model: GPT-5
@@ -4834,10 +4866,6 @@
 - Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: The profile-picture Upload action belongs to the same settings action rail and should share its platform control height and alignment.
 - Verification: Confirmed `.settings-upload-trigger` uses `3rem` width/height with centered content; `git diff --check` passed.
-
----
-
-### Entry
 
 - Date/Time: 2026-08-31T20:53:46Z
 - Agent: Codex

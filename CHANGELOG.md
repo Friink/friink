@@ -93,6 +93,10 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Fixed portaled in-app action menus so they follow the selected app light/dark theme instead of losing `.app-shell` color variables when rendered under `document.body`.
+
+- [web] Matched the public account menu to the reference geometry: it opens directly beneath the unchanged profile picture with a 2px gap and 2px right offset, while remaining above the public header.
+
 - [web] Updated the floating post composer to be borderless and transparent, expand into a full-width top editor as typing begins, grow to eight lines, then scroll while keeping composer controls in the bottom row.
 
 - [web] Corrected the public account-menu placement to sit below the profile picture with a 2px top gap and 2px right offset instead of overlapping the header.
