@@ -136,7 +136,7 @@ the entry, so history isn't lost.
 
 ### Rule: Profile Setup Resumes Until Complete
 - **What:** New accounts open the two-step profile setup flow after authentication. The flow is headed `Let's update your settings` and contains optional Profile picture and About steps.
-- **Progress:** The current setup step and completion state are persisted on the user record. Skipping a step marks that step done and advances; closing the setup preserves the current step. An incomplete setup resumes from its persisted step on a later login.
+- **Progress:** The current setup step and completion state are persisted on the user record. Skipping a step marks that step done and advances; closing the setup preserves the current step when persistence succeeds and dismisses the local modal even if the save is temporarily unavailable. An incomplete setup resumes from its persisted step on a later login.
 - **Completion:** The setup is complete after the About step is saved or skipped. Existing accounts migrated after this flow was introduced are treated as already complete.
 
 ### Rule: Preserve Sessions During Recoverable API Failures

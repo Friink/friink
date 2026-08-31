@@ -291,14 +291,19 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   function addToast(input: ToastInput, tone: ToastMessage['tone'] = 'error') {
     const now = new Date();
     const toast = typeof input === 'string' ? { message: input, tone } : input;
-    setToasts((current) => [
-      ...current,
-      {
-        id: now.getTime(),
-        ...toast,
-        timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
-      },
-    ]);
+    setToasts((current) => {
+      if (current.some((item) => item.message === toast.message && item.title === toast.title && item.code === toast.code)) {
+        return current;
+      }
+      return [
+        ...current,
+        {
+          id: now.getTime(),
+          ...toast,
+          timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+        },
+      ];
+    });
   }
 
   function dismissToast(id: number) {

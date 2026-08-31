@@ -45,9 +45,13 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
     if (busy) return;
     try {
       await saveSetup(step);
-      setOpen(false);
     } catch {
       onToast?.('Could not save your setup progress. Please try again.');
+    } finally {
+      // Closing is a local UI action. If persistence is unavailable, do not
+      // trap the user inside the setup modal; the server will retain the last
+      // successfully saved step for the next session.
+      setOpen(false);
     }
   }
 

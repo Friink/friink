@@ -3905,6 +3905,22 @@
 - Date/Time: 2026-08-31 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Stop setup from trapping users when progress saving fails and prevent duplicate error toasts.
+- Changes Made:
+  - Made the setup modal close locally even when the server cannot persist the current step; the failure remains visible as a single warning.
+  - Added app-level deduplication for identical toast messages.
+  - Updated the setup progress rule and changelog.
+- Files/Scope Touched: `web/components/profile-setup-wizard.tsx`, `web/components/app-shell.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Dismissing a modal should remain available during recoverable backend failures, while only successful server writes can advance or complete setup. Duplicate identical toasts obscure the original failure and are unnecessary.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed from `web/`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Normalize settings/modal save-button sizing and add a persisted post-signup profile setup wizard.
 - Changes Made:
   - Updated settings and modal save tick controls from `2.25rem` to the shared `3rem` platform button size.
