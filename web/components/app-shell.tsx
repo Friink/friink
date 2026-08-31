@@ -20,6 +20,7 @@ import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
+import { getPostPath } from '@/lib/post-path';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
@@ -539,25 +540,35 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const payload = notification.payload;
     const requesterUsername = typeof payload.requester_username === 'string' ? payload.requester_username : null;
     const recipientUsername = typeof payload.recipient_username === 'string' ? payload.recipient_username : null;
+    const postAuthorUsername = typeof payload.post_author_username === 'string' ? payload.post_author_username : null;
+    const postAuthorDisplayName = typeof payload.post_author_display_name === 'string' ? payload.post_author_display_name : null;
     const requesterName = typeof payload.requester_display_name === 'string' && payload.requester_display_name ? payload.requester_display_name : requesterUsername;
     const recipientName = typeof payload.recipient_display_name === 'string' && payload.recipient_display_name ? payload.recipient_display_name : recipientUsername;
-    const actorName = requesterName || recipientName || 'Friink';
-    const actorHandle = requesterUsername || recipientUsername || 'friink';
+    const actorName = postAuthorDisplayName || requesterName || recipientName || 'Friink';
+    const actorHandle = postAuthorUsername || requesterUsername || recipientUsername || 'friink';
+    const postPublicId = typeof payload.post_public_id === 'string' ? payload.post_public_id : null;
+    const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
+    const notificationHref = notification.type === 'mention' && postAuthorUsername && postPublicId
+      ? getPostPath(postAuthorUsername, postSlug, postPublicId)
+      : undefined;
     return {
       id: notification.id,
-      kind: notification.type.includes('request') ? 'request' : 'follow',
+      kind: notification.type === 'mention' ? 'mention' : notification.type.includes('request') ? 'request' : 'follow',
       name: actorName || 'Friink',
       handle: `@${actorHandle}`,
-      text: getNotificationText(notification.type, requesterUsername, recipientUsername),
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername, actorName, actorHandle),
       createdAt: notification.created_at,
       initials: getInitials(actorName || actorHandle),
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
+      href: notificationHref,
     };
   }
 
-  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null) {
+  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string) {
     switch (type) {
+      case 'mention':
+        return `${actorName} (@${actorHandle}) mentioned you.`;
       case 'follow_sent_public':
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'You are now following this profile.';
       case 'new_follower':

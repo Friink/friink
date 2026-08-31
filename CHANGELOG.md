@@ -94,6 +94,7 @@ _Last updated: 2026-08-31_
 ## 2026-09-01
 
 - [web] Renamed the reusable `NavigationMenu` component to `ActionMenu` and reused it from the post composer plus button for Font Awesome Add media and Add link actions; UI only, with backend upload/link behavior still deferred.
+- [api/web] Added username mention links in post text and mention notifications that identify the author and open the canonical post containing the mention.
 
 ### Changed
 

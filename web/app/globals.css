@@ -2608,6 +2608,15 @@ textarea {
   line-height: 1.45;
 }
 
+.notification-post-link:hover,
+.notification-post-link:focus-visible,
+.feed-post-body a:hover,
+.feed-post-body a:focus-visible,
+.feed-post-quote-body a:hover,
+.feed-post-quote-body a:focus-visible {
+  color: var(--color-brand);
+}
+
 .notification-copy-handle {
   display: block;
   margin-top: 0.2rem;

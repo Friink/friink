@@ -259,7 +259,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
   5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
   6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
-     - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
+  - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
+  - **Mention Rule**: Recognized `@username` mentions in post and quoted-post text are links to the mentioned profile. Mention notification copy links to the canonical post that contains the mention.
 - **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:

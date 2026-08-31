@@ -494,7 +494,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;

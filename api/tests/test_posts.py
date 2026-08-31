@@ -9,7 +9,7 @@ from app.models.post import Post
 from app.models.post import PostKind
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest
-from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, serialize_post, serialize_quoted_post
+from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, extract_mentioned_usernames, serialize_post, serialize_quoted_post
 
 
 def test_post_content_rejects_513_characters() -> None:
@@ -19,6 +19,10 @@ def test_post_content_rejects_513_characters() -> None:
 
 def test_post_content_accepts_512_characters() -> None:
     assert CreatePostRequest(content="x" * 512).content == "x" * 512
+
+
+def test_extract_mentioned_usernames_deduplicates_valid_mentions() -> None:
+    assert extract_mentioned_usernames("Hi @areeba, @areeba and (@muflah). email@domain.com") == ["areeba", "muflah"]
 
 
 def test_post_content_is_required_for_posts_and_replies() -> None:

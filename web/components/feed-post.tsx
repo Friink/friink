@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { type MouseEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProfileCard } from '@/components/profile-card';
+import { MentionText } from '@/components/mention-text';
 import type { Post } from '@/lib/data';
 import { getPostPath, getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
@@ -71,7 +72,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
       <div className="feed-post-date">
         <small>{formatRelativeTime(post.createdAt)}</small>
       </div>
-      <p ref={bodyRef} className={`feed-post-body${shouldClampBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
+      <p ref={bodyRef} className={`feed-post-body${shouldClampBody ? ' feed-post-body-clamped' : ''}`}><MentionText>{post.text}</MentionText></p>
       {post.quotedPost && (
         (() => {
           const quotedPost = post.quotedPost;
@@ -89,7 +90,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
               ) : (
                 <strong>Original post unavailable</strong>
               )}
-              <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}>{quotedPost.content}</p>
+              <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}><MentionText>{quotedPost.content}</MentionText></p>
               {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
             </div>
           );

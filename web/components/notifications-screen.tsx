@@ -4,8 +4,9 @@ import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { formatRelativeTime } from '@/lib/time';
+import Link from 'next/link';
 
-type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow';
+type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow' | 'mention';
 
 export type NotificationItem = {
   id: string;
@@ -17,6 +18,7 @@ export type NotificationItem = {
   initials: string;
   tone: 'coral' | 'sage' | 'sun' | 'mint';
   unread?: boolean;
+  href?: string;
 };
 
 function getIcon(kind: NotificationKind) {
@@ -33,6 +35,8 @@ function getIcon(kind: NotificationKind) {
       return 'fa-shield-halved';
     case 'verification':
       return 'fa-badge-check';
+    case 'mention':
+      return 'fa-at';
     case 'follow':
     default:
       return 'fa-user-group';
@@ -64,9 +68,11 @@ export function NotificationsScreen({ notifications = [] }: NotificationsScreenP
               />
             }
             subtitle={
-              <>
-                <span className="notification-copy-text">{notification.text}</span>
-              </>
+              notification.href ? (
+                <Link className="notification-copy-text notification-post-link" href={notification.href}>
+                  {notification.text}
+                </Link>
+              ) : <span className="notification-copy-text">{notification.text}</span>
             }
             trailing={
               <span className="notification-meta">

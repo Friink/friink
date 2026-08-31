@@ -393,6 +393,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/services/connections.py`, `api/app/services/auth.py`, `api/app/models/notification.py`
 - **Since:** 2026-08-29 (13:10 UTC-0)
 
+### Rule: Mention Notifications
+- **What:** A post mentioning an existing username creates one `mention` notification for each distinct mentioned user other than the author. The notification identifies the author and links to the canonical post containing the mention.
+- **Edge cases:** Repeated mentions in one post are deduplicated. Unknown usernames and self-mentions do not create notifications. Mention text is linked to the referenced profile in post and quoted-post views.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/services/posts.py`, `api/app/models/notification.py`, `api/alembic/versions/20260901_0012_add_mention_notification.py`, `web/components/mention-text.tsx`, `web/components/feed-post.tsx`, `web/components/notifications-screen.tsx`, `web/components/app-shell.tsx`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ## Web Navigation & Client Behavior
 
 ### Rule: API Origin Resolution

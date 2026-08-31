@@ -4287,10 +4287,6 @@
 - Files/Scope Touched: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
----
-
-### Entry
-
 - Date/Time: 2026-08-31 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
@@ -4383,4 +4379,22 @@
 - Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/navigation-menu.tsx`, `web/components/navigationbar.tsx`, `web/components/composer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: The existing menu was reusable but named too narrowly and could not accept contextual actions; `ActionMenu` keeps the shared implementation while allowing the composer to present attachment options.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Link user mentions in posts and notify mentioned users.
+- Changes Made:
+  - Added server-side mention extraction with case-insensitive username resolution, duplicate suppression, and self/unknown-user exclusion.
+  - Added the `mention` notification type and an additive Alembic enum migration.
+  - Stored canonical author/public-ID/slug data in mention notifications so the notification opens the source post.
+  - Added shared web mention rendering that links `@username` text to the referenced profile.
+  - Added mention notification presentation with an `@` icon and a link to the source post.
+- Files/Scope Touched: `api/app/models/notification.py`, `api/app/services/posts.py`, `api/alembic/versions/20260901_0012_add_mention_notification.py`, `api/tests/test_posts.py`, `web/components/mention-text.tsx`, `web/components/feed-post.tsx`, `web/components/notifications-screen.tsx`, `web/components/app-shell.tsx`, `web/lib/auth.ts`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Mentions need durable server-side recipient resolution and notification target data, while the web can render the same plain post content as profile links without changing the post storage format.
+- Verification: `python -m pytest tests/test_posts.py` passed with 17 tests; `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
