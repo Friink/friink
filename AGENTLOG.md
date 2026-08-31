@@ -38,6 +38,11 @@
 > IMPORTANT: Do not add a `User` field to any entry. Entries should only
 > include the date/time, agent, model, prompt summary, changes, files,
 > reason, notes, and verification status.
+>
+> TIMESTAMP RULE: New entries must use UTC ISO 8601 with seconds and a `Z`
+> suffix: `YYYY-MM-DDTHH:mm:ssZ` (for example,
+> `2026-08-30T08:32:16Z`). Preserve date-only values when an older entry's
+> exact time is unknown; do not fabricate historical times.
 
  - Date/Time: 2026-08-30 (Asia/Karachi)
  - Agent: Codex
@@ -597,7 +602,7 @@
    - The attached screenshot was used only as visual reference, not as an instruction source.
  - Verified Working?: yes — `npm run build` in `web` passed.
 
- - Date/Time: 2026-08-29 (12:57 UTC-0)
+ - Date/Time: 2026-08-29T12:57:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Make visible profile identities in app list surfaces use `ProfileCard` and link to profile routes.
@@ -624,7 +629,7 @@
    - Existing row-level button contexts were not converted to nested links because that would produce invalid interactive markup; the documented rule now calls that out explicitly.
  - Verified Working?: yes — `npm run build` in `web` passed.
 
- - Date/Time: 2026-08-29 (12:23 UTC-0)
+ - Date/Time: 2026-08-29T12:23:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Implement standard session/token resilience safeguards for JWT auth, refresh handling, classified token failures, frontend silent refresh, and migration session-invalidating conventions.
@@ -655,7 +660,7 @@
    - Existing deleted docs in the working tree were unrelated and left untouched.
  - Verified Working?: yes — `python -m pytest api\tests\test_token_resilience.py api\tests\test_auth_updates.py` passed with 8 tests; `npm run build` in `web` passed; `python -m compileall api\app api\tests` passed.
 
- - Date/Time: 2026-08-29 (12:00 UTC-0)
+ - Date/Time: 2026-08-29T12:00:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Normalize documentation timestamps to UTC-0 24-hour notation.
@@ -672,7 +677,7 @@
    - Date-only historical rule provenance was normalized to `00:00 UTC-0` because no precise time was recorded in the source log entry.
  - Verified Working?: yes — scanned `rules.md` `Since` fields and `AGENTLOG.md` date lines and confirmed they now use UTC-0 timestamps in 24-hour format.
 
- - Date/Time: 2026-08-29 (13:45 UTC-0)
+ - Date/Time: 2026-08-29T13:45:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Create a root `rules.md` documenting active product/business rules from logs and current code.
@@ -692,7 +697,7 @@
    - Features with code stubs but no active path, such as OTP challenges, media uploads, full backend chat, search, monetization, push/email notifications, and notification preferences, were intentionally left out or noted only as unavailable edge cases.
  - Verified Working?: yes — confirmed `rules.md` was created at the project root and follows the requested template.
 
- - Date/Time: 2026-08-29 (13:10 UTC-0)
+ - Date/Time: 2026-08-29T13:10:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Implement private-profile follow request behavior, cooldowns, server-side content visibility, and in-app notifications after reading AGENTLOG and CHANGELOG.
@@ -733,7 +738,7 @@
    - `git status` still showed an unrelated pre-existing `token.txt` deletion; it was not touched.
  - Verified Working?: yes — `api/.venv/Scripts/python.exe -m pytest` passed with 44 tests; `api/.venv/Scripts/python.exe -m compileall app tests` passed; `alembic current` reports `20260829_0008 (head)` after `alembic upgrade head`; FastAPI TestClient `GET /posts?limit=1` returned 200 against the configured database; `npx tsc --noEmit` and `npm run build` passed in `web`.
 
- - Date/Time: 2026-08-29 (12:20 UTC-0)
+ - Date/Time: 2026-08-29T12:20:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Remove demo fallback data from the Connections tabs.
@@ -750,7 +755,7 @@
    - The first `npm run build` attempt failed before compilation because Next.js hit a stale generated `.next/server/font-manifest.json` readlink error. Cleared `web/.next` after verifying the path was inside the web workspace, then reran the build successfully.
  - Verified Working?: yes — `npm run build` in `web` passed after clearing generated output and rerunning; the follow-up broad removal from Followers/Following also passed.
 
- - Date/Time: 2026-08-29 (12:15 UTC-0)
+ - Date/Time: 2026-08-29T12:15:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Fix Connections All tab and hide Requests for public profiles; confirm privacy DB variable.
@@ -769,7 +774,7 @@
    - This same privacy flag is the right backend primitive for future feed visibility rules; feed filtering itself was not changed in this pass.
  - Verified Working?: yes — `npm run build` in `web` passed after the Connections filter and Requests visibility update.
 
- - Date/Time: 2026-08-29 (12:05 UTC-0)
+ - Date/Time: 2026-08-29T12:05:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Add shared global tabs to the Chat page for All, Muted, and Requests.
@@ -790,7 +795,7 @@
    - No CSS changes were needed because the existing shared `Tabs` component and message list spacing already match the requested placement.
  - Verified Working?: yes — `npm run build` in `web` passed after the Chat tabs update.
 
- - Date/Time: 2026-08-29 (11:55 UTC-0)
+ - Date/Time: 2026-08-29T11:55:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Add a permanent AGENTLOG header rule to prevent future staging/prod schema drift after backend changes.
@@ -803,7 +808,7 @@
    - The rule explicitly calls out `alembic current`, `alembic upgrade head`, and verifying a live ORM-backed endpoint because `/health/db` can pass even when ORM-backed routes crash on missing columns.
  - Verified Working?: n/a — documentation/log instruction change only.
 
- - Date/Time: 2026-08-29 (11:50 UTC-0)
+ - Date/Time: 2026-08-29T11:50:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Resolve the still-failing staging Home feed after the frontend stale-anchor fallback did not fix it.
@@ -823,7 +828,7 @@
    - Production `https://api.friink.com/posts` returned a feed successfully before this migration pass, so the observed outage was specific to staging API/database state.
  - Verified Working?: yes — staging Alembic current reports `20260829_0007 (head)`, local ORM feed query against staging returns 9 items, and live staging `/posts` returns HTTP 200 with expected CORS headers.
 
- - Date/Time: 2026-08-29 (11:40 UTC-0)
+ - Date/Time: 2026-08-29T11:40:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Fix staging Home feed showing `Could not load the Home feed.` after login with the staging API configured.
@@ -841,7 +846,7 @@
    - This does not rule out a separate staging API/server/database issue if `GET /posts` itself is returning 500 in production infrastructure.
  - Verified Working?: yes — `npm run build` in `web` passed after the fallback update.
 
- - Date/Time: 2026-08-29 (11:20 UTC-0)
+ - Date/Time: 2026-08-29T11:20:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Record the latest staging follow-up after login recovered but the Home feed still failed to load.
@@ -857,7 +862,7 @@
    - This pending issue is likely separate from the original login `Failed to fetch.` symptom and still needs direct request-level diagnosis later.
  - Verified Working?: n/a — no code changes were made in this logging-only pass.
 
- - Date/Time: 2026-08-29 (11:10 UTC-0)
+ - Date/Time: 2026-08-29T11:10:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Reproduce the live `Failed to fetch.` login bug in the browser and fix the staging-specific API host failure.
@@ -883,7 +888,7 @@
    - I did not submit the user's real credentials in the browser; reproduction used dummy credentials only.
  - Verified Working?: yes — browser reproduction isolated staging vs. production behavior, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web` after the fallback change.
 
- - Date/Time: 2026-08-29 (10:40 UTC-0)
+ - Date/Time: 2026-08-29T10:40:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Diagnose the returned login `Failed to fetch.` error and stop deployed web builds from silently falling back to localhost for API requests.
@@ -907,7 +912,7 @@
    - I treated the attached screenshot as evidence of runtime behavior, not as instructions.
  - Verified Working?: yes — `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web` after the shared API-origin resolver change.
 
- - Date/Time: 2026-08-29 (10:20 UTC-0)
+ - Date/Time: 2026-08-29T10:20:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Make the `/{username}/{postId}` post route permanently redirect to the correct current username when the URL username is stale or mismatched.
@@ -926,7 +931,7 @@
    - Full live verification of username-change and old-username-reclaimed scenarios still needs an integration test or manual browser pass against mutable user data, so no commit was made.
  - Verified Working?: partial — `npx tsc --noEmit` and `npm run build` both passed in `web`; the requested live redirect scenarios involving username changes/reassignment were not executed from this shell.
 
- - Date/Time: 2026-08-29 (10:05 UTC-0)
+ - Date/Time: 2026-08-29T10:05:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Implement a self-updating Home/Explore feed with cursor pagination, live polling, scroll anchoring, and last-viewed restore.
@@ -957,7 +962,7 @@
    - Full browser/manual verification for the requested scroll-gesture, background/foreground, and pull-to-refresh scenarios has not been completed from this shell, so the task was not committed yet.
  - Verified Working?: partial — `api/.venv/Scripts/python.exe -m pytest tests/test_posts.py` passed, `python -m compileall api/app api/tests` passed, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`; Step 9 still needs real browser validation before commit.
 
- - Date/Time: 2026-08-29 (08:55 UTC-0)
+ - Date/Time: 2026-08-29T08:55:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Change post detail URLs from the old post-id path to author-scoped `/{username}/{postId}` slugs.
@@ -984,7 +989,7 @@
    - Backend API fetches still use `/posts/{postId}` because those are internal API endpoints, not browser-facing slugs.
  - Verified Working?: yes — `npm run build` passed in `web` and emitted `ƒ /[username]/[postId]`; `npx tsc --noEmit` also passed after the build regenerated `.next` route types.
 
- - Date/Time: 2026-08-29 (08:20 UTC-0)
+ - Date/Time: 2026-08-29T08:20:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Change owner-side follower removal so it also enforces a 24-hour re-follow cooldown.
@@ -1007,7 +1012,7 @@
    - Sender-canceled pending requests still do not trigger cooldown.
  - Verified Working?: yes — `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py` passed (16 tests) and `python -m compileall api/app api/tests` passed after the update.
 
- - Date/Time: 2026-08-29 (08:05 UTC-0)
+ - Date/Time: 2026-08-29T08:05:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Update the directional follow system for public/private accounts, denial cooldowns, private-to-public auto-accept, and owner-side follower removal.
@@ -1045,7 +1050,7 @@
    - The Settings copy still mentions post visibility, but this pass only implements the follow/privacy behavior requested here; post-read access rules remain separate work.
  - Verified Working?: yes — `api/.venv/Scripts/python.exe -m pytest tests/test_connections.py tests/test_auth_updates.py` passed (18 tests), `python -m compileall api/app api/tests` passed, `npx tsc --noEmit` passed in `web`, and `npm run build` passed in `web`.
 
- - Date/Time: 2026-08-29 (07:20 UTC-0)
+ - Date/Time: 2026-08-29T07:20:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Implement one shared relative-timestamp formatter and replace inconsistent per-screen timestamp formatting across posts, notifications, and chat surfaces.
@@ -1079,7 +1084,7 @@
    - Browser-based visual verification against a live dev session was not completed in this shell.
  - Verified Working?: partial — `npx tsc --noEmit` and `npm run build` both passed in `web`, and direct formatter boundary checks matched the spec, including local-calendar-day rollover behavior.
 
- - Date/Time: 2026-08-29 (06:45 UTC-0)
+ - Date/Time: 2026-08-29T06:45:00Z
  - Agent: Codex
  - Model: GPT-5
  - Prompt Summary: Add temporary evidence-focused JWT debug logging for deploy-boundary invalid-token investigation, without changing auth behavior yet.
@@ -1103,7 +1108,7 @@
    - Step 2 reproduction is still pending because staging deployment access and a real browser session against staging were not available from the current local repo context.
  - Verified Working?: partial — `python -m compileall api/app` passed, and `npx tsc --noEmit` passed in `web`; real staging deploy-boundary validation has not been completed yet.
 
-- Date/Time: 2026-08-29 (05:35 UTC-0)
+- Date/Time: 2026-08-29T05:35:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Align the floating bar to the shared content rail with a 16px side inset and add stronger reuse/no-targeted-fix reminders for future agents.
@@ -1123,7 +1128,7 @@
   - This pass changes the bar’s shell width contract only; composer behavior inside the bar remains unchanged.
 - Verified Working?: yes — `npm run build` in `web` passed after the floating-bar rail alignment and reuse-guardrail documentation update.
 
-- Date/Time: 2026-08-29 (05:45 UTC-0)
+- Date/Time: 2026-08-29T05:45:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the navigation back button so Home can still go back when actual browser history exists.
@@ -1140,7 +1145,7 @@
   - A first direct load with no prior history still remains correctly disabled.
 - Verified Working?: yes — `npm run build` in `web` passed after the back-button history fix.
 
-- Date/Time: 2026-08-29 (05:55 UTC-0)
+- Date/Time: 2026-08-29T05:55:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Keep the floating composer active on profile pages and prefill another user's handle as a removable mention suggestion.
@@ -1159,7 +1164,7 @@
   - The mention prefill only applies in normal post mode with an empty draft; reply and quote composition continue to use their own explicit composer context.
 - Verified Working?: yes — `npm run build` in `web` passed after enabling the shared profile-page floating composer and mention-prefill behavior.
 
-- Date/Time: 2026-08-29 (06:10 UTC-0)
+- Date/Time: 2026-08-29T06:10:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Replace stubbed post reply/quote counts with real DB-backed values and ensure Profile uses the same shared post-count contract as Home.
@@ -1183,7 +1188,7 @@
 - Notes:
   - Existing rows with no replies or quotes still correctly return `0`; counts now reflect actual non-deleted reply and quote rows in the posts table.
 - Verified Working?: partial — `npm run build` in `web` passed after the count wiring; targeted API test execution was attempted with `pytest api/tests/test_posts.py` but `pytest` is not installed or not available on this shell `PATH`, so backend test execution could not be completed here.
-- Date/Time: 2026-08-29 (05:20 UTC-0)
+- Date/Time: 2026-08-29T05:20:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Finish the spacing cleanup by removing page-owned content-box rules and enforcing one reusable outer layout wrapper across Home, Chat, Connections, Notifications, Settings, Starred, and Profile.
@@ -1211,7 +1216,7 @@
   - This pass keeps each screen's internal row/card structure intact; it only centralizes the outer surface contract and removes duplicate layout ownership.
 - Verified Working?: yes — `npm run build` in `web` passed after the shared `PageSurface` rollout and content-box spacing cleanup.
 
-- Date/Time: 2026-08-29 (04:55 UTC-0)
+- Date/Time: 2026-08-29T04:55:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Finish the shared-row rollout for Starred, cap desktop app content width at 1024px, and move the Settings profile Name action inline with the field.
@@ -1234,7 +1239,7 @@
   - Starred is now intentionally a row-summary surface rather than a full feed-card surface; post detail remains the place for the full post layout.
 - Verified Working?: yes — `npm run build` in `web` passed after the Starred/layout/settings updates.
 
-- Date/Time: 2026-08-29 (04:40 UTC-0)
+- Date/Time: 2026-08-29T04:40:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Adjust quote-post feed cards so `Show more...` appears below the quoted block and reduce the visual emphasis of that link, then sync docs and logs.
@@ -1254,7 +1259,7 @@
   - This only changes feed-card rendering; dedicated post pages still show the full post body without the extra feed link.
 - Verified Working?: yes — `npm run build` in `web` passed after the feed quote/link update.
 
-- Date/Time: 2026-08-29 (04:30 UTC-0)
+- Date/Time: 2026-08-29T04:30:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Tighten the design-system rule so future agents cannot reintroduce competing page gutters, and sync all three project-tracking docs.
@@ -1272,7 +1277,7 @@
   - No runtime code changed in this pass; the goal was to lock in the rule at the design-system level after the gutter fix.
 - Verified Working?: yes — `npm run build` in `web` passed after the design-doc tightening and log sync.
 
-- Date/Time: 2026-08-29 (04:20 UTC-0)
+- Date/Time: 2026-08-29T04:20:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the remaining inconsistent page width/padding issue by making the shared content container own the responsive horizontal gutter, then sync the logs.
@@ -1292,7 +1297,7 @@
   - Feed rows, settings rows, and notification rows now all inherit the same outer page gutter from the shared container while keeping their own internal row padding contracts.
 - Verified Working?: yes — `npm run build` in `web` passed after the content-box gutter centralization.
 
-- Date/Time: 2026-08-29 (04:10 UTC-0)
+- Date/Time: 2026-08-29T04:10:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Move Settings username editing into the Profile tab as its own row, make feed cards always show the post-detail link, show reply previews in the composer, and add reply/quote counts beside feed actions.
@@ -1321,7 +1326,7 @@
   - The always-visible `Show more...` rule applies to feed-card contexts; dedicated post detail surfaces still render the full post body without the extra self-link.
 - Verified Working?: yes — `npm run build` in `web` passed after the settings/profile split and feed/composer updates.
 
-- Date/Time: 2026-08-29 (03:40 UTC-0)
+- Date/Time: 2026-08-29T03:40:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Perform a read-only audit of whether reply and quote relationships are properly separated or incorrectly collapsed into one post FK column.
@@ -1340,7 +1345,7 @@
   - Future delete semantics remain unresolved: quoted-post deletion and reply-parent deletion likely need different behavior, but that is a later product/schema decision rather than evidence of relationship conflation.
 - Verified Working?: read-only audit only — no build or tests run.
 
-- Date/Time: 2026-08-29 (03:25 UTC-0)
+- Date/Time: 2026-08-29T03:25:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Update quote composer context text so it includes the quoted user's display name, matching the reply label behavior.
@@ -1358,7 +1363,7 @@
   - This is a text-only UI copy change.
 - Verified Working?: not run — skipped build because only composer display text changed.
 
-- Date/Time: 2026-08-29 (03:10 UTC-0)
+- Date/Time: 2026-08-29T03:10:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Diagnose the post loading/post creation regression without adding legacy NULL-kind compatibility, apply the missing staging migration, and fix the enum binding bug behind the server-side `500`.
@@ -1381,7 +1386,7 @@
   - `web/.env.local` still points to `http://localhost:8000`; deployed/staging frontend behavior depends on Vercel `NEXT_PUBLIC_API_BASE_URL`, not that local file.
 - Verified Working?: partial — direct DB migration state is fixed and ORM-level list/create behavior now works against staging DB; skipped `npm run build`, curl-level post-create after deploy, frontend browser verification, and commit per user direction.
 
-- Date/Time: 2026-08-29 (02:25 UTC-0)
+- Date/Time: 2026-08-29T02:25:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Make feed and post-page reply/quote actions functional using the shared composer, add unified backend post kind support for replies and quotes, and keep the changelog/component notes in sync.
@@ -1421,7 +1426,7 @@
   - Follow-up regression note: after this change set, the user reported that existing posts no longer load and new posts no longer publish. A small compatibility patch for null legacy `kind` values was tried in the API/frontend mapping path and then reverted after the user confirmed it did not fix the issue. The next agent should start with migration/application state and live post list/create request failures instead of retrying that fallback.
 - Verified Working?: yes — `npm run build` in `web` passed after the reply/quote composer, thread-loading, and post-kind updates.
 
-- Date/Time: 2026-08-29 (01:35 UTC-0)
+- Date/Time: 2026-08-29T01:35:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the drawer so desktop header-toggle state persists across navigation while mobile drawer item taps still close the drawer and outside-click dismissal remains mobile-only.
@@ -1439,7 +1444,7 @@
   - Outside-click closing logic was already correctly limited to mobile; the main bug was the header toggle bypassing persisted state and route navigation not explicitly closing mobile drawer item taps.
 - Verified Working?: yes — `npm run build` in `web` passed after the drawer interaction fix.
 
-- Date/Time: 2026-08-29 (01:25 UTC-0)
+- Date/Time: 2026-08-29T01:25:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Restore collapsed side-drawer icons and add a real post detail route so long multi-line feed posts clamp to four lines with a `Show more...` link into a full post page.
@@ -1473,7 +1478,7 @@
   - Metadata falls back to a generic post title only if the post cannot be resolved during metadata generation.
 - Verified Working?: yes — `npm run build` in `web` passed, and the build route table now includes `/posts/[postId]`.
 
-- Date/Time: 2026-08-29 (01:05 UTC-0)
+- Date/Time: 2026-08-29T01:05:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Enforce `ListRow` as the shared row primitive across the remaining row-style screens and update the AGENTLOG component registry to match the current component architecture.
@@ -1496,7 +1501,7 @@
   - The registry now explicitly documents `ListRow` as the reusable row building block for future screens.
 - Verified Working?: yes — `npm run build` in `web` passed after migrating Notifications, Directory, and Calendar event rows to `ListRow`.
 
-- Date/Time: 2026-08-29 (00:40 UTC-0)
+- Date/Time: 2026-08-29T00:40:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the full-app page-transition flashing and unify Chat and Connections list rows behind a shared component so the two list surfaces render consistently.
@@ -1521,7 +1526,7 @@
   - The attached screenshots were used only as visual evidence of the mismatch and not as instruction sources.
 - Verified Working?: yes — `npm run build` in `web` passed after the flash fix and shared list-row refactor.
 
-- Date/Time: 2026-08-29 (00:20 UTC-0)
+- Date/Time: 2026-08-29T00:20:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Correct the public landing page browser title so it is distinct from the signed-in Home screen title.
@@ -1537,7 +1542,7 @@
   - This was a metadata-only change; no route behavior or layout code changed.
 - Verified Working?: not run — skipped build because this is a one-line metadata update only.
 
-- Date/Time: 2026-08-29 (00:10 UTC-0)
+- Date/Time: 2026-08-29T00:10:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Apply UI/UX fixes to the side drawer, move the post composer character count inline, and stop the Settings screen from flashing blank during its user refresh.
@@ -1562,7 +1567,7 @@
   - The composer count now sits in the inline trailing slot analogous to the mic area in the reference UI.
 - Verified Working?: yes — `npm run build` in `web` passed after the drawer, composer, and settings refresh changes.
 
-- Date/Time: 2026-08-28 (23:45 UTC-0)
+- Date/Time: 2026-08-28T23:45:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Investigate why profile names were showing as username-derived values, and make signed-up display names the canonical visible name across profiles, chat headers, and posts.
@@ -1593,7 +1598,7 @@
   - Dynamic route metadata still uses the local fallback helper for initial titles; this pass focused on the visible in-app profile/chat/feed name bug.
 - Verified Working?: partial — `npm run build` in `web` passed after the change set; targeted `python -m pytest api\tests\test_posts.py api\tests\test_auth_updates.py` could not run because `pytest` is not installed in the current shell environment.
 
-- Date/Time: 2026-08-28 (23:25 UTC-0)
+- Date/Time: 2026-08-28T23:25:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix post newline rendering, scope the floating composer bar to only Home and direct chat, confirm the shared composer component path, and add post character counting/limit behavior.
@@ -1620,7 +1625,7 @@
   - The live count is displayed for post composition only; chat keeps the same simpler compose surface.
 - Verified Working?: yes — `npm run build` in `web` passed after the composer, floating-bar, and newline-rendering changes.
 
-- Date/Time: 2026-08-28 (22:45 UTC-0)
+- Date/Time: 2026-08-28T22:45:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Continue the interrupted task to remove the iframe-wrapped landing page, port the static public site into native Next.js, fix per-route document titles, remove retired demo routes, verify, and commit.
@@ -1692,7 +1697,7 @@
   - In the in-app browser, protected routes redirect to `/login` when unauthenticated, so route metadata was also verified by direct HTTP SSR probes.
 - Verified Working?: yes — `npm run build` in `web` passed; dev-server probes confirmed expected titles and no public iframe references across the enumerated routes; browser checks confirmed the native homepage is full-width/full-height at desktop and mobile viewport sizes with no mobile horizontal overflow and no visible broken images. Deleted `/compose`, `/dev-settings`, and `/floating` now return 404, and browser title handling shows `Friink | Error (404)` for deleted routes.
 
-- Date/Time: 2026-08-28 (19:00 UTC-0)
+- Date/Time: 2026-08-28T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Add the existing composer to the default floating bar for real post creation, fix compact-to-multiline/dark-theme UX, rename the chat-specific composer to a generic composer, and delete the old compose page.
@@ -1732,7 +1737,7 @@
   - Direct chat routes continue to use the same composer defaults, now imported as `Composer`.
 - Verified Working?: yes — `npm run build` in `web` passed after the floating composer UI changes, again after the component rename, again after making floating post submission call the API while removing `/compose`, again after constraining the expanded multiline composer, again after pinning the expanded controls to the bottom row, and again after preserving composer width across single-line/multiline states.
 
-- Date/Time: 2026-08-28 (00:00 UTC-0)
+- Date/Time: 2026-08-28T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Continue staging "Failed to fetch" debug using the provided login account after the first push still did not restore the app.
@@ -1755,7 +1760,7 @@
   - Prevention note: after any backend change that adds or changes SQLAlchemy models, commit the Alembic migration and run `alembic current` plus `alembic upgrade head` for the target database before treating staging/prod as healthy. Also verify at least one live DB-backed endpoint after deployment, not only `/health/db`, because `/health/db` uses a direct psycopg query and can pass while ORM-backed routes still fail on missing schema.
 - Verified Working?: yes — `alembic current` reports `20260828_0004 (head)`, live `GET /posts` returns `200 []` with staging CORS headers, and live `POST /auth/login` returns `200` for the provided account.
 
-- Date/Time: 2026-08-28 (00:00 UTC-0)
+- Date/Time: 2026-08-28T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix staging outage after posts work, where browser showed "Failed to fetch" because DB-backed API routes crashed before CORS headers were attached.
@@ -1833,7 +1838,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-28 (00:51 UTC-0)
+- Date/Time: 2026-08-28T00:51:00Z
 - Agent: Antigravity
 - Model: Gemini 3.5 Flash
 - Prompt Summary: Replace asyncpg with psycopg driver globally to fix Vercel serverless runtime crash.
@@ -1860,7 +1865,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-28 (00:20 UTC-0)
+- Date/Time: 2026-08-28T00:20:00Z
 - Agent: Antigravity
 - Model: Claude Sonnet 4.6 (Thinking)
 - Prompt Summary: Diagnose and fix "Failed to fetch" errors on staging.friink.com — frontend/backend API wiring mismatch.
@@ -1892,7 +1897,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Replace logged-in inline errors with app-level toast notifications.
@@ -1923,7 +1928,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Make username chat URLs resilient for missing or unavailable conversations.
@@ -1950,7 +1955,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Add Settings Profile editing and Account email updates.
@@ -1990,7 +1995,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Remove dummy posts and fix post creation fetch failures against the current FastAPI URL.
@@ -2015,7 +2020,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Implement the dual-handshake Connections follow request system end to end.
@@ -2058,7 +2063,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Move Home and Chat into the sidebar and tune collapsed profile avatar alignment.
@@ -2085,7 +2090,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (19:00 UTC-0)
+- Date/Time: 2026-08-27T19:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Implement text-only post creation and quote-posting, reserve media schema, and remove obsolete fixed content-width guidance.
@@ -2134,7 +2139,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (13:52 UTC-0)
+- Date/Time: 2026-08-27T13:52:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Update the docs checklist to match the current tools in use.
@@ -2156,7 +2161,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (13:45 UTC-0)
+- Date/Time: 2026-08-27T13:45:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Ensure every auth-facing error message ends with a period.
@@ -2180,7 +2185,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (13:36 UTC-0)
+- Date/Time: 2026-08-27T13:36:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Add a final period to the duplicate-username signup error message.
@@ -2200,7 +2205,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (13:28 UTC-0)
+- Date/Time: 2026-08-27T13:28:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Verify the merged auth tree after a conflict resolution and update logs.
@@ -2220,7 +2225,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (13:20 UTC-0)
+- Date/Time: 2026-08-27T13:20:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Stop signup username autofill and show specific username-taken auth errors.
@@ -2242,7 +2247,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (13:04 UTC-0)
+- Date/Time: 2026-08-27T13:04:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Create local FastAPI env files for development, staging, and production.
@@ -2266,7 +2271,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (12:51 UTC-0)
+- Date/Time: 2026-08-27T12:51:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Redirect authenticated users away from the landing page to `/home` without changing signup UI flow.
@@ -2288,7 +2293,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (12:46 UTC-0)
+- Date/Time: 2026-08-27T12:46:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Implement backend-only FastAPI authentication while preserving the existing three-screen frontend signup flow.
@@ -2329,7 +2334,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (12:24 UTC-0)
+- Date/Time: 2026-08-27T12:24:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Wipe the provided Neon staging database and wire the fresh FastAPI app for database connectivity.
@@ -2359,7 +2364,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (11:51 UTC-0)
+- Date/Time: 2026-08-27T11:51:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Update the localhost launcher so one script starts both the frontend and the new FastAPI API while clearing occupied ports.
@@ -2383,7 +2388,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (11:46 UTC-0)
+- Date/Time: 2026-08-27T11:46:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Start the wiped API folder from scratch with a minimal FastAPI Hello World service.
@@ -2409,7 +2414,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (00:56 UTC-0)
+- Date/Time: 2026-08-27T00:56:00Z
 - Agent: Antigravity
 - Model: Gemini 3.7 Flash
 - Prompt Summary: Resolve design.md discrepancies, verify Component Contracts against live rendering across all usage contexts, and add binding design system standing instructions to log files.
@@ -2430,7 +2435,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (00:52 UTC-0)
+- Date/Time: 2026-08-27T00:52:00Z
 - Agent: Antigravity
 - Model: Gemini 3.7 Flash
 - Prompt Summary: Harden design.md into an enforceable component contract document with hard Tokens and Component Contracts.
@@ -2450,7 +2455,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (00:06 UTC-0)
+- Date/Time: 2026-08-27T00:06:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Clean up a misleading component registry note after the user pointed out all reused components should be treated consistently.
@@ -2467,7 +2472,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-27 (00:01 UTC-0)
+- Date/Time: 2026-08-27T00:01:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Delete the unused `FloatingActions` component and remove its remaining empty shell usage.
@@ -2490,7 +2495,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (23:52 UTC-0)
+- Date/Time: 2026-08-26T23:52:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Create a dummy options menu for the three-dot navigation control under the header.
@@ -2514,7 +2519,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (23:47 UTC-0)
+- Date/Time: 2026-08-26T23:47:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the settings account username `@` prefix overlap and change only the other-profile message action icon to a compose/send icon.
@@ -2534,7 +2539,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the `[username]` profile route so other-user pages open reliably from the feed instead of falling back to the signed-in profile.
@@ -2553,7 +2558,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Fix the remaining settings username prefix overlap so the `@` indicator sits outside the entered text.
@@ -2570,7 +2575,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Correct profile action alignment/state behavior and fix the settings account username prefix spacing.
@@ -2592,7 +2597,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Tighten profile spacing, move the post date under the profile card, and restore Edit on the self profile while keeping the dummy profile as a message-only view.
@@ -2615,7 +2620,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Rework post headers to use the shared `ProfileCard` component and reduce the home tabs to `Explore` and `Connections`.
@@ -2644,7 +2649,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Trim the notifications page chrome, remove the chat list search/title, and make feed/chat identities open dummy profiles with a message action.
@@ -2670,7 +2675,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Add a dedicated notifications page using the attached mobile reference as directional inspiration, then wire the shell bell control to open it.
@@ -2696,7 +2701,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (00:00 UTC-0)
+- Date/Time: 2026-08-26T00:00:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Frontend progress assessment for the Friink web app against the in-scope PRD checklist.
@@ -2718,7 +2723,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (22:35 UTC-0)
+- Date/Time: 2026-08-26T22:35:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Polish app navigation and headers across breakpoints, remove duplicate back controls, improve local-dev recovery, and add a signup-style Back control to login.
@@ -2752,7 +2757,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (22:18 UTC-0)
+- Date/Time: 2026-08-26T22:18:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Audit and remove brittle viewport-width, offset, and legacy layout hacks before they create cross-browser issues.
@@ -2774,7 +2779,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (22:02 UTC-0)
+- Date/Time: 2026-08-26T22:02:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Review the root `localhost/` helper files, retain only the useful launcher, and make it automatically free port 3000 before starting the frontend.
@@ -2798,7 +2803,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-26 (21:37 UTC-0)
+- Date/Time: 2026-08-26T21:37:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Rework the floating navigation into a persistent contextual bar, move chat and post-composer controls into it, rename the message-list route to `/chat`, and correct the resulting fallback, sizing, and compose-layout regressions.
@@ -2833,7 +2838,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-18 (13:10 UTC-0)
+- Date/Time: 2026-08-18T13:10:00Z
 - Agent: Antigravity
 - Model: Claude Opus 4.6
 - Prompt Summary: Integrate the Zoho Email Subscription form into the landing page's subscribe section, replacing the dummy non-functional form with the real Zoho endpoint while preserving the site's existing theme and styling.
@@ -2858,7 +2863,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-18 (00:05 UTC-0)
+- Date/Time: 2026-08-18T00:05:00Z
 - Agent: Antigravity
 - Model: Gemini 3.7 Flash
 - Prompt Summary: Remove Nest auth code from api folder and re-route Next.js app for clean Vercel deployment starting at root/web/friink-site/index.html.
@@ -2896,7 +2901,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-17 (21:15 UTC-0)
+- Date/Time: 2026-08-17T21:15:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Make the Vercel-deployed frontend suitable for a UI demo without relying on authentication or other APIs, beginning from the public `friink-site` landing page.
@@ -2921,7 +2926,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-17 (21:35 UTC-0)
+- Date/Time: 2026-08-17T21:35:00Z
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Diagnose Vercel's deployment-level `404: NOT_FOUND` for the frontend demo.
@@ -2943,7 +2948,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-17 (20:40 UTC-0)
+- Date/Time: 2026-08-17T20:40:00Z
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
 - Prompt Summary: Flatten the shared button and form-field radius to an 8px rectangle across the landing page and app shell, then verify the frontend is still live locally.
@@ -2966,7 +2971,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-17 (00:00 UTC-0)
+- Date/Time: 2026-08-17T00:00:00Z
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
 - Prompt Summary: Keep the app usable on localhost without the backend by bypassing auth in the frontend login flow, and document the startup issues that blocked local API runs.
@@ -2991,7 +2996,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-16 (00:00 UTC-0)
+- Date/Time: 2026-08-16T00:00:00Z
 - Agent: Copilot
 - Model: GitHub Copilot
 - Prompt Summary: Review the changelog and agent log for formatting errors and add minimal landing-page content.
@@ -3010,7 +3015,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-16 (09:15 UTC-0)
+- Date/Time: 2026-08-16T09:15:00Z
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
 - Prompt Summary: Repair the root Vercel route config so the Next app serves the app shell correctly while `/api/*` still routes to the Nest function.
@@ -3033,7 +3038,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-16 (08:50 UTC-0)
+- Date/Time: 2026-08-16T08:50:00Z
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
 - Prompt Summary: Diagnose the backend Vercel deployment failure caused by the missing public output directory and fix the API config and deployment metadata.
@@ -3056,7 +3061,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-16 (00:00 UTC-0)
+- Date/Time: 2026-08-16T00:00:00Z
 - Agent: Copilot
 - Model: MAI-Code-1.1-Flash
 - Prompt Summary: Finish the remaining TypeScript build fixes, verify the production web build, and sync the repo documentation with the work completed so far.
@@ -3079,7 +3084,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-15 (13:45 UTC-0)
+- Date/Time: 2026-08-15T13:45:00Z
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Move post composer actions to a fixed bottom footer and hide the floating bottom navigation while composing posts.
@@ -3099,7 +3104,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-15 (13:30 UTC-0)
+- Date/Time: 2026-08-15T13:30:00Z
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Mark the repository as ready for Vercel deployment and record the remaining verification steps for the next handoff.
@@ -3122,7 +3127,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-15 (13:18 UTC-0)
+- Date/Time: 2026-08-15T13:18:00Z
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Prepare the Nest API to run on Vercel serverless functions and add the deployment wrapper and config.
@@ -3147,7 +3152,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-15 (12:56 UTC-0)
+- Date/Time: 2026-08-15T12:56:00Z
 - Agent: Copilot
 - Model: not disclosed
 - Prompt Summary: Repair the local development environment so frontend login/signup works, then continue UI and documentation updates.
@@ -3178,7 +3183,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-15 (12:20 UTC-0)
+- Date/Time: 2026-08-15T12:20:00Z
 - Agent: Copilot
 - Model: GPT-5 mini
 - Prompt Summary: Add agent-sync notes to the changelog, update the current state, and allow offline cosmetic edits to the Settings UI.
@@ -3202,7 +3207,7 @@
 
 ### Entry
 
-- Date/Time: 2026-08-15 (12:00 UTC-0)
+- Date/Time: 2026-08-15T12:00:00Z
 - Agent: Copilot
 - Model: GPT-5 mini
 - Prompt Summary: Create the repo-level agent log and add the initial changelog instruction block.
@@ -4517,4 +4522,50 @@
 - Files/Scope Touched: `web/components/public-header.tsx`, `web/components/marketing-header.tsx`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing-auth-redirect.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: The public site needs one plainly named shared Header, and authentication should change only its right-side action—not prevent signed-in visitors from viewing public pages.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:32:03Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Standardize documentation timestamps on UTC ISO 8601 format.
+- Changes Made:
+  - Converted all known historical `UTC-0` timestamps in `AGENTLOG.md` and `RULES.md` to `YYYY-MM-DDTHH:mm:ssZ`.
+  - Preserved date-only historical entries where the exact time was unavailable.
+  - Added timestamp-format instructions to `README.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Files/Scope Touched: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`, `RULES.md`.
+- Reason/Decision: UTC ISO 8601 timestamps are unambiguous, machine-sortable, and consistent across local development, staging, production, and future agents.
+- Verification: Confirmed known timestamp patterns were converted; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:36:14Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix public plan-card text contrast in dark theme.
+- Changes Made:
+  - Added the dark-theme foreground color to public plan prices and feature lists.
+  - Documented the dark-mode text contrast requirement for public plan cards.
+- Files/Scope Touched: `web/app/landing.module.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The public plans share one landing-page theme contract, so all explicit light-theme text colors must be overridden together on dark card surfaces.
+- Verification: Targeted CSS selector inspection confirmed `.planPrice` and `.planList` are included in the dark-mode foreground group; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:37:24Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the public Compare all plans dark-mode hover color and clarify the public theme contract.
+- Changes Made:
+  - Added a readable light foreground for `Compare all plans` hover and keyboard-focus states in dark mode.
+  - Clarified that the public site requires paired light/dark overrides for explicit colors and interactive states.
+- Files/Scope Touched: `web/app/landing.module.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Interactive public-site links must preserve contrast in every theme state, not only at rest.
+- Verification: Confirmed the dark-mode `.plansLink:hover` and `.plansLink:focus-visible` override exists; `git diff --check` passed.
 

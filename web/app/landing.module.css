@@ -614,7 +614,9 @@
   .vision p,
   .plansIntro,
   .planName,
+  .planPrice,
   .planDescription,
+  .planList,
   .planPrice span,
   .plansNote,
   .subscribe p,
@@ -645,5 +647,10 @@
   .cta:focus-visible {
     color: #000000;
     background: #ffffff;
+  }
+
+  .plansLink:hover,
+  .plansLink:focus-visible {
+    color: #f1f3f2;
   }
 }

@@ -19,7 +19,7 @@
 > corresponding detailed entry to AGENTLOG.md describing the exact files or
 > scope touched and why. Keep both files synchronized.
 
-This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
+This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags. New entries must use a UTC ISO 8601 timestamp with seconds and a `Z` suffix (`YYYY-MM-DDTHH:mm:ssZ`); retain date-only values when the historical time is unknown.
 
 ## Current State
 _Last updated: 2026-08-31_
@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [docs] Standardized known documentation timestamps to UTC ISO 8601 with seconds and a `Z` suffix, while preserving date-only historical entries whose exact times are unknown; added timestamp instructions to README, CHANGELOG, and AGENTLOG.
+
 - [web] Renamed the reusable `NavigationMenu` component to `ActionMenu` and reused it from the post composer plus button for Font Awesome Add media and Add link actions; UI only, with backend upload/link behavior still deferred.
 - [api/web] Added username mention links in post text and mention notifications that identify the author and open the canonical post containing the mention.
 - [api/web] Fixed quoted-post identity payloads and mappings so quoted cards show the original author's display name and profile picture.
@@ -101,6 +103,8 @@ _Last updated: 2026-08-31_
 - [web] Added a dedicated Settings > Subscription tab with the current Free plan summary and a link to `/subscriptions`.
 - [web] Reordered the landing page narrative to present Development progress and Our vision before Plans, followed by the newsletter CTA.
 - [web] Made the landing and `/subscriptions` pages reuse an auth-aware public `Header`; signed-in users see their profile picture as the return link instead of a Login CTA, the landing page no longer redirects signed-in visitors, and the subscriptions page follows the landing dark theme consistently.
+- [web] Fixed public plan-card feature-list and price text remaining dark in dark mode by applying the shared light foreground color to those selectors.
+- [web] Fixed the public `Compare all plans` link hover/focus state so it remains readable in dark mode, and clarified the public-site light/dark design contract.
 
 ### Changed
 

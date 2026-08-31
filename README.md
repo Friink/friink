@@ -87,6 +87,9 @@ from scratch.
 - Every task or prompt processed must update the project documentation before the task
   is considered complete — no change is too minor to log. Append a dated entry to
   `CHANGELOG.md` and a corresponding detailed entry to `AGENTLOG.md` for every task.
+- New documentation log timestamps must use UTC ISO 8601 format with seconds and a
+  `Z` suffix: `YYYY-MM-DDTHH:mm:ssZ` (for example, `2026-08-30T08:32:16Z`). If an
+  older entry has no known time, preserve its date-only value rather than inventing one.
 
 - Update `packages/design/design.md` as needed whenever a change adds, removes, or
   alters a visual token, component contract, or shared UI pattern that future agents
