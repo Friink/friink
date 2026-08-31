@@ -97,7 +97,7 @@ export function PostClient({ postId }: PostClientProps) {
     router.replace('/');
   }
 
-  async function handleSend(event: FormEvent<HTMLFormElement>) {
+  async function handleSend(event: FormEvent<HTMLFormElement>, media: File[]) {
     event.preventDefault();
     if (!user || !composeContext) return;
 
@@ -114,6 +114,7 @@ export function PostClient({ postId }: PostClientProps) {
         content: draft.trim(),
         quotedPostId: composeContext.kind === 'quote' ? composeContext.post.id : null,
         parentPostId: composeContext.kind === 'reply' ? composeContext.post.id : null,
+        media,
       });
       const mapped = mapApiPost(created);
       if (mapped.kind === 'reply') {

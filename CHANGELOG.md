@@ -25,7 +25,7 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 _Last updated: 2026-08-31_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
-- [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
+- [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while post images use submit-time R2 uploads and the `post_media` association table.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, rejected rows retain the 24-hour resend cooldown, and canceled rows retain sender-cancel history for the 3-hour/24-hour resend lockout cycle. Pending requests are auto-accepted when a private account flips public.
 - [api] In-app notifications are implemented with a `notifications` table, unread/feed/read endpoints, and synchronous notification creation for follow, request, accept, and private-to-public auto-accept events.
 - [web] The deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. `NEXT_PUBLIC_API_BASE_URL` must still be set in the Vercel **web** project to the deployed API base URL, but the app no longer silently falls back to `http://localhost:8000` in deployed browsers; missing config now fails clearly instead of surfacing as a misleading localhost network error. The subscribe section submits to Zoho Forms for real email collection.
@@ -92,6 +92,10 @@ _Last updated: 2026-08-31_
 - [web] Converted stable SideDrawer destinations to real anchors so Chrome can preview their routes on hover and users can open them in a new tab.
 
 ## 2026-09-01
+
+- [api/web] Implemented submit-time post-image uploads: up to 8 locally previewed/cropped images are compressed with the shared `postMedia` preset, uploaded to R2 under `post-media/{user_id}/`, server-validated and associated atomically with the post; failed attempts clean up uploaded objects and post deletion removes associated objects.
+
+- [audit] Completed the Phase 1 post-media upload audit: confirmed the composer workflow is client-only, the API rejects media payloads, `post_media` is currently a placeholder, and no post-media R2 upload, association, or cleanup path exists. Implementation is deferred pending review.
 
 - [api/web] Implemented user-facing session management under Settings > Account with server-managed auth sessions, nullable refresh-token linkage, current-session detection from the refresh cookie, individual and revoke-others actions, and device/browser metadata fallbacks.
 - [db] Applied additive Alembic migration `20260901_0013` for `auth_sessions` and nullable `refresh_tokens.session_id`; no existing session rows were backfilled or invalidated.

@@ -3686,6 +3686,7 @@
   - Corrected the profile-picture settings row to live under Settings > Profile rather than General.
 - Files/Scope Touched: `web/lib/image-compression.ts`, `web/components/account-screens.tsx`, `api/app/services/storage.py`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: The requested third-party package was not available in the local npm cache, so the native browser Canvas API keeps the feature self-contained while preserving a reusable preset interface. Video and post-media flows remain out of scope.
+
 - Notes: HEIC/HEIF is deliberately rejected rather than decoded or converted. PNG/WebP transparency becomes white in the JPEG output and should be revisited if logo-style profile images become important.
 - Verification: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed; Python bytecode compilation passed. An npm install attempt for `browser-image-compression` was blocked by the environment’s offline-only npm cache, so no package or lockfile change was made.
 
@@ -4291,6 +4292,31 @@
   - Updated `RULES.md` and `CHANGELOG.md` to document the canonical route contract.
 - Files/Scope Touched: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T23:03:03Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement approved Phase 2 post-media upload and persistence flow, without implementing media rendering inside posts.
+- Changes Made:
+  - Added authenticated post-media presigned upload URL and cleanup endpoints in `api/app/routers/posts.py`.
+  - Extended the existing storage service with the separate `post-media/{user_id}/{random}.jpg` namespace, JPEG/500KB object verification, and ownership-scoped deletion. The profile-picture storage path was left unchanged.
+  - Changed post creation to accept at most 8 media records, verify every submitted key belongs to the authenticated user and every R2 object is JPEG and within the server-side limit, then associate validated keys and server-derived public URLs with `post_media` rows.
+  - Added owner-only `DELETE /posts/{post_id}` cleanup that deletes associated R2 objects before marking the post deleted; a failed object deletion leaves the post active so the operation can be retried.
+  - Wired the existing Composer files through the submit path only. Files are compressed with the shared `postMedia` preset, uploaded after Post is pressed, and cleaned up after partial upload or post-association failure. The existing disabled composer state now covers the upload/submit operation, preventing rapid duplicate submits; successful floating posts show a success toast and reset the composer.
+  - Updated README, RULES, R2 guidance, and design contracts. No migration was needed because the existing `post_media` schema already supported the required association fields.
+- Files/Scope Touched: `api/app/routers/posts.py`, `api/app/schemas/posts.py`, `api/app/services/posts.py`, `api/app/services/storage.py`, `api/tests/test_posts.py`, `web/lib/auth.ts`, `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `README.md`, `RULES.md`, `R2.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The direct-to-R2 submit flow keeps selection, preview, and crop free of network side effects while using server-generated user-scoped keys and server-side object checks. Cleanup is explicit for client upload failures and association failures; post rendering remains out of scope as required.
+- Verification Evidence:
+  - `python -m pytest -q` from `api/`: **60 passed** (2 existing environment warnings).
+  - `python -m pytest tests/test_posts.py -q` from `api/`: **18 passed**.
+  - `tsc -p web/tsconfig.json --noEmit --incremental false`: **passed**.
+  - `python -m compileall -q api/app`: **passed**.
+  - `git diff --check`: **passed**.
+  - The repository has R2 variables in the ignored local API environment, but a real multi-image upload against the shared/staging bucket, browser network trace, failure injection, and live deletion verification were not run in this workspace. Therefore those required runtime checks remain unverified and are not claimed as passed.
 
 ---
 
@@ -4950,4 +4976,29 @@
 - Files/Scope Touched: `web/components/account-screens.tsx`, `web/components/profile-picture-crop-modal.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: Visible contextual labels improve discoverability and reduce ambiguity while icons continue to provide quick recognition.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T22:46:11Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Phase 1 audit of post-media upload, storage, persistence, and frontend wiring. Implementation was intentionally deferred pending review.
+- Audit Findings:
+  - **Backend upload endpoints:** No post-media upload or presigned-upload endpoint exists. `api/app/routers/posts.py` exposes post creation and read routes only; there is no media-specific route.
+  - **Post creation behavior:** `api/app/services/posts.py:create_post` explicitly returns HTTP 400 (`Media uploads are not yet supported.`) whenever `CreatePostRequest.media` is non-null. Otherwise it always creates the post with `media_count=0`; it does not create `PostMedia` rows or associate uploaded objects.
+  - **Existing schema:** `api/app/models/post.py` contains `PostMedia` with `id`, required `post_id` (`ON DELETE CASCADE`), nullable `storage_key`, nullable `url`, and `created_at`. `Post.media_count` is constrained to 0–16. The original migration `api/alembic/versions/20260828_0002_create_posts.py` creates the same placeholder table and an index on `post_id`. This is database groundwork only; no current code populates it.
+  - **Compression and validation:** `web/lib/image-compression.ts` has a reusable `postMedia` preset (1024px maximum longest edge, JPEG, approximately 500KB), but the file documents it as reserved and the composer does not call it. The API has no post-media byte, dimension, MIME, or object validation because no post-media endpoint exists. `CreatePostRequest` validates only the submitted media list count (maximum 16), while the current composer limits selection to 8 images; the API error text also says 16. There is no server-side enforcement of the intended eight-file product limit at an upload boundary.
+  - **R2/storage:** `api/app/services/storage.py` currently supports profile-picture URLs only. It accepts image content types, uses keys in the `profile-pictures/{user_id}/{random}.{extension}` namespace, confirms profile objects, and deletes prior profile objects. `R2.md` explicitly states that post-media uploads are not wired. No post-media key convention, presigned flow, or object lifecycle exists.
+  - **Persistence and cleanup:** The `post_media.post_id` foreign key would remove database rows when a post row is physically deleted, and `Post.media` uses SQLAlchemy delete-orphan cascading. However, posts currently have no delete route/service; the model uses a `deleted_at` soft-delete field and no post-media cleanup code exists. If storage keys were manually inserted today, database cascade would not delete their R2 objects, so object cleanup is an implementation gap rather than an existing behavior.
+  - **Ownership/authentication:** Post creation itself is authenticated through `get_current_user`, but there is no media upload or confirm endpoint with an ownership check. Consequently there is no current post-media authorization path to validate, and no current endpoint accepts client-supplied storage keys for association because the service rejects all non-null media.
+  - **Frontend selection and preview:** `web/components/composer.tsx` has a hidden multiple-image picker, accepts browser-reported `image/*` files, limits the local selection to 8, creates object URLs, and shows thumbnails between the plus control and character count. Clicking a thumbnail opens the existing `Modal`; crop uses `react-easy-crop` and `createCroppedImage`; delete removes the local item and revokes its object URL. This is local browser state only.
+  - **Frontend/API boundary:** `Composer.onSend` still exposes only the form event, so selected `File` objects are not passed to the parent. The post callers in `web/components/app-shell.tsx` and the post-detail clients call `createPost` with text/kind/quote/reply identifiers only. `web/lib/auth.ts:createPost` has an optional `media` field and serializes it, but the current callers do not provide it and the API rejects it if supplied. There is therefore no browser-to-R2 upload, confirmation, or post association.
+  - **Other media behavior:** Post response types expose only `media_count`; serializers return that count and do not load or return media items. Rendering media inside feed, quoted posts, or post detail was explicitly out of scope for this task and was not changed or treated as an implementation requirement.
+  - **Orphan uploads:** No post-media orphan can be created by the current application because no post-media upload exists. Profile-picture uploads have a separate replacement cleanup path; it does not cover post media. A future post-media flow will need a defined abandoned-upload strategy and deletion cleanup for R2 objects.
+- Phase 1 Conclusion: The repository has schema placeholders plus a substantial client-only composer prototype, but no working post-media upload/persistence pipeline. The principal implementation work remains: authenticated upload authorization, shared compression/validation, an R2 key convention, post association, eight-file server enforcement, and lifecycle cleanup. No code or migration changes were made in this audit.
+- Files/Scope Touched: `CHANGELOG.md`, `AGENTLOG.md` only.
+- Reason/Decision: The supplied task required an audit-only first phase and an approval checkpoint before any implementation; existing UI and schema groundwork was documented without widening scope into media rendering.
+- Verification: Read and cross-checked `README.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`, `R2.md`, `packages/design/design.md`, the post model/schema/router/service, storage service, composer, image-compression utility, post callers, and relevant tests. No build or runtime test was run because this phase requested a written audit only. `git diff --check` was run after the documentation update.
 

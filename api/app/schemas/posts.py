@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 POST_CONTENT_MAX_LENGTH = 512
-POST_MEDIA_MAX_FILES = 16
+POST_MEDIA_MAX_FILES = 8
 
 
 class PostKind(str, Enum):
@@ -15,8 +15,26 @@ class PostKind(str, Enum):
 
 
 class PostMediaInput(BaseModel):
-    storage_key: str | None = None
+    storage_key: str
     url: str | None = None
+
+
+class PostMediaUploadUrlRequest(BaseModel):
+    count: int = Field(ge=1, le=POST_MEDIA_MAX_FILES)
+
+
+class PostMediaUploadUrlItem(BaseModel):
+    upload_url: str
+    public_url: str
+    object_key: str
+
+
+class PostMediaUploadUrlResponse(BaseModel):
+    items: list[PostMediaUploadUrlItem]
+
+
+class PostMediaCleanupRequest(BaseModel):
+    storage_keys: list[str] = Field(min_length=1, max_length=POST_MEDIA_MAX_FILES)
 
 
 class CreatePostRequest(BaseModel):
@@ -37,7 +55,7 @@ class CreatePostRequest(BaseModel):
     @classmethod
     def validate_media_count(cls, media: list[PostMediaInput] | None) -> list[PostMediaInput] | None:
         if media and len(media) > POST_MEDIA_MAX_FILES:
-            raise ValueError("Posts can include at most 16 media files.")
+            raise ValueError("Posts can include at most 8 media files.")
         return media
 
     @model_validator(mode="after")

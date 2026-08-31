@@ -14,7 +14,7 @@ calendar, or service marketplace — that is permanently out of scope.
 - **API:** FastAPI with Uvicorn — hosted on Vercel as a separate project
 - **Database:** PostgreSQL via Neon
 - **ORM / migrations:** SQLAlchemy with synchronous `Session`/psycopg3 connections, Alembic
-- **Object storage:** Cloudflare R2 for profile pictures; post media currently uses minimal database placeholders. See `R2.md` for environment setup.
+- **Object storage:** Cloudflare R2 for profile pictures and submit-time post-image uploads. Post images use the `post-media/{user_id}/{random}.jpg` namespace and the existing `post_media` association table. See `R2.md` for environment setup.
 - **Authentication and session:** FastAPI routes, PyJWT access tokens, HTTP-only refresh-token cookie, bcrypt password hashing
 - **Validation and settings:** Pydantic, pydantic-settings, email-validator
 - **Notifications:** In-app notification records and API endpoints are implemented; email delivery provider remains TBD

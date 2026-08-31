@@ -1,6 +1,6 @@
 import uuid
 from base64 import urlsafe_b64decode, urlsafe_b64encode
-from datetime import datetime
+from datetime import UTC, datetime
 import json
 import logging
 import re
@@ -12,7 +12,7 @@ from sqlalchemy.orm import aliased, selectinload, with_expression
 
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
-from app.models.post import Post, PostKind
+from app.models.post import Post, PostKind, PostMedia
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh, rollback
@@ -107,9 +107,6 @@ def post_load_options():
 
 
 async def create_post(session: Session, user: User, data: CreatePostRequest) -> Post:
-    if data.media is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Media uploads are not yet supported.")
-
     quoted_post: Post | None = None
     if data.quoted_post_id:
         quoted_post = session.get(Post, data.quoted_post_id)
@@ -143,8 +140,10 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
         parent_post_id=parent_post.id if parent_post else None,
         content=data.content,
         quoted_post_id=quoted_post.id if quoted_post else None,
-        media_count=0,
+        media_count=len(data.media or []),
     )
+    if data.media:
+        post.media = [PostMedia(storage_key=item.storage_key, url=item.url) for item in data.media]
     session.add(post)
     await commit(session)
     await refresh(session, post)
@@ -317,6 +316,20 @@ async def get_post_for_response(session: Session, post_id: uuid.UUID) -> Post:
     )
     post = result.scalar_one()
     return post
+
+
+async def delete_post(session: Session, user: User, post_id: uuid.UUID, storage) -> None:
+    post = session.get(Post, post_id)
+    if not post or post.deleted_at is not None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
+    if post.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only delete your own posts.")
+    media_items = list(session.execute(select(PostMedia).where(PostMedia.post_id == post.id)).scalars().all())
+    for media in media_items:
+        if media.storage_key:
+            storage.delete_post_media_object(media.storage_key, user.id)
+    post.deleted_at = datetime.now(UTC)
+    await commit(session)
 
 
 def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:

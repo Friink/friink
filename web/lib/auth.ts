@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api-origin';
+import { compressImage } from '@/lib/image-compression';
 
 export type AuthUser = {
   id: string;
@@ -645,21 +646,72 @@ export async function listPostReplies(postId: string): Promise<ApiPost[]> {
   });
 }
 
-export async function createPost(accessToken: string, input: { content: string; kind?: 'post' | 'quote' | 'reply'; quotedPostId?: string | null; parentPostId?: string | null; media?: unknown[] }): Promise<ApiPost> {
-  return requestApi<ApiPost>('/posts', {
+type PostMediaUploadUrls = { items: Array<{ upload_url: string; object_key: string }> };
+
+async function uploadPostMedia(accessToken: string, files: File[]): Promise<string[]> {
+  const compressedFiles = await Promise.all(files.map((file) => compressImage(file, 'postMedia')));
+  const uploadUrls = await requestApi<PostMediaUploadUrls>('/posts/media/upload-url', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
-    body: JSON.stringify({
-      kind: input.kind ?? 'post',
-      content: input.content,
-      quoted_post_id: input.quotedPostId ?? null,
-      parent_post_id: input.parentPostId ?? null,
-      media: input.media,
-    }),
+    body: JSON.stringify({ count: compressedFiles.length }),
   });
+  if (uploadUrls.items.length !== compressedFiles.length) {
+    throw new AuthApiError('The server returned an incomplete upload plan.', 502);
+  }
+  const uploadedKeys: string[] = [];
+  try {
+    for (const [index, item] of uploadUrls.items.entries()) {
+      const response = await fetch(item.upload_url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: compressedFiles[index],
+      });
+      if (!response.ok) throw new AuthApiError('Could not upload one of the images.', response.status);
+      uploadedKeys.push(item.object_key);
+    }
+    return uploadedKeys;
+  } catch (error) {
+    if (uploadedKeys.length) {
+      await requestApi<void>('/posts/media/cleanup', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ storage_keys: uploadedKeys }),
+      }).catch(() => undefined);
+    }
+    throw error;
+  }
+}
+
+export async function createPost(accessToken: string, input: { content: string; kind?: 'post' | 'quote' | 'reply'; quotedPostId?: string | null; parentPostId?: string | null; media?: File[] }): Promise<ApiPost> {
+  const mediaKeys = input.media?.length ? await uploadPostMedia(accessToken, input.media) : undefined;
+  try {
+    return await requestApi<ApiPost>('/posts', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      authContext: 'authenticated_request',
+      body: JSON.stringify({
+        kind: input.kind ?? 'post',
+        content: input.content,
+        quoted_post_id: input.quotedPostId ?? null,
+        parent_post_id: input.parentPostId ?? null,
+        media: mediaKeys?.map((storageKey) => ({ storage_key: storageKey })),
+      }),
+    });
+  } catch (error) {
+    if (mediaKeys?.length) {
+      await requestApi<void>('/posts/media/cleanup', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ storage_keys: mediaKeys }),
+      }).catch(() => undefined);
+    }
+    throw error;
+  }
 }
 
 export async function getConnectionStatus(accessToken: string, username: string): Promise<ApiConnectionStatus> {

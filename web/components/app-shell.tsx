@@ -445,7 +445,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     setComposeContext({ kind: 'quote', post });
   }
 
-  async function handleFloatingPost(event: FormEvent<HTMLFormElement>) {
+  async function handleFloatingPost(event: FormEvent<HTMLFormElement>, media: File[]) {
     event.preventDefault();
 
     const trimmedText = floatingDraft.trim();
@@ -464,6 +464,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         content: trimmedText,
         quotedPostId: composeContext.kind === 'quote' ? composeContext.post.id : null,
         parentPostId: composeContext.kind === 'reply' ? composeContext.post.id : null,
+        media,
       });
       const newPost = mapApiPost(apiPost);
       if (newPost.kind !== 'reply') {
@@ -472,6 +473,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       }
       setFloatingDraft('');
       setComposeContext({ kind: 'post' });
+      addToast('Post published.', 'success');
       if (newPost.kind !== 'reply') {
         setHomeFilter('all');
         setActiveScreen('home');
