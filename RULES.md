@@ -174,6 +174,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/models/connection.py`, `api/app/services/connections.py`, `api/app/routers/connections.py`
 - **Since:** 2026-08-29 (07:15 UTC-0)
 
+### Rule: Home Following Feed Is Follow-Only
+- **What:** The Home `Following` tab is the canonical `/home/following` route and returns posts only from accounts the signed-in user follows through an accepted directional follow relationship.
+- **Edge cases:** The feed uses the same server-side filtering for initial pages, older-page pagination, newer-post polling, and saved-position context restoration. Users without follows see an empty feed; their own posts are not included unless they explicitly follow another account that authored them. The previous `/home/connections` slug redirects to `/home/following` for compatibility.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/routers/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`, `web/app/home/[tab]/page.tsx`
+- **Since:** 2026-08-31 (Asia/Karachi)
+
 ### Rule: Public Accounts Accept Follows Immediately
 - **What:** Following a public account creates an `accepted` follow request row immediately and returns it as the active following relationship.
 - **Edge cases:** If an active or pending row already exists, the existing row is returned instead of creating a duplicate.

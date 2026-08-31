@@ -56,7 +56,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 
 > Updated to match shipped behavior as of 2026-08-26 — see CHANGELOG.md entry 2026-08-26
 
-- **Home Timeline**: Offers two primary tabs: `Explore` (default public feed) and `Connections` (posts strictly from followed/connected users).
+- **Home Timeline**: Offers two primary tabs: `Explore` (default public feed) and `Following` (posts strictly from accounts the signed-in user follows).
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
 - **Starred Feed**: A preset saved-post view containing only starred posts. It uses the shared `ListRow` summary pattern instead of full feed cards, with post detail opening the full post surface.
 - **Starred Posts**: Starred posts display the brand-colored filled star icon (`fa-solid fa-star`).
@@ -228,7 +228,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   2. Top Identity Block (`.profile-intro`): `ProfileCard` with user name, handle, and avatar (`5rem` large avatar, twice the standard `2.5rem` profile-card avatar).
   3. Bio Text (`.profile-bio`): Left-aligned under identity block, `max-width: 34rem`.
   4. Profile Meta Row (`.profile-meta-row`): A single-column grid with statistics first and profile actions on the next row, using the shared `ContentBox` inset rather than custom profile gutters.
-     - Statistics (`.profile-stats`): Left-aligned and inline, displaying API-backed following and follower counts. Each complete number-and-label statistic is an ununderlined link that opens the matching Connections tab; self-profile links use `/connections`, while another profile uses `/{username}/connections`. Hover and focus color the complete link, including the number.
+     - Statistics (`.profile-stats`): Left-aligned and inline, displaying API-backed following and follower counts. Each complete number-and-label statistic is an ununderlined link that opens the matching Connections tab through username-scoped routes for both self and other profiles. Hover and focus color the complete link, including the number.
      - Actions (`.profile-actions`): Left-aligned on a dedicated row below the inline statistics on all viewports.
   5. Section Tabs (`Tabs`): Two tabs — `Posts` and `Replies`.
   6. Profile Feed / Empty State.

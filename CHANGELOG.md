@@ -36,7 +36,7 @@ _Last updated: 2026-08-31_
 - [web] Page titles now use the `Friink | Page Name` format through route-level metadata. Dynamic profile titles use the known display name when available and fall back to `@username`; deleted demo route names are guarded so `/compose`, `/dev-settings`, and `/floating` return 404 instead of becoming profiles.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
-- [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
+- [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Following`.
 - [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.
 - [web] The Home/Explore feed now uses cursor-based loading for older posts, foreground-only polling for newer posts, top-of-feed manual refresh fallback, and local last-viewed post restore so the feed no longer depends on full-page reloads to update.
 - [web] Home feed restore now treats stale last-viewed post anchors as recoverable: if `/posts/context/{post_id}` fails, the client clears the saved anchor and falls back to the normal `/posts` feed load instead of showing `Could not load the Home feed.`.
@@ -86,6 +86,8 @@ _Last updated: 2026-08-31_
 ### Changed
 
 - [web] Standardized signed-in Connections navigation on `/{username}/connections` and its filtered subroutes, matching other-user profile routes. Legacy `/connections` routes remain available as compatibility entry points.
+- [api/web] Renamed the Home `Connections` tab to `Following`, changed its slug to `/home/following`, and added server-side follow-only filtering across feed pagination, polling, and context restoration. `/home/connections` redirects to the new slug.
+- [web] Made the header Friink logo link to `/home`.
 
 ## 2026-08-30
 

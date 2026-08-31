@@ -4287,3 +4287,34 @@
 - Files/Scope Touched: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rename the Home Connections tab to Following, change its slug, and restrict it to posts by followed accounts.
+- Changes Made:
+  - Renamed the Home tab from `Connections` to `Following` and changed its canonical route from `/home/connections` to `/home/following`; the old slug permanently redirects for compatibility.
+  - Added a `feed=following` API mode that filters posts server-side through accepted directional follows.
+  - Applied the filter consistently to initial loading, cursor pagination, newer-post polling, and saved-feed context restoration.
+  - Updated the shared Home state types, design contract, product rules, and changelog.
+- Files/Scope Touched: `api/app/routers/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/app/home/[tab]/page.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The previous client-side Connections filter depended on `isConnection`, which was always set true for feed posts, so it did not enforce a real follow-only timeline. Server-side filtering keeps every feed request and pagination path consistent.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `python -m compileall -q app` passed in `api`; `python -m pytest tests/test_posts.py` passed with 16 tests; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Friink header logo link to Home.
+- Changes Made:
+  - Wrapped the shared header logo in an accessible anchor targeting `/home`.
+- Files/Scope Touched: `web/components/header.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The brand mark should provide a consistent, direct return to the Home surface.
+- Verification: Targeted web TypeScript check and `git diff --check` pending.
+

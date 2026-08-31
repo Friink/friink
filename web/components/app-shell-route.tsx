@@ -11,7 +11,7 @@ type AppShellRouteProps = {
   refreshCurrentUser?: boolean;
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
-  initialHomeFilter?: 'all' | 'connections';
+  initialHomeFilter?: 'all' | 'following';
   initialMessagesTab?: 'all' | 'muted' | 'requests';
   initialSettingsTab?: 'general' | 'profile' | 'account' | 'privacy';
 };

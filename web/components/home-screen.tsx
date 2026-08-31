@@ -20,7 +20,7 @@ const LAST_VIEWED_POST_KEY = 'friink-home-last-viewed-post';
 
 type HomeScreenProps = {
   posts?: Post[];
-  activeFilter?: 'all' | 'connections';
+  activeFilter?: 'all' | 'following';
   onFilterChange?: (id: string) => void;
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
@@ -213,7 +213,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
   const pullActiveRef = useRef(false);
 
   const visiblePosts = useMemo(
-    () => (activeFilter === 'connections' ? feedPosts.filter((post) => post.isConnection) : feedPosts),
+    () => (activeFilter === 'following' ? feedPosts.filter((post) => post.isConnection) : feedPosts),
     [activeFilter, feedPosts],
   );
 
@@ -284,6 +284,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
         afterCreatedAt: currentTopPost.createdAt,
         afterId: currentTopPost.id,
         limit: FEED_PAGE_SIZE,
+        feed: activeFilter === 'following' ? 'following' : 'explore',
       });
       const mappedNewerPosts = newerPosts.map(mapApiPost);
 
@@ -312,7 +313,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
     loadingOlderRef.current = true;
     setLoadingOlder(true);
     try {
-      const page = await listPosts({ cursor: nextCursorRef.current, limit: FEED_PAGE_SIZE });
+      const page = await listPosts({ cursor: nextCursorRef.current, limit: FEED_PAGE_SIZE, feed: activeFilter === 'following' ? 'following' : 'explore' });
       const merged = mergeOlderPosts(feedPostsRef.current, page.items.map(mapApiPost));
       updateFeedPage(page, merged);
     } catch {
@@ -335,6 +336,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
           const context = await getFeedContext(savedPosition.postId, {
             beforeLimit: FEED_CONTEXT_BEFORE,
             afterLimit: FEED_CONTEXT_AFTER,
+            feed: activeFilter === 'following' ? 'following' : 'explore',
           });
           const restoredPosts = dedupeAndSortPosts(context.items.map(mapApiPost));
           updateFeedPage(context, restoredPosts);
@@ -346,11 +348,11 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
         }
       }
 
-      const page = await listPosts({ limit: FEED_PAGE_SIZE });
+      const page = await listPosts({ limit: FEED_PAGE_SIZE, feed: activeFilter === 'following' ? 'following' : 'explore' });
       const initialPosts = dedupeAndSortPosts(page.items.map(mapApiPost));
       updateFeedPage(page, initialPosts);
     } catch {
-      if (initialSeedPosts.length > 0) {
+      if (activeFilter === 'all' && initialSeedPosts.length > 0) {
         setFeedPosts(initialSeedPosts);
         feedPostsRef.current = initialSeedPosts;
         setLoadError(null);
@@ -363,11 +365,17 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
   }
 
   useEffect(() => {
-    loadInitialFeed();
-  }, []);
+    feedPostsRef.current = [];
+    setFeedPosts([]);
+    nextCursorRef.current = null;
+    hasMoreRef.current = true;
+    setHasMore(true);
+    setRestoreAnchorId(null);
+    void loadInitialFeed();
+  }, [activeFilter]);
 
   useEffect(() => {
-    if (feedPostsRef.current.length === 0 && initialSeedPosts.length > 0) {
+    if (activeFilter === 'all' && feedPostsRef.current.length === 0 && initialSeedPosts.length > 0) {
       feedPostsRef.current = initialSeedPosts;
       setFeedPosts(initialSeedPosts);
     }
@@ -462,7 +470,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [visiblePosts.length]);
+  }, [activeFilter, visiblePosts.length]);
 
   useEffect(() => {
     async function runForegroundRefresh() {
@@ -498,7 +506,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
         window.clearInterval(pollIntervalRef.current);
       }
     };
-  }, []);
+  }, [activeFilter]);
 
   useEffect(() => {
     if (!injectedPost) return;

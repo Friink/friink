@@ -773,7 +773,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'following', label: 'Following' },
                 ]}
                 activeId={homeFilter}
-                onChange={(id) => handleHomeFilterChange(id as 'all' | 'connections')}
+                onChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                 ariaLabel="Home quick tabs"
               />
             )}

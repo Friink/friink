@@ -99,7 +99,9 @@ export function Header({
           >
             <i className="fa-solid fa-bars" aria-hidden="true" />
           </button>
-          <img className="topbar-full-logo" src="/brand/logoFullBrand.svg" alt="Friink" />
+          <a className="topbar-logo-link" href="/home" aria-label="Go to Home">
+            <img className="topbar-full-logo" src="/brand/logoFullBrand.svg" alt="Friink" />
+          </a>
         </div>
         <div className="topbar-actions">
           <div className={`topbar-search-wrap${searchOpen ? ' topbar-search-wrap-open' : ''}`} ref={searchRef}>
