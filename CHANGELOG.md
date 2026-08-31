@@ -93,6 +93,10 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Added native `minLength`, `pattern`, and `title` password-policy hints to Signup and Settings > Account so browsers and password managers can better generate or validate compliant new passwords.
+
+- [web] Added a live password-requirements checklist to Settings > Account so users can see why Update password is disabled and which signup rule still needs attention.
+
 - [web] Fixed the public signed-in account menu layering and theme treatment: it now renders above the header, overlaps the visible avatar, and shows display name plus secondary handle before the three account actions.
 
 - [docs] Updated RULES.md to reflect that authenticated users may browse public pages, the shared public account menu, and the hidden internal UUID policy; superseded the old authenticated-landing redirect rule.

@@ -4296,6 +4296,39 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:22:02Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add browser and password-manager policy hints to Signup and Settings password fields.
+- Changes Made:
+  - Updated the shared Signup password regex to include the existing eight-character minimum.
+  - Added matching `minLength`, `pattern`, and explanatory `title` hints to Signup password/confirmation fields.
+  - Added the same native hints to Settings New password and Confirm new password fields.
+  - Updated the password rules and design documentation.
+- Files/Scope Touched: `web/components/login-screen.tsx`, `web/components/account-screens.tsx`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Native constraints give browsers and password managers useful policy metadata while retaining server-side validation as the authoritative check.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T21:19:46Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Explain disabled password updates and show password criteria on field interaction.
+- Changes Made:
+  - Added a live six-item checklist beneath New password, revealed on focus and retained once the user has entered a value.
+  - Checklist states cover minimum length, uppercase, lowercase, number, special character, and no spaces, matching the existing backend/signup rules.
+  - Updated the password rule, design contract, and changelog.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The update action is intentionally gated by the established password policy, but users need immediate feedback about which requirement is preventing submission.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:18:00Z
 - Agent: Codex
 - Model: GPT-5

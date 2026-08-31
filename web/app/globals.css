@@ -2308,6 +2308,37 @@ textarea {
   right: 0.85rem;
 }
 
+.password-criteria {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  list-style: none;
+}
+
+.password-criteria li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.password-criteria li i {
+  width: 0.75rem;
+  color: var(--color-line);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.password-criteria li.met {
+  color: var(--color-brand);
+}
+
+.password-criteria li.met i {
+  color: var(--color-brand);
+}
+
 .settings-field-row {
   display: flex;
   align-items: stretch;

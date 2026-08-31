@@ -7,7 +7,7 @@ import { InputField } from '@/components/design/input-field';
 import { login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
-const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S+$/;
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,}$/;
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 type LoginScreenProps = {
@@ -231,6 +231,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
               autoComplete="new-password"
+              minLength={8}
+              pattern={PASSWORD_PATTERN.source}
+              title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
               required
               trailing={
                 <button
@@ -253,6 +256,9 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Confirm Password"
               autoComplete="new-password"
+              minLength={8}
+              pattern={PASSWORD_PATTERN.source}
+              title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
               required
               trailing={
                 <button
