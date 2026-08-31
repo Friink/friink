@@ -662,11 +662,16 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
   const uploadedKeys: string[] = [];
   try {
     for (const [index, item] of uploadUrls.items.entries()) {
-      const response = await fetch(item.upload_url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: compressedFiles[index],
-      });
+      let response: Response;
+      try {
+        response = await fetch(item.upload_url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: compressedFiles[index],
+        });
+      } catch {
+        throw new AuthApiError('Could not reach image storage. Please check the upload configuration and try again.', 0);
+      }
       if (!response.ok) throw new AuthApiError('Could not upload one of the images.', response.status);
       uploadedKeys.push(item.object_key);
     }

@@ -454,7 +454,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const session = loadAuthSession();
     if (!session) {
       addToast('Please log in again to post.');
-      return;
+      return false;
     }
 
     setFloatingPostBusy(true);
@@ -482,6 +482,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create post.';
       addToast(message);
+      return false;
     } finally {
       setFloatingPostBusy(false);
     }

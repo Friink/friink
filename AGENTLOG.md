@@ -4314,6 +4314,22 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T23:15:08Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix post-media submission failures that showed `Failed to fetch` and cleared the user's attachments.
+- Changes Made:
+  - Changed the shared Composer submit contract to distinguish successful completion from a handled failure; attachments and draft text are now cleared only on success.
+  - Updated the floating post handler to return an explicit failure result after showing its error toast, including the missing-session path.
+  - Wrapped direct R2 PUT network failures in a clearer storage-upload error while preserving the existing cleanup attempt.
+- Files/Scope Touched: `web/components/composer.tsx`, `web/lib/auth.ts`, `web/components/app-shell.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The root cause of disappearing media was a swallowed error in the parent handler, not the Composer reset itself. The direct browser `Failed to fetch` remains indicative of an R2 reachability/CORS/deployment configuration failure, so the fix preserves retryable local state and reports that stage clearly.
+- Verification: `tsc -p web/tsconfig.json --noEmit --incremental false` passed; `git diff --check` passed. A live R2 failure injection was not performed in this local pass.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T23:03:03Z
 - Agent: Codex
 - Model: GPT-5

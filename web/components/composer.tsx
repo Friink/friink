@@ -36,7 +36,7 @@ function ComposerMediaStrip({ media, onOpen, onRemove }: { media: ComposerMedia[
 type ComposerProps = {
   draft: string;
   onDraftChange: (draft: string) => void;
-  onSend: (event: FormEvent<HTMLFormElement>, media: File[]) => void | Promise<void>;
+  onSend: (event: FormEvent<HTMLFormElement>, media: File[]) => void | false | Promise<void | false>;
   disabled?: boolean;
   multiline?: boolean;
   placeholder?: string;
@@ -201,7 +201,8 @@ export function Composer({
       return;
     }
 
-    await onSend(event, media.map((item) => item.file));
+    const result = await onSend(event, media.map((item) => item.file));
+    if (result === false) return;
     mediaRef.current.forEach((item) => URL.revokeObjectURL(item.url));
     setMedia([]);
     setPreviewIndex(null);
