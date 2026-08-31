@@ -4296,6 +4296,24 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:55:00Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the UI-only post media selection and inline preview workflow.
+- Changes Made:
+  - Added multiple image selection capped at eight files through the existing composer action menu.
+  - Added a horizontally scrollable thumbnail strip between the expanded composer `+` control and character count.
+  - Added shared-modal preview, crop, and delete interactions using the existing crop utility and modal primitive.
+  - Reduced the expanded composer row gap from 8px to 6px.
+  - Kept files client-side; no upload, API, database, or post-submission behavior was added.
+- Files/Scope Touched: `web/components/composer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The media strip belongs to the post composer toolbar and should preserve the character count/send actions while remaining bounded and reusable within the existing composer.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:46:00Z
 - Agent: Codex
 - Model: GPT-5

@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Added the UI-only post media workflow: multiple image selection up to eight files, inline thumbnails between the composer `+` control and character count, modal preview/crop/delete controls, and tighter expanded-composer spacing.
+
 - [web] Fixed portaled in-app action menus so they follow the selected app light/dark theme instead of losing `.app-shell` color variables when rendered under `document.body`.
 
 - [web] Matched the public account menu to the reference geometry: it opens directly beneath the unchanged profile picture with a 2px gap and 2px right offset, while remaining above the public header.
