@@ -3905,6 +3905,83 @@
 - Date/Time: 2026-08-31 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Phase 1 audit of all web session/logout paths in AppShellRoute and related auth wrappers; runtime fixes explicitly deferred.
+- Changes Made:
+  - Re-read the latest auth/session changelog and agent-log entries.
+  - Audited route guards, explicit logout handlers, `requestApi`, `fetchApi`, proactive/refresh-token handling, refresh deduplication, JWT parsing, error boundaries, and backend refresh-cookie behavior.
+  - No runtime code was changed; this entry is the requested audit report.
+- Audit Report:
+  - **`web/components/app-shell-route.tsx` — no local session:** When `loadAuthSession()` returns `null`, the route sets user state to null and redirects to `/login`. This is correct: there is no client session to preserve. It does not clear any existing session because none was loaded.
+  - **`web/components/app-shell-route.tsx` — current-user bootstrap:** On routes with `refreshCurrentUser`, `getCurrentUser()` failures clear local storage and redirect only when the caught error is `AuthApiError` with `status === 401`. Status `0`, network/CORS errors, timeouts/rejections, `403`, `5xx`, and unknown errors are retained. This is correct for ambiguous failures, though it is status-only and does not verify that a 401 came from the intended API origin.
+  - **Explicit logout handlers:** `AppShellRoute.handleLogout` and standalone authenticated post/profile/chat clients call `clearAuthSession()` and redirect to `/` only from the user-invoked logout action. This is correct and is not an inferred failure.
+  - **Missing-session route guards outside AppShellRoute:** Standalone authenticated clients redirect to `/login` when `loadAuthSession()` is null. They do not clear storage and do not redirect based on a failed API request. This is correct for absent local state.
+  - **`web/lib/auth.ts:requestApi` — ordinary request failure:** A fetch rejection is converted to `AuthApiError` with `status === 0`; ordinary status-0 errors are thrown and are not cleared by AppShellRoute. CORS/no-response failures therefore are not directly misclassified as 401. A normal `403` or `5xx` is also thrown without clearing.
+  - **`requestApi` — access 401:** An authenticated request retries only when the response is exactly 401 with API code `TOKEN_EXPIRED`. It calls `refreshAuthSession()` and retries once. Other access 401s, including malformed/schema-invalid token, wrong signature, session-not-found, and unclassified 401, do not attempt refresh. The `/auth/me` bootstrap then logs out on any resulting explicit 401; other callers generally surface the error. This is only partially correct: access 401 should refresh first, but malformed/missing local JWT state does not reliably do so.
+  - **`requestApi` — refresh failure catch:** When the access-token retry invokes `refreshAuthSession()`, its catch-all handler calls `clearAuthSession()` and converts every refresh failure into `AuthApiError(..., 401, 'REFRESH_TOKEN_INVALID')`. A genuine refresh endpoint 401 is evidence of an invalid refresh session, but this same branch also logs out on refresh timeout/hang rejection, status-0 network/CORS failure, `403`, `5xx`, malformed refresh response, and unknown exception. This is the primary violation of the rule and incorrectly treats no-response/unknown errors as 401.
+  - **`web/lib/auth.ts:refreshAuthSession` — refresh 401 distinction:** The refresh request is made with `skipAuthRefresh`, so it does not recursively refresh. Its own 401 is not independently handled there; the caller’s broad catch erases the distinction by clearing and manufacturing a `REFRESH_TOKEN_INVALID` 401 for every failure. Refresh 401 and access 401 are therefore not safely handled distinctly.
+  - **Timeout/connection hang:** `web/lib/api-origin.ts:fetchApi` has no explicit timeout or AbortController. A completed fetch rejection becomes status 0 and ordinary callers retain the session, but a refresh rejection reaches the broad refresh catch and clears the session. A fetch that remains permanently pending has no logout by itself, but there is also no bounded failure/recovery path.
+  - **CORS/opaque/no-status:** CORS failures normally reject fetch and become status 0, not 401. `fetchApi` retries a staging network rejection against production; if production responds with 401, that response can be treated as the auth result for the original staging request. This is an origin-qualification risk. Refresh CORS/no-response failures still clear because of the broad refresh catch. Opaque responses are not explicitly requested; a response with status 0 would follow the same ambiguous-failure path.
+  - **Refresh-in-flight race:** The module-level `refreshPromise` deduplicates concurrent proactive and reactive refresh calls. Concurrent callers share one refresh request and reuse its token on success. On failure, each waiting caller enters the broad catch and can clear local storage, so request deduplication works but safe failure handling does not.
+  - **Locally expired/malformed JWT:** Proactive refresh runs only when the stored access token has a parseable expiry/issued-at pair, the request Authorization header matches that stored token, and the 80%-lifetime threshold is reached. A parseable expiring token generally refreshes first. A malformed token, missing/invalid timestamps, or missing expiry bypasses proactive refresh and is sent as-is; a non-`TOKEN_EXPIRED` 401 then does not refresh first. This is not fully compliant.
+  - **403 Forbidden:** Normal 403 responses do not clear the session. A refresh-endpoint 403 is incorrectly caught by the refresh catch-all and converted into logout/401 behavior. Thus the general 403 rule is correct except inside refresh recovery.
+  - **Logout during refresh timeout:** Explicit logout clears local storage immediately, but there is no refresh generation/cancellation guard. An in-flight refresh can later complete and call `saveAuthSession()`, potentially resurrecting a session after logout. If refresh instead times out, the broad refresh catch clears the session even though timeout is not evidence of invalid credentials.
+  - **Refresh-cookie invalidation:** `api/app/routers/auth.py` deletes `friink_refresh_token` only for explicit `POST /auth/logout`. Missing/invalid refresh-token 401 responses do not delete the cookie server-side. This is not a client logout trigger, but it leaves invalid cookies in place and is relevant to refresh-state cleanup.
+  - **Error boundaries/global wrappers:** `web/app/error.tsx` handles navigation for rendering errors and does not call `clearAuthSession()`. `web/lib/api-origin.ts` is the global fetch wrapper and only retries an origin after a network rejection; it does not clear session state. No additional error-boundary/interceptor logout trigger was found. The standalone page clients do redirect to `/home` when post loading fails, but they do not clear the session or redirect to login on that failure.
+- Overall Assessment: **Not fully compliant.** AppShellRoute itself no longer logs out for ambiguous bootstrap failures, but `requestApi` still has a generic refresh-failure logout path. The audit also found incomplete malformed-JWT refresh-first behavior, origin-fallback 401 ambiguity, unsafe refresh/logout race behavior, no explicit request timeout, and no server-side refresh-cookie deletion on refresh 401.
+- Files/Scope Inspected: `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell.tsx`, authenticated clients under `web/app/`, `web/app/error.tsx`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/services/security.py`, `CHANGELOG.md`, and recent `AGENTLOG.md` entries.
+- Verification: Read-only source audit completed. Only this `AGENTLOG.md` entry was added; no runtime code, UI, or deployment files were changed. Phase 2 remains paused pending explicit approval and fix ordering.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the shared database migration required for profile setup progress saving.
+- Changes Made:
+  - Applied Alembic migration `20260831_0011_add_profile_setup_state.py` to the configured shared database.
+  - Confirmed Alembic current revision is `20260831_0011 (head)`.
+  - Recorded the shared localhost/staging/production database migration in `CHANGELOG.md`.
+- Files/Scope Touched: Shared database schema, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The setup wizard’s save endpoint reads and writes `setup_step` and `setup_completed`; applying the migration removes the schema mismatch that caused every setup save to fail.
+- Verification: `python -m alembic upgrade head` completed successfully; `python -m alembic current` reported `20260831_0011 (head)`.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Phase 1 audit of AppShellRoute logout/session invalidation behavior; no runtime fixes authorized.
+- Changes Made:
+  - Audited every client-side `clearAuthSession`, login redirect, refresh attempt, refresh deduplication path, and backend refresh-cookie set/delete path.
+  - No runtime code was changed. This entry records the findings only.
+- Audit Findings:
+  - **No local session:** `AppShellRoute` and several direct page clients redirect to `/login` when `loadAuthSession()` returns null. This is correct: there is no client session to preserve and no logout is performed at that point.
+  - **Explicit user logout:** `AppShellRoute.handleLogout` and the standalone post/profile/chat clients call `clearAuthSession()` and redirect to `/`. These are intentional user actions, not inferred auth failures, and are correct.
+  - **Authenticated bootstrap:** `AppShellRoute` calls `getCurrentUser()` only on routes with `refreshCurrentUser`. Its catch clears local state and redirects only for `AuthApiError.status === 401`. Status `0`, `403`, `5xx`, thrown network errors, and unknown errors are retained. This matches the intended rule for transient failures, although the check is status-only and does not independently verify that the response came from the intended API origin.
+  - **Access-token 401:** `requestApi()` retries only when an authenticated request receives `401` with error code `TOKEN_EXPIRED`; it invokes the shared refresh promise and retries once. Other access-token 401s (`TOKEN_INVALID`, malformed/schema failures, session-not-found, or an unclassified 401) are thrown without a refresh attempt. In `AppShellRoute`'s genuine `/auth/me` check, any resulting 401 is treated as logout-worthy; other callers generally show an error. This means locally malformed/missing JWTs do not reliably attempt refresh first.
+  - **Refresh-token 401:** `/auth/refresh` is called with `skipAuthRefresh`, so it does not recurse. However, the `requestApi()` catch around `refreshAuthSession()` catches *all* refresh failures, calls `clearAuthSession()`, and converts the failure to `401 REFRESH_TOKEN_INVALID`. A genuine refresh 401 is evidence of an invalid/expired refresh session, but this implementation silently conflates it with refresh timeout, CORS/no-response, `403`, `5xx`, malformed response, and other exceptions. This is the primary logout bug.
+  - **Request timeout/connection hang:** `fetchApi()` has no explicit timeout/AbortController. A browser fetch rejection becomes `AuthApiError(..., status=0)`. For an ordinary API request, status `0` is not cleared by `AppShellRoute`; during the access-token refresh path, the broad refresh catch does clear the session incorrectly. A request that hangs indefinitely has no completion or logout by itself, but a later fetch rejection follows the status-0 path.
+  - **CORS/opaque response:** CORS failures normally reject fetch and become status `0`, so ordinary requests are not classified as 401. `fetchApi()` also falls back from staging API to production API after a network failure; if that fallback returns a 401, the app can treat a response from the fallback origin as an auth failure for the original environment. The refresh path still clears on CORS/no-response because of the broad catch. Opaque responses are not explicitly requested/accepted; if one were returned, `response.ok` would be false with status `0`, but the same refresh-catch issue applies.
+  - **Refresh-in-flight race:** `refreshPromise` deduplicates concurrent proactive refreshes and concurrent reactive refreshes; concurrent callers share one refresh request and retry with the resulting token on success. On refresh failure, all waiting callers enter their own broad catch and may call `clearAuthSession()` repeatedly, so deduplication holds for the request but not for safe failure handling.
+  - **Malformed/expired JWT before send:** Proactive refresh runs only when the locally stored session has a parseable `accessTokenExpiresAt`, matching `iat`, and an Authorization header equal to the stored access token. A locally expired, parseable token generally refreshes at the 80% threshold. A malformed token, token without parseable timestamps, or missing expiry skips proactive refresh and is sent as-is; a resulting non-`TOKEN_EXPIRED` 401 does not attempt refresh. This does not fully satisfy the requested “refresh first” behavior for malformed/missing client JWT state.
+  - **403 Forbidden:** Normal request 403s are thrown as `AuthApiError(403)` and do not directly clear the session. A refresh-endpoint 403 is incorrectly swallowed by the broad refresh catch and converted into session clearing/401 behavior. This is an exception to the otherwise correct normal-request handling.
+  - **Logout during refresh timeout:** There is no explicit user-logout/refresh cancellation coordination. If refresh is in flight and then times out/rejects with status `0`, the broad refresh catch clears the session. This is incorrect under the rule because timeout is ambiguous, not proof of invalid credentials. An explicit user logout during refresh clears local storage immediately; the in-flight refresh may still later save a refreshed session because there is no generation/cancellation guard.
+  - **Refresh-cookie invalidation:** The backend deletes `friink_refresh_token` only in the explicit `POST /auth/logout` handler. A refresh 401 does not delete the cookie server-side; the frontend clears local storage instead. Missing/invalid refresh cookies produce backend 401 responses, but cookie deletion is not performed in those failure paths.
+- Overall Assessment: **Not fully compliant.** Ordinary status-0/unknown failures are protected in `AppShellRoute`, but the refresh failure catch remains a generic logout path. Access 401 and refresh 401 are not safely distinguished on refresh failure, malformed local JWTs do not consistently refresh first, fallback-origin 401s are not origin-qualified, and refresh/logout races lack cancellation or generation protection.
+- Files/Scope Inspected: `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell.tsx`, standalone authenticated page clients under `web/app/`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/services/security.py`, `CHANGELOG.md`, and recent `AGENTLOG.md` entries.
+- Verification: Read-only source audit completed; no runtime files changed. Phase 2 fixes await user review and authorization.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Ensure new accounts open setup at step 1 and reuse the existing profile-picture crop tool.
 - Changes Made:
   - Made the signup client session explicitly initialize `setupStep` to 1 and `setupCompleted` to false.
@@ -3948,6 +4025,33 @@
 - Files/Scope Touched: `web/app/globals.css`, `web/components/profile-setup-wizard.tsx`, `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260831_0011_add_profile_setup_state.py`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: Setup progress belongs to the user record so it survives closing the modal, navigation, and later logins. The existing profile-picture pipeline is reused inside the wizard, while the shared modal remains the single shell for both setup and crop interactions.
 - Verification: Frontend TypeScript check, backend `compileall`, and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the authorized Phase 2 session/logout fixes from the completed audit.
+- Changes Made:
+  - Changed refresh failure handling so only an explicit 401 from the refresh request clears local session state; status 0/timeouts, CORS/network failures, 403, 5xx, malformed responses, and unknown failures are propagated without logout.
+  - Removed the per-request refresh catch-all clearing path, so concurrent callers share the existing `refreshPromise` and do not independently clear state on one failed refresh.
+  - Added an auth-session generation guard so an in-flight refresh cannot save a session after explicit logout or after the session changes.
+  - Added refresh-before-login recovery when local session state is absent, and proactive refresh when the stored JWT is malformed or lacks usable timestamps.
+  - Added a 15-second AbortController timeout to outgoing API requests.
+  - Left the staging-to-production fallback unchanged as explicitly required; it remains an open origin/401 qualification risk for a future design decision.
+- Server-Side Revocation Stop:
+  - Refresh tokens are created as stateless JWTs by `api/app/services/security.py` and validated directly by `decode_token()`.
+  - No refresh-token database table, in-memory registry, revocation column, denylist, or equivalent server-side record exists. The refresh cookie is only a transport of the JWT.
+  - Per the task safeguard, server-side token revocation was not improvised or marked complete. A design decision is required before introducing a token/session store; therefore the requested “reuse the exact invalidated token and confirm rejection” test could not be performed.
+- Verification:
+  - `npx tsc -p tsconfig.json --noEmit --incremental false` passed from `web/`.
+  - `python -m compileall -q api/app api/alembic` passed.
+  - `git diff --check` passed.
+  - No frontend unit-test setup exists for `requestApi`/browser storage behavior, so timeout, concurrent refresh, malformed-token recovery, and logout-race behavior were source-verified but not executed in an automated browser test.
+- Files/Scope Touched: `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell-route.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Preserve valid sessions through ambiguous infrastructure failures while treating only explicit refresh invalidation as proof that logout is required. Use a generation guard to make explicit logout authoritative without expanding changes into unrelated UI or deployment work.
 
 ---
 
@@ -4080,4 +4184,29 @@
 - Files/Scope Touched: `web/components/profile-screen.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
 - Reason/Decision: Empty profile metadata should not invent copy for visitors, while owners need a clear path to complete their profile.
 - Verification: Targeted TypeScript check and `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Runtime verification of the session/logout hardening changes in `web/lib/auth.ts`, `web/lib/api-origin.ts`, and `web/components/app-shell-route.tsx`; verification only, no fixes authorized.
+- Verification Environment:
+  - Connected to the existing signed-in Codex in-app browser tab at `https://staging.friink.com/home/explore`.
+  - Live evidence: page title `Friink | Home`; URL remained `/home/explore`; visible DOM showed the signed-in identity `Muflah` and a `Log out` control.
+  - Browser console baseline contained existing minified React hydration errors (`#418` and `#423`) from the staging build. The authenticated page still rendered, but these errors were not caused or changed by this verification task.
+- Results:
+  - **1. Refresh 401 clears session — COULD NOT TEST.** The current browser controls do not provide request interception, and no test refresh-token invalidation endpoint or disposable authenticated test account was available. I did not alter the live refresh cookie or claim that a redirect/session clear occurred.
+  - **2. Refresh timeout/network error/CORS/403/5xx/malformed response preserves session — COULD NOT TEST.** No network blocking/interception or API fault-injection control is exposed in the current browser session. The live tab was not disrupted to simulate an outage, so there is no runtime before/after recovery evidence.
+  - **3. Refresh deduplication — COULD NOT TEST.** The browser surface exposes console logs but not a network panel/request trace, and no controlled way to create simultaneous expired-token requests was available. Therefore the number of refresh requests was not observed.
+  - **4. Logout during in-flight refresh — COULD NOT TEST.** No request interception or delay control was available to hold refresh in flight. I also did not click the live account’s logout control because that would clear the shared signed-in browser state and require an account recovery flow; the test would need a disposable session or action-time approval in a controlled test context.
+  - **5. Refresh-before-login recovery for missing/malformed local token — COULD NOT TEST.** The browser policy/surface does not permit direct localStorage or cookie inspection/mutation, and no browser devtools storage controls were exposed. I could not corrupt/delete the token while preserving the refresh cookie and therefore could not observe recovery versus `/login` redirect.
+  - **6. 15-second request timeout — COULD NOT TEST.** No way was available to make a staging request hang beyond 15 seconds or inspect the resulting AbortController event. Consequently, there is no runtime abort or session-preservation evidence.
+  - **7. Explicit user logout — COULD NOT TEST.** The live DOM confirmed the `Log out` control is present, but I did not activate it because it mutates the shared signed-in browser session and the available environment has no disposable account/session for safe regression testing. Presence of the control is not treated as proof of redirect/storage behavior.
+  - **8. Staging-to-production fallback unchanged — PASS (Git evidence).** `git diff -- web/lib/api-origin.ts` shows only the new timeout/controller handling around `fetch`; the existing candidate logic remains `candidates = [primaryOrigin]` followed by `if (primaryOrigin === STAGING_API_ORIGIN) candidates.push(PRODUCTION_API_ORIGIN)`. The fallback code matches `git show HEAD:web/lib/api-origin.ts`; it was not changed.
+- Conclusion: Runtime proof was not available for items 1–7 in this environment. Item 8 was verified by the requested diff comparison. No runtime code was changed, and no fixes were made after the inconclusive tests.
+- Files/Scope Touched: `AGENTLOG.md` only.
+- Verification: This entry records live-browser evidence and explicit test limitations; no runtime files were modified.
 

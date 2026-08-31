@@ -74,6 +74,10 @@ _Last updated: 2026-08-31_
 - [web] Authenticated bootstrap now clears sessions only for explicit `401` responses, preserving valid sessions during network, API, deployment, or migration failures.
 - [web] Setup close now dismisses the local modal even when progress persistence fails, and duplicate identical toasts are suppressed.
 - [web] New-account signup now explicitly starts profile setup at step 1, and Settings/setup share one `ProfilePictureCropModal` implementation.
+- [api/db] Applied profile setup migration `20260831_0011` to the shared database; Alembic is now at head for localhost, staging, and production.
+- [web] Hardened auth refresh handling so only an explicit refresh-token 401 can clear local session state; refresh timeouts, CORS/network failures, 403s, 5xx responses, and malformed responses now remain retryable.
+- [web] Added refresh/logout generation guards, refresh-before-login recovery for missing or malformed local auth state, and a 15-second request timeout. Server-side refresh-token revocation remains open because tokens are currently stateless JWTs without server records.
+- [verification] Runtime verification of session/logout hardening was attempted against the signed-in staging app. Items requiring fault injection, storage mutation, network traces, or an in-flight request could not be tested in the available browser surface; staging-to-production fallback was diff-verified unchanged.
 
 ## 2026-08-30
 

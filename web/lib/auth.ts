@@ -26,6 +26,7 @@ const AUTH_SESSION_KEY = 'friink-auth-session';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
 const TOKEN_REFRESH_LIFETIME_FRACTION = 0.8;
 let refreshPromise: Promise<AuthSession> | null = null;
+let authSessionGeneration = 0;
 
 type ApiUser = {
   id: string;
@@ -179,6 +180,7 @@ export function loadPersistedAuthSession(): AuthSession | null {
 
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
+  authSessionGeneration += 1;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
 }
 
@@ -194,24 +196,56 @@ export async function login(email: string, password: string): Promise<AuthSessio
 export async function refreshAuthSession(): Promise<AuthSession> {
   if (refreshPromise) return refreshPromise;
 
+  const generation = authSessionGeneration;
   refreshPromise = (async () => {
     const currentSession = loadPersistedAuthSession();
-    const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
-      method: 'POST',
-      authContext: 'refresh_exchange',
-      skipAuthRefresh: true,
-    });
-    if (!currentSession) {
-      throw new AuthApiError('Please log in again.', 401, 'SESSION_NOT_FOUND');
-    }
+    try {
+      const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
+        method: 'POST',
+        authContext: 'refresh_exchange',
+        skipAuthRefresh: true,
+      });
 
-    const nextSession = withAccessTokenExpiry({
-      ...currentSession,
-      accessToken: response.access_token,
-      tokenType: 'Bearer',
-    });
-    saveAuthSession(nextSession);
-    return nextSession;
+      if (generation !== authSessionGeneration) {
+        throw new AuthApiError('The session was cleared while it was refreshing.', 0);
+      }
+
+      if (currentSession) {
+        const latestSession = loadPersistedAuthSession();
+        if (latestSession?.accessToken !== currentSession.accessToken) {
+          throw new AuthApiError('The session changed while it was refreshing.', 0);
+        }
+        const nextSession = withAccessTokenExpiry({
+          ...currentSession,
+          accessToken: response.access_token,
+          tokenType: 'Bearer',
+        });
+        saveAuthSession(nextSession);
+        return nextSession;
+      }
+
+      const restoredUser = await requestApi<ApiUser>('/auth/me', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${response.access_token}` },
+        authContext: 'authenticated_request',
+        skipAuthRefresh: true,
+      });
+      if (generation !== authSessionGeneration || loadPersistedAuthSession()) {
+        throw new AuthApiError('The session changed while it was refreshing.', 0);
+      }
+      const restoredSession = withAccessTokenExpiry({
+        accessToken: response.access_token,
+        tokenType: 'Bearer',
+        user: mapApiUser(restoredUser),
+      });
+      saveAuthSession(restoredSession);
+      return restoredSession;
+    } catch (error) {
+      if (isExplicitUnauthorized(error)) {
+        clearAuthSession();
+      }
+      throw error;
+    }
   })().finally(() => {
     refreshPromise = null;
   });
@@ -755,17 +789,12 @@ async function requestApi<T>(
       apiError.code === 'TOKEN_EXPIRED' &&
       requestInit.authContext === 'authenticated_request'
     ) {
-      try {
-        const refreshedSession = await refreshAuthSession();
-        return requestApi<T>(path, {
-          ...requestInit,
-          headers: withAuthorizationHeader(requestInit.headers, refreshedSession.accessToken),
-          retryingAfterRefresh: true,
-        });
-      } catch {
-        clearAuthSession();
-        throw new AuthApiError('Please log in again.', 401, 'REFRESH_TOKEN_INVALID');
-      }
+      const refreshedSession = await refreshAuthSession();
+      return requestApi<T>(path, {
+        ...requestInit,
+        headers: withAuthorizationHeader(requestInit.headers, refreshedSession.accessToken),
+        retryingAfterRefresh: true,
+      });
     }
     throw new AuthApiError(apiError.message, response.status, apiError.code);
   }
@@ -852,17 +881,29 @@ function getJwtTimestampMs(token: string, claim: 'iat' | 'exp'): number | undefi
 
 async function getProactivelyRefreshedAccessToken(headers: HeadersInit | undefined): Promise<string | null> {
   const session = loadPersistedAuthSession();
-  if (!session?.accessTokenExpiresAt) return null;
+  if (!session) return null;
+  if (typeof session.accessToken !== 'string' || !session.accessToken) {
+    const refreshedSession = await refreshAuthSession();
+    return refreshedSession.accessToken;
+  }
   const authorization = getAuthorizationHeader(headers);
   if (!authorization || authorization !== `Bearer ${session.accessToken}`) return null;
 
   const issuedAt = getJwtTimestampMs(session.accessToken, 'iat');
-  if (!issuedAt) return null;
-  const refreshAt = issuedAt + (session.accessTokenExpiresAt - issuedAt) * TOKEN_REFRESH_LIFETIME_FRACTION;
+  const expiresAt = session.accessTokenExpiresAt ?? getJwtTimestampMs(session.accessToken, 'exp');
+  if (!issuedAt || !expiresAt) {
+    const refreshedSession = await refreshAuthSession();
+    return refreshedSession.accessToken;
+  }
+  const refreshAt = issuedAt + (expiresAt - issuedAt) * TOKEN_REFRESH_LIFETIME_FRACTION;
   if (Date.now() < refreshAt) return null;
 
   const refreshedSession = await refreshAuthSession();
   return refreshedSession.accessToken;
+}
+
+function isExplicitUnauthorized(error: unknown): error is AuthApiError {
+  return error instanceof AuthApiError && error.status === 401;
 }
 
 function getAuthorizationHeader(headers: HeadersInit | undefined): string | null {
