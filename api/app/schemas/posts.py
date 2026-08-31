@@ -53,6 +53,7 @@ class QuotedPostResponse(BaseModel):
     slug: str | None = None
     author_username: str | None
     author_display_name: str | None = None
+    profile_picture_url: str | None = None
     content: str
     media_count: int = 0
     unavailable: bool = False

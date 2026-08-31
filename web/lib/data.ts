@@ -22,6 +22,7 @@ export type Post = {
     slug?: string | null;
     authorUsername: string | null;
     authorDisplayName?: string | null;
+    imageUrl?: string | null;
     content: string;
     mediaCount?: number;
     unavailable: boolean;

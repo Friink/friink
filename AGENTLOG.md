@@ -4398,3 +4398,20 @@
 - Reason/Decision: Mentions need durable server-side recipient resolution and notification target data, while the web can render the same plain post content as profile links without changing the post storage format.
 - Verification: `python -m pytest tests/test_posts.py` passed with 17 tests; `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix quoted-post cards missing the original author display name and profile picture.
+- Changes Made:
+  - Added `profile_picture_url` to the quoted-post API response.
+  - Passed the original author's display name and profile picture through every web post mapping.
+  - Rendered the quoted identity through `ProfileCard` with the original avatar and existing fallback behavior.
+  - Added API coverage for quoted-post identity serialization.
+- Files/Scope Touched: `api/app/schemas/posts.py`, `api/app/services/posts.py`, `api/tests/test_posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/app-shell.tsx`, `web/components/home-screen.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The quoted-post response included author name fields but omitted the avatar URL, and the web quote model discarded the available identity data before rendering. The fix keeps quote rendering on the shared `ProfileCard` contract.
+- Verification: `python -m pytest tests/test_posts.py tests/test_connections.py` passed with 37 tests; `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `python -m compileall -q app` and `git diff --check` passed.
+

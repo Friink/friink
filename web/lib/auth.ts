@@ -443,6 +443,7 @@ export type ApiPost = {
     slug: string | null;
     author_username: string | null;
     author_display_name: string | null;
+    profile_picture_url: string | null;
     content: string;
     media_count: number;
     unavailable: boolean;

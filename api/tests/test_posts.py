@@ -82,6 +82,8 @@ def test_quote_of_quote_is_allowed_and_serializes_direct_quote_only() -> None:
         id=uuid.uuid4(),
         email="author@example.com",
         username="author",
+        display_name="Author Name",
+        profile_picture_url="https://cdn.example.com/author.jpg",
         password_hash="hash",
         date_of_birth=date(2000, 1, 1),
     )
@@ -93,6 +95,8 @@ def test_quote_of_quote_is_allowed_and_serializes_direct_quote_only() -> None:
 
     assert serialized is not None
     assert serialized.id == quote.id
+    assert serialized.author_display_name == "Author Name"
+    assert serialized.profile_picture_url == "https://cdn.example.com/author.jpg"
     assert serialized.content == "Quote"
 
 

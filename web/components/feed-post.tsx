@@ -86,6 +86,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
                   name={quotedPost.authorDisplayName || `@${quotedPost.authorUsername}`}
                   handle={`@${quotedPost.authorUsername}`}
                   tone="mint"
+                  imageUrl={quotedPost.imageUrl}
                 />
               ) : (
                 <strong>Original post unavailable</strong>

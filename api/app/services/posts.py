@@ -379,6 +379,7 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         slug=getattr(quoted_post, "slug", None),
         author_username=quoted_post.user.username,
         author_display_name=quoted_post.user.display_name,
+        profile_picture_url=quoted_post.user.profile_picture_url,
         content=quoted_post.content,
         media_count=quoted_post.media_count,
         unavailable=False,
