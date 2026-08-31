@@ -1353,7 +1353,8 @@ textarea {
   word-break: break-word;
 }
 
-.composer-mention-editor:empty::before {
+.composer-mention-editor:empty::before,
+.composer-mention-editor[data-empty='true']::before {
   color: var(--color-muted);
   content: attr(data-placeholder);
   pointer-events: none;

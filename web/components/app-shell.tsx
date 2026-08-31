@@ -912,6 +912,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 inputLabel="Post"
                 sendLabel="Post"
                 maxLength={256}
+                draftStorageKey={`friink-draft:${user.id}:floating:${composeContext.kind}:${composeContext.kind === 'post' ? 'new' : composeContext.post.id}`}
                 showCount
                 allowEmptySubmit={composeContext.kind === 'quote'}
                 enableMentions

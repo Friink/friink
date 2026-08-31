@@ -4296,6 +4296,39 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T22:25:00Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the composer placeholder after clearing text and retain local drafts across navigation.
+- Changes Made:
+  - Added an explicit empty-state attribute to the mention editor so the placeholder returns even when contenteditable retains an empty browser node.
+  - Added best-effort localStorage draft persistence to the shared Composer with user/context-specific keys for floating posts and post-detail replies/quotes.
+  - Removed empty drafts from local storage and kept persistence entirely client-side.
+  - Documented the behavior and updated the changelog.
+- Files/Scope Touched: `web/components/mention-input.tsx`, `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Controlled-value emptiness is more reliable than the browser's `:empty` state, and browser-local context keys preserve drafts without introducing database state or mixing unrelated post/reply drafts.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T22:13:54Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the scope and risks of Account session management for review.
+- Changes Made:
+  - Added `docs/session-management.md` with the proposed auth-session data model, user-facing table, API flows, migration/current-user impact, risks, implementation areas, verification checklist, and MVP non-goals.
+  - Recorded that device metadata may be unknown while session identity and token ownership remain mandatory.
+  - Recorded that the existing approved stateless-refresh migration decision remains separate and should not cause a second forced logout.
+- Files/Scope Touched: `docs/session-management.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Session management is a standard feature, but it requires server-side session metadata and revocation wiring in addition to the existing refresh-token family model; documenting the full boundary lets the implementation be reviewed before code changes.
+- Verification: `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:55:00Z
 - Agent: Codex
 - Model: GPT-5

@@ -44,6 +44,7 @@ type ComposerProps = {
   inputLabel?: string;
   sendLabel?: string;
   maxLength?: number;
+  draftStorageKey?: string;
   showCount?: boolean;
   allowEmptySubmit?: boolean;
   contextLabel?: string | null;
@@ -69,6 +70,7 @@ export function Composer({
   inputLabel = 'Message',
   sendLabel = 'Send message',
   maxLength,
+  draftStorageKey,
   showCount = false,
   allowEmptySubmit = false,
   contextLabel = null,
@@ -89,9 +91,32 @@ export function Composer({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropPixels | null>(null);
   const [cropBusy, setCropBusy] = useState(false);
+  const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(null);
   const characterCount = draft.length;
   const isOverLimit = typeof maxLength === 'number' && characterCount > maxLength;
   const composerExpanded = expanded || media.length > 0;
+
+  useEffect(() => {
+    if (!draftStorageKey || typeof window === 'undefined') return;
+    let savedDraft = '';
+    try {
+      savedDraft = window.localStorage.getItem(draftStorageKey) ?? '';
+    } catch {
+      savedDraft = '';
+    }
+    onDraftChange(savedDraft);
+    setHydratedDraftKey(draftStorageKey);
+  }, [draftStorageKey, onDraftChange]);
+
+  useEffect(() => {
+    if (!draftStorageKey || hydratedDraftKey !== draftStorageKey || typeof window === 'undefined') return;
+    try {
+      if (draft) window.localStorage.setItem(draftStorageKey, draft);
+      else window.localStorage.removeItem(draftStorageKey);
+    } catch {
+      // Draft persistence is best effort and must not interrupt composing.
+    }
+  }, [draft, draftStorageKey, hydratedDraftKey]);
 
   mediaRef.current = media;
   useEffect(() => () => {

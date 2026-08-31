@@ -149,6 +149,7 @@ export function PostClient({ postId }: PostClientProps) {
           inputLabel="Post"
           sendLabel="Post"
           maxLength={512}
+          draftStorageKey={`friink-draft:${user.id}:post:${postId}:${composeContext.kind}`}
           showCount
           enableMentions
           contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}

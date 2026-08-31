@@ -143,6 +143,7 @@ export function MentionInput({ value, onChange, placeholder, ariaLabel, disabled
       aria-label={ariaLabel}
       aria-multiline={multiline}
       data-placeholder={placeholder}
+      data-empty={value.length === 0 ? 'true' : 'false'}
       suppressContentEditableWarning
       onInput={handleInput}
       onKeyDown={(event) => {

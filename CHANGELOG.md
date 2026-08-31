@@ -93,6 +93,10 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Restored the composer placeholder after clearing a mention-enabled draft and added best-effort local browser draft persistence across navigation, without database writes.
+
+- [docs] Added `docs/session-management.md` covering the proposed Account sessions feature, data model, API/UI scope, migration impact, risks, and verification requirements; no implementation changes were made.
+
 - [web] Added the UI-only post media workflow: multiple image selection up to eight files, inline thumbnails between the composer `+` control and character count, modal preview/crop/delete controls, and tighter expanded-composer spacing.
 
 - [web] Fixed portaled in-app action menus so they follow the selected app light/dark theme instead of losing `.app-shell` color variables when rendered under `document.body`.
