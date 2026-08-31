@@ -15,6 +15,9 @@ class RefreshToken(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("auth_sessions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     family_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     token_hash: Mapped[bytes] = mapped_column(LargeBinary(length=32), nullable=False, unique=True)
     replaced_by_id: Mapped[uuid.UUID | None] = mapped_column(

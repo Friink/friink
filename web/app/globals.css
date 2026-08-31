@@ -2566,6 +2566,64 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   line-height: 1.35;
 }
 
+.settings-sessions-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.settings-session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.settings-session-copy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.settings-session-copy strong,
+.settings-session-copy span,
+.settings-session-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-session-copy strong {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+
+.settings-session-copy span,
+.settings-session-copy small,
+.settings-session-current {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.settings-session-current {
+  flex: 0 0 auto;
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .settings-session-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-session-item .settings-secondary-button {
+    align-self: flex-end;
+  }
+}
+
 @media (max-width: 420px) {
   .settings-field-row {
     flex-direction: column;

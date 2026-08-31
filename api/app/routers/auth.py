@@ -1,3 +1,4 @@
+import uuid
 from datetime import timedelta
 
 from datetime import UTC, datetime
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models.user import User
+from app.models.auth_session import AuthSession
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
@@ -18,6 +20,7 @@ from app.schemas.auth import (
     ProfilePictureUploadUrlResponse,
     PublicUserResponse,
     RefreshResponse,
+    AuthSessionResponse,
     SignupRequest,
     TokenResponse,
     UpdateSetupRequest,
@@ -31,9 +34,14 @@ from app.services.email import EmailService
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
 from app.services.session_service import (
+    create_auth_session,
+    get_refresh_token,
     get_refresh_token_for_update,
     issue_refresh_token,
+    list_active_auth_sessions,
+    revoke_auth_session,
     revoke_refresh_family,
+    revoke_refresh_family_for_session,
     revoke_refresh_token,
 )
 from app.services.token_context import get_auth_flow_context
@@ -65,13 +73,15 @@ async def signup(payload: SignupRequest, session: Session = Depends(get_session)
 @router.post("/login", response_model=TokenResponse)
 async def login(
     payload: LoginRequest,
+    request: Request,
     response: Response,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
     user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
-    issued_refresh = issue_refresh_token(session, user.id, settings)
+    auth_session = create_auth_session(session, user.id, request)
+    issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
     await commit(session)
     log_token_issued(flow="fresh_login", token_type="access", token=access_token, user_id=str(user.id))
     log_refresh_token_event(
@@ -166,7 +176,12 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
-    issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id)
+    auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
+    if auth_session and auth_session.revoked_at is not None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
+    if auth_session:
+        auth_session.last_active_at = now
+    issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
     access_token = create_access_token(user.id)
@@ -193,7 +208,14 @@ async def logout(
     if refresh_token:
         token_record = get_refresh_token_for_update(session, refresh_token)
         if token_record:
-            revoke_refresh_family(session, token_record.family_id, "logout")
+            if token_record.session_id:
+                auth_session = session.get(AuthSession, token_record.session_id)
+                if auth_session:
+                    revoke_auth_session(session, auth_session)
+                else:
+                    revoke_refresh_family(session, token_record.family_id, "logout")
+            else:
+                revoke_refresh_family(session, token_record.family_id, "logout")
             await commit(session)
             log_refresh_token_event(
                 event="auth_refresh_token_family_revoked",
@@ -269,6 +291,68 @@ async def get_current_user(
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.get("/sessions", response_model=list[AuthSessionResponse])
+async def sessions(
+    request: Request,
+    refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> list[AuthSessionResponse]:
+    current_session_id = None
+    if refresh_token:
+        token_record = get_refresh_token(session, refresh_token)
+        if token_record and token_record.user_id == current_user.id and token_record.revoked_at is None and token_record.rotated_at is None:
+            current_session_id = token_record.session_id
+
+    return [
+        AuthSessionResponse(
+            id=auth_session.id,
+            device_label=auth_session.device_label or "Unknown device",
+            browser=auth_session.browser,
+            operating_system=auth_session.operating_system,
+            created_at=auth_session.created_at,
+            last_active_at=auth_session.last_active_at,
+            current=auth_session.id == current_session_id,
+        )
+        for auth_session in list_active_auth_sessions(session, current_user.id)
+    ]
+
+
+@router.post("/sessions/{session_id}/revoke", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_session(
+    session_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    auth_session = session.get(AuthSession, session_id)
+    if not auth_session or auth_session.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found.")
+    if auth_session.revoked_at is None:
+        revoke_auth_session(session, auth_session)
+        await commit(session)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/sessions/revoke-others", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_other_sessions(
+    request: Request,
+    refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    current_session_id = None
+    if refresh_token:
+        token_record = get_refresh_token(session, refresh_token)
+        if token_record and token_record.user_id == current_user.id and token_record.revoked_at is None and token_record.rotated_at is None:
+            current_session_id = token_record.session_id
+
+    for auth_session in list_active_auth_sessions(session, current_user.id):
+        if auth_session.id != current_session_id:
+            revoke_auth_session(session, auth_session, "logout_others")
+    await commit(session)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/users/{username}", response_model=PublicUserResponse)

@@ -105,6 +105,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/models/refresh_token.py`, `api/app/routers/auth.py`, `api/app/services/session_service.py`, `api/app/services/security.py`, `api/app/services/auth_errors.py`, `api/app/config.py`, `web/lib/auth.ts`, `api/tests/test_token_resilience.py`
 - **Since:** 2026-08-31 (Asia/Karachi)
 
+### Rule: Users Can Manage Their Active Sessions
+- **What:** Settings > Account lists the user's active server-managed auth sessions with best-effort device, browser, operating-system, logged-in, and last-active information. The server identifies the current session from the presented refresh cookie; the UI never supplies that identity. Users may revoke other sessions individually or revoke all other sessions while preserving the current one.
+- **Edge cases:** `refresh_tokens.session_id` is nullable so existing/orphaned refresh rows remain valid and are not backfilled. Missing user-agent parsing falls back to `Unknown device`. Raw tokens, hashes, IPs, and internal UUIDs are never shown. Access tokens already issued may remain valid until their normal expiry after revocation.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/models/auth_session.py`, `api/app/models/refresh_token.py`, `api/app/routers/auth.py`, `api/app/services/session_service.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`
+- **Since:** 2026-09-01T22:30:00Z
+
 ### Rule: JWT Secret Configuration Fails Loud
 - **What:** `JWT_SECRET_KEY` is required at API settings load and has no application default or generated fallback. API startup logs only an 8-character SHA256 fingerprint of the configured secret so deploys can confirm secret stability without exposing the secret.
 - **Edge cases:** Missing `JWT_SECRET_KEY` prevents startup through Pydantic settings validation. Vercel web/API and staging/production secret values must be verified in deployment settings when environments share a database.

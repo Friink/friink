@@ -1,12 +1,13 @@
 # Friink Session Management
 
-Status: design and scope for review
+Status: implemented
 
 Last updated: 2026-08-31T22:13:54Z
 
-This document defines the proposed user-facing session-management feature for
-`/settings/account`. It is documentation only. It does not authorize or
-describe an implementation already made.
+This document defines the user-facing session-management feature for
+`/settings/account` and records the implementation boundaries. The feature is
+implemented with an additive migration; no existing refresh rows are
+backfilled.
 
 ## Goal
 
@@ -51,7 +52,7 @@ directly:
 | `user_agent` | Optional raw value for diagnostics; never shown by default |
 | `ip_hash` | Optional one-way hash for security diagnostics, not display |
 
-Add a non-null `session_id` foreign key to new refresh-token rows. The token
+Add a nullable `session_id` foreign key to new refresh-token rows. The token
 family remains useful for rotation and reuse detection; the session groups the
 family and owns the user-facing revoke operation.
 
@@ -237,19 +238,20 @@ Documentation and tests:
 - targeted web tests if a suitable test setup exists
 - `CHANGELOG.md` and `AGENTLOG.md`
 
-## Verification checklist
+## Implementation and verification status
 
-- Two logins produce two visible active sessions.
-- Existing refresh rotation remains one-token-at-a-time and deduplicated.
-- Refresh preserves the same session record.
-- One session can be revoked without affecting another.
-- “Log out all other sessions” preserves the current session.
-- Revoked sessions cannot refresh successfully.
-- Dead-token reuse still revokes its complete family.
-- Missing metadata renders safely as unknown rather than breaking the page.
-- Current users are not logged out by the additive schema migration.
-- Normal logout, refresh timeout handling, and access-token behavior remain
-  unchanged.
+The focused integration test in `api/tests/test_refresh_token_rotation.py`
+verified that two fresh logins produce two visible sessions, exactly one is
+marked current from the request cookie, one session can be revoked without
+affecting the other, revoke-others preserves the current session, and revoked
+sessions receive `401` on refresh. The same test module continues to verify
+rotation, dead-token reuse family revocation, logout, legacy-cookie rejection,
+and concurrent refresh behavior. The full API suite passed with 60 tests; the
+web TypeScript check and `git diff --check` also passed.
+
+The additive migration leaves existing rows valid and does not backfill them.
+Existing stateless-cookie migration behavior remains governed by
+`docs/session-updates.md`.
 
 ## Deliberate non-goals for the MVP
 
@@ -259,4 +261,3 @@ Documentation and tests:
 - immediate revocation of already-issued access JWTs
 - administrative cross-user session controls
 - multi-region coordination or a distributed session cache
-

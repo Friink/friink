@@ -93,6 +93,9 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [api/web] Implemented user-facing session management under Settings > Account with server-managed auth sessions, nullable refresh-token linkage, current-session detection from the refresh cookie, individual and revoke-others actions, and device/browser metadata fallbacks.
+- [db] Applied additive Alembic migration `20260901_0013` for `auth_sessions` and nullable `refresh_tokens.session_id`; no existing session rows were backfilled or invalidated.
+
 - [web] Restored the composer placeholder after clearing a mention-enabled draft and added best-effort local browser draft persistence across navigation, without database writes.
 
 - [docs] Added `docs/session-management.md` covering the proposed Account sessions feature, data model, API/UI scope, migration impact, risks, and verification requirements; no implementation changes were made.

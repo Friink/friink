@@ -146,6 +146,16 @@ class RefreshResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class AuthSessionResponse(BaseModel):
+    id: uuid.UUID
+    device_label: str
+    browser: str | None
+    operating_system: str | None
+    created_at: datetime
+    last_active_at: datetime
+    current: bool
+
+
 class ProfilePictureUploadUrlRequest(BaseModel):
     content_type: str = Field(min_length=1, max_length=100)
 

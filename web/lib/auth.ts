@@ -22,6 +22,16 @@ export type AuthSession = {
   accessTokenExpiresAt?: number;
 };
 
+export type ManagedAuthSession = {
+  id: string;
+  device_label: string;
+  browser: string | null;
+  operating_system: string | null;
+  created_at: string;
+  last_active_at: string;
+  current: boolean;
+};
+
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
 const TOKEN_REFRESH_LIFETIME_FRACTION = 0.8;
@@ -287,6 +297,30 @@ export async function changePassword(accessToken: string, currentPassword: strin
       new_password: newPassword,
       confirm_password: confirmPassword,
     }),
+  });
+}
+
+export async function listAuthSessions(accessToken: string): Promise<ManagedAuthSession[]> {
+  return requestApi<ManagedAuthSession[]>('/auth/sessions', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function revokeAuthSession(accessToken: string, sessionId: string): Promise<void> {
+  await requestApi<void>(`/auth/sessions/${encodeURIComponent(sessionId)}/revoke`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function revokeOtherAuthSessions(accessToken: string): Promise<void> {
+  await requestApi<void>('/auth/sessions/revoke-others', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
   });
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
+import { AuthApiError, changePassword, listAuthSessions, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser, type ManagedAuthSession } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -123,6 +123,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [directMessagesSaved, setDirectMessagesSaved] = useState(false);
   const [mentionsDraft, setMentionsDraft] = useState(true);
   const [mentionsSaved, setMentionsSaved] = useState(true);
+  const [authSessions, setAuthSessions] = useState<ManagedAuthSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState('');
+  const [sessionsBusyId, setSessionsBusyId] = useState<string | null>(null);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
@@ -146,6 +150,20 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setShowPasswordCriteria(false);
     setPasswordStatus('');
   }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl, appearance]);
+
+  useEffect(() => {
+    if (activeTab !== 'account') return;
+    const session = loadAuthSession();
+    if (!session) return;
+    let cancelled = false;
+    setSessionsLoading(true);
+    setSessionsError('');
+    listAuthSessions(session.accessToken)
+      .then((items) => { if (!cancelled) setAuthSessions(items); })
+      .catch((error) => { if (!cancelled) setSessionsError(error instanceof Error ? error.message : 'Could not load sessions.'); })
+      .finally(() => { if (!cancelled) setSessionsLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab]);
 
   const hasUsernameChanged = username !== user.username;
   const isUsernameValid = USERNAME_PATTERN.test(username);
@@ -267,6 +285,42 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     } finally {
       setIsChangingPassword(false);
     }
+  }
+
+  async function handleSessionRevoke(sessionId: string) {
+    if (!window.confirm('Log out this session?')) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    setSessionsBusyId(sessionId);
+    try {
+      await revokeAuthSession(session.accessToken, sessionId);
+      setAuthSessions((current) => current.filter((item) => item.id !== sessionId));
+      onToast?.('Session logged out.', 'success');
+    } catch (error) {
+      onToast?.(error instanceof Error ? error.message : 'Could not log out this session.');
+    } finally {
+      setSessionsBusyId(null);
+    }
+  }
+
+  async function handleRevokeOtherSessions() {
+    if (!window.confirm('Log out all other sessions?')) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    setSessionsBusyId('others');
+    try {
+      await revokeOtherAuthSessions(session.accessToken);
+      setAuthSessions((current) => current.filter((item) => item.current));
+      onToast?.('All other sessions logged out.', 'success');
+    } catch (error) {
+      onToast?.(error instanceof Error ? error.message : 'Could not log out other sessions.');
+    } finally {
+      setSessionsBusyId(null);
+    }
+  }
+
+  function formatSessionDate(value: string) {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
   }
 
   async function handleNameUpdate() {
@@ -495,6 +549,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 ))}
               </span>
             </SettingsRow>
+
           </div>
         </div>
       )}
@@ -574,6 +629,36 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                 </label>
                 {passwordStatus && <span className="settings-field-message" role="status">{passwordStatus}</span>}
               </div>
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-laptop" aria-hidden="true" /></span>}
+              title="Sessions"
+              subtitle="Manage the browsers and devices signed in to your account."
+              className="settings-row settings-row-expanded settings-sessions-row"
+              trailing={authSessions.some((item) => !item.current) ? (
+                <button className="settings-secondary-button" type="button" disabled={sessionsBusyId !== null} onClick={handleRevokeOtherSessions}>Log out other sessions</button>
+              ) : null}
+            >
+              {sessionsLoading ? <p className="settings-field-message" role="status">Loading sessions…</p> : null}
+              {sessionsError ? <p className="settings-field-message" role="alert">{sessionsError}</p> : null}
+              {!sessionsLoading && !sessionsError && authSessions.length === 0 ? <p className="settings-field-message">No active sessions found.</p> : null}
+              {!sessionsLoading && !sessionsError && authSessions.length > 0 ? (
+                <div className="settings-sessions-list">
+                  {authSessions.map((item) => (
+                    <div className="settings-session-item" key={item.id}>
+                      <div className="settings-session-copy">
+                        <strong>{item.device_label} · {item.browser || 'Browser unavailable'}</strong>
+                        <span>{item.operating_system || 'Operating system unavailable'}</span>
+                        <small>Logged in {formatSessionDate(item.created_at)} · Last active {formatSessionDate(item.last_active_at)}</small>
+                      </div>
+                      {item.current ? <span className="settings-session-current">Current session</span> : (
+                        <button className="settings-secondary-button" type="button" disabled={sessionsBusyId !== null} onClick={() => handleSessionRevoke(item.id)}>{sessionsBusyId === item.id ? 'Logging out…' : 'Log out'}</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </SettingsRow>
           </div>
         </div>

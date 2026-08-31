@@ -11,4 +11,5 @@ pytest
 pytest-asyncio
 python-dotenv
 SQLAlchemy
+user-agents
 uvicorn[standard]

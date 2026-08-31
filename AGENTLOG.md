@@ -4296,6 +4296,25 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T22:35:00Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved user-facing session-management design.
+- Changes Made:
+  - Added the additive `auth_sessions` model and migration `20260901_0013`; linked new refresh tokens through nullable `session_id` with no backfill.
+  - Created sessions on fresh login, preserved session identity during rotation, updated last-active time only on login/refresh, and revoked session families on logout or settings revocation.
+  - Added server-owned `GET /auth/sessions`, `POST /auth/sessions/{session_id}/revoke`, and `POST /auth/sessions/revoke-others` endpoints. Current-session state is derived from the presented refresh cookie and ownership is checked against the authenticated user.
+  - Added `user-agents` as the deployment dependency with safe `Unknown device` fallback when parsing is unavailable or inconclusive.
+  - Added the Account Sessions settings row with active-session details, current-session labeling, individual logout, revoke-others confirmation, loading/empty/error/success behavior, and responsive mobile layout.
+  - Updated the design document and active session rule.
+- Files/Scope Touched: `api/app/models/auth_session.py`, `api/app/models/refresh_token.py`, `api/app/models/__init__.py`, `api/alembic/env.py`, `api/alembic/versions/20260901_0013_create_auth_sessions.py`, `api/app/services/session_service.py`, `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/requirements.txt`, `api/tests/test_refresh_token_rotation.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `docs/session-management.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The implementation uses one server-side session record per fresh login and keeps the refresh-token family as the revocation unit, which provides standard user control without backfilling or invalidating existing rows.
+- Verification: Alembic upgraded the configured database to `20260901_0013 (head)`. Focused session integration coverage passed (`2 passed`); full API suite passed (`60 passed`, 2 non-blocking existing warnings); web TypeScript check passed; `git diff --check` passed. The local package index could not install `user-agents`, so its runtime fallback was exercised by the existing tests; deployment must install the declared requirement.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T22:25:00Z
 - Agent: Codex
 - Model: GPT-5
