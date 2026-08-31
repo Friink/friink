@@ -98,6 +98,7 @@ _Last updated: 2026-08-31_
 - [api/web] Fixed quoted-post identity payloads and mappings so quoted cards show the original author's display name and profile picture.
 - [web] Made the shared `ActionMenu` viewport-aware with portal-based fixed positioning, automatic vertical flipping, edge clamping, and scroll/resize recalculation.
 - [web] Added a public Plans section to the landing page and a full `/subscriptions` comparison page for Friink Free, Pro, and Pro+; paid actions remain Coming soon until billing exists.
+- [web] Added a dedicated Settings > Subscription tab with the current Free plan summary and a link to `/subscriptions`.
 
 ### Changed
 

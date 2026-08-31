@@ -427,6 +427,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing.module.css`
 - **Since:** 2026-09-01 (Asia/Karachi)
 
+### Rule: Subscription Settings Starts As A Plan Summary
+- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the current Friink Free plan and linking to the public `/subscriptions` comparison page.
+- **Edge cases:** The current plan is presentation-only until billing and entitlements exist; this tab does not process upgrades, payments, cancellations, or paid access.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/globals.css`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ### Rule: Landing Newsletter Uses Zoho Form Submission
 - **What:** The landing-page subscribe form submits the `Email` field to the configured Zoho Forms endpoint through a hidden iframe target and then disables the form with a submitted state.
 - **Edge cases:** The submitted state is deferred briefly so the native form submission includes the email input.

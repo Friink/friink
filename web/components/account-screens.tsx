@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
@@ -10,7 +11,7 @@ import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/c
 import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
-type SettingsTab = 'general' | 'profile' | 'account' | 'privacy';
+type SettingsTab = 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
 
 type SettingsScreenProps = {
   user: AuthUser;
@@ -474,6 +475,25 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               <label className="settings-field">
                 <input type="text" value={user.id} readOnly aria-readonly="true" aria-label="Unique user ID" />
               </label>
+            </SettingsRow>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'subscription' && (
+        <div className="settings-panel">
+          <div className="settings-section">
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-crown" aria-hidden="true" /></span>}
+              title="Current plan"
+              subtitle="Your Friink plan and subscription options."
+              className="settings-row settings-row-expanded"
+              trailing={<Link className="settings-secondary-button settings-subscription-link" href="/subscriptions">View plans</Link>}
+            >
+              <div className="settings-plan-summary">
+                <strong>Friink Free</strong>
+                <span>Free · Never expires</span>
+              </div>
             </SettingsRow>
           </div>
         </div>

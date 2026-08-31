@@ -13,7 +13,7 @@ type AppShellRouteProps = {
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
   initialHomeFilter?: 'all' | 'following';
   initialMessagesTab?: 'all' | 'muted' | 'requests';
-  initialSettingsTab?: 'general' | 'profile' | 'account' | 'privacy';
+  initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
 };
 
 export function AppShellRoute({ initialScreen, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general' }: AppShellRouteProps) {

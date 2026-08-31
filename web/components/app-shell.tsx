@@ -63,7 +63,7 @@ type AppShellProps = {
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
   initialHomeFilter?: 'all' | 'following';
   initialMessagesTab?: 'all' | 'muted' | 'requests';
-  initialSettingsTab?: 'general' | 'profile' | 'account' | 'privacy';
+  initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
   profileTab?: 'posts' | 'replies';
   onProfileTabChange?: (tab: 'posts' | 'replies') => void;
 };
@@ -112,7 +112,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [homeFilter, setHomeFilter] = useState<'all' | 'following'>(initialHomeFilter);
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
   const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>(initialMessagesTab);
-  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>(initialSettingsTab);
+  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'subscription' | 'privacy'>(initialSettingsTab);
   const [canGoBack, setCanGoBack] = useState(false);
   useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
   useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
@@ -286,7 +286,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     router.push(`/chat/${tab}`, { scroll: false });
   }
 
-  function handleSettingsTabChange(tab: 'general' | 'profile' | 'account' | 'privacy') {
+  function handleSettingsTabChange(tab: 'general' | 'profile' | 'account' | 'subscription' | 'privacy') {
     setSettingsTab(tab);
     router.push(`/settings/${tab}`, { scroll: false });
   }
@@ -817,10 +817,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'general', label: 'General' },
                   { id: 'profile', label: 'Profile' },
                   { id: 'account', label: 'Account' },
+                  { id: 'subscription', label: 'Subscription' },
                   { id: 'privacy', label: 'Privacy & Safety' },
                 ]}
                 activeId={settingsTab}
-                onChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'privacy')}
+                onChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
                 ariaLabel="Settings sections"
               />
             )}
@@ -883,7 +884,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       appearance={appearance}
                       onAppearanceChange={(a) => persistAppearance(a)}
                       activeTab={settingsTab}
-                      onTabChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'privacy')}
+                      onTabChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
                       onUserChange={onUserChange}
                       onToast={addToast}
                     />
