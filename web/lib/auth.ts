@@ -139,6 +139,8 @@ export async function signUp(input: {
     user: {
       ...session.user,
       name: input.name || session.user.name,
+      setupStep: 1,
+      setupCompleted: false,
     },
   };
 }

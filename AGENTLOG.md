@@ -3905,6 +3905,22 @@
 - Date/Time: 2026-08-31 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
+- Prompt Summary: Ensure new accounts open setup at step 1 and reuse the existing profile-picture crop tool.
+- Changes Made:
+  - Made the signup client session explicitly initialize `setupStep` to 1 and `setupCompleted` to false.
+  - Extracted the existing crop-modal presentation into reusable `ProfilePictureCropModal` and used it from both Settings and ProfileSetupWizard.
+  - Updated the design contract and changelog.
+- Files/Scope Touched: `web/lib/auth.ts`, `web/components/profile-picture-crop-modal.tsx`, `web/components/account-screens.tsx`, `web/components/profile-setup-wizard.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Signup must reliably enter the new-account flow even if a stale or incomplete API response omits setup fields. One shared crop component keeps the setup experience identical to the established Settings crop tool and avoids divergent crop behavior.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed from `web/`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
 - Prompt Summary: Stop setup from trapping users when progress saving fails and prevent duplicate error toasts.
 - Changes Made:
   - Made the setup modal close locally even when the server cannot persist the current step; the failure remains visible as a single warning.

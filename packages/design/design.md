@@ -92,6 +92,7 @@ Standard app surfaces should be reusable components. Page-specific content may r
 
 - **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, an optional left-side back-arrow control, a top-right cross close control, and a bottom action ribbon for adjacent actions. The back arrow is shown only when `onBack` is provided and must perform the flow's previous-step action without replacing the close control.
 - **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses `Modal` with the title `Let's update your settings`, supports optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
+- **ProfilePictureCropModal** (`web/components/profile-picture-crop-modal.tsx`): Shared square crop interaction used by Settings and ProfileSetupWizard; it owns the crop modal presentation while callers own upload/confirmation state.
 
 ---
 

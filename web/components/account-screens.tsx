@@ -7,8 +7,7 @@ import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, uplo
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
-import Cropper from 'react-easy-crop';
-import { Modal } from '@/components/modal';
+import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'privacy';
@@ -500,32 +499,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   <input ref={profilePictureInputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleProfilePictureSelected(event.target.files?.[0])} />
                 </div>
                 {cropSource && (
-                  <Modal title="Crop profile picture" onClose={handleCropCancel} onBack={handleCropCancel} backLabel="Back to profile picture" closeLabel="Cancel crop" className="profile-picture-crop-dialog" actions={
-                    <>
-                      <button className="settings-secondary-button" type="button" disabled={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropCancel}>Cancel</button>
-                      <SaveTickButton disabled={isProcessingProfilePicture || isUploadingProfilePicture} busy={isProcessingProfilePicture || isUploadingProfilePicture} onClick={handleCropConfirm} label="Upload profile picture" />
-                    </>
-                  }>
-                      <p className="profile-picture-crop-help">Drag the image and adjust the zoom to choose a square crop.</p>
-                      <div className="profile-picture-crop-stage">
-                        <Cropper
-                          image={cropSource}
-                          crop={crop}
-                          zoom={zoom}
-                          maxZoom={maxZoom}
-                          aspect={1}
-                          cropShape="rect"
-                          showGrid
-                          onCropChange={setCrop}
-                          onZoomChange={setZoom}
-                          onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
-                        />
-                      </div>
-                      <label className="profile-picture-zoom">
-                        <span>Zoom</span>
-                        <input type="range" min={1} max={maxZoom} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} />
-                      </label>
-                  </Modal>
+                  <ProfilePictureCropModal source={cropSource} crop={crop} zoom={zoom} maxZoom={maxZoom} croppedAreaPixels={croppedAreaPixels} busy={isProcessingProfilePicture || isUploadingProfilePicture} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={setCroppedAreaPixels} onCancel={handleCropCancel} onConfirm={handleCropConfirm} />
                 )}
                 {(isProcessingProfilePicture || isUploadingProfilePicture || cropSource || profilePictureFile) && (
                   <span className="settings-field-message" role="status">

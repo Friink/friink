@@ -73,6 +73,7 @@ _Last updated: 2026-08-31_
 - [api/web] Added persisted profile setup state and a resumable two-step setup wizard for new accounts, covering optional profile picture and About steps with skip, close, and completion behavior.
 - [web] Authenticated bootstrap now clears sessions only for explicit `401` responses, preserving valid sessions during network, API, deployment, or migration failures.
 - [web] Setup close now dismisses the local modal even when progress persistence fails, and duplicate identical toasts are suppressed.
+- [web] New-account signup now explicitly starts profile setup at step 1, and Settings/setup share one `ProfilePictureCropModal` implementation.
 
 ## 2026-08-30
 

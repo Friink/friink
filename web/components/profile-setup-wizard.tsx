@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import Cropper from 'react-easy-crop';
 import { Modal } from '@/components/modal';
+import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, updateProfileSetup, uploadProfilePicture, type AuthUser } from '@/lib/auth';
@@ -196,18 +196,7 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
         )}
       </Modal>
 
-      {cropSource && (
-        <Modal title="Crop profile picture" onClose={cancelCrop} onBack={cancelCrop} backLabel="Back to profile picture" closeLabel="Cancel crop" className="profile-picture-crop-dialog" actions={
-          <>
-            <button className="settings-secondary-button" type="button" disabled={busy} onClick={cancelCrop}>Cancel</button>
-            <button className="settings-update-button" type="button" disabled={busy} onClick={confirmCrop} aria-label="Upload profile picture" title="Upload profile picture"><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" /></button>
-          </>
-        }>
-          <p className="profile-picture-crop-help">Drag the image and adjust the zoom to choose a square crop.</p>
-          <div className="profile-picture-crop-stage"><Cropper image={cropSource} crop={crop} zoom={zoom} maxZoom={maxZoom} aspect={1} cropShape="rect" showGrid onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)} /></div>
-          <label className="profile-picture-zoom"><span>Zoom</span><input type="range" min={1} max={maxZoom} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /></label>
-        </Modal>
-      )}
+      {cropSource && <ProfilePictureCropModal source={cropSource} crop={crop} zoom={zoom} maxZoom={maxZoom} croppedAreaPixels={croppedAreaPixels} busy={busy} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={setCroppedAreaPixels} onCancel={cancelCrop} onConfirm={confirmCrop} />}
     </>
   );
 }
