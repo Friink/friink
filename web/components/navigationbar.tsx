@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { NavigationMenu } from '@/components/navigation-menu';
+import { ActionMenu } from '@/components/action-menu';
 
 type NavigationBarProps = {
   title: string;
@@ -58,7 +58,7 @@ export function NavigationBar({ title, onBack, backDisabled = false }: Navigatio
         >
           <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
         </button>
-        <NavigationMenu open={menuOpen} />
+        <ActionMenu open={menuOpen} />
       </div>
     </div>
   );

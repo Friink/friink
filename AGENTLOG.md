@@ -4367,3 +4367,20 @@
 - Reason/Decision: The quoted post already has its own identity and canonical public URL data; linking the whole available quote block provides the requested original-post navigation without changing the parent post click target.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `python -m pytest tests/test_posts.py` passed with 16 tests; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reuse and rename the navigation menu for composer attachment actions.
+- Changes Made:
+  - Renamed the reusable `NavigationMenu` component to `ActionMenu`.
+  - Added configurable menu items and reused it from the post composer plus button.
+  - Added Font Awesome `fa-image` and `fa-link` items for UI-only Add media and Add link actions.
+  - Renamed the shared menu CSS selectors to the generic `action-menu` names and anchored the composer menu to the plus button.
+- Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/navigation-menu.tsx`, `web/components/navigationbar.tsx`, `web/components/composer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The existing menu was reusable but named too narrowly and could not accept contextual actions; `ActionMenu` keeps the shared implementation while allowing the composer to present attachment options.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+

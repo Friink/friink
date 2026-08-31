@@ -1319,7 +1319,17 @@ textarea {
   flex-shrink: 0;
 }
 
-.navigation-menu {
+.composer-attachment-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.composer-attachment-menu .action-menu {
+  left: 0;
+  right: auto;
+}
+
+.action-menu {
   position: absolute;
   top: calc(100% + 0.45rem);
   right: 0;
@@ -1333,7 +1343,7 @@ textarea {
   box-shadow: 0 1rem 2rem rgba(18, 28, 23, 0.14);
 }
 
-.navigation-menu-item {
+.action-menu-item {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -1349,14 +1359,14 @@ textarea {
   text-align: left;
 }
 
-.navigation-menu-item i {
+.action-menu-item i {
   width: 1rem;
   color: var(--color-muted);
   text-align: center;
 }
 
-.navigation-menu-item:hover,
-.navigation-menu-item:focus-visible {
+.action-menu-item:hover,
+.action-menu-item:focus-visible {
   background: rgba(57, 173, 103, 0.08);
   outline: none;
 }

@@ -11,7 +11,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
 - **Top Headers**:
   - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, and Notifications bell (`/notifications`).
-  - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `NavigationMenu`.
+  - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
@@ -183,12 +183,12 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `href?: string` (optional; when provided, wraps the whole card in a profile link)
   - `imageUrl?: string | null` (optional; profile picture URL, with `/media/profile.jpg` fallback when null)
 
-### 2. NavigationMenu (`web/components/navigation-menu.tsx`)
-- **Purpose**: Reusable contextual popover menu for page-level options, triggered by the three-dot overflow button in `NavigationBar`.
+### 2. ActionMenu (`web/components/action-menu.tsx`)
+- **Purpose**: Reusable contextual popover menu for page-level and composer actions. It is triggered by the three-dot overflow button in `NavigationBar` and by the post composer plus button.
 - **Fixed Internal Layout Order**:
-  - Popover card (`.navigation-menu`, `role="menu"`).
-  - Vertical list of menu items (`.navigation-menu-item`, `role="menuitem"`), each containing an icon (`fa-solid`) and a label.
-- **Fixed Items Contract**:
+  - Popover card (`.action-menu`, `role="menu"`).
+  - Vertical list of menu items (`.action-menu-item`, `role="menuitem"`), each containing an icon (`fa-solid`) and a label.
+- **Default Items Contract**:
   1. Share profile (`fa-share-nodes`)
   2. Copy link (`fa-link`)
   3. Mute updates (`fa-bell-slash`)
@@ -196,6 +196,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Dismissal Behavior**: Must close on outside pointer click (`pointerdown`) and `Escape` keypress.
 - **Props Contract**:
   - `open: boolean` (required; renders `null` when `false`)
+  - `items?: ActionMenuItem[]` (optional contextual item list)
+  - `ariaLabel?: string` (optional menu label)
+
+The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-link`). These controls are UI-only in the current flow: they close the menu but do not upload or persist attachments.
 
 ### 3. FloatingBar (`web/components/floating-bar.tsx`)
 - **Purpose**: Persistent contextual bottom surface providing navigation or screen-specific composer actions.
@@ -277,7 +281,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Mobile / Sub-page `NavigationBar`**:
   - Height is `2rem`.
   - Left: History-aware Back button (`fa-arrow-left`) + Page Title (`.navigationbar-title`).
-  - Right: Overflow menu button (`fa-ellipsis-vertical`) controlling `NavigationMenu`.
+  - Right: Overflow menu button (`fa-ellipsis-vertical`) controlling `ActionMenu`.
   - Page title uses bold compact uppercase sizing.
   - *Back Button Rule*: Back navigation is history-aware (`router.push`), disabled when on Home or without history (`window.history.length <= 1`). In-content back buttons are removed to prevent duplication.
 

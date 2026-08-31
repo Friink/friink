@@ -2,6 +2,7 @@
 
 import { type FormEvent, useLayoutEffect, useRef, useState } from 'react';
 import { ProfileCard } from '@/components/profile-card';
+import { ActionMenu } from '@/components/action-menu';
 
 type ComposerProps = {
   draft: string;
@@ -45,6 +46,7 @@ export function Composer({
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const characterCount = draft.length;
   const isOverLimit = typeof maxLength === 'number' && characterCount > maxLength;
 
@@ -81,9 +83,27 @@ export function Composer({
         className={`composer floating-bar-composer${multiline ? ' floating-bar-composer-multiline' : ''}${expanded ? ' floating-bar-composer-expanded' : ''}`}
         onSubmit={handleSubmit}
       >
-        <button className="icon-plain" type="button" aria-label="Attach file" disabled={disabled}>
-          <i className="fa-solid fa-plus" aria-hidden="true" />
-        </button>
+        <div className="composer-attachment-menu">
+          <button
+            className="icon-plain"
+            type="button"
+            aria-label="Add to post"
+            aria-haspopup="menu"
+            aria-expanded={attachmentMenuOpen}
+            disabled={disabled}
+            onClick={() => setAttachmentMenuOpen((open) => !open)}
+          >
+            <i className="fa-solid fa-plus" aria-hidden="true" />
+          </button>
+          <ActionMenu
+            open={attachmentMenuOpen}
+            ariaLabel="Add to post"
+            items={[
+              { label: 'Add media', icon: 'fa-image', onClick: () => setAttachmentMenuOpen(false) },
+              { label: 'Add link', icon: 'fa-link', onClick: () => setAttachmentMenuOpen(false) },
+            ]}
+          />
+        </div>
         {multiline ? (
           <textarea
             ref={textareaRef}
