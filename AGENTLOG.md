@@ -4296,6 +4296,22 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:32:54Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the public profile-picture account menu offset.
+- Changes Made:
+  - Extended the reusable `ActionMenu` positioning API with a horizontal offset.
+  - Changed the public account menu from the previous large overlap to a 2px vertical gap below the avatar and 2px right offset.
+  - Updated the public-header design and product navigation contracts.
+- Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/public-header.tsx`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The menu should read as attached to the profile picture while remaining a distinct surface; a small controlled offset achieves the requested visual relationship without obscuring the header.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:29:02Z
 - Agent: Codex
 - Model: GPT-5

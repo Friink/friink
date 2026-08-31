@@ -60,7 +60,8 @@ export function Header({ page = 'landing' }: HeaderProps) {
               anchorRef={accountTriggerRef}
               ariaLabel="Account menu"
               className="public-account-menu"
-              anchorGap={-24}
+              anchorGap={2}
+              offsetX={2}
               header={
                 <div className="action-menu-profile">
                   <strong>{session.user.name || session.user.username}</strong>

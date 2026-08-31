@@ -19,6 +19,7 @@ type ActionMenuProps = {
   anchorRef: RefObject<HTMLElement>;
   align?: 'start' | 'end';
   anchorGap?: number;
+  offsetX?: number;
   className?: string;
   onClose?: () => void;
 };
@@ -39,7 +40,7 @@ type MenuPosition = {
 const VIEWPORT_MARGIN = 8;
 const ANCHOR_GAP = 7;
 
-export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel = 'More options', anchorRef, align = 'end', anchorGap = ANCHOR_GAP, className = '', onClose }: ActionMenuProps) {
+export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel = 'More options', anchorRef, align = 'end', anchorGap = ANCHOR_GAP, offsetX = 0, className = '', onClose }: ActionMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState<MenuPosition>({ top: 0, left: 0, ready: false });
 
@@ -54,7 +55,7 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
       const anchorRect = anchor.getBoundingClientRect();
       const menuRect = menu.getBoundingClientRect();
       const maxLeft = Math.max(VIEWPORT_MARGIN, window.innerWidth - menuRect.width - VIEWPORT_MARGIN);
-      const preferredLeft = align === 'start' ? anchorRect.left : anchorRect.right - menuRect.width;
+      const preferredLeft = (align === 'start' ? anchorRect.left : anchorRect.right - menuRect.width) + offsetX;
       const left = Math.min(Math.max(preferredLeft, VIEWPORT_MARGIN), maxLeft);
       const spaceBelow = window.innerHeight - anchorRect.bottom - anchorGap - VIEWPORT_MARGIN;
       const spaceAbove = anchorRect.top - anchorGap - VIEWPORT_MARGIN;
@@ -73,7 +74,7 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [align, anchorGap, anchorRef, open]);
+  }, [align, anchorGap, anchorRef, offsetX, open]);
 
   useLayoutEffect(() => {
     if (!open) return;

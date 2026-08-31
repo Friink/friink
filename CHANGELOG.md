@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Corrected the public account-menu placement to sit below the profile picture with a 2px top gap and 2px right offset instead of overlapping the header.
+
 - [api/web] Added editable inline mention tokens to post, reply, and quote composers; recognized users show a small profile picture and handle while rendered posts retain compact clickable `@username` links.
 
 - [web] Added native `minLength`, `pattern`, and `title` password-policy hints to Signup and Settings > Account so browsers and password managers can better generate or validate compliant new passwords.

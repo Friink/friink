@@ -436,7 +436,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Public Header Uses Signed-In Account Menu
-- **What:** The shared public header shows `Login` to signed-out visitors and the signed-in user's profile picture to authenticated visitors. Clicking the picture opens the reusable account menu with the user's `@username` profile link, Feed (`/home`), Settings (`/settings`), and Log out.
+- **What:** The shared public header shows `Login` to signed-out visitors and the signed-in user's profile picture to authenticated visitors. Clicking the picture opens the reusable account menu directly below the picture with a 2px top gap and 2px right offset, showing the user's profile information, Feed (`/home`), Settings (`/settings`), and Log out.
 - **Edge cases:** The Friink logo remains the public landing-page link; the public header does not add a redundant Home link. Logout clears the persisted client session and leaves the user on the public site.
 - **Status:** Active
 - **Platform:** Web only
