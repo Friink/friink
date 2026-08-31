@@ -133,9 +133,10 @@ The following design tokens are locked hard values extracted directly from the c
 
 ### Typography
 - **Font Families**:
-  - Body & Display: `'Inter', sans-serif` (`--font-body`, `--font-display`)
-  - Headings / Landing: `'Nunito Local'`, sans-serif
+  - Body / user-authored content: `'Inter', sans-serif` (`--font-body`)
+  - Display and action text: `'Nunito Local'`, sans-serif (`--font-display`)
   - Brand Mark: `Georgia, 'Times New Roman', serif` (`--font-logo`)
+- **App Typography Rule**: In-app headings, buttons, tabs, navigation labels, and other action-driven controls use `--font-display` (`'Nunito Local'`). Post text, About text, messages, and input content remain on `--font-body` (`'Inter'`) for sustained readability.
 - **Font Sizes**:
   - `--text-xs`: `0.6875rem` (11px)
   - `--text-sm`: `0.8125rem` (13px)

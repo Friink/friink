@@ -95,6 +95,8 @@ _Last updated: 2026-08-31_
 
 - [docs] Standardized known documentation timestamps to UTC ISO 8601 with seconds and a `Z` suffix, while preserving date-only historical entries whose exact times are unknown; added timestamp instructions to README, CHANGELOG, and AGENTLOG.
 
+- [web] Standardized app display and action typography on local Nunito for headings, buttons, tabs, navigation labels, and action links while retaining Inter for body and user-authored content.
+
 - [web] Renamed the reusable `NavigationMenu` component to `ActionMenu` and reused it from the post composer plus button for Font Awesome Add media and Add link actions; UI only, with backend upload/link behavior still deferred.
 - [api/web] Added username mention links in post text and mention notifications that identify the author and open the canonical post containing the mention.
 - [api/web] Fixed quoted-post identity payloads and mappings so quoted cards show the original author's display name and profile picture.

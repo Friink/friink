@@ -109,14 +109,17 @@ textarea {
   font: inherit;
 }
 
-.primary-button,
+button,
 .text-link,
-.pill-button,
+.nav-item,
+.sidebar-action,
+.settings-secondary-button,
+.profile-action-button,
+.profile-message-button,
 .landing-button,
 .landing-nav-links a,
-.forgot-password,
-.login-switch button {
-  font-family: var(--font-body);
+.forgot-password {
+  font-family: var(--font-display);
 }
 
 button {

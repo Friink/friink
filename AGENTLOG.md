@@ -4569,3 +4569,20 @@
 - Reason/Decision: Interactive public-site links must preserve contrast in every theme state, not only at rest.
 - Verification: Confirmed the dark-mode `.plansLink:hover` and `.plansLink:focus-visible` override exists; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:41:35Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Bring app headings and action-driven controls in line with the public site’s Nunito typography.
+- Changes Made:
+  - Changed the shared display font token from Inter to the existing local Nunito font.
+  - Applied the display font to buttons, tabs, navigation labels, settings/profile action links, and other action-driven controls.
+  - Kept body text, user-authored content, messages, and input content on Inter.
+  - Updated the typography contract and changelog.
+- Files/Scope Touched: `web/theme.config.ts`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Nunito gives Friink a consistent, softer brand voice across public and authenticated surfaces while Inter remains better suited to dense reading and user-entered content.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+

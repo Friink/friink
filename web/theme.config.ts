@@ -17,7 +17,7 @@ export const theme = {
   },
   fonts: {
     body: "'Inter', sans-serif",
-    display: "'Inter', sans-serif",
+    display: "'Nunito Local', sans-serif",
     logo: "Georgia, 'Times New Roman', serif",
   },
   fontSizes: {
