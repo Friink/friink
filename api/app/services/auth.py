@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.user import User
-from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
+from app.schemas.auth import ChangePasswordRequest, SignupRequest, UpdateCurrentUserRequest
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.notifications import create_notification
@@ -119,6 +119,14 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
     await commit(session)
     await refresh(session, user)
     return user
+
+
+async def change_password(session: Session, user: User, data: ChangePasswordRequest) -> None:
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")
+
+    user.password_hash = hash_password(data.new_password)
+    await commit(session)
 
 
 async def authenticate_user(session: Session, email: str, password: str) -> User:

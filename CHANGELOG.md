@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [api/web] Added password change in Settings > Account with current-password verification, standard password validation, matching confirmation, and session-preserving hash replacement.
+
 - [api/web] Hardened post creation after the mention timeout investigation: mention notifications are now best-effort after the post is committed, and staging-to-production fallback is restricted to safe read requests so timed-out mutations cannot be replayed across environments.
 
 - [docs] Standardized known documentation timestamps to UTC ISO 8601 with seconds and a `Z` suffix, while preserving date-only historical entries whose exact times are unknown; added timestamp instructions to README, CHANGELOG, and AGENTLOG.

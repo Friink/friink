@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
+import { AuthApiError, changePassword, loadAuthSession, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -102,11 +102,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [emailStatus, setEmailStatus] = useState('');
   const [nameStatus, setNameStatus] = useState('');
   const [aboutStatus, setAboutStatus] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStatus, setPasswordStatus] = useState('');
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [appearanceDraft, setAppearanceDraft] = useState(appearance);
   const [privacyDraft, setPrivacyDraft] = useState(user.isPrivate);
   const [directMessagesDraft, setDirectMessagesDraft] = useState(false);
@@ -145,6 +150,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
   const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
+  const isNewPasswordValid = newPassword.length >= 8
+    && !/\s/.test(newPassword)
+    && /[A-Z]/.test(newPassword)
+    && /[a-z]/.test(newPassword)
+    && /\d/.test(newPassword)
+    && /[^A-Za-z0-9\s]/.test(newPassword);
+  const canChangePassword = Boolean(currentPassword) && isNewPasswordValid && newPassword === confirmPassword && !isChangingPassword;
 
   async function handleUsernameUpdate() {
     if (!canUpdateUsername) {
@@ -205,6 +217,42 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update email.');
     } finally {
       setIsUpdatingEmail(false);
+    }
+  }
+
+  async function handlePasswordChange() {
+    if (!canChangePassword) {
+      if (!currentPassword) {
+        onToast?.('Enter your current password.');
+      } else if (!isNewPasswordValid) {
+        onToast?.('New password must be 8+ characters with uppercase, lowercase, number, and special character, with no spaces.');
+      } else if (newPassword !== confirmPassword) {
+        onToast?.('New passwords do not match.');
+      }
+      return;
+    }
+
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to change your password.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setPasswordStatus('');
+    try {
+      await changePassword(session.accessToken, currentPassword, newPassword, confirmPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordStatus('Password updated.');
+      onToast?.('Password updated.', 'success');
+    } catch (error) {
+      const message = error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update password.';
+      setPasswordStatus(message);
+      onToast?.(message);
+    } finally {
+      setIsChangingPassword(false);
     }
   }
 
@@ -475,6 +523,30 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               <label className="settings-field">
                 <input type="text" value={user.id} readOnly aria-readonly="true" aria-label="Unique user ID" />
               </label>
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-key" aria-hidden="true" /></span>}
+              title="Password"
+              subtitle="Change the password you use to sign in."
+              className="settings-row settings-row-expanded"
+              save={{ disabled: !canChangePassword, busy: isChangingPassword, onClick: handlePasswordChange, label: 'Update password' }}
+            >
+              <div className="settings-password-fields">
+                <label className="settings-field">
+                  <span>Current password</span>
+                  <input type="password" value={currentPassword} onChange={(event) => { setCurrentPassword(event.target.value); setPasswordStatus(''); }} autoComplete="current-password" />
+                </label>
+                <label className="settings-field">
+                  <span>New password</span>
+                  <input type="password" value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" />
+                </label>
+                <label className="settings-field">
+                  <span>Confirm new password</span>
+                  <input type="password" value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" />
+                </label>
+                {passwordStatus && <span className="settings-field-message" role="status">{passwordStatus}</span>}
+              </div>
             </SettingsRow>
           </div>
         </div>

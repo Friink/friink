@@ -275,6 +275,21 @@ export async function updateCurrentUser(
   return mapApiUser(response);
 }
 
+export async function changePassword(accessToken: string, currentPassword: string, newPassword: string, confirmPassword: string): Promise<void> {
+  await requestApi<void>('/auth/me/password', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    }),
+  });
+}
+
 export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'GET',

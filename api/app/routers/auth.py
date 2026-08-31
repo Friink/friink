@@ -10,6 +10,7 @@ from app.config import Settings, get_settings
 from app.db import get_session
 from app.models.user import User
 from app.schemas.auth import (
+    ChangePasswordRequest,
     LoginRequest,
     ProfilePictureConfirmRequest,
     ProfilePictureConfirmResponse,
@@ -23,7 +24,7 @@ from app.schemas.auth import (
     UpdateCurrentUserRequest,
     UserResponse,
 )
-from app.services.auth import authenticate_user, create_user, get_user_by_username, update_current_user, user_id_from_subject
+from app.services.auth import authenticate_user, change_password, create_user, get_user_by_username, update_current_user, user_id_from_subject
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
@@ -285,6 +286,16 @@ async def update_me(
     session: Session = Depends(get_session),
 ) -> User:
     return await update_current_user(session, current_user, payload)
+
+
+@router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_my_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    await change_password(session, current_user, payload)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/me/setup", response_model=UserResponse)

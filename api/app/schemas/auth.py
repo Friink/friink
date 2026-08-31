@@ -2,7 +2,7 @@ import re
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
@@ -79,6 +79,23 @@ class UpdateCurrentUserRequest(BaseModel):
         if username is None:
             return username
         return validate_username_rules(username)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str
+    confirm_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, password: str) -> str:
+        return validate_password_rules(password)
+
+    @model_validator(mode="after")
+    def validate_confirmation(self) -> "ChangePasswordRequest":
+        if self.new_password != self.confirm_password:
+            raise ValueError("New passwords do not match.")
+        return self
 
 
 class UpdateSetupRequest(BaseModel):

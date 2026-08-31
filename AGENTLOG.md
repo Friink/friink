@@ -4292,6 +4292,23 @@
 - Files/Scope Touched: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:59:06Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add password change functionality to Settings > Account.
+- Changes Made:
+  - Added authenticated `POST /auth/me/password` with current-password verification and standard password-strength/confirmation validation.
+  - Added Account UI fields for current, new, and confirmed password with a contextual `Update password` action.
+  - Preserved the existing session after successful hash replacement and cleared the password fields.
+  - Added API regression tests and updated product/design documentation.
+- Files/Scope Touched: `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/tests/test_auth_updates.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Password changes belong in Account, should verify the existing credential before replacement, and should not force a valid active session to restart.
+- Verification: `23 passed` for `tests/test_auth_updates.py tests/test_posts.py`; frontend `npx tsc -p tsconfig.json --noEmit --incremental false` passed; `git diff --check` passed. Pytest emitted one non-blocking Windows cache-permission warning.
+
 - Date/Time: 2026-08-31 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5

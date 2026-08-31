@@ -130,6 +130,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/components/account-screens.tsx`
 - **Since:** 2026-08-29T07:15:00Z
 
+### Rule: Users Can Change Their Password From Account Settings
+- **What:** An authenticated user may change their password from `/settings/account` after providing the current password, a new password that satisfies the standard password rules, and a matching confirmation.
+- **Edge cases:** The backend verifies the current password and remains authoritative for validation. Failed changes do not alter the stored password; successful changes preserve the current session.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/components/account-screens.tsx`, `web/lib/auth.ts`
+- **Since:** 2026-08-31T20:57:15Z
+
 ### Rule: Web Settings Saves Confirm And Persist Through API
 - **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
 - **Edge cases:** If an API-backed save fails, the UI reverts to the last known saved value. Theme and privacy changes require an explicit tick confirmation. Direct Messages and Mentions currently use client-side draft/save controls until corresponding backend settings exist.
