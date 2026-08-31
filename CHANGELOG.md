@@ -69,6 +69,8 @@ _Last updated: 2026-08-31_
 - [web] Updated profile statistic hover/focus styling so the number and its following/followers label change color together.
 - [web] Connections tab changes now update the current URL's `tab` query parameter, removing it when returning to `All`.
 - [web] The reusable `Modal` now supports an optional left-side back arrow; the profile-picture crop modal uses it to return to the previous profile-picture step.
+- [web] Settings update controls and modal save ticks now use the shared platform button height of `3rem`.
+- [api/web] Added persisted profile setup state and a resumable two-step setup wizard for new accounts, covering optional profile picture and About steps with skip, close, and completion behavior.
 
 ## 2026-08-30
 

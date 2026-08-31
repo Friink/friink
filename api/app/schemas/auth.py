@@ -81,6 +81,11 @@ class UpdateCurrentUserRequest(BaseModel):
         return validate_username_rules(username)
 
 
+class UpdateSetupRequest(BaseModel):
+    step: int = Field(ge=1, le=2)
+    completed: bool = False
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
@@ -89,6 +94,8 @@ class UserResponse(BaseModel):
     about: str | None
     profile_picture_url: str | None
     profile_picture_updated_at: datetime | None
+    setup_step: int
+    setup_completed: bool
     is_private: bool
     date_of_birth: date
     location: str | None

@@ -133,6 +133,11 @@ the entry, so history isn't lost.
 - **Processing:** The client accepts JPG/JPEG, PNG, and WebP, compresses to JPEG before requesting an upload URL, rejects HEIC/HEIF and other unsupported formats, and the confirmation backstop rejects objects over 3 MB.
 - **Crop and sizing:** Profile pictures require a square crop in a modal dialog before compression. Sources with a shorter edge below 128px are rejected before cropping, and crop zoom is capped at `shorterEdge / 128` so a smaller crop cannot be selected. The avatar output targets 512px square and approximately 250KB, but never upscales a crop smaller than 512px. The reusable post-media preset targets 1024px maximum longest edge and approximately 500KB, but remains unwired until post-media uploads are implemented.
 - **Preview and confirmation:** Selecting or cropping a file must not replace the visible server-confirmed avatar. The modal tick is the only post-selection upload control, and the modal closes only after the complete upload and API confirmation flow succeeds.
+
+### Rule: Profile Setup Resumes Until Complete
+- **What:** New accounts open the two-step profile setup flow after authentication. The flow is headed `Let's update your settings` and contains optional Profile picture and About steps.
+- **Progress:** The current setup step and completion state are persisted on the user record. Skipping a step marks that step done and advances; closing the setup preserves the current step. An incomplete setup resumes from its persisted step on a later login.
+- **Completion:** The setup is complete after the About step is saved or skipped. Existing accounts migrated after this flow was introduced are treated as already complete.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/account-screens.tsx`, `web/app/globals.css`

@@ -19,6 +19,7 @@ from app.schemas.auth import (
     RefreshResponse,
     SignupRequest,
     TokenResponse,
+    UpdateSetupRequest,
     UpdateCurrentUserRequest,
     UserResponse,
 )
@@ -225,6 +226,18 @@ async def update_me(
     session: Session = Depends(get_session),
 ) -> User:
     return await update_current_user(session, current_user, payload)
+
+
+@router.patch("/me/setup", response_model=UserResponse)
+async def update_setup(
+    payload: UpdateSetupRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> User:
+    current_user.setup_step = payload.step
+    current_user.setup_completed = payload.completed
+    await commit(session)
+    return current_user
 
 
 @router.post("/me/profile-picture/upload-url", response_model=ProfilePictureUploadUrlResponse)

@@ -9,6 +9,8 @@ export type AuthUser = {
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
+  setupStep: 1 | 2;
+  setupCompleted: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
 };
@@ -32,6 +34,8 @@ type ApiUser = {
   display_name: string | null;
   about: string | null;
   is_private: boolean;
+  setup_step: 1 | 2;
+  setup_completed: boolean;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -97,6 +101,8 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
+    setupStep: 1,
+    setupCompleted: true,
     status: 'active',
     emailVerifiedAt: new Date().toISOString(),
     ...overrides,
@@ -240,6 +246,19 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
       Authorization: `Bearer ${accessToken}`,
     },
     authContext: 'authenticated_request',
+  });
+
+  return mapApiUser(response);
+}
+
+export async function updateProfileSetup(accessToken: string, input: { step: 1 | 2; completed?: boolean }): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me/setup', {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ step: input.step, completed: input.completed ?? false }),
   });
 
   return mapApiUser(response);
@@ -803,6 +822,8 @@ function mapApiUser(user: ApiUser): AuthUser {
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,
+    setupStep: user.setup_step,
+    setupCompleted: user.setup_completed,
     status: user.is_verified ? 'active' : 'pending_email_verification',
     emailVerifiedAt: user.is_verified ? user.updated_at : null,
   };

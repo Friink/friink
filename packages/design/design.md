@@ -91,6 +91,7 @@ Fallback and error screens should be quiet, centered, and branded.
 Standard app surfaces should be reusable components. Page-specific content may remain local when it is not reused elsewhere.
 
 - **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, an optional left-side back-arrow control, a top-right cross close control, and a bottom action ribbon for adjacent actions. The back arrow is shown only when `onBack` is provided and must perform the flow's previous-step action without replacing the close control.
+- **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses `Modal` with the title `Let's update your settings`, supports optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
 
 ---
 
@@ -329,7 +330,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.
 - **Settings Toggle Rule**: Privacy settings use the shared two-option toggle with `On` on the left and `Off` on the right; the selected state is highlighted and the save tick remains beside it in the same top-aligned action rail.
 - **About Field Rule**: The About textarea enforces a 128-character frontend limit and displays an `x/128` counter inside the lower-right corner of the field.
-- **Save Control Rule**: Editable settings use an icon-only `2.25rem` square tick button in an `8px` radius box, matching the leading settings icon. The profile-picture Upload action uses the same right-side rail.
+- **Save Control Rule**: Editable settings use an icon-only `3rem` square tick button in an `8px` radius box, matching the shared platform button height. The profile-picture Upload action uses the same right-side rail.
 - **Privacy Toggle Rule**: Privacy toggles use draft values and require the right-side tick to save; API-backed Private Profile changes revert to the last saved value if saving fails.
 - **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.

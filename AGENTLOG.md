@@ -3902,6 +3902,25 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Normalize settings/modal save-button sizing and add a persisted post-signup profile setup wizard.
+- Changes Made:
+  - Updated settings and modal save tick controls from `2.25rem` to the shared `3rem` platform button size.
+  - Added `setup_step` and `setup_completed` fields to users, with migration `20260831_0011`; existing users are marked complete and new signups start at step 1.
+  - Added authenticated setup-progress update API and frontend client mapping.
+  - Added `ProfileSetupWizard` using the shared `Modal`, with optional Profile picture and About steps, skip controls, close/resume behavior, profile-picture crop/upload, and completion persistence.
+  - Mounted the wizard in the authenticated app shell and ensured user updates propagate back to the route session.
+  - Updated product rules, design contracts, and changelog.
+- Files/Scope Touched: `web/app/globals.css`, `web/components/profile-setup-wizard.tsx`, `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260831_0011_add_profile_setup_state.py`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Setup progress belongs to the user record so it survives closing the modal, navigation, and later logins. The existing profile-picture pipeline is reused inside the wizard, while the shared modal remains the single shell for both setup and crop interactions.
+- Verification: Frontend TypeScript check, backend `compileall`, and `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5

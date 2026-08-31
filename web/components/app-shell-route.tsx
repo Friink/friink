@@ -52,5 +52,5 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
 
   if (!user) return null;
 
-  return <AppShell user={user} onLogout={handleLogout} initialScreen={initialScreen} onUserChange={refreshCurrentUser ? setUser : undefined} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} />;
+  return <AppShell user={user} onLogout={handleLogout} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} />;
 }

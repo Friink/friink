@@ -19,6 +19,7 @@ import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
+import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
@@ -905,6 +906,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           </FloatingBar>
         )}
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
+        <ProfileSetupWizard user={user} onUserChange={onUserChange ?? (() => undefined)} onToast={(message) => addToast(message)} />
       </div>
     </main>
   );

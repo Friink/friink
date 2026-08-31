@@ -18,6 +18,8 @@ class User(Base):
     about: Mapped[str | None] = mapped_column(String(256), nullable=True)
     profile_picture_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     profile_picture_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    setup_step: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    setup_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     is_private: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
