@@ -4415,3 +4415,21 @@
 - Reason/Decision: The quoted-post response included author name fields but omitted the avatar URL, and the web quote model discarded the available identity data before rendering. The fix keeps quote rendering on the shared `ProfileCard` contract.
 - Verification: `python -m pytest tests/test_posts.py tests/test_connections.py` passed with 37 tests; `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `python -m compileall -q app` and `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make ActionMenu placement viewport-aware for composer and future post menus.
+- Changes Made:
+  - Added trigger-anchor measurement and portal rendering to the shared `ActionMenu`.
+  - Added automatic above/below placement, viewport edge clamping, and scroll/resize recalculation.
+  - Moved outside-click and Escape dismissal into `ActionMenu` so portal-rendered menus remain interactive.
+  - Connected the NavigationBar and Composer triggers to the shared positioning contract.
+  - Updated the ActionMenu design contract and changelog.
+- Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/navigationbar.tsx`, `web/components/composer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: A single portal-based, fixed-position menu avoids clipping and can intelligently flip or clamp for triggers near any viewport edge without duplicating menu components or adding a positioning dependency.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+

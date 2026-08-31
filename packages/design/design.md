@@ -198,6 +198,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `open: boolean` (required; renders `null` when `false`)
   - `items?: ActionMenuItem[]` (optional contextual item list)
   - `ariaLabel?: string` (optional menu label)
+  - `anchorRef: RefObject<HTMLElement>` (required trigger reference)
+  - `align?: 'start' | 'end'` (optional horizontal alignment, default `'end'`)
+  - `onClose?: () => void` (optional dismissal callback)
+- **Viewport Placement Rule**: Renders through a document-body portal with fixed positioning. It measures the trigger and menu, flips above when below-space is insufficient, clamps to the viewport edges, and recalculates on resize and scroll.
 
 The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-link`). These controls are UI-only in the current flow: they close the menu but do not upload or persist attachments.
 

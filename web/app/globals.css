@@ -1330,9 +1330,7 @@ textarea {
 }
 
 .action-menu {
-  position: absolute;
-  top: calc(100% + 0.45rem);
-  right: 0;
+  position: fixed;
   z-index: 30;
   display: grid;
   width: min(13.5rem, calc(100vw - 1rem));

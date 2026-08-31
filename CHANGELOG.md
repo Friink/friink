@@ -96,6 +96,7 @@ _Last updated: 2026-08-31_
 - [web] Renamed the reusable `NavigationMenu` component to `ActionMenu` and reused it from the post composer plus button for Font Awesome Add media and Add link actions; UI only, with backend upload/link behavior still deferred.
 - [api/web] Added username mention links in post text and mention notifications that identify the author and open the canonical post containing the mention.
 - [api/web] Fixed quoted-post identity payloads and mappings so quoted cards show the original author's display name and profile picture.
+- [web] Made the shared `ActionMenu` viewport-aware with portal-based fixed positioning, automatic vertical flipping, edge clamping, and scroll/resize recalculation.
 
 ### Changed
 

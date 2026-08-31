@@ -47,6 +47,7 @@ export function Composer({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const attachmentButtonRef = useRef<HTMLButtonElement>(null);
   const characterCount = draft.length;
   const isOverLimit = typeof maxLength === 'number' && characterCount > maxLength;
 
@@ -85,6 +86,7 @@ export function Composer({
       >
         <div className="composer-attachment-menu">
           <button
+            ref={attachmentButtonRef}
             className="icon-plain"
             type="button"
             aria-label="Add to post"
@@ -98,6 +100,9 @@ export function Composer({
           <ActionMenu
             open={attachmentMenuOpen}
             ariaLabel="Add to post"
+            anchorRef={attachmentButtonRef}
+            align="start"
+            onClose={() => setAttachmentMenuOpen(false)}
             items={[
               { label: 'Add media', icon: 'fa-image', onClick: () => setAttachmentMenuOpen(false) },
               { label: 'Add link', icon: 'fa-link', onClick: () => setAttachmentMenuOpen(false) },
