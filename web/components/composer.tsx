@@ -3,6 +3,7 @@
 import { type FormEvent, useLayoutEffect, useRef, useState } from 'react';
 import { ProfileCard } from '@/components/profile-card';
 import { ActionMenu } from '@/components/action-menu';
+import { MentionInput } from '@/components/mention-input';
 
 type ComposerProps = {
   draft: string;
@@ -26,6 +27,7 @@ type ComposerProps = {
     text: string;
     mediaCount?: number;
   } | null;
+  enableMentions?: boolean;
 };
 
 export function Composer({
@@ -43,6 +45,7 @@ export function Composer({
   allowEmptySubmit = false,
   contextLabel = null,
   referencedPreview = null,
+  enableMentions = false,
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -109,7 +112,17 @@ export function Composer({
             ]}
           />
         </div>
-        {multiline ? (
+        {enableMentions ? (
+          <MentionInput
+            value={draft}
+            onChange={onDraftChange}
+            placeholder={disabled ? disabledPlaceholder : placeholder}
+            ariaLabel={inputLabel}
+            disabled={disabled}
+            maxLength={maxLength}
+            multiline={multiline}
+          />
+        ) : multiline ? (
           <textarea
             ref={textareaRef}
             value={draft}

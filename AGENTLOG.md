@@ -4296,6 +4296,24 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:29:02Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add profile-picture-backed editable mention tokens to post composers and define their post rendering.
+- Changes Made:
+  - Added `MentionInput`, a contenteditable post input that resolves exact usernames on Space through the existing public-user endpoint.
+  - Recognized users render as small avatar plus `@username` inline tokens; editing a token unwraps it back into normal editable text.
+  - Enabled the behavior for posts, replies, and quotes while leaving chat composition unchanged.
+  - Kept rendered posts as compact clickable `@username` links using the existing `MentionText` component.
+  - Added shared styling and updated rules/design/changelog documentation.
+- Files/Scope Touched: `web/components/mention-input.tsx`, `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Composer tokens provide identity confirmation without making published posts visually noisy; unresolved or edited names remain ordinary text and cannot accidentally notify the wrong user.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:22:02Z
 - Agent: Codex
 - Model: GPT-5

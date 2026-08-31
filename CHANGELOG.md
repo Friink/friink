@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [api/web] Added editable inline mention tokens to post, reply, and quote composers; recognized users show a small profile picture and handle while rendered posts retain compact clickable `@username` links.
+
 - [web] Added native `minLength`, `pattern`, and `title` password-policy hints to Signup and Settings > Account so browsers and password managers can better generate or validate compliant new passwords.
 
 - [web] Added a live password-requirements checklist to Settings > Account so users can see why Update password is disabled and which signup rule still needs attention.

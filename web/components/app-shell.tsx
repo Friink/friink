@@ -914,6 +914,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 maxLength={256}
                 showCount
                 allowEmptySubmit={composeContext.kind === 'quote'}
+                enableMentions
                 contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
                 referencedPreview={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,

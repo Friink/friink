@@ -309,6 +309,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   - Quote mode may submit without typed text when a quoted post is selected; normal posts and replies still require text.
   - Floating post multiline mode: Starts in the same single-line layout, then expands vertically as text wraps or new lines are added. Once expanded, text occupies the full top row while attachment and send/post controls remain bottom-aligned.
   - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
+  - Mention input: Post composers resolve an exact `@username` when the user types a space, replacing the recognized text with an editable inline token containing the user's small profile picture and `@username`. Editing the token unwraps it back to ordinary text. Rendered posts remain compact text with clickable `@username` profile links; avatars are not repeated in post bodies.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with animated sliding indicator line.
 - **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`). Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap.

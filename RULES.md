@@ -409,6 +409,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/services/posts.py`, `api/app/models/notification.py`, `api/alembic/versions/20260901_0012_add_mention_notification.py`, `web/components/mention-text.tsx`, `web/components/feed-post.tsx`, `web/components/notifications-screen.tsx`, `web/components/app-shell.tsx`
 - **Since:** 2026-09-01 (Asia/Karachi)
 
+### Rule: Composer Mentions Resolve To Editable Identity Tokens
+- **What:** In post, reply, and quote composers, typing a valid `@username` followed by a space resolves that user and displays an editable inline token with their small profile picture and `@username`.
+- **Edge cases:** Unknown usernames remain ordinary text and cannot create mention notifications. Editing a resolved token unwraps it to ordinary text so mistakes can be corrected. In rendered posts, mentions remain compact clickable `@username` profile links without repeating the avatar.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/mention-input.tsx`, `web/components/composer.tsx`, `web/components/mention-text.tsx`, `api/app/services/posts.py`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ## Web Navigation & Client Behavior
 
 ### Rule: API Origin Resolution

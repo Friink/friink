@@ -150,6 +150,7 @@ export function PostClient({ postId }: PostClientProps) {
           sendLabel="Post"
           maxLength={512}
           showCount
+          enableMentions
           contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}
           referencedPreview={{
             name: composeContext.post.name,
