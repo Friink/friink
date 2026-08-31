@@ -77,7 +77,12 @@ export function MentionInput({ value, onChange, placeholder, ariaLabel, disabled
     });
 
     const nextValue = editor.textContent ?? '';
-    if (!nextValue) editor.blur();
+    if (!nextValue) {
+      // Browsers may leave a placeholder <br> in an empty contenteditable.
+      // Remove it so refocusing places the caret before the visual placeholder.
+      editor.replaceChildren();
+      editor.blur();
+    }
     if (typeof maxLength === 'number' && nextValue.length > maxLength) {
       editor.textContent = nextValue.slice(0, maxLength);
       lastValueRef.current = editor.textContent;

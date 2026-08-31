@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Fixed the mention editor caret appearing after the placeholder after typing, deleting, and refocusing by removing the browser's leftover empty contenteditable node.
+
 - [web] Fixed failed post-media submissions incorrectly clearing local attachments: caught submit failures now return an unsuccessful result to the shared Composer, which preserves the text and images for retry; direct R2 fetch failures now show a clearer storage-upload message.
 
 - [web] Fixed composer context dismissal, empty mention-editor caret behavior, and missing author avatars in reply/quote previews by reusing the target post's resolved profile-picture URL.

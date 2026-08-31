@@ -5035,3 +5035,15 @@
 - Reason/Decision: The supplied task required an audit-only first phase and an approval checkpoint before any implementation; existing UI and schema groundwork was documented without widening scope into media rendering.
 - Verification: Read and cross-checked `README.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`, `R2.md`, `packages/design/design.md`, the post model/schema/router/service, storage service, composer, image-compression utility, post callers, and relevant tests. No build or runtime test was run because this phase requested a written audit only. `git diff --check` was run after the documentation update.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T23:20:01Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the mention composer caret appearing after the placeholder after a user deletes and then resumes typing.
+- Changes Made: Normalized the empty contenteditable by removing browser-inserted placeholder nodes before blurring it, so the next focus starts before the visual placeholder. Updated the shared Composer design contract and project logs.
+- Files/Scope Touched: `web/components/mention-input.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification: `tsc -p web/tsconfig.json --noEmit --incremental false` passed; `git diff --check` passed. Runtime browser verification was not available in this local pass.
+
