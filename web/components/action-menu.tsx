@@ -1,11 +1,13 @@
 "use client";
 
 import { createPortal } from 'react-dom';
+import Link from 'next/link';
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react';
 
 export type ActionMenuItem = {
   label: string;
   icon: string;
+  href?: string;
   onClick?: () => void;
 };
 
@@ -103,19 +105,35 @@ export function ActionMenu({ open, items = defaultMenuItems, ariaLabel = 'More o
       style={{ top: position.top, left: position.left, visibility: position.ready ? 'visible' : 'hidden' }}
     >
       {items.map((item) => (
-        <button
-          className="action-menu-item"
-          type="button"
-          role="menuitem"
-          key={item.label}
-          onClick={() => {
-            item.onClick?.();
-            onClose?.();
-          }}
-        >
-          <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
-          <span>{item.label}</span>
-        </button>
+        item.href ? (
+          <Link
+            className="action-menu-item"
+            role="menuitem"
+            href={item.href}
+            key={item.label}
+            onClick={() => {
+              item.onClick?.();
+              onClose?.();
+            }}
+          >
+            <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+            <span>{item.label}</span>
+          </Link>
+        ) : (
+          <button
+            className="action-menu-item"
+            type="button"
+            role="menuitem"
+            key={item.label}
+            onClick={() => {
+              item.onClick?.();
+              onClose?.();
+            }}
+          >
+            <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+            <span>{item.label}</span>
+          </button>
+        )
       ))}
     </div>,
     document.body,

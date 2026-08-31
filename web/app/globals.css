@@ -1358,6 +1358,7 @@ textarea {
   font: inherit;
   font-size: var(--text-sm);
   text-align: left;
+  text-decoration: none;
 }
 
 .action-menu-item i {

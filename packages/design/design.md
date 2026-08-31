@@ -356,7 +356,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### Public Header and Plans (`web/components/public-header.tsx`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`)
 - Public marketing surfaces are governed by the same light/dark theme contract: every explicit light-theme foreground, background, border, and interactive-state color must have a matching dark-mode override.
 - The landing page and `/subscriptions` reuse `Header`; public pages must not duplicate site navigation markup.
-- `Header` detects the persisted authenticated session on the client. Signed-in users see their current profile picture instead of a Login CTA, and the picture links to the same-origin page that led to the public page, falling back to `/home` when no safe referrer is available.
+- `Header` detects the persisted authenticated session on the client. Signed-out users see a Login CTA; signed-in users see their current profile picture as an account-menu trigger. The shared `ActionMenu` shows the signed-in handle linking to `/{username}`, plus Feed (`fa-house` → `/home`), Settings (`fa-gear` → `/settings`), and Log out (`fa-right-from-bracket`). Public headers do not show a redundant Home link because the Friink logo already links to `/`.
 - The `/subscriptions` page uses the same landing-page surface and dark-mode treatment as the landing page, including the shared navigation, cards, borders, text colors, and backgrounds.
 - Public plan-card text, including feature lists and prices, must use the dark-theme foreground token in dark mode; no light-theme hardcoded foreground may remain visible on dark card surfaces.
 - Public plan links, including hover and keyboard-focus states, must remain readable against dark-mode surfaces.

@@ -4296,6 +4296,23 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:03:15Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the redundant public subscriptions Home header link with a signed-in account dropdown.
+- Changes Made:
+  - Extended the reusable `ActionMenu` to support navigational links as well as button actions.
+  - Changed the signed-in public-header avatar into an account-menu trigger showing the current `@username`, Profile, Feed, Settings, and Log out actions.
+  - Reused the app Font Awesome icons for Feed, Settings, and Log out, and kept the logo as the public-home link.
+  - Updated the shared public-header design contract and changelog.
+- Files/Scope Touched: `web/components/action-menu.tsx`, `web/components/public-header.tsx`, `web/app/landing.module.css`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Public pages should share the app’s established navigation vocabulary; the avatar menu keeps the header compact while giving signed-in users direct access to identity, Feed, Settings, and logout.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T20:59:06Z
 - Agent: Codex
 - Model: GPT-5

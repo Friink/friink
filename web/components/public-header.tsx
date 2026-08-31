@@ -2,37 +2,23 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { loadPersistedAuthSession, type AuthSession } from '@/lib/auth';
+import { useEffect, useRef, useState } from 'react';
+import { clearAuthSession, loadPersistedAuthSession, type AuthSession } from '@/lib/auth';
+import { ActionMenu } from '@/components/action-menu';
 import styles from '@/app/landing.module.css';
 
 type HeaderProps = {
   page?: 'landing' | 'subscriptions';
 };
 
-function getReturnPath() {
-  if (typeof window === 'undefined') return '/home';
-
-  try {
-    const referrer = document.referrer ? new URL(document.referrer) : null;
-    if (referrer?.origin === window.location.origin && referrer.pathname !== '/subscriptions') {
-      return `${referrer.pathname}${referrer.search}${referrer.hash}`;
-    }
-  } catch {
-    // Keep the stable app destination when referrer data is unavailable.
-  }
-
-  return '/home';
-}
-
 export function Header({ page = 'landing' }: HeaderProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [returnPath, setReturnPath] = useState('/home');
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setSession(loadPersistedAuthSession());
-    setReturnPath(getReturnPath());
     setSessionChecked(true);
   }, []);
 
@@ -51,15 +37,45 @@ export function Header({ page = 'landing' }: HeaderProps) {
               <a className={styles.navLink} href="#vision">Our vision</a>
               <Link className={styles.navLink} href="#plans">Plans</Link>
             </>
-          ) : <Link className={styles.navLink} href="/">Home</Link>}
+          ) : null}
           {sessionChecked && session ? (
-            <Link className={styles.avatarLink} href={returnPath} aria-label="Return to Friink">
+            <>
+            <button
+              ref={accountTriggerRef}
+              className={styles.accountTrigger}
+              type="button"
+              aria-label="Open account menu"
+              aria-expanded={accountMenuOpen}
+              aria-haspopup="menu"
+              onClick={() => setAccountMenuOpen((open) => !open)}
+            >
               <img
                 className={styles.avatar}
                 src={session.user.profilePictureUrl || '/media/profile.jpg'}
                 alt={session.user.name || session.user.username}
               />
-            </Link>
+            </button>
+            <ActionMenu
+              open={accountMenuOpen}
+              anchorRef={accountTriggerRef}
+              ariaLabel="Account menu"
+              items={[
+                { label: `@${session.user.username}`, icon: 'fa-user', href: `/${encodeURIComponent(session.user.username)}` },
+                { label: 'Feed', icon: 'fa-house', href: '/home' },
+                { label: 'Settings', icon: 'fa-gear', href: '/settings' },
+                {
+                  label: 'Log out',
+                  icon: 'fa-right-from-bracket',
+                  onClick: () => {
+                    clearAuthSession();
+                    setSession(null);
+                    setAccountMenuOpen(false);
+                  },
+                },
+              ]}
+              onClose={() => setAccountMenuOpen(false)}
+            />
+            </>
           ) : sessionChecked ? (
             <Link className={styles.cta} href="/login">Login</Link>
           ) : <span className={styles.authPlaceholder} aria-hidden="true" />}

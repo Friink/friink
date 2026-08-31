@@ -93,6 +93,8 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [web] Updated the shared public header so signed-in avatars open an ActionMenu with the user profile, Feed, Settings, and Log out; removed the redundant subscriptions-page Home link and reused the app Font Awesome icons.
+
 - [api/web] Added password change in Settings > Account with current-password verification, standard password validation, matching confirmation, and session-preserving hash replacement.
 
 - [api/web] Hardened post creation after the mention timeout investigation: mention notifications are now best-effort after the post is committed, and staging-to-production fallback is restricted to safe read requests so timed-out mutations cannot be replayed across environments.
