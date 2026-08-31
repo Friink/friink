@@ -88,6 +88,7 @@ _Last updated: 2026-08-31_
 - [web] Standardized signed-in Connections navigation on `/{username}/connections` and its filtered subroutes, matching other-user profile routes. Legacy `/connections` routes remain available as compatibility entry points.
 - [api/web] Renamed the Home `Connections` tab to `Following`, changed its slug to `/home/following`, and added server-side follow-only filtering across feed pagination, polling, and context restoration. `/home/connections` redirects to the new slug.
 - [web] Made the header Friink logo link to `/home`.
+- [web] Removed repeated visible setting titles from expanded Settings fields while retaining accessible input labels.
 
 ## 2026-08-30
 

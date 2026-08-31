@@ -4316,5 +4316,21 @@
   - Wrapped the shared header logo in an accessible anchor targeting `/home`.
 - Files/Scope Touched: `web/components/header.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: The brand mark should provide a consistent, direct return to the Home surface.
-- Verification: Targeted web TypeScript check and `git diff --check` pending.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove repeated setting titles from expanded Settings fields.
+- Changes Made:
+  - Removed duplicate visible field labels from Email, User ID, Name, Username, and About settings rows.
+  - Preserved accessible control names with native input labeling and `aria-label` attributes.
+  - Updated the Settings design and behavior contracts.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The shared row header already presents the setting title and summary; repeating the same title above the control adds unnecessary visual noise.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 

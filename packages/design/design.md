@@ -326,6 +326,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Purpose**: Settings uses a shared `SettingsRow` wrapper around `ListRow` for every setting so spacing, dividers, typography, leading icons, field content, and right-side actions stay consistent.
 - **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
+- **Expanded Row Rule**: An expanded setting renders its title and summary once in the shared row header; the control body must not repeat the setting title as a second visible field label. Inputs remain accessible through native labels or `aria-label` attributes.
 - **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.

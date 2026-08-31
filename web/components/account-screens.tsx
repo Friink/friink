@@ -448,7 +448,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               save={{ disabled: !canUpdateEmail, busy: isUpdatingEmail, onClick: handleEmailUpdate, label: 'Update email' }}
             >
               <label className="settings-field">
-                <span className="settings-field-label">Email</span>
                 <div className="settings-field-row">
                   <input
                     type="email"
@@ -473,8 +472,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               className="settings-row settings-row-expanded"
             >
               <label className="settings-field">
-                <span className="settings-field-label">Unique user ID</span>
-                <input type="text" value={user.id} readOnly aria-readonly="true" />
+                <input type="text" value={user.id} readOnly aria-readonly="true" aria-label="Unique user ID" />
               </label>
             </SettingsRow>
           </div>
@@ -517,7 +515,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               save={{ disabled: !canUpdateName, busy: isUpdatingName, onClick: handleNameUpdate, label: 'Update name' }}
             >
               <label className="settings-field">
-                <span className="settings-field-label">Name</span>
                 <div className="settings-field-row">
                   <input
                     type="text"
@@ -527,6 +524,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                       setNameStatus('');
                     }}
                     placeholder="Name"
+                    aria-label="Name"
                     autoComplete="name"
                   />
                 </div>
@@ -542,7 +540,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               save={{ disabled: !canUpdateUsername, busy: isUpdatingUsername, onClick: handleUsernameUpdate, label: 'Update username' }}
             >
               <label className="settings-field">
-                <span className="settings-field-label">Username</span>
                 <div className="settings-field-row">
                   <div className="input-with-prefix">
                     <span className="input-prefix">@</span>
@@ -571,7 +568,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               save={{ disabled: !canUpdateAbout, busy: isUpdatingAbout, onClick: handleAboutUpdate, label: 'Update about' }}
             >
               <label className="settings-field">
-                <span className="settings-field-label">About</span>
                 <div className="settings-about-control">
                   <textarea
                     className="settings-about-field"
@@ -582,6 +578,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                       setAboutStatus('');
                     }}
                     placeholder="About"
+                    aria-label="About"
                   />
                   <span className="settings-field-count">{about.length}/128</span>
                 </div>
