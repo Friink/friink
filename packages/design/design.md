@@ -307,7 +307,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   - Default layout: Attachment button (`fa-plus`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
   - Floating post composer enforces a frontend-only `256` character limit and shows a live `x/256` counter.
   - Quote mode may submit without typed text when a quoted post is selected; normal posts and replies still require text.
-  - Floating post multiline mode: Starts in the same single-line layout, then expands vertically as text wraps or new lines are added. Once expanded, text occupies the full top row while attachment and send/post controls remain bottom-aligned.
+  - Floating post multiline mode: Starts in the same single-line layout, then moves the text editor to a full-width top row as soon as typing begins. It grows upward with the draft to a maximum of eight lines (`10rem`); additional content scrolls inside the editor while attachment, count, and send/post controls remain bottom-aligned.
   - Floating post textbox: Borderless and transparent for a modern embedded look while retaining readable `var(--color-ink)` text in light and dark themes.
   - Mention input: Post composers resolve an exact `@username` when the user types a space, replacing the recognized text with an editable inline token containing the user's small profile picture and `@username`. Editing the token unwraps it back to ordinary text. Rendered posts remain compact text with clickable `@username` profile links; avatars are not repeated in post bodies.
 ### 9. Tabs (`web/components/tabs.tsx`)

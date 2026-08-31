@@ -4296,6 +4296,23 @@
 
 ### Entry
 
+- Date/Time: 2026-08-31T21:39:15Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the intended borderless, expanding floating post composer and make the mention editor visible in that layout.
+- Changes Made:
+  - Made post composer expansion begin as soon as typing starts, moving the editor to a full-width top row.
+  - Set the post editor to borderless/transparent styling and an eight-line (`10rem`) maximum before internal scrolling.
+  - Kept attachment, count, and send controls in the bottom row; chat composers retain their existing behavior.
+  - Added matching composer/design and product rules.
+- Files/Scope Touched: `web/components/composer.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The composer should give writing priority as soon as text exists while leaving a stable action rail beneath it; the shared mention editor must follow the same layout contract as the regular post textarea.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
 - Date/Time: 2026-08-31T21:32:54Z
 - Agent: Codex
 - Model: GPT-5

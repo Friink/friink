@@ -55,7 +55,13 @@ export function Composer({
   const isOverLimit = typeof maxLength === 'number' && characterCount > maxLength;
 
   useLayoutEffect(() => {
-    if (!multiline || !textareaRef.current) return;
+    if (!multiline) {
+      setExpanded(false);
+      return;
+    }
+
+    setExpanded(draft.length > 0);
+    if (!textareaRef.current) return;
 
     const textarea = textareaRef.current;
     textarea.style.height = 'auto';

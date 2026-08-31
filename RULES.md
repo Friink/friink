@@ -419,6 +419,14 @@ the entry, so history isn't lost.
 
 ## Web Navigation & Client Behavior
 
+### Rule: Floating Post Composer Expands Above Its Controls
+- **What:** The floating post composer has no field background or border. Once typing begins, its text editor occupies the full-width top row and grows upward to eight lines; longer drafts scroll within the editor. Attachment, character count, and send controls remain in the bottom row.
+- **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/composer.tsx`, `web/components/mention-input.tsx`, `web/app/globals.css`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ### Rule: API Origin Resolution
 - **What:** Web API calls use `NEXT_PUBLIC_API_BASE_URL` when configured. Localhost browsing falls back to `http://localhost:8000`. Deployed browser contexts without an API origin throw a configuration error instead of silently calling localhost.
 - **Edge cases:** If the configured origin is `https://staging-api.friink.com` and a network-level fetch fails for a safe read (`GET`, `HEAD`, or `OPTIONS`), the client retries `https://api.friink.com`. Mutations are never retried across origins because replaying them could duplicate or misroute user data.
