@@ -77,6 +77,7 @@ _Last updated: 2026-08-31_
 - [api/db] Applied profile setup migration `20260831_0011` to the shared database; Alembic is now at head for localhost, staging, and production.
 - [web] Hardened auth refresh handling so only an explicit refresh-token 401 can clear local session state; refresh timeouts, CORS/network failures, 403s, 5xx responses, and malformed responses now remain retryable.
 - [web] Added refresh/logout generation guards, refresh-before-login recovery for missing or malformed local auth state, and a 15-second request timeout. Server-side refresh-token revocation remains open because tokens are currently stateless JWTs without server records.
+- [docs] Added a design-only proposal for opaque refresh-token rotation/revocation, reuse detection, legacy-session migration, and access-token `kid` key rotation; no implementation or schema changes were made.
 - [verification] Runtime verification of session/logout hardening was attempted against the signed-in staging app. Items requiring fault injection, storage mutation, network traces, or an in-flight request could not be tested in the available browser surface; staging-to-production fallback was diff-verified unchanged.
 
 ## 2026-08-30

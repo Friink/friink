@@ -4210,3 +4210,52 @@
 - Files/Scope Touched: `AGENTLOG.md` only.
 - Verification: This entry records live-browser evidence and explicit test limitations; no runtime files were modified.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Design server-side refresh-token rotation, revocation, reuse detection, and access-token `kid` key rotation; design only.
+- Changes Made:
+  - Added `docs/session-hardening-design.md` covering the proposed `refresh_tokens` schema, indexes, transaction/locking behavior, login/refresh/logout/expiry flows, family reuse detection, legacy stateless-token transition, multi-key access JWT verification, affected files/endpoints, additive migration sequencing, MVP risks, and overlap with verification/subscription concepts.
+  - Confirmed the current stack is synchronous SQLAlchemy + psycopg3 + Alembic against a single Neon database. The requested root `STACK.md` file was not present, so README's stack section was used.
+  - Confirmed repository search found no implemented professional verification, paid subscription, Pro badge, or day-8/day-64 revocation subsystem; the design keeps future entitlement revocation separate from login-session revocation.
+- Scope Constraint: No implementation code, migration, schema change, configuration change, or deployment change was made. Work stops at the design for review.
+- Files/Scope Touched: `docs/session-hardening-design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification: Documentation-only change; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement server-side opaque refresh-token rotation, family revocation, reuse detection, and access-token `kid` support from the approved design.
+- Changes Made:
+  - Added the `refresh_tokens` SQLAlchemy model and additive Alembic migration `20260831_0012`, with hashed opaque tokens, family ids, rotation/revocation timestamps, replacement linkage, expiry, foreign keys, and indexes.
+  - Replaced stateless refresh JWT issuance/exchange with 32-byte opaque cookie values hashed with SHA-256. Login creates one token row; refresh locks the presented row, inserts a replacement, marks the old row rotated, and sets the replacement cookie.
+  - Added family-wide revocation when a rotated or revoked token is presented again, plus expiry handling, idempotent logout revocation, and a bounded 30-day dead-row cleanup hook.
+  - Added access JWT `kid` headers with `JWT_ACTIVE_KID` and JSON `JWT_KEYS` configuration. Verification supports the active key, overlapping keyed previous secrets, and no-`kid` legacy access tokens using `JWT_SECRET_KEY`. The live key was not rotated.
+  - Kept the frontend cookie-only contract and existing explicit-refresh-401 behavior; no opaque refresh value is stored client-side.
+  - Updated `RULES.md` to describe rotation and to state that only explicit refresh-endpoint `401` clears the web session; recoverable failures preserve it.
+  - Corrected the existing missing-secret test to disable `.env` loading for that isolated configuration assertion.
+- Explicitly Skipped:
+  - The design’s legacy stateless-refresh grace migration, dual-secret refresh window, and transition-row concurrency logic were intentionally not implemented per the approved brief. Existing old-style refresh cookies will receive the generic refresh `401` and require one login after deployment.
+  - The live `JWT_SECRET_KEY` value was not rotated.
+  - Professional verification, subscription, and Pro-badge logic was not touched; no such implementation currently exists in the repository.
+- Migration and Database Evidence:
+  - `python -m alembic upgrade head` applied `20260831_0012` to the configured database.
+  - `python -m alembic current` reported `20260831_0012 (head)`.
+  - Direct SQLAlchemy inspection reported `ENVIRONMENT=development`, `refresh_tokens_exists=True`, all 11 expected columns, and indexes for token hash, user, family, expiry, and family-active lookup. This is the configured shared Neon database used by the API environment.
+- Runtime Verification Evidence:
+  - `api/tests/test_refresh_token_rotation.py` exercised real FastAPI endpoints against the configured database and created/cleaned a disposable account. It verified exactly one row after fresh login; old-row `rotated_at` and `replaced_by_id`; a new replacement row and changed cookie; old-cookie replay returning `401` with every family row revoked; logout returning `204`, sending cookie deletion, and revoking the logout family; old-style stateless refresh JWT returning `401`; and two concurrent refreshes returning exactly `[200, 401]` with no active row left in the affected family.
+  - `api/tests/test_token_resilience.py` verified current `kid` issuance, decoding with the active key, and decoding an overlapping previous keyed secret.
+  - Full API suite: `55 passed` (two non-blocking pytest cache/Starlette warnings).
+  - Web TypeScript check: `npx tsc -p tsconfig.json --noEmit --incremental false` passed.
+  - Python compile check and `git diff --check` passed.
+- Files/Scope Touched: `api/app/models/refresh_token.py`, `api/app/models/__init__.py`, `api/alembic/env.py`, `api/alembic/versions/20260831_0012_create_refresh_tokens.py`, `api/app/services/session_service.py`, `api/app/services/auth_debug.py`, `api/app/services/security.py`, `api/app/config.py`, `api/app/routers/auth.py`, `api/tests/test_refresh_token_rotation.py`, `api/tests/test_token_resilience.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`, `docs/session-hardening-design.md`.
+- Reason/Decision: Server-side rotation and family reuse detection close the remaining stateless-refresh revocation gap while preserving the existing client rule that ambiguous infrastructure failures do not force logout.
+

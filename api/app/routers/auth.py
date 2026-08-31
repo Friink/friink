@@ -24,12 +24,18 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.auth import authenticate_user, create_user, get_user_by_username, update_current_user, user_id_from_subject
-from app.services.auth_debug import log_auth_failure, log_token_issued, log_token_verification_failure
+from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
-from app.services.security import TokenValidationError, create_access_token, create_refresh_token, decode_token
-from app.services.token_context import get_auth_flow_context
+from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
+from app.services.session_service import (
+    get_refresh_token_for_update,
+    issue_refresh_token,
+    revoke_refresh_family,
+    revoke_refresh_token,
+)
+from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -64,16 +70,24 @@ async def login(
 ) -> TokenResponse:
     user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
-    refresh_token = create_refresh_token(user.id)
+    issued_refresh = issue_refresh_token(session, user.id, settings)
+    await commit(session)
     log_token_issued(flow="fresh_login", token_type="access", token=access_token, user_id=str(user.id))
-    log_token_issued(flow="fresh_login", token_type="refresh", token=refresh_token, user_id=str(user.id))
-    set_refresh_cookie(response, refresh_token, settings)
+    log_refresh_token_event(
+        event="auth_refresh_token_issued",
+        flow="fresh_login",
+        token_id=str(issued_refresh.record.id),
+        family_id=str(issued_refresh.record.family_id),
+        user_id=str(user.id),
+    )
+    set_refresh_cookie(response, issued_refresh.raw_token, settings)
     return TokenResponse(access_token=access_token, user=UserResponse.model_validate(user))
 
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh(
     request: Request,
+    response: Response,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
@@ -92,37 +106,52 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Missing refresh token.", AuthErrorCode.REFRESH_TOKEN_MISSING),
         )
-    try:
-        payload = decode_token(refresh_token, "refresh")
-    except TokenValidationError as exc:
-        if exc.original:
-            log_token_verification_failure(
-                flow="refresh_exchange",
-                token_type="refresh",
-                token=refresh_token,
-                exception=exc.original,
-                settings=settings,
-                request_path=str(request.url.path),
-                request_method=request.method,
-            )
+    token_record = get_refresh_token_for_update(session, refresh_token)
+    if not token_record:
         log_auth_failure(
             flow="refresh_exchange",
             token_type="refresh",
-            code=exc.code,
-            reason=str(exc),
+            code=AuthErrorCode.REFRESH_TOKEN_INVALID,
+            reason="Refresh token was not found in the server-side token store.",
             settings=settings,
             request_path=str(request.url.path),
             request_method=request.method,
         )
-        client_code = AuthErrorCode.TOKEN_EXPIRED if exc.code == AuthErrorCode.TOKEN_EXPIRED else AuthErrorCode.REFRESH_TOKEN_INVALID
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=auth_error_detail("Invalid refresh token.", client_code),
-        ) from exc
+            detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID),
+        )
 
-    user_id = user_id_from_subject(str(payload.get("sub", "")))
+    now = datetime.now(UTC)
+    if token_record.rotated_at is not None or token_record.revoked_at is not None:
+        revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
+        await commit(session)
+        log_refresh_token_event(
+            event="auth_refresh_token_reuse_detected",
+            flow="refresh_exchange",
+            token_id=str(token_record.id),
+            family_id=str(token_record.family_id),
+            user_id=str(token_record.user_id),
+            reason="dead_token_presented",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID),
+        )
+
+    if token_record.expires_at <= now:
+        revoke_refresh_token(session, token_record, "expired", now)
+        await commit(session)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.TOKEN_EXPIRED),
+        )
+
+    user_id = token_record.user_id
     user = session.get(User, user_id)
     if not user:
+        revoke_refresh_family(session, token_record.family_id, "family_revoked", now)
+        await commit(session)
         log_auth_failure(
             flow="refresh_exchange",
             token_type="refresh",
@@ -136,14 +165,43 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
-    # Optional v2 hardening: rotate refresh tokens and keep a denylist for explicit revocation.
+    issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id)
+    token_record.rotated_at = now
+    token_record.replaced_by_id = issued_refresh.record.id
     access_token = create_access_token(user.id)
+    await commit(session)
     log_token_issued(flow="refresh_exchange", token_type="access", token=access_token, user_id=str(user.id))
+    log_refresh_token_event(
+        event="auth_refresh_token_rotated",
+        flow="refresh_exchange",
+        token_id=str(issued_refresh.record.id),
+        family_id=str(issued_refresh.record.family_id),
+        user_id=str(user.id),
+    )
+    set_refresh_cookie(response, issued_refresh.raw_token, settings)
     return RefreshResponse(access_token=access_token)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(response: Response, settings: Settings = Depends(get_settings)) -> Response:
+async def logout(
+    response: Response,
+    refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    if refresh_token:
+        token_record = get_refresh_token_for_update(session, refresh_token)
+        if token_record:
+            revoke_refresh_family(session, token_record.family_id, "logout")
+            await commit(session)
+            log_refresh_token_event(
+                event="auth_refresh_token_family_revoked",
+                flow="logout",
+                token_id=str(token_record.id),
+                family_id=str(token_record.family_id),
+                user_id=str(token_record.user_id),
+                reason="logout",
+            )
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         httponly=True,
@@ -151,6 +209,7 @@ async def logout(response: Response, settings: Settings = Depends(get_settings))
         samesite="none" if settings.is_production else "lax",
         path="/",
     )
+    response.status_code = status.HTTP_204_NO_CONTENT
     return response
 
 

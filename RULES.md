@@ -83,12 +83,12 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27 (00:00 UTC-0)
 
 ### Rule: JWT Sessions
-- **What:** Login returns a bearer access token and sets an HTTP-only refresh-token cookie. Access tokens default to 30 minutes; refresh tokens default to 14 days. Token payloads are minimal and stable: `sub`, `typ`, `iat`, and `exp`; payloads must match the expected `typ` value (`access` or `refresh`) and `sub` must be a valid user UUID.
-- **Edge cases:** Refresh tokens are not rotated or denylisted yet. Logout deletes the refresh cookie and returns `204`. Token failures are classified server-side as expired, malformed, signature mismatch, schema invalid, or session/user not found; client responses keep details generic but include a machine-readable code.
+- **What:** Login returns a bearer access token and sets an HTTP-only opaque refresh-token cookie. Access tokens default to 30 minutes; refresh tokens default to 14 days. Access JWT payloads are minimal and stable: `sub`, `typ`, `iat`, and `exp`, with a `kid` header identifying the signing key. Refresh tokens are stored server-side by SHA-256 hash only.
+- **Edge cases:** Each login/device receives a refresh-token family. Every refresh rotates the presented token; presenting a rotated or revoked token revokes that family and returns a generic `401`. Logout revokes only the presented family and deletes the refresh cookie with `204`. Expired refresh rows are rejected and retained for bounded reuse-detection cleanup. Token failures are classified server-side as expired, malformed, signature mismatch, schema invalid, refresh-token invalid, or session/user not found; client responses keep details generic but include a machine-readable code.
 - **Status:** Active
 - **Platform:** All
-- **File(s):** `api/app/routers/auth.py`, `api/app/services/security.py`, `api/app/services/auth_errors.py`, `api/app/config.py`, `web/lib/auth.ts`, `api/tests/test_token_resilience.py`
-- **Since:** 2026-08-29 (12:23 UTC-0)
+- **File(s):** `api/app/models/refresh_token.py`, `api/app/routers/auth.py`, `api/app/services/session_service.py`, `api/app/services/security.py`, `api/app/services/auth_errors.py`, `api/app/config.py`, `web/lib/auth.ts`, `api/tests/test_token_resilience.py`
+- **Since:** 2026-08-31 (Asia/Karachi)
 
 ### Rule: JWT Secret Configuration Fails Loud
 - **What:** `JWT_SECRET_KEY` is required at API settings load and has no application default or generated fallback. API startup logs only an 8-character SHA256 fingerprint of the configured secret so deploys can confirm secret stability without exposing the secret.
@@ -100,7 +100,7 @@ the entry, so history isn't lost.
 
 ### Rule: Web Auth Refresh Is Silent For Expired Access Tokens
 - **What:** Authenticated web API calls proactively refresh access tokens at about 80% of the token lifetime. If an authenticated request receives `TOKEN_EXPIRED`, the client refreshes via the refresh cookie and retries the original request once.
-- **Edge cases:** Concurrent refresh attempts share one in-flight refresh promise. If refresh fails because the refresh token is missing, invalid, expired, or the session/user is not found, the stored web session is cleared and the user must log in again.
+- **Edge cases:** Concurrent refresh attempts share one in-flight refresh promise. Only an explicit `401` from the refresh endpoint clears the stored web session and requires login again; network failures, timeouts, CORS failures, `403`, `5xx`, malformed responses, and other ambiguous failures preserve it. A server-detected rotated-token reuse also returns an explicit refresh `401` and therefore terminates the affected client session.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/lib/auth.ts`
