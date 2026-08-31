@@ -4586,3 +4586,55 @@
 - Reason/Decision: Nunito gives Friink a consistent, softer brand voice across public and authenticated surfaces while Inter remains better suited to dense reading and user-entered content.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:46:52Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate and fix an intermittent post request timeout reported after mention notifications were added.
+- Changes Made:
+  - Restricted staging-to-production API fallback to `GET`, `HEAD`, and `OPTIONS`; `POST`, `PATCH`, and `DELETE` mutations now remain on their configured origin.
+  - Committed posts before mention lookup/notification work so notification failures cannot roll back a successfully created post.
+  - Added best-effort notification rollback and server logging when mention notification persistence fails.
+  - Added a regression test covering a mention notification failure after post commit.
+  - Updated the API-origin product rule, changelog, and agent log.
+- Files/Scope Touched: `web/lib/api-origin.ts`, `api/app/services/posts.py`, `api/app/services/session_ops.py`, `api/tests/test_posts.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The timeout could not be reproduced, but code inspection identified two concrete reliability hazards: replaying timed-out mutations across environments and making post success depend on notification persistence. Both are now isolated without changing the user-visible mention contract.
+- Verification: `python -m pytest tests/test_posts.py -q` passed with 18 tests; `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:49:36Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the Settings profile-picture Upload control with the shared settings action size.
+- Changes Made:
+  - Standardized the icon-only Upload trigger at `3rem` square dimensions to match settings save actions.
+  - Preserved the neutral outlined appearance and existing upload behavior.
+  - Updated the profile-picture design contract and changelog.
+- Files/Scope Touched: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The profile-picture Upload action belongs to the same settings action rail and should share its platform control height and alignment.
+- Verification: Confirmed `.settings-upload-trigger` uses `3rem` width/height with centered content; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31T20:53:46Z
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add clear text labels beside icons on Settings and profile-picture actions.
+- Changes Made:
+  - Added `Upload` to the profile-picture file-selection control.
+  - Added contextual `Update …` labels to settings save controls, with `Updating…` while busy.
+  - Added `Upload` to the crop confirmation action, with `Uploading…` while busy.
+  - Kept the shared minimum `3rem` action height while allowing labeled controls to size naturally.
+  - Updated the profile/settings design contract and changelog.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/components/profile-picture-crop-modal.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Visible contextual labels improve discoverability and reduce ambiguity while icons continue to provide quick recognition.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+

@@ -2,6 +2,7 @@ import uuid
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import datetime
 import json
+import logging
 import re
 
 from fastapi import HTTPException, status
@@ -14,7 +15,7 @@ from app.models.notification import NotificationType
 from app.models.post import Post, PostKind
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
-from app.services.session_ops import commit, refresh
+from app.services.session_ops import commit, refresh, rollback
 from app.services.post_slug import generate_post_slug
 from app.services.post_ids import generate_public_id
 from app.services.notifications import create_notification
@@ -22,6 +23,7 @@ from app.services.notifications import create_notification
 DEFAULT_FEED_LIMIT = 20
 MAX_FEED_LIMIT = 100
 MENTION_PATTERN = re.compile(r"(?<![A-Za-z0-9_@])@([A-Za-z0-9][A-Za-z0-9._-]{0,63})")
+logger = logging.getLogger(__name__)
 
 
 def extract_mentioned_usernames(content: str) -> list[str]:
@@ -144,34 +146,41 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
         media_count=0,
     )
     session.add(post)
-    mentioned_usernames = extract_mentioned_usernames(data.content)
-    if mentioned_usernames:
-        mentioned_users = list(
-            session.execute(
-                select(User).where(func.lower(User.username).in_([username.casefold() for username in mentioned_usernames]))
-            ).scalars().all()
-        )
-        mentioned_by_username = {mentioned_user.username.casefold(): mentioned_user for mentioned_user in mentioned_users}
-        post_slug = generate_post_slug(post.content)
-        for username in mentioned_usernames:
-            mentioned_user = mentioned_by_username.get(username.casefold())
-            if not mentioned_user or mentioned_user.id == user.id:
-                continue
-            create_notification(
-                session,
-                recipient_user_id=mentioned_user.id,
-                actor_user_id=user.id,
-                notification_type=NotificationType.mention,
-                payload={
-                    "mentioned_username": mentioned_user.username,
-                    "post_author_username": user.username,
-                    "post_author_display_name": user.display_name,
-                    "post_public_id": post.public_id,
-                    "post_slug": post_slug,
-                },
-            )
     await commit(session)
     await refresh(session, post)
+
+    mentioned_usernames = extract_mentioned_usernames(data.content)
+    if mentioned_usernames:
+        try:
+            mentioned_users = list(
+                session.execute(
+                    select(User).where(func.lower(User.username).in_([username.casefold() for username in mentioned_usernames]))
+                ).scalars().all()
+            )
+            mentioned_by_username = {mentioned_user.username.casefold(): mentioned_user for mentioned_user in mentioned_users}
+            post_slug = generate_post_slug(post.content)
+            for username in mentioned_usernames:
+                mentioned_user = mentioned_by_username.get(username.casefold())
+                if not mentioned_user or mentioned_user.id == user.id:
+                    continue
+                create_notification(
+                    session,
+                    recipient_user_id=mentioned_user.id,
+                    actor_user_id=user.id,
+                    notification_type=NotificationType.mention,
+                    payload={
+                        "mentioned_username": mentioned_user.username,
+                        "post_author_username": user.username,
+                        "post_author_display_name": user.display_name,
+                        "post_public_id": post.public_id,
+                        "post_slug": post_slug,
+                    },
+                )
+            await commit(session)
+        except Exception:
+            await rollback(session)
+            logger.exception("Could not create mention notifications for post %s", post.id)
+
     return post
 
 

@@ -12,5 +12,9 @@ async def commit(session: Any) -> None:
     await maybe_await(session.commit())
 
 
+async def rollback(session: Any) -> None:
+    await maybe_await(session.rollback())
+
+
 async def refresh(session: Any, instance: Any) -> None:
     await maybe_await(session.refresh(instance))

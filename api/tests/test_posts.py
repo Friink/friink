@@ -256,3 +256,63 @@ async def test_quote_creation_blocks_private_posts_even_for_owner() -> None:
         await create_post(Session(), owner, CreatePostRequest(content="Nope", kind="quote", quoted_post_id=quoted.id))
 
     assert error.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_mention_notification_failure_does_not_rollback_post(monkeypatch: pytest.MonkeyPatch) -> None:
+    author = User(
+        id=uuid.uuid4(),
+        email="author@example.com",
+        username="author",
+        display_name="Author",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+    mentioned = User(
+        id=uuid.uuid4(),
+        email="mentioned@example.com",
+        username="mentioned",
+        display_name="Mentioned",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+
+    class Session:
+        def __init__(self) -> None:
+            self.commits = 0
+            self.rollbacks = 0
+
+        def add(self, instance) -> None:
+            self.post = instance
+
+        def execute(self, statement):
+            class Result:
+                def scalars(self):
+                    return self
+
+                def all(self):
+                    return [mentioned]
+
+            return Result()
+
+        def commit(self) -> None:
+            self.commits += 1
+
+        def refresh(self, instance) -> None:
+            return None
+
+        def rollback(self) -> None:
+            self.rollbacks += 1
+
+    session = Session()
+
+    def fail_notification(*args, **kwargs):
+        raise RuntimeError("notification store unavailable")
+
+    monkeypatch.setattr("app.services.posts.create_notification", fail_notification)
+
+    post = await create_post(session, author, CreatePostRequest(content="Hello @mentioned"))
+
+    assert post is session.post
+    assert session.commits == 1
+    assert session.rollbacks == 1

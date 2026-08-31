@@ -46,8 +46,11 @@ export function getApiOriginCandidates() {
 
 export async function fetchApi(path: string, init?: RequestInit) {
   let lastError: Error | null = null;
+  const method = (init?.method || 'GET').toUpperCase();
+  const isSafeToRetryAcrossOrigins = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+  const origins = isSafeToRetryAcrossOrigins ? getApiOriginCandidates() : [getApiOrigin()];
 
-  for (const origin of getApiOriginCandidates()) {
+  for (const origin of origins) {
     const controller = new AbortController();
     let timedOut = false;
     const timeoutId = setTimeout(() => {

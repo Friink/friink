@@ -405,7 +405,7 @@ the entry, so history isn't lost.
 
 ### Rule: API Origin Resolution
 - **What:** Web API calls use `NEXT_PUBLIC_API_BASE_URL` when configured. Localhost browsing falls back to `http://localhost:8000`. Deployed browser contexts without an API origin throw a configuration error instead of silently calling localhost.
-- **Edge cases:** If the configured origin is `https://staging-api.friink.com` and a network-level fetch fails, the client retries `https://api.friink.com`.
+- **Edge cases:** If the configured origin is `https://staging-api.friink.com` and a network-level fetch fails for a safe read (`GET`, `HEAD`, or `OPTIONS`), the client retries `https://api.friink.com`. Mutations are never retried across origins because replaying them could duplicate or misroute user data.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/lib/api-origin.ts`, `web/lib/auth.ts`

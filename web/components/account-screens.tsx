@@ -507,7 +507,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
               title="Profile picture"
               subtitle="Choose an optional JPG, PNG, or WebP picture for your profile."
               className="settings-row settings-row-expanded"
-              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /></button>}
+              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /><span>Upload</span></button>}
             >
               <div className="profile-picture-picker">
                 <div className="profile-picture-preview" aria-hidden="true">
@@ -671,6 +671,7 @@ function SaveTickButton({
   return (
     <button className="settings-update-button" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>
       <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" />
+      <span>{busy ? 'Updating…' : label}</span>
     </button>
   );
 }

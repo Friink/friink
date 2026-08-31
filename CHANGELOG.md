@@ -93,7 +93,13 @@ _Last updated: 2026-08-31_
 
 ## 2026-09-01
 
+- [api/web] Hardened post creation after the mention timeout investigation: mention notifications are now best-effort after the post is committed, and staging-to-production fallback is restricted to safe read requests so timed-out mutations cannot be replayed across environments.
+
 - [docs] Standardized known documentation timestamps to UTC ISO 8601 with seconds and a `Z` suffix, while preserving date-only historical entries whose exact times are unknown; added timestamp instructions to README, CHANGELOG, and AGENTLOG.
+
+- [web] Standardized the Settings > Profile picture Upload control to the shared `3rem` square action size used by settings save controls.
+
+- [web] Added visible labels to Settings profile-picture Upload, settings Update, and crop confirmation controls while preserving the shared action sizing and contextual wording.
 
 - [web] Standardized app display and action typography on local Nunito for headings, buttons, tabs, navigation labels, and action links while retaining Inter for body and user-authored content.
 

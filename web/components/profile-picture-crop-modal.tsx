@@ -23,7 +23,7 @@ export function ProfilePictureCropModal({ source, crop, zoom, maxZoom, busy, onC
     <Modal title="Crop profile picture" onClose={onCancel} onBack={onCancel} backLabel="Back to profile picture" closeLabel="Cancel crop" className="profile-picture-crop-dialog" actions={
       <>
         <button className="settings-secondary-button" type="button" disabled={busy} onClick={onCancel}>Cancel</button>
-        <button className="settings-update-button" type="button" disabled={busy} onClick={onConfirm} aria-label="Upload profile picture" title="Upload profile picture"><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" /></button>
+        <button className="settings-update-button" type="button" disabled={busy} onClick={onConfirm} aria-label="Upload profile picture" title="Upload profile picture"><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" /><span>{busy ? 'Uploading…' : 'Upload'}</span></button>
       </>
     }>
       <p className="profile-picture-crop-help">Drag the image and adjust the zoom to choose a square crop.</p>
