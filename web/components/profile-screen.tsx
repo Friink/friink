@@ -50,7 +50,7 @@ export function ProfileScreen({
   user,
   posts,
   profileStats = null,
-  profileConnectionsBasePath = '/connections',
+  profileConnectionsBasePath,
   isOwnProfile = true,
   onReply,
   onQuote,
@@ -63,6 +63,7 @@ export function ProfileScreen({
   initialTab = 'posts',
   onTabChange,
 }: ProfileScreenProps) {
+  const connectionsBasePath = profileConnectionsBasePath ?? `/${encodeURIComponent(user.username)}/connections`;
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
   useEffect(() => setActiveTab(initialTab), [initialTab]);
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
@@ -88,10 +89,10 @@ export function ProfileScreen({
 
         <div className="profile-meta-row">
           <div className="profile-stats" aria-label="Profile statistics">
-            <a href={`${profileConnectionsBasePath}/following`}>
+            <a href={`${connectionsBasePath}/following`}>
               <strong>{profileStats?.following ?? '—'}</strong> following
             </a>
-            <a href={`${profileConnectionsBasePath}/followers`}>
+            <a href={`${connectionsBasePath}/followers`}>
               <strong>{profileStats?.followers ?? '—'}</strong> followers
             </a>
           </div>

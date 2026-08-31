@@ -504,13 +504,16 @@ export type ApiNotificationPage = {
   has_more: boolean;
 };
 
-export async function listPosts(input: { cursor?: string; limit?: number } = {}): Promise<ApiFeedPage> {
+export async function listPosts(input: { cursor?: string; limit?: number; feed?: 'explore' | 'following' } = {}): Promise<ApiFeedPage> {
   const search = new URLSearchParams();
   if (input.cursor) {
     search.set('cursor', input.cursor);
   }
   if (input.limit) {
     search.set('limit', String(input.limit));
+  }
+  if (input.feed) {
+    search.set('feed', input.feed);
   }
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';
@@ -522,13 +525,16 @@ export async function listPosts(input: { cursor?: string; limit?: number } = {})
   });
 }
 
-export async function listNewerPosts(input: { afterCreatedAt: string; afterId: string; limit?: number }): Promise<ApiPost[]> {
+export async function listNewerPosts(input: { afterCreatedAt: string; afterId: string; limit?: number; feed?: 'explore' | 'following' }): Promise<ApiPost[]> {
   const search = new URLSearchParams({
     after_created_at: input.afterCreatedAt,
     after_id: input.afterId,
   });
   if (input.limit) {
     search.set('limit', String(input.limit));
+  }
+  if (input.feed) {
+    search.set('feed', input.feed);
   }
 
   const session = loadAuthSession();
@@ -539,13 +545,16 @@ export async function listNewerPosts(input: { afterCreatedAt: string; afterId: s
   });
 }
 
-export async function getFeedContext(postId: string, input: { beforeLimit?: number; afterLimit?: number } = {}): Promise<ApiFeedContext> {
+export async function getFeedContext(postId: string, input: { beforeLimit?: number; afterLimit?: number; feed?: 'explore' | 'following' } = {}): Promise<ApiFeedContext> {
   const search = new URLSearchParams();
   if (input.beforeLimit) {
     search.set('before_limit', String(input.beforeLimit));
   }
   if (input.afterLimit) {
     search.set('after_limit', String(input.afterLimit));
+  }
+  if (input.feed) {
+    search.set('feed', input.feed);
   }
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';

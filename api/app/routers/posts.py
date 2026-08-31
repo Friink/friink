@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -36,10 +37,11 @@ async def get_optional_current_user(
 async def list_posts(
     cursor: str | None = None,
     limit: int = 20,
+    feed: Literal["explore", "following"] = "explore",
     current_user: User | None = Depends(get_optional_current_user),
     session: Session = Depends(get_session),
 ) -> FeedPageResponse:
-    return await get_posts_page(session, limit=limit, cursor=cursor, viewer=current_user)
+    return await get_posts_page(session, limit=limit, cursor=cursor, viewer=current_user, feed=feed)
 
 
 @router.get("/updates", response_model=list[PostResponse])
@@ -47,10 +49,11 @@ async def list_post_updates(
     after_created_at: datetime,
     after_id: uuid.UUID,
     limit: int = 20,
+    feed: Literal["explore", "following"] = "explore",
     current_user: User | None = Depends(get_optional_current_user),
     session: Session = Depends(get_session),
 ) -> list[PostResponse]:
-    return [serialize_post(post, viewer=current_user, session=session) for post in await get_newer_posts(session, after_created_at=after_created_at, after_post_id=after_id, limit=limit, viewer=current_user)]
+    return [serialize_post(post, viewer=current_user, session=session) for post in await get_newer_posts(session, after_created_at=after_created_at, after_post_id=after_id, limit=limit, viewer=current_user, feed=feed)]
 
 
 @router.get("/context/{post_id}", response_model=FeedContextResponse)
@@ -58,10 +61,11 @@ async def get_post_context(
     post_id: uuid.UUID,
     before_limit: int = 10,
     after_limit: int = 10,
+    feed: Literal["explore", "following"] = "explore",
     current_user: User | None = Depends(get_optional_current_user),
     session: Session = Depends(get_session),
 ) -> FeedContextResponse:
-    context = await get_feed_context(session, post_id, before_limit=before_limit, after_limit=after_limit, viewer=current_user)
+    context = await get_feed_context(session, post_id, before_limit=before_limit, after_limit=after_limit, viewer=current_user, feed=feed)
     if not context:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
     return context

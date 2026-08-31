@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import aliased, selectinload, with_expression
 
@@ -139,9 +139,27 @@ def post_feed_base_query():
     )
 
 
-async def get_posts_page(session: Session, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None, viewer: User | None = None) -> FeedPageResponse:
+def following_post_filter(viewer: User | None):
+    if viewer is None:
+        return False
+    return exists(
+        select(FollowRequest.id).where(
+            FollowRequest.requester_id == viewer.id,
+            FollowRequest.recipient_id == Post.user_id,
+            FollowRequest.status == FollowRequestStatus.accepted,
+        )
+    )
+
+
+def apply_feed_filter(query, feed: str, viewer: User | None):
+    if feed == "following":
+        query = query.where(following_post_filter(viewer))
+    return query
+
+
+async def get_posts_page(session: Session, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None, viewer: User | None = None, feed: str = "explore") -> FeedPageResponse:
     clamped_limit = clamp_feed_limit(limit)
-    query = post_feed_base_query().order_by(Post.created_at.desc(), Post.id.desc())
+    query = apply_feed_filter(post_feed_base_query(), feed, viewer).order_by(Post.created_at.desc(), Post.id.desc())
 
     if cursor:
         created_at, post_id = decode_post_cursor(cursor)
@@ -159,10 +177,10 @@ async def get_posts_page(session: Session, limit: int = DEFAULT_FEED_LIMIT, curs
     )
 
 
-async def get_newer_posts(session: Session, after_created_at: datetime, after_post_id: uuid.UUID, limit: int = DEFAULT_FEED_LIMIT, viewer: User | None = None) -> list[Post]:
+async def get_newer_posts(session: Session, after_created_at: datetime, after_post_id: uuid.UUID, limit: int = DEFAULT_FEED_LIMIT, viewer: User | None = None, feed: str = "explore") -> list[Post]:
     clamped_limit = clamp_feed_limit(limit)
     result = session.execute(
-        post_feed_base_query()
+        apply_feed_filter(post_feed_base_query(), feed, viewer)
         .where(build_newer_than_filter(after_created_at, after_post_id))
         .order_by(Post.created_at.desc(), Post.id.desc())
         .limit(clamped_limit)
@@ -170,22 +188,24 @@ async def get_newer_posts(session: Session, after_created_at: datetime, after_po
     return [post for post in result.scalars().all() if can_view_post(session, viewer, post)]
 
 
-async def get_feed_context(session: Session, anchor_post_id: uuid.UUID, before_limit: int = 10, after_limit: int = 10, viewer: User | None = None) -> FeedContextResponse | None:
+async def get_feed_context(session: Session, anchor_post_id: uuid.UUID, before_limit: int = 10, after_limit: int = 10, viewer: User | None = None, feed: str = "explore") -> FeedContextResponse | None:
     anchor_post = await get_post(session, anchor_post_id)
     if not anchor_post or anchor_post.kind == PostKind.REPLY or not can_view_post(session, viewer, anchor_post):
+        return None
+    if feed == "following" and not session.execute(select(following_post_filter(viewer)).where(Post.id == anchor_post.id)).scalar():
         return None
 
     newer_limit = clamp_feed_limit(before_limit)
     older_limit = clamp_feed_limit(after_limit)
 
     newer_result = session.execute(
-        post_feed_base_query()
+        apply_feed_filter(post_feed_base_query(), feed, viewer)
         .where(build_newer_than_filter(anchor_post.created_at, anchor_post.id))
         .order_by(Post.created_at.asc(), Post.id.asc())
         .limit(newer_limit)
     )
     older_result = session.execute(
-        post_feed_base_query()
+        apply_feed_filter(post_feed_base_query(), feed, viewer)
         .where(build_older_than_filter(anchor_post.created_at, anchor_post.id))
         .order_by(Post.created_at.desc(), Post.id.desc())
         .limit(older_limit + 1)

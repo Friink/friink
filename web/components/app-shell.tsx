@@ -60,7 +60,7 @@ type AppShellProps = {
   profileConnectionsBasePath?: string;
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
-  initialHomeFilter?: 'all' | 'connections';
+  initialHomeFilter?: 'all' | 'following';
   initialMessagesTab?: 'all' | 'muted' | 'requests';
   initialSettingsTab?: 'general' | 'profile' | 'account' | 'privacy';
   profileTab?: 'posts' | 'replies';
@@ -108,7 +108,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
   const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>(initialHomeFilter);
+  const [homeFilter, setHomeFilter] = useState<'all' | 'following'>(initialHomeFilter);
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
   const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>(initialMessagesTab);
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>(initialSettingsTab);
@@ -245,7 +245,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         router.push(`/${user.username}`);
         break;
       case 'connections':
-        router.push('/connections/all');
+        router.push(`/${encodeURIComponent(user.username)}/connections`);
         break;
       case 'starred':
         router.push('/starred');
@@ -269,13 +269,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   function handleConnectionsFilterChange(filter: 'all' | 'followers' | 'following' | 'requests') {
     setConnectionsFilter(filter);
-    const basePath = viewingOtherConnections ? `/${encodeURIComponent(connectionsUsername!)}/connections` : '/connections';
-    router.push(`${basePath}/${filter}`, { scroll: false });
+    const basePath = viewingOtherConnections
+      ? `/${encodeURIComponent(connectionsUsername!)}/connections`
+      : `/${encodeURIComponent(user.username)}/connections`;
+    router.push(filter === 'all' ? basePath : `${basePath}/${filter}`, { scroll: false });
   }
 
-  function handleHomeFilterChange(filter: 'all' | 'connections') {
+  function handleHomeFilterChange(filter: 'all' | 'following') {
     setHomeFilter(filter);
-    router.push(`/home/${filter === 'all' ? 'explore' : 'connections'}`, { scroll: false });
+    router.push(`/home/${filter === 'all' ? 'explore' : 'following'}`, { scroll: false });
   }
 
   function handleMessagesTabChange(tab: 'all' | 'muted' | 'requests') {
@@ -768,7 +770,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
               <Tabs
                 tabs={[
                   { id: 'all', label: 'Explore' },
-                  { id: 'connections', label: 'Connections' },
+                  { id: 'following', label: 'Following' },
                 ]}
                 activeId={homeFilter}
                 onChange={(id) => handleHomeFilterChange(id as 'all' | 'connections')}
@@ -817,7 +819,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <HomeScreen
                       posts={posts}
                       activeFilter={homeFilter}
-                      onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'connections')}
+                      onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                       onReply={handleReply}
                       onQuote={handleQuote}
                       injectedPost={homeInjectedPost}

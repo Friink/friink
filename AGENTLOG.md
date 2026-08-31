@@ -3368,8 +3368,6 @@
 
 ---
 
-### Entry
-
 - Date/Time: 2026-08-30 (Asia/Karachi)
 - Agent: Codex
 - Model: GPT-5
@@ -4258,4 +4256,34 @@
   - Python compile check and `git diff --check` passed.
 - Files/Scope Touched: `api/app/models/refresh_token.py`, `api/app/models/__init__.py`, `api/alembic/env.py`, `api/alembic/versions/20260831_0012_create_refresh_tokens.py`, `api/app/services/session_service.py`, `api/app/services/auth_debug.py`, `api/app/services/security.py`, `api/app/config.py`, `api/app/routers/auth.py`, `api/tests/test_refresh_token_rotation.py`, `api/tests/test_token_resilience.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`, `docs/session-hardening-design.md`.
 - Reason/Decision: Server-side rotation and family reuse detection close the remaining stateless-refresh revocation gap while preserving the existing client rule that ambiguous infrastructure failures do not force logout.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create a Claude handoff document for the completed session rotation/revocation work.
+- Changes Made:
+  - Added `docs/session-updates.md` with the implementation summary, approved legacy-token compatibility decision, changed files, database state, JWT `kid` configuration, runtime evidence, deployment checklist, follow-up items, and auth guardrails.
+- Scope Constraint: Documentation only; no runtime, schema, migration, or configuration changes were made for this handoff request.
+- Files/Scope Touched: `docs/session-updates.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification: `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Standardize the signed-in user's Connections route to match username-scoped routes used for other users.
+- Changes Made:
+  - Updated the side drawer to open `/{username}/connections`.
+  - Updated self-profile statistics and Connections tab navigation to use the username-scoped base route, with filtered tabs under the same route.
+  - Kept legacy `/connections` routes available as compatibility entry points.
+  - Updated `RULES.md` and `CHANGELOG.md` to document the canonical route contract.
+- Files/Scope Touched: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 

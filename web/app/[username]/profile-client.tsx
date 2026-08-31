@@ -104,9 +104,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     ? profileStatus === 'ready'
     : profileStatus === 'ready' && profileUser?.username.toLowerCase() === profileHandle.toLowerCase();
   const profileUnavailable = !resolvedProfile && profileStatus === 'unavailable';
-  const profileConnectionsBasePath = isOwnProfile
-    ? '/connections'
-    : `/${encodeURIComponent(profileHandle)}/connections`;
+  const profileConnectionsBasePath = `/${encodeURIComponent(isOwnProfile ? user.username : profileHandle)}/connections`;
 
   return (
     <AppShell

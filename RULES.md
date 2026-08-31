@@ -412,8 +412,8 @@ the entry, so history isn't lost.
 
 ### Rule: Profile Identity And Actions Are Client-Mapped
 - **What:** The web profile screen treats the signed-in user's profile as self and other username routes as other-user profiles. Self-profile shows Edit; other-user profiles show follow/request/following state plus a message icon.
-- **Edge cases:** Counts include accepted connections only, matching the Connections endpoints; pending, rejected, and canceled relationships are excluded. Self-profile Connections shows the signed-in user's data and request behavior; `/{username}/connections` shows the requested user's three-tab follower/following directory without the signed-in user's request tab.
-- **URL State:** Changing the active Connections tab updates the current route's `tab` query parameter; selecting `All` removes the parameter while preserving the current Connections route.
+- **Edge cases:** Counts include accepted connections only, matching the Connections endpoints; pending, rejected, and canceled relationships are excluded. Self-profile Connections shows the signed-in user's data and request behavior; `/{username}/connections` is the canonical username-scoped route for the requested user's directory.
+- **URL State:** Connections uses the username-scoped route `/{username}/connections`, with `/{username}/connections/followers`, `/{username}/connections/following`, and `/{username}/connections/requests` for filtered tabs. Selecting `All` returns to the base route. Legacy `/connections` routes remain compatibility entry points only.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`

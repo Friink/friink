@@ -64,7 +64,7 @@ _Last updated: 2026-08-31_
 - [docs] Documented the profile loading and stale-request handling contract.
 - [web] Replaced hardcoded profile follower/following zeros with API-backed counts and made each statistic open the matching Connections tab.
 - [docs] Documented the profile count and statistic-navigation contract.
-- [web] Made the complete profile statistics ununderlined links, with self-profile links targeting `/connections` and other-profile links targeting `/{username}/connections`; the shared Connections screen now loads the requested user's data.
+- [web] Made the complete profile statistics ununderlined links, with profile links targeting the canonical `/{username}/connections` route; the shared Connections screen now loads the requested user's data.
 - [docs] Documented profile-specific Connections routes and three-tab behavior for other users.
 - [web] Updated profile statistic hover/focus styling so the number and its following/followers label change color together.
 - [web] Connections tab changes now update the current URL's `tab` query parameter, removing it when returning to `All`.
@@ -78,7 +78,14 @@ _Last updated: 2026-08-31_
 - [web] Hardened auth refresh handling so only an explicit refresh-token 401 can clear local session state; refresh timeouts, CORS/network failures, 403s, 5xx responses, and malformed responses now remain retryable.
 - [web] Added refresh/logout generation guards, refresh-before-login recovery for missing or malformed local auth state, and a 15-second request timeout. Server-side refresh-token revocation remains open because tokens are currently stateless JWTs without server records.
 - [docs] Added a design-only proposal for opaque refresh-token rotation/revocation, reuse detection, legacy-session migration, and access-token `kid` key rotation; no implementation or schema changes were made.
+- [docs] Added `docs/session-updates.md` as a handoff for the completed session rotation/revocation implementation, deployment requirements, verification evidence, and remaining caveats.
 - [verification] Runtime verification of session/logout hardening was attempted against the signed-in staging app. Items requiring fault injection, storage mutation, network traces, or an in-flight request could not be tested in the available browser surface; staging-to-production fallback was diff-verified unchanged.
+
+## 2026-08-31
+
+### Changed
+
+- [web] Standardized signed-in Connections navigation on `/{username}/connections` and its filtered subroutes, matching other-user profile routes. Legacy `/connections` routes remain available as compatibility entry points.
 
 ## 2026-08-30
 
