@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-31T23:43:16Z
+
+- [web] Added explicit brand-colored mention links that remain green after visiting, plus a device-local Accent color setting under Settings > General that changes only the in-app brand token.
+- [design/rules] Documented the six-digit hex validation and public-site isolation contract.
+
 ## 2026-08-31T23:36:05Z
 
 - [api] Hardened post-media confirmation to fall back from unreliable R2 S3 `HEAD` metadata calls to bounded public-object HEAD/GET verification, matching the working profile-picture flow while retaining JPEG and 500KB checks.

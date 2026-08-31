@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from 'react';
+import { type CSSProperties, type FormEvent, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -91,6 +91,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
+  const [accentColor, setAccentColor] = useState('#33aa55');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [homeInjectedPost, setHomeInjectedPost] = useState<Post | null>(null);
@@ -186,6 +187,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('friink_accent_color')?.trim().toLowerCase();
+      if (saved && /^#[0-9a-f]{6}$/.test(saved)) setAccentColor(saved);
+    } catch {
+      // Keep the default accent when local storage is unavailable.
+    }
+  }, []);
+
   // read persisted appearance from cookie (if present)
   useEffect(() => {
     try {
@@ -209,6 +219,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       document.cookie = `friink_appearance=${encodeURIComponent(a)}; path=/; expires=${expires}; sameSite=Lax`;
     } catch (e) {
       // ignore cookie write errors
+    }
+  }
+
+  function persistAccentColor(color: string) {
+    const normalized = color.trim().toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(normalized)) return;
+    setAccentColor(normalized);
+    try {
+      window.localStorage.setItem('friink_accent_color', normalized);
+    } catch {
+      // Best effort; the current app session still uses the chosen color.
     }
   }
 
@@ -754,7 +775,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }
 
   return (
-    <main className="app-shell" data-theme={appearance}>
+    <main className="app-shell" data-theme={appearance} style={{ '--color-brand': accentColor } as CSSProperties}>
       <div className="app-layout">
         <SideDrawer
           user={user}
@@ -886,6 +907,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       user={user}
                       appearance={appearance}
                       onAppearanceChange={(a) => persistAppearance(a)}
+                      accentColor={accentColor}
+                      onAccentColorChange={persistAccentColor}
                       activeTab={settingsTab}
                       onTabChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
                       onUserChange={onUserChange}

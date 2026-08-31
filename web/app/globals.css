@@ -2714,6 +2714,31 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   background: var(--color-brand);
 }
 
+.accent-color-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 18rem;
+}
+
+.accent-color-control input {
+  min-width: 0;
+}
+
+.accent-color-control small {
+  grid-column: 1 / -1;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.accent-color-swatch {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+}
+
 /* Messages */
 .messages-screen {
   width: 100%;
@@ -2917,6 +2942,13 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .feed-post-body a:focus-visible,
 .feed-post-quote-body a:hover,
 .feed-post-quote-body a:focus-visible {
+  color: var(--color-brand);
+}
+
+.mention-link,
+.mention-link:visited,
+.mention-link:hover,
+.mention-link:focus-visible {
   color: var(--color-brand);
 }
 

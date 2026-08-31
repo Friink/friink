@@ -27,6 +27,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
+### Rule: In-App Accent Color Is Device-Local
+- **What:** Signed-in users may set a six-digit hex accent color from Settings > General. It overrides the app shell's brand token for the current device only; public/landing surfaces are not affected.
+- **Edge cases:** Invalid hex values cannot be saved. The default `#33aa55` is used when no valid local preference exists or local storage is unavailable.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/account-screens.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`
+- **Since:** 2026-09-01 (UTC)
+
 ### Rule: Route-Based Navigation Uses Real Links
 - **What:** Navigation controls that have a stable destination must render as anchors with an `href`, including the signed-in drawer routes. Client-side click handling may intercept normal clicks, but the destination must remain available to browser status previews, middle-click, and open-in-new-tab behavior.
 - **Status:** Active

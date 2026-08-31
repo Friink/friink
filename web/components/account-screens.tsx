@@ -17,6 +17,8 @@ type SettingsScreenProps = {
   user: AuthUser;
   appearance: AppearanceMode;
   onAppearanceChange: (appearance: AppearanceMode) => void;
+  accentColor: string;
+  onAccentColorChange: (accentColor: string) => void;
   activeTab?: SettingsTab;
   onTabChange?: (id: string) => void;
   onUserChange?: (user: AuthUser) => void;
@@ -83,7 +85,7 @@ function getProfilePictureErrorDetail(error: AuthApiError) {
   return 'We couldn’t finish updating your profile picture. Please try again.';
 }
 
-export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab = 'general', onUserChange, onToast }: SettingsScreenProps) {
+export function SettingsScreen({ user, appearance, onAppearanceChange, accentColor, onAccentColorChange, activeTab = 'general', onUserChange, onToast }: SettingsScreenProps) {
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
@@ -118,6 +120,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [appearanceDraft, setAppearanceDraft] = useState(appearance);
+  const [accentColorDraft, setAccentColorDraft] = useState(accentColor);
   const [privacyDraft, setPrivacyDraft] = useState(user.isPrivate);
   const [directMessagesDraft, setDirectMessagesDraft] = useState(false);
   const [directMessagesSaved, setDirectMessagesSaved] = useState(false);
@@ -135,6 +138,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setIsPrivate(user.isPrivate);
     setPrivacyDraft(user.isPrivate);
     setAppearanceDraft(appearance);
+    setAccentColorDraft(accentColor);
     setProfilePicturePreview(user.profilePictureUrl);
     setProfilePictureFile(null);
     setUsernameStatus('');
@@ -149,7 +153,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
     setShowConfirmPassword(false);
     setShowPasswordCriteria(false);
     setPasswordStatus('');
-  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl, appearance]);
+  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl, appearance, accentColor]);
 
   useEffect(() => {
     if (activeTab !== 'account') return;
@@ -178,6 +182,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
   const canUpdateName = hasNameChanged && isDisplayNameValid && !isUpdatingName;
   const canUpdateAbout = hasAboutChanged && isAboutValid && !isUpdatingAbout;
   const canUpdateAppearance = appearanceDraft !== appearance;
+  const isAccentColorValid = /^#[0-9A-Fa-f]{6}$/.test(accentColorDraft);
+  const canUpdateAccentColor = isAccentColorValid && accentColorDraft.toLowerCase() !== accentColor.toLowerCase();
   const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
   const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
@@ -548,6 +554,29 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, activeTab
                   </button>
                 ))}
               </span>
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-droplet" aria-hidden="true" /></span>}
+              title="Accent color"
+              subtitle="Choose the accent color used inside the app."
+              className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateAccentColor, busy: false, onClick: () => onAccentColorChange(accentColorDraft.toLowerCase()), label: 'Update color' }}
+            >
+              <div className="accent-color-control">
+                <input
+                  type="text"
+                  value={accentColorDraft}
+                  onChange={(event) => setAccentColorDraft(event.target.value)}
+                  aria-label="Accent color hex code"
+                  placeholder="#33aa55"
+                  maxLength={7}
+                  pattern="^#[0-9A-Fa-f]{6}$"
+                  spellCheck={false}
+                />
+                <span className="accent-color-swatch" style={{ backgroundColor: isAccentColorValid ? accentColorDraft : 'transparent' }} aria-hidden="true" />
+                {!isAccentColorValid ? <small>Use a six-digit hex code, for example #33aa55.</small> : null}
+              </div>
             </SettingsRow>
 
           </div>

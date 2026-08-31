@@ -13,6 +13,13 @@
 - Fixed `api/app/services/storage.py` to use the same bounded public-URL fallback for post media, preserving JPEG content-type and 500KB size enforcement. Also completed the previously requested media-only-post behavior in the frontend/API and added its regression test.
 - Verification: API suite `61 passed, 2 warnings`; Python compileall passed; web TypeScript check passed; `git diff --check` passed. Staging must be redeployed with the API and web changes before live re-test; source changes cannot alter the already-running deployment.
 
+## 2026-08-31T23:43:16Z — Mention color and in-app accent preference
+
+- Prompt Summary: Keep mention links brand-colored after visiting and add a General settings Accent color control for the in-app shell only.
+- Changes: `MentionText` now uses a dedicated `mention-link` class with explicit base, visited, hover, and focus brand coloring. Added a reusable General settings row accepting validated `#RRGGBB` values, a swatch preview, and disabled save state for invalid input. The selected accent is stored in local storage and applied as the app shell's `--color-brand` custom property; public-site components are unaffected.
+- Design/rules: Updated `packages/design/design.md` and `RULES.md` to document the dynamic in-app-only accent contract and six-digit validation.
+- Verification: TypeScript check and `git diff --check` pending for this entry.
+
 > INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file —
 > especially the most recent 3-5 entries — to understand exactly what
 > the last agent(s) did, including which files or scope they touched.

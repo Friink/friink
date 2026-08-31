@@ -70,6 +70,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Ink and muted gray provide the primary text hierarchy.
 - Thin lines separate navigation, tabs, feed posts, and directory rows.
 - Settings should follow the same divider-based row rhythm as chat and notifications; avoid individual boxed cards around every setting item unless a future component contract explicitly calls for a standalone card.
+- The in-app General settings surface includes an Accent color row. It accepts a six-digit hex code (`#RRGGBB`), previews the color, and applies it to the app shell's brand token only; the public site remains on the fixed Friink brand color. Invalid values keep the update action disabled.
 - Avatars use circular shapes and soft color variations.
 - Controls should remain compact, clear, and usable on narrow screens.
 - Typography should feel soft, human, and modern; Nunito is used for headings and action-driven text.

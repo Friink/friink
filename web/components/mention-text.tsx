@@ -22,7 +22,7 @@ export function MentionText({ children }: MentionTextProps) {
       parts.push(children.slice(lastIndex, mentionStart));
     }
     parts.push(
-      <Link key={`${mentionStart}-${mention}`} href={`/${encodeURIComponent(mention.slice(1))}`}>
+      <Link className="mention-link" key={`${mentionStart}-${mention}`} href={`/${encodeURIComponent(mention.slice(1))}`}>
         {mention}
       </Link>,
     );
