@@ -56,6 +56,31 @@
   outline: none;
 }
 
+.avatarLink {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+.avatarLink:focus-visible {
+  outline: 2px solid #33aa55;
+  outline-offset: 3px;
+}
+
+.avatar {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid #cfc4c5;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.authPlaceholder {
+  display: block;
+  width: 7.5rem;
+  min-height: 3rem;
+}
+
 .cta {
   display: inline-flex;
   align-items: center;
@@ -604,6 +629,10 @@
     border-color: #46514c;
     color: #f1f3f2;
     background: #1c201f;
+  }
+
+  .avatar {
+    border-color: #46514c;
   }
 
   .progressTrack,

@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import styles from './landing.module.css';
-import { LandingAuthRedirect } from './landing-auth-redirect';
+import { Header } from '@/components/public-header';
 import { SubscribeForm } from './subscribe-form';
 
 export const metadata: Metadata = {
@@ -14,22 +14,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className={styles.page}>
-      <LandingAuthRedirect />
-      <nav className={styles.nav} aria-label="Marketing navigation">
-        <div className={styles.navInner}>
-          <Link href="/" aria-label="Friink home">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoFullWhite.svg" />
-              <Image src="/brand/logoFullBlack.svg" alt="Friink" width={176} height={56} className={styles.logoFull} priority />
-            </picture>
-          </Link>
-          <div className={styles.navActions}>
-            <a className={styles.navLink} href="#vision">Our vision</a>
-            <Link className={styles.navLink} href="#plans">Plans</Link>
-            <Link className={styles.cta} href="/login">Early access</Link>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <main className={styles.hero}>
         <section className={`${styles.sectionInner} ${styles.heroInner}`}>

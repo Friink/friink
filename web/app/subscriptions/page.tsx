@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import styles from '../landing.module.css';
+import { Header } from '@/components/public-header';
 
 export const metadata: Metadata = {
   title: 'Plans',
@@ -17,20 +18,7 @@ const plans = [
 export default function SubscriptionsPage() {
   return (
     <div className={styles.page}>
-      <nav className={styles.nav} aria-label="Marketing navigation">
-        <div className={styles.navInner}>
-          <Link href="/" aria-label="Friink home">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoFullWhite.svg" />
-              <Image src="/brand/logoFullBlack.svg" alt="Friink" width={176} height={56} className={styles.logoFull} priority />
-            </picture>
-          </Link>
-          <div className={styles.navActions}>
-            <Link className={styles.navLink} href="/">Home</Link>
-            <Link className={styles.cta} href="/login">Join Friink</Link>
-          </div>
-        </div>
-      </nav>
+      <Header page="subscriptions" />
 
       <main className={styles.plansPage}>
         <section className={`${styles.sectionInner} ${styles.plansPageInner}`}>

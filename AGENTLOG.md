@@ -4484,3 +4484,37 @@
 - Reason/Decision: Visitors should understand Friink’s purpose and credibility before encountering plan choices; the order now follows What is it? → Why does it exist? → Is it real? → Which plan fits? → What next?
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the subscriptions page with landing dark mode and reuse an auth-aware public header.
+- Changes Made:
+  - Extracted the duplicated public navigation into reusable `MarketingHeader`.
+  - Added persisted-session detection so signed-in users see their profile picture instead of `Join Friink`.
+  - Made the profile picture return to the same-origin page that led to `/subscriptions`, with `/home` as the safe fallback.
+  - Added shared avatar and loading-placeholder styles plus the documented public marketing-header contract.
+- Files/Scope Touched: `web/components/marketing-header.tsx`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing.module.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Public marketing surfaces should share one navigation implementation, preserve the authenticated user’s continuity, and use one visual system in both light and dark themes.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the public header naming and keep signed-in users on public pages.
+- Changes Made:
+  - Replaced the over-specific `MarketingHeader` name with the shared public `Header` component.
+  - Changed the signed-out public action from `Early access`/`Join Friink` to `Login`.
+  - Removed the landing-page auth redirect so signed-in users can visit and inspect the public landing page.
+  - Kept the signed-in profile picture as the return link to the prior same-origin app page, with `/home` fallback.
+- Files/Scope Touched: `web/components/public-header.tsx`, `web/components/marketing-header.tsx`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing-auth-redirect.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The public site needs one plainly named shared Header, and authentication should change only its right-side action—not prevent signed-in visitors from viewing public pages.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+

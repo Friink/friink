@@ -100,6 +100,7 @@ _Last updated: 2026-08-31_
 - [web] Added a public Plans section to the landing page and a full `/subscriptions` comparison page for Friink Free, Pro, and Pro+; paid actions remain Coming soon until billing exists.
 - [web] Added a dedicated Settings > Subscription tab with the current Free plan summary and a link to `/subscriptions`.
 - [web] Reordered the landing page narrative to present Development progress and Our vision before Plans, followed by the newsletter CTA.
+- [web] Made the landing and `/subscriptions` pages reuse an auth-aware public `Header`; signed-in users see their profile picture as the return link instead of a Login CTA, the landing page no longer redirects signed-in visitors, and the subscriptions page follows the landing dark theme consistently.
 
 ### Changed
 
