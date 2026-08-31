@@ -18,6 +18,8 @@ export type Post = {
   reactions: number;
   quotedPost?: {
     id: string | null;
+    publicId?: string | null;
+    slug?: string | null;
     authorUsername: string | null;
     authorDisplayName?: string | null;
     content: string;

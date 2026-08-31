@@ -64,6 +64,25 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     }
   }
 
+  function getNavigationHref(screen: Screen) {
+    switch (screen) {
+      case 'home':
+        return '/home/explore';
+      case 'profile':
+        return `/${encodeURIComponent(user.username)}`;
+      case 'connections':
+        return `/${encodeURIComponent(user.username)}/connections`;
+      case 'messages':
+        return '/chat/all';
+      case 'starred':
+        return '/starred';
+      case 'settings':
+        return '/settings/general';
+      default:
+        return '/home';
+    }
+  }
+
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
@@ -72,27 +91,38 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
 
       <nav className="sidebar-nav" aria-label="Main navigation">
         {sidebarNavItems.map((item) => (
-          <button
+          <a
             className={`nav-item${activeScreen === item.id ? ' active' : ''}`}
             key={item.id}
-            type="button"
-            onClick={() => handleNavigate(item.id)}
+            href={getNavigationHref(item.id)}
+            aria-current={activeScreen === item.id ? 'page' : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              handleNavigate(item.id);
+            }}
           >
             <span className="nav-item-icon" aria-hidden="true">
               <i className={item.icon} />
             </span>
             <span>{item.label}</span>
-          </button>
+          </a>
         ))}
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-action" type="button" onClick={() => handleNavigate('settings')}>
+        <a
+          className="sidebar-action"
+          href={getNavigationHref('settings')}
+          onClick={(event) => {
+            event.preventDefault();
+            handleNavigate('settings');
+          }}
+        >
           <span className="nav-item-icon" aria-hidden="true">
             <i className="fa-solid fa-gear" />
           </span>
           <span>Settings</span>
-        </button>
+        </a>
         <button className="sidebar-action" type="button" onClick={onLogout}>
           <span className="nav-item-icon" aria-hidden="true">
             <i className="fa-solid fa-right-from-bracket" />

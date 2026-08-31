@@ -252,10 +252,10 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
      - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
-  4. Quoted Post Block (`.feed-post-quote`, optional).
+  4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
   5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
   6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
-- **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls and profile links keep their own behavior.
+     - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
 - **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:
@@ -285,7 +285,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`).
-  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Chat (`fa-envelope`), Starred (`fa-star`).
+  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Chat (`fa-envelope`), Starred (`fa-star`). Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
   3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`).
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.

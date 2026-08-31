@@ -89,6 +89,13 @@ _Last updated: 2026-08-31_
 - [api/web] Renamed the Home `Connections` tab to `Following`, changed its slug to `/home/following`, and added server-side follow-only filtering across feed pagination, polling, and context restoration. `/home/connections` redirects to the new slug.
 - [web] Made the header Friink logo link to `/home`.
 - [web] Removed repeated visible setting titles from expanded Settings fields while retaining accessible input labels.
+- [web] Converted stable SideDrawer destinations to real anchors so Chrome can preview their routes on hover and users can open them in a new tab.
+
+## 2026-09-01
+
+### Changed
+
+- [api/web] Made available quoted-post blocks link to the original post's canonical detail page while preserving parent-card and author-profile navigation; unavailable quoted posts remain non-clickable status blocks.
 
 ## 2026-08-30
 

@@ -49,6 +49,8 @@ class CreatePostRequest(BaseModel):
 
 class QuotedPostResponse(BaseModel):
     id: uuid.UUID | None
+    public_id: str | None = None
+    slug: str | None = None
     author_username: str | None
     author_display_name: str | None = None
     content: str

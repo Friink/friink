@@ -5,7 +5,7 @@ import { type MouseEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProfileCard } from '@/components/profile-card';
 import type { Post } from '@/lib/data';
-import { getPostPathForPost } from '@/lib/post-path';
+import { getPostPath, getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
 
 type FeedPostProps = {
@@ -73,19 +73,33 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
       </div>
       <p ref={bodyRef} className={`feed-post-body${shouldClampBody ? ' feed-post-body-clamped' : ''}`}>{post.text}</p>
       {post.quotedPost && (
-        <div className={`feed-post-quote${post.quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
-          {post.quotedPost.authorUsername ? (
-            <ProfileCard
-              name={post.quotedPost.authorDisplayName || `@${post.quotedPost.authorUsername}`}
-              handle={`@${post.quotedPost.authorUsername}`}
-              tone="mint"
-            />
-          ) : (
-            <strong>Original post unavailable</strong>
-          )}
-          <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}>{post.quotedPost.content}</p>
-          {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
-        </div>
+        (() => {
+          const quotedPost = post.quotedPost;
+          const quotedPostPath = quotedPost.authorUsername && quotedPost.publicId
+            ? getPostPath(quotedPost.authorUsername, quotedPost.slug ?? '', quotedPost.publicId)
+            : null;
+          const quoteContent = (
+            <div className={`feed-post-quote${quotedPost.unavailable ? ' feed-post-quote-unavailable' : ''}`}>
+              {quotedPost.authorUsername ? (
+                <ProfileCard
+                  name={quotedPost.authorDisplayName || `@${quotedPost.authorUsername}`}
+                  handle={`@${quotedPost.authorUsername}`}
+                  tone="mint"
+                />
+              ) : (
+                <strong>Original post unavailable</strong>
+              )}
+              <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}>{quotedPost.content}</p>
+              {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
+            </div>
+          );
+
+          return quotedPostPath ? (
+            <Link className="feed-post-quote-link" href={quotedPostPath} aria-label={`Open quoted post by ${quotedPost.authorUsername}`}>
+              {quoteContent}
+            </Link>
+          ) : quoteContent;
+        })()
       )}
       {bodyOverflows && !isExpanded && (
         <button

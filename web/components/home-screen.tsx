@@ -70,6 +70,8 @@ function mapApiPost(post: ApiPost): Post {
     quotedPost: post.quoted_post
       ? {
           id: post.quoted_post.id,
+          publicId: post.quoted_post.public_id,
+          slug: post.quoted_post.slug,
           authorUsername: post.quoted_post.author_username,
           authorDisplayName: post.quoted_post.author_display_name,
           content: post.quoted_post.content,

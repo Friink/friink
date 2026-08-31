@@ -322,6 +322,8 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
     if quoted_post.user and quoted_post.user.is_private and (not session or not can_view_post(session, viewer, quoted_post)):
         return QuotedPostResponse(
             id=quoted_post.id,
+            public_id=getattr(quoted_post, "public_id", None),
+            slug=getattr(quoted_post, "slug", None),
             author_username=None,
             author_display_name=None,
             content="Content not available",
@@ -329,6 +331,8 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         )
     return QuotedPostResponse(
         id=quoted_post.id,
+        public_id=getattr(quoted_post, "public_id", None),
+        slug=getattr(quoted_post, "slug", None),
         author_username=quoted_post.user.username,
         author_display_name=quoted_post.user.display_name,
         content=quoted_post.content,

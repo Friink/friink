@@ -19,6 +19,13 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
+### Rule: Route-Based Navigation Uses Real Links
+- **What:** Navigation controls that have a stable destination must render as anchors with an `href`, including the signed-in drawer routes. Client-side click handling may intercept normal clicks, but the destination must remain available to browser status previews, middle-click, and open-in-new-tab behavior.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx`
+- **Since:** 2026-08-31 (Asia/Karachi)
+
 ### Rule: Profile Header Summary Uses ContentBox Spacing
 - **What:** Web profile pages render profile identity, about text, follower/following stats, and edit/message/follow actions through the shared `ProfileScreen` inside `ContentBox`. These elements are grouped in the component-level profile summary section, not patched with route-specific spacing.
 - **Edge cases:** Profile stats are API-backed, remain inline and left-aligned, and each complete number-and-label statistic is an ununderlined link. Self-profile links use `/connections?tab=...`; another profile uses `/{username}/connections?tab=...`. Edit/message/follow actions move to a dedicated left-aligned row below them on all viewports. The dynamic `/{username}` route must continue delegating to shared `AppShell` and `ProfileScreen`.
@@ -50,6 +57,14 @@ the entry, so history isn't lost.
 - **Platform:** All
 - **File(s):** `api/app/models/post.py`, `api/app/services/post_slug.py`, `api/app/routers/posts.py`, `api/alembic/versions/20260830_0009_add_public_id_to_posts.py`, `web/lib/post-path.ts`
 - **Since:** 2026-08-30 (Asia/Karachi)
+
+### Rule: Quoted Posts Link To Their Original
+- **What:** A quoted-post block in a feed or post card links to the original post's canonical detail URL when that original is available. The parent quote post remains navigable through its surrounding non-interactive card area.
+- **Edge cases:** Profile-card clicks continue to open the author's profile. Deleted, private, or otherwise unavailable originals render a non-clickable `Original post unavailable`/`Content not available` block because there is not enough visible identity data to construct a safe canonical URL.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ## Authentication & Accounts
 

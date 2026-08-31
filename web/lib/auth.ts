@@ -439,6 +439,8 @@ export type ApiPost = {
   quote_count: number;
   quoted_post: {
     id: string | null;
+    public_id: string | null;
+    slug: string | null;
     author_username: string | null;
     author_display_name: string | null;
     content: string;

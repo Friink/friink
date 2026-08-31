@@ -4334,3 +4334,36 @@
 - Reason/Decision: The shared row header already presents the setting title and summary; repeating the same title above the control adds unnecessary visual noise.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-08-31 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make stable drawer navigation destinations visible as browser link previews.
+- Changes Made:
+  - Converted SideDrawer route controls to anchors with user-specific `href` values, including `/{username}/connections`.
+  - Preserved SPA navigation, active state, mobile drawer closing, and native new-tab behavior.
+  - Documented the route-link contract.
+- Files/Scope Touched: `web/components/side-drawer.tsx`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Browser status previews and open-in-new-tab behavior require real anchor destinations; buttons using only `router.push()` do not expose a URL before activation.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make quoted posts clickable to their original post page.
+- Changes Made:
+  - Added canonical public ID and slug fields to available quoted-post API payloads.
+  - Made an available quoted-post block a link to the original post while leaving unavailable quoted posts non-clickable.
+  - Preserved the existing parent-card and author-profile navigation behavior.
+  - Added compatibility handling for lightweight post fixtures without slug fields.
+- Files/Scope Touched: `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: The quoted post already has its own identity and canonical public URL data; linking the whole available quote block provides the requested original-post navigation without changing the parent post click target.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `python -m pytest tests/test_posts.py` passed with 16 tests; `git diff --check` passed.
+
