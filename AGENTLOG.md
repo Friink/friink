@@ -4451,3 +4451,20 @@
 - Reason/Decision: Showing a concise plan preview on the landing page supports conversion, while a dedicated `/subscriptions` page provides a stable, shareable comparison surface before billing is ready.
 - Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
 
+---
+
+### Entry
+
+- Date/Time: 2026-09-01 (Asia/Karachi)
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a dedicated Subscription tab under Settings.
+- Changes Made:
+  - Added `subscription` to the Settings tab type, route validation, and URL navigation.
+  - Added a current `Friink Free` plan summary with a `View plans` link to `/subscriptions`.
+  - Added shared styling for the subscription summary and plan link.
+  - Updated the design contract, product rules, changelog, and agent log.
+- Files/Scope Touched: `web/components/account-screens.tsx`, `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: A dedicated tab gives subscriptions a stable home now and leaves room for future plan status, billing, renewal, upgrade, downgrade, and cancellation controls without crowding Account.
+- Verification: `npx tsc -p tsconfig.json --noEmit --incremental false` passed in `web`; `git diff --check` passed.
+
