@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T16:20:00Z
+
+- [notifications] Added 4-second adaptive unread-count polling with hidden-tab pausing, focus/visibility recovery, and full-list refresh while Notifications is open. Existing notification UI and read behavior remain unchanged.
+
 ## 2026-09-01T16:01:43Z
 
 - [chat] Replaced local mock conversations with authenticated REST-backed conversations and messages. Added cursor-based history, 4-second adaptive polling behind a transport interface, optimistic sends with client-message idempotency, accepted-connection authorization, and the schema/migration needed for future WebSocket transport without changing the chat UI.
@@ -287,6 +291,7 @@ _Last updated: 2026-09-01_
 - [web/media] Post media currently uses a fixed 3:5 react-easy-crop frame, submit-time R2 upload, up to 8 images, a shared 3:4 frame for multi-image galleries, and natural-ratio single-image display. Final crop width, height, and aspect ratio are not currently persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
 - [auth] Usernames are case-insensitive identities. Signup and Settings perform availability checks, accepted usernames are stored canonically in lowercase, and the API/database enforce uniqueness.
 - [chat] Chat conversations and messages are API-backed. The active conversation uses a 4-second polling transport with focus/visibility recovery, cursor-based incremental loading, and retry-safe client message IDs; mute/request filtering remains unimplemented.
+- [notifications] The header unread count and open Notifications screen now use a 4-second polling transport with adaptive backoff after failures.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Following`.
 - [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.

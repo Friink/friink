@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T16:20:00Z — Add 4-second notification polling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add MVP notification polling using the same lifecycle and transport principles as chat.
+- Changes Made: Added a notification polling transport that checks unread count every 4 seconds, pauses in hidden tabs, resumes on focus/visibility recovery, and backs off after failures. Wired AppShell to refresh the full notification list while Notifications is open, while retaining existing initial loading and read-marking behavior.
+- Files: `web/lib/notification-transport.ts`, `web/components/app-shell.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Keep notification state reasonably fresh at MVP scale without WebSocket infrastructure or unnecessary full-list requests on every interval.
+- Notes: No visual design or API/database changes were made.
+- Verification Status: Web production build and API test suite were green before this documentation follow-up; final `git diff --check` is run after the documentation update.
+
 ## 2026-09-01T16:01:43Z — Implement MVP REST chat with polling transport
 
 - Agent: Codex

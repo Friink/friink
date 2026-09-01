@@ -21,6 +21,7 @@ import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
 import { getPostPath } from '@/lib/post-path';
+import { PollingNotificationTransport } from '@/lib/notification-transport';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
@@ -343,6 +344,20 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         // Keep the timeline empty when the API is not running.
       });
   }, []);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session) return;
+    const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
+    return transport.subscribe((count) => {
+      setUnreadNotificationCount(count);
+      if (activeScreen === 'notifications') {
+        listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
+          .then((page) => setNotifications(page.items.map(mapApiNotification).map((notification) => ({ ...notification, tone: 'sage', unread: false }))))
+          .catch(() => undefined);
+      }
+    });
+  }, [activeScreen]);
 
   useEffect(() => {
     const session = loadAuthSession();

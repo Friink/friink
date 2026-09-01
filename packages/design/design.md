@@ -46,6 +46,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
   - Notifications (`fa-bell`) opens a floating recent-notifications dropdown with up to four items, a green unread indicator on the bell, an unread-count pill, and an `All Notifications` link to `/notifications`.
+  - Notification freshness: the unread count uses a 4-second adaptive polling transport that pauses while the document is hidden and resumes on focus/visibility recovery; the full notification list refreshes while `/notifications` is open.
 
 ### Tab URL Contract
 

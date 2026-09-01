@@ -412,7 +412,7 @@ the entry, so history isn't lost.
 
 ### Rule: In-App Notifications Are Fetchable And Readable
 - **What:** Authenticated users can fetch a paginated notification feed, fetch an unread count, mark one notification read, or mark all their notifications read.
-- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. Marking another user's notification read returns `404`.
+- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Marking another user's notification read returns `404`.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/notification.py`, `api/app/services/notifications.py`, `api/app/routers/notifications.py`, `web/lib/auth.ts`, `web/components/notifications-screen.tsx`
