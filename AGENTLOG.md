@@ -10,6 +10,12 @@ LAYOUT RULE: Inline fixes and targeted per-screen spacing patches are strictly p
 
 ABSOLUTE WEB INLINE-CSS BAN: Never use inline CSS in the web app. Do not add JSX `style` props, `style="..."` attributes, or component-level inline CSS declarations for any reason. Put static styling in `web/app/globals.css` and use the shared token system. Runtime values must use a documented class/state or CSS custom-property mechanism owned by the shared styling system. This ban applies to `web/` only and does not govern the public site.
 
+ABSOLUTE WEB PAGE-CSS BAN: Never create or introduce page-specific CSS for the web app. Do not add screen/page CSS Modules, route-only stylesheets, or page-only style sections. All logged-in web-app styling must use semantic classes and shared rules in `web/app/globals.css`, backed by `web/theme.config.ts` tokens. This does not modify the public-site `web/app/landing.module.css`, which remains outside the logged-in app scope.
+
+ABSOLUTE TSX DESIGN BAN: Never define, modify, or quick-fix visual design in logged-in web-app TSX components. TSX may contain structure, semantic class names, state, behavior, and accessibility only. All colors, spacing, sizing, positioning, typography, borders, shadows, and layout changes must be made through `web/app/globals.css` and canonical tokens in `web/theme.config.ts`. This does not govern the public site.
+
+DESIGN FILE OWNERSHIP RULE: For the logged-in web app, only `web/theme.config.ts` and `web/app/globals.css` may be used for design changes. `theme.config.ts` owns canonical token values; `globals.css` owns generated variables and shared visual/layout rules. Do not place design rules in TSX, page-specific CSS, CSS Modules, route stylesheets, or any other web-app file.
+
 SESSION AUDIT REMINDER: UI fixes made in the 2026-08-30 session were verified as component-level changes in shared components, app shell state, shared CSS, and documented contracts. Keep future fixes on those shared surfaces unless `packages/design/design.md` documents a deliberate exception.
 
 DATABASE MIGRATION RULE: After any backend change that adds, removes, or changes SQLAlchemy models, Alembic migrations, schemas, or DB-backed query behavior, verify the target database is configured and migrated before treating staging/prod as healthy. Run/check `alembic current`, apply `alembic upgrade head` for the intended environment when needed, and verify at least one live ORM-backed endpoint, not only `/health/db`.
@@ -17,6 +23,16 @@ DATABASE MIGRATION RULE: After any backend change that adds, removes, or changes
 IMPORTANT: Do not add a `User` field to any entry. Entries should only include the date/time, agent, model, prompt summary, changes, files, reason, notes, and verification status.
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
+
+## 2026-09-01T14:58:26Z — Move content gutter outside the 720px visible column
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the 16px desktop content gutter sit outside the 720px visible content column and match the floating-bar rail spacing.
+- Changes Made: Updated the shared `.content-box` rule to calculate its width as the available panel width minus two shared inline insets, capped by `--space-content-col`, and removed its internal horizontal padding. The existing `.floating-bar-rail` continues to apply the same shared inline inset outside its 720px bar cap. Updated the design contract to document this ownership and boundary.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`
+- Reason: Ensure visible feed cards and the floating composer both resolve to the same 720px surface while preserving equal edge spacing at narrower breakpoints.
+- Verification Status: `npm run build` passed and `git diff --check` passed. The local built server could not load authenticated content for a second live measurement, so no new runtime geometry claim is made; source boundaries now explicitly match the diagnosed model. `RULES.md` was not modified.
 
 ## 2026-09-01T14:37:18Z — Remove web-app JSX inline style props
 

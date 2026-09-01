@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-01T14:59:34Z
+
+- [docs/web-architecture] Documented exclusive design-file ownership for the logged-in web app: design changes may use only `web/theme.config.ts` and `web/app/globals.css`. TSX, page-specific CSS, CSS Modules, route stylesheets, and other web-app files must not contain design rules.
+
+## 2026-09-01T14:58:26Z
+
+- [web/layout] Moved the shared 16px desktop content gutter outside the visible 720px `ContentBox` column, matching the floating-bar rail’s outer gutter. Feed surfaces can now reach the same visible cap as the composer while remaining inset on narrower screens.
+
+## 2026-09-01T14:49:35Z
+
+- [docs/web-architecture] Added a standing rule that logged-in web-app TSX must never define or modify visual design. TSX is limited to structure, semantic classes, state, behavior, and accessibility; visual changes belong in `web/app/globals.css` and `web/theme.config.ts` tokens.
+
+## 2026-09-01T14:46:01Z
+
+- [docs/web-architecture] Added a standing ban on page-specific CSS for the logged-in web app. Future app styling must use semantic classes and shared rules in `web/app/globals.css` with `web/theme.config.ts` tokens; the public-site landing stylesheet remains explicitly out of scope.
+
 ## 2026-09-01T14:41:37Z
 
 - [docs/web-architecture] Added an absolute, standing ban on inline CSS in `web/` to `AGENTLOG.md` and `packages/design/design.md`: no JSX `style` props, HTML style attributes, or component-level inline CSS declarations. Static styling must use shared CSS/tokens; runtime values must use documented shared mechanisms. The public site is excluded.

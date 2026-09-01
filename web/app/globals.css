@@ -4359,9 +4359,9 @@ input[type="search"]:focus {
   display: flex;
   flex-direction: column;
   align-self: center;
-  width: min(100%, var(--space-content-col));
+  width: min(calc(100% - (2 * var(--space-content-inset-inline))), var(--space-content-col));
   margin-inline: auto;
-  padding: 0 var(--space-content-inset-inline) 3rem;
+  padding: 0 0 3rem;
   flex: 1 1 auto;
   min-height: 0;
   overflow: visible;
