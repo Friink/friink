@@ -18,6 +18,16 @@ AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in
 
 HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten, or reorganize existing rules when adding a new one — add the new rule as its own entry at the bottom instead. If an edit to this header would leave fewer rules present than before, stop and flag it instead of proceeding.
 
+## 2026-09-01T12:08:00Z — Align floating bar with desktop content panel
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the floating bar’s horizontal alignment and update the layout documentation.
+- Changes Made: On desktop, `.floating-bar-rail` now uses `left: var(--desktop-sidebar-width)`, `right: 0`, and `width: auto`, matching the `.main-panel` area that begins after the fixed/collapsible side drawer. The rail remains full-width on mobile; the bar retains flex centering, `margin: 0 auto`, and the shared `512px` maximum width.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The content box was centered within the post-sidebar main panel while the fixed floating rail was centered across the entire viewport, causing a visible horizontal offset.
+- Verification Status: `npm run build` completed successfully. No inline styles or positioning calculations were introduced.
+
 ## 2026-09-01T10:54:14Z — Completed real authenticated cross-tab refresh-race verification
 
 - Agent: Codex

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T12:08:00Z
+
+- [web/layout] Corrected the desktop floating-bar rail so it shares the main-panel boundary after the side drawer; the bar remains capped at 512px and centered with flex alignment. Updated the active layout documentation and design contract.
+
 ## 2026-09-01T10:54:14Z
 
 - [auth/verification] Completed the real authenticated two-tab refresh-race test: one coordinated refresh occurred, neither tab logged out, no reuse-detection event fired, and both tabs succeeded on follow-up authenticated requests. Added Web Locks as the primary cross-tab lock with storage coordination fallback and recorded the evidence in AGENTLOG.md.

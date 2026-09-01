@@ -29,7 +29,7 @@ the entry, so history isn't lost.
 
 ### Rule: Primary Desktop Content Uses A 512px Shared Cap
 - **What:** The shared `ContentBox` caps primary logged-in app content at `512px` on desktop and centers it within the available main panel. On smaller screens it remains fluid within the responsive content gutter.
-- **Edge cases:** Screen-level wrappers must not introduce competing max-widths or duplicate outer gutters. The floating bar and media surfaces retain their own documented width contracts unless explicitly changed.
+- **Edge cases:** Screen-level wrappers must not introduce competing max-widths or duplicate outer gutters. The floating bar rail must use the same available main-panel area as `ContentBox`: full viewport width on mobile, and from the desktop sidebar edge to the viewport edge on desktop. The bar itself retains the shared `512px` cap and flex/margin-auto centering.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/content-box.tsx`, `web/app/globals.css`, `packages/design/design.md`

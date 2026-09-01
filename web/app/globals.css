@@ -4614,6 +4614,12 @@ input[type="search"]:focus {
     min-height: 100vh;
   }
 
+  .floating-bar-rail {
+    left: var(--desktop-sidebar-width);
+    right: 0;
+    width: auto;
+  }
+
   .mobile-home-navigation,
   .mobile-page-navigation {
     left: var(--desktop-sidebar-width);
