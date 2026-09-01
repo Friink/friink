@@ -108,7 +108,7 @@ export function ChatClient({ username }: ChatClientProps) {
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} disabled={!conversation || Boolean(error)} busy={busy} />}
+      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} placeholder="Write a message..." disabled={!conversation || Boolean(error)} busy={busy} />}
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
