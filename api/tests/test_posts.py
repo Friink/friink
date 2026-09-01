@@ -10,7 +10,7 @@ from app.routers import posts as posts_router
 from app.models.post import Post
 from app.models.post import PostKind
 from app.models.user import User
-from app.schemas.posts import CreatePostRequest, PostMediaUploadUrlRequest
+from app.schemas.posts import CreatePostRequest, PostMediaConfirmRequest, PostMediaUploadUrlRequest
 from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, extract_mentioned_usernames, serialize_post, serialize_quoted_post
 
 
@@ -36,6 +36,30 @@ async def test_post_media_upload_plan_exposes_diagnostic_stage(monkeypatch) -> N
     assert "Reference:" in error.value.detail
     assert error.value.headers["X-Friink-Post-Media-Stage"] == "upload_plan_generation"
     assert error.value.headers["X-Friink-Request-Id"] in error.value.detail
+
+
+@pytest.mark.asyncio
+async def test_post_media_confirmation_returns_public_url(monkeypatch) -> None:
+    class Storage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def confirm_post_media_object(self, object_key, user_id) -> None:
+            assert object_key == "post-media/user/image.jpg"
+
+        def public_url(self, object_key) -> str:
+            return f"https://cdn.example/{object_key}"
+
+    monkeypatch.setattr(posts_router, "StorageService", Storage)
+
+    result = await posts_router.confirm_post_media_upload(
+        PostMediaConfirmRequest(object_key="post-media/user/image.jpg"),
+        SimpleNamespace(id=uuid.uuid4()),
+        SimpleNamespace(),
+    )
+
+    assert result.object_key == "post-media/user/image.jpg"
+    assert result.public_url == "https://cdn.example/post-media/user/image.jpg"
 
 
 @pytest.mark.asyncio

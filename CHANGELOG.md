@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-01T01:07:40Z
+
+- [api/web] Added a post-specific media confirmation API and changed the post client to request, upload, and confirm one image at a time before associating media with the post. Post-media namespace, JPEG/500KB limit, eight-image limit, ownership checks, and cleanup rules remain post-specific; profile-picture code was not changed.
+
+## 2026-09-01T00:53:00Z
+
+- [diagnostic] Reproduced the reported post-media toast as a network-level failure: the local web app was configured for `http://localhost:8000` while no API listener was running. Started the local FastAPI API with the ignored staging R2 configuration, installed the already-declared local `boto3` dependency, verified database health/CORS, and confirmed post presigned-URL generation.
+
+## 2026-09-01T00:45:39Z
+
+- [docs] Added `docs/media-upload.md`, an implementation audit of profile-picture and post-media preparation, presigned R2 transfer, confirmation, persistence, cleanup, diagnostics, configuration risks, session behavior, and verification steps.
+
 ## 2026-09-01T00:40:38Z
 
 - [web] Refactored the general post-media presigned upload path around a reusable storage PUT helper, added stage-specific transfer errors, and made cleanup include keys before each PUT so partially received uploads can be removed; profile-picture upload behavior is unchanged.

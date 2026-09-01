@@ -648,8 +648,9 @@ export async function listPostReplies(postId: string): Promise<ApiPost[]> {
 }
 
 type PostMediaUploadUrls = { items: PresignedMediaUpload[] };
+type PostMediaConfirmation = { object_key: string; public_url: string };
 
-function postMediaUploadError(stage: 'start' | 'transfer', error: unknown): AuthApiError {
+function postMediaUploadError(stage: 'start' | 'transfer' | 'confirm', error: unknown): AuthApiError {
   const apiError = error instanceof AuthApiError ? error : null;
   const transferError = error instanceof PresignedMediaUploadError ? error : null;
   const status = apiError?.status ?? transferError?.status ?? 0;
@@ -670,6 +671,25 @@ function postMediaUploadError(stage: 'start' | 'transfer', error: unknown): Auth
     return new AuthApiError(`The API could not prepare the image upload (${status}). ${apiError?.message || 'Check the API logs.'}`, status);
   }
 
+  if (stage === 'confirm') {
+    if (status === 404) {
+      return new AuthApiError('The API could not find the post-media confirmation endpoint (404). Redeploy the FastAPI project with the latest code.', status);
+    }
+    if (status === 502) {
+      return new AuthApiError('The image reached storage, but the API could not verify it. Check the R2 object and API logs.', status);
+    }
+    if (status === 503) {
+      return new AuthApiError('The image reached storage, but post-media storage is not configured on the API.', status);
+    }
+    if (status === 401) {
+      return new AuthApiError('The image reached storage, but your login session expired before confirmation. Please log in again.', status);
+    }
+    if (status === 0) {
+      return new AuthApiError('The image reached storage, but the API could not confirm it. Check the API deployment and connection.', status);
+    }
+    return new AuthApiError(`The API could not confirm the image (${status}). ${apiError?.message || 'Check the API logs.'}`, status);
+  }
+
   if (status === 0) {
     return new AuthApiError('The image could not be sent to storage. Check the storage bucket CORS policy and upload configuration.', status);
   }
@@ -683,32 +703,44 @@ function postMediaUploadError(stage: 'start' | 'transfer', error: unknown): Auth
 }
 
 async function uploadPostMedia(accessToken: string, files: File[]): Promise<string[]> {
-  const compressedFiles = await Promise.all(files.map((file) => compressImage(file, 'postMedia')));
-  let uploadUrls: PostMediaUploadUrls;
-  try {
-    uploadUrls = await requestApi<PostMediaUploadUrls>('/posts/media/upload-url', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` },
-      authContext: 'authenticated_request',
-      body: JSON.stringify({ count: compressedFiles.length }),
-    });
-  } catch (error) {
-    throw postMediaUploadError('start', error);
-  }
-
-  if (uploadUrls.items.length !== compressedFiles.length) {
-    throw new AuthApiError('The server returned an incomplete post-media upload plan.', 502);
-  }
   const uploadedKeys: string[] = [];
   try {
-    for (const [index, item] of uploadUrls.items.entries()) {
+    for (const file of files) {
+      const compressedFile = await compressImage(file, 'postMedia');
+      let uploadUrls: PostMediaUploadUrls;
+      try {
+        uploadUrls = await requestApi<PostMediaUploadUrls>('/posts/media/upload-url', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          authContext: 'authenticated_request',
+          body: JSON.stringify({ count: 1 }),
+        });
+      } catch (error) {
+        throw postMediaUploadError('start', error);
+      }
+      const item = uploadUrls.items[0];
+      if (uploadUrls.items.length !== 1 || !item) {
+        throw new AuthApiError('The server returned an invalid one-image post-media upload plan.', 502);
+      }
+
       // Claim the key before PUT: storage may receive the body even when the
       // browser observes a failed or interrupted response.
       uploadedKeys.push(item.object_key);
       try {
-        await uploadPresignedMedia(item, compressedFiles[index]);
+        await uploadPresignedMedia(item, compressedFile);
       } catch (error) {
         throw postMediaUploadError('transfer', error);
+      }
+
+      try {
+        await requestApi<PostMediaConfirmation>('/posts/media/confirm', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          authContext: 'authenticated_request',
+          body: JSON.stringify({ object_key: item.object_key }),
+        });
+      } catch (error) {
+        throw postMediaUploadError('confirm', error);
       }
     }
     return uploadedKeys;

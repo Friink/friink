@@ -13,7 +13,7 @@ from app.routers.auth import get_current_user
 from app.services.security import decode_token
 from app.services.auth import user_id_from_subject
 from app.config import Settings, get_settings
-from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostMediaCleanupRequest, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse
+from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostMediaCleanupRequest, PostMediaConfirmRequest, PostMediaConfirmResponse, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.posts import can_view_post, create_post, delete_post, get_feed_context, get_newer_posts, get_post, get_post_by_public_id, get_post_for_response, get_post_replies, get_posts_page, serialize_post
 from app.services.session_ops import rollback
@@ -100,6 +100,54 @@ async def create_post_media_upload_urls(
             error=exc,
         ) from exc
     return PostMediaUploadUrlResponse(items=items)
+
+
+@router.post("/media/confirm", response_model=PostMediaConfirmResponse)
+async def confirm_post_media_upload(
+    payload: PostMediaConfirmRequest,
+    current_user: User = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+) -> PostMediaConfirmResponse:
+    storage = StorageService(settings)
+    request_id = _post_media_request_id()
+    try:
+        storage.confirm_post_media_object(payload.object_key, current_user.id)
+    except ValueError as exc:
+        raise _post_media_http_error(
+            stage="object_key_validation",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="The post-media object key is invalid.",
+            error=exc,
+        ) from exc
+    except StorageNotConfiguredError as exc:
+        raise _post_media_http_error(
+            stage="object_verification_storage_config",
+            request_id=request_id,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Post-media upload storage is not configured.",
+            error=exc,
+        ) from exc
+    except StorageObjectError as exc:
+        raise _post_media_http_error(
+            stage="object_verification",
+            request_id=request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            message="The uploaded post image could not be verified.",
+            error=exc,
+        ) from exc
+    except Exception as exc:
+        raise _post_media_http_error(
+            stage="object_verification_unexpected",
+            request_id=request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            message="The API encountered an unexpected post-image verification error.",
+            error=exc,
+        ) from exc
+    return PostMediaConfirmResponse(
+        object_key=payload.object_key,
+        public_url=storage.public_url(payload.object_key),
+    )
 
 
 @router.post("/media/cleanup", status_code=status.HTTP_204_NO_CONTENT)

@@ -33,6 +33,15 @@ class PostMediaUploadUrlResponse(BaseModel):
     items: list[PostMediaUploadUrlItem]
 
 
+class PostMediaConfirmRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=512)
+
+
+class PostMediaConfirmResponse(BaseModel):
+    object_key: str
+    public_url: str
+
+
 class PostMediaCleanupRequest(BaseModel):
     storage_keys: list[str] = Field(min_length=1, max_length=POST_MEDIA_MAX_FILES)
 

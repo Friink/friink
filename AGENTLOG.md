@@ -1,3 +1,64 @@
+## 2026-09-01T01:07:40Z — Add one-at-a-time post-media confirmation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Copy the profile upload/confirmation API structure for post media while preserving post business rules, then test the one-image sequence.
+- Changes Made:
+  - Added `POST /posts/media/confirm` with the same verification-oriented API shape as profile confirmation, but using `post-media/{user_id}/...jpg`, JPEG validation, and the 500KB post-media limit.
+  - Added post confirmation request/response schemas returning the verified post object key and public URL.
+  - Changed the web post flow to process each selected image independently: compress, request one upload URL, upload one JPEG, call post confirmation, then proceed to the next image.
+  - Kept post creation’s final verification and association boundary intact and retained post-only cleanup; no profile confirmation deletion or profile business rules were copied.
+  - Updated `docs/media-upload.md` and `R2.md` to describe the one-at-a-time post sequence.
+- Files:
+  - `api/app/routers/posts.py`
+  - `api/app/schemas/posts.py`
+  - `api/tests/test_posts.py`
+  - `web/lib/auth.ts`
+  - `docs/media-upload.md`
+  - `R2.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The requested experiment needs a post-specific confirmation boundary after each direct R2 upload. Reusing the profile endpoint itself would create profile-picture keys and could affect or conflict with profile state, so the same endpoint structure was applied to the post namespace and rules instead.
+- Notes: The deployed staging API and web projects must be redeployed before this new `/posts/media/confirm` route and client sequence exist on staging. Profile-picture source and behavior were not modified.
+- Verification: `python -m pytest tests/test_posts.py -q` passed with 22 tests; `npx tsc --noEmit --incremental false` passed; `git diff --check` passed; profile-picture files have no diff.
+
+## 2026-09-01T00:53:00Z — Resolve reported post-media connection failure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the reported post-media upload failure while strictly leaving profile-picture source unchanged.
+- Changes Made:
+  - Diagnosed the exact toast as the `status 0` start-stage error from the browser failing to reach the configured API origin.
+  - Confirmed `web/.env.local` points to `http://localhost:8000` and that the API port was not listening.
+  - Started FastAPI locally with the existing ignored staging R2 configuration and installed the already-declared `boto3` dependency in the local virtual environment.
+  - Started the Next.js web server locally for retry.
+  - Verified `GET /` and `GET /health/db` return 200, CORS preflight for the post upload route returns 200, and post presigned URL generation succeeds.
+  - Did not modify any profile-picture source, configuration, or business behavior.
+- Files:
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The screenshot error occurs before R2 and before post creation; it is caused by an unavailable API connection, so rewriting media code cannot resolve that particular event. Restoring the configured local API and its declared storage dependency is the direct fix for the observed environment.
+- Notes: Both local servers are currently running on ports 8000 and 3000. A deployed staging occurrence still requires the staging API deployment to be reachable and redeployed with the post-media routes.
+- Verification: Local web returned HTTP 200; API root and database health returned HTTP 200; post presigning succeeded; `git diff --check` passed.
+
+## 2026-09-01T00:45:39Z — Add media upload audit documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Produce a technical audit summary of profile-picture and post-media uploads in `docs/media-upload.md`.
+- Changes Made:
+  - Documented the shared R2 configuration, presigned URL architecture, browser CORS requirements, key namespaces, verification fallbacks, and deployment dependencies.
+  - Documented the profile-picture flow separately, including crop/compression rules, authenticated confirmation, replacement deletion, and failure stages.
+  - Documented the post-media flow separately, including local submit-time preparation, eight-file plan generation, sequential direct PUTs, post-specific verification/association, cleanup, request-stage diagnostics, and current media-rendering boundary.
+  - Added a comparison table, operational risk findings, session behavior notes, environment verification checklist, and source map.
+- Files:
+  - `docs/media-upload.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The profile and post flows share transport infrastructure but not business rules. The audit keeps those rules separate while making the exact handoffs between browser, API, R2, and database visible for deployment and failure analysis.
+- Notes: Documentation-only change; no upload or profile-picture behavior was modified.
+- Verification: Source details cross-checked against the current frontend and FastAPI implementations; `git diff --check` passed.
+
 ## 2026-09-01T00:40:38Z — Refactor general post-media upload transport
 
 - Agent: Codex
