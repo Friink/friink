@@ -16,6 +16,16 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T12:27:02Z — Update rendered media gallery framing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix broken media rendering by changing the displayed image frame to 3:4, adding spacing between images, and rounding every image.
+- Changes Made: Updated the shared `.post-media-gallery` gap to `0.5rem`/8px. Updated each `.post-media-gallery-item` from `3:5` to `3:4`, recalculated its width from the shared slide height, and applied `var(--radius-sm)`/8px to every frame. Updated the Post Media Gallery contract in `packages/design/design.md`.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The prior gallery used narrow `3:5` slides, a 4px gap, and only rounded the gallery container; individual image frames were not rounded.
+- Verification Status: `npm run build` passed. Visual inspection of the rebuilt local app showed the media gallery with separated, rounded portrait frames. Computed values confirmed `aspect-ratio: 3 / 4`, an `8px` gap, an `8px` item radius, and a `288px × 384px` frame; the floating bar remained `512px` wide.
+
 ## 2026-09-01T12:23:43Z — Remove content overflow causing floating-bar size mismatch
 
 - Agent: Codex

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T12:27:02Z
+
+- [web/media] Updated rendered post-media slides to a 3:4 aspect ratio, added an 8px gap between images, and applied the shared 8px radius to every image frame.
+
 ## 2026-09-01T12:23:43Z
 
 - [web/layout] Constrained list surfaces with a shrinkable grid track so media content cannot overflow the 512px `ContentBox`; this removes the apparent content/floating-bar size mismatch while preserving shared panel centering.
