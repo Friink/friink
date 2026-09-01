@@ -16,6 +16,36 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T12:39:42Z — Reconcile post-media rules and verify README logging guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `RULES.md` to match the shipped feed/media rendering and verify the README requirement to document every task.
+- Changes Made: Corrected the active post-media rule to distinguish the 3:5 crop tool from the 3:4 rendered gallery frame, and documented the 8px gallery gap and rounded image frames. Removed the stale rule claiming media payloads are unsupported and recorded that confirmed media items can support media-only posts up to the eight-item limit. Verified `README.md` still requires every task or prompt to append dated entries to `CHANGELOG.md` and `AGENTLOG.md`.
+- Files: `RULES.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The rules had retained pre-shipping media behavior and conflicted with the current implementation and design/changelog contracts.
+- Verification Status: Documentation-only verification completed; targeted source inspection confirmed the README requirement and current API media schema.
+
+## 2026-09-01T12:48:48Z — Improve single-image feed media rendering
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Improve the UX of feed posts containing one image while keeping the multi-image slider behavior.
+- Changes Made: Added a shared `.post-media-gallery-count-1` presentation that removes the visible trailing gallery background and sizes the single image from its natural aspect ratio, constrained by the available gallery width and responsive maximum height. Multi-image galleries remain fixed-height 3:4 sliders. Updated the design and product rules to document the distinction.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: A fixed-width gallery track left a large gray area beside common single-image posts, making the media appear artificially narrow and unfinished.
+- Verification Status: Source-level CSS inspection completed; `git diff --check` passed. No full build was run because the change is isolated to shared CSS and documentation.
+
+## 2026-09-01T12:35:31Z — Add async button loading design rule
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a design-system rule requiring every asynchronous button action to show a loader until the operation completes, then finish the session.
+- Changes Made: Added the active `Async Button Loading Rule` to `packages/design/design.md`. It requires a visible loading state for the full async operation, prevents duplicate activation, and applies to both success and failure completion paths.
+- Files: `packages/design/design.md`, `AGENTLOG.md`
+- Reason: Establish one consistent interaction rule for asynchronous button feedback across the product.
+- Verification Status: Documentation-only change; no runtime code was modified.
+
 ## 2026-09-01T12:27:02Z — Update rendered media gallery framing
 
 - Agent: Codex

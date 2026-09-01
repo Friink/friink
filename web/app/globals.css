@@ -4050,6 +4050,29 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   object-fit: cover;
 }
 
+.post-media-gallery-count-1 {
+  background: transparent;
+  border-color: transparent;
+  overflow: hidden;
+}
+
+.post-media-gallery-count-1 .post-media-gallery-item {
+  width: fit-content;
+  max-width: 100%;
+  height: auto;
+  max-height: var(--post-media-slide-height);
+  aspect-ratio: auto;
+  background: transparent;
+}
+
+.post-media-gallery-count-1 .post-media-gallery-item img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: var(--post-media-slide-height);
+  object-fit: contain;
+}
+
 @media (max-width: 480px) {
   .post-media-gallery {
     --post-media-slide-height: 15rem;

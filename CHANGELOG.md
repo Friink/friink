@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T12:48:48Z
+
+- [web/media] Added a shared single-image gallery variant that preserves the image's natural aspect ratio within the responsive content width/height bounds and removes the empty trailing gallery background; multi-image sliders retain uniform 3:4 slides.
+
+## 2026-09-01T12:39:42Z
+
+- [docs] Updated `RULES.md` to reflect the active submit-time post-media flow, media-only posts, and the current distinction between the 3:5 crop tool and 3:4 rendered gallery frames. Verified the README requirement to append changelog and agent-log entries after every task remains present.
+
 ## 2026-09-01T12:27:02Z
 
 - [web/media] Updated rendered post-media slides to a 3:4 aspect ratio, added an 8px gap between images, and applied the shared 8px radius to every image frame.
