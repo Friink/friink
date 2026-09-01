@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-01T11:15:00Z
+
+- [web] Made the shared modal topmost and changed post-media thumbnails to open a navigable 3:5 crop tool directly with Reset and Apply controls.
+
+## 2026-09-01T10:50:00Z
+
+- [docs] Synced `RULES.md` with the complete post-media implementation, including reordering, submit-state feedback, retry behavior, and slider rendering.
+
+## 2026-09-01T10:40:00Z
+
+- [docs] Updated `RULES.md` to match the new post-media slider behavior and responsive height contract.
+
 ## 2026-09-01T10:30:00Z
 
 - [web] Replaced the post-media grid with a fixed-height horizontal slider that preserves each image’s aspect-ratio width and shows all associated photos on desktop and mobile.

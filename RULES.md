@@ -12,11 +12,11 @@ the entry, so history isn't lost.
 ## Web Architecture
 
 ### Rule: Post Media Uploads Are Submit-Time And Image-Only
-- **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits; the API then validates ownership, type, and size before associating them with the authenticated user's new post.
-- **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Successfully associated media is returned as URL items and rendered through the shared responsive post-media gallery.
+- **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits, allows the user to reorder the selected attachments before submission, and submits files in the visible order. Clicking a thumbnail opens the 3:5 crop tool directly; Reset restores the crop view, Apply saves the crop, and previous/next arrows switch among attached images. The API then validates ownership, type, and size before associating them with the authenticated user's new post.
+- **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. While the post/media request is running, the Post button is disabled and shows the posting spinner; failed submissions preserve the draft and attachments for retry, while successful submissions clear them. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Successfully associated media is returned as URL items and rendered through the shared horizontal slider: all images remain available, each uses a common nominal height (`24rem` desktop, `15rem` compact screens), and a default 3:5 frame. The shared modal backdrop is above application overlays so crop controls remain interactive.
 - **Status:** Active
 - **Platform:** Web/API
-- **File(s):** `web/components/composer.tsx`, `web/lib/auth.ts`, `api/app/routers/posts.py`, `api/app/services/posts.py`, `api/app/services/storage.py`, `api/app/models/post.py`
+- **File(s):** `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/components/post-media-gallery.tsx`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/app/globals.css`, `api/app/routers/posts.py`, `api/app/services/posts.py`, `api/app/services/storage.py`, `api/app/models/post.py`
 - **Since:** 2026-09-01 (UTC)
 
 ### Rule: Web UI Fixes Must Be Component-Level

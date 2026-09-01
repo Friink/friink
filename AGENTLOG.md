@@ -5437,3 +5437,47 @@
   - `AGENTLOG.md`
   - `CHANGELOG.md`
 - Scope: Post-media display only. Profile-picture code and behavior were not changed.
+## 2026-09-01T10:40:00Z — Align RULES.md with post-media slider behavior
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm and update the rules documentation after changing the post-media gallery.
+- Changes Made:
+  - Updated the active post-media rule to describe the horizontal slider, all-image visibility, common desktop/mobile heights, and aspect-ratio-preserving widths.
+- Files:
+  - `RULES.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Documentation only. Profile-picture code and behavior were not changed.
+## 2026-09-01T10:50:00Z — Sync RULES.md with the complete post-media implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `RULES.md` for all post-media and composer changes made so far.
+- Changes Made:
+  - Expanded the active post-media rule to include local attachment reordering and submit order.
+  - Documented the disabled Post button/spinner during submission and retry-preserving failure behavior.
+  - Added the gallery, feed mapping, shell, and styling files to the rule’s implementation references.
+- Files:
+  - `RULES.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Documentation only. Profile-picture code and behavior were not changed.
+## 2026-09-01T11:15:00Z — Direct 3:5 post-media crop workflow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the shared modal topmost and make post-media thumbnails open a navigable 3:5 crop tool directly.
+- Changes Made:
+  - Raised the shared `Modal` backdrop above the application overlay stack.
+  - Removed the intermediate post-media preview step; thumbnail clicks now open cropping immediately.
+  - Added Reset and Apply controls, previous/next crop arrows, and a 3:5 crop aspect ratio for post media.
+  - Changed the published post-media slider to use a default 3:5 frame at the existing responsive nominal heights.
+- Files:
+  - `web/app/globals.css`
+  - `web/components/composer.tsx`
+  - `packages/design/design.md`
+  - `RULES.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Shared modal layering and post-media only. Profile-picture APIs, components, and behavior were not changed.

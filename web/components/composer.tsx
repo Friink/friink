@@ -109,7 +109,6 @@ export function Composer({
   const mediaRef = useRef<ComposerMedia[]>([]);
   const [media, setMedia] = useState<ComposerMedia[]>([]);
   const [mediaError, setMediaError] = useState('');
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [cropIndex, setCropIndex] = useState<number | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -170,7 +169,7 @@ export function Composer({
       return current.filter((entry) => entry.id !== id);
     });
     setMediaError('');
-    setPreviewIndex(null);
+    setCropIndex(null);
   }
 
   function reorderMedia(draggedId: string, targetId: string) {
@@ -186,11 +185,21 @@ export function Composer({
   }
 
   function openCrop(index: number) {
-    setPreviewIndex(null);
     setCropIndex(index);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
+  }
+
+  function resetCrop() {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  }
+
+  function changeCropImage(direction: -1 | 1) {
+    if (cropIndex === null || media.length < 2) return;
+    openCrop((cropIndex + direction + media.length) % media.length);
   }
 
   async function confirmCrop() {
@@ -239,7 +248,6 @@ export function Composer({
     if (result === false) return;
     mediaRef.current.forEach((item) => URL.revokeObjectURL(item.url));
     setMedia([]);
-    setPreviewIndex(null);
     setCropIndex(null);
   }
 
@@ -284,7 +292,7 @@ export function Composer({
           />
           {multiline ? <input ref={mediaInputRef} className="composer-media-input" type="file" accept="image/*" multiple onChange={handleMediaSelection} aria-label="Choose images to attach" /> : null}
         </div>
-        {multiline ? <ComposerMediaStrip media={media} onOpen={setPreviewIndex} onRemove={removeMedia} onReorder={reorderMedia} /> : null}
+        {multiline ? <ComposerMediaStrip media={media} onOpen={openCrop} onRemove={removeMedia} onReorder={reorderMedia} /> : null}
         {enableMentions ? (
           <MentionInput
             value={draft}
@@ -326,25 +334,17 @@ export function Composer({
         </button>
       </form>
       {mediaError ? <p className="composer-media-error" role="status">{mediaError}</p> : null}
-      {previewIndex !== null && media[previewIndex] ? (
-        <Modal title={`Image ${previewIndex + 1} of ${media.length}`} onClose={() => setPreviewIndex(null)} closeLabel="Close image preview" actions={
-          <>
-            <button className="settings-secondary-button" type="button" onClick={() => openCrop(previewIndex)}>Crop</button>
-            <button className="settings-secondary-button" type="button" onClick={() => removeMedia(media[previewIndex].id)}>Delete</button>
-          </>
-        }>
-          <img className="composer-media-modal-image" src={media[previewIndex].url} alt={`Attached image ${previewIndex + 1}`} />
-        </Modal>
-      ) : null}
       {cropIndex !== null && media[cropIndex] ? (
         <Modal title="Crop image" onClose={() => setCropIndex(null)} closeLabel="Cancel crop" actions={
           <>
-            <button className="settings-secondary-button" type="button" disabled={cropBusy} onClick={() => setCropIndex(null)}>Cancel</button>
+            <button className="settings-secondary-button" type="button" disabled={cropBusy} onClick={resetCrop}>Reset</button>
             <button className="settings-update-button" type="button" disabled={cropBusy || !croppedAreaPixels} onClick={confirmCrop}><i className={`fa-solid ${cropBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" /><span>{cropBusy ? 'Cropping…' : 'Apply crop'}</span></button>
           </>
         }>
           <div className="composer-media-crop-stage">
-            <Cropper image={media[cropIndex].url} crop={crop} zoom={zoom} aspect={1} cropShape="rect" showGrid onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)} />
+            {media.length > 1 ? <button className="composer-media-crop-arrow composer-media-crop-arrow-previous" type="button" disabled={cropBusy} onClick={() => changeCropImage(-1)} aria-label="Previous image" title="Previous image"><i className="fa-solid fa-chevron-left" aria-hidden="true" /></button> : null}
+            <Cropper image={media[cropIndex].url} crop={crop} zoom={zoom} aspect={3 / 5} cropShape="rect" showGrid onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)} />
+            {media.length > 1 ? <button className="composer-media-crop-arrow composer-media-crop-arrow-next" type="button" disabled={cropBusy} onClick={() => changeCropImage(1)} aria-label="Next image" title="Next image"><i className="fa-solid fa-chevron-right" aria-hidden="true" /></button> : null}
           </div>
           <label className="profile-picture-zoom"><span>Zoom</span><input type="range" min={1} max={3} step={0.05} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /></label>
         </Modal>
