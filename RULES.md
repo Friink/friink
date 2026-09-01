@@ -461,7 +461,7 @@ the entry, so history isn't lost.
 
 ### Rule: Floating Post Composer Expands Above Its Controls
 - **What:** The floating post composer has no field background or border. Once typing begins, its text editor occupies the full-width top row and grows upward to eight lines; longer drafts scroll within the editor. Attachment, character count, and send controls remain in the bottom row.
-- **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior.
+- **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior. Profile pages do not render the floating composer.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/composer.tsx`, `web/components/mention-input.tsx`, `web/app/globals.css`

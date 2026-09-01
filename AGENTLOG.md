@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Hide floating composer on profiles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Disable the floating composer on profile pages.
+- Changes Made: Updated the shared `AppShell` visibility condition to exclude the profile screen while preserving the composer on feed, chat, and other supported surfaces. Synchronized the profile composer contract across the living documentation.
+- Files: `web/components/app-shell.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Profile pages should not display the app-wide floating post composer.
+- Notes: This is a visibility/state change only; no styling, dimensions, or composer behavior changed.
+- Verification Status: Web production build and `git diff --check` are pending.
+
 ## 2026-09-01 — Require mutual follows for chat
 
 - Agent: Codex

@@ -136,7 +136,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || activeScreen === 'profile' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && activeScreen !== 'profile' && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {

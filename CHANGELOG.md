@@ -2,6 +2,10 @@
 
 ## 2026-09-01
 
+- [web/composer] Disabled the floating composer on profile pages so profiles remain focused on identity, actions, and profile content. Feed, chat, and other explicitly supported composer surfaces are unchanged.
+
+## 2026-09-01
+
 - [chat] Corrected chat authorization to require mutual accepted follows: both users must follow each other before a conversation can be created, listed, read, or used for sending. Updated the Direct Messages setting copy to match the enforced policy.
 
 ## 2026-09-01T16:20:00Z
