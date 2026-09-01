@@ -4257,7 +4257,7 @@ input[type="search"]:focus {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1024px;
+  max-width: 512px;
   margin: 0 auto;
   padding: 0 var(--space-content-inset-inline) 3rem;
   flex: 1 1 auto;

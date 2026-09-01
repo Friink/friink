@@ -14,7 +14,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
   - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
-- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `1024px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On desktop, the content surface is capped at `512px` width and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. `ContentBox` owns the standard page-side gutter and bottom spacing, so child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
 - **Floating Bar Rail Rule**: The persistent `FloatingBar` follows the same centered content rail as `ContentBox` instead of using a wider independent viewport width. It sits inset horizontally by `16px` on desktop and `8px` on mobile, with `16px` bottom spacing on all viewports, so its effective max width is `calc(1024px - 2rem)` on desktop and `calc(1024px - 1rem)` on mobile.
 - **Page Gutter Ownership Rule**: The shared `ContentBox` is the only default owner of app-page horizontal gutters. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) on desktop and `0.5rem` on mobile, with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
@@ -153,7 +153,7 @@ The following design tokens are locked hard values extracted directly from the c
 - **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
 - **Mobile Navigation / Tabs Height**: `2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
-- **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `1024px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
+- **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary desktop cap of `512px` for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
 - **Shared Inset Tokens**:
   - `--space-content-inset-inline`: `1rem` desktop, `0.5rem` mobile
   - `--space-content-inset-block`: `0.75rem`
@@ -399,7 +399,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### 15. ContentBox (`web/components/content-box.tsx`)
 - **Purpose**: Canonical app-page content wrapper for primary logged-in surfaces.
 - **Ownership Rule**: Owns the page-level horizontal gutter and the default bottom breathing room for content above the floating bar.
-- **Desktop Width Rule**: Caps primary logged-in content at `1024px` and centers it within the main panel.
+- **Desktop Width Rule**: Caps primary logged-in content at `512px` and centers it within the main panel.
 - **Do Not Duplicate Rule**: Child screen wrappers must not add a second page-level left/right gutter, center themselves with a narrower default width, or compete with `ContentBox` over the outer responsive inset unless an explicit contract documents why.
 - **Allowed Responsibility Split**:
   - `ContentBox`: page gutter, desktop width cap, centering, and bottom page spacing.

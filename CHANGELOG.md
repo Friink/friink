@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T11:35:00Z
+
+- [web] Reduced the shared desktop `ContentBox` maximum width from `1024px` to `512px`; mobile remains fluid.
+
 ## 2026-09-01T11:15:00Z
 
 - [web] Made the shared modal topmost and changed post-media thumbnails to open a navigable 3:5 crop tool directly with Reset and Apply controls.

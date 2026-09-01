@@ -5481,3 +5481,18 @@
   - `AGENTLOG.md`
   - `CHANGELOG.md`
 - Scope: Shared modal layering and post-media only. Profile-picture APIs, components, and behavior were not changed.
+## 2026-09-01T11:35:00Z — Reduce primary desktop content width
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Try a 512px maximum width for the shared desktop content box instead of 1024px.
+- Changes Made:
+  - Changed the shared `.content-box` desktop cap from `1024px` to `512px`.
+  - Updated the design contract and active rules entry; mobile remains fluid.
+- Files:
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `RULES.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Shared primary content layout only. Profile-picture code and behavior were not changed.

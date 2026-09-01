@@ -27,6 +27,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
+### Rule: Primary Desktop Content Uses A 512px Shared Cap
+- **What:** The shared `ContentBox` caps primary logged-in app content at `512px` on desktop and centers it within the available main panel. On smaller screens it remains fluid within the responsive content gutter.
+- **Edge cases:** Screen-level wrappers must not introduce competing max-widths or duplicate outer gutters. The floating bar and media surfaces retain their own documented width contracts unless explicitly changed.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/content-box.tsx`, `web/app/globals.css`, `packages/design/design.md`
+- **Since:** 2026-09-01 (UTC)
+
 ### Rule: In-App Accent Color Is Device-Local
 - **What:** Signed-in users may set a six-digit hex accent color from Settings > General. It overrides the app shell's brand token for the current device only; public/landing surfaces are not affected.
 - **Edge cases:** Invalid hex values cannot be saved. The default `#33aa55` is used when no valid local preference exists or local storage is unavailable.
