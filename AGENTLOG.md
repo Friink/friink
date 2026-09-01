@@ -1,3 +1,22 @@
+## 2026-09-01T00:40:38Z — Refactor general post-media upload transport
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Refactor the general media upload code to improve post uploads after prior diagnosis attempts failed, using the working profile upload flow as a structural reference without copying profile-picture business rules.
+- Changes Made:
+  - Added `web/lib/media-upload.ts` with a reusable presigned storage PUT helper and explicit transfer status/error handling.
+  - Refactored the post-media upload section of `web/lib/auth.ts` to use the helper, distinguish upload-plan failures from storage-transfer failures, and preserve HTTP status context for user-facing diagnostics.
+  - Marked each planned post-media object for cleanup before issuing its PUT, covering the case where storage receives the body but the browser observes a failed/interrupted response.
+  - Did not modify profile-picture upload functions, profile-picture storage behavior, or profile-picture product rules.
+- Files:
+  - `web/lib/media-upload.ts`
+  - `web/lib/auth.ts`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The post path had an inline, less diagnostic implementation of the same request/PUT sequence used successfully by profile pictures. A general transport primitive reduces divergence while keeping post-specific compression, JPEG/500KB limits, eight-file limits, storage namespace, confirmation, and cleanup rules in the post flow. Recording a key before PUT also makes cleanup safer for ambiguous transfer outcomes.
+- Notes: This is a source-level refactor and cannot by itself validate an already deployed staging API/R2 CORS configuration. Profile-picture code was intentionally left untouched.
+- Verification: `npx tsc --noEmit --incremental false` passed in `web`; `git diff --check` passed. Targeted API behavior was not changed.
+
 ## 2026-09-01T00:34:10Z — Remove mention-link underlines
 
 - Prompt Summary: Update the project documentation for the completed accent work and remove underlines from mentions.

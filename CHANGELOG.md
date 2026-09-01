@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T00:40:38Z
+
+- [web] Refactored the general post-media presigned upload path around a reusable storage PUT helper, added stage-specific transfer errors, and made cleanup include keys before each PUT so partially received uploads can be removed; profile-picture upload behavior is unchanged.
+
 ## 2026-09-01T00:34:10Z
 
 - [web/design] Removed the underline from rendered mention links in every state while keeping them accent-colored; documented the shared mention styling contract.

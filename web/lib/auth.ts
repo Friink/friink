@@ -1,5 +1,6 @@
 import { fetchApi } from '@/lib/api-origin';
 import { compressImage } from '@/lib/image-compression';
+import { PresignedMediaUploadError, uploadPresignedMedia, type PresignedMediaUpload } from '@/lib/media-upload';
 
 export type AuthUser = {
   id: string;
@@ -646,34 +647,69 @@ export async function listPostReplies(postId: string): Promise<ApiPost[]> {
   });
 }
 
-type PostMediaUploadUrls = { items: Array<{ upload_url: string; object_key: string }> };
+type PostMediaUploadUrls = { items: PresignedMediaUpload[] };
+
+function postMediaUploadError(stage: 'start' | 'transfer', error: unknown): AuthApiError {
+  const apiError = error instanceof AuthApiError ? error : null;
+  const transferError = error instanceof PresignedMediaUploadError ? error : null;
+  const status = apiError?.status ?? transferError?.status ?? 0;
+
+  if (stage === 'start') {
+    if (status === 404) {
+      return new AuthApiError('The API could not find the post-media upload endpoint (404). Redeploy the FastAPI project with the latest code.', status);
+    }
+    if (status === 503) {
+      return new AuthApiError('Post-media uploads are unavailable because storage is not configured on the API.', status);
+    }
+    if (status === 401) {
+      return new AuthApiError('Your login session is no longer valid. Please log in again before uploading images.', status);
+    }
+    if (status === 0) {
+      return new AuthApiError('The API could not be reached while preparing the image upload. Check the API deployment and connection.', status);
+    }
+    return new AuthApiError(`The API could not prepare the image upload (${status}). ${apiError?.message || 'Check the API logs.'}`, status);
+  }
+
+  if (status === 0) {
+    return new AuthApiError('The image could not be sent to storage. Check the storage bucket CORS policy and upload configuration.', status);
+  }
+  if (status === 403) {
+    return new AuthApiError('Storage rejected the image upload (403). Check the bucket permissions and CORS policy.', status);
+  }
+  if (status === 404) {
+    return new AuthApiError('Storage could not find the generated upload target (404). Check the R2 account, bucket, and upload URL configuration.', status);
+  }
+  return new AuthApiError(`Storage could not accept the image (${status}). Check the bucket configuration and CORS policy.`, status);
+}
 
 async function uploadPostMedia(accessToken: string, files: File[]): Promise<string[]> {
   const compressedFiles = await Promise.all(files.map((file) => compressImage(file, 'postMedia')));
-  const uploadUrls = await requestApi<PostMediaUploadUrls>('/posts/media/upload-url', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    authContext: 'authenticated_request',
-    body: JSON.stringify({ count: compressedFiles.length }),
-  });
+  let uploadUrls: PostMediaUploadUrls;
+  try {
+    uploadUrls = await requestApi<PostMediaUploadUrls>('/posts/media/upload-url', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      authContext: 'authenticated_request',
+      body: JSON.stringify({ count: compressedFiles.length }),
+    });
+  } catch (error) {
+    throw postMediaUploadError('start', error);
+  }
+
   if (uploadUrls.items.length !== compressedFiles.length) {
-    throw new AuthApiError('The server returned an incomplete upload plan.', 502);
+    throw new AuthApiError('The server returned an incomplete post-media upload plan.', 502);
   }
   const uploadedKeys: string[] = [];
   try {
     for (const [index, item] of uploadUrls.items.entries()) {
-      let response: Response;
-      try {
-        response = await fetch(item.upload_url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'image/jpeg' },
-          body: compressedFiles[index],
-        });
-      } catch {
-        throw new AuthApiError('Could not reach image storage. Please check the upload configuration and try again.', 0);
-      }
-      if (!response.ok) throw new AuthApiError('Could not upload one of the images.', response.status);
+      // Claim the key before PUT: storage may receive the body even when the
+      // browser observes a failed or interrupted response.
       uploadedKeys.push(item.object_key);
+      try {
+        await uploadPresignedMedia(item, compressedFiles[index]);
+      } catch (error) {
+        throw postMediaUploadError('transfer', error);
+      }
     }
     return uploadedKeys;
   } catch (error) {
