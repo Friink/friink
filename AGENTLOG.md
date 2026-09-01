@@ -16,6 +16,16 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T12:23:43Z — Remove content overflow causing floating-bar size mismatch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit all positioning and sizing logic for `ContentBox` and `FloatingBar`, remove the conflicting layout behavior, redo centering, and verify visually.
+- Findings: Staging computed styles showed the shared `ContentBox` and floating bar both capped at `512px`, but `.page-surface-list` created a `624px` minimum-content grid track. Feed posts and media galleries consequently overflowed the content box, making the content look wider while the bar appeared short by comparison.
+- Changes Made: Added `grid-template-columns: minmax(0, 1fr)` to the shared `.page-surface-list` contract. The existing bar rail remains centered by flexbox and uses the same main-panel area as the content surface on desktop; no transform, viewport-width arithmetic, or inline positioning was added.
+- Files: `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Verification Status: `npm run build` passed. Visual inspection of the rebuilt local app showed the centered 512px floating bar. Computed layout inspection showed `ContentBox` and bar both at `512px`, with the list surface constrained to the content width and a `minmax(0, 1fr)` grid track. `git diff --check` follows this documentation update.
+
 ## 2026-09-01T12:14:25Z — Correct runtime content-width token and staging alignment
 
 - Agent: Codex

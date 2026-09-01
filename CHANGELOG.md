@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T12:23:43Z
+
+- [web/layout] Constrained list surfaces with a shrinkable grid track so media content cannot overflow the 512px `ContentBox`; this removes the apparent content/floating-bar size mismatch while preserving shared panel centering.
+
 ## 2026-09-01T12:14:25Z
 
 - [web/layout] Corrected the shared runtime theme token from `640px` to `512px`, which had been overriding the CSS content-width cap in staging. Updated the floating-bar/content-panel alignment contract.

@@ -392,7 +392,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### 14. PageSurface (`web/components/page-surface.tsx`)
 - **Purpose**: Shared first-level screen wrapper used inside `ContentBox` so app pages inherit one layout contract instead of owning custom outer spacing.
-- **Ownership Rule**: `PageSurface` may define screen display mode such as stacked sections or list flow, but it must not introduce page-level side gutters, custom max-widths, or competing centering.
+- **Ownership Rule**: `PageSurface` may define screen display mode such as stacked sections or list flow, but it must not introduce page-level side gutters, custom max-widths, or competing centering. List surfaces use a shrinkable `minmax(0, 1fr)` track so wide media content cannot expand beyond the shared `ContentBox`.
 - **Variant Rule**: Use the list variant for row/feed surfaces and the stack variant for forms or mixed vertical sections.
 - **Enforcement Rule**: Logged-in screens should mount a `PageSurface` directly inside `ContentBox` instead of hand-rolling a bespoke outer wrapper.
 - **Reuse Rule**: Prefer extending an existing shared layout primitive such as `PageSurface`, `ContentBox`, `ListRow`, or `FloatingBar` before creating a new wrapper component for a one-off page need.

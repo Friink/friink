@@ -4275,6 +4275,7 @@ input[type="search"]:focus {
 
 .page-surface-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .page-surface-stack {
