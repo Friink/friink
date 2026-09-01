@@ -321,8 +321,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### 8a. Post Media Gallery (`web/components/post-media-gallery.tsx`)
 - **Purpose**: Shared Instagram-style display for successfully associated post images in feed posts, post detail, replies, and quoted-post blocks.
-- **Layout**: One image uses a portrait `4:5` frame on compact screens and a responsive desktop frame capped at `min(70vh, 38rem)` so it remains visible above the floating composer. Two and four images use an even square grid. Three images use one larger left image with two stacked right images. Five through eight images show the first four positions with a `+N` overlay for the remaining count.
-- **Surface**: The gallery uses the shared line/background tokens, a small platform radius, a compact gap, and full-width mobile bleed aligned to the content inset. Images use `object-fit: cover` and lazy loading after the first image.
+- **Layout**: All images appear in a horizontal scroll slider. Every slide uses the same nominal height (`24rem` on desktop and `15rem` on compact screens); width follows each image's natural aspect ratio, so portrait, square, landscape, and panoramic images retain their proportions. Scroll snap aligns each slide to the gallery edge, and all associated images remain available instead of being hidden behind a count overlay.
+- **Surface**: The gallery uses the shared line/background tokens, a small platform radius, a compact gap, and full-width mobile bleed aligned to the content inset. Images use `object-fit: contain` and lazy loading after the first image.
 - **Accessibility**: The gallery exposes its image count through an accessible label, and every image receives an author-specific position-aware alt description.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with animated sliding indicator line.

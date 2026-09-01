@@ -5421,3 +5421,19 @@
   - `AGENTLOG.md`
   - `CHANGELOG.md`
 - Scope: Post composer attachments only. Profile-picture code and behavior were not changed.
+## 2026-09-01T10:30:00Z — Convert post media to a fixed-height aspect-ratio slider
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Display post photos in a horizontal slider with a common height and aspect-ratio-preserving widths on desktop and mobile.
+- Changes Made:
+  - Replaced the fixed multi-image grid and fourth-image overlay with a horizontal scroll-snap slider containing every associated image.
+  - Set a nominal slide height of `24rem` on desktop and `15rem` on compact screens; each image keeps its natural width at that height.
+  - Added region semantics and an accessible instruction to scroll horizontally for additional images.
+- Files:
+  - `web/components/post-media-gallery.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Post-media display only. Profile-picture code and behavior were not changed.

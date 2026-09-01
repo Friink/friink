@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T10:30:00Z
+
+- [web] Replaced the post-media grid with a fixed-height horizontal slider that preserves each image’s aspect-ratio width and shows all associated photos on desktop and mobile.
+
 ## 2026-09-01T10:10:00Z
 
 - [web] Added drag-and-drop ordering for post attachments and fixed the thumbnail remove icon’s clipping/stacking.
