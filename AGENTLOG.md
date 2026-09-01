@@ -5279,3 +5279,29 @@
   - `web/lib/auth.ts`
 - Reason/Decision: Direct R2 PUT does not use the Friink session, and post-media does not need a session rotation before every API step. Reactive refresh remains available if the access token is actually expired.
 - Verification: `npx tsc --noEmit --incremental false` passed. Profile-picture route/orchestration code was not changed.
+## 2026-09-01T04:45:00Z — Diagnose staging post-media HTTP 500
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the staging request log showing `POST /posts/media/upload-url` returning 500 with no outgoing APIs.
+- Finding:
+  - `api/app/routers/posts.py` collects `PostMediaUpload` dataclass instances from `PostMediaStorageService.create_upload()` and passes them directly to `PostMediaUploadUrlResponse(items=items)`.
+  - `PostMediaUploadUrlItem` is a Pydantic model and does not accept the `PostMediaUpload` dataclass as a validated model instance. Local reproduction raised `pydantic_core.ValidationError: Input should be a valid dictionary or instance of PostMediaUploadUrlItem`.
+  - The response construction occurs after the route's exception-handling block, so the validation error escapes as HTTP 500.
+  - This explains the staging log's “No outgoing requests”: boto3 presigned URL generation signs locally and does not contact R2; the failure happens while constructing the API response.
+- Scope: Diagnosis only. No application code, profile-picture API, or configuration was changed.
+- Evidence: Current source lines `posts.py:85` and `posts.py:102`; local Pydantic reproduction failed with the exact dataclass/model mismatch.
+## 2026-09-01T04:55:00Z — Fix post-media upload-plan response serialization
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the diagnosed fix for the staging `/posts/media/upload-url` HTTP 500 and document it.
+- Changes Made:
+  - Explicitly converted each `PostMediaUpload` storage dataclass into a `PostMediaUploadUrlItem` Pydantic response model in `api/app/routers/posts.py`.
+  - Added a regression test covering a successful upload-plan response, including a nullable public URL.
+  - Profile-picture APIs and implementation were not changed.
+- Root Cause: The route passed `PostMediaUpload` dataclass instances directly into `PostMediaUploadUrlResponse`, which requires `PostMediaUploadUrlItem` models. Pydantic raised a validation error after presigned URL generation, producing an unhandled HTTP 500 with no external API request.
+- Files:
+  - `api/app/routers/posts.py`
+  - `api/tests/test_posts.py`
+- Verification: `pytest tests/test_posts.py -q` passed (23 tests); API compileall passed; web TypeScript check passed.

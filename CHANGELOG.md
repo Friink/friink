@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T04:55:00Z
+
+- [api] Fixed the post-media upload-plan HTTP 500 by serializing storage upload dataclasses into the declared Pydantic response models; added regression coverage.
+
+## 2026-09-01T04:45:00Z
+
+- [diagnosis] Identified the post-media upload-url 500 as a Pydantic response-validation failure: `PostMediaUpload` dataclasses are passed directly where `PostMediaUploadUrlItem` models are required. No code fix was applied in this diagnostic step.
+
 ## 2026-09-01T03:05:00Z
 
 - [web/auth] Disabled proactive session refresh for post-media requests while preserving reactive refresh on `401 TOKEN_EXPIRED`; profile-picture behavior is unchanged.

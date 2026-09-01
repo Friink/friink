@@ -13,7 +13,7 @@ from app.routers.auth import get_current_user
 from app.services.security import decode_token
 from app.services.auth import user_id_from_subject
 from app.config import Settings, get_settings
-from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostMediaCleanupRequest, PostMediaConfirmRequest, PostMediaConfirmResponse, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse
+from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostMediaCleanupRequest, PostMediaConfirmRequest, PostMediaConfirmResponse, PostMediaUploadUrlItem, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse
 from app.services.post_media import PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
 from app.services.posts import can_view_post, create_post, delete_post, get_feed_context, get_newer_posts, get_post, get_post_by_public_id, get_post_for_response, get_post_replies, get_posts_page, serialize_post
 from app.services.session_ops import rollback
@@ -99,7 +99,16 @@ async def create_post_media_upload_urls(
             message="The API could not create the post-media upload plan.",
             error=exc,
         ) from exc
-    return PostMediaUploadUrlResponse(items=items)
+    return PostMediaUploadUrlResponse(
+        items=[
+            PostMediaUploadUrlItem(
+                upload_url=item.upload_url,
+                public_url=item.public_url,
+                object_key=item.object_key,
+            )
+            for item in items
+        ]
+    )
 
 
 @router.post("/media/confirm", response_model=PostMediaConfirmResponse)

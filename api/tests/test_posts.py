@@ -11,7 +11,34 @@ from app.models.post import Post
 from app.models.post import PostKind
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, PostMediaConfirmRequest, PostMediaUploadUrlRequest
+from app.services.post_media import PostMediaUpload
 from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, extract_mentioned_usernames, serialize_post, serialize_quoted_post
+
+
+@pytest.mark.asyncio
+async def test_post_media_upload_plan_serializes_storage_uploads(monkeypatch) -> None:
+    class Storage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def create_upload(self, user_id):
+            return PostMediaUpload(
+                upload_url="https://r2.example/upload",
+                public_url=None,
+                object_key=f"post-media/{user_id}/image.jpg",
+            )
+
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", Storage)
+
+    result = await posts_router.create_post_media_upload_urls(
+        PostMediaUploadUrlRequest(count=1),
+        SimpleNamespace(id=uuid.uuid4()),
+        SimpleNamespace(),
+    )
+
+    assert result.items[0].upload_url == "https://r2.example/upload"
+    assert result.items[0].public_url is None
+    assert result.items[0].object_key.startswith("post-media/")
 
 
 @pytest.mark.asyncio
