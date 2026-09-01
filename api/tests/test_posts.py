@@ -20,10 +20,10 @@ async def test_post_media_upload_plan_exposes_diagnostic_stage(monkeypatch) -> N
         def __init__(self, settings) -> None:
             pass
 
-        def generate_post_media_upload_url(self, user_id):
+        def create_upload(self, user_id):
             raise RuntimeError("presign service unavailable")
 
-    monkeypatch.setattr(posts_router, "StorageService", BrokenStorage)
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", BrokenStorage)
 
     with pytest.raises(HTTPException) as error:
         await posts_router.create_post_media_upload_urls(
@@ -44,13 +44,13 @@ async def test_post_media_confirmation_returns_public_url(monkeypatch) -> None:
         def __init__(self, settings) -> None:
             pass
 
-        def confirm_post_media_object(self, object_key, user_id) -> None:
+        def confirm(self, object_key, user_id) -> None:
             assert object_key == "post-media/user/image.jpg"
 
         def public_url(self, object_key) -> str:
             return f"https://cdn.example/{object_key}"
 
-    monkeypatch.setattr(posts_router, "StorageService", Storage)
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", Storage)
 
     result = await posts_router.confirm_post_media_upload(
         PostMediaConfirmRequest(object_key="post-media/user/image.jpg"),
@@ -70,13 +70,13 @@ async def test_post_media_database_failure_is_reported_as_association_stage(monk
         def __init__(self, settings) -> None:
             pass
 
-        def confirm_post_media_object(self, object_key, user_id) -> None:
+        def confirm(self, object_key, user_id) -> None:
             return None
 
         def public_url(self, object_key) -> str:
             return f"https://cdn.example/{object_key}"
 
-        def delete_post_media_object(self, object_key, user_id) -> None:
+        def delete(self, object_key, user_id) -> None:
             deleted_keys.append(object_key)
 
     class Session:
@@ -89,7 +89,7 @@ async def test_post_media_database_failure_is_reported_as_association_stage(monk
     async def fail_create_post(*args, **kwargs):
         raise RuntimeError("post_media table unavailable")
 
-    monkeypatch.setattr(posts_router, "StorageService", Storage)
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", Storage)
     monkeypatch.setattr(posts_router, "create_post", fail_create_post)
     session = Session()
     storage_key = "post-media/user/image.jpg"

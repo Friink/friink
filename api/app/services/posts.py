@@ -327,7 +327,7 @@ async def delete_post(session: Session, user: User, post_id: uuid.UUID, storage)
     media_items = list(session.execute(select(PostMedia).where(PostMedia.post_id == post.id)).scalars().all())
     for media in media_items:
         if media.storage_key:
-            storage.delete_post_media_object(media.storage_key, user.id)
+            storage.delete(media.storage_key, user.id)
     post.deleted_at = datetime.now(UTC)
     await commit(session)
 

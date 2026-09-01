@@ -1,3 +1,46 @@
+## 2026-09-01T01:26:19Z — Remove legacy post methods from shared storage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure the post-media rewrite is fully isolated and does not touch profile-picture APIs or behavior.
+- Changes Made:
+  - Removed the obsolete post-media constants, presign method, confirmation method, deletion method, and post-key validator from `api/app/services/storage.py`.
+  - Kept the profile-picture storage client, upload URL generation, confirmation, fallback verification, replacement deletion, and key validation unchanged.
+- Files:
+  - `api/app/services/storage.py`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Leaving old post-media implementations beside the new dedicated service would create two competing post paths and undermine the requested end-to-end rewrite. Removing only the legacy post methods makes `post_media.py` the sole post-media storage implementation.
+- Notes: No profile-picture API or profile-picture behavior was changed.
+- Verification: `git diff --check` passed; profile API file and profile UI file have zero diff; post tests and TypeScript checks remain passing.
+
+## 2026-09-01T01:24:25Z — Isolate post-media feature from profile storage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rewrite the entire post-media upload feature end to end while using profile-picture code only as reference and keeping profile-picture APIs untouched.
+- Changes Made:
+  - Added `api/app/services/post_media.py`, a dedicated R2 service for post-media presigning, ownership validation, JPEG/500KB verification, public URL construction, and post-media deletion.
+  - Rewired post upload-plan, per-file confirmation, cleanup, post creation verification, and post deletion to the dedicated post-media service.
+  - Kept the existing post business rules: submit-time uploads, `post-media/{user_id}/...jpg`, up to eight images, JPEG normalization, 500KB ceiling, ownership checks, cleanup after failure, and deletion cleanup.
+  - Kept the client one-image-at-a-time sequence: compress, request one URL, upload one image, confirm one image, then continue.
+  - Updated post tests and media audit documentation.
+  - Did not modify `api/app/routers/auth.py`, profile-picture routes, or profile-picture UI code. Removed only the obsolete post-media methods/constants from `api/app/services/storage.py`; its profile-picture methods remain unchanged.
+- Files:
+  - `api/app/services/post_media.py`
+  - `api/app/routers/posts.py`
+  - `api/app/services/posts.py`
+  - `api/app/schemas/posts.py`
+  - `api/tests/test_posts.py`
+  - `web/lib/auth.ts`
+  - `docs/media-upload.md`
+  - `R2.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The post feature had been coupled to a storage service that also contained profile-picture behavior. Isolating post storage makes the post flow independently auditable and prevents profile-picture rules or deletion behavior from being reused accidentally.
+- Notes: Staging must be redeployed with the API and web changes before the new post flow is available there. This source change does not alter profile-picture behavior.
+- Verification: `python -m pytest tests/test_posts.py -q` passed with 22 tests; `python -m compileall -q app` passed; `npx tsc --noEmit --incremental false` passed; `git diff --check` passed; profile-picture files have zero diff.
+
 ## 2026-09-01T01:07:40Z — Add one-at-a-time post-media confirmation
 
 - Agent: Codex

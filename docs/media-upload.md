@@ -52,7 +52,9 @@ request header is `Content-Type`.
 
 ### Storage service
 
-Current implementation: `api/app/services/storage.py`.
+Profile-picture implementation: `api/app/services/storage.py`. Post-media
+storage is isolated in `api/app/services/post_media.py` and does not use the
+profile-picture storage service.
 
 The service provides separate object-key namespaces:
 
@@ -407,7 +409,8 @@ For each environment, audit in this order:
 | Area | Files |
 |---|---|
 | R2 setup | `R2.md`, `api/.env.example` |
-| Shared storage | `api/app/services/storage.py` |
+| Profile storage | `api/app/services/storage.py` |
+| Post-media storage | `api/app/services/post_media.py` |
 | Profile API | `api/app/routers/auth.py`, `api/app/schemas/auth.py` |
 | Post API | `api/app/routers/posts.py`, `api/app/schemas/posts.py` |
 | Post service/model | `api/app/services/posts.py`, `api/app/models/post.py` |

@@ -17,8 +17,6 @@ class StorageObjectError(RuntimeError):
 
 
 MAX_PROFILE_PICTURE_BYTES = 3 * 1024 * 1024
-MAX_POST_MEDIA_BYTES = 500 * 1024
-POST_MEDIA_PREFIX = "post-media"
 
 
 @dataclass(frozen=True)
@@ -71,46 +69,8 @@ class StorageService:
         public_url = f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
         return UploadUrl(upload_url=upload_url, public_url=public_url, object_key=object_key)
 
-    def generate_post_media_upload_url(self, user_id: uuid.UUID) -> UploadUrl:
-        object_key = f"{POST_MEDIA_PREFIX}/{user_id}/{uuid.uuid4().hex}.jpg"
-        client = self._client()
-        upload_url = client.generate_presigned_url(
-            "put_object",
-            Params={"Bucket": self.settings.r2_bucket_name, "Key": object_key, "ContentType": "image/jpeg"},
-            ExpiresIn=900,
-            HttpMethod="PUT",
-        )
-        public_url = f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
-        return UploadUrl(upload_url=upload_url, public_url=public_url, object_key=object_key)
-
     def public_url(self, object_key: str) -> str:
         return f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
-
-    def confirm_post_media_object(self, object_key: str, user_id: uuid.UUID) -> None:
-        self._validate_post_media_key(object_key, user_id)
-        try:
-            metadata = self._client().head_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
-        except StorageNotConfiguredError:
-            raise
-        except Exception as exc:
-            # R2 public endpoints can reject or fail S3-compatible HEAD even
-            # when the object is available. Match profile-picture confirmation
-            # by verifying the bounded public URL instead of rejecting a valid
-            # upload solely because the metadata endpoint is unavailable.
-            public_url = self.public_url(object_key)
-            try:
-                self._verify_public_object(public_url, MAX_POST_MEDIA_BYTES, expected_content_type="image/jpeg")
-                return
-            except Exception as public_exc:
-                raise StorageObjectError("The post image could not be verified.") from public_exc
-        self._validate_uploaded_metadata(metadata, MAX_POST_MEDIA_BYTES, expected_content_type="image/jpeg")
-
-    @staticmethod
-    def _validate_uploaded_metadata(metadata: dict, max_bytes: int, *, expected_content_type: str | None = None) -> None:
-        if expected_content_type and str(metadata.get("ContentType", "")).lower() != expected_content_type:
-            raise StorageObjectError("Post images must be JPEG files.")
-        if int(metadata.get("ContentLength", 0)) > max_bytes:
-            raise StorageObjectError("Post images must be 500 KB or smaller.")
 
     @staticmethod
     def _verify_public_object(public_url: str, max_bytes: int, *, expected_content_type: str | None = None) -> None:
@@ -137,15 +97,6 @@ class StorageService:
                 raise StorageObjectError("Post images must be 500 KB or smaller.")
             if not content_length and len(response.read(max_bytes + 1)) > max_bytes:
                 raise StorageObjectError("Post images must be 500 KB or smaller.")
-
-    def delete_post_media_object(self, object_key: str, user_id: uuid.UUID) -> None:
-        self._validate_post_media_key(object_key, user_id)
-        try:
-            self._client().delete_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
-        except StorageNotConfiguredError:
-            raise
-        except Exception as exc:
-            raise StorageObjectError("The post image could not be removed.") from exc
 
     def confirm_object(self, object_key: str, user_id: uuid.UUID) -> None:
         self._validate_user_key(object_key, user_id)
@@ -187,12 +138,6 @@ class StorageService:
     def _validate_user_key(object_key: str, user_id: uuid.UUID) -> None:
         if not object_key.startswith(f"profile-pictures/{user_id}/") or object_key.count("/") != 2:
             raise ValueError("Profile picture object key is invalid.")
-
-    @staticmethod
-    def _validate_post_media_key(object_key: str, user_id: uuid.UUID) -> None:
-        prefix = f"{POST_MEDIA_PREFIX}/{user_id}/"
-        if not object_key.startswith(prefix) or object_key.count("/") != 2 or not object_key.endswith(".jpg"):
-            raise ValueError("Post media object key is invalid.")
 
     @staticmethod
     def _validate_stored_profile_key(object_key: str) -> None:

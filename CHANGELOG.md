@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T01:26:19Z
+
+- [api] Completed the post-media isolation by removing the obsolete post-media methods from the profile-capable storage service; profile-picture methods and APIs remain unchanged.
+
+## 2026-09-01T01:24:25Z
+
+- [api/web] Rebuilt post-media upload storage and orchestration as an isolated post-specific feature. Added a dedicated post R2 service and kept profile-picture APIs/storage untouched; post images retain their namespace, JPEG/500KB, eight-image, ownership, confirmation, association, and cleanup rules.
+
 ## 2026-09-01T01:07:40Z
 
 - [api/web] Added a post-specific media confirmation API and changed the post client to request, upload, and confirm one image at a time before associating media with the post. Post-media namespace, JPEG/500KB limit, eight-image limit, ownership checks, and cleanup rules remain post-specific; profile-picture code was not changed.

@@ -14,7 +14,7 @@ from app.services.security import decode_token
 from app.services.auth import user_id_from_subject
 from app.config import Settings, get_settings
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostMediaCleanupRequest, PostMediaConfirmRequest, PostMediaConfirmResponse, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse
-from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
+from app.services.post_media import PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
 from app.services.posts import can_view_post, create_post, delete_post, get_feed_context, get_newer_posts, get_post, get_post_by_public_id, get_post_for_response, get_post_replies, get_posts_page, serialize_post
 from app.services.session_ops import rollback
 
@@ -45,10 +45,10 @@ def _post_media_http_error(*, stage: str, request_id: str, status_code: int, mes
     )
 
 
-def _cleanup_post_media(storage: StorageService, storage_keys: list[str], user_id: uuid.UUID, request_id: str) -> None:
+def _cleanup_post_media(storage: PostMediaStorageService, storage_keys: list[str], user_id: uuid.UUID, request_id: str) -> None:
     for key in storage_keys:
         try:
-            storage.delete_post_media_object(key, user_id)
+            storage.delete(key, user_id)
         except Exception:
             logger.exception(
                 "post_media_cleanup_failure request_id=%s user_id=%s storage_key=%s",
@@ -79,11 +79,11 @@ async def create_post_media_upload_urls(
     current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> PostMediaUploadUrlResponse:
-    storage = StorageService(settings)
+    storage = PostMediaStorageService(settings)
     request_id = _post_media_request_id()
     try:
-        items = [storage.generate_post_media_upload_url(current_user.id) for _ in range(payload.count)]
-    except StorageNotConfiguredError as exc:
+        items = [storage.create_upload(current_user.id) for _ in range(payload.count)]
+    except PostMediaStorageNotConfiguredError as exc:
         raise _post_media_http_error(
             stage="upload_plan_storage_config",
             request_id=request_id,
@@ -108,10 +108,10 @@ async def confirm_post_media_upload(
     current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> PostMediaConfirmResponse:
-    storage = StorageService(settings)
+    storage = PostMediaStorageService(settings)
     request_id = _post_media_request_id()
     try:
-        storage.confirm_post_media_object(payload.object_key, current_user.id)
+        storage.confirm(payload.object_key, current_user.id)
     except ValueError as exc:
         raise _post_media_http_error(
             stage="object_key_validation",
@@ -120,7 +120,7 @@ async def confirm_post_media_upload(
             message="The post-media object key is invalid.",
             error=exc,
         ) from exc
-    except StorageNotConfiguredError as exc:
+    except PostMediaStorageNotConfiguredError as exc:
         raise _post_media_http_error(
             stage="object_verification_storage_config",
             request_id=request_id,
@@ -128,7 +128,7 @@ async def confirm_post_media_upload(
             message="Post-media upload storage is not configured.",
             error=exc,
         ) from exc
-    except StorageObjectError as exc:
+    except PostMediaObjectError as exc:
         raise _post_media_http_error(
             stage="object_verification",
             request_id=request_id,
@@ -156,12 +156,12 @@ async def cleanup_post_media_uploads(
     current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> Response:
-    storage = StorageService(settings)
+    storage = PostMediaStorageService(settings)
     request_id = _post_media_request_id()
     for key in payload.storage_keys:
         try:
-            storage.delete_post_media_object(key, current_user.id)
-        except (ValueError, StorageNotConfiguredError, StorageObjectError) as exc:
+            storage.delete(key, current_user.id)
+        except (ValueError, PostMediaStorageNotConfiguredError, PostMediaObjectError) as exc:
             logger.warning(
                 "post_media_cleanup_failure request_id=%s user_id=%s storage_key=%s error_type=%s error=%s",
                 request_id,
@@ -250,10 +250,10 @@ async def delete_post_route(
     settings: Settings = Depends(get_settings),
 ) -> Response:
     try:
-        await delete_post(session, current_user, post_id, StorageService(settings))
-    except StorageNotConfiguredError as exc:
+        await delete_post(session, current_user, post_id, PostMediaStorageService(settings))
+    except PostMediaStorageNotConfiguredError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
-    except StorageObjectError as exc:
+    except PostMediaObjectError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -265,13 +265,13 @@ async def create_post_route(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> PostResponse:
-    storage = StorageService(settings)
+    storage = PostMediaStorageService(settings)
     media_keys = [item.storage_key for item in payload.media or []]
     request_id = _post_media_request_id()
     try:
         for key in media_keys:
             try:
-                storage.confirm_post_media_object(key, current_user.id)
+                storage.confirm(key, current_user.id)
             except ValueError as exc:
                 raise _post_media_http_error(
                     stage="object_key_validation",
@@ -280,7 +280,7 @@ async def create_post_route(
                     message="The post-media object key is invalid.",
                     error=exc,
                 ) from exc
-            except StorageNotConfiguredError as exc:
+            except PostMediaStorageNotConfiguredError as exc:
                 raise _post_media_http_error(
                     stage="object_verification_storage_config",
                     request_id=request_id,
@@ -288,7 +288,7 @@ async def create_post_route(
                     message="Post-media upload storage is not configured.",
                     error=exc,
                 ) from exc
-            except StorageObjectError as exc:
+            except PostMediaObjectError as exc:
                 raise _post_media_http_error(
                     stage="object_verification",
                     request_id=request_id,
