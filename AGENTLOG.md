@@ -1,4 +1,22 @@
-> **Auth/session change control:** The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
+INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
+
+DESIGN SYSTEM RULE: Before making any visual, UI, layout, spacing, or styling change, you MUST read packages/design/design.md in full — specifically the "Tokens" and "Component Contracts" sections. All rules, dimensions, alignments, and component variants documented there are binding and must be strictly adhered to without creating ad-hoc overrides.
+
+Before modifying a file another agent recently touched (per this log or git history), briefly verify the current state of that file matches what the log describes — do not assume the log is authoritative over the actual code.
+
+REUSE RULE: Do not create new components unnecessarily when an existing shared primitive can be extended or reused.
+
+LAYOUT RULE: Inline fixes and targeted per-screen spacing patches are strictly prohibited for global layout problems. Resolve them by updating reusable shared components/contracts such as `ContentBox`, `PageSurface`, `ListRow`, `FloatingBar`, or the relevant documented design token.
+
+SESSION AUDIT REMINDER: UI fixes made in the 2026-08-30 session were verified as component-level changes in shared components, app shell state, shared CSS, and documented contracts. Keep future fixes on those shared surfaces unless `packages/design/design.md` documents a deliberate exception.
+
+DATABASE MIGRATION RULE: After any backend change that adds, removes, or changes SQLAlchemy models, Alembic migrations, schemas, or DB-backed query behavior, verify the target database is configured and migrated before treating staging/prod as healthy. Run/check `alembic current`, apply `alembic upgrade head` for the intended environment when needed, and verify at least one live ORM-backed endpoint, not only `/health/db`.
+
+IMPORTANT: Do not add a `User` field to any entry. Entries should only include the date/time, agent, model, prompt summary, changes, files, reason, notes, and verification status.
+
+AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
+
+HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten, or reorganize existing rules when adding a new one — add the new rule as its own entry at the bottom instead. If an edit to this header would leave fewer rules present than before, stop and flag it instead of proceeding.
 
 ## 2026-09-01T10:54:14Z — Completed real authenticated cross-tab refresh-race verification
 
