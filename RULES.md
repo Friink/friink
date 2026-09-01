@@ -92,6 +92,14 @@ the entry, so history isn't lost.
 
 ## Authentication & Accounts
 
+### Rule: Authoritative Web Session And Refresh Model
+- **What:** This is the single authoritative model for all future web authentication/session work. Authenticated requests send the current access token and refresh only after a `401 TOKEN_EXPIRED`; they retry the original request exactly once with the refreshed token. No request proactively refreshes before receiving a 401. Only an explicit 401 returned by the refresh exchange clears local session state and redirects to `/login`.
+- **Edge cases:** Network, timeout, CORS, 403, 5xx, malformed-response, and other original-request failures never refresh or clear the session and remain retryable errors. Refresh network/timeout/CORS/5xx/malformed failures also preserve the session. Refreshes are coordinated across tabs with the browser Web Locks API when available and a shared browser-storage lease/result fallback, so followers wait for and reuse the leader's result. The backend's generic `REFRESH_TOKEN_INVALID` response remains unable to distinguish theft from a bypassed legitimate race; coordination prevents the normal browser race before it reaches the server. Each environment uses only its configured API origin; no cross-environment fallback is allowed for any request. Auth/session logic must not be changed without explicit human approval; future auth prompts must reference this rule and obtain sign-off before implementation.
+- **Status:** Active
+- **Platform:** Web
+- **File(s):** `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell-route.tsx`
+- **Since:** 2026-09-01 (UTC)
+
 ### Rule: Signup Creates Active Public Accounts
 - **What:** A successful signup creates a user with a lowercased unique email, unique username, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`.
 - **Edge cases:** Signup rejects duplicate emails and duplicate usernames with `409`. OTP records/services exist only as stubs; no OTP challenge is active in signup.
@@ -146,9 +154,9 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-29T12:23:00Z
 
 ### Rule: Web Auth Refresh Is Silent For Expired Access Tokens
-- **What:** Authenticated web API calls proactively refresh access tokens at about 80% of the token lifetime. If an authenticated request receives `TOKEN_EXPIRED`, the client refreshes via the refresh cookie and retries the original request once.
-- **Edge cases:** Concurrent refresh attempts share one in-flight refresh promise. Only an explicit `401` from the refresh endpoint clears the stored web session and requires login again; network failures, timeouts, CORS failures, `403`, `5xx`, malformed responses, and other ambiguous failures preserve it. A server-detected rotated-token reuse also returns an explicit refresh `401` and therefore terminates the affected client session.
-- **Status:** Active
+- **What:** **Deprecated/Superseded by `Authoritative Web Session And Refresh Model`.** The former behavior proactively refreshed access tokens at about 80% of token lifetime and allowed per-request opt-outs. Reactive refresh after `TOKEN_EXPIRED`, one retry, and explicit-refresh-401 session clearing remain only where they conform to the authoritative model.
+- **Edge cases:** The old per-tab promise deduplication and feature-specific opt-outs are no longer the session contract. Cross-tab coordination, retryable non-terminal failures, and single-origin API resolution are governed by the authoritative rule above.
+- **Status:** Deprecated
 - **Platform:** Web only
 - **File(s):** `web/lib/auth.ts`
 - **Since:** 2026-08-29T12:23:00Z

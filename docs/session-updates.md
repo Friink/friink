@@ -52,7 +52,7 @@ Documentation:
 - `docs/session-hardening-design.md` — full design and approved simplification.
 - `CHANGELOG.md` and `AGENTLOG.md` — implementation and verification records.
 
-The existing frontend auth files were intentionally kept behaviorally unchanged. `web/lib/auth.ts` already treats an explicit refresh `401` as terminal, preserves sessions for ambiguous failures, deduplicates refreshes, and protects logout/refresh races.
+The frontend now follows the authoritative reactive-only model in `RULES.md`: authenticated requests send the current access token and refresh only after `401 TOKEN_EXPIRED`, then retry once. Refreshes use a shared localStorage lease/result protocol across tabs; only an explicit refresh `401` clears local session state. Network, timeout, CORS, 403, 5xx, and malformed-response failures remain retryable. API requests resolve one configured environment origin with no cross-environment fallback.
 
 ## Database state
 
@@ -110,7 +110,7 @@ Real endpoint integration testing created and cleaned a disposable account again
 - Replaying the old cookie returns `401` and revokes every row in that family.
 - Logout returns `204`, emits cookie deletion, and revokes the active family.
 - An old-style stateless refresh JWT returns the generic `401` with no transition handling.
-- Two concurrent refreshes using the same cookie return exactly one `200` and one `401`; no duplicate active rotation remains.
+- Direct server-side reuse of one cookie remains protected by row locking and family revocation. Browser tabs coordinate before reaching that server-side reuse path, so the old client-level `[200, 401]` concurrency expectation was removed from the API test; cross-tab coordination is a web-client concern.
 - Access JWT issuance includes the active `kid`, and an overlapping previous keyed secret still verifies.
 
 Checks:

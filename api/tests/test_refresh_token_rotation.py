@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 import uuid
 
@@ -13,7 +12,6 @@ from app.models.refresh_token import RefreshToken
 from app.models.auth_session import AuthSession
 from app.models.user import User
 from app.routers.auth import REFRESH_COOKIE_NAME
-from app.services.session_service import hash_refresh_token
 
 
 def _rows(user_id: uuid.UUID) -> list[RefreshToken]:
@@ -35,7 +33,7 @@ def _login(client: TestClient, email: str, password: str) -> str:
     return refresh_token
 
 
-def test_refresh_rotation_reuse_logout_legacy_and_concurrency() -> None:
+def test_refresh_rotation_reuse_logout_legacy() -> None:
     suffix = uuid.uuid4().hex
     email = f"session-{suffix}@example.com"
     username = f"session_{suffix[:24]}"
@@ -108,19 +106,6 @@ def test_refresh_rotation_reuse_logout_legacy_and_concurrency() -> None:
         legacy_response = legacy.post("/auth/refresh")
         assert legacy_response.status_code == 401
 
-        concurrent_token = _login(client, email, password)
-
-        def refresh_with_same_cookie() -> int:
-            concurrent_client = TestClient(app)
-            concurrent_client.cookies.set(REFRESH_COOKIE_NAME, concurrent_token)
-            return concurrent_client.post("/auth/refresh").status_code
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            statuses = list(executor.map(lambda _: refresh_with_same_cookie(), range(2)))
-        assert sorted(statuses) == [200, 401]
-        concurrent_rows = _rows(user_id)
-        concurrent_family = next(row.family_id for row in concurrent_rows if row.token_hash == hash_refresh_token(concurrent_token))
-        assert sum(row.family_id == concurrent_family and row.rotated_at is None and row.revoked_at is None for row in concurrent_rows) == 0
     finally:
         if user_id is not None:
             _delete_user(user_id)

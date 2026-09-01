@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-01T10:54:14Z
+
+- [auth/verification] Completed the real authenticated two-tab refresh-race test: one coordinated refresh occurred, neither tab logged out, no reuse-detection event fired, and both tabs succeeded on follow-up authenticated requests. Added Web Locks as the primary cross-tab lock with storage coordination fallback and recorded the evidence in AGENTLOG.md.
+
+## 2026-09-01T07:47:32Z
+
+- [verification] Attempted the real authenticated two-tab refresh-race test. Verification remained blocked by the local Next runtime missing generated server chunks and a development-server `spawn EPERM`; no authenticated result is claimed and no application code was changed.
+
+## 2026-09-01T07:21:00Z
+
+- [auth] Replaced proactive/per-feature refresh behavior with the authoritative reactive-only model, added cross-tab refresh coordination, removed cross-environment API fallback, updated the API test expectation layer, and synchronized RULES/session documentation.
+
+## 2026-09-01T06:33:58Z
+
+- [auth/diagnosis] Audited the unexpected logout path; documented refresh failure handling, cross-tab reuse races, JWT configuration history, cookie settings, and the limits of available deployment/incident evidence. No runtime fix was made.
+
+## 2026-09-01T06:28:00Z
+
+- [web/design] Kept the composer’s normal contextual placeholder visible while a post, media-only post, or empty quote submission is busy; progress remains indicated by the posting spinner and button label.
+
 ## 2026-09-01T06:26:08Z
 
 - [web/design] Removed the desktop sidebar offset from the floating-bar rail so the 512px bar centers in the viewport with ordinary flex alignment.

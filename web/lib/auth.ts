@@ -21,7 +21,6 @@ export type AuthSession = {
   accessToken: string;
   tokenType: 'Bearer';
   user: AuthUser;
-  accessTokenExpiresAt?: number;
 };
 
 export type ManagedAuthSession = {
@@ -35,10 +34,15 @@ export type ManagedAuthSession = {
 };
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
+const REFRESH_COORDINATION_KEY = 'friink-auth-refresh-coordination';
+const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
-const TOKEN_REFRESH_LIFETIME_FRACTION = 0.8;
+const REFRESH_LEASE_MS = 20000;
+const REFRESH_RESULT_TTL_MS = 3000;
 let refreshPromise: Promise<AuthSession> | null = null;
 let authSessionGeneration = 0;
+const tabId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+let coordinationListenerInstalled = false;
 
 type ApiUser = {
   id: string;
@@ -160,17 +164,20 @@ export async function signUp(input: {
 
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(withAccessTokenExpiry(session)));
+  installAuthCoordinationListener();
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
 }
 
 export function loadAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
+  installAuthCoordinationListener();
 
   const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as AuthSession;
+    const session = JSON.parse(raw) as Partial<AuthSession>;
+    return isStoredAuthSession(session) ? session : null;
   } catch {
     return null;
   }
@@ -178,13 +185,14 @@ export function loadAuthSession(): AuthSession | null {
 
 export function loadPersistedAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
+  installAuthCoordinationListener();
 
   const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
   if (!raw) return null;
 
   try {
-    const session = JSON.parse(raw) as AuthSession;
-    return session.user.email === DEFAULT_DEMO_EMAIL ? null : session;
+    const session = JSON.parse(raw) as Partial<AuthSession>;
+    return isStoredAuthSession(session) && session.user.email !== DEFAULT_DEMO_EMAIL ? session : null;
   } catch {
     return null;
   }
@@ -192,6 +200,7 @@ export function loadPersistedAuthSession(): AuthSession | null {
 
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
+  installAuthCoordinationListener();
   authSessionGeneration += 1;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
 }
@@ -208,61 +217,184 @@ export async function login(email: string, password: string): Promise<AuthSessio
 export async function refreshAuthSession(): Promise<AuthSession> {
   if (refreshPromise) return refreshPromise;
 
-  const generation = authSessionGeneration;
-  refreshPromise = (async () => {
-    const currentSession = loadPersistedAuthSession();
-    try {
-      const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
-        method: 'POST',
-        authContext: 'refresh_exchange',
-        skipAuthRefresh: true,
-      });
-
-      if (generation !== authSessionGeneration) {
-        throw new AuthApiError('The session was cleared while it was refreshing.', 0);
-      }
-
-      if (currentSession) {
-        const latestSession = loadPersistedAuthSession();
-        if (latestSession?.accessToken !== currentSession.accessToken) {
-          throw new AuthApiError('The session changed while it was refreshing.', 0);
-        }
-        const nextSession = withAccessTokenExpiry({
-          ...currentSession,
-          accessToken: response.access_token,
-          tokenType: 'Bearer',
-        });
-        saveAuthSession(nextSession);
-        return nextSession;
-      }
-
-      const restoredUser = await requestApi<ApiUser>('/auth/me', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${response.access_token}` },
-        authContext: 'authenticated_request',
-        skipAuthRefresh: true,
-      });
-      if (generation !== authSessionGeneration || loadPersistedAuthSession()) {
-        throw new AuthApiError('The session changed while it was refreshing.', 0);
-      }
-      const restoredSession = withAccessTokenExpiry({
-        accessToken: response.access_token,
-        tokenType: 'Bearer',
-        user: mapApiUser(restoredUser),
-      });
-      saveAuthSession(restoredSession);
-      return restoredSession;
-    } catch (error) {
-      if (isExplicitUnauthorized(error)) {
-        clearAuthSession();
-      }
-      throw error;
-    }
-  })().finally(() => {
+  installAuthCoordinationListener();
+  refreshPromise = coordinateRefresh().finally(() => {
     refreshPromise = null;
   });
 
   return refreshPromise;
+}
+
+type RefreshCoordinationState = {
+  operationId: string;
+  ownerId: string;
+  status: 'refreshing' | 'succeeded' | 'failed';
+  expiresAt: number;
+  error?: { message: string; status: number; code?: AuthErrorCode };
+};
+
+function installAuthCoordinationListener() {
+  if (typeof window === 'undefined' || coordinationListenerInstalled) return;
+  coordinationListenerInstalled = true;
+  window.addEventListener('storage', (event) => {
+    if (event.key === AUTH_SESSION_KEY && event.newValue === null) {
+      authSessionGeneration += 1;
+    }
+  });
+}
+
+function readRefreshCoordination(): RefreshCoordinationState | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(REFRESH_COORDINATION_KEY);
+  if (!raw) return null;
+  try {
+    const state = JSON.parse(raw) as RefreshCoordinationState;
+    if (!state.operationId || !state.ownerId || !state.status || typeof state.expiresAt !== 'number') return null;
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+function publishRefreshCoordination(state: RefreshCoordinationState) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(REFRESH_COORDINATION_KEY, JSON.stringify(state));
+}
+
+async function coordinateRefresh(): Promise<AuthSession> {
+  if (supportsCrossTabLock()) {
+    const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
+    return lockManager.request(REFRESH_LOCK_NAME, { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease());
+  }
+  return coordinateRefreshWithStorageLease();
+}
+
+function supportsCrossTabLock() {
+  return typeof navigator !== 'undefined' && 'locks' in navigator;
+}
+
+async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
+  const generation = authSessionGeneration;
+
+  while (true) {
+    const existing = readRefreshCoordination();
+    if (existing && existing.expiresAt > Date.now()) {
+      if (existing.status === 'succeeded') {
+        const sharedSession = loadPersistedAuthSession();
+        if (sharedSession) return sharedSession;
+      } else if (existing.status === 'failed') {
+        throw refreshErrorFromState(existing);
+      } else if (existing.ownerId !== tabId) {
+        await waitForRefreshCoordination(existing.operationId);
+        continue;
+      }
+    }
+
+    const operationId = `${tabId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const started: RefreshCoordinationState = {
+      operationId,
+      ownerId: tabId,
+      status: 'refreshing',
+      expiresAt: Date.now() + REFRESH_LEASE_MS,
+    };
+    publishRefreshCoordination(started);
+    const winner = readRefreshCoordination();
+    if (!winner || winner.operationId !== operationId || winner.ownerId !== tabId) {
+      continue;
+    }
+
+    try {
+      const session = await performRefresh(generation);
+      publishRefreshCoordination({
+        ...started,
+        status: 'succeeded',
+        expiresAt: Date.now() + REFRESH_RESULT_TTL_MS,
+      });
+      return session;
+    } catch (error) {
+      const refreshError = error instanceof AuthApiError ? error : new AuthApiError(error instanceof Error ? error.message : 'Refresh failed.', 0);
+      if (isExplicitUnauthorized(refreshError)) {
+        clearAuthSession();
+      }
+      publishRefreshCoordination({
+        ...started,
+        status: 'failed',
+        expiresAt: Date.now() + REFRESH_RESULT_TTL_MS,
+        error: { message: refreshError.message, status: refreshError.status, code: refreshError.code },
+      });
+      throw refreshError;
+    }
+  }
+}
+
+async function performRefresh(generation: number): Promise<AuthSession> {
+  const currentSession = loadPersistedAuthSession();
+  const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
+    method: 'POST',
+    authContext: 'refresh_exchange',
+    skipAuthRefresh: true,
+  });
+
+  if (generation !== authSessionGeneration) {
+    throw new AuthApiError('The session was cleared while it was refreshing.', 0);
+  }
+
+  if (currentSession) {
+    const latestSession = loadPersistedAuthSession();
+    if (latestSession?.accessToken !== currentSession.accessToken) {
+      throw new AuthApiError('The session changed while it was refreshing.', 0);
+    }
+    const nextSession: AuthSession = {
+      ...currentSession,
+      accessToken: response.access_token,
+      tokenType: 'Bearer',
+    };
+    saveAuthSession(nextSession);
+    return nextSession;
+  }
+
+  const restoredUser = await requestApi<ApiUser>('/auth/me', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${response.access_token}` },
+    authContext: 'authenticated_request',
+    skipAuthRefresh: true,
+  });
+  if (generation !== authSessionGeneration || loadPersistedAuthSession()) {
+    throw new AuthApiError('The session changed while it was refreshing.', 0);
+  }
+  const restoredSession: AuthSession = {
+    accessToken: response.access_token,
+    tokenType: 'Bearer',
+    user: mapApiUser(restoredUser),
+  };
+  saveAuthSession(restoredSession);
+  return restoredSession;
+}
+
+function waitForRefreshCoordination(operationId: string): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  return new Promise((resolve) => {
+    const finish = () => {
+      window.removeEventListener('storage', onStorage);
+      window.clearInterval(pollId);
+      resolve();
+    };
+    const check = () => {
+      const state = readRefreshCoordination();
+      if (!state || state.operationId !== operationId || state.status !== 'refreshing' || state.expiresAt <= Date.now()) finish();
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === REFRESH_COORDINATION_KEY) check();
+    };
+    const pollId = window.setInterval(check, 100);
+    window.addEventListener('storage', onStorage);
+    check();
+  });
+}
+
+function refreshErrorFromState(state: RefreshCoordinationState): AuthApiError {
+  const error = state.error;
+  return new AuthApiError(error?.message ?? 'Refresh failed.', error?.status ?? 0, error?.code);
 }
 
 export async function updateCurrentUser(
@@ -715,7 +847,6 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}` },
           authContext: 'authenticated_request',
-          skipProactiveAuthRefresh: true,
           body: JSON.stringify({ count: 1 }),
         });
       } catch (error) {
@@ -740,7 +871,6 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}` },
           authContext: 'authenticated_request',
-          skipProactiveAuthRefresh: true,
           body: JSON.stringify({ object_key: item.object_key }),
         });
       } catch (error) {
@@ -754,7 +884,6 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
         authContext: 'authenticated_request',
-        skipProactiveAuthRefresh: true,
         body: JSON.stringify({ storage_keys: uploadedKeys }),
       }).catch(() => undefined);
     }
@@ -771,7 +900,6 @@ export async function createPost(accessToken: string, input: { content: string; 
         Authorization: `Bearer ${accessToken}`,
       },
       authContext: 'authenticated_request',
-      skipProactiveAuthRefresh: Boolean(mediaKeys?.length),
       body: JSON.stringify({
         kind: input.kind ?? 'post',
         content: input.content,
@@ -949,21 +1077,10 @@ async function requestApi<T>(
   init: RequestInit & {
     authContext?: AuthRequestContext;
     skipAuthRefresh?: boolean;
-    skipProactiveAuthRefresh?: boolean;
     retryingAfterRefresh?: boolean;
   },
 ): Promise<T> {
   const requestInit = { ...init };
-  if (
-    !requestInit.skipAuthRefresh &&
-    !requestInit.skipProactiveAuthRefresh &&
-    requestInit.authContext === 'authenticated_request'
-  ) {
-    const refreshedToken = await getProactivelyRefreshedAccessToken(requestInit.headers);
-    if (refreshedToken) {
-      requestInit.headers = withAuthorizationHeader(requestInit.headers, refreshedToken);
-    }
-  }
 
   let response: Response;
   try {
@@ -1037,11 +1154,11 @@ async function getApiError(response: Response): Promise<{ message: string; code?
 }
 
 function mapTokenResponse(response: ApiTokenResponse): AuthSession {
-  return withAccessTokenExpiry({
+  return {
     accessToken: response.access_token,
     tokenType: 'Bearer',
     user: mapApiUser(response.user),
-  });
+  };
 }
 
 function mapApiUser(user: ApiUser): AuthUser {
@@ -1061,59 +1178,19 @@ function mapApiUser(user: ApiUser): AuthUser {
   };
 }
 
-function withAccessTokenExpiry(session: AuthSession): AuthSession {
-  return {
-    ...session,
-    accessTokenExpiresAt: getJwtTimestampMs(session.accessToken, 'exp') ?? session.accessTokenExpiresAt,
-  };
-}
-
-function getJwtTimestampMs(token: string, claim: 'iat' | 'exp'): number | undefined {
-  if (typeof window === 'undefined') return undefined;
-  const [, payload] = token.split('.');
-  if (!payload) return undefined;
-  try {
-    const decoded = JSON.parse(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
-    return typeof decoded[claim] === 'number' ? decoded[claim] * 1000 : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-async function getProactivelyRefreshedAccessToken(headers: HeadersInit | undefined): Promise<string | null> {
-  const session = loadPersistedAuthSession();
-  if (!session) return null;
-  if (typeof session.accessToken !== 'string' || !session.accessToken) {
-    const refreshedSession = await refreshAuthSession();
-    return refreshedSession.accessToken;
-  }
-  const authorization = getAuthorizationHeader(headers);
-  if (!authorization || authorization !== `Bearer ${session.accessToken}`) return null;
-
-  const issuedAt = getJwtTimestampMs(session.accessToken, 'iat');
-  const expiresAt = session.accessTokenExpiresAt ?? getJwtTimestampMs(session.accessToken, 'exp');
-  if (!issuedAt || !expiresAt) {
-    const refreshedSession = await refreshAuthSession();
-    return refreshedSession.accessToken;
-  }
-  const refreshAt = issuedAt + (expiresAt - issuedAt) * TOKEN_REFRESH_LIFETIME_FRACTION;
-  if (Date.now() < refreshAt) return null;
-
-  const refreshedSession = await refreshAuthSession();
-  return refreshedSession.accessToken;
+function isStoredAuthSession(session: Partial<AuthSession>): session is AuthSession {
+  return Boolean(
+    typeof session.accessToken === 'string' &&
+      session.accessToken.split('.').length === 3 &&
+      session.tokenType === 'Bearer' &&
+      session.user &&
+      typeof session.user === 'object' &&
+      typeof session.user.email === 'string',
+  );
 }
 
 function isExplicitUnauthorized(error: unknown): error is AuthApiError {
   return error instanceof AuthApiError && error.status === 401;
-}
-
-function getAuthorizationHeader(headers: HeadersInit | undefined): string | null {
-  if (!headers) return null;
-  if (headers instanceof Headers) return headers.get('Authorization') || headers.get('authorization');
-  if (Array.isArray(headers)) {
-    return headers.find(([key]) => key.toLowerCase() === 'authorization')?.[1] ?? null;
-  }
-  return headers.Authorization ?? headers.authorization ?? null;
 }
 
 function withAuthorizationHeader(headers: HeadersInit | undefined, accessToken: string): HeadersInit {

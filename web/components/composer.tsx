@@ -297,7 +297,7 @@ export function Composer({
           <MentionInput
             value={draft}
             onChange={onDraftChange}
-            placeholder={disabled ? disabledPlaceholder : placeholder}
+            placeholder={busy ? placeholder : disabled ? disabledPlaceholder : placeholder}
             ariaLabel={inputLabel}
             disabled={disabled}
             maxLength={maxLength}
@@ -308,7 +308,7 @@ export function Composer({
             ref={textareaRef}
             value={draft}
             onChange={(event) => onDraftChange(maxLength ? event.target.value.slice(0, maxLength) : event.target.value)}
-            placeholder={disabled ? disabledPlaceholder : placeholder}
+            placeholder={busy ? placeholder : disabled ? disabledPlaceholder : placeholder}
             aria-label={inputLabel}
             disabled={disabled}
             rows={1}
@@ -318,7 +318,7 @@ export function Composer({
           <input
             value={draft}
             onChange={(event) => onDraftChange(maxLength ? event.target.value.slice(0, maxLength) : event.target.value)}
-            placeholder={disabled ? disabledPlaceholder : placeholder}
+            placeholder={busy ? placeholder : disabled ? disabledPlaceholder : placeholder}
             aria-label={inputLabel}
             disabled={disabled}
             maxLength={maxLength}

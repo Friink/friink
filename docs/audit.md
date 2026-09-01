@@ -137,20 +137,20 @@ Defined in `web/lib/auth.ts` and `web/lib/api-origin.ts`:
 - `loadPersistedAuthSession()` rejects the demo session and parses persisted data.
 - `clearAuthSession()` removes local auth and increments a refresh generation.
 - `refreshAuthSession()` calls `/auth/refresh` with credentials and updates the stored access token.
-- Concurrent refreshes share one in-flight promise.
+- Concurrent refreshes share one in-flight promise within a tab and a
+  localStorage coordination lease/result across tabs.
 - `requestApi()` adds JSON headers, auth-flow context, bearer auth, and
   `credentials: include`.
 - A `401` with `TOKEN_EXPIRED` causes one refresh-and-retry of the original
   request.
 - Only an explicit `401` from refresh clears the local session. Network errors,
-  timeouts, CORS failures, 5xx responses, and ambiguous failures do not prove
-  that credentials are invalid.
-
-Authenticated requests normally use proactive refresh at roughly 80% of the
-access-token lifetime. Post-media requests explicitly set
-`skipProactiveAuthRefresh: true`: they use the current access token and rely on
-the normal `401 TOKEN_EXPIRED` retry. The direct R2 PUT never uses the Friink
-session.
+  timeouts, CORS failures, 5xx responses, malformed refresh responses, and
+  ambiguous failures do not prove that credentials are invalid. No authenticated
+  request proactively refreshes; every request sends its current token and
+  reacts only to `401 TOKEN_EXPIRED`.
+- `fetchApi()` resolves exactly one configured API origin and never falls back
+  across staging, production, or local environments. The direct R2 PUT never
+  uses the Friink session.
 
 ## 4. Profile-picture media architecture
 
@@ -310,8 +310,8 @@ regression test covers a successful upload-plan response.
   cannot render until their URLs are repaired or resolved through another
   delivery endpoint.
 - A `status 0` toast means the browser received no HTTP response. For an
-  authenticated media request, inspect `/auth/refresh` first if proactive
-  refresh was not disabled, then `/posts/media/upload-url`, then the R2 PUT.
+  authenticated media request, inspect the original request and its reactive
+  `401 TOKEN_EXPIRED` retry, then `/posts/media/upload-url`, then the R2 PUT.
 - The repository cannot confirm Vercel's exact deployed commit or deploy order
   without deployment-log access. Staging should be checked for matching API
   and web deployments.

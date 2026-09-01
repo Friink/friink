@@ -1,3 +1,81 @@
+> **Auth/session change control:** The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
+
+## 2026-09-01T10:54:14Z — Completed real authenticated cross-tab refresh-race verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the previously blocked real authenticated two-tab refresh-race verification after implementing the authoritative reactive-only session model.
+- Environment: Rebuilt the local web app and started it at `http://localhost:3000`; started the local API at `127.0.0.1:8000` with the process-only test setting `ACCESS_TOKEN_EXPIRE_MINUTES=1`. No application or session logic was changed for this verification.
+- Method: Used the actual app UI to log in an existing real local account, opened two separate tabs in the same browser profile (therefore sharing the refresh cookie/local storage), waited for the one-minute access token to expire, and navigated both tabs to authenticated settings routes near-simultaneously. This caused both tabs to issue authenticated requests with the expired access token.
+- Result: **Pass.** The server logged multiple original-request `401 TOKEN_EXPIRED` responses, exactly one `POST /auth/refresh` with `200 OK`, then successful retries including `GET /auth/me 200 OK` and `GET /auth/sessions 200 OK`. No second refresh request, `REFRESH_TOKEN_INVALID`, or refresh-token-reuse event occurred during the race. Both tabs remained on `/settings/account`; each rendered the authenticated sessions UI (`hasSessions: true`, `hasLogin: false`) after the race, and both completed subsequent authenticated requests successfully.
+- Coordination: The client now prefers the browser Web Locks API for an atomic cross-tab refresh lock and uses the existing storage-event/local-storage lease/result protocol for coordination and fallback. Same-tab promise deduplication remains an optimization, not the cross-tab authority.
+- Failure-model coverage: The code and test suites cover reactive `401 TOKEN_EXPIRED` refresh/retry, explicit refresh `401` as the sole automatic clear condition, and preservation of session state for timeout/network/CORS/403/5xx/malformed refresh failures. `npx tsc --noEmit` passed; API tests passed (`65 passed`); `npm run build` passed. The test server logs also show the expected expired-request-to-refresh-to-success sequence above.
+- Cross-environment origin audit: `web/lib/api-origin.ts` now resolves one configured origin per request; the staging/production candidate list and fallback loop are removed, and the static invariant audit found no related fallback symbols or call path.
+- Note: Earlier `REFRESH_TOKEN_INVALID` output belonged to the stale pre-login browser session before this test account was authenticated. It was not part of the race and was not counted as a race failure. The server-side rotation/revocation implementation was not changed.
+
+## 2026-09-01T07:47:32Z — Attempt authenticated cross-tab refresh-race verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the previously skipped real authenticated two-tab refresh-race test against the local app, verify both tabs remain authenticated, inspect server reuse events, and append the actual outcome. Verification only; no code changes authorized.
+- Result: **Blocked before authentication; no pass claimed.** The local API was already reachable on `127.0.0.1:8000` (`GET /docs` returned `200`). The first rebuilt local Next server rendered `/login`, and two independent browser tabs loaded the login page, but the signup control did not transition the real app UI. A retry after restarting the local server returned an internal error before rendering.
+- Evidence:
+  - Browser smoke: two separate tabs were opened at `http://localhost:3000/login`; the first attempt showed the real login DOM and no console errors. The available browser had no authenticated local session, so no test account was created and no credentials were submitted.
+  - Local server output: `Cannot find module './vendor-chunks/next.js'`, followed by `Cannot find module './249.js'` from `.next/server/webpack-runtime.js`; `/login` consequently rendered `Internal Server Error` on the retry.
+  - A development-server retry was also attempted and failed with `Error: spawn EPERM` before startup.
+  - Re-running `npm run build` completed successfully, but the running `next start` process continued to report missing generated server chunks. This is a local build/runtime-environment blocker, not evidence about the session implementation.
+- Verification not performed: No real local account was created; no two tabs shared an authenticated refresh cookie; no forced simultaneous `/auth/refresh` calls were made; no post-race authenticated requests were possible; and no server-side `REFRESH_TOKEN_INVALID`/reuse event could be inspected for this scenario.
+- Conclusion: The earlier AGENTLOG limitation remains active. The cross-tab fix is not end-to-end verified by a real authenticated browser test in this session. No application source, API behavior, session data, or configuration was changed. Only this documentation entry was appended.
+
+## 2026-09-01T07:21:00Z — Rearchitect session/refresh handling to the authoritative reactive model
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace proactive refresh, per-feature refresh opt-outs, and cross-environment API fallback with one reactive-only session model; coordinate refreshes across tabs; preserve server-side rotation/reuse revocation; update tests and authoritative rules.
+- Changes Made:
+  - Removed the 80%-lifetime proactive access-token check, expiry parsing, and all `skipProactiveAuthRefresh` call-site options from `web/lib/auth.ts`.
+  - Kept one reactive path: authenticated requests send their current access token; only an original `401 TOKEN_EXPIRED` invokes one coordinated refresh and one retry. Other original-request failures are thrown without refresh or local-session clearing.
+  - Added a shared localStorage refresh lease/result protocol in `web/lib/auth.ts`. A winning tab performs the refresh and persists the new access token before publishing success; other tabs wait for the result and reuse the persisted session. The storage listener also advances the refresh generation when another tab logs out, preventing an in-flight refresh from restoring that session.
+  - Kept explicit refresh `401` as the sole automatic session-clearing condition. Refresh network, timeout, CORS, 5xx, and malformed-response failures are status-0/retryable and preserve local state. Original-request 401s other than `TOKEN_EXPIRED` no longer cause `app-shell-route` to clear the session.
+  - Removed `getApiOriginCandidates()` and all staging-to-production fallback from `web/lib/api-origin.ts`; each request now uses exactly the configured origin with the existing 15-second timeout.
+  - Removed the API test's old direct `[200, 401]` concurrent-refresh expectation. Server-side row locking and family revocation remain unchanged; cross-tab coordination is now a client behavior rather than an API concurrency expectation.
+  - Added the authoritative active rule and deprecated/superseded the prior proactive-refresh rule in `RULES.md`. Added the required AGENTLOG header approval gate. Updated the session audit/handoff and media-upload documentation to remove stale proactive-refresh claims.
+- Files:
+  - `web/lib/auth.ts`
+  - `web/lib/api-origin.ts`
+  - `web/components/app-shell-route.tsx`
+  - `api/tests/test_refresh_token_rotation.py`
+  - `RULES.md`
+  - `docs/audit.md`
+  - `docs/media-upload.md`
+  - `docs/session-updates.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Verification Evidence:
+  - `npx tsc --noEmit` in `web`: passed.
+  - `npm run build`: passed; Next.js compiled, type-checked, generated all 15 static pages, and finalized optimization.
+  - `python -m pytest tests -q` in `api`: `65 passed, 2 warnings`. The unscoped `python -m pytest -q` was also attempted but collection included unrelated `tmp/media-upload-test/manual_r2_test.py`, which requires unavailable `boto3`; the maintained API suite passed.
+  - Static request-surface audit found 42 `requestApi` call sites and no remaining proactive-refresh symbol, skip flag, origin-candidate helper, or cross-environment origin constant/loop. The only authenticated refresh gate remains the `401` + `TOKEN_EXPIRED` branch in `requestApi`.
+  - Browser smoke check opened the built local app in two independent tabs (`http://localhost:3000/login`); both rendered the login surface with no console errors. The available browser session had no authenticated local account, so a signed-in forced near-simultaneous refresh could not be exercised without creating/logging into a test account. The cross-tab implementation was verified by code path and build, but this limitation is recorded rather than claimed as an end-to-end authenticated browser result.
+  - Failure-mode source review: original network/timeout/CORS/403/5xx paths throw without entering refresh; original `TOKEN_EXPIRED` enters one refresh/retry; refresh explicit `401` clears; refresh non-401 failures do not clear. Origin review confirms one call to the configured origin and no fallback candidate.
+- Scope/Decision: No backend rotation, revocation, cookie, JWT, database, or migration logic was changed. Existing unrelated working-tree changes were preserved. Current sessions may be invalidated by the new client model as explicitly allowed by the task.
+
+## 2026-09-01T06:33:58Z — Diagnose unexpected session end (no fix)
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Broadly investigate another unexpected logout, including recent auth/config history, proactive-refresh failure semantics, multi-tab races, JWT key changes, cookie settings, and deployment evidence. Diagnosis only; append findings without changing runtime behavior.
+- Scope: Read-only inspection of `README.md`, `RULES.md`, recent session-hardening/media-refresh entries in this log, current auth/session source, ignored local environment files, and git history. Existing unrelated working-tree changes were preserved.
+- Findings:
+  - Recent source history: `HEAD` and `origin/staging` are `e48540d` (`2026-09-01 11:27:14 +0500`, “Page layout fixed”). The session-management changes are `f2dc620` and `78e7f5e`; after `78e7f5e`, the requested auth paths were not changed except for six later `web/lib/auth.ts` media-upload commits (`e5558e6`, `807af1a`, `70b819c`, `249cb51`, `ea62581`, `c1d58dc`). `app-shell-route.tsx`, `auth.py`, `config.py`, `security.py`, and `session_service.py` have no later changes in that range. The repository has no deploy metadata/provider log access, so git cannot establish when (or whether) a Vercel deployment occurred or what deployed environment variables currently contain.
+  - Proactive refresh: `web/lib/auth.ts:209-265` deduplicates refreshes only inside one JavaScript runtime. Network/timeout/5xx failures become status `0` and do not clear local auth. An explicit `401` from `/auth/refresh` does clear the local session. That is appropriate for a genuinely missing, expired, revoked, or invalid refresh token, but the client cannot distinguish a reuse-detection 401 from theft: `api/app/routers/auth.py:138-145` revokes the whole family with reason `reuse_detected` and returns the same `REFRESH_TOKEN_INVALID` 401 shape used for ordinary invalid tokens. `app-shell-route.tsx:25-58` also redirects on any explicit 401 from bootstrap `/auth/me`.
+  - Multi-tab race: no `BroadcastChannel`, `navigator.locks`, storage-event synchronization, or other cross-tab refresh coordinator was found. `refreshPromise` is module-local, while the session itself is shared through `localStorage`. Two tabs can therefore send the same old refresh cookie concurrently. `session_service.py:43` locks the token row; the first request rotates it, and the second sees the rotated token, treats it as reuse, revokes the family, and returns 401. Existing `api/tests/test_refresh_token_rotation.py` intentionally models this and expects concurrent results `[200, 401]`, followed by no active token in the family. This is a concrete hard-logout path caused by a legitimate same-user race, but there is no incident timestamp or server log proving it happened during this logout.
+  - JWT configuration: `f2dc620` introduced `JWT_ACTIVE_KID`/`JWT_KEYS`; current `config.py` defaults to active kid `default` and an empty `JWT_KEYS`, with the base `JWT_SECRET_KEY` as the default verification key. Current ignored local files contain no `JWT_ACTIVE_KID` or `JWT_KEYS`. Secret values were not recorded; non-sensitive SHA-256 fingerprints are: `api/.env` length 38 / `52B80A2C269F`, `.env.production` length 64 / `3CFE8CBE71D3`, `.env.staging` length 64 / `455430F408D0`. The environment-specific secrets differ as expected, but these local ignored files cannot prove deployed values or a historical app-wide key change. No committed key change was found after the key-ID rollout.
+  - Cookies: current `auth.py:56-64` sets a host-only cookie (no `Domain`), `Path=/`, `HttpOnly`, `Max-Age` equal to the configured 14-day refresh lifetime, `Secure` when `ENVIRONMENT` is production, and `SameSite=None` in production / `Lax` otherwise. Git history shows no recent cookie-attribute change. Local production/staging files use `ENVIRONMENT=production`; local development uses `development`. A deployed environment mismatch, or a frontend/API origin mismatch, could make the refresh cookie unavailable, but no deployed configuration evidence is available. `api-origin.ts` also permits staging-to-production fallback for network-failed safe requests; a production `/auth/me` 401 could consequently look like an invalid staging session to `app-shell-route`, another plausible false-positive path not proven for this incident.
+  - Post-media: the current media upload, confirmation, cleanup, and media-bearing post requests explicitly set `skipProactiveAuthRefresh: true`, matching the recent documented removal. The available context does not identify the screen/action, so there is no evidence that this logout occurred in post-media.
+- Conclusion: The inspection found a verified code-level false-positive logout mechanism in cross-tab refresh/reuse detection, plus an origin-fallback 401 attribution risk. Current code does correctly avoid clearing auth for ordinary network/timeouts/5xx refresh failures. Nothing in the repository establishes which mechanism caused this particular logout; without an occurrence time, action, browser/network trace, or server logs, a conclusive incident diagnosis would be speculation.
+- Verification: No runtime, auth, cookie, environment, or database changes were made. No destructive commands or tests that mutate session data were run. `git diff --check` was run after the documentation update.
+
 ## 2026-09-01T06:13:06Z — Align floating bar with the reduced content rail
 
 - Agent: Codex
@@ -5563,3 +5641,19 @@
   - `AGENTLOG.md`
 - Reason/Decision: The sidebar offset centered the fixed rail within the remaining panel, which visibly shifted the bar right. A viewport-wide flex rail provides stable centering at every desktop width without positional calculations.
 - Verification: `git diff --check`; targeted CSS/source inspection.
+## 2026-09-01T06:28:00Z — Preserve composer placeholders during submission
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Stop media-only posts and empty quote posts from replacing their editor placeholder with `Posting...`.
+- Changes Made:
+  - Updated all shared `Composer` input variants to keep the normal placeholder whenever `busy` is true.
+  - Retained `disabledPlaceholder` for disabled-but-not-busy composers, such as unavailable chat composition.
+  - Documented the submission-state placeholder contract in `packages/design/design.md`.
+- Files:
+  - `web/components/composer.tsx`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Submission progress is already communicated by the disabled Post button, spinner, and accessible posting label. Replacing the editor placeholder is misleading, especially when the draft is intentionally empty for media-only and quote submissions.
+- Verification: Targeted source inspection, TypeScript check, and `git diff --check`.

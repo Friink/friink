@@ -49,11 +49,10 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
         setUser(currentUser);
       })
       .catch((error) => {
-        // Only an explicit unauthorized response proves that the session is
-        // invalid. Keep the local session for network, API, or deployment
-        // failures so a temporary outage cannot sign users out.
-        if (error instanceof AuthApiError && error.status === 401) {
-          clearAuthSession();
+        // requestApi owns refresh and session clearing. An original-request
+        // 401 must not be mistaken for a failed refresh, so redirect only
+        // after refreshAuthSession has already removed the local session.
+        if (error instanceof AuthApiError && error.status === 401 && !loadAuthSession()) {
           router.replace('/login');
         }
       });

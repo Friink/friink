@@ -211,11 +211,12 @@ created in `web/lib/auth.ts` when `fetchApi()` rejects before receiving an HTTP
 response. That can represent a browser/CORS/network/timeout failure; it is not
 an HTTP status returned by the API.
 
-For authenticated requests, `requestApi()` may proactively call
-`POST /auth/refresh` before the requested post-media route. If refresh fails,
-`/posts/media/upload-url` may never be sent and the UI can display the generic
-status-0 upload message. A definitive session diagnosis requires the actual
-browser Network entry or API deployment log for `/auth/refresh`.
+For authenticated requests, `requestApi()` sends the current access token and
+reacts only to a `401 TOKEN_EXPIRED` response by coordinating one refresh and
+retrying the original request once. There are no post-media refresh exceptions;
+all authenticated requests follow the same model. A definitive session
+diagnosis requires the actual browser Network entry or API deployment log for
+the original request and any reactive `/auth/refresh`.
 
 ## Deployment and release evidence
 
