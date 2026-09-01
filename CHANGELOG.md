@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T01:52:00Z
+
+- [api] Decoupled post-media upload/confirmation from public R2 HEAD/GET verification and made `R2_PUBLIC_URL` optional for upload planning; profile-picture APIs remain unchanged.
+
+## 2026-09-01T01:40:00Z
+
+- [verification] Direct staging R2 post-media upload and authenticated metadata read succeeded; the configured public R2 URL returned 403 for both HEAD and GET. Test objects were removed.
+
 ## 2026-09-01T01:26:19Z
 
 - [api] Completed the post-media isolation by removing the obsolete post-media methods from the profile-capable storage service; profile-picture methods and APIs remain unchanged.

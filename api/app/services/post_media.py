@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
 from app.config import Settings
 
@@ -23,7 +21,7 @@ class PostMediaObjectError(RuntimeError):
 @dataclass(frozen=True)
 class PostMediaUpload:
     upload_url: str
-    public_url: str
+    public_url: str | None
     object_key: str
 
 
@@ -43,7 +41,6 @@ class PostMediaStorageService:
             self.settings.r2_access_key_id,
             self.settings.r2_secret_access_key,
             self.settings.r2_bucket_name,
-            self.settings.r2_public_url,
         )
         if not all(value.strip() for value in values):
             raise PostMediaStorageNotConfiguredError("R2 storage is not configured for post media.")
@@ -61,7 +58,9 @@ class PostMediaStorageService:
             region_name="auto",
         )
 
-    def public_url(self, object_key: str) -> str:
+    def public_url(self, object_key: str) -> str | None:
+        if not self.settings.r2_public_url.strip():
+            return None
         return f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
 
     def create_upload(self, user_id: uuid.UUID) -> PostMediaUpload:
@@ -83,25 +82,13 @@ class PostMediaStorageService:
         )
 
     def confirm(self, object_key: str, user_id: uuid.UUID) -> None:
-        self._validate_key(object_key, user_id)
-        try:
-            metadata = self._client().head_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
-        except PostMediaStorageNotConfiguredError:
-            raise
-        except Exception:
-            try:
-                self._verify_public_object(self.public_url(object_key))
-                return
-            except PostMediaObjectError:
-                raise
-            except Exception as exc:
-                raise PostMediaObjectError("The post image could not be verified.") from exc
+        """Confirm an API-issued key after the client receives a successful PUT.
 
-        content_type = str(metadata.get("ContentType", "")).split(";", 1)[0].lower()
-        if content_type != "image/jpeg":
-            raise PostMediaObjectError("Post images must be JPEG files.")
-        if int(metadata.get("ContentLength", 0)) > MAX_POST_MEDIA_BYTES:
-            raise PostMediaObjectError("Post images must be 500 KB or smaller.")
+        Public object reads are deliberately not part of confirmation because
+        staging may use a private bucket or a delivery domain that rejects
+        HEAD/GET.
+        """
+        self._validate_key(object_key, user_id)
 
     def delete(self, object_key: str, user_id: uuid.UUID) -> None:
         self._validate_key(object_key, user_id)
@@ -117,28 +104,3 @@ class PostMediaStorageService:
         prefix = f"{POST_MEDIA_PREFIX}/{user_id}/"
         if not object_key.startswith(prefix) or object_key.count("/") != 2 or not object_key.endswith(".jpg"):
             raise ValueError("Post media object key is invalid.")
-
-    def _verify_public_object(self, public_url: str) -> None:
-        try:
-            with urlopen(Request(public_url, method="HEAD"), timeout=10) as response:
-                self._validate_public_headers(response.headers)
-                return
-        except PostMediaObjectError:
-            raise
-        except (HTTPError, URLError, TimeoutError, ValueError):
-            pass
-
-        with urlopen(Request(public_url, method="GET"), timeout=10) as response:
-            self._validate_public_headers(response.headers)
-            content_length = response.headers.get("Content-Length")
-            if not content_length and len(response.read(MAX_POST_MEDIA_BYTES + 1)) > MAX_POST_MEDIA_BYTES:
-                raise PostMediaObjectError("Post images must be 500 KB or smaller.")
-
-    @staticmethod
-    def _validate_public_headers(headers) -> None:
-        content_type = headers.get("Content-Type", "").split(";", 1)[0].lower()
-        if content_type != "image/jpeg":
-            raise PostMediaObjectError("Post images must be JPEG files.")
-        content_length = headers.get("Content-Length")
-        if content_length and int(content_length) > MAX_POST_MEDIA_BYTES:
-            raise PostMediaObjectError("Post images must be 500 KB or smaller.")

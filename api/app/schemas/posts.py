@@ -25,7 +25,7 @@ class PostMediaUploadUrlRequest(BaseModel):
 
 class PostMediaUploadUrlItem(BaseModel):
     upload_url: str
-    public_url: str
+    public_url: str | None = None
     object_key: str
 
 
@@ -39,7 +39,7 @@ class PostMediaConfirmRequest(BaseModel):
 
 class PostMediaConfirmResponse(BaseModel):
     object_key: str
-    public_url: str
+    public_url: str | None = None
 
 
 class PostMediaCleanupRequest(BaseModel):

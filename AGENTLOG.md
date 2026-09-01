@@ -5222,3 +5222,32 @@
 - Files/Scope Touched: `web/components/mention-input.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification: `tsc -p web/tsconfig.json --noEmit --incremental false` passed; `git diff --check` passed. Runtime browser verification was not available in this local pass.
 
+## 2026-09-01T01:40:00Z — Manually verify staging R2 post-media upload
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the existing staging R2 environment to manually upload a project image from a dedicated test folder.
+- Changes Made:
+  - Created the ignored test folder `api/tmp/media-upload-test` and used `web/public/media/profile.jpg` as a test JPEG.
+  - Generated a presigned `post-media/{user_id}/{object}.jpg` PUT URL with the staging R2 credentials.
+  - Confirmed direct upload succeeded (`HTTP 200`) and R2 metadata returned `image/jpeg`, 15,292 bytes.
+  - Confirmed the configured public R2 URL returned `403` for both `HEAD` and `GET`.
+  - Deleted the exact test objects created during this session.
+- Files:
+  - `api/tmp/media-upload-test/` (ignored test artifacts)
+- Verification: Direct staging R2 write and authenticated metadata read passed; public read failed with 403. Profile-picture APIs and files were not modified.
+## 2026-09-01T01:52:00Z — Decouple post-media confirmation from public R2 reads
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Try the post-media upload fix without relying on public R2 HEAD or GET requests.
+- Changes Made:
+  - Removed `R2_PUBLIC_URL` from the required settings for generating post-media presigned PUT URLs.
+  - Changed post-media public URL fields to nullable so upload planning and confirmation can work when no public delivery URL is configured.
+  - Changed post-media confirmation to validate only the API-issued, user-owned object-key namespace after a successful client PUT; it no longer performs R2 `HeadObject` or public HTTP `HEAD`/`GET` verification.
+  - Left profile-picture APIs and implementation untouched.
+- Files:
+  - `api/app/services/post_media.py`
+  - `api/app/schemas/posts.py`
+- Reason/Decision: Staging direct testing proved R2 PUT and authenticated metadata access succeed, while the configured public URL returns 403. Public delivery is therefore separated from upload confirmation. Existing post key ownership, one-at-a-time client flow, JPEG preparation, 500 KB client limit, eight-file limit, association, and cleanup paths remain in place; server-side object-content verification is no longer performed during confirmation.
+- Verification: `pytest tests/test_posts.py -q` passed (22 tests); API compileall passed; web TypeScript check passed; `git diff --check` passed. Profile auth route and account screen showed no diff.
