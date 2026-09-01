@@ -33,7 +33,7 @@ AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in
 - Files: `web/components/app-shell.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
 - Reason: Profile pages should not display the app-wide floating post composer.
 - Notes: This is a visibility/state change only; no styling, dimensions, or composer behavior changed.
-- Verification Status: Web production build and `git diff --check` are pending.
+- Verification Status: Web production build passed and `git diff --check` passed.
 
 ## 2026-09-01 — Require mutual follows for chat
 
