@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
-import { login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
+import { checkUsernameAvailability, login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,}$/;
@@ -84,6 +84,13 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         if (!USERNAME_PATTERN.test(username)) {
           setIsSubmitting(false);
           setErrorMessage("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.");
+          return;
+        }
+
+        const availability = await checkUsernameAvailability(username);
+        if (!availability.available) {
+          setIsSubmitting(false);
+          setErrorMessage('Username is already taken.');
           return;
         }
 

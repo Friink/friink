@@ -1,14 +1,13 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Composer } from '@/components/composer';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { navItems } from '@/lib/data';
-import { mockConversations } from '@/lib/mock-conversations';
+import { listConversations, loadAuthSession, type ApiConversation } from '@/lib/auth';
 import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -22,87 +21,49 @@ export function QuestionsScreen() {
 type MessagesTab = 'all' | 'muted' | 'requests';
 
 export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
-  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
-  const [draft, setDraft] = useState('');
-
-  const [conversations, setConversations] = useState(mockConversations);
-
   const router = useRouter();
-  const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
+  const [conversations, setConversations] = useState<ApiConversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session) return;
+    listConversations(session.accessToken)
+      .then(setConversations)
+      .finally(() => setLoading(false));
+  }, []);
+
   const visibleConversations = conversations.filter((conversation) => {
-    if (activeTab === 'muted') return conversation.muted === true;
-    if (activeTab === 'requests') return conversation.request === true;
+    if (activeTab === 'muted' || activeTab === 'requests') return false;
     return true;
   });
-
-  function sendMessage(event: React.FormEvent) {
-    event.preventDefault();
-    const text = draft.trim();
-    if (!text || !activeConversation) return;
-
-    setConversations((current) => current.map((conversation) => conversation.id === activeConversation.id
-      ? {
-          ...conversation,
-          preview: text,
-          createdAt: new Date().toISOString(),
-          messages: [...conversation.messages, { id: Date.now(), from: 'me', text, createdAt: new Date().toISOString() }],
-        }
-      : conversation));
-    setDraft('');
-  }
-
-  if (activeConversation) {
-    return (
-      <PageSurface className="messages-screen chat-screen">
-        <div className="chat-header">
-          <Link className="chat-contact-link" href={`/${activeConversation.handle.replace('@', '')}`}>
-            <ProfileCard name={activeConversation.name} handle={activeConversation.handle} tone={activeConversation.tone} initials={activeConversation.initials} />
-          </Link>
-          <button className="icon-plain chat-more" type="button" aria-label="Conversation options">
-            <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="chat-messages">
-          {activeConversation.messages.length > 0 && <p className="chat-date">{formatRelativeTime(activeConversation.messages[0].createdAt)}</p>}
-          {activeConversation.messages.map((message) => (
-            <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
-              <div className="chat-bubble">
-                <p>{message.text}</p>
-                <small>{formatRelativeTime(message.createdAt)}</small>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
-      </PageSurface>
-    );
-  }
 
   return (
     <PageSurface className="messages-screen" variant="list">
       <div className="message-list">
-        {visibleConversations.map((conversation) => (
+        {loading && <div className="home-feed-message">Loading chats...</div>}
+        {!loading && visibleConversations.map((conversation) => (
           <ListRow
             key={conversation.id}
             avatar={
-              <Link className="message-row-profile" href={`/${conversation.handle.replace('@', '')}`} aria-label={`Open ${conversation.name} profile`}>
-                <ProfileCard name={conversation.name} handle={conversation.handle} tone={conversation.tone} initials={conversation.initials} />
+              <Link className="message-row-profile" href={`/${conversation.participant.username}`} aria-label={`Open ${conversation.participant.display_name || conversation.participant.username} profile`}>
+                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} />
               </Link>
             }
             title={
-              <Link className="message-profile-link" href={`/${conversation.handle.replace('@', '')}`}>
-                {conversation.name}
+              <Link className="message-profile-link" href={`/${conversation.participant.username}`}>
+                {conversation.participant.display_name || conversation.participant.username}
               </Link>
             }
             subtitle={conversation.preview}
-            meta={formatRelativeTime(conversation.createdAt)}
+            meta={formatRelativeTime(conversation.updated_at)}
             trailing={conversation.unread ? <span className="unread-dot" /> : null}
             unread={conversation.unread}
-            onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
-            ariaLabel={`Open chat with ${conversation.name}`}
+            onClick={() => router.push(`/${conversation.participant.username}/chat`)}
+            ariaLabel={`Open chat with ${conversation.participant.display_name || conversation.participant.username}`}
           />
         ))}
-        {visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
+        {!loading && visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
       </div>
     </PageSurface>
   );

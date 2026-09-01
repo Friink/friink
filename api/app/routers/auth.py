@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -25,9 +25,10 @@ from app.schemas.auth import (
     TokenResponse,
     UpdateSetupRequest,
     UpdateCurrentUserRequest,
+    UsernameAvailabilityResponse,
     UserResponse,
 )
-from app.services.auth import authenticate_user, change_password, create_user, get_user_by_username, update_current_user, user_id_from_subject
+from app.services.auth import authenticate_user, change_password, create_user, get_user_by_username, is_username_available, update_current_user, user_id_from_subject
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
@@ -68,6 +69,22 @@ def set_refresh_cookie(response: Response, token: str, settings: Settings) -> No
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup(payload: SignupRequest, session: Session = Depends(get_session)) -> User:
     return await create_user(session, payload, EmailService())
+
+
+@router.get("/username-availability", response_model=UsernameAvailabilityResponse)
+async def username_availability(
+    username: str = Query(min_length=1, max_length=64),
+    session: Session = Depends(get_session),
+) -> UsernameAvailabilityResponse:
+    try:
+        normalized_username = UpdateCurrentUserRequest(username=username).username
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    assert normalized_username is not None
+    return UsernameAvailabilityResponse(
+        username=normalized_username,
+        available=await is_username_available(session, normalized_username),
+    )
 
 
 @router.post("/login", response_model=TokenResponse)

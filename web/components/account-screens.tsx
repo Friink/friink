@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, listAuthSessions, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser, type ManagedAuthSession } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, listAuthSessions, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser, type ManagedAuthSession } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -212,6 +212,12 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setIsUpdatingUsername(true);
     setUsernameStatus('');
     try {
+      const availability = await checkUsernameAvailability(username);
+      if (!availability.available && username.toLowerCase() !== user.username.toLowerCase()) {
+        setUsernameStatus('Username is already taken.');
+        onToast?.('Username is already taken.');
+        return;
+      }
       const updatedUser = await updateCurrentUser(session.accessToken, { username });
       const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
       saveAuthSession(updatedSession);

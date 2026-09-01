@@ -26,7 +26,7 @@ def validate_password_rules(password: str) -> str:
 def validate_username_rules(username: str) -> str:
     if " " in username or not USERNAME_PATTERN.fullmatch(username):
         raise ValueError("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.")
-    return username
+    return username.lower()
 
 
 def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date | None = None) -> date:
@@ -96,6 +96,11 @@ class ChangePasswordRequest(BaseModel):
         if self.new_password != self.confirm_password:
             raise ValueError("New passwords do not match.")
         return self
+
+
+class UsernameAvailabilityResponse(BaseModel):
+    username: str
+    available: bool
 
 
 class UpdateSetupRequest(BaseModel):

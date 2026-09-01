@@ -52,7 +52,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Every tab is addressable by its own path segment so tabs can be bookmarked, refreshed, and navigated with browser history.
 - Home uses `/home/explore` and `/home/connections`.
 - Connections uses `/connections/all`, `/connections/followers`, `/connections/following`, and `/connections/requests`; another user's directory uses `/{username}/connections/{tab}`.
-- Chat uses `/chat/all`, `/chat/muted`, and `/chat/requests`.
+- Chat uses `/chat/all`, `/chat/muted`, and `/chat/requests`; conversation routes use `/{username}/chat`.
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
@@ -360,7 +360,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Expanded Row Rule**: An expanded setting renders its title and summary once in the shared row header; the control body must not repeat the setting title as a second visible field label. Inputs remain accessible through native labels or `aria-label` attributes.
-- **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging.
+- **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging. Username changes check availability before submission; username identity is case-insensitive and stored/displayed canonically in lowercase.
 - **Subscription Tab Rule**: Settings includes a dedicated Subscription tab showing the current `Friink Free` plan and a `View plans` link to `/subscriptions`. Paid billing and entitlement management are not active yet.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.

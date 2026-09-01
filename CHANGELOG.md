@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T16:01:43Z
+
+- [chat] Replaced local mock conversations with authenticated REST-backed conversations and messages. Added cursor-based history, 4-second adaptive polling behind a transport interface, optimistic sends with client-message idempotency, accepted-connection authorization, and the schema/migration needed for future WebSocket transport without changing the chat UI.
+
+## 2026-09-01T15:31:42Z
+
+- [auth] Enforced case-insensitive username identity across signup and Settings. Validated usernames are canonicalized to lowercase, both flows check availability, the API remains authoritative for races, and a database migration adds a unique `lower(username)` index after existing collisions are resolved.
+
 ## 2026-09-01T15:13:11Z
 
 - [docs] Reconciled `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md` with the current working implementation. Current media behavior and known gaps are documented; historical entries remain unchanged.
@@ -277,6 +285,8 @@ _Last updated: 2026-09-01_
 - [web/layout] The shared visible `ContentBox` and contextual `FloatingBar` use the same fluid 720px maximum on tablet/desktop, centered within the available main panel after the side drawer; the shared 16px desktop/8px mobile gutter sits outside that visible cap.
 - [web/architecture] Logged-in app design is owned exclusively by `web/theme.config.ts` and `web/app/globals.css`; TSX contains structure/behavior and the app has no page-specific CSS or JSX inline styling. The public landing CSS module is separate and outside this rule.
 - [web/media] Post media currently uses a fixed 3:5 react-easy-crop frame, submit-time R2 upload, up to 8 images, a shared 3:4 frame for multi-image galleries, and natural-ratio single-image display. Final crop width, height, and aspect ratio are not currently persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
+- [auth] Usernames are case-insensitive identities. Signup and Settings perform availability checks, accepted usernames are stored canonically in lowercase, and the API/database enforce uniqueness.
+- [chat] Chat conversations and messages are API-backed. The active conversation uses a 4-second polling transport with focus/visibility recovery, cursor-based incremental loading, and retry-safe client message IDs; mute/request filtering remains unimplemented.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Following`.
 - [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.

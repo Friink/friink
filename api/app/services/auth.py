@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.connection import FollowRequest, FollowRequestStatus
@@ -25,8 +25,15 @@ async def get_user_by_email(session: Session, email: str) -> User | None:
 
 
 async def get_user_by_username(session: Session, username: str) -> User | None:
-    result = session.execute(select(User).where(User.username == username))
+    result = session.execute(select(User).where(func.lower(User.username) == username.lower()))
     return result.scalar_one_or_none()
+
+
+async def is_username_available(session: Session, username: str, exclude_user_id: uuid.UUID | None = None) -> bool:
+    statement = select(User.id).where(func.lower(User.username) == username.lower())
+    if exclude_user_id is not None:
+        statement = statement.where(User.id != exclude_user_id)
+    return session.execute(statement).scalar_one_or_none() is None
 
 
 async def create_user(session: Session, data: SignupRequest, email_service: EmailService | None = None) -> User:

@@ -1,26 +1,30 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { ProfileCard } from '@/components/profile-card';
-import { mockConversations } from '@/lib/mock-conversations';
-import { clearAuthSession, getConnectionStatus, getPublicUser, loadAuthSession, type AuthUser } from '@/lib/auth';
-import { getInitialsForUsername } from '@/lib/profile-display';
+import { clearAuthSession, loadAuthSession, type ApiConversation, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 
-type ChatClientProps = {
-  username: string;
-};
+type ChatClientProps = { username: string };
+
+function mergeMessages(current: ApiMessage[], incoming: ApiMessage[]) {
+  const messages = new Map(current.map((message) => [message.id, message]));
+  incoming.forEach((message) => messages.set(message.id, message));
+  return [...messages.values()].sort((left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime());
+}
 
 export function ChatClient({ username }: ChatClientProps) {
   const router = useRouter();
-  const handle = `@${username}`;
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [composerDisabled, setComposerDisabled] = useState(true);
+  const [conversation, setConversation] = useState<ApiConversation | null>(null);
+  const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [draft, setDraft] = useState('');
-  const [publicProfile, setPublicProfile] = useState<Pick<AuthUser, 'id' | 'name' | 'username' | 'about'> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -29,60 +33,63 @@ export function ChatClient({ username }: ChatClientProps) {
       return;
     }
     setUser(session.user);
-    getConnectionStatus(session.accessToken, username)
-      .then((status) => {
-        setComposerDisabled(status.state !== 'following');
+    const transport = new PollingChatTransport(session.accessToken);
+    let cancelled = false;
+    let unsubscribe: () => void = () => undefined;
+
+    transport.open(username)
+      .then(async (nextConversation) => {
+        if (cancelled) return;
+        setConversation(nextConversation);
+        const page = await transport.loadMessages(nextConversation.id);
+        if (cancelled) return;
+        setMessages(page.items);
+        unsubscribe = transport.subscribe(nextConversation.id, page.nextCursor, (event) => {
+          setMessages((current) => mergeMessages(current, [event.message]));
+        });
       })
-      .catch(() => {
-        setComposerDisabled(true);
+      .catch((nextError) => {
+        if (!cancelled) setError(nextError instanceof Error ? nextError.message : 'Could not load this conversation.');
       });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [router, username]);
 
   useEffect(() => {
-    const conversation = mockConversations.find((c) => c.handle === handle);
-    if (conversation) {
-      setPublicProfile({
-        id: conversation.id.toString(),
-        name: conversation.name,
-        username,
-        about: '',
-      });
-      return;
-    }
+    const element = document.querySelector('.chat-messages');
+    if (element) element.scrollTop = element.scrollHeight;
+  }, [messages.length]);
 
-    getPublicUser(username)
-      .then((profile) => setPublicProfile(profile))
-      .catch(() => {
-        setPublicProfile({
-          id: `missing-${username}`,
-          name: `@${username}`,
-          username,
-          about: '',
-        });
-      });
-  }, [handle, username]);
-
-  useEffect(() => {
-    const el = document.querySelector('.chat-messages');
-    if (el) {
-      setTimeout(() => {
-        (el as HTMLElement).scrollTop = (el as HTMLElement).scrollHeight;
-      }, 0);
-    }
-  }, []);
-
-  const conversation = mockConversations.find((c) => c.handle === handle);
-  const displayName = publicProfile?.name ?? `@${username}`;
-  const initials = conversation?.initials ?? getInitialsForUsername(displayName);
-  const tone = conversation?.tone ?? 'mint';
-  const messages = conversation?.messages ?? [];
-
-  if (!user) return null;
-
-  function sendMessage(event: React.FormEvent) {
+  async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (composerDisabled) return;
+    const text = draft.trim();
+    const session = loadAuthSession();
+    if (!text || !conversation || !session || busy) return;
+
+    const clientMessageId = crypto.randomUUID();
+    const optimisticMessage: ApiMessage = {
+      id: `pending-${clientMessageId}`,
+      conversation_id: conversation.id,
+      sender_id: session.user.id,
+      content: text,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((current) => mergeMessages(current, [optimisticMessage]));
     setDraft('');
+    setBusy(true);
+    try {
+      const sent = await new PollingChatTransport(session.accessToken).send(conversation.id, text, clientMessageId);
+      setMessages((current) => mergeMessages(current.filter((message) => message.id !== optimisticMessage.id), [sent]));
+    } catch (nextError) {
+      setMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
+      setError(nextError instanceof Error ? nextError.message : 'Could not send message.');
+      setDraft(text);
+    } finally {
+      setBusy(false);
+    }
   }
 
   function handleLogout() {
@@ -90,26 +97,32 @@ export function ChatClient({ username }: ChatClientProps) {
     router.replace('/');
   }
 
+  if (!user) return null;
+
+  const displayName = conversation?.participant.display_name || conversation?.participant.username || `@${username}`;
+  const handle = `@${conversation?.participant.username || username}`;
+
   return (
     <AppShell
       user={user}
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} disabled={composerDisabled} />}
+      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} disabled={!conversation || Boolean(error)} busy={busy} />}
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <ProfileCard name={displayName} handle={handle} tone={tone} initials={initials} />
+          <ProfileCard name={displayName} handle={handle} imageUrl={conversation?.participant.profile_picture_url} />
         </div>
 
+        {error && <p className="home-feed-message" role="alert">{error}</p>}
         <div className="chat-messages">
-          {messages.length > 0 && <p className="chat-date">{formatRelativeTime(messages[0].createdAt)}</p>}
+          {messages.length > 0 && <p className="chat-date">{formatRelativeTime(messages[0].created_at)}</p>}
           {messages.map((message) => (
-            <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
+            <div className={`chat-bubble-row ${message.sender_id === user.id ? 'mine' : ''}`} key={message.id}>
               <div className="chat-bubble">
-                <p>{message.text}</p>
-                <small>{formatRelativeTime(message.createdAt)}</small>
+                <p>{message.content}</p>
+                <small>{formatRelativeTime(message.created_at)}</small>
               </div>
             </div>
           ))}

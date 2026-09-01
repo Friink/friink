@@ -74,6 +74,23 @@ async def test_update_current_user_rejects_duplicate_email(monkeypatch: pytest.M
 
 
 @pytest.mark.asyncio
+async def test_update_current_user_rejects_duplicate_username_case_insensitively(monkeypatch: pytest.MonkeyPatch) -> None:
+    user = make_user("alex", "alex@example.com")
+    other = make_user("Areeba", "areeba@example.com")
+
+    async def fake_get_user_by_username(session, username):
+        return other if username.lower() == other.username.lower() else None
+
+    monkeypatch.setattr(service, "get_user_by_username", fake_get_user_by_username)
+
+    with pytest.raises(HTTPException) as error:
+        await service.update_current_user(FakeSession(), user, UpdateCurrentUserRequest(username="areeba"))
+
+    assert error.value.status_code == 409
+    assert user.username == "alex"
+
+
+@pytest.mark.asyncio
 async def test_update_current_user_updates_profile_fields() -> None:
     user = make_user("alex", "alex@example.com")
     session = FakeSession()

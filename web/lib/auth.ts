@@ -162,6 +162,13 @@ export async function signUp(input: {
   };
 }
 
+export async function checkUsernameAvailability(username: string): Promise<{ username: string; available: boolean }> {
+  return requestApi<{ username: string; available: boolean }>(`/auth/username-availability?username=${encodeURIComponent(username)}`, {
+    method: 'GET',
+    skipAuthRefresh: true,
+  });
+}
+
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
@@ -676,6 +683,35 @@ export type ApiConnectionList = {
   count: number;
 };
 
+export type ApiChatUser = {
+  id: string;
+  username: string;
+  display_name: string | null;
+  profile_picture_url: string | null;
+};
+
+export type ApiConversation = {
+  id: string;
+  participant: ApiChatUser;
+  preview: string | null;
+  updated_at: string;
+  unread: boolean;
+};
+
+export type ApiMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+};
+
+export type ApiMessagePage = {
+  items: ApiMessage[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
 export type ApiNotification = {
   id: string;
   recipient_user_id: string;
@@ -928,6 +964,41 @@ export async function getConnectionStatus(accessToken: string, username: string)
       Authorization: `Bearer ${accessToken}`,
     },
     authContext: 'authenticated_request',
+  });
+}
+
+export async function listConversations(accessToken: string): Promise<ApiConversation[]> {
+  const response = await requestApi<{ items: ApiConversation[] }>('/chat/conversations', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+  return response.items;
+}
+
+export async function getConversationWithUser(accessToken: string, username: string): Promise<ApiConversation> {
+  return requestApi<ApiConversation>(`/chat/conversations/with/${encodeURIComponent(username)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function listConversationMessages(accessToken: string, conversationId: string, after?: string | null): Promise<ApiMessagePage> {
+  const query = after ? `?after=${encodeURIComponent(after)}` : '';
+  return requestApi<ApiMessagePage>(`/chat/conversations/${conversationId}/messages${query}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function sendConversationMessage(accessToken: string, conversationId: string, content: string, clientMessageId: string): Promise<ApiMessage> {
+  return requestApi<ApiMessage>(`/chat/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ content, client_message_id: clientMessageId }),
   });
 }
 

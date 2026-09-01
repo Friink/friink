@@ -61,7 +61,8 @@ dashboard.
 - The logged-in web app has no page-specific CSS, CSS Modules, route-only stylesheets, or JSX inline styles. The public landing stylesheet `web/app/landing.module.css` is separate and outside this rule.
 - The shared visible app content column and contextual floating composer use `--space-content-col` at a `720px` tablet/desktop cap. The shared inline gutter is outside that visible cap: `16px` on desktop and `8px` on mobile.
 - Current post media uses a fixed `3:5` crop tool, submit-time R2 upload, a `3:4` frame for multi-image galleries, and natural-ratio display for single images. Final crop dimensions/aspect ratio are not currently persisted.
-- Chat list and conversation content currently use local mock data; they are not yet API-backed.
+- Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport; the UI is transport-neutral so a future WebSocket transport can replace polling.
+- Usernames are case-insensitive identities: signup and Settings check availability before submission, the API remains authoritative, and accepted values are canonicalized to lowercase.
 - The web production build and TypeScript checks are the current automated web verification. Browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.
 
 ## Project Documentation

@@ -24,6 +24,28 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T16:01:43Z — Implement MVP REST chat with polling transport
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace mock chat with an MVP implementation that uses 4-second polling now while remaining ready for a future WebSocket transport.
+- Changes Made: Added one-to-one conversations and messages with accepted-connection authorization, cursor-based message history, server-authoritative timestamps, client-message idempotency, and REST routes. Added a transport-neutral web client with adaptive polling, visibility/focus recovery, incremental deduplication, optimistic sends, and server reconciliation. Replaced mock conversation rendering in the chat list and direct chat route. Preserved the existing chat styling and route structure.
+- Files: `api/app/models/chat.py`, `api/app/schemas/chat.py`, `api/app/services/chat.py`, `api/app/routers/chat.py`, `api/app/main.py`, `api/alembic/versions/20260901_0015_create_chat_tables.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/components/screens.tsx`, `web/app/[username]/chat/chat-client.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: REST plus adaptive polling is appropriate for the MVP scale and avoids premature WebSocket infrastructure while keeping the UI independent of the delivery mechanism.
+- Notes: `Muted` and `Requests` remain compatibility tabs without backend behavior. The conversation endpoint permits messaging only between accepted connections. No visual design rules were changed.
+- Verification Status: API test suite (`tests`) passed 66 tests. `npm run build` passed after fixing the unsubscribe function type. `git diff --check` is run after documentation updates. Database migration must be applied before deployed chat can operate.
+
+## 2026-09-01T15:31:42Z — Enforce case-insensitive username availability
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent duplicate logical usernames in signup and Settings, after staging showed two accounts rendered as `@areeba`.
+- Changes Made: Canonicalized validated usernames to lowercase; changed backend username lookups and availability checks to compare case-insensitively; added the public username-availability endpoint; wired availability checks into signup and Settings while retaining the API conflict response as the race-condition guard; added an Alembic migration for lowercase normalization and a unique `lower(username)` index; added mixed-case duplicate regression coverage.
+- Files: `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260901_0014_case_insensitive_usernames.py`, `api/tests/test_auth_updates.py`, `api/tests/test_validation.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `web/components/account-screens.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Username casing is presentation-only; signup and profile updates must enforce one case-insensitive identity before accepting a value.
+- Notes: The migration intentionally stops with a clear error if existing rows already collide after lowercasing; those rows require explicit account-data resolution before the unique index can be created.
+- Verification Status: API test suite (`tests`) passed 66 tests. `npm run build` passed after correcting the public request context. The first unscoped pytest command was blocked by the existing manual R2 script under `api/tmp` requiring unset storage variables; no application code was changed by that script.
+
 ## 2026-09-01T15:13:11Z — Reconcile documentation with the working implementation
 
 - Agent: Codex

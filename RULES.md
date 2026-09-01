@@ -101,15 +101,15 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-01 (UTC)
 
 ### Rule: Signup Creates Active Public Accounts
-- **What:** A successful signup creates a user with a lowercased unique email, unique username, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`.
-- **Edge cases:** Signup rejects duplicate emails and duplicate usernames with `409`. OTP records/services exist only as stubs; no OTP challenge is active in signup.
+- **What:** A successful signup creates a user with a lowercased unique email, a lowercased unique username, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`.
+- **Edge cases:** Signup validates username syntax and checks username availability before submission. The API remains authoritative and rejects duplicate usernames case-insensitively with `409`; the database enforces the same invariant. OTP records/services exist only as stubs; no OTP challenge is active in signup.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/services/auth.py`, `api/app/schemas/auth.py`, `api/app/models/user.py`
 - **Since:** 2026-08-29T07:15:00Z
 
 ### Rule: Password And Username Validation
-- **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces.
+- **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
@@ -162,7 +162,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-29T12:23:00Z
 
 ### Rule: Current User Updates
-- **What:** Authenticated users may update username, email, display name, about text, and privacy status. Username/email updates reject conflicts with another user.
+- **What:** Authenticated users may update username, email, display name, about text, and privacy status. Settings validates username availability before submission, and the API/database remain authoritative: username/email updates reject conflicts with another user, with username conflicts compared case-insensitively.
 - **Edge cases:** If no submitted value changes the user, the API returns the existing user without committing. `about` is capped at 256 characters and display name at 120.
 - **Web input limit:** The Settings About textarea limits input to 128 characters and shows the live `x/128` count inside the lower-right of the field; the API's broader 256-character ceiling remains a backend safety limit.
 - **Status:** Active
@@ -523,13 +523,13 @@ the entry, so history isn't lost.
 - **File(s):** `web/app/subscribe-form.tsx`, `web/app/page.tsx`
 - **Since:** 2026-08-18T00:00:00Z
 
-### Rule: Chat Filters Are Client-Side Mock Data Filters
-- **What:** The web Chat screen filters local conversation data into `All`, `Muted`, and `Requests` tabs using fields from `web/lib/mock-conversations.ts`.
-- **Edge cases:** There is no live backend chat, mute, or request API in the current codebase.
+### Rule: Chat Uses REST With Polling Delivery
+- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation between accepted connections, message history, and message sending. The web client polls the active conversation every 4 seconds through a transport interface; the transport pauses while the document is hidden and polls immediately on focus/visibility recovery.
+- **Edge cases:** Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID so retries do not create duplicates. The API rejects messaging users who are not accepted connections. The `Muted` and `Requests` tabs remain present for compatibility but have no backend behavior yet. The transport boundary must remain stable so a future WebSocket transport can replace polling without changing the chat UI.
 - **Status:** Active
-- **Platform:** Web only
-- **File(s):** `web/components/screens.tsx`, `web/lib/mock-conversations.ts`, `web/components/app-shell.tsx`
-- **Since:** 2026-08-29T12:05:00Z
+- **Platform:** Web/API
+- **File(s):** `api/app/models/chat.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`
+- **Since:** 2026-09-01T16:00:00Z
 
 ### Rule: Appearance And Sidebar Preferences Use Cookies
 - **What:** The web app stores appearance (`light`, `dark`, or `system`) and desktop sidebar collapsed state in cookies for one year.
