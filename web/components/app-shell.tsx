@@ -775,7 +775,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }
 
   return (
-    <main className="app-shell" data-theme={appearance} style={{ '--color-brand': accentColor } as CSSProperties}>
+    <main className="app-shell" data-theme={appearance} style={{ '--color-accent': accentColor } as CSSProperties}>
       <div className="app-layout">
         <SideDrawer
           user={user}

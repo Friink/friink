@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T00:34:10Z
+
+- [web/design] Removed the underline from rendered mention links in every state while keeping them accent-colored; documented the shared mention styling contract.
+
+## 2026-09-01T00:30:00Z
+
+- [web/design] Renamed the dynamic in-app accent token to `--color-accent` and derived soft, hover, focus, and interaction backgrounds from the selected accent instead of fixed green values.
+
 ## 2026-09-01T00:07:47Z
 
 - [api] Added stage-specific post-media failure handling and request references for upload-plan generation, object verification, database association, response serialization, and cleanup logging; profile-picture APIs were not changed.

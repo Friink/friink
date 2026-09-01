@@ -1,3 +1,20 @@
+## 2026-09-01T00:34:10Z — Remove mention-link underlines
+
+- Prompt Summary: Update the project documentation for the completed accent work and remove underlines from mentions.
+- Changes Made:
+  - Added `text-decoration: none` to the shared `.mention-link` selector so base, visited, hover, and focus states remain underline-free.
+  - Updated `packages/design/design.md` to record the no-underline mention presentation rule.
+  - Added synchronized entries to `CHANGELOG.md` and `AGENTLOG.md`.
+- Scope: No upload or profile-picture behavior changed.
+
+## 2026-09-01T00:30:00Z — Make in-app accent-derived surfaces dynamic
+
+- Prompt Summary: Rename the dynamic theme variable to `--color-accent`, default it to the brand color, and make the remaining soft/alpha surfaces follow the selected accent.
+- Changes Made:
+  - Added the default `--color-accent` theme variable and changed the app shell to override it when the user saves a color.
+  - Replaced fixed soft-green and hardcoded green interaction washes with accent-derived `color-mix()` variables.
+  - Kept public brand styling fixed and did not change upload or profile-picture behavior.
+
 ## 2026-08-31T23:30:08Z — Post-media staging diagnosis and media-only composer fix
 
 - Prompt Summary: Reproduce the staging `Failed to fetch` post-media failure and remove the unnecessary caption requirement when media is attached.

@@ -22,12 +22,12 @@ export default function GlobalError({
   // cookie wins, otherwise use system preference
   const darkVars: Record<string, string> = {
     '--color-background': '#333333',
-    '--color-background-accent': '#3a3a3a',
+    '--color-accent-background': '#3a3a3a',
     '--color-paper': '#3d3d3d',
     '--color-ink': '#f5f5f5',
     '--color-muted': '#c4c4c4',
     '--color-line': '#555555',
-    '--color-brand-soft': '#244d30',
+    '--color-accent-soft': '#244d30',
     '--color-chrome': '#262626',
   };
 
@@ -77,7 +77,7 @@ export default function GlobalError({
           display: 'grid',
           placeItems: 'center',
           background: 'transparent',
-          color: 'var(--color-brand)',
+          color: 'var(--color-accent)',
           border: 'none',
           boxShadow: 'none',
           textDecoration: 'none',

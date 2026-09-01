@@ -70,7 +70,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Ink and muted gray provide the primary text hierarchy.
 - Thin lines separate navigation, tabs, feed posts, and directory rows.
 - Settings should follow the same divider-based row rhythm as chat and notifications; avoid individual boxed cards around every setting item unless a future component contract explicitly calls for a standalone card.
-- The in-app General settings surface includes an Accent color row. It accepts a six-digit hex code (`#RRGGBB`), previews the color, and applies it to the app shell's brand token only; the public site remains on the fixed Friink brand color. Invalid values keep the update action disabled.
+- The in-app General settings surface includes an Accent color row. It accepts a six-digit hex code (`#RRGGBB`), previews the color, and applies it to the app shell's `--color-accent` token only; the public site remains on the fixed Friink brand color. Accent-derived soft, background, hover, and focus colors must be computed from `--color-accent`. Invalid values keep the update action disabled.
 - Avatars use circular shapes and soft color variations.
 - Controls should remain compact, clear, and usable on narrow screens.
 - Typography should feel soft, human, and modern; Nunito is used for headings and action-driven text.
@@ -115,15 +115,18 @@ The following design tokens are locked hard values extracted directly from the c
 
 ### Colors
 - **Brand Colors**:
-  - `--color-brand`: `#33aa55` (Primary actions, active states, indicators, focus rings)
-  - `--color-brand-soft`: `#eaf5ed` (Light mode tint; Dark mode: `#244d30`)
+  - `--color-brand`: `#33aa55` (Fixed public brand color)
+  - `--color-accent`: `#33aa55` by default (In-app primary actions, active states, indicators, and focus rings)
+  - `--color-accent-soft`: Accent-derived surface tint (light and dark mode)
+  - `--color-accent-background`: Accent-derived subtle interaction background
+  - `--color-accent-focus`: Accent-derived translucent focus ring
+  - `--color-accent-hover`: Accent-derived translucent hover background
 - **Neutral & Surface Colors**:
   - `--color-ink`: `#111111` (Primary text; Dark mode: `#f5f5f5`)
   - `--color-muted`: `#8a908c` (Secondary text, inactive icons, handles, dates; Dark mode: `#c4c4c4`)
   - `--color-line`: `#e3e6e3` (Borders, dividers; Dark mode: `#555555`)
   - `--color-paper`: `#ffffff` (Card and panel backgrounds, floating bar; Dark mode: `#161616`)
   - `--color-background`: `#f2f5f1` (App background; Dark mode: `#111111`)
-  - `--color-background-accent`: `#e7f2e9` (Subtle accent; Dark mode: `#161616`)
   - `--color-chrome`: `#111111` (Header/shell dark surfaces)
   - `--color-danger`: `#ed8c6b` / `#b54444` (Error states and destructive actions)
 - **Avatar Tone Palette**:
@@ -218,7 +221,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   1. **Default Navigation Mode** (`children` is null/undefined/false):
      - Width: Compact natural width constrained by the shared rail (`width: min(max-content, 100%)`), horizontally centered (`margin: 0 auto`).
      - Fixed Navigation Item: Post (`fa-pen`).
-     - Active item highlighted with `color: var(--color-brand)` and `background: var(--color-brand-soft)`.
+     - Active item highlighted with `color: var(--color-accent)` and `background: var(--color-accent-soft)`.
   2. **Contextual Composer Mode** (`children` is provided):
      - Width: Spans the shared content rail, not the full viewport (`width: 100%` within the centered floating shell).
      - Hosts contextual composers (`Composer`).
@@ -267,7 +270,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
   6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
   - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
-  - **Mention Rule**: Recognized `@username` mentions in post and quoted-post text are links to the mentioned profile. Mention notification copy links to the canonical post that contains the mention.
+  - **Mention Rule**: Recognized `@username` mentions in post and quoted-post text are links to the mentioned profile, use the current app accent, and do not display an underline in any interaction state. Mention notification copy links to the canonical post that contains the mention.
 - **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
 - **Variants**:
