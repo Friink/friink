@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Restore incoming request actions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make pending private-profile follow requests actionable in Connections > Requests.
+- Changes Made: Removed the client-side `isPrivate` gate and reset behavior that could hide or leave the Requests tab when the cached session privacy flag was stale. The signed-in owner's Requests tab now remains available and renders API-backed Accept and Reject controls.
+- Files: `web/components/app-shell.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The server correctly creates pending requests for private accounts, but the client could reset `/connections/requests` to All based on stale cached privacy state.
+- Notes: Other users' directories still do not expose the signed-in user's private request queue. Public follows remain auto-accepted.
+- Verification Status: Web production build passed and `git diff --check` passed.
+
 ## 2026-09-01 — Wire profile Message action to chat
 
 - Agent: Codex

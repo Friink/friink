@@ -122,7 +122,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   useEffect(() => setSettingsTab(initialSettingsTab), [initialSettingsTab]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
-  const connectionsTabs = !viewingOtherConnections && user.isPrivate
+  const connectionsTabs = !viewingOtherConnections
     ? [
         { id: 'all', label: 'All' },
         { id: 'followers', label: 'Followers' },
@@ -458,12 +458,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         addToast(error instanceof Error ? error.message : 'Could not load connection state.');
       });
   }, [profileUser, user]);
-
-  useEffect(() => {
-    if (!user.isPrivate && connectionsFilter === 'requests') {
-      setConnectionsFilter('all');
-    }
-  }, [connectionsFilter, user.isPrivate]);
 
   useEffect(() => {
     if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;

@@ -62,6 +62,7 @@ dashboard.
 - The shared visible app content column and contextual floating composer use `--space-content-col` at a `720px` tablet/desktop cap. The shared inline gutter is outside that visible cap: `16px` on desktop and `8px` on mobile.
 - The floating composer is available on feed and supported contextual surfaces, but is intentionally hidden on profile pages.
 - Other-user profiles expose a functional Message action that opens `/{username}/chat`; chat access still requires mutual accepted follows.
+- The signed-in account's Connections surface always exposes Requests; pending incoming requests provide Accept and Reject actions from the authenticated API.
 - Current post media uses a fixed `3:5` crop tool, submit-time R2 upload, a `3:4` frame for multi-image galleries, and natural-ratio display for single images. Final crop dimensions/aspect ratio are not currently persisted.
 - Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. A chat is available only between users who follow each other and have accepted relationships in both directions; the UI is transport-neutral so a future WebSocket transport can replace polling.
 - Notifications use a 4-second adaptive unread-count polling transport with visibility/focus recovery; the full list refreshes while Notifications is open.

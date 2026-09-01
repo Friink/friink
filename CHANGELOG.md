@@ -2,6 +2,10 @@
 
 ## 2026-09-01
 
+- [connections] Kept the signed-in account's Requests tab available independently of cached privacy state, restoring the API-backed Accept and Reject controls for pending private-profile follow requests.
+
+## 2026-09-01
+
 - [web/profile] Wired the profile Message action to the username-scoped chat route; it was previously rendered as an inert button.
 
 ## 2026-09-01

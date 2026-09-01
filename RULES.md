@@ -467,6 +467,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/chat/chat-client.tsx`
 - **Since:** 2026-09-01 (Asia/Karachi)
 
+### Rule: Incoming Requests Are Available In The Owner's Connections
+- **What:** The signed-in account's Connections surface always exposes the Requests tab. Incoming pending follow requests are loaded from the authenticated API and render Accept and Reject actions; the client must not hide or reset the tab based on a cached privacy flag.
+- **Edge cases:** Other users' Connections directories do not expose the owner's private request queue. Public accounts normally have no pending incoming requests because public follows are accepted immediately, but the Requests tab remains a valid empty state.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `web/components/app-shell.tsx`, `web/components/connections-screen.tsx`, `api/app/routers/connections.py`, `api/app/services/connections.py`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ### Rule: Floating Post Composer Expands Above Its Controls
 - **What:** The floating post composer has no field background or border. Once typing begins, its text editor occupies the full-width top row and grows upward to eight lines; longer drafts scroll within the editor. Attachment, character count, and send controls remain in the bottom row.
 - **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior. Profile pages do not render the floating composer.
