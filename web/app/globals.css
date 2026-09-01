@@ -3984,7 +3984,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   display: grid;
   gap: 0.25rem;
   width: 100%;
-  max-width: 42rem;
+  max-width: 38rem;
   margin: 0.75rem 0 0.875rem;
   overflow: hidden;
   border: 1px solid var(--color-line);
@@ -4009,6 +4009,13 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .post-media-gallery-count-1 .post-media-gallery-item {
   aspect-ratio: 4 / 5;
   max-height: 38rem;
+}
+
+@media (min-width: 768px) {
+  .post-media-gallery-count-1 .post-media-gallery-item {
+    height: min(70vh, 38rem);
+    aspect-ratio: auto;
+  }
 }
 
 .post-media-gallery-count-2,
@@ -4061,6 +4068,12 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
     border-right: 0;
     border-left: 0;
     border-radius: 0;
+  }
+
+  .post-media-gallery-count-1 .post-media-gallery-item {
+    height: auto;
+    aspect-ratio: 4 / 5;
+    max-height: none;
   }
 }
 

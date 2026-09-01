@@ -5367,3 +5367,27 @@
 - Prompt Summary: Investigate the broken-image icon shown after post-media gallery rendering was deployed.
 - Finding: The exact URL returned by `GET /posts/public/WaptlLjG` still fails from the external test with `No such host is known: staging-media.friink.com` for both GET and HEAD. The browser image element is present and displays its alt text, so the gallery/rendering code is executing; DNS resolution remains the blocker.
 - Scope: Diagnosis only. No application code or R2 settings were changed.
+## 2026-09-01T06:45:00Z — Verify r2.dev post-media delivery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the supplied Cloudflare-managed `r2.dev` base URL instead of the unresolved custom media hostname.
+- Finding: Rebuilt the exact post object URL with the single base `https://pub-8ef6e4d6374844fa92d4d5db54a35c06.r2.dev` and fetched it successfully: HTTP 200, `image/jpeg`, 102,817 bytes.
+- Conclusion: R2 public delivery works through the `r2.dev` hostname; `staging-media.friink.com` remains the DNS failure. Existing post rows retain the URL stored at creation, so changing `R2_PUBLIC_URL` affects newly created media URLs and does not rewrite old rows.
+- Scope: Diagnosis only. No application code or R2 settings were changed.
+## 2026-09-01T07:00:00Z — Fix desktop post-media gallery sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the loaded post-media preview being non-responsive and excessively tall on desktop.
+- Changes Made:
+  - Reduced the shared gallery maximum width to `38rem`.
+  - Added a desktop-only single-image height cap of `min(70vh, 38rem)` so the gallery remains visible above the floating composer.
+  - Preserved the `4:5` portrait ratio on compact screens and documented the responsive contract.
+- Files:
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `docs/audit.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Post-media display only. Profile-picture code and layout were not changed.

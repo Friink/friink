@@ -232,7 +232,7 @@ shared `PostMediaGallery`.
 The gallery is rendered by `FeedPost`, which is reused by feed, post-detail,
 and reply views; quoted-post blocks use the same gallery component. Layout:
 
-- one image: portrait 4:5 frame;
+- one image: portrait 4:5 frame on compact screens and a desktop frame capped at `min(70vh, 38rem)`;
 - two images: two square tiles;
 - three images: one large tile and two stacked tiles;
 - four images: 2×2 grid;

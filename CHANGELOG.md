@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T07:00:00Z
+
+- [web] Fixed desktop post-media gallery sizing by adding a responsive width/height cap while preserving the mobile portrait frame.
+
+## 2026-09-01T06:45:00Z
+
+- [verification] Confirmed the exact post-media object is publicly readable through the Cloudflare `r2.dev` URL with HTTP 200; the custom media hostname remains DNS-unresolved.
+
 ## 2026-09-01T06:30:00Z
 
 - [diagnosis] Reconfirmed that post-media rendering reaches the image element but the exact custom media URL still fails DNS resolution for `staging-media.friink.com`.
