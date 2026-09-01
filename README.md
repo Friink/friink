@@ -112,3 +112,11 @@ from scratch.
   Only run a targeted check (for example, a single affected test or a type-check on
   changed files) if the task specifically requires it or you are uncertain a change
   compiles.
+
+- New or changed API endpoints must be verified with a real request/response
+  check before the task is considered complete — confirm the endpoint returns
+  the expected status and response shape, not just that the code compiles or
+  imports cleanly. This is required regardless of confidence level; "the code
+  looks correct" is not sufficient evidence for an endpoint. This is a
+  targeted check (one real call), not a full test suite run, and does not
+  conflict with the manual-verification-by-default rule above.

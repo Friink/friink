@@ -67,6 +67,7 @@ function mapApiPost(post: ApiPost): Post {
     replies: post.reply_count,
     quotes: post.quote_count,
     reactions: 0,
+    media: post.media.map((item) => item.url),
     quotedPost: post.quoted_post
       ? {
           id: post.quoted_post.id,
@@ -77,6 +78,7 @@ function mapApiPost(post: ApiPost): Post {
           imageUrl: post.quoted_post.profile_picture_url,
           content: post.quoted_post.content,
           mediaCount: post.quoted_post.media_count,
+          media: post.quoted_post.media.map((item) => item.url),
           unavailable: post.quoted_post.unavailable,
         }
       : null,

@@ -5,6 +5,7 @@ import { type MouseEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProfileCard } from '@/components/profile-card';
 import { MentionText } from '@/components/mention-text';
+import { PostMediaGallery } from '@/components/post-media-gallery';
 import type { Post } from '@/lib/data';
 import { getPostPath, getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
@@ -73,6 +74,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
         <small>{formatRelativeTime(post.createdAt)}</small>
       </div>
       <p ref={bodyRef} className={`feed-post-body${shouldClampBody ? ' feed-post-body-clamped' : ''}`}><MentionText>{post.text}</MentionText></p>
+      <PostMediaGallery urls={post.media ?? []} authorName={post.name} />
       {post.quotedPost && (
         (() => {
           const quotedPost = post.quotedPost;
@@ -92,6 +94,7 @@ export function FeedPost({ post, highlightedStar = false, onReply, onQuote, trun
                 <strong>Original post unavailable</strong>
               )}
               <p className={`feed-post-quote-body${truncateQuotedPost ? ' feed-post-quote-body-clamped' : ''}`}><MentionText>{quotedPost.content}</MentionText></p>
+              <PostMediaGallery urls={quotedPost.media ?? []} authorName={quotedPost.authorDisplayName || quotedPost.authorUsername || 'Original'} />
               {truncateQuotedPost && <span className="feed-post-quote-more">...</span>}
             </div>
           );

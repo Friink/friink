@@ -5305,3 +5305,32 @@
   - `api/app/routers/posts.py`
   - `api/tests/test_posts.py`
 - Verification: `pytest tests/test_posts.py -q` passed (23 tests); API compileall passed; web TypeScript check passed.
+## 2026-09-01T05:20:00Z — Add Instagram-style post media display
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a responsive Instagram-like display for uploaded post media.
+- Changes Made:
+  - Added `media` URL items to post and quoted-post API response schemas.
+  - Eagerly loaded `Post.media` and quoted-post media in post queries and serialized stored URLs.
+  - Added shared `PostMediaGallery` rendering for feed, post detail, replies, and quoted-post blocks.
+  - Added responsive one/two/three/four-tile layouts, four-image preview with `+N` overlay for up to eight images, lazy loading, and accessible image labels.
+  - Updated the active product/design/media-upload documentation contracts.
+- Files:
+  - `api/app/schemas/posts.py`
+  - `api/app/services/posts.py`
+  - `web/lib/auth.ts`
+  - `web/lib/data.ts`
+  - `web/components/home-screen.tsx`
+  - `web/components/app-shell.tsx`
+  - `web/components/feed-post.tsx`
+  - `web/components/post-media-gallery.tsx`
+  - `web/app/globals.css`
+  - `RULES.md`
+  - `packages/design/design.md`
+  - `docs/media-upload.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Post upload and association already worked, but responses exposed only `media_count` and the frontend rendered no post media. The gallery is shared so feed/detail/reply/quote displays stay consistent.
+- Verification: `pytest tests/test_posts.py -q` passed (23 tests); API compileall passed; web TypeScript check passed; `git diff --check` passed.
+- Profile-picture APIs and implementation were not changed.

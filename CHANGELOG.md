@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T05:20:00Z
+
+- [api/web] Added post-media URL response fields and a shared Instagram-style responsive gallery for feed, detail, replies, and quoted posts.
+
 ## 2026-09-01T04:55:00Z
 
 - [api] Fixed the post-media upload-plan HTTP 500 by serializing storage upload dataclasses into the declared Pydantic response models; added regression coverage.

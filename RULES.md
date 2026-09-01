@@ -13,7 +13,7 @@ the entry, so history isn't lost.
 
 ### Rule: Post Media Uploads Are Submit-Time And Image-Only
 - **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits; the API then validates ownership, type, and size before associating them with the authenticated user's new post.
-- **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Rendering uploaded media remains a separate feature.
+- **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Successfully associated media is returned as URL items and rendered through the shared responsive post-media gallery.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `web/components/composer.tsx`, `web/lib/auth.ts`, `api/app/routers/posts.py`, `api/app/services/posts.py`, `api/app/services/storage.py`, `api/app/models/post.py`

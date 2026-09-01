@@ -83,7 +83,12 @@ class QuotedPostResponse(BaseModel):
     profile_picture_url: str | None = None
     content: str
     media_count: int = 0
+    media: list["PostMediaResponse"] = []
     unavailable: bool = False
+
+
+class PostMediaResponse(BaseModel):
+    url: str
 
 
 class PostResponse(BaseModel):
@@ -97,6 +102,7 @@ class PostResponse(BaseModel):
     profile_picture_url: str | None = None
     content: str
     media_count: int
+    media: list[PostMediaResponse] = []
     parent_post_id: uuid.UUID | None
     quoted_post_id: uuid.UUID | None
     reply_count: int = 0

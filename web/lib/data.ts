@@ -16,6 +16,7 @@ export type Post = {
   replies: number;
   quotes: number;
   reactions: number;
+  media?: string[];
   quotedPost?: {
     id: string | null;
     publicId?: string | null;
@@ -25,6 +26,7 @@ export type Post = {
     imageUrl?: string | null;
     content: string;
     mediaCount?: number;
+    media?: string[];
     unavailable: boolean;
   } | null;
 };

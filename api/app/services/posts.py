@@ -14,7 +14,7 @@ from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.post import Post, PostKind, PostMedia
 from app.models.user import User
-from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostResponse, QuotedPostResponse
+from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostMediaResponse, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh, rollback
 from app.services.post_slug import generate_post_slug
 from app.services.post_ids import generate_public_id
@@ -100,7 +100,9 @@ def post_load_options():
     reply_count, quote_count = post_count_expressions()
     return (
         selectinload(Post.user),
+        selectinload(Post.media),
         selectinload(Post.quoted_post).selectinload(Post.user),
+        selectinload(Post.quoted_post).selectinload(Post.media),
         with_expression(Post.reply_count, reply_count),
         with_expression(Post.quote_count, quote_count),
     )
@@ -364,6 +366,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         profile_picture_url=post.user.profile_picture_url,
         content=post.content,
         media_count=post.media_count,
+        media=[PostMediaResponse(url=item.url) for item in post.media if item.url],
         parent_post_id=post.parent_post_id,
         quoted_post_id=post.quoted_post_id,
         reply_count=post.reply_count or 0,
@@ -404,5 +407,6 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         profile_picture_url=quoted_post.user.profile_picture_url,
         content=quoted_post.content,
         media_count=quoted_post.media_count,
+        media=[PostMediaResponse(url=item.url) for item in quoted_post.media if item.url],
         unavailable=False,
     )

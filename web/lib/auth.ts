@@ -484,6 +484,7 @@ export type ApiPost = {
   profile_picture_url: string | null;
   content: string;
   media_count: number;
+  media: { url: string }[];
   parent_post_id: string | null;
   quoted_post_id: string | null;
   reply_count: number;
@@ -497,6 +498,7 @@ export type ApiPost = {
     profile_picture_url: string | null;
     content: string;
     media_count: number;
+    media: { url: string }[];
     unavailable: boolean;
   } | null;
   created_at: string;

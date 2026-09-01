@@ -177,10 +177,20 @@ rule was intentionally altered by the post-media implementation.
 
 ## Viewing post media
 
-Successful storage and confirmation do not currently guarantee visible post
-images. The current `PostResponse` exposes `media_count`, not a list of media
-URLs/items, and feed/detail clients map that count. Media rendering is not yet
-implemented in the current response contract.
+The post response now includes URL items alongside `media_count`, and the web
+client maps them into the shared `PostMediaGallery`. Feed posts and post-detail
+posts (including replies) render the same responsive gallery. Quoted-post
+blocks also render their associated media when the quoted response includes it.
+
+The gallery uses one portrait frame for a single image; two and four square
+tiles; one large tile plus two stacked tiles for three images; and a four-tile
+preview with a `+N` overlay for five through eight images. The browser loads
+the first image eagerly and the remaining images lazily.
+
+Successful storage and confirmation still do not guarantee that an image can
+be fetched: the URL in each `PostMedia` row must be readable by the browser.
+The current delivery URL is derived from `R2_PUBLIC_URL`; a private-bucket
+deployment would require replacing those URLs with signed download URLs.
 
 There are two independent requirements for viewing:
 
