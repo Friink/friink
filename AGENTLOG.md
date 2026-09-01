@@ -5547,3 +5547,19 @@
   - `AGENTLOG.md`
 - Reason/Decision: Centering belongs to the layout container, not to viewport-width calculations on the bar itself. The rail keeps the persistent surface inside the app panel while ordinary flex centering and `margin: auto` handle the 512px cap and narrower screens.
 - Verification: Targeted source inspection and `git diff --check`.
+## 2026-09-01T06:26:08Z — Center the floating bar in the viewport
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the remaining floating-bar centering offset shown after the previous flex-rail change.
+- Changes Made:
+  - Removed the desktop sidebar-width override from `.floating-bar-rail`.
+  - Kept the rail viewport-wide with responsive gutters and the bar capped at 512px.
+  - Updated the design contract to make viewport centering explicit.
+- Files:
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The sidebar offset centered the fixed rail within the remaining panel, which visibly shifted the bar right. A viewport-wide flex rail provides stable centering at every desktop width without positional calculations.
+- Verification: `git diff --check`; targeted CSS/source inspection.

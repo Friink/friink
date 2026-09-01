@@ -4414,13 +4414,6 @@ input[type="search"]:focus {
     --desktop-sidebar-width: 4.5rem;
   }
 
-  .floating-bar-rail {
-    left: var(--desktop-sidebar-width);
-    right: 0;
-    width: auto;
-    padding: 0 var(--space-content-inset-inline);
-  }
-
   .sidebar {
     position: fixed;
     top: var(--space-topbar-height);

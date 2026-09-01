@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T06:26:08Z
+
+- [web/design] Removed the desktop sidebar offset from the floating-bar rail so the 512px bar centers in the viewport with ordinary flex alignment.
+
 ## 2026-09-01T06:16:01Z
 
 - [web/design] Replaced floating-bar viewport positioning with a centered fixed rail and capped the bar at the shared 512px content width.
