@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T12:14:25Z
+
+- [web/layout] Corrected the shared runtime theme token from `640px` to `512px`, which had been overriding the CSS content-width cap in staging. Updated the floating-bar/content-panel alignment contract.
+
 ## 2026-09-01T12:08:00Z
 
 - [web/layout] Corrected the desktop floating-bar rail so it shares the main-panel boundary after the side drawer; the bar remains capped at 512px and centered with flex alignment. Updated the active layout documentation and design contract.

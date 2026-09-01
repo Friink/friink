@@ -215,7 +215,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Fixed Sizing & Positioning**:
   - `position: fixed`, `bottom: max(1rem, env(safe-area-inset-bottom))`, `left: 1rem`, `right: 1rem` on desktop, with `0.5rem` mobile left/right insets and `1rem` mobile bottom spacing.
   - `height: 3.5rem` (`var(--space-floating-bar-height)`).
-  - Lives in a fixed viewport-width `.floating-bar-rail` that centers the bar with `display: flex` and `justify-content: center`. The bar uses `width: 100%`, `max-width: var(--space-content-max-width)` (512px), and `margin: 0 auto`; the rail owns only the responsive horizontal gutter.
+  - Lives in a fixed `.floating-bar-rail` covering the same available area as the main content panel: full viewport width on mobile, and from the desktop sidebar edge to the viewport edge on desktop. The rail centers the bar with `display: flex` and `justify-content: center`. The bar uses `width: 100%`, `max-width: var(--space-content-max-width)` (512px), and `margin: 0 auto`; the rail owns only the responsive horizontal gutter.
   - Border radius: `8px`, border: `1px solid var(--color-line)`, background: `var(--color-paper)`, box shadow: `0 0.75rem 2rem rgba(24, 44, 31, 0.12)`.
 - **Variants & Layout Modes**:
   1. **Default Navigation Mode** (`children` is null/undefined/false):

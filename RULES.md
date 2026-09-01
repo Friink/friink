@@ -32,7 +32,7 @@ the entry, so history isn't lost.
 - **Edge cases:** Screen-level wrappers must not introduce competing max-widths or duplicate outer gutters. The floating bar rail must use the same available main-panel area as `ContentBox`: full viewport width on mobile, and from the desktop sidebar edge to the viewport edge on desktop. The bar itself retains the shared `512px` cap and flex/margin-auto centering.
 - **Status:** Active
 - **Platform:** Web only
-- **File(s):** `web/components/content-box.tsx`, `web/app/globals.css`, `packages/design/design.md`
+- **File(s):** `web/components/content-box.tsx`, `web/app/globals.css`, `web/theme.config.ts`, `packages/design/design.md`
 - **Since:** 2026-09-01 (UTC)
 
 ### Rule: In-App Accent Color Is Device-Local

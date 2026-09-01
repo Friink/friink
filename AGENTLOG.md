@@ -16,6 +16,16 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T12:14:25Z — Correct runtime content-width token and staging alignment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the staging screenshot showing the floating bar offset and wider than the intended 512px content surface, then update the shared layout documentation.
+- Changes Made: Found that `web/theme.config.ts` generated an inline root CSS variable of `--space-content-max-width: 640px`, overriding the `32rem`/512px declaration in `web/app/globals.css`. Changed the single shared theme value to `512px`. Retained the desktop rail boundary matching `.main-panel` (`left: var(--desktop-sidebar-width); right: 0`) and updated the design/rules wording to document that relationship.
+- Files: `web/theme.config.ts`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The staging page’s computed styles showed both `.content-box` and `.floating-bar` at `640px`; the runtime theme token, not the CSS fallback declaration, was authoritative in the rendered page.
+- Verification Status: Staging computed-style inspection identified the `640px` override and the source correction now sets the shared token to `512px`. `npm run build` completed successfully and `git diff --check` passed.
+
 HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten, or reorganize existing rules when adding a new one — add the new rule as its own entry at the bottom instead. If an edit to this header would leave fewer rules present than before, stop and flag it instead of proceeding.
 
 ## 2026-09-01T12:08:00Z — Align floating bar with desktop content panel
