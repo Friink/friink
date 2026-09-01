@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Restore profile connection action during loading
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the complete follow-to-chat flow usable when the chat composer is unavailable.
+- Changes Made: Reset the profile connection state to the neutral other-user state as soon as an other-user profile resolves, before fetching authenticated connection status. This prevents the initial self-profile state from suppressing the Follow/Following/request action needed to establish mutual follows.
+- Files: `web/components/app-shell.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Staging reproduced the chat policy denial and showed the target profile with no Follow action, while its visible counts were `0 following / 0 followers`; the profile state had remained `self` during the async transition.
+- Notes: Chat still requires mutual accepted follows. No chat authorization bypass or visual styling change was introduced.
+- Verification Status: Web production build passed and `git diff --check` passed. Live staging still serves the pre-fix profile state until the web deployment is updated.
+
 ## 2026-09-01 — Restrict chat composer disabling to policy denial
 
 - Agent: Codex

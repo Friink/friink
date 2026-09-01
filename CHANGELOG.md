@@ -2,6 +2,10 @@
 
 ## 2026-09-01
 
+- [profile/connections] Corrected the profile-loading state transition so other-user profiles expose the proper Follow/Following/request action instead of retaining the self-profile state.
+
+## 2026-09-01
+
 - [chat] Narrowed composer disabling to the actual mutual-follow authorization failure instead of treating every conversation-loading error as “Chat unavailable.”
 
 ## 2026-09-01

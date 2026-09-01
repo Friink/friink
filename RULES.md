@@ -467,6 +467,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/chat/chat-client.tsx`
 - **Since:** 2026-09-01 (Asia/Karachi)
 
+### Rule: Profile Connection State Resolves Before Actions
+- **What:** When an other-user profile resolves, its Follow/Following/request action must resolve from the authenticated connection-status API rather than retaining the self-profile state from the initial loading render.
+- **Edge cases:** While status is loading, the profile may temporarily show the neutral Follow action; failures fall back to the actionable neutral state. The self-profile continues to show Edit. The Message action still routes to chat, whose API enforces mutual accepted follows.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `api/app/routers/connections.py`, `api/app/services/connections.py`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ### Rule: Incoming Requests Are Available In The Owner's Connections
 - **What:** The signed-in account's Connections surface always exposes the Requests tab. Incoming pending follow requests are loaded from the authenticated API and render Accept and Reject actions; the client must not hide or reset the tab based on a cached privacy flag.
 - **Edge cases:** Other users' Connections directories do not expose the owner's private request queue. Public accounts normally have no pending incoming requests because public follows are accepted immediately, but the Requests tab remains a valid empty state.

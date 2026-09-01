@@ -434,11 +434,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   useEffect(() => {
     const viewedUser = profileUser ?? user;
-    if (!profileUser || viewedUser.username === user.username) {
+    if (!profileUser) {
       setProfileConnectionState('self');
       setProfileConnectionRequestId(null);
       return;
     }
+
+    setProfileConnectionState('none');
+    setProfileConnectionRequestId(null);
 
     const session = loadAuthSession();
     if (!session) {
