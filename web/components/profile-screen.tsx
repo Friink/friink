@@ -17,6 +17,7 @@ type ProfileScreenProps = {
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onEditProfile?: () => void;
+  onMessage?: () => void;
   connectionState?: 'self' | 'none' | 'requested' | 'following';
   connectionActionBusy?: boolean;
   onFollow?: () => void;
@@ -55,6 +56,7 @@ export function ProfileScreen({
   onReply,
   onQuote,
   onEditProfile,
+  onMessage,
   connectionState = isOwnProfile ? 'self' : 'none',
   connectionActionBusy = false,
   onFollow,
@@ -117,7 +119,7 @@ export function ProfileScreen({
                     <span>{connectionActionBusy ? 'Updating' : action.label}</span>
                   </button>
                 )}
-                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
+                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user" onClick={onMessage}>
                   <i className="fa-regular fa-paper-plane" aria-hidden="true" />
                 </button>
               </>

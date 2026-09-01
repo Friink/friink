@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Wire profile Message action to chat
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the disabled/inert Message action on other-user profiles.
+- Changes Made: Added an `onMessage` behavior prop to `ProfileScreen` and wired `AppShell` to navigate to `/{username}/chat`. Updated the profile contract and current architecture documentation.
+- Files: `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The profile Message button had no click handler or navigation target, so it appeared available but did nothing.
+- Notes: Chat authorization remains enforced by the API and still requires mutual accepted follows. No visual styles changed.
+- Verification Status: Web production build passed and `git diff --check` passed.
+
 ## 2026-09-01 — Hide floating composer on profiles
 
 - Agent: Codex

@@ -459,6 +459,14 @@ the entry, so history isn't lost.
 
 ## Web Navigation & Client Behavior
 
+### Rule: Profile Message Action Opens Direct Chat
+- **What:** On another user's profile, the paper-plane Message action is an active button that navigates to the username-scoped `/{username}/chat` route. The self-profile variant continues to show Edit instead.
+- **Edge cases:** The chat route and API enforce the mutual accepted-follow policy; navigation itself does not bypass authorization. The profile message action must not be rendered as a decorative or inert control.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/chat/chat-client.tsx`
+- **Since:** 2026-09-01 (Asia/Karachi)
+
 ### Rule: Floating Post Composer Expands Above Its Controls
 - **What:** The floating post composer has no field background or border. Once typing begins, its text editor occupies the full-width top row and grows upward to eight lines; longer drafts scroll within the editor. Attachment, character count, and send controls remain in the bottom row.
 - **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior. Profile pages do not render the floating composer.

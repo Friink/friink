@@ -2,6 +2,10 @@
 
 ## 2026-09-01
 
+- [web/profile] Wired the profile Message action to the username-scoped chat route; it was previously rendered as an inert button.
+
+## 2026-09-01
+
 - [web/composer] Disabled the floating composer on profile pages so profiles remain focused on identity, actions, and profile content. Feed, chat, and other explicitly supported composer surfaces are unchanged.
 
 ## 2026-09-01
