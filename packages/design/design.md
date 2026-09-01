@@ -95,7 +95,7 @@ Fallback and error screens should be quiet, centered, and branded.
 
 ## Components
 
-Standard app surfaces should be reusable components. Page-specific content may remain local when it is not reused elsewhere.
+Standard app surfaces should be reusable components. Page-specific markup/content may remain local when it is not reused elsewhere, but logged-in app design rules must never be page-specific; they belong only in `web/theme.config.ts` and `web/app/globals.css`.
 
 - **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, an optional left-side back-arrow control, a top-right cross close control, and a bottom action ribbon for adjacent actions. Its backdrop is the topmost application layer (`z-index: 2000`) so dialogs and their controls remain above navigation, floating bars, menus, and toasts. The back arrow is shown only when `onBack` is provided and must perform the flow's previous-step action without replacing the close control.
 - **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses `Modal` with the title `Let's update your settings`, supports optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
@@ -416,7 +416,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ---
 
-## Unresolved & Contract Violations
+## Current Implementation Notes
 
-None. All historical discrepancies have been resolved to match shipped behavior, and all shared component contracts have been verified against active component implementations across all usage contexts.
+- Post media currently uses the fixed 3:5 crop flow described above. Final crop width, height, and aspect ratio are not persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
+- The logged-in app has no known design-contract violations in the current working tree. Deployment configuration, R2 health, and end-to-end browser verification remain release checks outside this design contract.
 

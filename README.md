@@ -53,6 +53,17 @@ dashboard.
 - Staging: `staging.friink.com` / `staging-api.friink.com`
 - Production: `friink.com`
 
+## Current Web-App Architecture
+
+- `web/theme.config.ts` is the canonical source for design-token values.
+- `web/app/globals.css` owns generated CSS variables and all logged-in app visual/layout rules.
+- Logged-in TSX components contain structure, semantic class names, state, behavior, and accessibility only; they do not define visual design.
+- The logged-in web app has no page-specific CSS, CSS Modules, route-only stylesheets, or JSX inline styles. The public landing stylesheet `web/app/landing.module.css` is separate and outside this rule.
+- The shared visible app content column and contextual floating composer use `--space-content-col` at a `720px` tablet/desktop cap. The shared inline gutter is outside that visible cap: `16px` on desktop and `8px` on mobile.
+- Current post media uses a fixed `3:5` crop tool, submit-time R2 upload, a `3:4` frame for multi-image galleries, and natural-ratio display for single images. Final crop dimensions/aspect ratio are not currently persisted.
+- Chat list and conversation content currently use local mock data; they are not yet API-backed.
+- The web production build and TypeScript checks are the current automated web verification. Browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.
+
 ## Project Documentation
 
 This repo is governed by a small set of living documents rather than a static PRD.

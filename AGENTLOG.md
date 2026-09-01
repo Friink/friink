@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T15:13:11Z — Reconcile documentation with the working implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update README.md, RULES.md, design.md, AGENTLOG.md, and CHANGELOG.md so current documentation describes the implementation that exists in the working tree rather than superseded plans or historical behavior.
+- Changes Made: Updated the active post-media rule to record the current fixed 3:5 crop, non-persisted crop dimensions/aspect ratio, and the absence of freeform bounds and first-image carousel-ratio locking. Replaced the design document's stale "no unresolved violations" statement with current implementation notes. Expanded the README's current architecture summary with the local-mock chat status and release-verification caveats. Added this synchronized documentation entry while preserving historical changelog and agent-log entries.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Keep the living documentation evidence-based and aligned with shipped code, while retaining history for prior width, media, and architecture changes.
+- Notes: This was a documentation-only reconciliation; no application source files were changed.
+- Verification Status: Targeted scans compared current documentation against `web/theme.config.ts`, `web/app/globals.css`, the composer/gallery, and API `PostMedia` implementation. Existing `npm run build` verification remains green; `git diff --check` is run after this documentation update.
+
 ## 2026-09-01T14:58:26Z — Move content gutter outside the 720px visible column
 
 - Agent: Codex
