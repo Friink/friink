@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T14:41:37Z
+
+- [docs/web-architecture] Added an absolute, standing ban on inline CSS in `web/` to `AGENTLOG.md` and `packages/design/design.md`: no JSX `style` props, HTML style attributes, or component-level inline CSS declarations. Static styling must use shared CSS/tokens; runtime values must use documented shared mechanisms. The public site is excluded.
+
+## 2026-09-01T14:37:18Z
+
+- [web/architecture] Removed JSX `style` props from the web app and moved static layout styling into `web/app/globals.css`. Runtime geometry and user-selected accent values now flow through documented CSS custom properties. The public site was not changed.
+
 ## 2026-09-01T14:10:09Z
 
 - [web/layout] Unified the feed `ContentBox` and fixed floating composer on the single `content-col`/`--space-content-col` token at a 720px cap. Confirmed they remain separate DOM branches but now resolve through the same shared width contract at mobile, tablet, and desktop breakpoints.

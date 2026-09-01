@@ -574,7 +574,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                   pattern="^#[0-9A-Fa-f]{6}$"
                   spellCheck={false}
                 />
-                <span className="accent-color-swatch" style={{ backgroundColor: isAccentColorValid ? accentColorDraft : 'transparent' }} aria-hidden="true" />
+                <span
+                  className={`accent-color-swatch${isAccentColorValid ? ' accent-color-swatch-valid' : ''}`}
+                  ref={(element) => {
+                    if (element) element.style.setProperty('--accent-preview', isAccentColorValid ? accentColorDraft : 'transparent');
+                  }}
+                  aria-hidden="true"
+                />
                 {!isAccentColorValid ? <small>Use a six-digit hex code, for example #33aa55.</small> : null}
               </div>
             </SettingsRow>

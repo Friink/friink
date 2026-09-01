@@ -231,9 +231,9 @@ export function Composer({
     if (!textareaRef.current) return;
 
     const textarea = textareaRef.current;
-    textarea.style.height = 'auto';
+    textarea.style.setProperty('--composer-editor-height', 'auto');
     const shouldExpand = draft.length > 0 && (draft.includes('\n') || textarea.scrollHeight > 44);
-    textarea.style.height = shouldExpand ? `${Math.min(textarea.scrollHeight, 96)}px` : '2.5rem';
+    textarea.style.setProperty('--composer-editor-height', shouldExpand ? `${Math.min(textarea.scrollHeight, 96)}px` : '2.5rem');
     setExpanded(shouldExpand);
   }, [draft, multiline]);
 

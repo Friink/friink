@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -776,8 +776,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  useEffect(() => {
+    document.documentElement.style.setProperty('--color-accent', accentColor);
+  }, [accentColor]);
+
   return (
-    <main className="app-shell" data-theme={appearance} style={{ '--color-accent': accentColor } as CSSProperties}>
+    <main className="app-shell" data-theme={appearance}>
       <div className="app-layout">
         <SideDrawer
           user={user}

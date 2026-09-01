@@ -27,6 +27,7 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
   const active = activeId ?? internalActive;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const indicatorRef = useRef<HTMLDivElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
 
@@ -40,6 +41,8 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
       const bRect = btn.getBoundingClientRect();
       setIndicator((prev) => {
         const next = { left: Math.round(bRect.left - cRect.left), width: Math.round(bRect.width) };
+        indicatorRef.current?.style.setProperty('--tabs-indicator-left', `${next.left}px`);
+        indicatorRef.current?.style.setProperty('--tabs-indicator-width', `${next.width}px`);
         if (prev.left === next.left && prev.width === next.width) return prev;
         return next;
       });
@@ -109,7 +112,7 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
           </button>
         ))}
       </div>
-      <div className="tabs__indicator" aria-hidden="true" style={{ left: `${indicator.left}px`, width: `${indicator.width}px` }} />
+      <div ref={indicatorRef} className="tabs__indicator" aria-hidden="true" />
     </div>
   );
 }

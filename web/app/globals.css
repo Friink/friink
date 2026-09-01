@@ -1390,6 +1390,8 @@ textarea {
 
 .action-menu {
   position: fixed;
+  top: var(--action-menu-top, 0px);
+  left: var(--action-menu-left, 0px);
   z-index: 1000;
   display: grid;
   width: min(13.5rem, calc(100vw - 1rem));
@@ -1399,6 +1401,10 @@ textarea {
   background: #ffffff;
   color: #1a1c1c;
   box-shadow: 0 1rem 2rem rgba(18, 28, 23, 0.14);
+}
+
+.action-menu:not(.action-menu-ready) {
+  visibility: hidden;
 }
 
 body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) {
@@ -2367,7 +2373,9 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .tabs__indicator {
   position: absolute;
+  left: var(--tabs-indicator-left, 0px);
   bottom: 0;
+  width: var(--tabs-indicator-width, 0px);
   height: 1px;
   background: var(--color-accent);
   border-radius: 1px;
@@ -2742,6 +2750,73 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   height: 2.25rem;
   border: 1px solid var(--color-line);
   border-radius: 50%;
+  background: var(--accent-preview, transparent);
+}
+
+.global-error-screen {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.global-error-home-link {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 1rem;
+  color: var(--color-accent);
+  background: transparent;
+  box-shadow: none;
+  text-decoration: none;
+}
+
+.global-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 35rem;
+  gap: 1.125rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.global-error-logo {
+  display: block;
+  width: min(15rem, 60vw);
+  height: auto;
+}
+
+.global-error-title {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.global-error-code {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.global-error-actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 /* Messages */
@@ -3130,6 +3205,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .composer textarea {
   min-height: 5rem;
+  height: var(--composer-editor-height, 2.5rem);
   padding: 0.5rem 0.75rem;
   resize: none;
   line-height: 1.35;
@@ -3139,7 +3215,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   display: inline-grid;
   place-items: center;
   width: 2.5rem;
-  height: 2.5rem;
+  height: var(--composer-editor-height, 2.5rem);
   border: 0;
   border-radius: var(--radius-sm);
   color: var(--color-paper);
@@ -3851,6 +3927,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   justify-content: center;
   gap: 0.5rem;
   width: calc(100% - (var(--space-content-inset-inline) * 2));
+  height: var(--feed-refresh-height, auto);
   min-height: 2.75rem;
   margin: 0.75rem var(--space-content-inset-inline) 0;
   border: 1px dashed var(--color-line);

@@ -64,6 +64,8 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
       const maxTop = Math.max(VIEWPORT_MARGIN, window.innerHeight - menuRect.height - VIEWPORT_MARGIN);
       const top = Math.min(Math.max(preferredTop, VIEWPORT_MARGIN), maxTop);
 
+      menu.style.setProperty('--action-menu-top', `${top}px`);
+      menu.style.setProperty('--action-menu-left', `${left}px`);
       setPosition({ top, left, ready: true });
     };
 
@@ -103,10 +105,9 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
   return createPortal(
     <div
       ref={menuRef}
-      className={`action-menu${className ? ` ${className}` : ''}`}
       role="menu"
       aria-label={ariaLabel}
-      style={{ top: position.top, left: position.left, visibility: position.ready ? 'visible' : 'hidden' }}
+      className={`action-menu${className ? ` ${className}` : ''}${position.ready ? ' action-menu-ready' : ''}`}
     >
       {header}
       {items.map((item) => (

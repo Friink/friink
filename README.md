@@ -81,6 +81,11 @@ from scratch.
 - Keep reusable behavior and layout fixes at the shared component or documented
   contract level. Do not use inline styles, route-only patches, or page-specific
   quick fixes for global UI behavior.
+- Web app styling belongs in `web/app/globals.css` and the shared tokens generated
+  from `web/theme.config.ts`. Components must use semantic classes; runtime-only
+  geometry may update documented CSS custom properties through refs, but JSX
+  `style` props are not permitted. This rule applies to `web/` only; the public
+  site remains outside this cleanup scope.
 
 ### After finishing a task
 

@@ -8,6 +8,8 @@ REUSE RULE: Do not create new components unnecessarily when an existing shared p
 
 LAYOUT RULE: Inline fixes and targeted per-screen spacing patches are strictly prohibited for global layout problems. Resolve them by updating reusable shared components/contracts such as `ContentBox`, `PageSurface`, `ListRow`, `FloatingBar`, or the relevant documented design token.
 
+ABSOLUTE WEB INLINE-CSS BAN: Never use inline CSS in the web app. Do not add JSX `style` props, `style="..."` attributes, or component-level inline CSS declarations for any reason. Put static styling in `web/app/globals.css` and use the shared token system. Runtime values must use a documented class/state or CSS custom-property mechanism owned by the shared styling system. This ban applies to `web/` only and does not govern the public site.
+
 SESSION AUDIT REMINDER: UI fixes made in the 2026-08-30 session were verified as component-level changes in shared components, app shell state, shared CSS, and documented contracts. Keep future fixes on those shared surfaces unless `packages/design/design.md` documents a deliberate exception.
 
 DATABASE MIGRATION RULE: After any backend change that adds, removes, or changes SQLAlchemy models, Alembic migrations, schemas, or DB-backed query behavior, verify the target database is configured and migrated before treating staging/prod as healthy. Run/check `alembic current`, apply `alembic upgrade head` for the intended environment when needed, and verify at least one live ORM-backed endpoint, not only `/health/db`.
@@ -15,6 +17,16 @@ DATABASE MIGRATION RULE: After any backend change that adds, removes, or changes
 IMPORTANT: Do not add a `User` field to any entry. Entries should only include the date/time, agent, model, prompt summary, changes, files, reason, notes, and verification status.
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
+
+## 2026-09-01T14:37:18Z — Remove web-app JSX inline style props
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove inline styling from the web app while leaving the public site untouched.
+- Changes Made: Moved the global error screen’s static layout styling into shared CSS classes; removed JSX `style` props from the accent swatch, app-shell accent assignment, action menu, tabs indicator, pull-to-refresh control, and composer editor. Runtime-calculated values now use documented CSS custom properties, while static styling lives in `web/app/globals.css`. Added the web styling ownership rule to the README and design contract.
+- Files: `web/app/error.tsx`, `web/app/globals.css`, `web/components/account-screens.tsx`, `web/components/action-menu.tsx`, `web/components/app-shell.tsx`, `web/components/composer.tsx`, `web/components/home-screen.tsx`, `web/components/tabs.tsx`, `README.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`
+- Reason: Establish one maintainable global CSS/token path for web-app styling and eliminate JSX-level static layout quick fixes without changing the public site.
+- Verification Status: `npm run build` passed, `git diff --check` passed, and no JSX `style=` props remain under `web/`. Canvas `fillStyle`, date-format options, and runtime CSS custom-property updates are not JSX inline styling.
 
 ## 2026-09-01T14:10:09Z — Unify feed content and floating composer width token
 

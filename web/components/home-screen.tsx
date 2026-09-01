@@ -601,7 +601,10 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
           onClick={() => {
             void handleManualRefresh();
           }}
-          style={!isDesktopRefresh ? { height: `${Math.max(40, pullDistance)}px` } : undefined}
+          ref={(element) => {
+            if (!element || isDesktopRefresh) return;
+            element.style.setProperty('--feed-refresh-height', `${Math.max(40, pullDistance)}px`);
+          }}
         >
           <span>{refreshing ? 'Refreshing...' : manualRefreshReason === 'poll_failed' ? 'Tap to refresh feed' : 'Check for new posts'}</span>
         </button>
