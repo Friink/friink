@@ -853,7 +853,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
               title="Direct messages"
-              subtitle="People you follow can message you."
+              subtitle="You can message people who follow you back."
               className="settings-row"
               trailing={
                 <>

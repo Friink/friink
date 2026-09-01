@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01
+
+- [chat] Corrected chat authorization to require mutual accepted follows: both users must follow each other before a conversation can be created, listed, read, or used for sending. Updated the Direct Messages setting copy to match the enforced policy.
+
 ## 2026-09-01T16:20:00Z
 
 - [notifications] Added 4-second adaptive unread-count polling with hidden-tab pausing, focus/visibility recovery, and full-list refresh while Notifications is open. Existing notification UI and read behavior remain unchanged.

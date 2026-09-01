@@ -42,21 +42,27 @@ async def _get_conversation(session: Session, conversation_id: uuid.UUID, user: 
     ).scalar_one_or_none()
     if not conversation or user.id not in {conversation.user_one_id, conversation.user_two_id}:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found.")
+    await _ensure_connected(session, user, _participant(conversation, user.id))
     return conversation
 
 
-async def _ensure_connected(session: Session, user: User, other: User) -> None:
-    connected = session.execute(
-        select(FollowRequest.id).where(
+async def _has_mutual_connection(session: Session, user: User, other: User) -> bool:
+    accepted_directions = session.execute(
+        select(FollowRequest.requester_id, FollowRequest.recipient_id).where(
             FollowRequest.status == FollowRequestStatus.accepted,
             or_(
                 and_(FollowRequest.requester_id == user.id, FollowRequest.recipient_id == other.id),
                 and_(FollowRequest.requester_id == other.id, FollowRequest.recipient_id == user.id),
             ),
         )
-    ).scalar_one_or_none()
-    if connected is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only message a connection.")
+    ).all()
+    directions = {(requester_id, recipient_id) for requester_id, recipient_id in accepted_directions}
+    return not ({(user.id, other.id), (other.id, user.id)} - directions)
+
+
+async def _ensure_connected(session: Session, user: User, other: User) -> None:
+    if not await _has_mutual_connection(session, user, other):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only message someone you mutually follow.")
 
 
 async def get_or_create_conversation(session: Session, user: User, username: str) -> Conversation:
@@ -111,6 +117,8 @@ async def list_conversations(session: Session, user: User) -> ConversationListRe
     ).scalars().all()
     items = []
     for conversation in conversations:
+        if not await _has_mutual_connection(session, user, _participant(conversation, user.id)):
+            continue
         latest = conversation.messages[-1] if conversation.messages else None
         items.append(serialize_conversation(conversation, user.id, latest.content if latest else None))
     return ConversationListResponse(items=items)

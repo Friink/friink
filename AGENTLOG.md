@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Require mutual follows for chat
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct chat access so users can message only when they follow each other.
+- Changes Made: Replaced the one-sided accepted-connection check with a two-direction accepted-follow check and applied it to conversation creation, listing, history, and sending. Updated the Direct Messages settings copy and synchronized the chat policy across the living documentation.
+- Files: `api/app/services/chat.py`, `web/components/account-screens.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The previous chat rule allowed either user to have an accepted follow relationship, which did not match the product requirement that both users follow each other. Existing one-way conversations also needed to stop appearing or accepting messages.
+- Notes: Follow relationships remain directional for feeds, followers, and following lists. Private-account requests must be accepted in both directions before chat is available.
+- Verification Status: API test suite passed 66 tests, web production build passed, and `git diff --check` passed. Existing test warnings are unrelated dependency/cache warnings.
+
 ## 2026-09-01T16:20:00Z — Add 4-second notification polling
 
 - Agent: Codex
