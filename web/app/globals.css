@@ -21,7 +21,7 @@
   --space-top-tabs-height: 1.98rem;
   --space-floating-bar-height: 3.5rem;
   --space-sidebar-collapsed-width: 4.5rem;
-  --space-content-max-width: 32rem;
+  --space-content-max-width: 40rem;
   --space-content-inset-inline: 1rem;
   --space-content-inset-block: 0.75rem;
   --color-accent-soft: color-mix(in srgb, var(--color-accent) 12%, var(--color-paper));
@@ -4349,7 +4349,7 @@ input[type="search"]:focus {
   display: flex;
   justify-content: center;
   width: 100%;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-content-inset-inline);
   pointer-events: none;
 }
 

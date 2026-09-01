@@ -16,6 +16,16 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T12:57:51Z — Align tablet/desktop content and floating bar at 640px
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the tablet/desktop `ContentBox` and `FloatingBar` use the same 640px width and center relative to the available panel after the side drawer.
+- Changes Made: Set the shared runtime and CSS content-width token to 640px, retained panel-relative floating-bar rail positioning, and changed the rail to use the shared responsive content gutter so the bar and content surface share the same available geometry. Mobile behavior remains fluid.
+- Files: `web/app/globals.css`, `web/theme.config.ts`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The previous 512px contract did not match the requested tablet/desktop width, and the rail gutter was not using the same shared inset token as the content surface.
+- Verification Status: Visual inspection completed against the local app at the current 1280px viewport. With the sidebar collapsed, both `.content-box` and `.floating-bar` measured 640px wide at x=356; with the sidebar expanded to 240px, both measured 640px wide at x=440. The rail tracked the main panel in both states. `git diff --check` passed. Mobile source rules remain fluid at the existing breakpoint; no viewport override capability was available for a separate mobile screenshot.
+
 ## 2026-09-01T12:39:42Z — Reconcile post-media rules and verify README logging guidance
 
 - Agent: Codex

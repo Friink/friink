@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T12:57:51Z
+
+- [web/layout] Increased the shared tablet/desktop content cap to 640px and kept `ContentBox` and the contextual `FloatingBar` on the same sidebar-relative, centered rail. The rail now uses the shared responsive content gutter.
+
 ## 2026-09-01T12:48:48Z
 
 - [web/media] Added a shared single-image gallery variant that preserves the image's natural aspect ratio within the responsive content width/height bounds and removes the empty trailing gallery background; multi-image sliders retain uniform 3:4 slides.
@@ -209,7 +213,7 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags. New entries must use a UTC ISO 8601 timestamp with seconds and a `Z` suffix (`YYYY-MM-DDTHH:mm:ssZ`); retain date-only values when the historical time is unknown.
 
 ## Current State
-_Last updated: 2026-08-31_
+_Last updated: 2026-09-01_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while post images use submit-time R2 uploads and the `post_media` association table.
@@ -222,6 +226,7 @@ _Last updated: 2026-08-31_
 - [web] The public landing page is now a native Next.js App Router route at `/`, not an iframe wrapper around `web/public/friink-site/index.html`. Landing styles are scoped in a CSS module, landing media assets live under top-level `web/public/brand` and `web/public/media`, and the old `web/public/friink-site/` folder has been removed.
 - [web] Page titles now use the `Friink | Page Name` format through route-level metadata. Dynamic profile titles use the known display name when available and fall back to `@username`; deleted demo route names are guarded so `/compose`, `/dev-settings`, and `/floating` return 404 instead of becoming profiles.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
+- [web/layout] The shared `ContentBox` and contextual `FloatingBar` use the same fluid 640px maximum on tablet/desktop, centered within the available main panel after the side drawer; mobile remains fluid with its existing gutter.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
 - [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Following`.
 - [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.
