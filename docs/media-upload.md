@@ -1,421 +1,266 @@
-# Friink Media Upload Audit
+# Media Upload Audit Report
 
 Last reviewed: 2026-09-01
 
-This document describes the current profile-picture and post-media upload
-implementations. It is an implementation audit, not a product specification.
-The two flows share Cloudflare R2 and presigned `PUT` transport, but their
-business rules and persistence behavior are intentionally separate.
+This is an evidence-based implementation and staging audit of profile-picture
+and post-media upload. It records the current repository state and the manual
+staging R2 tests. It is not a product specification.
 
-## Executive summary
+## Executive finding
 
-Both flows use the same high-level architecture:
+R2 write access is working. A direct staging test using `api/.env.r2staging`
+generated a presigned post-media URL, uploaded a project JPEG, and confirmed
+the object through authenticated R2 metadata. The same object returned `403`
+through the configured `r2.dev` public URL for both `HEAD` and `GET`.
 
-1. The browser prepares an image locally.
-2. The authenticated FastAPI API issues a short-lived, object-specific R2
-   presigned `PUT` URL.
-3. The browser uploads the prepared file directly to R2.
-4. The browser calls an authenticated API confirmation/association endpoint.
-5. The API verifies ownership and the stored object before persisting the
-   application URL or association.
+The staging API is independently reachable: its root returned `200`, the
+post-media CORS preflight returned `200`, and an unauthenticated upload-plan
+request returned `401`. Therefore the observed browser toast with status `0`
+is a browser `fetch()` rejection, not proof that R2 is unreachable. The exact
+authenticated browser request was not captured because the browser automation
+could not attach the local test file; no upload request was generated in that
+attempt.
 
-Profile pictures are single-file account updates. Post media is a submit-time
-multi-file transaction around post creation. Selecting, previewing, or
-cropping post images does not upload anything.
+The repository now contains a post-media confirmation change that no longer
+requires public R2 `HEAD`/`GET` access. It is present on the `staging` branch at
+commit `fcd468d` (`Media upload new`, 2026-09-01T07:20:57+05:00). Whether the
+same commit is running in the user-visible staging deployment must be verified
+in Vercel; this audit does not assume deployment success.
 
-## Shared infrastructure
+## Current post-media architecture
 
-### Configuration
+Relevant routes:
 
-The API reads these five R2 settings at runtime:
+```text
+POST /posts/media/upload-url
+PUT <presigned R2 URL>       browser directly to R2
+POST /posts/media/confirm
+POST /posts/media/cleanup
+POST /posts                   final association
+```
 
-| Setting | Purpose |
+The client processes selected files sequentially. For each image it:
+
+1. Compresses/prepares the source as JPEG using the post-media preset.
+2. Requests one upload item with `{"count":1}`.
+3. Records the server-issued object key.
+4. Performs a direct R2 `PUT` with `Content-Type: image/jpeg`.
+5. Calls confirmation for that one key.
+6. Continues to the next file only after confirmation succeeds.
+7. Sends all confirmed keys to `POST /posts`.
+
+The post key namespace is:
+
+```text
+post-media/{authenticated_user_id}/{random}.jpg
+```
+
+The API validates that the submitted key belongs to the authenticated user,
+has the post-media prefix, has exactly the expected path shape, and ends in
+`.jpg`. The request schema permits one through eight upload-plan items, while
+the current browser intentionally requests one at a time.
+
+## Current confirmation behavior
+
+`api/app/services/post_media.py` now:
+
+- requires the R2 account ID, access key, secret, and bucket name to create a
+  client;
+- does not require `R2_PUBLIC_URL` to create a presigned upload URL;
+- signs a `put_object` request for `image/jpeg` with a 900-second expiry;
+- returns a nullable public URL when `R2_PUBLIC_URL` is configured;
+- confirms by validating the user-owned object key after the client reports a
+  successful PUT;
+- does not call S3 `HeadObject`;
+- does not call public HTTP `HEAD` or `GET` during confirmation;
+- deletes only validated user-owned keys through authenticated R2 deletion.
+
+This removes the known public-read 403 from the upload/confirmation critical
+path. It also means confirmation alone no longer verifies the actual stored
+object's MIME type or byte length server-side. The client still prepares JPEG
+files with an approximately 500 KB post-media ceiling, and the API still
+enforces the post count and key-ownership rules. If server-side byte/type
+verification is required, it must be implemented through a separate trusted
+mechanism, such as signed upload constraints or authenticated R2 metadata
+inspection; public delivery checks should not be used for that purpose.
+
+## R2 configuration and manual evidence
+
+The API configuration fields are:
+
+| Variable | Purpose |
 |---|---|
-| `R2_ACCOUNT_ID` | Account used to construct the S3-compatible R2 endpoint |
+| `R2_ACCOUNT_ID` | R2 account and S3-compatible endpoint construction |
 | `R2_ACCESS_KEY_ID` | S3-compatible signing credential |
 | `R2_SECRET_ACCESS_KEY` | S3-compatible signing secret |
 | `R2_BUCKET_NAME` | Environment-specific bucket |
-| `R2_PUBLIC_URL` | Public read base URL used for persisted media URLs and verification fallback |
+| `R2_PUBLIC_URL` | Base URL returned for later browser delivery; no longer required for post presigning/confirmation |
 
-`StorageService._client()` rejects the flow with
-`StorageNotConfiguredError` unless all five values are non-blank. The API
-endpoint is:
+Test setup:
 
-```text
-https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com
-```
+- Test folder: `api/tmp/media-upload-test` (ignored by Git).
+- Test source: `web/public/media/profile.jpg` copied as `test-post-image.jpg`.
+- Credentials: loaded from `api/.env.r2staging`; secret values were not
+  printed.
+- Key namespace: a random `post-media/{random_user}/{random_file}.jpg` key.
 
-The browser never receives R2 credentials. It receives only a short-lived
-presigned URL generated by the API. The bucket must allow browser `PUT`
-requests from the exact web origin through its CORS policy. The expected
-request header is `Content-Type`.
-
-### Storage service
-
-Profile-picture implementation: `api/app/services/storage.py`. Post-media
-storage is isolated in `api/app/services/post_media.py` and does not use the
-profile-picture storage service.
-
-The service provides separate object-key namespaces:
+Test result:
 
 ```text
-profile-pictures/{user_id}/{random}.{extension}
-post-media/{user_id}/{random}.jpg
+PUT          200       15292 bytes
+R2_HEAD      image/jpeg 15292 bytes
+PUBLIC_HEAD  403
+PUBLIC_GET   403
+DELETE       succeeded
 ```
 
-The generated presigned URLs expire after 900 seconds. Public URLs are formed
-as `R2_PUBLIC_URL/{object_key}`. Public read access is required because the
-application persists and later renders those URLs; writes still use presigned
-URLs.
+The test object was deleted. The test proves R2 signing, bucket selection,
+write permission, authenticated metadata access, and delete permission. It
+does not prove that the browser can access the public delivery URL.
 
-The service can verify object metadata through the S3-compatible
-`head_object`. When that metadata call is unavailable, it falls back to a
-bounded public-object `HEAD`, then `GET`. The fallback validates content type
-where the flow requires it and enforces the relevant byte ceiling. This is
-especially important for hosted R2 environments where S3 metadata `HEAD` may
-not behave like the public object endpoint.
+Cloudflare dashboard evidence later supplied by the user showed:
 
-## Profile-picture flow
+```text
+Public Development URL: enabled
+Custom domain: staging-media.friink.com
+Status: Active
+Access: Enabled
+```
 
-### Client preparation
+The active custom domain should be the API Preview/staging value when used:
 
-Current implementation: `web/components/account-screens.tsx`,
-`web/lib/image-compression.ts`, and `web/lib/crop-image.ts`.
+```env
+R2_PUBLIC_URL=https://staging-media.friink.com
+```
 
-The profile settings picker accepts JPG/JPEG, PNG, and WebP. HEIC/HEIF and
-other unsupported types are rejected. The selected source is checked for a
-minimum 128px shorter edge, then shown in the square crop modal. The crop
-modal is the only final upload action.
+The custom-domain URL was not manually re-tested by this audit after the
+dashboard screenshot was supplied. The earlier `403` test used the value from
+`api/.env.r2staging`, which was the configured `r2.dev` base at that time.
 
-Before upload, the cropped image is normalized to JPEG by the `avatar`
-compression preset:
+The R2 CORS configuration shown by the user allows:
 
-- square output;
-- target dimension 512px;
-- no upscaling of a smaller crop;
-- approximately 250KB maximum target;
-- transparent pixels flattened to white.
+```text
+Origins: https://staging.friink.com, https://friink.com, http://localhost:3000
+Methods: PUT, GET, HEAD
+Headers: Content-Type
+```
 
-The server-side confirmation backstop allows up to 3MB for the profile object.
-The client therefore normally sends a substantially smaller file than the
-server maximum.
+That is sufficient for the current browser PUT contract. CORS does not grant
+object read permission; public bucket access or signed delivery does that.
 
-### API sequence
+## Profile-picture flow (reference only)
 
-Routes in `api/app/routers/auth.py`:
+Profile picture code was not changed by the post-media work. Its routes are:
 
 ```text
 POST /auth/me/profile-picture/upload-url
 POST /auth/me/profile-picture/confirm
 ```
 
-Both routes require the authenticated user.
+The profile flow uses `api/app/services/storage.py`, the
+`profile-pictures/{user_id}/...` namespace, a profile-specific image preset,
+and a 3 MB server ceiling. Confirmation updates the user record and handles
+replacement cleanup. The profile client uses the existing auth/session path.
 
-#### 1. Request an upload URL
-
-The client calls the upload-url route with the prepared file MIME type:
-
-```json
-{"content_type":"image/jpeg"}
-```
-
-`StorageService.generate_upload_url()` rejects non-image content types,
-creates a user-scoped `profile-pictures/{user_id}/...` key, and signs a
-`put_object` request containing the same `ContentType` value.
-
-The API returns:
-
-```json
-{
-  "upload_url": "https://...",
-  "public_url": "https://.../profile-pictures/...",
-  "object_key": "profile-pictures/{user_id}/{random}.jpg"
-}
-```
-
-#### 2. Direct browser upload
-
-`uploadProfilePicture()` performs a browser `PUT` to `upload_url` with:
+Profile viewing reads the stored `profile_picture_url` from user/post author
+responses and the browser fetches that URL. This is separate from post-media
+association and rendering. The following files showed no diff during the
+post-media verification:
 
 ```text
-Content-Type: <prepared file type>
+api/app/routers/auth.py
+web/components/account-screens.tsx
 ```
 
-No application session data is sent to R2. The API session remains relevant
-only for the subsequent confirmation call.
+No profile API, profile storage method, profile schema, or profile business
+rule was intentionally altered by the post-media implementation.
 
-#### 3. Confirm and replace
+## Viewing post media
 
-The client calls confirmation with the returned object key:
+Successful storage and confirmation do not currently guarantee visible post
+images. The current `PostResponse` exposes `media_count`, not a list of media
+URLs/items, and feed/detail clients map that count. Media rendering is not yet
+implemented in the current response contract.
 
-```json
-{"object_key":"profile-pictures/{user_id}/{random}.jpg"}
-```
+There are two independent requirements for viewing:
 
-The API validates that the key belongs to the authenticated user, verifies the
-object and its 3MB ceiling, then deletes the previous profile object before
-committing the new public URL and update timestamp to the `users` row. Legacy
-flat profile keys can be deleted during replacement when they came from the
-already-stored user URL.
+1. The post response must expose media URLs or an endpoint that can resolve
+   media objects.
+2. Those URLs must be readable by the browser.
 
-The visible avatar is kept at the last server-confirmed value while selection,
-cropping, processing, and upload are in progress. A failed operation restores
-that confirmed value.
+The public-domain option is an active readable R2 custom/public domain. The
+private-bucket option is an API-generated signed R2 `GET` URL. Upload does not
+need to use the same URL mechanism as viewing: upload can remain a presigned
+R2 `PUT`, while viewing uses short-lived signed `GET` URLs.
 
-### Profile failure behavior
+## Error and session behavior
 
-The web client distinguishes these stages:
+Post-media API calls use the normal authenticated request helper. The direct
+R2 PUT does not carry or mutate the Friink session. A `status 0` toast is
+created in `web/lib/auth.ts` when `fetchApi()` rejects before receiving an HTTP
+response. That can represent a browser/CORS/network/timeout failure; it is not
+an HTTP status returned by the API.
 
-- start: API endpoint, authentication, or missing R2 configuration;
-- transfer: browser-to-R2 `PUT`, including CORS and R2 HTTP status failures;
-- confirm: API verification, replacement deletion, or database persistence.
+For authenticated requests, `requestApi()` may proactively call
+`POST /auth/refresh` before the requested post-media route. If refresh fails,
+`/posts/media/upload-url` may never be sent and the UI can display the generic
+status-0 upload message. A definitive session diagnosis requires the actual
+browser Network entry or API deployment log for `/auth/refresh`.
 
-The profile flow is not part of the post-media refactor described below.
+## Deployment and release evidence
 
-## Post-media flow
-
-### Client preparation
-
-Current implementation: `web/components/composer.tsx`,
-`web/lib/auth.ts`, `web/lib/image-compression.ts`, and
-`web/lib/media-upload.ts`.
-
-The composer keeps up to eight selected images in local state and uses object
-URLs only for previews. Users may preview, crop, or remove images. The
-selection and crop operations do not contact the API or R2.
-
-At submit time, `createPost()` compresses every selected file with the
-`postMedia` preset:
-
-- maximum longest edge 1024px;
-- JPEG output;
-- approximately 500KB maximum per image;
-- preserved aspect ratio;
-- transparent pixels flattened to white;
-- supported source types are JPG/JPEG, PNG, and WebP; HEIC/HEIF is rejected.
-
-The post composer can submit media with an empty caption. Other post-kind
-validation, reply relationships, quote relationships, and content limits stay
-in the post API and are not media-upload rules.
-
-### API sequence
-
-Routes in `api/app/routers/posts.py`:
+Repository branch state at audit time:
 
 ```text
-POST /posts/media/upload-url
-PUT <presigned R2 URL>       (browser directly to R2)
-POST /posts/media/confirm
-POST /posts/media/cleanup
-POST /posts
+staging -> origin/staging
+HEAD: fcd468d Media upload new
 ```
 
-The upload-plan, confirmation, and cleanup routes require the authenticated
-user. The final post creation route also requires the authenticated user.
+Relevant history:
 
-#### 1. Request an upload plan
+| Commit | Time (+05:00) | Change |
+|---|---:|---|
+| `78e7f5e` | 2026-09-01 03:39:04 | Session management added |
+| `e5558e6` | 2026-09-01 04:06:53 | Initial post-media upload added |
+| `807af1a` | 2026-09-01 04:16:06 | Failed-fetch handling change |
+| `4c9978e` | 2026-09-01 04:39:00 | Image upload fix |
+| `70b819c` | 2026-09-01 05:42:25 | Additional media upload attempt |
+| `249cb51` | 2026-09-01 06:10:44 | New media APIs |
+| `92fc7fc` | 2026-09-01 06:27:43 | Post-media complete rewrite |
+| `fcd468d` | 2026-09-01 07:20:57 | Removed public-read confirmation dependency |
 
-For each file, the client requests a one-image plan:
+The repository documents the safe order as migrate, deploy API, verify, then
+deploy web. This audit has no Vercel deployment event/log access and therefore
+cannot confirm whether that order was followed for `fcd468d`, or whether the
+currently served web and API deployments contain matching commits. This is an
+explicit unresolved item, not an assumption.
 
-```json
-{"count":1}
-```
+## Current conclusions
 
-The API validates `count` from 1 through 8; the current client deliberately
-sends `1`. `StorageService.generate_post_media_upload_url()` creates a key in
-the `post-media/{user_id}/...jpg` namespace and signs a JPEG `put_object`.
-The response contains exactly one upload item for the current file:
+- R2 credentials and direct post-media writes are functional.
+- R2 authenticated metadata and delete operations are functional.
+- The previously tested public `r2.dev` read path returned 403.
+- The user’s screenshot shows an active custom domain, but that domain still
+  needs an exact-object read test if public delivery is retained.
+- CORS is not the same as public object permission.
+- The API root, CORS preflight, and unauthenticated route are reachable from
+  outside; the status-0 toast remains an authenticated browser-path issue that
+  was not fully reproduced here.
+- Post confirmation no longer depends on public reads in commit `fcd468d`.
+- Post media still requires a separate response/rendering design for viewing.
+- Profile-picture APIs and implementation were not touched by the post-media
+  changes.
 
-```json
-{
-  "items": [
-    {
-      "upload_url": "https://...",
-      "public_url": "https://.../post-media/...jpg",
-      "object_key": "post-media/{user_id}/{random}.jpg"
-    }
-  ]
-}
-```
+## Recommended verification sequence
 
-The client rejects an incomplete plan before starting transfer.
-
-#### 2. Upload one file
-
-`uploadPostMedia()` handles files sequentially. For each file it requests one
-plan, then uses the reusable `uploadPresignedMedia()` helper in
-`web/lib/media-upload.ts` for one direct R2 `PUT`. Each `PUT` uses
-`Content-Type: image/jpeg`, matching the presigned request and generated key.
-
-Each planned object key is recorded before its `PUT`. This is deliberate: the
-storage service may receive the body even if the browser sees a network error,
-aborted response, or non-success response. If any transfer fails, the client
-calls `/posts/media/cleanup` for all keys recorded so far and then rethrows the
-stage-specific error.
-
-#### 3. Confirm one file
-
-After the direct `PUT` succeeds, the client calls:
-
-```text
-POST /posts/media/confirm
-```
-
-with the one returned object key. The API validates the user-scoped
-`post-media` key and verifies the object is a JPEG no larger than 500KB. It
-returns the object key and server-derived public URL. Only after this request
-succeeds does the client proceed to the next selected file.
-
-#### 4. Create and associate the post
-
-After every selected file has completed its own upload and confirmation, the
-client sends the confirmed object keys to `POST /posts`:
-
-```json
-{
-  "kind":"post",
-  "content":"Caption",
-  "quoted_post_id":null,
-  "parent_post_id":null,
-  "media":[
-    {"storage_key":"post-media/{user_id}/{random}.jpg"}
-  ]
-}
-```
-
-The API validates each key against the authenticated user's post-media
-namespace, verifies each object again as JPEG and at most 500KB, and derives
-the public URL server-side. The second verification protects the final
-association boundary; the per-file confirmation is the explicit upload
-milestone used by the client. The API then passes URL-bearing media records to
-the post service, which creates `PostMedia` rows and sets `Post.media_count`.
-
-The `post_media` rows use the post foreign key and are deleted with the post
-row by the database relationship. The API response currently exposes
-`media_count`; media rendering is a separate feature and the post response
-does not currently return a media URL list.
-
-#### 5. Cleanup after post failure
-
-If post creation, validation, or response handling fails after R2 transfer,
-the client requests cleanup for the uploaded keys. The API validates ownership
-of each key and attempts deletion. Cleanup is intentionally best effort so a
-cleanup failure does not mask the original post error; the API logs cleanup
-failures with a request ID.
-
-The API also cleans up from its side when verification or database association
-fails. Post deletion calls `delete_post_media_object()` for each associated
-storage key before marking the post deleted.
-
-### Post failure diagnostics
-
-The post API attaches these headers to post-media failures:
-
-```text
-X-Friink-Post-Media-Stage
-X-Friink-Request-Id
-```
-
-Current stages include:
-
-- `upload_plan_storage_config`;
-- `upload_plan_generation`;
-- `object_key_validation`;
-- `object_verification_storage_config`;
-- `object_verification`;
-- `object_verification_unexpected`;
-- `post_database_association`;
-- `post_response_serialization`;
-- `post_creation_unexpected`.
-
-The API logs the stage, request ID, exception type, and traceback where
-appropriate. The web client separately distinguishes upload-plan failures
-from direct storage-transfer failures and preserves the authenticated API
-status when presenting an error.
-
-## Comparison of the two flows
-
-| Concern | Profile picture | Post media |
-|---|---|---|
-| Trigger | Profile settings confirmation | Post submit |
-| Files per operation | One | Up to 8, processed one at a time |
-| Client output | Square JPEG, target 512px / ~250KB | Aspect-preserving JPEG, max 1024px / ~500KB |
-| Key namespace | `profile-pictures/{user_id}/...` | `post-media/{user_id}/...jpg` |
-| API confirmation | Replaces `users.profile_picture_url` | Verifies objects and associates `post_media` rows |
-| Server size ceiling | 3MB | 500KB |
-| Existing object behavior | Deletes previous profile object before commit | No previous object; deletes uploaded objects on failed creation |
-| Response media data | Confirmed profile URL/timestamp | Currently `media_count`; URL rendering is separate |
-| Client helper | Existing profile-specific sequence in `auth.ts` | Shared presigned PUT helper plus post-specific orchestration |
-
-## Audit findings and operational risks
-
-### 1. Deployment/configuration must match source
-
-The source changes cannot fix an already-running deployment. A valid live test
-requires the API deployment to contain the post upload-plan, confirmation, and
-cleanup routes, the web deployment to contain the matching client flow, all
-five R2 variables in the correct API environment, and the exact web origin in
-R2 CORS. Vercel environment-variable changes require redeployment.
-
-### 2. Browser `Failed to fetch` is ambiguous
-
-For a direct R2 `PUT`, a browser-level `Failed to fetch` can represent CORS,
-DNS/TLS, an interrupted transfer, or an unavailable response. It does not by
-itself prove that R2 received no bytes. The post client now records the planned
-key before transfer to make best-effort cleanup safer, but the API/R2 logs and
-the request-stage headers are still needed for definitive diagnosis.
-
-### 3. Public read URLs are part of confirmation
-
-The API requires `R2_PUBLIC_URL` and uses it both to construct persisted URLs
-and to verify objects when S3 metadata inspection fails. A bucket that accepts
-presigned writes but has no working public read URL can therefore upload bytes
-successfully while failing confirmation.
-
-### 4. Post media is persisted but not yet rendered
-
-The post database association and `media_count` are implemented. The current
-post response does not expose the media URL collection, so successful upload
-does not imply that images will appear in feed/post cards until the separate
-rendering work is implemented.
-
-### 5. Session behavior
-
-Both API requests use the existing authenticated request path. The direct R2
-`PUT` does not use or mutate the Friink session. A normal upload failure does
-not clear the session; only the existing authenticated `401` refresh behavior
-can affect authentication state.
-
-## Verification checklist
-
-For each environment, audit in this order:
-
-1. Confirm the deployed web commit and API commit contain matching routes and
-   client code.
-2. Confirm the five R2 variables are present in the API deployment environment.
-3. Confirm the R2 bucket is the intended environment bucket and its public URL
-   matches `R2_PUBLIC_URL`.
-4. Confirm CORS allows the exact web origin, `PUT`, and `Content-Type`.
-5. With a signed-in account, test one profile-picture upload and refresh.
-6. Test profile-picture replacement and confirm the prior object is removed.
-7. Test a one-image post and inspect the upload-plan response, R2 `PUT`, post
-   confirmation response, database association, and feed response.
-8. Test a multi-image post and an intentional failed transfer; confirm cleanup
-   attempts and API request-stage logging.
-9. Confirm post deletion removes associated post-media objects.
-
-## Source map
-
-| Area | Files |
-|---|---|
-| R2 setup | `R2.md`, `api/.env.example` |
-| Profile storage | `api/app/services/storage.py` |
-| Post-media storage | `api/app/services/post_media.py` |
-| Profile API | `api/app/routers/auth.py`, `api/app/schemas/auth.py` |
-| Post API | `api/app/routers/posts.py`, `api/app/schemas/posts.py` |
-| Post service/model | `api/app/services/posts.py`, `api/app/models/post.py` |
-| Image preparation | `web/lib/image-compression.ts`, `web/lib/crop-image.ts` |
-| Profile UI/orchestration | `web/components/account-screens.tsx`, `web/lib/auth.ts` |
-| Post UI/orchestration | `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/lib/auth.ts` |
-| Shared post transport | `web/lib/media-upload.ts` |
-| Tests | `api/tests/test_posts.py` |
+1. Confirm Vercel API Preview is running `fcd468d` and Vercel web Preview is
+   running the matching client commit.
+2. In the browser Network panel, click upload and record whether
+   `/auth/refresh` appears and its status.
+3. Record `/posts/media/upload-url` status, response body, and
+   `X-Friink-Post-Media-Stage` / `X-Friink-Request-Id` headers.
+4. If upload planning succeeds, record the R2 PUT status and then confirmation
+   status.
+5. Test one exact object URL through `https://staging-media.friink.com/...`.
+6. Separately implement/verify post-media URL exposure in post responses before
+   treating successful upload as visible media.

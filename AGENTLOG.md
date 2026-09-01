@@ -5251,3 +5251,31 @@
   - `api/app/schemas/posts.py`
 - Reason/Decision: Staging direct testing proved R2 PUT and authenticated metadata access succeed, while the configured public URL returns 403. Public delivery is therefore separated from upload confirmation. Existing post key ownership, one-at-a-time client flow, JPEG preparation, 500 KB client limit, eight-file limit, association, and cleanup paths remain in place; server-side object-content verification is no longer performed during confirmation.
 - Verification: `pytest tests/test_posts.py -q` passed (22 tests); API compileall passed; web TypeScript check passed; `git diff --check` passed. Profile auth route and account screen showed no diff.
+## 2026-09-01T02:45:00Z — Expand media-upload audit report
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Produce a complete technical media-upload report for independent review.
+- Changes Made:
+  - Rewrote `docs/media-upload.md` as a self-contained audit covering profile-picture reference behavior, post-media architecture, API sequence, R2/CORS configuration, manual staging evidence, status-0 diagnostics, deployment uncertainty, viewing limitations, and security/business-rule tradeoffs.
+  - Recorded exact manual R2 results without exposing credentials: PUT 200, authenticated metadata success, public HEAD/GET 403, and test-object deletion success.
+  - Recorded that the user-supplied active custom domain was not re-tested by this audit.
+- Files:
+  - `docs/media-upload.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Verification: Confirmed current branch HEAD is `fcd468d`; no profile-picture files were edited.
+## 2026-09-01T03:05:00Z — Skip proactive session refresh for post-media flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Try post-media upload once without proactively refreshing the Friink session.
+- Changes Made:
+  - Added an internal `skipProactiveAuthRefresh` request option.
+  - Enabled it for post-media upload-plan, confirmation, cleanup, and media-bearing post creation requests.
+  - Preserved the existing reactive `401 TOKEN_EXPIRED` refresh-and-retry behavior.
+  - Left profile-picture requests on the existing proactive refresh behavior.
+- Files:
+  - `web/lib/auth.ts`
+- Reason/Decision: Direct R2 PUT does not use the Friink session, and post-media does not need a session rotation before every API step. Reactive refresh remains available if the access token is actually expired.
+- Verification: `npx tsc --noEmit --incremental false` passed. Profile-picture route/orchestration code was not changed.

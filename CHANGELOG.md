@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T03:05:00Z
+
+- [web/auth] Disabled proactive session refresh for post-media requests while preserving reactive refresh on `401 TOKEN_EXPIRED`; profile-picture behavior is unchanged.
+
+## 2026-09-01T02:45:00Z
+
+- [docs] Expanded `docs/media-upload.md` into a complete technical audit with staging evidence, R2/CORS findings, current post/profile flows, deployment uncertainty, and unresolved viewing/session diagnostics.
+
 ## 2026-09-01T01:52:00Z
 
 - [api] Decoupled post-media upload/confirmation from public R2 HEAD/GET verification and made `R2_PUBLIC_URL` optional for upload planning; profile-picture APIs remain unchanged.

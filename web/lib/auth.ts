@@ -713,6 +713,7 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}` },
           authContext: 'authenticated_request',
+          skipProactiveAuthRefresh: true,
           body: JSON.stringify({ count: 1 }),
         });
       } catch (error) {
@@ -737,6 +738,7 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}` },
           authContext: 'authenticated_request',
+          skipProactiveAuthRefresh: true,
           body: JSON.stringify({ object_key: item.object_key }),
         });
       } catch (error) {
@@ -750,6 +752,7 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
         authContext: 'authenticated_request',
+        skipProactiveAuthRefresh: true,
         body: JSON.stringify({ storage_keys: uploadedKeys }),
       }).catch(() => undefined);
     }
@@ -766,6 +769,7 @@ export async function createPost(accessToken: string, input: { content: string; 
         Authorization: `Bearer ${accessToken}`,
       },
       authContext: 'authenticated_request',
+      skipProactiveAuthRefresh: Boolean(mediaKeys?.length),
       body: JSON.stringify({
         kind: input.kind ?? 'post',
         content: input.content,
@@ -940,10 +944,19 @@ export async function removeFollower(accessToken: string, username: string): Pro
 
 async function requestApi<T>(
   path: string,
-  init: RequestInit & { authContext?: AuthRequestContext; skipAuthRefresh?: boolean; retryingAfterRefresh?: boolean },
+  init: RequestInit & {
+    authContext?: AuthRequestContext;
+    skipAuthRefresh?: boolean;
+    skipProactiveAuthRefresh?: boolean;
+    retryingAfterRefresh?: boolean;
+  },
 ): Promise<T> {
   const requestInit = { ...init };
-  if (!requestInit.skipAuthRefresh && requestInit.authContext === 'authenticated_request') {
+  if (
+    !requestInit.skipAuthRefresh &&
+    !requestInit.skipProactiveAuthRefresh &&
+    requestInit.authContext === 'authenticated_request'
+  ) {
     const refreshedToken = await getProactivelyRefreshedAccessToken(requestInit.headers);
     if (refreshedToken) {
       requestInit.headers = withAuthorizationHeader(requestInit.headers, refreshedToken);
