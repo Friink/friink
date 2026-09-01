@@ -30,7 +30,7 @@ export const theme = {
     sidebarWidth: '256px',
     topbarHeight: '64px',
     bottomNavHeight: '56px',
-    contentMaxWidth: '720px',
+    contentCol: '720px',
   },
   radius: {
     sm: '8px',

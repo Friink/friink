@@ -16,6 +16,16 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T14:10:09Z — Unify feed content and floating composer width token
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the desktop mismatch where the floating composer appears narrower than feed post cards by consolidating both surfaces onto the shared 720px content-column token.
+- Changes Made: Confirmed `ContentBox` and `FloatingBar` are separate DOM branches: content is inside `.main-panel`, while the composer is rendered in a fixed `.floating-bar-rail` sibling. Renamed the width token to `contentCol`/`--space-content-col` and updated both wrappers plus the design contract to use it.
+- Files: `web/theme.config.ts`, `web/app/globals.css`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`
+- Reason: Make the feed column and floating composer resolve to one discoverable width contract at every breakpoint without introducing a second width value or moving the fixed composer into the scrolling content tree.
+- Verification Status: Targeted source inspection and `git diff --check` completed. Desktop runtime visual verification is still required and is reported separately; `RULES.md` was not modified.
+
 ## 2026-09-01T13:55:17Z — Apply confirmed shell dimension tokens and inventory topbar dependencies
 
 - Agent: Codex

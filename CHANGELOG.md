@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T14:10:09Z
+
+- [web/layout] Unified the feed `ContentBox` and fixed floating composer on the single `content-col`/`--space-content-col` token at a 720px cap. Confirmed they remain separate DOM branches but now resolve through the same shared width contract at mobile, tablet, and desktop breakpoints.
+
 ## 2026-09-01T13:55:17Z
 
 - [web/layout] Applied the confirmed 256px sidebar and 64px topbar dimensions through `web/theme.config.ts` and the shared CSS variable system. Updated the Header design contract and inventoried all topbar-dependent offsets; no scroll-padding or scroll-margin declarations were found. Broader consolidation remains paused for visual confirmation.

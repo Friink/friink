@@ -21,7 +21,7 @@
   --space-top-tabs-height: 1.98rem;
   --space-floating-bar-height: 3.5rem;
   --space-sidebar-collapsed-width: 4.5rem;
-  --space-content-max-width: 45rem;
+  --space-content-col: 45rem;
   --space-content-inset-inline: 1rem;
   --space-content-inset-block: 0.75rem;
   --color-accent-soft: color-mix(in srgb, var(--color-accent) 12%, var(--color-paper));
@@ -4282,7 +4282,7 @@ input[type="search"]:focus {
   display: flex;
   flex-direction: column;
   align-self: center;
-  width: min(100%, var(--space-content-max-width));
+  width: min(100%, var(--space-content-col));
   margin-inline: auto;
   padding: 0 var(--space-content-inset-inline) 3rem;
   flex: 1 1 auto;
@@ -4357,7 +4357,7 @@ input[type="search"]:focus {
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: var(--space-content-max-width);
+  max-width: var(--space-content-col);
   height: var(--space-floating-bar-height);
   margin: 0 auto;
   padding: 0.375rem;
@@ -4371,7 +4371,7 @@ input[type="search"]:focus {
 .floating-bar-contextual {
   justify-content: stretch;
   width: 100%;
-  max-width: var(--space-content-max-width);
+  max-width: var(--space-content-col);
   height: auto;
   min-height: var(--space-floating-bar-height);
 }
