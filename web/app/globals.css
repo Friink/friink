@@ -3431,6 +3431,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   min-width: 0;
   gap: 0.35rem;
   align-items: center;
+  padding: 0.4rem 0.4rem 0.2rem 0;
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -3440,6 +3441,11 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   flex: 0 0 auto;
   width: 2.5rem;
   height: 2.5rem;
+  cursor: grab;
+}
+
+.composer-media-item.is-dragging {
+  opacity: 0.45;
 }
 
 .composer-media-preview {
@@ -3469,8 +3475,9 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .composer-media-remove {
   position: absolute;
-  top: -0.35rem;
-  right: -0.35rem;
+  z-index: 2;
+  top: -0.3rem;
+  right: -0.3rem;
   display: inline-grid;
   place-items: center;
   width: 1rem;

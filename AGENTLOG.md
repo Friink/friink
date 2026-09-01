@@ -5391,3 +5391,33 @@
   - `AGENTLOG.md`
   - `CHANGELOG.md`
 - Scope: Post-media display only. Profile-picture code and layout were not changed.
+## 2026-09-01T09:55:00Z — Show posting animation during post submission
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show the profile-upload-style animation on the post button while posting.
+- Changes Made:
+  - Added an optional `busy` state to the shared post composer.
+  - While the post submission is running, the arrow changes to `fa-spinner fa-spin`, the button is disabled, and its accessible label becomes `Posting…`.
+  - Connected the existing `floatingPostBusy` state to the post composer.
+- Files:
+  - `web/components/composer.tsx`
+  - `web/components/app-shell.tsx`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Post composer only. Profile-picture files and behavior were not changed.
+## 2026-09-01T10:10:00Z — Reorder post attachments and expose remove controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Allow attached post images to be rearranged and prevent the delete icon from being covered.
+- Changes Made:
+  - Added drag-and-drop reordering for attached post thumbnails; the resulting order is passed to post submission.
+  - Added drag feedback and prevented the remove button itself from starting a drag.
+  - Added strip breathing room and z-index so the remove control remains visible instead of being clipped or covered.
+- Files:
+  - `web/components/composer.tsx`
+  - `web/app/globals.css`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Post composer attachments only. Profile-picture code and behavior were not changed.

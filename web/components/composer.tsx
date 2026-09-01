@@ -14,17 +14,36 @@ type ComposerMedia = {
   url: string;
 };
 
-function ComposerMediaStrip({ media, onOpen, onRemove }: { media: ComposerMedia[]; onOpen: (index: number) => void; onRemove: (id: string) => void }) {
+function ComposerMediaStrip({ media, onOpen, onRemove, onReorder }: { media: ComposerMedia[]; onOpen: (index: number) => void; onRemove: (id: string) => void; onReorder: (draggedId: string, targetId: string) => void }) {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+
   if (!media.length) return null;
 
   return (
     <div className="composer-media-strip" aria-label={`${media.length} image${media.length === 1 ? '' : 's'} attached`}>
       {media.map((item, index) => (
-        <div className="composer-media-item" key={item.id}>
+        <div
+          className={`composer-media-item${draggedId === item.id ? ' is-dragging' : ''}`}
+          key={item.id}
+          draggable
+          onDragStart={(event) => {
+            setDraggedId(item.id);
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', item.id);
+          }}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            const sourceId = event.dataTransfer.getData('text/plain') || draggedId;
+            if (sourceId && sourceId !== item.id) onReorder(sourceId, item.id);
+            setDraggedId(null);
+          }}
+          onDragEnd={() => setDraggedId(null)}
+        >
           <button className="composer-media-preview" type="button" onClick={() => onOpen(index)} aria-label={`Preview image ${index + 1}`}>
             <img src={item.url} alt="" />
           </button>
-          <button className="composer-media-remove" type="button" onClick={() => onRemove(item.id)} aria-label={`Remove image ${index + 1}`} title="Remove image">
+          <button className="composer-media-remove" type="button" onClick={() => onRemove(item.id)} aria-label={`Remove image ${index + 1}`} title="Remove image" draggable={false}>
             <i className="fa-solid fa-xmark" aria-hidden="true" />
           </button>
         </div>
@@ -38,6 +57,7 @@ type ComposerProps = {
   onDraftChange: (draft: string) => void;
   onSend: (event: FormEvent<HTMLFormElement>, media: File[]) => void | false | Promise<void | false>;
   disabled?: boolean;
+  busy?: boolean;
   multiline?: boolean;
   placeholder?: string;
   disabledPlaceholder?: string;
@@ -66,6 +86,7 @@ export function Composer({
   onDraftChange,
   onSend,
   disabled = false,
+  busy = false,
   multiline = false,
   placeholder = 'Write a message...',
   disabledPlaceholder = 'Chat unavailable',
@@ -150,6 +171,18 @@ export function Composer({
     });
     setMediaError('');
     setPreviewIndex(null);
+  }
+
+  function reorderMedia(draggedId: string, targetId: string) {
+    setMedia((current) => {
+      const fromIndex = current.findIndex((item) => item.id === draggedId);
+      const toIndex = current.findIndex((item) => item.id === targetId);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return current;
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
   }
 
   function openCrop(index: number) {
@@ -251,7 +284,7 @@ export function Composer({
           />
           {multiline ? <input ref={mediaInputRef} className="composer-media-input" type="file" accept="image/*" multiple onChange={handleMediaSelection} aria-label="Choose images to attach" /> : null}
         </div>
-        {multiline ? <ComposerMediaStrip media={media} onOpen={setPreviewIndex} onRemove={removeMedia} /> : null}
+        {multiline ? <ComposerMediaStrip media={media} onOpen={setPreviewIndex} onRemove={removeMedia} onReorder={reorderMedia} /> : null}
         {enableMentions ? (
           <MentionInput
             value={draft}
@@ -288,8 +321,8 @@ export function Composer({
             {characterCount}/{maxLength}
           </span>
         )}
-        <button className="composer-send" type="submit" disabled={disabled || ((!allowEmptySubmit && media.length === 0) && !draft.trim()) || isOverLimit} aria-label={sendLabel}>
-          <i className="fa-solid fa-arrow-up" aria-hidden="true" />
+        <button className="composer-send" type="submit" disabled={disabled || busy || ((!allowEmptySubmit && media.length === 0) && !draft.trim()) || isOverLimit} aria-label={busy ? 'Posting…' : sendLabel} aria-busy={busy}>
+          <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-arrow-up'}`} aria-hidden="true" />
         </button>
       </form>
       {mediaError ? <p className="composer-media-error" role="status">{mediaError}</p> : null}

@@ -934,6 +934,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 onDraftChange={setFloatingDraft}
                 onSend={handleFloatingPost}
                 disabled={floatingPostBusy}
+                busy={floatingPostBusy}
                 multiline
                 placeholder={composeContext.kind === 'reply' ? 'Write a reply...' : composeContext.kind === 'quote' ? 'Add your quote...' : 'Write a post...'}
                 disabledPlaceholder="Posting..."

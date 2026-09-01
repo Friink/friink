@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T10:10:00Z
+
+- [web] Added drag-and-drop ordering for post attachments and fixed the thumbnail remove icon’s clipping/stacking.
+
+## 2026-09-01T09:55:00Z
+
+- [web] Added the profile-upload-style spinner animation to the post button while a post and its media are being submitted; the button is disabled until the operation completes.
+
 ## 2026-09-01T07:00:00Z
 
 - [web] Fixed desktop post-media gallery sizing by adding a responsive width/height cap while preserving the mobile portrait frame.
