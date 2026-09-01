@@ -16,6 +16,26 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T13:55:17Z — Apply confirmed shell dimension tokens and inventory topbar dependencies
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the confirmed 256px sidebar and 64px topbar values using the existing theme/CSS-variable system, then inventory every topbar-height-dependent file before continuing the paused consolidation audit.
+- Changes Made: Updated `theme.config.ts` sidebar/topbar tokens to `256px`/`64px`; aligned the CSS fallback topbar token to `4rem`; corrected the Header component contract in `design.md` to reference the shared topbar token. Audited direct offsets, fixed positioning, sticky positioning, and scroll-related declarations. No Tailwind or `RULES.md` changes were made.
+- Files: `web/theme.config.ts`, `web/app/globals.css`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`
+- Reason: Establish the user-approved shell dimensions and provide a reviewable dependency inventory before making any broader token consolidation changes.
+- Verification Status: Targeted source inspection completed. Direct topbar consumers are in `web/app/globals.css`; no `scroll-padding` or `scroll-margin` declarations were found. Broader consolidation and runtime visual verification remain paused for user confirmation.
+
+## 2026-09-01T13:23:39Z — Audit spacing and sizing token consolidation feasibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit hardcoded spacing, sizing, positioning, Tailwind arbitrary values, inline dimensions, repeated magic numbers, and lint setup before consolidation.
+- Changes Made: Read `AGENTLOG.md`, `CHANGELOG.md`, and `packages/design/design.md`. Scanned the repository and found zero Tailwind arbitrary-value classes, no `tailwind.config.ts`, no ESLint configuration, no `eslint-plugin-tailwindcss`, and no pre-commit/lint-staged setup. Identified the active styling architecture as `web/app/globals.css` plus `web/theme.config.ts`. Recorded representative repeated CSS values and all inline dimension locations: dynamic tab indicator positioning, pull-to-refresh height, composer auto-height, action-menu positioning, error-page layout styles, and the accent swatch’s runtime color. No source, design, or rules implementation changes were made.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`
+- Reason: The requested Tailwind migration would require introducing a styling and linting stack that does not currently exist, which is materially broader than a cleanup/consolidation pass and must be confirmed before implementation.
+- Verification Status: Audit completed with targeted repository scans. No arbitrary Tailwind usages were found. `RULES.md` was not modified; no product/business/platform rule change was identified.
+
 ## 2026-09-01T13:10:31Z — Diagnose postMedia crop, storage, and rendering state
 
 - Agent: Codex

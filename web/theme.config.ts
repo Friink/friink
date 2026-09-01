@@ -27,8 +27,8 @@ export const theme = {
     xl: '1.5625rem',
   },
   spacing: {
-    sidebarWidth: '240px',
-    topbarHeight: '52px',
+    sidebarWidth: '256px',
+    topbarHeight: '64px',
     bottomNavHeight: '56px',
     contentMaxWidth: '720px',
   },

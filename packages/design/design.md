@@ -10,7 +10,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 
 - **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
 - **Top Headers**:
-  - Desktop uses the top `Header` (`3.75rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, and Notifications bell (`/notifications`).
+  - Desktop uses the top `Header` (`4rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines.
 - **Profile Composer Rule**: The shared floating composer remains available on profile pages. On another user's profile, the default post draft is prefilled with `@username ` as a removable suggestion so posting in-profile naturally supports mentions without forcing them.
@@ -151,7 +151,7 @@ The following design tokens are locked hard values extracted directly from the c
 
 ### Layout & Dimensions
 - **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
-- **Topbar Height**: `3.75rem` (60px, `--space-topbar-height`)
+- **Topbar Height**: `4rem` (64px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
 - **Mobile Navigation / Tabs Height**: `2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
 - **Content Width**: Shell content boxes are fluid (`width: 100%`) and responsive to the available app panel, with a primary tablet/desktop cap of `720px` (`--space-content-max-width`) for logged-in app content. Avoid per-screen hardcoded page max-width rules for primary app content; the shared container owns this constraint.
@@ -283,7 +283,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### 6. Header (`web/components/header.tsx`) & NavigationBar (`web/components/navigationbar.tsx`)
 - **Desktop `Header`**:
-  - Fixed top bar (`height: 3.75rem`).
+  - Fixed top bar (`height: 4rem`, `--space-topbar-height`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
   - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search submit icon before the close (`fa-xmark`) button. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown uses the shared `ContextualDropdown`, appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, shows up to four rows, and includes an `Open Search` link to `/search`; it stays naturally sized without a scrollbar when four or fewer rows are present.
   - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.

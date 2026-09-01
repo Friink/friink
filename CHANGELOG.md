@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T13:55:17Z
+
+- [web/layout] Applied the confirmed 256px sidebar and 64px topbar dimensions through `web/theme.config.ts` and the shared CSS variable system. Updated the Header design contract and inventoried all topbar-dependent offsets; no scroll-padding or scroll-margin declarations were found. Broader consolidation remains paused for visual confirmation.
+
+## 2026-09-01T13:23:39Z
+
+- [audit] Completed the spacing/sizing consolidation audit. Found no Tailwind arbitrary utility classes, no `tailwind.config.ts`, no ESLint configuration or Tailwind lint plugin, and no pre-commit setup. The app currently uses `web/app/globals.css` and `web/theme.config.ts`; inline dimension cases are limited to dynamic indicator positioning, pull-to-refresh height, composer auto-height, action-menu positioning, accent swatch color, and the error page’s inline layout styles. Repeated CSS values are concentrated in existing global rules, including `1rem`, `0.75rem`, `0.5rem`, `1.25rem`, `2rem`, `3rem`, `2.25rem`, `1.5rem`, `0.25rem`, `2.5rem`, `1px`, and `8px`. No implementation changes were made pending a decision on adapting the requested Tailwind deliverable to the existing CSS-token stack.
+
 ## 2026-09-01T13:10:31Z
 
 - [audit] Diagnosed the current postMedia crop, persistence, and feed-rendering implementation before any fix. Confirmed the checked-in composer still enforces a fixed 3:5 crop, `PostMedia` stores no final dimensions/aspect ratio, each image is cropped independently, and feed rendering uses fixed 3:4 containers for multi-image galleries without API-provided ratio reservation. No rules or application code were changed.
