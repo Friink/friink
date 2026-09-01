@@ -64,7 +64,7 @@ dashboard.
 - Other-user profiles expose a functional Message action that opens `/{username}/chat`; chat access still requires mutual accepted follows.
 - The signed-in account's Connections surface always exposes Requests; pending incoming requests provide Accept and Reject actions from the authenticated API.
 - Current post media uses a fixed `3:5` crop tool, submit-time R2 upload, a `3:4` frame for multi-image galleries, and natural-ratio display for single images. Final crop dimensions/aspect ratio are not currently persisted.
-- Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. A chat is available only between users who follow each other and have accepted relationships in both directions; the UI is transport-neutral so a future WebSocket transport can replace polling.
+- Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. A chat is available only between users who follow each other and have accepted relationships in both directions; the composer is unavailable for policy reasons only when the API confirms that relationship is missing. The UI is transport-neutral so a future WebSocket transport can replace polling.
 - Notifications use a 4-second adaptive unread-count polling transport with visibility/focus recovery; the full list refreshes while Notifications is open.
 - Usernames are case-insensitive identities: signup and Settings check availability before submission, the API remains authoritative, and accepted values are canonicalized to lowercase.
 - The web production build and TypeScript checks are the current automated web verification. Browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.

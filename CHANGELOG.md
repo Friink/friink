@@ -2,6 +2,10 @@
 
 ## 2026-09-01
 
+- [chat] Narrowed composer disabling to the actual mutual-follow authorization failure instead of treating every conversation-loading error as “Chat unavailable.”
+
+## 2026-09-01
+
 - [connections] Kept the signed-in account's Requests tab available independently of cached privacy state, restoring the API-backed Accept and Reject controls for pending private-profile follow requests.
 
 ## 2026-09-01

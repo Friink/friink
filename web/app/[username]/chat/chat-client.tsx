@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { ProfileCard } from '@/components/profile-card';
-import { clearAuthSession, loadAuthSession, type ApiConversation, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, loadAuthSession, type ApiConversation, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 
@@ -25,6 +25,7 @@ export function ChatClient({ username }: ChatClientProps) {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chatAccessDenied, setChatAccessDenied] = useState(false);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -49,7 +50,10 @@ export function ChatClient({ username }: ChatClientProps) {
         });
       })
       .catch((nextError) => {
-        if (!cancelled) setError(nextError instanceof Error ? nextError.message : 'Could not load this conversation.');
+        if (!cancelled) {
+          setChatAccessDenied(nextError instanceof AuthApiError && nextError.status === 403);
+          setError(nextError instanceof Error ? nextError.message : 'Could not load this conversation.');
+        }
       });
 
     return () => {
@@ -108,7 +112,7 @@ export function ChatClient({ username }: ChatClientProps) {
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} placeholder="Write a message..." disabled={!conversation || Boolean(error)} busy={busy} />}
+      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} placeholder="Write a message..." disabled={!conversation || chatAccessDenied} busy={busy} />}
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">

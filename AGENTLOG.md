@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Restrict chat composer disabling to policy denial
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make chat unavailable only when the mutual-follow policy blocks messaging.
+- Changes Made: Added explicit access-denial state in the direct chat client and limited the unavailable composer state to API `403` authorization responses. General conversation-loading errors no longer count as a policy denial; mutual accepted follows remain required by the backend.
+- Files: `web/app/[username]/chat/chat-client.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The old implementation disabled the composer for any error and was originally added while chat was unavailable; it did not distinguish policy denial from unrelated failures.
+- Notes: The composer remains temporarily disabled until the conversation object loads, then is enabled unless mutual-follow authorization is denied. No visual styles changed.
+- Verification Status: Web production build passed and `git diff --check` passed.
+
 ## 2026-09-01 — Restore incoming request actions
 
 - Agent: Codex
