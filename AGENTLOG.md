@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01 — Diagnose staging chat availability for mutual-follow accounts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Trace why the chat composer remains unavailable for `@muflah` and `@muflahulfurqan`.
+- Changes Made: Followed the live staging flow from the profile Message action to `/{username}/chat`. Confirmed profile navigation works, but conversation initialization ends in a browser-level `Failed to fetch`; the chat API does not return a response, so the client never receives a conversation ID and keeps the composer disabled.
+- Files: `AGENTLOG.md`
+- Reason: Distinguish an application authorization bug from an unavailable staging API.
+- Notes: Staging showed `@muflahulfurqan` with `1 following` and `1 follower`, while the chat request failed before producing a policy response. Direct connectivity to `https://staging-api.friink.com` also failed on `/health/db` and `/`. The local API source includes the chat router and explicit staging CORS support; the remaining blocker is the staging API deployment/runtime availability, not the mutual-follow rule.
+- Verification Status: Live staging reproduction recorded; no application code was changed in this diagnostic entry.
+
 ## 2026-09-01 — Restore profile connection action during loading
 
 - Agent: Codex
