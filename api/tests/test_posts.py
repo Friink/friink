@@ -1,15 +1,88 @@
 import uuid
 from datetime import UTC, date, datetime
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 
+from app.routers import posts as posts_router
 from app.models.post import Post
 from app.models.post import PostKind
 from app.models.user import User
-from app.schemas.posts import CreatePostRequest
+from app.schemas.posts import CreatePostRequest, PostMediaUploadUrlRequest
 from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, extract_mentioned_usernames, serialize_post, serialize_quoted_post
+
+
+@pytest.mark.asyncio
+async def test_post_media_upload_plan_exposes_diagnostic_stage(monkeypatch) -> None:
+    class BrokenStorage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def generate_post_media_upload_url(self, user_id):
+            raise RuntimeError("presign service unavailable")
+
+    monkeypatch.setattr(posts_router, "StorageService", BrokenStorage)
+
+    with pytest.raises(HTTPException) as error:
+        await posts_router.create_post_media_upload_urls(
+            PostMediaUploadUrlRequest(count=1),
+            SimpleNamespace(id=uuid.uuid4()),
+            SimpleNamespace(),
+        )
+
+    assert error.value.status_code == 502
+    assert "Reference:" in error.value.detail
+    assert error.value.headers["X-Friink-Post-Media-Stage"] == "upload_plan_generation"
+    assert error.value.headers["X-Friink-Request-Id"] in error.value.detail
+
+
+@pytest.mark.asyncio
+async def test_post_media_database_failure_is_reported_as_association_stage(monkeypatch) -> None:
+    deleted_keys: list[str] = []
+
+    class Storage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def confirm_post_media_object(self, object_key, user_id) -> None:
+            return None
+
+        def public_url(self, object_key) -> str:
+            return f"https://cdn.example/{object_key}"
+
+        def delete_post_media_object(self, object_key, user_id) -> None:
+            deleted_keys.append(object_key)
+
+    class Session:
+        def __init__(self) -> None:
+            self.rollbacks = 0
+
+        def rollback(self) -> None:
+            self.rollbacks += 1
+
+    async def fail_create_post(*args, **kwargs):
+        raise RuntimeError("post_media table unavailable")
+
+    monkeypatch.setattr(posts_router, "StorageService", Storage)
+    monkeypatch.setattr(posts_router, "create_post", fail_create_post)
+    session = Session()
+    storage_key = "post-media/user/image.jpg"
+
+    with pytest.raises(HTTPException) as error:
+        await posts_router.create_post_route(
+            CreatePostRequest(content="caption", media=[{"storage_key": storage_key}]),
+            SimpleNamespace(id=uuid.uuid4()),
+            session,
+            SimpleNamespace(),
+        )
+
+    assert error.value.status_code == 500
+    assert "Reference:" in error.value.detail
+    assert error.value.headers["X-Friink-Post-Media-Stage"] == "post_database_association"
+    assert session.rollbacks == 1
+    assert deleted_keys == [storage_key]
 
 
 def test_post_content_rejects_513_characters() -> None:

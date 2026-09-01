@@ -20,6 +20,19 @@
 - Design/rules: Updated `packages/design/design.md` and `RULES.md` to document the dynamic in-app-only accent contract and six-digit validation.
 - Verification: TypeScript check and `git diff --check` pending for this entry.
 
+## 2026-09-01T00:07:47Z — Add post-media API diagnostics
+
+- Prompt Summary: Rewrite the post-media API boundaries so a one-image upload failure exposes the failing stage instead of collapsing into a generic error.
+- Changes Made:
+  - Added post-media request IDs, stage headers, and traceback logging for upload-plan generation, object-key validation, R2 object verification, database association, and response serialization.
+  - Changed missing storage configuration to return `503`, unexpected storage/verification failures to return `502`, and database association failures to return `500` with a request reference.
+  - Centralized post-media cleanup logging so cleanup failures are visible in API logs instead of being silently discarded.
+  - Left the profile-picture upload and replacement flow unchanged.
+- Reason/Decision: A single-file failure is independent of the multi-file loop, so the API needs to identify whether the failure occurs before R2 upload, during object verification, while saving `post_media`, or while preparing the response. The response reference lets the staging API logs be correlated with the user-visible failure.
+- Verification: `python -m pytest tests/test_posts.py -q` passed with 21 tests; final compile and diff checks pending.
+
+---
+
 > INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file —
 > especially the most recent 3-5 entries — to understand exactly what
 > the last agent(s) did, including which files or scope they touched.

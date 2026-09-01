@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime
 from typing import Literal
@@ -15,9 +16,46 @@ from app.config import Settings, get_settings
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostMediaCleanupRequest, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.posts import can_view_post, create_post, delete_post, get_feed_context, get_newer_posts, get_post, get_post_by_public_id, get_post_for_response, get_post_replies, get_posts_page, serialize_post
+from app.services.session_ops import rollback
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+logger = logging.getLogger("friink.posts")
+
+
+def _post_media_request_id() -> str:
+    return uuid.uuid4().hex[:12]
+
+
+def _post_media_http_error(*, stage: str, request_id: str, status_code: int, message: str, error: Exception) -> HTTPException:
+    logger.exception(
+        "post_media_failure stage=%s request_id=%s error_type=%s error=%s",
+        stage,
+        request_id,
+        type(error).__name__,
+        str(error),
+    )
+    return HTTPException(
+        status_code=status_code,
+        detail=f"{message} Reference: {request_id}.",
+        headers={
+            "X-Friink-Post-Media-Stage": stage,
+            "X-Friink-Request-Id": request_id,
+        },
+    )
+
+
+def _cleanup_post_media(storage: StorageService, storage_keys: list[str], user_id: uuid.UUID, request_id: str) -> None:
+    for key in storage_keys:
+        try:
+            storage.delete_post_media_object(key, user_id)
+        except Exception:
+            logger.exception(
+                "post_media_cleanup_failure request_id=%s user_id=%s storage_key=%s",
+                request_id,
+                user_id,
+                key,
+            )
 
 
 async def get_optional_current_user(
@@ -42,10 +80,25 @@ async def create_post_media_upload_urls(
     settings: Settings = Depends(get_settings),
 ) -> PostMediaUploadUrlResponse:
     storage = StorageService(settings)
+    request_id = _post_media_request_id()
     try:
         items = [storage.generate_post_media_upload_url(current_user.id) for _ in range(payload.count)]
     except StorageNotConfiguredError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+        raise _post_media_http_error(
+            stage="upload_plan_storage_config",
+            request_id=request_id,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Post-media upload storage is not configured.",
+            error=exc,
+        ) from exc
+    except Exception as exc:
+        raise _post_media_http_error(
+            stage="upload_plan_generation",
+            request_id=request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            message="The API could not create the post-media upload plan.",
+            error=exc,
+        ) from exc
     return PostMediaUploadUrlResponse(items=items)
 
 
@@ -56,12 +109,30 @@ async def cleanup_post_media_uploads(
     settings: Settings = Depends(get_settings),
 ) -> Response:
     storage = StorageService(settings)
+    request_id = _post_media_request_id()
     for key in payload.storage_keys:
         try:
             storage.delete_post_media_object(key, current_user.id)
-        except (ValueError, StorageNotConfiguredError, StorageObjectError):
-            continue
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+        except (ValueError, StorageNotConfiguredError, StorageObjectError) as exc:
+            logger.warning(
+                "post_media_cleanup_failure request_id=%s user_id=%s storage_key=%s error_type=%s error=%s",
+                request_id,
+                current_user.id,
+                key,
+                type(exc).__name__,
+                str(exc),
+            )
+        except Exception as exc:
+            logger.exception(
+                "post_media_cleanup_unexpected_failure request_id=%s user_id=%s storage_key=%s",
+                request_id,
+                current_user.id,
+                key,
+            )
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT,
+        headers={"X-Friink-Request-Id": request_id},
+    )
 
 
 @router.get("", response_model=FeedPageResponse)
@@ -148,25 +219,80 @@ async def create_post_route(
 ) -> PostResponse:
     storage = StorageService(settings)
     media_keys = [item.storage_key for item in payload.media or []]
+    request_id = _post_media_request_id()
     try:
         for key in media_keys:
-            storage.confirm_post_media_object(key, current_user.id)
+            try:
+                storage.confirm_post_media_object(key, current_user.id)
+            except ValueError as exc:
+                raise _post_media_http_error(
+                    stage="object_key_validation",
+                    request_id=request_id,
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    message="The post-media object key is invalid.",
+                    error=exc,
+                ) from exc
+            except StorageNotConfiguredError as exc:
+                raise _post_media_http_error(
+                    stage="object_verification_storage_config",
+                    request_id=request_id,
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    message="Post-media upload storage is not configured.",
+                    error=exc,
+                ) from exc
+            except StorageObjectError as exc:
+                raise _post_media_http_error(
+                    stage="object_verification",
+                    request_id=request_id,
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    message="The uploaded post image could not be verified.",
+                    error=exc,
+                ) from exc
+            except Exception as exc:
+                raise _post_media_http_error(
+                    stage="object_verification_unexpected",
+                    request_id=request_id,
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    message="The API encountered an unexpected post-image verification error.",
+                    error=exc,
+                ) from exc
         payload = payload.model_copy(update={
             "media": [item.model_copy(update={"url": storage.public_url(item.storage_key)}) for item in payload.media or []]
         })
-        post = await create_post(session, current_user, payload)
-    except (ValueError, StorageNotConfiguredError, StorageObjectError) as exc:
-        for key in media_keys:
-            try:
-                storage.delete_post_media_object(key, current_user.id)
-            except Exception:
-                pass
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    except Exception:
-        for key in media_keys:
-            try:
-                storage.delete_post_media_object(key, current_user.id)
-            except Exception:
-                pass
+        try:
+            post = await create_post(session, current_user, payload)
+        except HTTPException:
+            await rollback(session)
+            raise
+        except Exception as exc:
+            await rollback(session)
+            raise _post_media_http_error(
+                stage="post_database_association",
+                request_id=request_id,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message="The uploaded images were verified, but the post could not be saved.",
+                error=exc,
+            ) from exc
+    except HTTPException:
+        _cleanup_post_media(storage, media_keys, current_user.id, request_id)
         raise
-    return serialize_post(await get_post_for_response(session, post.id), viewer=current_user, session=session)
+    except Exception as exc:
+        _cleanup_post_media(storage, media_keys, current_user.id, request_id)
+        raise _post_media_http_error(
+            stage="post_creation_unexpected",
+            request_id=request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="The post could not be completed after the image upload.",
+            error=exc,
+        ) from exc
+    try:
+        response_post = await get_post_for_response(session, post.id)
+        return serialize_post(response_post, viewer=current_user, session=session)
+    except Exception as exc:
+        raise _post_media_http_error(
+            stage="post_response_serialization",
+            request_id=request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="The post was saved, but the API could not prepare its response.",
+            error=exc,
+        ) from exc

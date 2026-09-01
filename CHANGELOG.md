@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T00:07:47Z
+
+- [api] Added stage-specific post-media failure handling and request references for upload-plan generation, object verification, database association, response serialization, and cleanup logging; profile-picture APIs were not changed.
+
 ## 2026-08-31T23:43:16Z
 
 - [web] Added explicit brand-colored mention links that remain green after visiting, plus a device-local Accent color setting under Settings > General that changes only the in-app brand token.
