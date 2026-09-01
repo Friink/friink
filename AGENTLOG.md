@@ -5529,3 +5529,21 @@
   - `AGENTLOG.md`
   - `CHANGELOG.md`
 - Scope: Documentation only. Profile-picture and auth implementation were not changed.
+## 2026-09-01T06:16:01Z — Center floating bar through a fixed flex rail
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace brittle fixed-position arithmetic with a simple centered layout for the 512px content box and floating bar.
+- Changes Made:
+  - Added a shared `.floating-bar-rail` wrapper that owns fixed positioning, flex centering, and the desktop sidebar boundary.
+  - Made `.floating-bar` fluid within the rail and capped it at `--space-content-max-width` (512px).
+  - Made `ContentBox` explicitly self-center with a capped `min()` width.
+  - Updated the design contract to describe the rail/flex-centering pattern.
+- Files:
+  - `web/components/floating-bar.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Centering belongs to the layout container, not to viewport-width calculations on the bar itself. The rail keeps the persistent surface inside the app panel while ordinary flex centering and `margin: auto` handle the 512px cap and narrower screens.
+- Verification: Targeted source inspection and `git diff --check`.

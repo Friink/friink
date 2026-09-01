@@ -4257,9 +4257,9 @@ input[type="search"]:focus {
 .content-box {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: var(--space-content-max-width);
-  margin: 0 auto;
+  align-self: center;
+  width: min(100%, var(--space-content-max-width));
+  margin-inline: auto;
   padding: 0 var(--space-content-inset-inline) 3rem;
   flex: 1 1 auto;
   min-height: 0;
@@ -4315,16 +4315,24 @@ input[type="search"]:focus {
 }
 
 /* Contextual floating bar */
-.floating-bar {
+.floating-bar-rail {
   position: fixed;
-  right: 0.5rem;
   bottom: max(1rem, env(safe-area-inset-bottom));
-  left: 0.5rem;
+  left: 0;
+  right: 0;
   z-index: 3;
   display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 0 0.5rem;
+  pointer-events: none;
+}
+
+.floating-bar {
+  display: flex;
   justify-content: space-between;
-  width: auto;
-  max-width: calc(100% - 1rem);
+  width: 100%;
+  max-width: var(--space-content-max-width);
   height: var(--space-floating-bar-height);
   margin: 0 auto;
   padding: 0.375rem;
@@ -4332,12 +4340,13 @@ input[type="search"]:focus {
   border-radius: var(--radius-pill);
   box-shadow: 0 0.75rem 2rem rgba(24, 44, 31, 0.12);
   background: var(--color-paper);
+  pointer-events: auto;
 }
 
 .floating-bar-contextual {
   justify-content: stretch;
-  width: auto;
-  max-width: calc(100% - 1rem);
+  width: 100%;
+  max-width: var(--space-content-max-width);
   height: auto;
   min-height: var(--space-floating-bar-height);
 }
@@ -4405,25 +4414,11 @@ input[type="search"]:focus {
     --desktop-sidebar-width: 4.5rem;
   }
 
-  .floating-bar {
-    left: calc(var(--desktop-sidebar-width) + var(--space-content-inset-inline));
-    right: var(--space-content-inset-inline);
-    bottom: max(1rem, env(safe-area-inset-bottom));
+  .floating-bar-rail {
+    left: var(--desktop-sidebar-width);
+    right: 0;
     width: auto;
-    max-width: calc(var(--space-content-max-width) - 2rem);
-    transform: none;
-  }
-
-  .floating-bar.floating-bar-contextual {
-    left: calc(var(--desktop-sidebar-width) + var(--space-content-inset-inline));
-    right: var(--space-content-inset-inline);
-    width: auto;
-    max-width: calc(var(--space-content-max-width) - 2rem);
-    transform: none;
-  }
-
-  .floating-bar:not(.floating-bar-contextual) {
-    width: min(max-content, calc(var(--space-content-max-width) - 2rem));
+    padding: 0 var(--space-content-inset-inline);
   }
 
   .sidebar {

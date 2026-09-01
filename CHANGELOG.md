@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01T06:16:01Z
+
+- [web/design] Replaced floating-bar viewport positioning with a centered fixed rail and capped the bar at the shared 512px content width.
+
 ## 2026-09-01T06:13:06Z
 
 - [web/design] Re-aligned the shared `FloatingBar` with the reduced 512px `ContentBox` rail and corrected its desktop panel-relative positioning so both surfaces stay centered and share the same content edges.
