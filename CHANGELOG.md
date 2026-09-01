@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T06:13:06Z
+
+- [web/design] Re-aligned the shared `FloatingBar` with the reduced 512px `ContentBox` rail and corrected its desktop panel-relative positioning so both surfaces stay centered and share the same content edges.
+
+## 2026-09-01T12:05:00Z
+
+- [docs] Reconciled `RULES.md` and `packages/design/design.md` with the recent post-media, modal, and content-width changes.
+
 ## 2026-09-01T11:35:00Z
 
 - [web] Reduced the shared desktop `ContentBox` maximum width from `1024px` to `512px`; mobile remains fluid.

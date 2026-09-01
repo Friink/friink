@@ -1,3 +1,21 @@
+## 2026-09-01T06:13:06Z — Align floating bar with the reduced content rail
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the content box centering regression after reducing its desktop width and make the floating bar follow the content-box width and positioning.
+- Changes Made:
+  - Added the shared `--space-content-max-width` token and used it for `ContentBox`.
+  - Changed the floating bar to use the same sidebar-relative desktop panel, horizontal content gutter, and effective 480px maximum rail at the 512px content cap.
+  - Kept mobile behavior fluid with the existing 8px horizontal inset.
+  - Updated `packages/design/design.md` to document the shared rail contract and corrected the stale independent-1024px floating-bar rule.
+- Files:
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: The floating composer had retained the previous 1024px viewport rail after `ContentBox` was reduced to 512px, so it no longer matched the primary content surface. Sharing the max-width token and panel-relative inset math keeps both surfaces centered and aligned across expanded and collapsed desktop sidebars.
+- Verification: Targeted CSS/source inspection and `git diff --check`.
+
 ## 2026-09-01T01:26:19Z — Remove legacy post methods from shared storage
 
 - Agent: Codex
@@ -5496,3 +5514,18 @@
   - `AGENTLOG.md`
   - `CHANGELOG.md`
 - Scope: Shared primary content layout only. Profile-picture code and behavior were not changed.
+## 2026-09-01T12:05:00Z — Reconcile rules and design documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Synchronize `RULES.md` and `packages/design/design.md` with recent changelog and agent-log entries.
+- Changes Made:
+  - Added the post-thumbnail reorder, direct 3:5 crop, Reset/Apply, navigation arrows, and posting-spinner details to the composer contract.
+  - Documented the shared modal’s topmost application layer.
+  - Corrected the floating-bar documentation after the primary `ContentBox` cap changed from `1024px` to `512px`; the floating bar remains on its separate `1024px` rail.
+- Files:
+  - `packages/design/design.md`
+  - `RULES.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Scope: Documentation only. Profile-picture and auth implementation were not changed.
