@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-01T06:30:00Z
+
+- [diagnosis] Reconfirmed that post-media rendering reaches the image element but the exact custom media URL still fails DNS resolution for `staging-media.friink.com`.
+
+## 2026-09-01T06:15:00Z
+
+- [diagnosis] Confirmed post-media rendering failure is DNS resolution: the API returns the custom media URL, but `staging-media.friink.com` has no resolvable public hostname.
+
+## 2026-09-01T05:45:00Z
+
+- [docs] Added `docs/audit.md`, a combined technical and architectural audit of auth, sessions, profile pictures, post media, R2, staging evidence, and known limitations.
+
 ## 2026-09-01T05:20:00Z
 
 - [api/web] Added post-media URL response fields and a shared Instagram-style responsive gallery for feed, detail, replies, and quoted posts.

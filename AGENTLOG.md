@@ -5334,3 +5334,36 @@
 - Reason/Decision: Post upload and association already worked, but responses exposed only `media_count` and the frontend rendered no post media. The gallery is shared so feed/detail/reply/quote displays stay consistent.
 - Verification: `pytest tests/test_posts.py -q` passed (23 tests); API compileall passed; web TypeScript check passed; `git diff --check` passed.
 - Profile-picture APIs and implementation were not changed.
+## 2026-09-01T05:45:00Z — Create combined auth/session/media audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Summarize authentication, server sessions, profile media, post media, and architecture in `docs/audit.md`.
+- Changes Made:
+  - Added a self-contained technical audit of JWT configuration, refresh-token rotation/reuse detection, auth-session storage, cookie behavior, web refresh behavior, profile-picture boundaries, post-media upload/confirmation/cleanup, response/display architecture, R2 evidence, diagnosed upload 500, limitations, and verification status.
+  - Explicitly documented that post-media requests skip proactive refresh while retaining reactive expired-token retry.
+  - Explicitly documented that profile-picture code remains separate and unchanged by post-media work.
+- Files:
+  - `docs/audit.md`
+  - `AGENTLOG.md`
+  - `CHANGELOG.md`
+- Verification: Report cross-checked against current source and prior targeted test evidence; no application code changed for this documentation task.
+## 2026-09-01T06:15:00Z — Diagnose post-media rendering failure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate why newly posted media is not visible on the supplied staging post URL.
+- Finding:
+  - The public staging API response for post `WaptlLjG` contains `media_count: 1` and a stored URL under `https://staging-media.friink.com/post-media/...jpg`.
+  - Fetching the exact media URL failed at DNS resolution with `No such host is known: staging-media.friink.com`.
+  - The API response and media association are present; the browser cannot load the image because the custom media hostname does not currently resolve publicly.
+  - The user-supplied R2 dashboard shows the custom domain as Active/Enabled, but that dashboard state did not produce a resolvable DNS hostname in the external test.
+- Scope: Diagnosis only. No application code or R2 settings were changed.
+- Required operational follow-up: Ensure the DNS record/target generated for the R2 custom domain exists at the authoritative DNS provider, then re-test the exact object URL.
+## 2026-09-01T06:30:00Z — Reconfirm custom media domain failure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the broken-image icon shown after post-media gallery rendering was deployed.
+- Finding: The exact URL returned by `GET /posts/public/WaptlLjG` still fails from the external test with `No such host is known: staging-media.friink.com` for both GET and HEAD. The browser image element is present and displays its alt text, so the gallery/rendering code is executing; DNS resolution remains the blocker.
+- Scope: Diagnosis only. No application code or R2 settings were changed.
