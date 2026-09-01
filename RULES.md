@@ -27,9 +27,9 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
-### Rule: Tablet And Desktop Content Use A 640px Shared Cap
-- **What:** The shared `ContentBox` caps primary logged-in app content at `640px` on tablet and desktop and centers it within the available main panel after accounting for the side drawer. On smaller mobile screens it remains fluid within the responsive content gutter.
-- **Edge cases:** Screen-level wrappers must not introduce competing max-widths or duplicate outer gutters. List surfaces must use a shrinkable grid track so media min-content width cannot expand beyond `ContentBox`. The floating bar rail must use the same available main-panel area as `ContentBox`: full viewport width on mobile, and from the desktop sidebar edge to the viewport edge on tablet and desktop. The bar itself retains the shared `640px` cap and flex/margin-auto centering.
+### Rule: Tablet And Desktop Content Use A 720px Shared Cap
+- **What:** The shared `ContentBox` caps primary logged-in app content at `720px` on tablet and desktop and centers it within the available main panel after accounting for the side drawer. On smaller mobile screens it remains fluid within the responsive content gutter.
+- **Edge cases:** Screen-level wrappers must not introduce competing max-widths or duplicate outer gutters. List surfaces must use a shrinkable grid track so media min-content width cannot expand beyond `ContentBox`. The floating bar rail must use the same available main-panel area as `ContentBox`: full viewport width on mobile, and from the desktop sidebar edge to the viewport edge on tablet and desktop. The bar itself retains the shared `720px` cap and flex/margin-auto centering.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/content-box.tsx`, `web/app/globals.css`, `web/theme.config.ts`, `packages/design/design.md`

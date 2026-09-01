@@ -16,6 +16,26 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-01T13:10:31Z — Diagnose postMedia crop, storage, and rendering state
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the postMedia crop-ratio, database persistence, multi-image consistency, and feed-rendering behavior before implementing the requested scoped fix.
+- Changes Made: Read the latest project logs and inspected the checked-in cropper, image preparation, API schema/service, `PostMedia` model/migration, feed mapping, and shared gallery. Confirmed the current workspace has no freeform crop implementation; post crops are fixed at 3:5. Confirmed media rows store only object/reference fields, crop operations are independent per image, and feed galleries use fixed 3:4 containers without persisted aspect-ratio data. No `RULES.md` or application-code changes were made, honoring the diagnosis-first and user review gates.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Establish an evidence-based baseline before implementing the requested Instagram-parity postMedia rules and avoid treating the prompt’s described-but-absent freeform crop code as already present.
+- Verification Status: Diagnosis completed through targeted source inspection; no runtime or database behavior was changed.
+
+## 2026-09-01T13:04:05Z — Increase tablet/desktop content and floating bar width to 720px
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Increase the shared tablet/desktop `ContentBox` and `FloatingBar` width from 640px to 720px.
+- Changes Made: Updated the CSS fallback token and runtime theme token to 720px, kept both surfaces on the sidebar-relative centered rail, and retained the shared responsive rail gutter. Updated the design and product contracts plus the required change logs.
+- Files: `web/app/globals.css`, `web/theme.config.ts`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: The requested tablet/desktop content width is now 720px, while mobile remains fluid.
+- Verification Status: Source inspection confirmed the CSS fallback and runtime theme both resolve to 720px, with the existing sidebar-relative rail preserved. `git diff --check` passed. A new rendered screenshot was not needed for this value-only adjustment; the prior visual inspection confirmed the shared geometry and the local runtime was stopped afterward.
+
 ## 2026-09-01T12:57:51Z — Align tablet/desktop content and floating bar at 640px
 
 - Agent: Codex

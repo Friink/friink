@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01T13:10:31Z
+
+- [audit] Diagnosed the current postMedia crop, persistence, and feed-rendering implementation before any fix. Confirmed the checked-in composer still enforces a fixed 3:5 crop, `PostMedia` stores no final dimensions/aspect ratio, each image is cropped independently, and feed rendering uses fixed 3:4 containers for multi-image galleries without API-provided ratio reservation. No rules or application code were changed.
+
+## 2026-09-01T13:04:05Z
+
+- [web/layout] Increased the shared tablet/desktop `ContentBox` and contextual `FloatingBar` cap from 640px to 720px while preserving the same sidebar-relative centering and shared responsive gutter.
+
 ## 2026-09-01T12:57:51Z
 
 - [web/layout] Increased the shared tablet/desktop content cap to 640px and kept `ContentBox` and the contextual `FloatingBar` on the same sidebar-relative, centered rail. The rail now uses the shared responsive content gutter.
