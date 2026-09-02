@@ -70,6 +70,10 @@ type ApiPublicUser = {
   is_private: boolean;
 };
 
+export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string };
+export type BlockedUserPage = { items: BlockedUser[]; next_cursor: string | null };
+type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null; blocked_at: string }>; next_cursor: string | null };
+
 type ApiTokenResponse = {
   access_token: string;
   token_type: string;
@@ -490,9 +494,10 @@ export async function updateProfileSetup(accessToken: string, input: { step: 1 |
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
+export async function getPublicUser(username: string, accessToken?: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
   });
 
   return {
@@ -504,6 +509,21 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
     profilePictureUrl: response.profile_picture_url,
     profilePictureUpdatedAt: response.profile_picture_updated_at,
   };
+}
+
+export async function blockUser(accessToken: string, username: string): Promise<void> {
+  await requestApi(`/users/${encodeURIComponent(username)}/block`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+}
+
+export async function unblockUser(accessToken: string, username: string): Promise<void> {
+  await requestApi(`/users/${encodeURIComponent(username)}/block`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+}
+
+export async function listBlockedUsers(accessToken: string, query = '', cursor?: string | null): Promise<BlockedUserPage> {
+  const params = new URLSearchParams({ query, limit: '24' });
+  if (cursor) params.set('cursor', cursor);
+  const response = await requestApi<ApiBlockedUserPage>(`/users/blocked?${params.toString()}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  return { items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url, blockedAt: item.blocked_at })), next_cursor: response.next_cursor };
 }
 
 export type ProfilePictureUpload = {

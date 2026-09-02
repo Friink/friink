@@ -2,6 +2,10 @@
 
 ## 2026-09-02
 
+- [blocking] Added bilateral block/unblock APIs, transactional follow cleanup, blocked-profile protection, profile block confirmation, and Privacy blocked-people search/list UI.
+
+## 2026-09-02
+
 - [web/chat] Added visibility-aware 4-second polling to the `/chat` conversation list so previews, ordering, unread pills, and row state stay current across tabs and devices.
 
 ## 2026-09-02

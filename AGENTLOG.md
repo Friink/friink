@@ -1,5 +1,12 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-02 — Blocking
+
+- **Task:** Document and implement user blocking.
+- **Scope:** `docs/blocking.md`; block/unblock API; transactional relationship cleanup; bilateral profile protection; profile confirmation; Privacy blocked list with database search and cursor loading; existing chat read-only enforcement.
+- **Verification:** Python compile/import passed; web TypeScript check passed. Full API tests require the API working directory/PYTHONPATH and a live test database; the attempted database-backed run did not complete cleanly in this environment.
+- **Notes:** No schema migration was needed because `user_blocks` already exists from chat infrastructure.
+
 DESIGN SYSTEM RULE: Before making any visual, UI, layout, spacing, or styling change, you MUST read packages/design/design.md in full — specifically the "Tokens" and "Component Contracts" sections. All rules, dimensions, alignments, and component variants documented there are binding and must be strictly adhered to without creating ad-hoc overrides.
 
 Before modifying a file another agent recently touched (per this log or git history), briefly verify the current state of that file matches what the log describes — do not assume the log is authoritative over the actual code.

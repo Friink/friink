@@ -903,6 +903,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onQuote={handleQuote}
                       onEditProfile={openProfileSettings}
                       onMessage={() => router.push(`/${encodeURIComponent((profileUser ?? user).username)}/chat`)}
+                      onBlocked={() => router.refresh()}
                       initialTab={profileTab}
                       onTabChange={onProfileTabChange}
                       connectionState={profileConnectionState}

@@ -610,3 +610,8 @@ the entry, so history isn't lost.
 - **Platform:** All
 - **File(s):** `api/app/main.py`
 - **Since:** 2026-08-27T00:00:00Z
+- ### Rule: Blocking Is Bilateral And Irreversible For Relationships
+- **What:** Blocking removes accepted and pending follow relationships in both directions transactionally. Unblocking never restores them. Both users lose profile access and message sending, while existing chats remain readable and read-only.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `docs/blocking.md`, `api/app/services/blocking.py`, `api/app/routers/users.py`, `api/app/services/chat.py`

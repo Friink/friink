@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.user import User
+from app.services.blocking import is_blocked
 from app.schemas.connections import (
     ConnectionListResponse,
     ConnectionStatusResponse,
@@ -36,6 +37,8 @@ async def send_follow_request(session: Session, requester: User, payload: SendFo
     recipient = await _get_recipient(session, payload)
     if recipient.id == requester.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot follow yourself.")
+    if is_blocked(session, requester.id, recipient.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This user is unavailable.")
 
     existing_pending = await _get_pair_request(
         session,

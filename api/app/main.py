@@ -12,6 +12,7 @@ from app.routers.connections import router as connections_router
 from app.routers.chat import router as chat_router
 from app.routers.notifications import router as notifications_router
 from app.routers.posts import router as posts_router
+from app.routers.users import router as users_router
 
 settings = get_settings()
 logger = logging.getLogger("friink.auth")
@@ -49,6 +50,7 @@ app.include_router(connections_router)
 app.include_router(chat_router)
 app.include_router(notifications_router)
 app.include_router(posts_router)
+app.include_router(users_router)
 
 
 @app.get("/", response_class=PlainTextResponse)

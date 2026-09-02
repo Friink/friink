@@ -4,11 +4,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, getReadReceiptPreference, listAuthSessions, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, type AuthUser, type ManagedAuthSession } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, getReadReceiptPreference, listAuthSessions, listBlockedUsers, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, type AuthUser, type BlockedUser, type ManagedAuthSession } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
 import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal';
+import { Modal } from '@/components/modal';
+import { ProfileCard } from '@/components/profile-card';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
@@ -129,6 +131,13 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [readReceiptsDraft, setReadReceiptsDraft] = useState(true);
   const [readReceiptsSaved, setReadReceiptsSaved] = useState(true);
   const [isUpdatingReadReceipts, setIsUpdatingReadReceipts] = useState(false);
+  const [blockedOpen, setBlockedOpen] = useState(false);
+  const [blockedQuery, setBlockedQuery] = useState('');
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
+  const [blockedCursor, setBlockedCursor] = useState<string | null>(null);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [unblockTarget, setUnblockTarget] = useState<BlockedUser | null>(null);
+  const blockedLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const [authSessions, setAuthSessions] = useState<ManagedAuthSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState('');
@@ -182,6 +191,31 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       .catch(() => { if (!cancelled) onToast?.('Could not load read-receipt preference.'); });
     return () => { cancelled = true; };
   }, [activeTab, onToast]);
+
+  async function loadBlocked(reset = false) {
+    const session = loadAuthSession();
+    if (!session || blockedLoading) return;
+    setBlockedLoading(true);
+    try {
+      const page = await listBlockedUsers(session.accessToken, blockedQuery, reset ? null : blockedCursor);
+      setBlockedUsers((items) => reset ? page.items : [...items, ...page.items.filter((item) => !items.some((old) => old.id === item.id))]);
+      setBlockedCursor(page.next_cursor);
+    } catch (error) { onToast?.(error instanceof Error ? error.message : 'Could not load blocked people.'); }
+    finally { setBlockedLoading(false); }
+  }
+
+  useEffect(() => {
+    if (!blockedOpen) return;
+    const timer = window.setTimeout(() => { setBlockedUsers([]); setBlockedCursor(null); void loadBlocked(true); }, 300);
+    return () => window.clearTimeout(timer);
+  }, [blockedOpen, blockedQuery]);
+
+  useEffect(() => {
+    if (!blockedOpen || !blockedCursor || !blockedLoadMoreRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) void loadBlocked(); }, { rootMargin: '160px' });
+    observer.observe(blockedLoadMoreRef.current);
+    return () => observer.disconnect();
+  }, [blockedOpen, blockedCursor, blockedLoading]);
 
   const hasUsernameChanged = username !== user.username;
   const isUsernameValid = USERNAME_PATTERN.test(username);
@@ -912,6 +946,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             />
 
             <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-ban" aria-hidden="true" /></span>}
+              title="Blocked people"
+              subtitle="Review and unblock people you have blocked."
+              className="settings-row"
+              trailing={<button className="settings-update-button" type="button" onClick={() => setBlockedOpen(true)}>View blocked people</button>}
+            />
+
+            <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
               title="Mentions"
               subtitle="Control who can mention you in conversations."
@@ -926,6 +968,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
           </div>
         </div>
       )}
+      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="settings-update-button" type="button" onClick={() => setUnblockTarget(item)}>Unblock</button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
     </PageSurface>
   );
 }

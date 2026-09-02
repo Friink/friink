@@ -50,6 +50,7 @@ from app.services.storage import StorageNotConfiguredError, StorageObjectError, 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 REFRESH_COOKIE_NAME = "friink_refresh_token"
 
@@ -305,6 +306,16 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme), session: Session = Depends(get_session)) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = decode_token(token, "access")
+        return session.get(User, user_id_from_subject(str(payload.get("sub", ""))))
+    except TokenValidationError:
+        return None
+
+
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
@@ -373,10 +384,14 @@ async def revoke_other_sessions(
 
 
 @router.get("/users/{username}", response_model=PublicUserResponse)
-async def get_public_user(username: str, session: Session = Depends(get_session)) -> User:
+async def get_public_user(username: str, session: Session = Depends(get_session), current_user: User | None = Depends(get_optional_user)) -> User:
     user = await get_user_by_username(session, username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    if current_user and current_user.id != user.id:
+        from app.services.blocking import is_blocked
+        if is_blocked(session, current_user.id, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile unavailable.")
     return user
 
 

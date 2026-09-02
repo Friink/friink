@@ -434,3 +434,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - Post media currently uses the fixed 3:5 crop flow described above. Final crop width, height, and aspect ratio are not persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
 - The logged-in app has no known design-contract violations in the current working tree. Deployment configuration, R2 health, and end-to-end browser verification remain release checks outside this design contract.
 
+- ### Blocking surfaces
+- Profile overflow uses the shared `ActionMenu` and `Modal` for block confirmation.
+- Privacy > Blocked people uses the shared `Modal`, `ListRow`, and `ProfileCard`; search is API-backed and loading uses an opaque cursor.
+- A blocked profile, including a direct URL, renders the neutral `Profile unavailable.` state. Existing chats remain visible but read-only.
