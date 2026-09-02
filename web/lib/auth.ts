@@ -696,6 +696,27 @@ export type ApiConversation = {
   preview: string | null;
   updated_at: string;
   unread: boolean;
+  status: 'pending' | 'accepted' | 'blocked' | string;
+  requester_id: string | null;
+  muted: boolean;
+  archived: boolean;
+  can_send: boolean;
+  composer_placeholder: string;
+  requester_message_count: number;
+};
+
+export type ApiChatContext = {
+  conversation: ApiConversation | null;
+  participant: {
+    id: string;
+    username: string;
+    display_name: string | null;
+    profile_picture_url: string | null;
+  };
+  can_send: boolean;
+  composer_placeholder: string;
+  status: string;
+  requester_message_count: number;
 };
 
 export type ApiMessage = {
@@ -716,7 +737,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;
@@ -977,8 +998,46 @@ export async function listConversations(accessToken: string): Promise<ApiConvers
 }
 
 export async function getConversationWithUser(accessToken: string, username: string): Promise<ApiConversation> {
-  return requestApi<ApiConversation>(`/chat/conversations/with/${encodeURIComponent(username)}`, {
+  const context = await requestApi<ApiChatContext>(`/chat/conversations/with/${encodeURIComponent(username)}`, {
     method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+  if (!context.conversation) throw new AuthApiError(context.composer_placeholder, 403);
+  return context.conversation;
+}
+
+export async function getChatContext(accessToken: string, username: string): Promise<ApiChatContext> {
+  return requestApi<ApiChatContext>(`/chat/conversations/with/${encodeURIComponent(username)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function sendMessageToUser(accessToken: string, username: string, content: string, clientMessageId: string): Promise<ApiMessage> {
+  return requestApi<ApiMessage>(`/chat/conversations/with/${encodeURIComponent(username)}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ content, client_message_id: clientMessageId }),
+  });
+}
+
+export async function acceptChatRequest(accessToken: string, conversationId: string): Promise<ApiConversation> {
+  return requestApi<ApiConversation>(`/chat/conversations/${conversationId}/accept`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function updateChatSettings(accessToken: string, conversationId: string, input: { muted?: boolean; archived?: boolean }): Promise<ApiConversation> {
+  const params = new URLSearchParams();
+  if (typeof input.muted === 'boolean') params.set('muted', String(input.muted));
+  if (typeof input.archived === 'boolean') params.set('archived', String(input.archived));
+  return requestApi<ApiConversation>(`/chat/conversations/${conversationId}/settings?${params.toString()}`, {
+    method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
   });

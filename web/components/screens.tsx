@@ -7,7 +7,7 @@ import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { navItems } from '@/lib/data';
-import { listConversations, loadAuthSession, type ApiConversation } from '@/lib/auth';
+import { acceptChatRequest, listConversations, loadAuthSession, updateChatSettings, type ApiConversation } from '@/lib/auth';
 import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -18,7 +18,7 @@ export function QuestionsScreen() {
   return <><ScreenHeading eyebrow="Ask your people" title="Questions" copy="Small questions are a good way to start a conversation." /><div className="question-prompt"><span className="prompt-spark">✦</span><div><strong>What are you curious about?</strong><p>Ask your circle anything, big or small.</p></div><button className="primary-button">Ask a question</button></div><div className="section-heading"><h2>Recent questions</h2><button className="text-button">See all <span>→</span></button></div><div className="question-list"><div className="question-card"><div className="question-meta"><ProfileCard name="Maya Chen" handle="@mayachen" tone="coral" initials="MC" /><span><strong>Maya Chen</strong> asked <small>25 min ago</small></span></div><p>What is one place you would return to in a heartbeat?</p><div className="question-footer"><span>12 answers</span><button className="text-button">Answer →</button></div></div><div className="question-card"><div className="question-meta"><ProfileCard name="Jon Bell" handle="@jonbell" tone="sage" initials="JB" /><span><strong>Jon Bell</strong> asked <small>1 hr ago</small></span></div><p>What are you listening to on repeat this week?</p><div className="question-footer"><span>7 answers</span><button className="text-button">Answer →</button></div></div></div></>;
 }
 
-type MessagesTab = 'all' | 'muted' | 'requests';
+type MessagesTab = 'all' | 'muted' | 'requests' | 'archived';
 
 export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
   const router = useRouter();
@@ -34,9 +34,25 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
   }, []);
 
   const visibleConversations = conversations.filter((conversation) => {
-    if (activeTab === 'muted' || activeTab === 'requests') return false;
-    return true;
+    if (activeTab === 'muted') return conversation.muted;
+    if (activeTab === 'requests') return conversation.status === 'pending';
+    if (activeTab === 'archived') return conversation.archived;
+    return conversation.status === 'accepted' && !conversation.archived;
   });
+
+  async function changeSetting(conversation: ApiConversation, input: { muted?: boolean; archived?: boolean }) {
+    const session = loadAuthSession();
+    if (!session) return;
+    const updated = await updateChatSettings(session.accessToken, conversation.id, input);
+    setConversations((current) => current.map((item) => item.id === updated.id ? updated : item));
+  }
+
+  async function acceptRequest(conversation: ApiConversation) {
+    const session = loadAuthSession();
+    if (!session) return;
+    const updated = await acceptChatRequest(session.accessToken, conversation.id);
+    setConversations((current) => current.map((item) => item.id === updated.id ? updated : item));
+  }
 
   return (
     <PageSurface className="messages-screen" variant="list">
@@ -57,7 +73,14 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
             }
             subtitle={conversation.preview}
             meta={formatRelativeTime(conversation.updated_at)}
-            trailing={conversation.unread ? <span className="unread-dot" /> : null}
+            trailing={
+              <span className="chat-row-actions">
+                {conversation.status === 'pending' && conversation.requester_id !== loadAuthSession()?.user.id ? <button className="text-button" type="button" onClick={(event) => { event.stopPropagation(); acceptRequest(conversation).catch(() => undefined); }}>Accept</button> : null}
+                <button className="icon-button" type="button" aria-label={conversation.muted ? 'Unmute chat' : 'Mute chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { muted: !conversation.muted }).catch(() => undefined); }}><i className={`fa-solid ${conversation.muted ? 'fa-bell' : 'fa-bell-slash'}`} aria-hidden="true" /></button>
+                <button className="icon-button" type="button" aria-label={conversation.archived ? 'Unarchive chat' : 'Archive chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { archived: !conversation.archived }).catch(() => undefined); }}><i className={`fa-solid ${conversation.archived ? 'fa-box-open' : 'fa-box-archive'}`} aria-hidden="true" /></button>
+                {conversation.unread ? <span className="unread-dot" /> : null}
+              </span>
+            }
             unread={conversation.unread}
             onClick={() => router.push(`/${conversation.participant.username}/chat`)}
             ariaLabel={`Open chat with ${conversation.participant.display_name || conversation.participant.username}`}

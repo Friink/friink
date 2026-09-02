@@ -34,6 +34,20 @@ export function ListRow({ avatar, title, subtitle, meta, trailing, children, onC
   );
 
   if (onClick) {
+    if (trailing) {
+      return (
+        <div
+          className={rowClassName}
+          role="button"
+          tabIndex={0}
+          onClick={onClick}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onClick(); } }}
+          aria-label={ariaLabel}
+        >
+          {content}
+        </div>
+      );
+    }
     return (
       <button
         className={rowClassName}

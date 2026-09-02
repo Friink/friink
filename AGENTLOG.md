@@ -24,6 +24,39 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-02T10:34:09Z — Audit chat composer disable paths
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Determine every way the chat composer can become disabled and distinguish frontend wrapper/input gates from backend authorization.
+- Changes Made: Audited the chat route, shared `Composer`, `AppShell`, shared CSS, chat transport, API router, and chat service. No runtime code or rules were changed.
+- Files: `web/app/[username]/chat/chat-client.tsx`, `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`, `web/lib/chat-transport.ts`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Identify why the composer could appear visibly disabled even when the issue was the surrounding wrapper or an unrelated conversation-loading failure.
+- Notes: The primary bug is the chat prop `disabled={!conversation || chatAccessDenied}`: any failed `transport.open()` or subsequent message-history load leaves `conversation` null and disables the composer. `chatAccessDenied` only becomes true for a `403`, but the `!conversation` branch covers status `0`/network failure, `401`, `400`, `404`, `5xx`, and unexpected errors. Other UI gates are the shared `disabled` prop, native disabled attributes on the input/mention editor, attachment button, and send button; `busy` disables only sending; empty draft or over-limit state disables only sending; and `handleSubmit` repeats disabled/empty/over-limit guards. The shell has a separate visibility gate (`showFloatingBar`, profile exclusion, and contextual-content conditions). Backend gates are authenticated-user dependency (`401`), self-message (`400`), mutual-accepted-follow policy (`403`), conversation membership/not-found (`404`), and empty-message validation (`422`); these reject requests but do not directly set the UI disabled flag.
+- Verification Status: Source audit and `git diff --check` completed; no build or live API request was run because this was a diagnosis-only pass.
+
+## 2026-09-02T11:54:29Z — Implement chat request behavior
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create the chat behavior scope document and implement the agreed composer, request, acceptance, notification, mute, archive, block, and subscription-boundary behavior.
+- Changes Made: Added `docs/chat-behavior.md`; introduced pending/accepted conversation state, requester message counting, per-user conversation settings, future block persistence, and `subscription_tier`; added chat context, first-message request creation, eight-message enforcement, receiver Accept/reply acceptance, settings endpoints, chat notifications, and migration `20260902_0016`; updated web chat context/composer states and All/Muted/Requests/Archived tabs; added an integration test covering request initiation, acceptance, cap, mute, and archive invariants.
+- Files: `docs/chat-behavior.md`, `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/models/notification.py`, `api/app/models/__init__.py`, `api/app/schemas/chat.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/alembic/versions/20260902_0016_add_chat_requests_and_settings.py`, `api/tests/test_chat_requests.py`, `web/lib/auth.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/app/chat/[tab]/page.tsx`, `web/components/app-shell.tsx`, `web/components/app-shell-route.tsx`, `web/components/list-row.tsx`, `web/components/notifications-screen.tsx`, `web/components/screens.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Replace the old mutual-follow-only and null-conversation disable inference with an explicit state machine matching the approved business and UX behavior.
+- Notes: Subscription billing and entitlement administration are not implemented; set a user's `subscription_tier` to `pro` or `pro_plus` for staging request-path verification. Profile hiding and block controls remain deferred, but chat enforcement and persistence are ready for them.
+- Verification Status: Alembic upgraded the configured database to `20260902_0016`; focused live API integration test passed; full API suite passed (67 tests); web production build passed with elevated process permission; `git diff --check` passed.
+
+## 2026-09-02T10:28:36Z — Hide floating bar on chat
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the floating bar from chat after the previous enablement troubleshooting became unreliable.
+- Changes Made: Set `showFloatingBar={false}` on the username-scoped chat `AppShell`. The shared chat composer prop and message transport remain in place for a later re-enable without reconstructing the flow.
+- Files: `web/app/[username]/chat/chat-client.tsx`, `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Make the floating bar disappear specifically on chat while preserving the existing implementation for future restoration.
+- Notes: This is a route-level behavior flag using the existing shared shell contract; no CSS, API, or authorization behavior changed.
+- Verification Status: Targeted source inspection and `git diff --check` completed; full build was not run per repository guidance.
+
 ## 2026-09-01 — Diagnose staging chat availability for mutual-follow accounts
 
 - Agent: Codex

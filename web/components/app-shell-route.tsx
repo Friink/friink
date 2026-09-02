@@ -12,7 +12,7 @@ type AppShellRouteProps = {
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
   initialHomeFilter?: 'all' | 'following';
-  initialMessagesTab?: 'all' | 'muted' | 'requests';
+  initialMessagesTab?: 'all' | 'muted' | 'requests' | 'archived';
   initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
 };
 

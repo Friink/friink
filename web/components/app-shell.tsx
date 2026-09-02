@@ -63,7 +63,7 @@ type AppShellProps = {
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
   initialHomeFilter?: 'all' | 'following';
-  initialMessagesTab?: 'all' | 'muted' | 'requests';
+  initialMessagesTab?: 'all' | 'muted' | 'requests' | 'archived';
   initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
   profileTab?: 'posts' | 'replies';
   onProfileTabChange?: (tab: 'posts' | 'replies') => void;
@@ -113,7 +113,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [homeFilter, setHomeFilter] = useState<'all' | 'following'>(initialHomeFilter);
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
-  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>(initialMessagesTab);
+  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests' | 'archived'>(initialMessagesTab);
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'subscription' | 'privacy'>(initialSettingsTab);
   const [canGoBack, setCanGoBack] = useState(false);
   useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
@@ -303,7 +303,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     router.push(`/home/${filter === 'all' ? 'explore' : 'following'}`, { scroll: false });
   }
 
-  function handleMessagesTabChange(tab: 'all' | 'muted' | 'requests') {
+  function handleMessagesTabChange(tab: 'all' | 'muted' | 'requests' | 'archived') {
     setMessagesTab(tab);
     router.push(`/chat/${tab}`, { scroll: false });
   }
@@ -585,6 +585,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const recipientName = typeof payload.recipient_display_name === 'string' && payload.recipient_display_name ? payload.recipient_display_name : recipientUsername;
     const actorName = postAuthorDisplayName || requesterName || recipientName || 'Friink';
     const actorHandle = postAuthorUsername || requesterUsername || recipientUsername || 'friink';
+    const chatActorName = typeof payload.actor_display_name === 'string' && payload.actor_display_name ? payload.actor_display_name : actorName;
+    const chatActorHandle = typeof payload.actor_username === 'string' && payload.actor_username ? payload.actor_username : actorHandle;
     const postPublicId = typeof payload.post_public_id === 'string' ? payload.post_public_id : null;
     const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
     const notificationHref = notification.type === 'mention' && postAuthorUsername && postPublicId
@@ -592,12 +594,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       : undefined;
     return {
       id: notification.id,
-      kind: notification.type === 'mention' ? 'mention' : notification.type.includes('request') ? 'request' : 'follow',
-      name: actorName || 'Friink',
-      handle: `@${actorHandle}`,
-      text: getNotificationText(notification.type, requesterUsername, recipientUsername, actorName, actorHandle),
+      kind: notification.type === 'mention' ? 'mention' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      name: notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
+      handle: `@${notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle),
       createdAt: notification.created_at,
-      initials: getInitials(actorName || actorHandle),
+      initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
       href: notificationHref,
@@ -618,6 +620,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return requesterUsername ? `@${requesterUsername} requested to follow you.` : 'Someone requested to follow you.';
       case 'unfollow_confirmed':
         return recipientUsername ? `You unfollowed @${recipientUsername}.` : 'You unfollowed this profile.';
+      case 'chat_request_received':
+        return `${actorName} sent you a chat request.`;
+      case 'chat_message':
+        return `${actorName} sent you a message.`;
+      case 'chat_request_accepted':
+        return `${actorName} accepted your chat request.`;
       case 'request_accepted':
       default:
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';
@@ -847,9 +855,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'all', label: 'All' },
                   { id: 'muted', label: 'Muted' },
                   { id: 'requests', label: 'Requests' },
+                  { id: 'archived', label: 'Archived' },
                 ]}
                 activeId={messagesTab}
-                onChange={(id) => handleMessagesTabChange(id as 'all' | 'muted' | 'requests')}
+                onChange={(id) => handleMessagesTabChange(id as 'all' | 'muted' | 'requests' | 'archived')}
                 ariaLabel="Chat filters"
               />
             )}

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-02
+
+- [chat] Added paid chat requests with an eight-message requester cap, reply/Accept unlock, request/all/muted/archived tabs, per-user mute/archive settings, chat notifications, block-aware read-only access, and a future subscription-tier entitlement boundary. See `docs/chat-behavior.md`.
+
+## 2026-09-02
+
+- [chat/diagnosis] Audited the chat composer disable paths. The main defect is that `disabled={!conversation || chatAccessDenied}` treats every conversation initialization failure that leaves `conversation` null as a disabled composer, including network/API failures; the backend only directly denies with authentication, mutual-follow, identity, or conversation-access responses.
+
+## 2026-09-02
+
+- [chat] Hid the shared floating bar on the chat route while retaining the existing composer wiring for a later re-enable.
+
 ## 2026-09-01
 
 - [profile/connections] Corrected the profile-loading state transition so other-user profiles expose the proper Follow/Following/request action instead of retaining the self-profile state.

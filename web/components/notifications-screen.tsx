@@ -6,7 +6,7 @@ import { ProfileCard } from '@/components/profile-card';
 import { formatRelativeTime } from '@/lib/time';
 import Link from 'next/link';
 
-type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow' | 'mention';
+type NotificationKind = 'request' | 'like' | 'service' | 'reply' | 'login' | 'verification' | 'follow' | 'mention' | 'chat';
 
 export type NotificationItem = {
   id: string;
@@ -37,6 +37,8 @@ function getIcon(kind: NotificationKind) {
       return 'fa-badge-check';
     case 'mention':
       return 'fa-at';
+    case 'chat':
+      return 'fa-message';
     case 'follow':
     default:
       return 'fa-user-group';

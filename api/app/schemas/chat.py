@@ -38,7 +38,23 @@ class ConversationResponse(BaseModel):
     preview: str | None
     updated_at: datetime
     unread: bool = False
+    status: str = "accepted"
+    requester_id: uuid.UUID | None = None
+    muted: bool = False
+    archived: bool = False
+    can_send: bool = True
+    composer_placeholder: str = "Write a message..."
+    requester_message_count: int = 0
 
 
 class ConversationListResponse(BaseModel):
     items: list[ConversationResponse]
+
+
+class ChatContextResponse(BaseModel):
+    conversation: ConversationResponse | None
+    participant: ChatUserResponse
+    can_send: bool
+    composer_placeholder: str
+    status: str
+    requester_message_count: int = 0

@@ -1,9 +1,9 @@
-import { getConversationWithUser, listConversationMessages, sendConversationMessage, type ApiConversation, type ApiMessage } from '@/lib/auth';
+import { getChatContext, listConversationMessages, sendConversationMessage, type ApiChatContext, type ApiMessage } from '@/lib/auth';
 
 export type ChatEvent = { type: 'message.created'; message: ApiMessage };
 
 export interface ChatTransport {
-  open(username: string): Promise<ApiConversation>;
+  open(username: string): Promise<ApiChatContext>;
   loadMessages(conversationId: string, after?: string | null): Promise<{ items: ApiMessage[]; nextCursor: string | null }>;
   send(conversationId: string, content: string, clientMessageId?: string): Promise<ApiMessage>;
   subscribe(conversationId: string, after: string | null, onEvent: (event: ChatEvent) => void): () => void;
@@ -19,7 +19,7 @@ export class PollingChatTransport implements ChatTransport {
   }
 
   open(username: string) {
-    return getConversationWithUser(this.accessToken, username);
+    return getChatContext(this.accessToken, username);
   }
 
   async loadMessages(conversationId: string, after?: string | null) {
