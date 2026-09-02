@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-02T11:00:00Z — Align chat composer with shared post layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose why chat used the old composer appearance and make it match the current shared post composer without changing post mode.
+- Changes Made: Confirmed there is one shared `Composer`; chat now opts into the multiline and mention-editor variants. Added an explicit media capability prop so chat can share the visual/editor layout without exposing post-media controls that the chat API does not support.
+- Files: `web/app/[username]/chat/chat-client.tsx`, `web/components/composer.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Chat omitted the contextual props that select the current embedded composer layout; the post-only character counter/limit and media upload flow remain intentionally separate.
+- Notes: Post mode continues using its existing multiline, mention, media, and counter configuration.
+- Verification Status: Passed `npm exec tsc -- --noEmit`, `npm run build`, and `git diff --check`; generated `web/tsconfig.tsbuildinfo` was restored so it is not part of the change.
+
 ## 2026-09-02T10:34:09Z — Audit chat composer disable paths
 
 - Agent: Codex

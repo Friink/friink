@@ -79,6 +79,7 @@ type ComposerProps = {
     mediaCount?: number;
   } | null;
   enableMentions?: boolean;
+  enableMedia?: boolean;
 };
 
 export function Composer({
@@ -100,6 +101,7 @@ export function Composer({
   onClearContext,
   referencedPreview = null,
   enableMentions = false,
+  enableMedia = true,
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -117,7 +119,7 @@ export function Composer({
   const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(null);
   const characterCount = draft.length;
   const isOverLimit = typeof maxLength === 'number' && characterCount > maxLength;
-  const composerExpanded = expanded || media.length > 0;
+  const composerExpanded = expanded || (enableMedia && media.length > 0);
 
   useEffect(() => {
     if (!draftStorageKey || typeof window === 'undefined') return;
@@ -286,13 +288,13 @@ export function Composer({
             align="start"
             onClose={() => setAttachmentMenuOpen(false)}
             items={[
-              { label: 'Add media', icon: 'fa-image', onClick: () => { setAttachmentMenuOpen(false); if (multiline) mediaInputRef.current?.click(); } },
+              ...(enableMedia ? [{ label: 'Add media', icon: 'fa-image', onClick: () => { setAttachmentMenuOpen(false); if (multiline) mediaInputRef.current?.click(); } }] : []),
               { label: 'Add link', icon: 'fa-link', onClick: () => setAttachmentMenuOpen(false) },
             ]}
           />
-          {multiline ? <input ref={mediaInputRef} className="composer-media-input" type="file" accept="image/*" multiple onChange={handleMediaSelection} aria-label="Choose images to attach" /> : null}
+          {multiline && enableMedia ? <input ref={mediaInputRef} className="composer-media-input" type="file" accept="image/*" multiple onChange={handleMediaSelection} aria-label="Choose images to attach" /> : null}
         </div>
-        {multiline ? <ComposerMediaStrip media={media} onOpen={openCrop} onRemove={removeMedia} onReorder={reorderMedia} /> : null}
+        {multiline && enableMedia ? <ComposerMediaStrip media={media} onOpen={openCrop} onRemove={removeMedia} onReorder={reorderMedia} /> : null}
         {enableMentions ? (
           <MentionInput
             value={draft}

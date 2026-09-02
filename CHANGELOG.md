@@ -2,6 +2,10 @@
 
 ## 2026-09-02
 
+- [web/chat] Fixed the chat composer using the shared post composer’s multiline and mention-editor variants, restoring the current embedded layout in chat without changing post-mode behavior or applying the post-only character counter.
+
+## 2026-09-02
+
 - [chat] Added paid chat requests with an eight-message requester cap, reply/Accept unlock, request/all/muted/archived tabs, per-user mute/archive settings, chat notifications, block-aware read-only access, and a future subscription-tier entitlement boundary. See `docs/chat-behavior.md`.
 
 ## 2026-09-02
