@@ -44,7 +44,8 @@ Date: 2026-09-02
 ## Privacy
 
 - Each user has a persisted `read_receipts_enabled` setting, defaulting to true.
-- The setting is infrastructure for a future Privacy settings UI.
+- The setting is available now in Settings > Privacy and is backed by authenticated
+  GET/PATCH preference endpoints.
 - Privacy is mutual: a user can see read receipts only when both participants have
   read receipts enabled.
 - Disabling read receipts hides read state from the other participant and also hides
@@ -60,7 +61,7 @@ Date: 2026-09-02
 
 - Store per-user conversation cursors: `last_delivered_message_id` and
   `last_read_message_id`.
-- Store `read_receipts_enabled` on the user so the future privacy UI can update it
+- Store `read_receipts_enabled` on the user so the Privacy settings UI can update it
   without changing conversation records.
 - The message page returns receipt metadata even when no new messages are returned,
   allowing polling to update tick colors.
@@ -76,11 +77,11 @@ Date: 2026-09-02
   viewer-relative peer receipt cursors.
 - `POST /chat/conversations/{id}/read` advances the viewer's read cursor.
 - `PATCH /chat/preferences/read-receipts?enabled={true|false}` updates the persisted
-  privacy preference; the settings UI will consume this endpoint later.
+  privacy preference used by Settings > Privacy.
 
 ## Out of scope
 
 - WebSockets or sub-second receipt delivery.
 - Typing indicators, presence, reactions, editing, deletion, or manual unread toggles.
-- Privacy settings UI; only the backend-ready setting is included now.
+- Additional privacy controls beyond the read-receipt setting.
 - Push, email, or external read-receipt notifications.

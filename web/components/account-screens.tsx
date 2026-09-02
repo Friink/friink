@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, listAuthSessions, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, updateCurrentUser, uploadProfilePicture, type AuthUser, type ManagedAuthSession } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, getReadReceiptPreference, listAuthSessions, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, type AuthUser, type ManagedAuthSession } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -126,6 +126,9 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [directMessagesSaved, setDirectMessagesSaved] = useState(false);
   const [mentionsDraft, setMentionsDraft] = useState(true);
   const [mentionsSaved, setMentionsSaved] = useState(true);
+  const [readReceiptsDraft, setReadReceiptsDraft] = useState(true);
+  const [readReceiptsSaved, setReadReceiptsSaved] = useState(true);
+  const [isUpdatingReadReceipts, setIsUpdatingReadReceipts] = useState(false);
   const [authSessions, setAuthSessions] = useState<ManagedAuthSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState('');
@@ -169,6 +172,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     return () => { cancelled = true; };
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab !== 'privacy') return;
+    const session = loadAuthSession();
+    if (!session) return;
+    let cancelled = false;
+    getReadReceiptPreference(session.accessToken)
+      .then((preference) => { if (!cancelled) { setReadReceiptsDraft(preference.read_receipts_enabled); setReadReceiptsSaved(preference.read_receipts_enabled); } })
+      .catch(() => { if (!cancelled) onToast?.('Could not load read-receipt preference.'); });
+    return () => { cancelled = true; };
+  }, [activeTab, onToast]);
+
   const hasUsernameChanged = username !== user.username;
   const isUsernameValid = USERNAME_PATTERN.test(username);
   const canUpdateUsername = hasUsernameChanged && isUsernameValid && !isUpdatingUsername;
@@ -187,6 +201,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
   const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
+  const canUpdateReadReceipts = readReceiptsDraft !== readReceiptsSaved && !isUpdatingReadReceipts;
   const isNewPasswordValid = newPassword.length >= 8
     && !/\s/.test(newPassword)
     && /[A-Z]/.test(newPassword)
@@ -429,6 +444,26 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       setPrivacyDraft(user.isPrivate);
     } finally {
       setIsUpdatingPrivacy(false);
+    }
+  }
+
+  async function handleReadReceiptsUpdate() {
+    if (!canUpdateReadReceipts) return;
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update read receipts.');
+      return;
+    }
+    setIsUpdatingReadReceipts(true);
+    try {
+      const preference = await updateReadReceiptPreference(session.accessToken, readReceiptsDraft);
+      setReadReceiptsDraft(preference.read_receipts_enabled);
+      setReadReceiptsSaved(preference.read_receipts_enabled);
+      onToast?.(`Read receipts ${preference.read_receipts_enabled ? 'enabled' : 'disabled'}.`, 'success');
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update read receipts.');
+    } finally {
+      setIsUpdatingReadReceipts(false);
     }
   }
 
@@ -846,6 +881,19 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                 <>
                   <SettingsToggle value={privacyDraft} onChange={setPrivacyDraft} disabled={isUpdatingPrivacy} />
                   <SaveTickButton disabled={!canUpdatePrivacy} busy={isUpdatingPrivacy} onClick={handlePrivacyUpdate} label="Update private profile" />
+                </>
+              }
+            />
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-check-double" aria-hidden="true" /></span>}
+              title="Read receipts"
+              subtitle="Show when messages have been read. This setting is mutual with the other person."
+              className="settings-row"
+              trailing={
+                <>
+                  <SettingsToggle value={readReceiptsDraft} onChange={setReadReceiptsDraft} disabled={isUpdatingReadReceipts} />
+                  <SaveTickButton disabled={!canUpdateReadReceipts} busy={isUpdatingReadReceipts} onClick={handleReadReceiptsUpdate} label="Update read receipts" />
                 </>
               }
             />

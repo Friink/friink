@@ -2,6 +2,14 @@
 
 ## 2026-09-02
 
+- [web/chat] Added visibility-aware 4-second polling to the `/chat` conversation list so previews, ordering, unread pills, and row state stay current across tabs and devices.
+
+## 2026-09-02
+
+- [web/chat] Added the Read receipts control to Settings > Privacy, connected to the persisted mutual-privacy preference API.
+
+## 2026-09-02
+
 - [chat] Added per-user delivery/read cursors, receipt privacy infrastructure, unread counts and separators, sent/delivered/read tick states, and polling-based receipt updates. See `docs/read-receipts.md`.
 
 ## 2026-09-02

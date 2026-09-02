@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-02T13:30:00Z — Poll the chat conversation list
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement 4-second polling for the `/chat` conversation list.
+- Changes Made: Added a visibility-aware, overlap-guarded polling loop to `MessagesScreen`; it refreshes server-authoritative previews, ordering, unread counts, and row state, pauses while hidden, resumes on focus/visibility recovery, and cleans up on unmount.
+- Files: `docs/chat-behavior.md`, `web/components/screens.tsx`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Keep the conversation-list unread pill and latest activity current using the same 4-second polling cadence as active chat.
+- Notes: No API, schema, database, or post-mode changes were required.
+- Verification Status: Passed TypeScript, production web build, focused chat regression test, and `git diff --check`. The full API suite reached 66 passing tests before a transient database server-closed-connection failure; the affected chat test passed on retry. No API or database code changed in this task.
+
 ## 2026-09-02T12:30:00Z — Implement chat read receipts
 
 - Agent: Codex
@@ -32,8 +43,19 @@ AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in
 - Changes Made: Added per-user delivery/read cursors, receipt metadata on message pages, idempotent mark-read and privacy-preference endpoints, viewport-based read marking, row unread pills, in-chat unread separator, receipt ticks, blocked-chat receipt suppression, and migration `20260902_0017`.
 - Files: `docs/read-receipts.md`, `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/schemas/chat.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `api/tests/test_chat_requests.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
 - Reason: Provide transparent receipt state and unread navigation while preserving the existing 4-second polling architecture and future mutual privacy behavior.
-- Notes: Pending requests use the same receipt rules without auto-accepting; mute/archive remain notification/organization controls only; privacy settings UI remains future work.
+- Notes: Pending requests use the same receipt rules without auto-accepting; mute/archive remain notification/organization controls only; the Privacy settings UI is now implemented.
 - Verification Status: Passed full API suite (67 tests), focused read-receipt integration test (including privacy and blocked receipt suppression), TypeScript check, production web build, `alembic current` at `20260902_0017 (head)`, and `git diff --check`.
+
+## 2026-09-02T13:00:00Z — Add read-receipt privacy control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the easier first step between read-receipt privacy controls and user blocking.
+- Changes Made: Added GET/PATCH read-receipt preference endpoints and a Settings > Privacy Read receipts toggle using the existing settings/save control pattern.
+- Files: `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/read-receipts.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Expose the already-persisted read-receipt privacy infrastructure before taking on the broader blocking feature.
+- Notes: Mutual privacy behavior remains unchanged; blocking is intentionally deferred to the next step.
+- Verification Status: Passed focused API preference test, TypeScript check, production web build, and final `git diff --check`; generated `web/tsconfig.tsbuildinfo` was restored.
 
 ## 2026-09-02T11:00:00Z — Align chat composer with shared post layout
 

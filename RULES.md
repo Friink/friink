@@ -548,7 +548,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-18T00:00:00Z
 
 ### Rule: Chat Uses REST With Polling Delivery
-- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. The web client polls active conversations every 4 seconds through a transport interface; the transport pauses while the document is hidden and polls immediately on focus/visibility recovery.
+- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chat` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
 - **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription billing, profile hiding, and block controls remain future work; see `docs/chat-behavior.md`.
 - **Status:** Active
 - **Platform:** Web/API
@@ -557,10 +557,18 @@ the entry, so history isn't lost.
 
 ### Rule: Chat Read Receipts Use Per-User Cursors
 - **What:** Chat exposes sent, delivered, and read states. The message endpoint records delivery only when the full conversation is fetched; the visible conversation advances the viewer's read cursor through an idempotent endpoint. Polling returns receipt metadata even without new messages, so tick state can change on the existing 4-second cycle.
-- **Edge cases:** Unread counts include only incoming messages and appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. Mute and archive do not change receipt state. Blocked conversations do not expose receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled. The preference is persisted now and its settings UI remains future work. Chat messages are limited to 2,048 Unicode characters.
+- **Edge cases:** Unread counts include only incoming messages and appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. Mute and archive do not change receipt state. Blocked conversations do not expose receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `docs/read-receipts.md`
+- **Since:** 2026-09-02 (UTC)
+
+### Rule: Chat List Refreshes Through Visibility-Aware Polling
+- **What:** The `/chat` conversation-list screen refreshes `GET /chat/conversations` every 4 seconds while visible. Each response refreshes previews, latest-activity ordering, unread counts, unread styling, and the row state for the currently selected All, Muted, Requests, or Archived tab.
+- **Edge cases:** Polling pauses without requests or timer rescheduling while the document is hidden, resumes immediately on visibility or focus recovery, prevents overlapping requests, and cleans up its timer and listeners on unmount. The server remains authoritative for filtering and unread counts; no database migration or separate unread-count endpoint is required.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/screens.tsx`, `web/lib/auth.ts`, `docs/chat-behavior.md`
 - **Since:** 2026-09-02 (UTC)
 
 ### Rule: Appearance And Sidebar Preferences Use Cookies

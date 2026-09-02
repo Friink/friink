@@ -17,6 +17,11 @@ async def update_read_receipt_preference(enabled: bool = Query(...), current_use
     return await set_read_receipts_enabled(session, current_user, enabled)
 
 
+@router.get("/preferences/read-receipts", response_model=ReadReceiptPreferenceResponse)
+async def read_read_receipt_preference(current_user: User = Depends(get_current_user)) -> ReadReceiptPreferenceResponse:
+    return ReadReceiptPreferenceResponse(read_receipts_enabled=current_user.read_receipts_enabled)
+
+
 @router.get("/conversations", response_model=ConversationListResponse)
 async def conversations(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ConversationListResponse:
     return await list_conversations(session, current_user)

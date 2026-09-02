@@ -59,7 +59,9 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Connections uses `/connections/all`, `/connections/followers`, `/connections/following`, and `/connections/requests`; another user's directory uses `/{username}/connections/{tab}`.
 - Chat uses `/chat/all`, `/chat/muted`, and `/chat/requests`; conversation routes use `/{username}/chat`.
 - Chat read receipts use single/double tick states, a 4-second polling refresh, a numeric unread pill in conversation rows, and an `Unread messages` separator before the first unread message. Consecutive chat bubbles retain the shared 4px rhythm.
+- The `/chat` conversation list refreshes its server-authoritative previews, ordering, unread pills, and row state every 4 seconds while visible; hidden documents pause polling and focus/visibility recovery resumes it immediately.
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
+- Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 

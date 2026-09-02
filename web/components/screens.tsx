@@ -28,9 +28,44 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) return;
-    listConversations(session.accessToken)
-      .then(setConversations)
-      .finally(() => setLoading(false));
+    let stopped = false;
+    let busy = false;
+    let timer: number | null = null;
+
+    const refresh = async () => {
+      if (stopped || busy || document.visibilityState === 'hidden') return;
+      busy = true;
+      try {
+        const nextConversations = await listConversations(session.accessToken);
+        if (!stopped) setConversations(nextConversations);
+      } finally {
+        busy = false;
+        if (!stopped) setLoading(false);
+      }
+    };
+
+    const schedule = () => {
+      if (!stopped && document.visibilityState !== 'hidden') timer = window.setTimeout(async () => { await refresh(); schedule(); }, 4000);
+    };
+
+    const resume = () => {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = null;
+      void refresh();
+      schedule();
+    };
+
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('focus', resume);
+    void refresh();
+    schedule();
+
+    return () => {
+      stopped = true;
+      if (timer !== null) window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('focus', resume);
+    };
   }, []);
 
   const visibleConversations = conversations.filter((conversation) => {

@@ -72,6 +72,9 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         assert marked_read.json()["unread_count"] == 0
         requester_receipts = client.get(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers)
         assert requester_receipts.json()["items"][0]["receipt_status"] == "read"
+        default_receipts = client.get("/chat/preferences/read-receipts", headers=recipient_headers)
+        assert default_receipts.status_code == 200, default_receipts.text
+        assert default_receipts.json()["read_receipts_enabled"] is True
         disabled_receipts = client.patch("/chat/preferences/read-receipts?enabled=false", headers=recipient_headers)
         assert disabled_receipts.status_code == 200, disabled_receipts.text
         assert disabled_receipts.json()["read_receipts_enabled"] is False

@@ -1079,6 +1079,14 @@ export async function updateReadReceiptPreference(accessToken: string, enabled: 
   });
 }
 
+export async function getReadReceiptPreference(accessToken: string): Promise<{ read_receipts_enabled: boolean }> {
+  return requestApi('/chat/preferences/read-receipts', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function sendConversationMessage(accessToken: string, conversationId: string, content: string, clientMessageId: string): Promise<ApiMessage> {
   return requestApi<ApiMessage>(`/chat/conversations/${conversationId}/messages`, {
     method: 'POST',
