@@ -62,6 +62,61 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-02T20:22:34Z — Align login OTP with persistent-session UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the conflict between mandatory OTP on every new login and the requested X/Instagram-like persistent login experience.
+- Changes Made: Replaced default OTP on every new login with risk-based OTP/MFA; retained mandatory signup email verification, four-minute OTPs for high-risk flows, and future user-enabled two-factor authentication. Added server-authoritative device-recognition requirements and updated Phase 2.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Preserve low-friction ordinary password login while challenging new or suspicious devices and sensitive actions.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only review; `git diff --check` pending.
+
+## 2026-09-02T20:16:12Z — Consolidate auth requirements and implementation phases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the previously implemented auth requirements, new OTP/lockout decisions, security safeguards, and the six approved implementation phases to the auth/session design.
+- Changes Made: Added signup/date-of-birth/location requirements, six-character four-minute signup/login OTP rules, incomplete-signup email reuse, progressive login cooldowns, access-token storage and CSRF requirements, durable outbox wording, and phase-specific verification gates for reliability, identity, notifications, user sessions, staff security, and operations.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Give a future implementation agent one complete, phased, auditable specification for rock-solid authentication and sessions.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only review; `git diff --check` pending.
+
+## 2026-09-02T19:48:53Z — Add mandatory auth/session acceptance evidence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Strengthen the auth/session design document so implementation cannot be declared complete without proving cookie, failure-classification, key-rotation, clock-skew, and login-race behavior.
+- Changes Made: Added explicit cookie/CORS/deployed-header requirements, literal frontend conditional and transient-failure evidence requirements, JWT `kid` overlap and clock-boundary tests, and duplicate-login race/idempotency evidence requirements.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Convert previously open spec statements into auditable acceptance criteria before implementation.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only diff review; `git diff --check` pending.
+
+## 2026-09-02T19:42:11Z — Clarify approved auth/session planning decisions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the reviewed conflicts between the current implementation and the proposed auth/session architecture.
+- Changes Made: Clarified that the target is a 30-day sliding idle session, added the terminal-versus-ambiguous refresh failure contract, and explicitly confirmed login security events/notifications, permanent identity history, and reserved usernames as in-scope planning work.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Make the intended user experience and remaining implementation scope unambiguous before any runtime changes.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only diff review; `git diff --check` pending.
+
+## 2026-09-02T19:20:54Z — Document proposed auth and session architecture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Consolidate the approved direction for authentication, ordinary sessions, identity history, OTP, security notifications, staff access, and administrative controls before implementation.
+- Changes Made: Added `docs/auth-and-session.md` with requirements, scope, non-negotiable rules, signup and identity-change flows, username reuse and public-ID URL behavior, persistent session model, session management, password handling, login notifications, four-minute OTP enrollment, staff roles/permissions, superadmin bootstrap, account locking, audit events, rate limits, risks, limitations, and rollout verification requirements.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Establish one reviewable design document before making any auth/session runtime changes.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed. The existing authoritative reactive refresh/session model remains in force until explicit implementation approval.
+- Verification Status: Documentation-only review; confirmed the current auth/session implementation and recent agent history before writing the proposal.
+
 ## 2026-09-02T13:30:00Z — Poll the chat conversation list
 
 - Agent: Codex
@@ -6080,3 +6135,12 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - `AGENTLOG.md`
 - Reason/Decision: Submission progress is already communicated by the disabled Post button, spinner, and accessible posting label. Replacing the editor placeholder is misleading, especially when the draft is intentionally empty for media-only and quote submissions.
 - Verification: Targeted source inspection, TypeScript check, and `git diff --check`.
+## 2026-09-03T21:00:00Z — Implement auth/session Phase 1 foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin the six-phase auth/session implementation exactly in order, with evidence gates.
+- Changes Made: Added bounded refresh replay grace and its migration/configuration; narrowed frontend terminal logout classification; moved access-token persistence to memory with cross-tab synchronization; enforced auth request origins; added Phase 1 contract coverage.
+- Files: `api/app/routers/auth.py`, `api/app/config.py`, `api/app/models/refresh_token.py`, `api/alembic/versions/20260902_0018_add_refresh_reuse_grace.py`, `api/tests/test_refresh_token_rotation.py`, `api/tests/test_phase1_contract.py`, `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, environment templates, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Preserve the X/Instagram-style persistent UX while distinguishing terminal session invalidation from transient/network failures and protecting rotation against lost-response races.
+- Verification: 10 focused API tests pass; `npm exec tsc -- --noEmit` passes; `npm run build` passes. Phase 1 remains open pending deployment migration and real successful-login `Set-Cookie` traces from staging (and production if required by the gate).

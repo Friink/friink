@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { AuthApiError, clearAuthSession, getCurrentUser, loadAuthSession, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -29,7 +29,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
           setUser(restoredSession.user);
         })
         .catch((error) => {
-          if (error instanceof AuthApiError && error.status === 401) {
+          if (isTerminalRefreshFailure(error)) {
             setUser(null);
             router.replace('/login');
           }

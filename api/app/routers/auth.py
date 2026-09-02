@@ -55,6 +55,21 @@ optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error
 REFRESH_COOKIE_NAME = "friink_refresh_token"
 
 
+def require_allowed_origin(request: Request, settings: Settings) -> None:
+    """Reject browser cross-site auth requests while allowing non-browser clients."""
+    origin = request.headers.get("origin")
+    if not origin:
+        return
+    allowed_origins = {
+        str(settings.frontend_url).rstrip("/"),
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://staging.friink.com",
+    }
+    if origin.rstrip("/") not in allowed_origins:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Request origin is not allowed.")
+
+
 def set_refresh_cookie(response: Response, token: str, settings: Settings) -> None:
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -68,7 +83,13 @@ def set_refresh_cookie(response: Response, token: str, settings: Settings) -> No
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(payload: SignupRequest, session: Session = Depends(get_session)) -> User:
+async def signup(
+    payload: SignupRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> User:
+    require_allowed_origin(request, settings)
     return await create_user(session, payload, EmailService())
 
 
@@ -96,6 +117,7 @@ async def login(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
+    require_allowed_origin(request, settings)
     user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
     auth_session = create_auth_session(session, user.id, request)
@@ -121,6 +143,7 @@ async def refresh(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> RefreshResponse:
+    require_allowed_origin(request, settings)
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -153,6 +176,37 @@ async def refresh(
 
     now = datetime.now(UTC)
     if token_record.rotated_at is not None or token_record.revoked_at is not None:
+        replacement = session.get(type(token_record), token_record.replaced_by_id) if token_record.replaced_by_id else None
+        grace_is_valid = (
+            token_record.rotated_at is not None
+            and token_record.revoked_at is None
+            and token_record.reuse_grace_used_at is None
+            and (now - token_record.rotated_at).total_seconds() <= settings.refresh_token_reuse_grace_seconds
+            and replacement is not None
+            and replacement.revoked_at is None
+            and replacement.expires_at > now
+        )
+        if grace_is_valid:
+            token_record.reuse_grace_used_at = now
+            user = session.get(User, token_record.user_id)
+            auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
+            if not user or (auth_session and auth_session.revoked_at is not None):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
+            if auth_session:
+                auth_session.last_active_at = now
+            issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
+            access_token = create_access_token(user.id)
+            await commit(session)
+            log_refresh_token_event(
+                event="auth_refresh_token_grace_replayed",
+                flow="refresh_exchange",
+                token_id=str(token_record.id),
+                family_id=str(token_record.family_id),
+                user_id=str(user.id),
+                reason="immediately_previous_token",
+            )
+            set_refresh_cookie(response, issued_refresh.raw_token, settings)
+            return RefreshResponse(access_token=access_token)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
         await commit(session)
         log_refresh_token_event(
@@ -218,11 +272,13 @@ async def refresh(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
+    request: Request,
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> Response:
+    require_allowed_origin(request, settings)
     if refresh_token:
         token_record = get_refresh_token_for_update(session, refresh_token)
         if token_record:

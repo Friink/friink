@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-02T20:22:34Z
+
+- [docs/auth-session] Replaced mandatory OTP on every new login with risk-based OTP/MFA, preserving ordinary password login and persistent sessions. Added a server-authoritative device-recognition model for new/suspicious-login challenges and updated Phase 2 accordingly. No runtime behavior was changed.
+
+## 2026-09-02T20:16:12Z
+
+- [docs/auth-session] Incorporated the prior signup/login requirements and decisions: six-character four-minute OTPs, fresh OTP on every new login, immediate reuse of incomplete signup emails, progressive login cooldowns, in-memory access-token preference, CSRF protection, durable outbox requirement, and six phased implementation/verification gates. No runtime behavior was changed.
+
+## 2026-09-02T19:48:53Z
+
+- [docs/auth-session] Converted cookie behavior, frontend failure classification, JWT rotation/clock skew, and duplicate-login races into mandatory implementation evidence and acceptance checks. No runtime behavior was changed.
+
+## 2026-09-02T19:42:11Z
+
+- [docs/auth-session] Clarified the approved planning decisions in `docs/auth-and-session.md`: persistent sessions use a 30-day sliding idle target, refresh failures must distinguish terminal invalid-session results from ambiguous failures, and login security events/notifications plus identity history and reserved usernames are explicitly in scope. No runtime behavior was changed.
+
+## 2026-09-02T19:20:54Z
+
+- [docs/auth-session] Added `docs/auth-and-session.md`, consolidating the proposed authentication and session architecture: privacy-preserving signup/email verification, cosmetic username casing and history, reserved usernames, durable sessions, login security notifications, OTP device enrollment, staff roles and permissions, superadmin bootstrap, account locking, audit events, rate limits, risks, limitations, and rollout requirements. No runtime behavior was changed.
+
 ## 2026-09-02
 
 - [chat] Added explicit blocked-receipt and pending-request intersection behavior: blocked conversations do not advance delivery ticks, and blocking freezes a pending requester’s existing eight-message count without resetting or extending it after unblock.
@@ -1432,3 +1452,10 @@ _Last updated: 2026-09-01_
 - [web] Extracted the profile-picture crop dialog into a reusable global `Modal` with a top-right close cross and bottom action ribbon, placing Cancel beside the upload tick.
 - [web] Corrected Privacy settings layout by moving all two-state controls into the right action rail, adding left-On/right-Off segmented toggles, and top-aligning ticks with the leading icons.
 - [web] Replaced the profile-picture picker’s text Upload button with an accessible upload icon button.
+## 2026-09-03 — Auth/session Phase 1 implementation in progress
+
+- Added a 60-second, one-use refresh-token grace path for the immediately previous token, preserving family revocation for repeated or stale replay.
+- Added the refresh-token grace migration and configured the 30-day refresh lifetime/grace settings in environment templates.
+- Changed web access-token handling to memory-only storage, retained cross-tab coordination, and limited automatic logout to coded terminal refresh failures.
+- Added auth-origin protection and Phase 1 contract tests for cookie attributes, origin policy, rotation grace, and token resilience.
+- Verification: API Phase 1 contract, refresh-rotation, and token-resilience tests pass (10 tests); web TypeScript check and production build pass. Live staging success-login headers remain required before the Phase 1 gate can close.

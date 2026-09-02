@@ -43,6 +43,8 @@ let refreshPromise: Promise<AuthSession> | null = null;
 let authSessionGeneration = 0;
 const tabId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 let coordinationListenerInstalled = false;
+let inMemoryAuthSession: AuthSession | null = null;
+let authBroadcastChannel: BroadcastChannel | null = null;
 
 type ApiUser = {
   id: string;
@@ -176,44 +178,30 @@ export async function checkUsernameAvailability(username: string): Promise<{ use
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  inMemoryAuthSession = session;
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user: session.user }));
+  authBroadcastChannel?.postMessage({ type: 'session-updated', session });
 }
 
 export function loadAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
   installAuthCoordinationListener();
-
-  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-  if (!raw) return null;
-
-  try {
-    const session = JSON.parse(raw) as Partial<AuthSession>;
-    return isStoredAuthSession(session) ? session : null;
-  } catch {
-    return null;
-  }
+  return inMemoryAuthSession;
 }
 
 export function loadPersistedAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
   installAuthCoordinationListener();
-
-  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-  if (!raw) return null;
-
-  try {
-    const session = JSON.parse(raw) as Partial<AuthSession>;
-    return isStoredAuthSession(session) && session.user.email !== DEFAULT_DEMO_EMAIL ? session : null;
-  } catch {
-    return null;
-  }
+  return inMemoryAuthSession?.user.email !== DEFAULT_DEMO_EMAIL ? inMemoryAuthSession : null;
 }
 
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
   authSessionGeneration += 1;
+  inMemoryAuthSession = null;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
+  authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
@@ -247,9 +235,22 @@ type RefreshCoordinationState = {
 function installAuthCoordinationListener() {
   if (typeof window === 'undefined' || coordinationListenerInstalled) return;
   coordinationListenerInstalled = true;
+  if (typeof BroadcastChannel !== 'undefined') {
+    authBroadcastChannel = new BroadcastChannel('friink-auth-session');
+    authBroadcastChannel.addEventListener('message', (event: MessageEvent) => {
+      const message = event.data as { type?: string; session?: Partial<AuthSession> } | null;
+      if (message?.type === 'session-cleared') {
+        authSessionGeneration += 1;
+        inMemoryAuthSession = null;
+      } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
+        inMemoryAuthSession = message.session;
+      }
+    });
+  }
   window.addEventListener('storage', (event) => {
     if (event.key === AUTH_SESSION_KEY && event.newValue === null) {
       authSessionGeneration += 1;
+      inMemoryAuthSession = null;
     }
   });
 }
@@ -315,7 +316,7 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
     }
 
     try {
-      const session = await performRefresh(generation);
+      const session = await performRefresh(generation, operationId);
       publishRefreshCoordination({
         ...started,
         status: 'succeeded',
@@ -324,7 +325,7 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
       return session;
     } catch (error) {
       const refreshError = error instanceof AuthApiError ? error : new AuthApiError(error instanceof Error ? error.message : 'Refresh failed.', 0);
-      if (isExplicitUnauthorized(refreshError)) {
+      if (isTerminalRefreshFailure(refreshError)) {
         clearAuthSession();
       }
       publishRefreshCoordination({
@@ -338,7 +339,7 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
   }
 }
 
-async function performRefresh(generation: number): Promise<AuthSession> {
+async function performRefresh(generation: number, operationId: string): Promise<AuthSession> {
   const currentSession = loadPersistedAuthSession();
   const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
     method: 'POST',
@@ -361,6 +362,7 @@ async function performRefresh(generation: number): Promise<AuthSession> {
       tokenType: 'Bearer',
     };
     saveAuthSession(nextSession);
+    authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
     return nextSession;
   }
 
@@ -379,6 +381,7 @@ async function performRefresh(generation: number): Promise<AuthSession> {
     user: mapApiUser(restoredUser),
   };
   saveAuthSession(restoredSession);
+  authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
   return restoredSession;
 }
 
@@ -1374,8 +1377,13 @@ function isStoredAuthSession(session: Partial<AuthSession>): session is AuthSess
   );
 }
 
-function isExplicitUnauthorized(error: unknown): error is AuthApiError {
-  return error instanceof AuthApiError && error.status === 401;
+export function isTerminalRefreshFailure(error: unknown): error is AuthApiError {
+  return error instanceof AuthApiError && error.status === 401 && (
+    error.code === 'TOKEN_EXPIRED' ||
+    error.code === 'SESSION_NOT_FOUND' ||
+    error.code === 'REFRESH_TOKEN_MISSING' ||
+    error.code === 'REFRESH_TOKEN_INVALID'
+  );
 }
 
 function withAuthorizationHeader(headers: HeadersInit | undefined, accessToken: string): HeadersInit {
