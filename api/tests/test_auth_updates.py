@@ -7,8 +7,9 @@ from fastapi import HTTPException
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import Notification
 from app.models.user import User
-from app.schemas.auth import UpdateCurrentUserRequest
+from app.schemas.auth import ChangePasswordRequest, UpdateCurrentUserRequest
 from app.services import auth as service
+from app.services.security import hash_password, verify_password
 
 
 class FakeSession:
@@ -73,6 +74,23 @@ async def test_update_current_user_rejects_duplicate_email(monkeypatch: pytest.M
 
 
 @pytest.mark.asyncio
+async def test_update_current_user_rejects_duplicate_username_case_insensitively(monkeypatch: pytest.MonkeyPatch) -> None:
+    user = make_user("alex", "alex@example.com")
+    other = make_user("Areeba", "areeba@example.com")
+
+    async def fake_get_user_by_username(session, username):
+        return other if username.lower() == other.username.lower() else None
+
+    monkeypatch.setattr(service, "get_user_by_username", fake_get_user_by_username)
+
+    with pytest.raises(HTTPException) as error:
+        await service.update_current_user(FakeSession(), user, UpdateCurrentUserRequest(username="areeba"))
+
+    assert error.value.status_code == 409
+    assert user.username == "alex"
+
+
+@pytest.mark.asyncio
 async def test_update_current_user_updates_profile_fields() -> None:
     user = make_user("alex", "alex@example.com")
     session = FakeSession()
@@ -87,6 +105,39 @@ async def test_update_current_user_updates_profile_fields() -> None:
     assert updated.about == "Builder of quiet social software."
     assert session.commits == 1
     assert session.refreshed is user
+
+
+@pytest.mark.asyncio
+async def test_change_password_requires_current_password() -> None:
+    user = make_user("alex", "alex@example.com")
+    user.password_hash = hash_password("CurrentPass1!")
+
+    with pytest.raises(HTTPException) as error:
+        await service.change_password(
+            FakeSession(),
+            user,
+            ChangePasswordRequest(current_password="wrong", new_password="NewPass1!", confirm_password="NewPass1!"),
+        )
+
+    assert error.value.status_code == 400
+    assert verify_password("CurrentPass1!", user.password_hash)
+
+
+@pytest.mark.asyncio
+async def test_change_password_replaces_hash_and_keeps_session_data() -> None:
+    user = make_user("alex", "alex@example.com")
+    user.password_hash = hash_password("CurrentPass1!")
+    session = FakeSession()
+
+    await service.change_password(
+        session,
+        user,
+        ChangePasswordRequest(current_password="CurrentPass1!", new_password="NewPass1!", confirm_password="NewPass1!"),
+    )
+
+    assert verify_password("NewPass1!", user.password_hash)
+    assert not verify_password("CurrentPass1!", user.password_hash)
+    assert session.commits == 1
 
 
 @pytest.mark.asyncio

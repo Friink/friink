@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import json
 import uuid
 
 import jwt
@@ -24,7 +25,7 @@ def test_missing_jwt_secret_fails_settings_load(monkeypatch: pytest.MonkeyPatch)
     get_settings.cache_clear()
 
     with pytest.raises(ValidationError):
-        Settings()
+        Settings(_env_file=None)
 
 
 def test_expired_token_is_classified(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -84,3 +85,31 @@ def test_valid_token_survives_unrelated_schema_changes(monkeypatch: pytest.Monke
 
     assert payload["sub"] == str(user_id)
     assert set(payload) == {"sub", "typ", "iat", "exp"}
+
+
+def test_access_tokens_support_key_ids_and_overlapping_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    old_secret = "old-secret-at-least-32-bytes-long"
+    new_secret = "new-secret-at-least-32-bytes-long"
+    monkeypatch.setenv("JWT_SECRET_KEY", old_secret)
+    monkeypatch.setenv("JWT_ACTIVE_KID", "access-v2")
+    monkeypatch.setenv("JWT_KEYS", json.dumps({"access-v1": old_secret, "access-v2": new_secret}))
+    get_settings.cache_clear()
+    user_id = uuid.uuid4()
+
+    current_token = create_access_token(user_id)
+    assert jwt.get_unverified_header(current_token)["kid"] == "access-v2"
+    assert decode_token(current_token, "access")["sub"] == str(user_id)
+
+    now = datetime.now(UTC)
+    old_token = jwt.encode(
+        {
+            "sub": str(user_id),
+            "typ": "access",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(minutes=30)).timestamp()),
+        },
+        old_secret,
+        algorithm="HS256",
+        headers={"kid": "access-v1"},
+    )
+    assert decode_token(old_token, "access")["sub"] == str(user_id)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { FeedPost } from '@/components/feed-post';
@@ -11,15 +11,20 @@ import type { Post } from '@/lib/data';
 type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
+  profileStats?: { followers: number; following: number } | null;
+  profileConnectionsBasePath?: string;
   isOwnProfile?: boolean;
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onEditProfile?: () => void;
+  onMessage?: () => void;
   connectionState?: 'self' | 'none' | 'requested' | 'following';
   connectionActionBusy?: boolean;
   onFollow?: () => void;
   onCancelRequest?: () => void;
   onUnfollow?: () => void;
+  initialTab?: ProfileTab;
+  onTabChange?: (tab: ProfileTab) => void;
 };
 
 type ProfileTab = 'posts' | 'replies';
@@ -45,18 +50,26 @@ function getInitials(value: string) {
 export function ProfileScreen({
   user,
   posts,
+  profileStats = null,
+  profileConnectionsBasePath,
   isOwnProfile = true,
   onReply,
   onQuote,
   onEditProfile,
+  onMessage,
   connectionState = isOwnProfile ? 'self' : 'none',
   connectionActionBusy = false,
   onFollow,
   onCancelRequest,
   onUnfollow,
+  initialTab = 'posts',
+  onTabChange,
 }: ProfileScreenProps) {
-  const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+  const connectionsBasePath = profileConnectionsBasePath ?? `/${encodeURIComponent(user.username)}/connections`;
+  const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
+  useEffect(() => setActiveTab(initialTab), [initialTab]);
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
+  const aboutText = user.about?.trim();
   const action = getConnectionAction(connectionState, { onFollow, onCancelRequest, onUnfollow });
 
   return (
@@ -68,17 +81,22 @@ export function ProfileScreen({
             handle={`@${user.username}`}
             tone="mint"
             initials={getInitials(user.name)}
+            imageUrl={user.profilePictureUrl}
           />
         </div>
 
         <p className="profile-bio">
-          {user.about || (isOwnProfile ? 'Your signed-in account is now driving this profile view.' : 'This profile has not added an about yet.')}
+          {aboutText || (isOwnProfile ? 'Add about in settings.' : '')}
         </p>
 
         <div className="profile-meta-row">
           <div className="profile-stats" aria-label="Profile statistics">
-            <span><strong>0</strong> following</span>
-            <span><strong>0</strong> followers</span>
+            <a href={`${connectionsBasePath}/following`}>
+              <strong>{profileStats?.following ?? '—'}</strong> following
+            </a>
+            <a href={`${connectionsBasePath}/followers`}>
+              <strong>{profileStats?.followers ?? '—'}</strong> followers
+            </a>
           </div>
 
           <div className="profile-actions">
@@ -101,7 +119,7 @@ export function ProfileScreen({
                     <span>{connectionActionBusy ? 'Updating' : action.label}</span>
                   </button>
                 )}
-                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user">
+                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user" onClick={onMessage}>
                   <i className="fa-regular fa-paper-plane" aria-hidden="true" />
                 </button>
               </>
@@ -113,7 +131,11 @@ export function ProfileScreen({
       <Tabs
         tabs={profileTabs}
         activeId={activeTab}
-        onChange={(id) => setActiveTab(id as ProfileTab)}
+        onChange={(id) => {
+          const tab = id as ProfileTab;
+          setActiveTab(tab);
+          onTabChange?.(tab);
+        }}
         ariaLabel="Profile tabs"
         className="section-tabs"
       />

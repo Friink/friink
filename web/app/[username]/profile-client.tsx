@@ -3,16 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getPublicUser, loadAuthSession, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, getPublicUser, listFollowers, listFollowing, loadAuthSession, type AuthUser } from '@/lib/auth';
 
 type ProfileClientProps = {
   username: string;
+  initialTab?: 'posts' | 'replies';
 };
 
-export function ProfileClient({ username }: ProfileClientProps) {
+export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profileUser, setProfileUser] = useState<AuthUser | null>(null);
+  const [profileStats, setProfileStats] = useState<{ followers: number; following: number } | null>(null);
+  const [profileStatus, setProfileStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -27,16 +30,22 @@ export function ProfileClient({ username }: ProfileClientProps) {
   useEffect(() => {
     if (!user) return;
 
+    let active = true;
     const profileHandle = username || user.username;
     const isOwnProfile = profileHandle.toLowerCase() === user.username.toLowerCase();
 
     if (isOwnProfile) {
-      setProfileUser(null);
+      if (active) {
+        setProfileUser(null);
+        setProfileStatus('ready');
+      }
       return;
     }
 
+    setProfileStatus('loading');
     getPublicUser(profileHandle)
       .then((publicUser) => {
+        if (!active) return;
         setProfileUser({
           ...user,
           id: publicUser.id,
@@ -44,20 +53,42 @@ export function ProfileClient({ username }: ProfileClientProps) {
           username: publicUser.username,
           about: publicUser.about,
           isPrivate: publicUser.isPrivate,
+          profilePictureUrl: publicUser.profilePictureUrl,
+          profilePictureUpdatedAt: publicUser.profilePictureUpdatedAt,
           email: `${publicUser.username}@friink.local`,
         });
+        setProfileStatus('ready');
       })
       .catch(() => {
-        setProfileUser({
-          ...user,
-          id: `missing-${profileHandle}`,
-          name: `@${profileHandle}`,
-          username: profileHandle,
-          about: 'This profile has not added an about yet.',
-          isPrivate: false,
-          email: `${profileHandle}@friink.local`,
-        });
+        if (!active) return;
+        setProfileUser(null);
+        setProfileStatus('unavailable');
       });
+
+    return () => {
+      active = false;
+    };
+  }, [user, username]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+    const profileHandle = username || user.username;
+    setProfileStats(null);
+
+    Promise.all([listFollowers(profileHandle), listFollowing(profileHandle)])
+      .then(([followers, following]) => {
+        if (!active) return;
+        setProfileStats({ followers: followers.count, following: following.count });
+      })
+      .catch(() => {
+        if (active) setProfileStats(null);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [user, username]);
 
   function handleLogout() {
@@ -69,13 +100,28 @@ export function ProfileClient({ username }: ProfileClientProps) {
 
   const profileHandle = username || user.username;
   const isOwnProfile = profileHandle.toLowerCase() === user.username.toLowerCase();
+  const resolvedProfile = isOwnProfile
+    ? profileStatus === 'ready'
+    : profileStatus === 'ready' && profileUser?.username.toLowerCase() === profileHandle.toLowerCase();
+  const profileUnavailable = !resolvedProfile && profileStatus === 'unavailable';
+  const profileConnectionsBasePath = `/${encodeURIComponent(isOwnProfile ? user.username : profileHandle)}/connections`;
 
   return (
     <AppShell
       user={user}
       profileUser={isOwnProfile ? undefined : (profileUser ?? undefined)}
+      profileStats={profileStats}
+      profileConnectionsBasePath={profileConnectionsBasePath}
       onLogout={handleLogout}
       initialScreen="profile"
-    />
+      profileTab={initialTab}
+      onProfileTabChange={(tab) => router.push(`/${encodeURIComponent(profileHandle)}/${tab}`)}
+    >
+      {resolvedProfile ? undefined : (
+        <section className="profile-unavailable" aria-live="polite">
+          <p>{profileUnavailable ? 'Does not exist or unavailable.' : 'Loading profile...'}</p>
+        </section>
+      )}
+    </AppShell>
   );
 }

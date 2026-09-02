@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { fetchApi } from '@/lib/api-origin';
+import { getPublicIdFromPostSegment } from '@/lib/post-path';
 
 type PostLayoutProps = {
   children: React.ReactNode;
@@ -16,7 +17,9 @@ type MetadataPostResponse = {
 
 export async function generateMetadata({ params }: PostLayoutProps): Promise<Metadata> {
   try {
-    const response = await fetchApi(`/posts/${encodeURIComponent(params.postId)}`, {
+    const publicId = getPublicIdFromPostSegment(params.postId);
+    if (!publicId) throw new Error('Invalid post id');
+    const response = await fetchApi(`/posts/public/${encodeURIComponent(publicId)}`, {
       cache: 'no-store',
     });
 

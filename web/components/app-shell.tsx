@@ -18,7 +18,10 @@ import { NotificationsScreen, type NotificationItem } from '@/components/notific
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { SideDrawer } from '@/components/side-drawer';
-import { ToastStack, type ToastMessage } from '@/components/toast-stack';
+import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
+import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
+import { getPostPath } from '@/lib/post-path';
+import { PollingNotificationTransport } from '@/lib/notification-transport';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
 import {
   acceptFollowRequest,
@@ -55,6 +58,15 @@ type AppShellProps = {
   showTabs?: boolean;
   showFloatingBar?: boolean;
   onUserChange?: (user: AuthUser) => void;
+  profileStats?: { followers: number; following: number } | null;
+  profileConnectionsBasePath?: string;
+  connectionsUsername?: string;
+  initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
+  initialHomeFilter?: 'all' | 'following';
+  initialMessagesTab?: 'all' | 'muted' | 'requests' | 'archived';
+  initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
+  profileTab?: 'posts' | 'replies';
+  onProfileTabChange?: (tab: 'posts' | 'replies') => void;
 };
 
 type ComposeContext =
@@ -75,11 +87,12 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
+  const [accentColor, setAccentColor] = useState('#33aa55');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [homeInjectedPost, setHomeInjectedPost] = useState<Post | null>(null);
@@ -98,13 +111,18 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
   const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [homeFilter, setHomeFilter] = useState<'all' | 'connections'>('all');
-  const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>('all');
-  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests'>('all');
-  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'privacy'>('general');
+  const [homeFilter, setHomeFilter] = useState<'all' | 'following'>(initialHomeFilter);
+  const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
+  const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests' | 'archived'>(initialMessagesTab);
+  const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'subscription' | 'privacy'>(initialSettingsTab);
   const [canGoBack, setCanGoBack] = useState(false);
+  useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
+  useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
+  useEffect(() => setMessagesTab(initialMessagesTab), [initialMessagesTab]);
+  useEffect(() => setSettingsTab(initialSettingsTab), [initialSettingsTab]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
-  const connectionsTabs = user.isPrivate
+  const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
+  const connectionsTabs = !viewingOtherConnections
     ? [
         { id: 'all', label: 'All' },
         { id: 'followers', label: 'Followers' },
@@ -118,7 +136,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || activeScreen === 'profile' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && activeScreen !== 'profile' && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -170,6 +188,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('friink_accent_color')?.trim().toLowerCase();
+      if (saved && /^#[0-9a-f]{6}$/.test(saved)) setAccentColor(saved);
+    } catch {
+      // Keep the default accent when local storage is unavailable.
+    }
+  }, []);
+
   // read persisted appearance from cookie (if present)
   useEffect(() => {
     try {
@@ -193,6 +220,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       document.cookie = `friink_appearance=${encodeURIComponent(a)}; path=/; expires=${expires}; sameSite=Lax`;
     } catch (e) {
       // ignore cookie write errors
+    }
+  }
+
+  function persistAccentColor(color: string) {
+    const normalized = color.trim().toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(normalized)) return;
+    setAccentColor(normalized);
+    try {
+      window.localStorage.setItem('friink_accent_color', normalized);
+    } catch {
+      // Best effort; the current app session still uses the chosen color.
     }
   }
 
@@ -224,42 +262,73 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     // route to pages that have their own app route
     switch (screen) {
       case 'home':
-        router.push('/home');
+        router.push('/home/explore');
         break;
       case 'profile':
         router.push(`/${user.username}`);
         break;
       case 'connections':
-        router.push('/connections');
+        router.push(`/${encodeURIComponent(user.username)}/connections`);
         break;
       case 'starred':
         router.push('/starred');
         break;
       case 'settings':
-        router.push('/settings');
+        router.push('/settings/general');
         break;
       case 'messages':
-        router.push('/chat');
+        router.push('/chat/all');
         break;
       case 'notifications':
         router.push('/notifications');
+        break;
+      case 'search':
+        router.push('/search');
         break;
       default:
         break;
     }
   }
 
-  function addToast(message: string, tone: ToastMessage['tone'] = 'error') {
+  function handleConnectionsFilterChange(filter: 'all' | 'followers' | 'following' | 'requests') {
+    setConnectionsFilter(filter);
+    const basePath = viewingOtherConnections
+      ? `/${encodeURIComponent(connectionsUsername!)}/connections`
+      : `/${encodeURIComponent(user.username)}/connections`;
+    router.push(filter === 'all' ? basePath : `${basePath}/${filter}`, { scroll: false });
+  }
+
+  function handleHomeFilterChange(filter: 'all' | 'following') {
+    setHomeFilter(filter);
+    router.push(`/home/${filter === 'all' ? 'explore' : 'following'}`, { scroll: false });
+  }
+
+  function handleMessagesTabChange(tab: 'all' | 'muted' | 'requests' | 'archived') {
+    setMessagesTab(tab);
+    router.push(`/chat/${tab}`, { scroll: false });
+  }
+
+  function handleSettingsTabChange(tab: 'general' | 'profile' | 'account' | 'subscription' | 'privacy') {
+    setSettingsTab(tab);
+    router.push(`/settings/${tab}`, { scroll: false });
+  }
+
+  function addToast(input: ToastInput, tone: ToastMessage['tone'] = 'error') {
     const now = new Date();
-    setToasts((current) => [
-      ...current,
-      {
-      id: now.getTime(),
-      message,
-      timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
-        tone,
-      },
-    ]);
+    const toast = typeof input === 'string' ? { message: input, tone } : input;
+    setToasts((current) => {
+      if (current.some((item) => item.message === toast.message && item.title === toast.title && item.code === toast.code)) {
+        return current;
+      }
+      return [
+        ...current,
+        {
+          id: now.getTime(),
+          ...toast,
+          timestamp: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+        },
+      ];
+    });
   }
 
   function dismissToast(id: number) {
@@ -275,6 +344,20 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         // Keep the timeline empty when the API is not running.
       });
   }, []);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session) return;
+    const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
+    return transport.subscribe((count) => {
+      setUnreadNotificationCount(count);
+      if (activeScreen === 'notifications') {
+        listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
+          .then((page) => setNotifications(page.items.map(mapApiNotification).map((notification) => ({ ...notification, tone: 'sage', unread: false }))))
+          .catch(() => undefined);
+      }
+    });
+  }, [activeScreen]);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -331,7 +414,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         });
     }
 
-    const targetUsername = user.username;
+    const targetUsername = viewingOtherConnections ? connectionsUsername! : user.username;
     listFollowers(targetUsername)
       .then((response) => {
         setFollowers(response.users.map((connectionUser) => mapConnectionUser(connectionUser, 'follower')));
@@ -347,15 +430,18 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       .catch(() => {
         setFollowing([]);
       });
-  }, [activeScreen]);
+  }, [activeScreen, connectionsUsername, viewingOtherConnections]);
 
   useEffect(() => {
     const viewedUser = profileUser ?? user;
-    if (!profileUser || viewedUser.username === user.username) {
+    if (!profileUser) {
       setProfileConnectionState('self');
       setProfileConnectionRequestId(null);
       return;
     }
+
+    setProfileConnectionState('none');
+    setProfileConnectionRequestId(null);
 
     const session = loadAuthSession();
     if (!session) {
@@ -377,12 +463,6 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   }, [profileUser, user]);
 
   useEffect(() => {
-    if (!user.isPrivate && connectionsFilter === 'requests') {
-      setConnectionsFilter('all');
-    }
-  }, [connectionsFilter, user.isPrivate]);
-
-  useEffect(() => {
     if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;
     if (!profileUser || profileUser.username === user.username) return;
     if (floatingDraft.trim().length > 0) return;
@@ -398,16 +478,16 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     setComposeContext({ kind: 'quote', post });
   }
 
-  async function handleFloatingPost(event: FormEvent<HTMLFormElement>) {
+  async function handleFloatingPost(event: FormEvent<HTMLFormElement>, media: File[]) {
     event.preventDefault();
 
     const trimmedText = floatingDraft.trim();
-    if (!trimmedText && composeContext.kind !== 'quote') return;
+    if (!trimmedText && !media.length && composeContext.kind !== 'quote') return;
 
     const session = loadAuthSession();
     if (!session) {
       addToast('Please log in again to post.');
-      return;
+      return false;
     }
 
     setFloatingPostBusy(true);
@@ -417,6 +497,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         content: trimmedText,
         quotedPostId: composeContext.kind === 'quote' ? composeContext.post.id : null,
         parentPostId: composeContext.kind === 'reply' ? composeContext.post.id : null,
+        media,
       });
       const newPost = mapApiPost(apiPost);
       if (newPost.kind !== 'reply') {
@@ -425,6 +506,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       }
       setFloatingDraft('');
       setComposeContext({ kind: 'post' });
+      addToast('Post published.', 'success');
       if (newPost.kind !== 'reply') {
         setHomeFilter('all');
         setActiveScreen('home');
@@ -433,6 +515,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not create post.';
       addToast(message);
+      return false;
     } finally {
       setFloatingPostBusy(false);
     }
@@ -440,16 +523,19 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   function openProfileSettings() {
     setSettingsTab('profile');
-    navigateTo('settings');
+    router.push('/settings/profile');
   }
 
   function mapApiPost(post: ApiPost): Post {
     return {
       id: post.id,
+      publicId: post.public_id,
+      slug: post.slug,
       kind: post.kind,
       name: post.author_display_name || post.author_username,
       handle: `@${post.author_username}`,
       initials: getInitials(post.author_display_name || post.author_username),
+      imageUrl: post.profile_picture_url,
       tone: 'mint',
       createdAt: post.created_at,
       text: post.content,
@@ -459,13 +545,18 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       replies: post.reply_count,
       quotes: post.quote_count,
       reactions: 0,
+      media: post.media.map((item) => item.url),
       quotedPost: post.quoted_post
         ? {
             id: post.quoted_post.id,
+            publicId: post.quoted_post.public_id,
+            slug: post.quoted_post.slug,
             authorUsername: post.quoted_post.author_username,
             authorDisplayName: post.quoted_post.author_display_name,
+            imageUrl: post.quoted_post.profile_picture_url,
             content: post.quoted_post.content,
             mediaCount: post.quoted_post.media_count,
+            media: post.quoted_post.media.map((item) => item.url),
             unavailable: post.quoted_post.unavailable,
           }
         : null,
@@ -488,25 +579,37 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const payload = notification.payload;
     const requesterUsername = typeof payload.requester_username === 'string' ? payload.requester_username : null;
     const recipientUsername = typeof payload.recipient_username === 'string' ? payload.recipient_username : null;
+    const postAuthorUsername = typeof payload.post_author_username === 'string' ? payload.post_author_username : null;
+    const postAuthorDisplayName = typeof payload.post_author_display_name === 'string' ? payload.post_author_display_name : null;
     const requesterName = typeof payload.requester_display_name === 'string' && payload.requester_display_name ? payload.requester_display_name : requesterUsername;
     const recipientName = typeof payload.recipient_display_name === 'string' && payload.recipient_display_name ? payload.recipient_display_name : recipientUsername;
-    const actorName = requesterName || recipientName || 'Friink';
-    const actorHandle = requesterUsername || recipientUsername || 'friink';
+    const actorName = postAuthorDisplayName || requesterName || recipientName || 'Friink';
+    const actorHandle = postAuthorUsername || requesterUsername || recipientUsername || 'friink';
+    const chatActorName = typeof payload.actor_display_name === 'string' && payload.actor_display_name ? payload.actor_display_name : actorName;
+    const chatActorHandle = typeof payload.actor_username === 'string' && payload.actor_username ? payload.actor_username : actorHandle;
+    const postPublicId = typeof payload.post_public_id === 'string' ? payload.post_public_id : null;
+    const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
+    const notificationHref = notification.type === 'mention' && postAuthorUsername && postPublicId
+      ? getPostPath(postAuthorUsername, postSlug, postPublicId)
+      : undefined;
     return {
       id: notification.id,
-      kind: notification.type.includes('request') ? 'request' : 'follow',
-      name: actorName || 'Friink',
-      handle: `@${actorHandle}`,
-      text: getNotificationText(notification.type, requesterUsername, recipientUsername),
+      kind: notification.type === 'mention' ? 'mention' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      name: notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
+      handle: `@${notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle),
       createdAt: notification.created_at,
-      initials: getInitials(actorName || actorHandle),
+      initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
+      href: notificationHref,
     };
   }
 
-  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null) {
+  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string) {
     switch (type) {
+      case 'mention':
+        return `${actorName} (@${actorHandle}) mentioned you.`;
       case 'follow_sent_public':
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'You are now following this profile.';
       case 'new_follower':
@@ -517,6 +620,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return requesterUsername ? `@${requesterUsername} requested to follow you.` : 'Someone requested to follow you.';
       case 'unfollow_confirmed':
         return recipientUsername ? `You unfollowed @${recipientUsername}.` : 'You unfollowed this profile.';
+      case 'chat_request_received':
+        return `${actorName} sent you a chat request.`;
+      case 'chat_message':
+        return `${actorName} sent you a message.`;
+      case 'chat_request_accepted':
+        return `${actorName} accepted your chat request.`;
       case 'request_accepted':
       default:
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';
@@ -687,6 +796,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     }
   }
 
+  useEffect(() => {
+    document.documentElement.style.setProperty('--color-accent', accentColor);
+  }, [accentColor]);
+
   return (
     <main className="app-shell" data-theme={appearance}>
       <div className="app-layout">
@@ -704,6 +817,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
           notificationCount={unreadNotificationCount}
+          notifications={notifications}
         />
 
         <section className="main-panel">
@@ -720,10 +834,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
               <Tabs
                 tabs={[
                   { id: 'all', label: 'Explore' },
-                  { id: 'connections', label: 'Connections' },
+                  { id: 'following', label: 'Following' },
                 ]}
                 activeId={homeFilter}
-                onChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                onChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                 ariaLabel="Home quick tabs"
               />
             )}
@@ -731,7 +845,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
               <Tabs
                 tabs={connectionsTabs}
                 activeId={connectionsFilter}
-                onChange={(id) => setConnectionsFilter(id as 'all' | 'followers' | 'following' | 'requests')}
+                onChange={(id) => handleConnectionsFilterChange(id as 'all' | 'followers' | 'following' | 'requests')}
                 ariaLabel="Connections filters"
               />
             )}
@@ -741,9 +855,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'all', label: 'All' },
                   { id: 'muted', label: 'Muted' },
                   { id: 'requests', label: 'Requests' },
+                  { id: 'archived', label: 'Archived' },
                 ]}
                 activeId={messagesTab}
-                onChange={(id) => setMessagesTab(id as 'all' | 'muted' | 'requests')}
+                onChange={(id) => handleMessagesTabChange(id as 'all' | 'muted' | 'requests' | 'archived')}
                 ariaLabel="Chat filters"
               />
             )}
@@ -753,10 +868,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                   { id: 'general', label: 'General' },
                   { id: 'profile', label: 'Profile' },
                   { id: 'account', label: 'Account' },
+                  { id: 'subscription', label: 'Subscription' },
                   { id: 'privacy', label: 'Privacy & Safety' },
                 ]}
                 activeId={settingsTab}
-                onChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
+                onChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
                 ariaLabel="Settings sections"
               />
             )}
@@ -769,7 +885,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <HomeScreen
                       posts={posts}
                       activeFilter={homeFilter}
-                      onFilterChange={(id) => setHomeFilter(id as 'all' | 'connections')}
+                      onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                       onReply={handleReply}
                       onQuote={handleQuote}
                       injectedPost={homeInjectedPost}
@@ -780,10 +896,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <ProfileScreen
                       user={profileUser ?? user}
                       posts={posts}
+                      profileStats={profileStats}
+                      profileConnectionsBasePath={profileConnectionsBasePath}
                       isOwnProfile={!profileUser}
                       onReply={handleReply}
                       onQuote={handleQuote}
                       onEditProfile={openProfileSettings}
+                      onMessage={() => router.push(`/${encodeURIComponent((profileUser ?? user).username)}/chat`)}
+                      initialTab={profileTab}
+                      onTabChange={onProfileTabChange}
                       connectionState={profileConnectionState}
                       connectionActionBusy={connectionActionBusy}
                       onFollow={handleFollowProfile}
@@ -795,14 +916,14 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <ConnectionsScreen
                       connections={getConnectionsForFilter()}
                       activeFilter={connectionsFilter}
-                      onFilterChange={(id) => setConnectionsFilter(id as 'all' | 'following' | 'followers' | 'requests')}
+                      onFilterChange={(id) => handleConnectionsFilterChange(id as 'all' | 'following' | 'followers' | 'requests')}
                       incomingRequests={incomingRequests}
                       outgoingRequests={outgoingRequests}
                       requestActionBusyId={requestActionBusyId}
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
                       onCancelRequest={handleCancelSentRequest}
-                      onRemoveFollower={handleRemoveFollower}
+                      onRemoveFollower={viewingOtherConnections ? undefined : handleRemoveFollower}
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
@@ -814,8 +935,10 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       user={user}
                       appearance={appearance}
                       onAppearanceChange={(a) => persistAppearance(a)}
+                      accentColor={accentColor}
+                      onAccentColorChange={persistAccentColor}
                       activeTab={settingsTab}
-                      onTabChange={(id) => setSettingsTab(id as 'general' | 'profile' | 'account' | 'privacy')}
+                      onTabChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
                       onUserChange={onUserChange}
                       onToast={addToast}
                     />
@@ -837,28 +960,34 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                 onDraftChange={setFloatingDraft}
                 onSend={handleFloatingPost}
                 disabled={floatingPostBusy}
+                busy={floatingPostBusy}
                 multiline
                 placeholder={composeContext.kind === 'reply' ? 'Write a reply...' : composeContext.kind === 'quote' ? 'Add your quote...' : 'Write a post...'}
                 disabledPlaceholder="Posting..."
                 inputLabel="Post"
                 sendLabel="Post"
                 maxLength={256}
+                draftStorageKey={`friink-draft:${user.id}:floating:${composeContext.kind}:${composeContext.kind === 'post' ? 'new' : composeContext.post.id}`}
                 showCount
                 allowEmptySubmit={composeContext.kind === 'quote'}
+                enableMentions
                 contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : composeContext.kind === 'quote' ? `Quoting ${composeContext.post.name}` : null}
                 referencedPreview={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? {
                   name: composeContext.post.name,
                   handle: composeContext.post.handle,
                   initials: composeContext.post.initials,
                   tone: composeContext.post.tone,
+                  imageUrl: composeContext.post.imageUrl,
                   text: composeContext.post.text,
                   mediaCount: 0,
                 } : null}
+                onClearContext={composeContext.kind === 'reply' || composeContext.kind === 'quote' ? () => setComposeContext({ kind: 'post' }) : undefined}
               />
             )}
           </FloatingBar>
         )}
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
+        <ProfileSetupWizard user={user} onUserChange={onUserChange ?? (() => undefined)} onToast={(message) => addToast(message)} />
       </div>
     </main>
   );

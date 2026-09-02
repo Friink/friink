@@ -1,5 +1,316 @@
 # Changelog
 
+## 2026-09-02
+
+- [web/chat] Added visibility-aware 4-second polling to the `/chat` conversation list so previews, ordering, unread pills, and row state stay current across tabs and devices.
+
+## 2026-09-02
+
+- [web/chat] Added the Read receipts control to Settings > Privacy, connected to the persisted mutual-privacy preference API.
+
+## 2026-09-02
+
+- [chat] Added per-user delivery/read cursors, receipt privacy infrastructure, unread counts and separators, sent/delivered/read tick states, and polling-based receipt updates. See `docs/read-receipts.md`.
+
+## 2026-09-02
+
+- [chat/web] Set the chat message limit to 2,048 characters with a persistent composer counter and added a 4px gap between consecutive message bubbles.
+
+## 2026-09-02
+
+- [web/chat] Fixed the chat composer using the shared post composer’s multiline and mention-editor variants, restoring the current embedded layout in chat without changing post-mode behavior or applying the post-only character counter.
+
+## 2026-09-02
+
+- [chat] Added paid chat requests with an eight-message requester cap, reply/Accept unlock, request/all/muted/archived tabs, per-user mute/archive settings, chat notifications, block-aware read-only access, and a future subscription-tier entitlement boundary. See `docs/chat-behavior.md`.
+
+## 2026-09-02
+
+- [chat/diagnosis] Audited the chat composer disable paths. The main defect is that `disabled={!conversation || chatAccessDenied}` treats every conversation initialization failure that leaves `conversation` null as a disabled composer, including network/API failures; the backend only directly denies with authentication, mutual-follow, identity, or conversation-access responses.
+
+## 2026-09-02
+
+- [chat] Hid the shared floating bar on the chat route while retaining the existing composer wiring for a later re-enable.
+
+## 2026-09-01
+
+- [profile/connections] Corrected the profile-loading state transition so other-user profiles expose the proper Follow/Following/request action instead of retaining the self-profile state.
+
+## 2026-09-01
+
+- [chat] Narrowed composer disabling to the actual mutual-follow authorization failure instead of treating every conversation-loading error as “Chat unavailable.”
+
+## 2026-09-01
+
+- [connections] Kept the signed-in account's Requests tab available independently of cached privacy state, restoring the API-backed Accept and Reject controls for pending private-profile follow requests.
+
+## 2026-09-01
+
+- [web/profile] Wired the profile Message action to the username-scoped chat route; it was previously rendered as an inert button.
+
+## 2026-09-01
+
+- [web/composer] Disabled the floating composer on profile pages so profiles remain focused on identity, actions, and profile content. Feed, chat, and other explicitly supported composer surfaces are unchanged.
+
+## 2026-09-01
+
+- [chat] Corrected chat authorization to require mutual accepted follows: both users must follow each other before a conversation can be created, listed, read, or used for sending. Updated the Direct Messages setting copy to match the enforced policy.
+
+## 2026-09-01T16:20:00Z
+
+- [notifications] Added 4-second adaptive unread-count polling with hidden-tab pausing, focus/visibility recovery, and full-list refresh while Notifications is open. Existing notification UI and read behavior remain unchanged.
+
+## 2026-09-01T16:01:43Z
+
+- [chat] Replaced local mock conversations with authenticated REST-backed conversations and messages. Added cursor-based history, 4-second adaptive polling behind a transport interface, optimistic sends with client-message idempotency, accepted-connection authorization, and the schema/migration needed for future WebSocket transport without changing the chat UI.
+
+## 2026-09-01T15:31:42Z
+
+- [auth] Enforced case-insensitive username identity across signup and Settings. Validated usernames are canonicalized to lowercase, both flows check availability, the API remains authoritative for races, and a database migration adds a unique `lower(username)` index after existing collisions are resolved.
+
+## 2026-09-01T15:13:11Z
+
+- [docs] Reconciled `README.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md` with the current working implementation. Current media behavior and known gaps are documented; historical entries remain unchanged.
+
+## 2026-09-01T14:59:34Z
+
+- [docs/web-architecture] Documented exclusive design-file ownership for the logged-in web app: design changes may use only `web/theme.config.ts` and `web/app/globals.css`. TSX, page-specific CSS, CSS Modules, route stylesheets, and other web-app files must not contain design rules.
+
+## 2026-09-01T14:58:26Z
+
+- [web/layout] Moved the shared 16px desktop content gutter outside the visible 720px `ContentBox` column, matching the floating-bar rail’s outer gutter. Feed surfaces can now reach the same visible cap as the composer while remaining inset on narrower screens.
+
+## 2026-09-01T14:49:35Z
+
+- [docs/web-architecture] Added a standing rule that logged-in web-app TSX must never define or modify visual design. TSX is limited to structure, semantic classes, state, behavior, and accessibility; visual changes belong in `web/app/globals.css` and `web/theme.config.ts` tokens.
+
+## 2026-09-01T14:46:01Z
+
+- [docs/web-architecture] Added a standing ban on page-specific CSS for the logged-in web app. Future app styling must use semantic classes and shared rules in `web/app/globals.css` with `web/theme.config.ts` tokens; the public-site landing stylesheet remains explicitly out of scope.
+
+## 2026-09-01T14:41:37Z
+
+- [docs/web-architecture] Added an absolute, standing ban on inline CSS in `web/` to `AGENTLOG.md` and `packages/design/design.md`: no JSX `style` props, HTML style attributes, or component-level inline CSS declarations. Static styling must use shared CSS/tokens; runtime values must use documented shared mechanisms. The public site is excluded.
+
+## 2026-09-01T14:37:18Z
+
+- [web/architecture] Removed JSX `style` props from the web app and moved static layout styling into `web/app/globals.css`. Runtime geometry and user-selected accent values now flow through documented CSS custom properties. The public site was not changed.
+
+## 2026-09-01T14:10:09Z
+
+- [web/layout] Unified the feed `ContentBox` and fixed floating composer on the single `content-col`/`--space-content-col` token at a 720px cap. Confirmed they remain separate DOM branches but now resolve through the same shared width contract at mobile, tablet, and desktop breakpoints.
+
+## 2026-09-01T13:55:17Z
+
+- [web/layout] Applied the confirmed 256px sidebar and 64px topbar dimensions through `web/theme.config.ts` and the shared CSS variable system. Updated the Header design contract and inventoried all topbar-dependent offsets; no scroll-padding or scroll-margin declarations were found. Broader consolidation remains paused for visual confirmation.
+
+## 2026-09-01T13:23:39Z
+
+- [audit] Completed the spacing/sizing consolidation audit. Found no Tailwind arbitrary utility classes, no `tailwind.config.ts`, no ESLint configuration or Tailwind lint plugin, and no pre-commit setup. The app currently uses `web/app/globals.css` and `web/theme.config.ts`; inline dimension cases are limited to dynamic indicator positioning, pull-to-refresh height, composer auto-height, action-menu positioning, accent swatch color, and the error page’s inline layout styles. Repeated CSS values are concentrated in existing global rules, including `1rem`, `0.75rem`, `0.5rem`, `1.25rem`, `2rem`, `3rem`, `2.25rem`, `1.5rem`, `0.25rem`, `2.5rem`, `1px`, and `8px`. No implementation changes were made pending a decision on adapting the requested Tailwind deliverable to the existing CSS-token stack.
+
+## 2026-09-01T13:10:31Z
+
+- [audit] Diagnosed the current postMedia crop, persistence, and feed-rendering implementation before any fix. Confirmed the checked-in composer still enforces a fixed 3:5 crop, `PostMedia` stores no final dimensions/aspect ratio, each image is cropped independently, and feed rendering uses fixed 3:4 containers for multi-image galleries without API-provided ratio reservation. No rules or application code were changed.
+
+## 2026-09-01T13:04:05Z
+
+- [web/layout] Increased the shared tablet/desktop `ContentBox` and contextual `FloatingBar` cap from 640px to 720px while preserving the same sidebar-relative centering and shared responsive gutter.
+
+## 2026-09-01T12:57:51Z
+
+- [web/layout] Increased the shared tablet/desktop content cap to 640px and kept `ContentBox` and the contextual `FloatingBar` on the same sidebar-relative, centered rail. The rail now uses the shared responsive content gutter.
+
+## 2026-09-01T12:48:48Z
+
+- [web/media] Added a shared single-image gallery variant that preserves the image's natural aspect ratio within the responsive content width/height bounds and removes the empty trailing gallery background; multi-image sliders retain uniform 3:4 slides.
+
+## 2026-09-01T12:39:42Z
+
+- [docs] Updated `RULES.md` to reflect the active submit-time post-media flow, media-only posts, and the current distinction between the 3:5 crop tool and 3:4 rendered gallery frames. Verified the README requirement to append changelog and agent-log entries after every task remains present.
+
+## 2026-09-01T12:27:02Z
+
+- [web/media] Updated rendered post-media slides to a 3:4 aspect ratio, added an 8px gap between images, and applied the shared 8px radius to every image frame.
+
+## 2026-09-01T12:23:43Z
+
+- [web/layout] Constrained list surfaces with a shrinkable grid track so media content cannot overflow the 512px `ContentBox`; this removes the apparent content/floating-bar size mismatch while preserving shared panel centering.
+
+## 2026-09-01T12:14:25Z
+
+- [web/layout] Corrected the shared runtime theme token from `640px` to `512px`, which had been overriding the CSS content-width cap in staging. Updated the floating-bar/content-panel alignment contract.
+
+## 2026-09-01T12:08:00Z
+
+- [web/layout] Corrected the desktop floating-bar rail so it shares the main-panel boundary after the side drawer; the bar remains capped at 512px and centered with flex alignment. Updated the active layout documentation and design contract.
+
+## 2026-09-01T10:54:14Z
+
+- [auth/verification] Completed the real authenticated two-tab refresh-race test: one coordinated refresh occurred, neither tab logged out, no reuse-detection event fired, and both tabs succeeded on follow-up authenticated requests. Added Web Locks as the primary cross-tab lock with storage coordination fallback and recorded the evidence in AGENTLOG.md.
+
+## 2026-09-01T07:47:32Z
+
+- [verification] Attempted the real authenticated two-tab refresh-race test. Verification remained blocked by the local Next runtime missing generated server chunks and a development-server `spawn EPERM`; no authenticated result is claimed and no application code was changed.
+
+## 2026-09-01T07:21:00Z
+
+- [auth] Replaced proactive/per-feature refresh behavior with the authoritative reactive-only model, added cross-tab refresh coordination, removed cross-environment API fallback, updated the API test expectation layer, and synchronized RULES/session documentation.
+
+## 2026-09-01T06:33:58Z
+
+- [auth/diagnosis] Audited the unexpected logout path; documented refresh failure handling, cross-tab reuse races, JWT configuration history, cookie settings, and the limits of available deployment/incident evidence. No runtime fix was made.
+
+## 2026-09-01T06:28:00Z
+
+- [web/design] Kept the composer’s normal contextual placeholder visible while a post, media-only post, or empty quote submission is busy; progress remains indicated by the posting spinner and button label.
+
+## 2026-09-01T06:26:08Z
+
+- [web/design] Removed the desktop sidebar offset from the floating-bar rail so the 512px bar centers in the viewport with ordinary flex alignment.
+
+## 2026-09-01T06:16:01Z
+
+- [web/design] Replaced floating-bar viewport positioning with a centered fixed rail and capped the bar at the shared 512px content width.
+
+## 2026-09-01T06:13:06Z
+
+- [web/design] Re-aligned the shared `FloatingBar` with the reduced 512px `ContentBox` rail and corrected its desktop panel-relative positioning so both surfaces stay centered and share the same content edges.
+
+## 2026-09-01T12:05:00Z
+
+- [docs] Reconciled `RULES.md` and `packages/design/design.md` with the recent post-media, modal, and content-width changes.
+
+## 2026-09-01T11:35:00Z
+
+- [web] Reduced the shared desktop `ContentBox` maximum width from `1024px` to `512px`; mobile remains fluid.
+
+## 2026-09-01T11:15:00Z
+
+- [web] Made the shared modal topmost and changed post-media thumbnails to open a navigable 3:5 crop tool directly with Reset and Apply controls.
+
+## 2026-09-01T10:50:00Z
+
+- [docs] Synced `RULES.md` with the complete post-media implementation, including reordering, submit-state feedback, retry behavior, and slider rendering.
+
+## 2026-09-01T10:40:00Z
+
+- [docs] Updated `RULES.md` to match the new post-media slider behavior and responsive height contract.
+
+## 2026-09-01T10:30:00Z
+
+- [web] Replaced the post-media grid with a fixed-height horizontal slider that preserves each image’s aspect-ratio width and shows all associated photos on desktop and mobile.
+
+## 2026-09-01T10:10:00Z
+
+- [web] Added drag-and-drop ordering for post attachments and fixed the thumbnail remove icon’s clipping/stacking.
+
+## 2026-09-01T09:55:00Z
+
+- [web] Added the profile-upload-style spinner animation to the post button while a post and its media are being submitted; the button is disabled until the operation completes.
+
+## 2026-09-01T07:00:00Z
+
+- [web] Fixed desktop post-media gallery sizing by adding a responsive width/height cap while preserving the mobile portrait frame.
+
+## 2026-09-01T06:45:00Z
+
+- [verification] Confirmed the exact post-media object is publicly readable through the Cloudflare `r2.dev` URL with HTTP 200; the custom media hostname remains DNS-unresolved.
+
+## 2026-09-01T06:30:00Z
+
+- [diagnosis] Reconfirmed that post-media rendering reaches the image element but the exact custom media URL still fails DNS resolution for `staging-media.friink.com`.
+
+## 2026-09-01T06:15:00Z
+
+- [diagnosis] Confirmed post-media rendering failure is DNS resolution: the API returns the custom media URL, but `staging-media.friink.com` has no resolvable public hostname.
+
+## 2026-09-01T05:45:00Z
+
+- [docs] Added `docs/audit.md`, a combined technical and architectural audit of auth, sessions, profile pictures, post media, R2, staging evidence, and known limitations.
+
+## 2026-09-01T05:20:00Z
+
+- [api/web] Added post-media URL response fields and a shared Instagram-style responsive gallery for feed, detail, replies, and quoted posts.
+
+## 2026-09-01T04:55:00Z
+
+- [api] Fixed the post-media upload-plan HTTP 500 by serializing storage upload dataclasses into the declared Pydantic response models; added regression coverage.
+
+## 2026-09-01T04:45:00Z
+
+- [diagnosis] Identified the post-media upload-url 500 as a Pydantic response-validation failure: `PostMediaUpload` dataclasses are passed directly where `PostMediaUploadUrlItem` models are required. No code fix was applied in this diagnostic step.
+
+## 2026-09-01T03:05:00Z
+
+- [web/auth] Disabled proactive session refresh for post-media requests while preserving reactive refresh on `401 TOKEN_EXPIRED`; profile-picture behavior is unchanged.
+
+## 2026-09-01T02:45:00Z
+
+- [docs] Expanded `docs/media-upload.md` into a complete technical audit with staging evidence, R2/CORS findings, current post/profile flows, deployment uncertainty, and unresolved viewing/session diagnostics.
+
+## 2026-09-01T01:52:00Z
+
+- [api] Decoupled post-media upload/confirmation from public R2 HEAD/GET verification and made `R2_PUBLIC_URL` optional for upload planning; profile-picture APIs remain unchanged.
+
+## 2026-09-01T01:40:00Z
+
+- [verification] Direct staging R2 post-media upload and authenticated metadata read succeeded; the configured public R2 URL returned 403 for both HEAD and GET. Test objects were removed.
+
+## 2026-09-01T01:26:19Z
+
+- [api] Completed the post-media isolation by removing the obsolete post-media methods from the profile-capable storage service; profile-picture methods and APIs remain unchanged.
+
+## 2026-09-01T01:24:25Z
+
+- [api/web] Rebuilt post-media upload storage and orchestration as an isolated post-specific feature. Added a dedicated post R2 service and kept profile-picture APIs/storage untouched; post images retain their namespace, JPEG/500KB, eight-image, ownership, confirmation, association, and cleanup rules.
+
+## 2026-09-01T01:07:40Z
+
+- [api/web] Added a post-specific media confirmation API and changed the post client to request, upload, and confirm one image at a time before associating media with the post. Post-media namespace, JPEG/500KB limit, eight-image limit, ownership checks, and cleanup rules remain post-specific; profile-picture code was not changed.
+
+## 2026-09-01T00:53:00Z
+
+- [diagnostic] Reproduced the reported post-media toast as a network-level failure: the local web app was configured for `http://localhost:8000` while no API listener was running. Started the local FastAPI API with the ignored staging R2 configuration, installed the already-declared local `boto3` dependency, verified database health/CORS, and confirmed post presigned-URL generation.
+
+## 2026-09-01T00:45:39Z
+
+- [docs] Added `docs/media-upload.md`, an implementation audit of profile-picture and post-media preparation, presigned R2 transfer, confirmation, persistence, cleanup, diagnostics, configuration risks, session behavior, and verification steps.
+
+## 2026-09-01T00:40:38Z
+
+- [web] Refactored the general post-media presigned upload path around a reusable storage PUT helper, added stage-specific transfer errors, and made cleanup include keys before each PUT so partially received uploads can be removed; profile-picture upload behavior is unchanged.
+
+## 2026-09-01T00:34:10Z
+
+- [web/design] Removed the underline from rendered mention links in every state while keeping them accent-colored; documented the shared mention styling contract.
+
+## 2026-09-01T00:30:00Z
+
+- [web/design] Renamed the dynamic in-app accent token to `--color-accent` and derived soft, hover, focus, and interaction backgrounds from the selected accent instead of fixed green values.
+
+## 2026-09-01T00:07:47Z
+
+- [api] Added stage-specific post-media failure handling and request references for upload-plan generation, object verification, database association, response serialization, and cleanup logging; profile-picture APIs were not changed.
+
+## 2026-08-31T23:43:16Z
+
+- [web] Added explicit brand-colored mention links that remain green after visiting, plus a device-local Accent color setting under Settings > General that changes only the in-app brand token.
+- [design/rules] Documented the six-digit hex validation and public-site isolation contract.
+
+## 2026-08-31T23:36:05Z
+
+- [api] Hardened post-media confirmation to fall back from unreliable R2 S3 `HEAD` metadata calls to bounded public-object HEAD/GET verification, matching the working profile-picture flow while retaining JPEG and 500KB checks.
+- [diagnostic] Reproduced staging `Failed to fetch` with two attached images; attachments remained intact and no console errors appeared. The live deployment must be redeployed before this fix can be tested there.
+
+## 2026-08-31T23:30:08Z
+
+- [web/api] Allowed media-only posts by enabling submission when attachments exist and relaxing the API's non-quote empty-content validation; added a regression test and corrected the post-media compression documentation comment.
+- [diagnostic] Reproduced staging post-media submission failure: two attached images remained after the UI showed `Failed to fetch`. No console errors were emitted; source-level attachment retention is working, but staging API/R2 deployment or configuration still requires verification.
+
+> README.md is the authoritative source for the stack. Read it once per work session,
+> and always before tasks involving stack, infrastructure, environment setup, or
+> deployment configuration.
+
 > INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file
 > for project history and current state. After completing any change to the
 > codebase, add a dated entry here summarizing what changed and why. Also
@@ -15,22 +326,30 @@
 > corresponding detailed entry to AGENTLOG.md describing the exact files or
 > scope touched and why. Keep both files synchronized.
 
-This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags.
+This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags. New entries must use a UTC ISO 8601 timestamp with seconds and a `Z` suffix (`YYYY-MM-DDTHH:mm:ssZ`); retain date-only values when the historical time is unknown.
 
 ## Current State
-_Last updated: 2026-08-30_
+_Last updated: 2026-09-01_
 
 - [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
-- [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while media schema remains reserved through minimal `post_media` storage placeholders pending an object storage decision.
+- [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while post images use submit-time R2 uploads and the `post_media` association table.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, rejected rows retain the 24-hour resend cooldown, and canceled rows retain sender-cancel history for the 3-hour/24-hour resend lockout cycle. Pending requests are auto-accepted when a private account flips public.
 - [api] In-app notifications are implemented with a `notifications` table, unread/feed/read endpoints, and synchronous notification creation for follow, request, accept, and private-to-public auto-accept events.
 - [web] The deployed frontend makes **real fetch calls** to the FastAPI backend via `web/lib/auth.ts` and `web/lib/data.ts`. There is no demo/mock mode for logged-in flows; signup, login, post creation, connections, and profile editing all require the API. `NEXT_PUBLIC_API_BASE_URL` must still be set in the Vercel **web** project to the deployed API base URL, but the app no longer silently falls back to `http://localhost:8000` in deployed browsers; missing config now fails clearly instead of surfacing as a misleading localhost network error. The subscribe section submits to Zoho Forms for real email collection.
-- [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. As of 2026-08-28 the API Vercel project's existence and deployment status for staging is **unconfirmed** — must be verified in the Vercel dashboard.
+- [api/web] The staging profile-picture flow has been verified end to end: the cropped image uploads to R2, confirmation persists the profile URL, and replacing a picture removes the previous stored object, including legacy flat keys.
+- [docs/infra] Added `R2.md`, a production-ready Cloudflare R2 and Vercel configuration guide based on the verified staging setup, with secret-handling, CORS, public URL, deployment, and troubleshooting steps.
+- [infra] **Two separate Vercel projects** are required: one for the Next.js `web` app (deployed from `web/`) and one for the FastAPI `api` app (deployed from `api/`, entrypoint `api/api/index.py`). There is no root `vercel.json`; each project is configured independently in the Vercel dashboard. The web project needs `NEXT_PUBLIC_API_BASE_URL` set to the API project's deployed URL. The API project needs `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL` (set to the web URL for CORS), and the other vars in `api/.env.example`. The application uses **sync `psycopg` (psycopg3)** through SQLAlchemy, avoiding the async DB driver/event-loop path that caused staging serverless crashes. The current repository does not independently verify the Vercel dashboard deployment/configuration state; that remains an operational release check.
 - [web] The public landing page is now a native Next.js App Router route at `/`, not an iframe wrapper around `web/public/friink-site/index.html`. Landing styles are scoped in a CSS module, landing media assets live under top-level `web/public/brand` and `web/public/media`, and the old `web/public/friink-site/` folder has been removed.
 - [web] Page titles now use the `Friink | Page Name` format through route-level metadata. Dynamic profile titles use the known display name when available and fall back to `@username`; deleted demo route names are guarded so `/compose`, `/dev-settings`, and `/floating` return 404 instead of becoming profiles.
 - [web] The shared `FloatingBar` is the persistent contextual surface: it now hosts the reusable `Composer` for real post creation by default, starts floating-post entry in a compact single-line layout, expands into multiline borderless entry only as text needs vertical space, and uses the `/chat` route for message lists and direct chat. The old `/compose` route and post compose page components have been removed.
+- [web/layout] The shared visible `ContentBox` and contextual `FloatingBar` use the same fluid 720px maximum on tablet/desktop, centered within the available main panel after the side drawer; the shared 16px desktop/8px mobile gutter sits outside that visible cap.
+- [web/architecture] Logged-in app design is owned exclusively by `web/theme.config.ts` and `web/app/globals.css`; TSX contains structure/behavior and the app has no page-specific CSS or JSX inline styling. The public landing CSS module is separate and outside this rule.
+- [web/media] Post media currently uses a fixed 3:5 react-easy-crop frame, submit-time R2 upload, up to 8 images, a shared 3:4 frame for multi-image galleries, and natural-ratio single-image display. Final crop width, height, and aspect ratio are not currently persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
+- [auth] Usernames are case-insensitive identities. Signup and Settings perform availability checks, accepted usernames are stored canonically in lowercase, and the API/database enforce uniqueness.
+- [chat] Chat conversations and messages are API-backed. The active conversation uses a 4-second polling transport with focus/visibility recovery, cursor-based incremental loading, and retry-safe client message IDs; mute/request filtering remains unimplemented.
+- [notifications] The header unread count and open Notifications screen now use a 4-second polling transport with adaptive backoff after failures.
 - [web] Added a dedicated `/notifications` screen with Friink-styled notification rows, wired the header bell to open it, and connected it to the API-backed in-app notification feed. The notifications page is now stripped down to the list only, and feed/chat identities open dummy profile views that can launch chat.
-- [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Connections`.
+- [web] Post headers and the sidebar/profile identity block now use the reusable `ProfileCard` pattern, and the home tabs are reduced to `Explore` and `Following`.
 - [web] Post cards navigate to the canonical post detail page when clicking non-interactive card areas. `Show more...` appears only for post body text that exceeds four visible lines and expands the card in place on both feed and post detail surfaces.
 - [web] The Home/Explore feed now uses cursor-based loading for older posts, foreground-only polling for newer posts, top-of-feed manual refresh fallback, and local last-viewed post restore so the feed no longer depends on full-page reloads to update.
 - [web] Home feed restore now treats stale last-viewed post anchors as recoverable: if `/posts/context/{post_id}` fails, the client clears the saved anchor and falls back to the normal `/posts` feed load instead of showing `Could not load the Home feed.`.
@@ -38,6 +357,157 @@ _Last updated: 2026-08-30_
 - [web] Connections `All` now combines live followers and following, while the private-account `Requests` tab shows both received pending requests with Accept/Reject actions and sent pending requests with Cancel actions.
 - [web] Connections tabs no longer fall back to sample/demo people when there are no live followers or following.
 - [web] Profile action buttons are now right-aligned, the sidebar profile highlight only tracks the signed-in user profile, and Settings now uses shared row sections with Profile owning separate Name, Username, and About rows while Account holds email and user ID.
+- [web] Profile summary content now uses the shared 8px inline inset so the profile card, About text, follower/following stats, and profile actions maintain the minimum spacing inside the ContentBox.
+- [web] Header search controls now place the magnifier before the close icon, and the notification bell stays right-aligned while opening a recent-notifications dropdown with an unread dot, count pill, and All Notifications link.
+- [web] Removed the duplicate header action right inset so the bell aligns exactly with the right edge of the mobile navigation three-dots control.
+- [web] Restored the fourth default recommendation in the floating search suggestions dropdown.
+- [web] Removed the unnecessary search-dropdown scrollbar, added the Open Search footer link, and hid the notification count pill and empty placeholder when there are zero unread/recent items.
+- [api/web] Post URLs now use an 8-character random `public_id` plus an on-the-fly, eight-word/64-character content slug; UUID primary and foreign keys remain unchanged, and stale username/slug segments redirect to the canonical URL.
+- [api] Neon database migration `20260830_0009` has been applied successfully and existing posts have been backfilled with public IDs.
+- [docs] README is now the single source of truth for the verified stack, and it contains standing instructions for keeping CHANGELOG, AGENTLOG, design, and rules documentation current.
+- [web] Updated the login/signup screen dark-mode background to `#161616`, kept the auth form fluid with a `31rem` maximum width, and aligned mobile auth controls to the right.
+- [docs] Documented the login/signup responsive-width, dark-mode, and mobile action-alignment contracts in `packages/design/design.md`.
+- [dev] Restarted the local Next.js server after a generated `.next` stylesheet cache caused the landing page CSS asset to return 404; the landing source was unchanged and styles were verified loading again.
+- [web] Kept the mobile Forgot password control left-aligned while retaining right-aligned mobile auth action groups.
+- [web] Moved profile edit/message/follow actions to a left-aligned row below the inline follower/following statistics across all viewport types.
+- [docs] Updated the profile layout contracts in `packages/design/design.md` and `RULES.md` to record the stacked, left-aligned action row.
+- [web] Unknown username routes now show `Does not exist or unavailable.` instead of rendering a synthetic demo profile, including while the lookup is pending.
+- [docs] Documented the unavailable-profile behavior in `RULES.md` and the ProfileScreen contract.
+- [web] Fixed client-side profile navigation so a previously loaded profile cannot flash while the new username is resolving; stale lookup results are ignored and a loading state is shown.
+- [docs] Documented the profile loading and stale-request handling contract.
+- [web] Replaced hardcoded profile follower/following zeros with API-backed counts and made each statistic open the matching Connections tab.
+- [docs] Documented the profile count and statistic-navigation contract.
+- [web] Made the complete profile statistics ununderlined links, with profile links targeting the canonical `/{username}/connections` route; the shared Connections screen now loads the requested user's data.
+- [docs] Documented profile-specific Connections routes and three-tab behavior for other users.
+- [web] Updated profile statistic hover/focus styling so the number and its following/followers label change color together.
+- [web] Connections tab changes now update the current URL's `tab` query parameter, removing it when returning to `All`.
+- [web] The reusable `Modal` now supports an optional left-side back arrow; the profile-picture crop modal uses it to return to the previous profile-picture step.
+- [web] Settings update controls and modal save ticks now use the shared platform button height of `3rem`.
+- [api/web] Added persisted profile setup state and a resumable two-step setup wizard for new accounts, covering optional profile picture and About steps with skip, close, and completion behavior.
+- [web] Authenticated bootstrap now clears sessions only for explicit `401` responses, preserving valid sessions during network, API, deployment, or migration failures.
+- [web] Setup close now dismisses the local modal even when progress persistence fails, and duplicate identical toasts are suppressed.
+- [web] New-account signup now explicitly starts profile setup at step 1, and Settings/setup share one `ProfilePictureCropModal` implementation.
+- [api/db] Applied profile setup migration `20260831_0011` to the shared database; Alembic is now at head for localhost, staging, and production.
+- [web] Hardened auth refresh handling so only an explicit refresh-token 401 can clear local session state; refresh timeouts, CORS/network failures, 403s, 5xx responses, and malformed responses now remain retryable.
+- [web] Added refresh/logout generation guards, refresh-before-login recovery for missing or malformed local auth state, and a 15-second request timeout. Server-side refresh-token revocation remains open because tokens are currently stateless JWTs without server records.
+- [docs] Added a design-only proposal for opaque refresh-token rotation/revocation, reuse detection, legacy-session migration, and access-token `kid` key rotation; no implementation or schema changes were made.
+- [docs] Added `docs/session-updates.md` as a handoff for the completed session rotation/revocation implementation, deployment requirements, verification evidence, and remaining caveats.
+- [verification] Runtime verification of session/logout hardening was attempted against the signed-in staging app. Items requiring fault injection, storage mutation, network traces, or an in-flight request could not be tested in the available browser surface; staging-to-production fallback was diff-verified unchanged.
+
+## 2026-08-31
+
+### Changed
+
+- [web] Standardized signed-in Connections navigation on `/{username}/connections` and its filtered subroutes, matching other-user profile routes. Legacy `/connections` routes remain available as compatibility entry points.
+- [api/web] Renamed the Home `Connections` tab to `Following`, changed its slug to `/home/following`, and added server-side follow-only filtering across feed pagination, polling, and context restoration. `/home/connections` redirects to the new slug.
+- [web] Made the header Friink logo link to `/home`.
+- [web] Removed repeated visible setting titles from expanded Settings fields while retaining accessible input labels.
+- [web] Converted stable SideDrawer destinations to real anchors so Chrome can preview their routes on hover and users can open them in a new tab.
+
+## 2026-09-01
+
+- [web] Fixed the mention editor caret appearing after the placeholder after typing, deleting, and refocusing by removing the browser's leftover empty contenteditable node.
+
+- [web] Fixed failed post-media submissions incorrectly clearing local attachments: caught submit failures now return an unsuccessful result to the shared Composer, which preserves the text and images for retry; direct R2 fetch failures now show a clearer storage-upload message.
+
+- [web] Fixed composer context dismissal, empty mention-editor caret behavior, and missing author avatars in reply/quote previews by reusing the target post's resolved profile-picture URL.
+
+- [api/web] Implemented submit-time post-image uploads: up to 8 locally previewed/cropped images are compressed with the shared `postMedia` preset, uploaded to R2 under `post-media/{user_id}/`, server-validated and associated atomically with the post; failed attempts clean up uploaded objects and post deletion removes associated objects.
+
+- [audit] Completed the Phase 1 post-media upload audit: confirmed the composer workflow is client-only, the API rejects media payloads, `post_media` is currently a placeholder, and no post-media R2 upload, association, or cleanup path exists. Implementation is deferred pending review.
+
+- [api/web] Implemented user-facing session management under Settings > Account with server-managed auth sessions, nullable refresh-token linkage, current-session detection from the refresh cookie, individual and revoke-others actions, and device/browser metadata fallbacks.
+- [db] Applied additive Alembic migration `20260901_0013` for `auth_sessions` and nullable `refresh_tokens.session_id`; no existing session rows were backfilled or invalidated.
+
+- [web] Restored the composer placeholder after clearing a mention-enabled draft and added best-effort local browser draft persistence across navigation, without database writes.
+
+- [docs] Added `docs/session-management.md` covering the proposed Account sessions feature, data model, API/UI scope, migration impact, risks, and verification requirements; no implementation changes were made.
+
+- [web] Added the UI-only post media workflow: multiple image selection up to eight files, inline thumbnails between the composer `+` control and character count, modal preview/crop/delete controls, and tighter expanded-composer spacing.
+
+- [web] Fixed portaled in-app action menus so they follow the selected app light/dark theme instead of losing `.app-shell` color variables when rendered under `document.body`.
+
+- [web] Matched the public account menu to the reference geometry: it opens directly beneath the unchanged profile picture with a 2px gap and 2px right offset, while remaining above the public header.
+
+- [web] Updated the floating post composer to be borderless and transparent, expand into a full-width top editor as typing begins, grow to eight lines, then scroll while keeping composer controls in the bottom row.
+
+- [web] Corrected the public account-menu placement to sit below the profile picture with a 2px top gap and 2px right offset instead of overlapping the header.
+
+- [api/web] Added editable inline mention tokens to post, reply, and quote composers; recognized users show a small profile picture and handle while rendered posts retain compact clickable `@username` links.
+
+- [web] Added native `minLength`, `pattern`, and `title` password-policy hints to Signup and Settings > Account so browsers and password managers can better generate or validate compliant new passwords.
+
+- [web] Added a live password-requirements checklist to Settings > Account so users can see why Update password is disabled and which signup rule still needs attention.
+
+- [web] Fixed the public signed-in account menu layering and theme treatment: it now renders above the header, overlaps the visible avatar, and shows display name plus secondary handle before the three account actions.
+
+- [docs] Updated RULES.md to reflect that authenticated users may browse public pages, the shared public account menu, and the hidden internal UUID policy; superseded the old authenticated-landing redirect rule.
+
+- [web] Removed default link underlines from SideDrawer anchor destinations while preserving real browser-previewable routes.
+
+- [web] Restored standard `autocomplete="current-password"` on Settings > Account so browser password managers can offer saved credentials.
+
+- [web] Removed the internal UUID from the normal Settings > Account screen; users see account controls rather than database implementation identifiers.
+
+- [web] Matched Settings > Account password fields to Login/Signup with empty-on-entry current password, eye visibility toggles, and autofill prevention for the current-password field.
+
+- [web] Updated the shared public header so signed-in avatars open an ActionMenu with the user profile, Feed, Settings, and Log out; removed the redundant subscriptions-page Home link and reused the app Font Awesome icons.
+
+- [api/web] Added password change in Settings > Account with current-password verification, standard password validation, matching confirmation, and session-preserving hash replacement.
+
+- [api/web] Hardened post creation after the mention timeout investigation: mention notifications are now best-effort after the post is committed, and staging-to-production fallback is restricted to safe read requests so timed-out mutations cannot be replayed across environments.
+
+- [docs] Standardized known documentation timestamps to UTC ISO 8601 with seconds and a `Z` suffix, while preserving date-only historical entries whose exact times are unknown; added timestamp instructions to README, CHANGELOG, and AGENTLOG.
+
+- [web] Standardized the Settings > Profile picture Upload control to the shared `3rem` square action size used by settings save controls.
+
+- [web] Added visible labels to Settings profile-picture Upload, settings Update, and crop confirmation controls while preserving the shared action sizing and contextual wording.
+
+- [web] Standardized app display and action typography on local Nunito for headings, buttons, tabs, navigation labels, and action links while retaining Inter for body and user-authored content.
+
+- [web] Renamed the reusable `NavigationMenu` component to `ActionMenu` and reused it from the post composer plus button for Font Awesome Add media and Add link actions; UI only, with backend upload/link behavior still deferred.
+- [api/web] Added username mention links in post text and mention notifications that identify the author and open the canonical post containing the mention.
+- [api/web] Fixed quoted-post identity payloads and mappings so quoted cards show the original author's display name and profile picture.
+- [web] Made the shared `ActionMenu` viewport-aware with portal-based fixed positioning, automatic vertical flipping, edge clamping, and scroll/resize recalculation.
+- [web] Added a public Plans section to the landing page and a full `/subscriptions` comparison page for Friink Free, Pro, and Pro+; paid actions remain Coming soon until billing exists.
+- [web] Added a dedicated Settings > Subscription tab with the current Free plan summary and a link to `/subscriptions`.
+- [web] Reordered the landing page narrative to present Development progress and Our vision before Plans, followed by the newsletter CTA.
+- [web] Made the landing and `/subscriptions` pages reuse an auth-aware public `Header`; signed-in users see their profile picture as the return link instead of a Login CTA, the landing page no longer redirects signed-in visitors, and the subscriptions page follows the landing dark theme consistently.
+- [web] Fixed public plan-card feature-list and price text remaining dark in dark mode by applying the shared light foreground color to those selectors.
+- [web] Fixed the public `Compare all plans` link hover/focus state so it remains readable in dark mode, and clarified the public-site light/dark design contract.
+
+### Changed
+
+- [api/web] Made available quoted-post blocks link to the original post's canonical detail page while preserving parent-card and author-profile navigation; unavailable quoted posts remain non-clickable status blocks.
+
+## 2026-08-30
+
+### Changed
+
+- [web] Refined login/signup responsive styling: dark-mode auth background is `#161616`, the form is explicitly fluid up to `31rem`, and mobile auth controls remain right-aligned.
+- [docs] Added the login/signup visual contract to `packages/design/design.md`.
+- [dev] Recovered localhost landing-page styling by restarting Next.js after a stale generated CSS asset returned 404; no landing-page source changes were needed.
+
+### Verified
+
+- [web] `npm run build` passed at the repository root; Next.js compiled, type-checked, and generated all routes successfully.
+- [dev] Live `http://localhost:3000/` verification confirmed landing CTA styles loaded and `scrollWidth` remained below the viewport width.
+
+## 2026-08-30
+
+### Added
+
+- [api] Added the `posts.public_id` migration, unique/indexed storage, public-id lookup endpoint, and centralized slug generation utility.
+
+### Changed
+
+- [web] Updated feed, profile, detail, creation, metadata, and legacy post links to use `/{username}/{slug}-{public_id}` or `/{username}/{public_id}` for empty slugs.
+- [docs] Documented public post URL rules and the completed Neon migration in `README.md` and `RULES.md`.
+- [docs] Merged the audited stack reference into `README.md`, removed the obsolete duplicate stack file, and corrected the ORM/session reference to synchronous SQLAlchemy with psycopg3.
+- [docs] Removed the post URL explanation from the Local Development section after confirming the complete routing rule already lives in `RULES.md` and the implementation history is recorded above.
+- [web] Consolidated the search and notification floating lists into the shared `ContextualDropdown` component with a centered “Nothing to show.” empty state.
+- [web] Matched the search dropdown footer styling to the notifications footer by scoping search row styles away from the Open Search action.
+- [docs] Added a RULES.md architecture rule requiring shared ContextualDropdown usage for floating Search and Notifications lists.
 - [web] Tightened the settings username prefix wrapper again so the `@` marker sits outside the entered text cleanly.
 - [web] Fixed the `[username]` profile route to read the path slug directly so other-user profile pages open reliably instead of falling back to the signed-in profile.
 - [web] Settings username prefixes reset inherited absolute positioning, and other-user profile actions now use a compose/send message icon while own-profile Edit stays unchanged.
@@ -59,7 +529,17 @@ _Last updated: 2026-08-30_
 - [web] Added mobile swipe gestures to the shared Tabs component: right-to-left advances to the next tab and left-to-right returns to the previous tab.
 
 ### Changed
+- [docs] Documented shared ContextualDropdown ownership, common empty-state behavior, and the allowed Search/Notifications row-specific exceptions in RULES.md.
+- [web] Unified contextual dropdown footer controls so Search and Notifications share the same compact border, spacing, and link treatment.
+- [web] Reused one contextual dropdown component for header search and notifications, keeping notification styling as the shared base while allowing each list's row content and footer to vary.
+- [web] Made search and notification dropdowns naturally size from zero to four visible items, added `/search` navigation from the search footer, and limited the notification count pill to unread counts of at least 1 (`99+` above 99).
+- [web] Added the missing fourth default search suggestion, `Search hashtags`, so the floating search dropdown uses its documented four-row capacity.
+- [web] Corrected `.topbar-actions` right-edge spacing by removing its extra 16px padding; the shared topbar and navigation bar now resolve to the same 8px right inset.
+- [web] Updated the shared Header notification flow to pass recent notification items from AppShell, show up to four items in a floating dropdown, and navigate to the full Notifications screen from the footer or an item.
+- [web] Restored the bell's green unread dot indicator and moved the actual unread count into the dropdown footer; no numeric badge is shown on the bell itself.
+- [web] Reordered the search panel actions so the magnifying-glass submit control appears before the close control.
 - [web] Tightened the profile meta row into a two-column grid with stats and actions sharing the same row, matched stats min-height to action button height for visible vertical centering, and removed legacy profile CSS that could confuse the cascade.
+- [web] Added the shared inline content inset to `.profile-summary`, moving profile summary content 8px inward from the ContentBox edges for consistent minimum spacing.
 - [web] Refined the profile meta-row breakpoint so the mobile stacked action layout only applies on narrow coarse-pointer/touch views; narrow desktop browser views keep stats and profile actions vertically aligned on one row.
 - [docs] Added the profile header/content-box spacing rule to `RULES.md`, covering desktop stats/action alignment, mobile stacking, and shared `ProfileScreen` ownership.
 - [web] Made the profile header summary explicit inside `ProfileScreen`, grouping profile card, about text, stats, and actions into one component-level section inside `ContentBox` with standard spacing.
@@ -82,12 +562,16 @@ _Last updated: 2026-08-30_
 - [docs] Updated `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, and `AGENTLOG.md` for the navigation, floating bar, post expansion, quote submission, and composer-limit contracts.
 
 ### Verified
+- [web] `npx tsc --noEmit --incremental false` passed in `web`; live localhost verification confirmed four search options without a scrollbar, Open Search routing to `/search`, and no notification count pill or empty placeholder at zero unread/recent items.
+- [web] Live localhost measurement confirmed the header bell and navigation three-dots right edges match at `0px` delta on the profile/post-detail viewport.
+- [web] `npx tsc --noEmit` passed in `web`; live localhost verification confirmed the search action order and notification dropdown at `http://localhost:3000/muflah`.
 - [web] `npx tsc --noEmit` passed in `web` after tightening profile meta-row grid alignment; `npm run build` is currently blocked by generated `.next` cache/Windows cleanup errors after source compilation.
 - [web] `npx tsc --noEmit` and `npm run build` passed in `web` after refining the profile meta-row mobile breakpoint.
 - [web] `npx tsc --noEmit` and `npm run build` passed in `web` after hardening the profile summary/content-box alignment source changes.
 - [docs] Component-level audit passed: current-session UI behavior lives in shared components/state owners or documented shared CSS contracts; only component-owned dynamic measurement styles remain (`Tabs` indicator and Home pull-to-refresh height).
 - [web] `npx tsc --noEmit` and `npm run build` passed in `web` after the component-level audit documentation updates.
 - [web] `npx tsc --noEmit` passed in `web` after the profile meta-row alignment change.
+- [web] Verified the profile padding adjustment live at `http://localhost:3000/muflah`; no build was required because this was a CSS-only update to `web/app/globals.css`.
 - [web] `npm run build` passed in `web` after clearing the generated `.next` cache that had a Windows/OneDrive lock from the prior build attempt.
 - [web] `npx tsc --noEmit` passed in `web` after the mobile header search layout fix.
 - [web] `npm run build` passed in `web` after the mobile header search layout fix.
@@ -892,3 +1376,46 @@ _Last updated: 2026-08-30_
 - This is the baseline snapshot for the monorepo so future work can be traced by app and date.
 - Local demo flow is testable after restarting the API with the correct JWT env values and applying the DB migration.
 - Added local startup check scripts to confirm the API and web app both run on the expected ports before verification.
+
+## 2026-08-30
+
+### Changed
+
+- [docs] Consolidated the overlapping README agent guidance into one section, clarified targeted verification versus handoff commits, and added the README stack-read pointer to this file.
+- [docs] Final README cleanup corrected `RULES.md` filename casing, removed a duplicated documentation instruction, and retained the existing README-read pointer.
+- [docs] Fixed missing Markdown list markers in the README agent-instructions section so all “after finishing” guidance renders consistently.
+- [docs] Indented multiline continuations in those list items so the README renders as valid, consistently formatted Markdown.
+- [api/web] Prepared profile-picture media support: added nullable user URL/timestamp fields, migration `20260830_0010`, a real boto3/R2 storage service, authenticated upload-url and confirmation endpoints, R2 env placeholders, and settings UI with preview/loading/error states. Shared profile and sidebar avatars use the stored URL when present and retain initials fallback otherwise. RULES.md was not changed because existing avatar guidance already covers the optional/default behavior.
+- [api] Alembic upgrade to `20260830_0010` applied cleanly; remaining setup is limited to adding the five R2 environment values when staging credentials arrive.
+- [docs] Completed the R2 documentation pass by adding the `ProfileCard.imageUrl` fallback contract, the Settings profile-picture UI contract, and the optional-profile-picture product rule in `packages/design/design.md` and `RULES.md`.
+- [web/api] Added client-side profile-picture compression before the existing upload flow using the browser Canvas API: JPG/JPEG, PNG, and WebP are normalized to JPEG at the avatar preset (600px max edge, ~250KB target), HEIC/HEIF and unsupported types are rejected explicitly, transparent pixels flatten to white, and the backend confirmation safety net rejects objects over 3MB. The picker now displays processing separately from upload progress. A future `postMedia` preset can be added without changing the utility API.
+- [web] Added `react-easy-crop` square cropping before profile-picture compression; updated the avatar preset to 512px square/~250KB without upscaling smaller crops, and implemented an unwired `postMedia` preset at 1024px max edge/~500KB with preserved aspect ratio.
+- [web] Added the provided root `profile.jpg` unchanged at `web/public/media/profile.jpg` and made the shared `ProfileCard` use it as the default whenever no user-uploaded profile picture URL exists.
+- [web] Enforced a 128px minimum source short edge before profile-picture cropping and capped `react-easy-crop` zoom at `shorterEdge / 128`, preventing unusably small crop selections.
+- [verification] Completed the profile-picture pipeline audit: schema/migration, R2 service, protected endpoints, frontend sequence, compression presets, avatar fallback coverage, and cross-task consistency were checked. Fixed the upload button/handler so an uncropped file cannot bypass the modal; TypeScript and diff checks pass.
+- [verification] Normalized the remaining legacy Questions/Directory avatar renderers to the shared `ProfileCard` fallback path so no code path bypasses the default profile image.
+- [local] Added the supplied staging R2 account, access key, secret key, and bucket name to ignored `api/.env`; `R2_PUBLIC_URL` remains blank pending the bucket public URL/custom domain and no secret values were added to tracked files.
+- [web] Moved the profile-picture cropper into an accessible modal/popup with backdrop dismissal, cancel/close controls, title/help text, and explicit Confirm crop action.
+- [web] Added contextual profile-picture upload errors that distinguish API startup, R2 transfer/CORS, and API confirmation failures, including relevant HTTP status and staging configuration guidance.
+- [docs] Clarified in `api/.env.example` that staging R2 values belong in Vercel Preview and must not be committed.
+- [web] Renamed the profile-picture file picker action to `Upload`, moved the tick confirmation control into the crop modal, made the final upload action explicit, and removed crop-dialog horizontal overflow.
+- [web] Structured profile-picture failure toasts with a plain-language title, stable code, user-facing summary, and smaller diagnostic detail beneath it.
+- [web] Replaced developer-oriented profile-picture failure details with plain-language summaries and next steps while retaining a support code.
+- [web] Restored the last server-confirmed profile picture after a failed upload so an optimistic local preview cannot imply that the account was updated.
+- [api] Hardened profile-picture confirmation with a public-object verification fallback and safe handling for unexpected confirmation failures.
+- [api] Made R2 confirmation resilient when the public development endpoint does not support `HEAD`: confirmation now falls back to a bounded `GET` while preserving the 3 MB object-size limit.
+- [api] Made previous profile-picture cleanup fully best-effort so legacy object keys cannot cause a successful replacement to return an error after the database update.
+- [api] Changed profile-picture replacement cleanup to mandatory deletion before the new database URL is committed, with support for deleting legacy flat object keys.
+- [api] Fixed the profile-picture confirmation `500`: the route accidentally resolved `refresh(...)` to the `/auth/refresh` handler after committing the new picture. Confirmation now returns the committed result directly.
+- [api/security] Kept FastAPI API documentation available in staging while disabling Swagger, ReDoc, and OpenAPI routes in production.
+- [verification] Confirmed the staging profile-picture upload succeeds end to end after aligning the web client, FastAPI confirmation route, R2 verification, database persistence, and mandatory previous-object deletion.
+- [api/web] Included each post author's profile-picture URL in post responses and preserved it through feed, live-update, post-detail, and reply mapping so shared feed profile cards render uploaded avatars for other users.
+- [web] Made tab state URL-addressable with canonical paths for Home, Connections, Chat, Settings, and Profile tabs; legacy tab roots redirect to their default tab.
+- [web] Kept the server-confirmed profile picture visible during selection, cropping, processing, and upload; the crop-modal tick now performs the upload and closes only after success, with the duplicate upload button and empty-selection copy removed.
+- [web] Changed empty About rendering so visitors see no placeholder, while the signed-in owner sees `Add about in settings.`; new accounts already retain an empty About by default.
+- [web] Limited the Settings About textarea to 128 frontend characters and moved the live `x/128` counter inside the field's lower-right corner.
+- [web] Enlarged the profile-page avatar to `5rem`, twice the standard ProfileCard avatar size, without changing feed or list avatars.
+- [web] Standardized Settings around a shared `SettingsRow` with matching leading-icon/right-action dimensions, moved field save ticks to the common rail, added Theme and Privacy confirmation ticks, and aligned profile-picture Upload with that rail.
+- [web] Extracted the profile-picture crop dialog into a reusable global `Modal` with a top-right close cross and bottom action ribbon, placing Cancel beside the upload tick.
+- [web] Corrected Privacy settings layout by moving all two-state controls into the right action rail, adding left-On/right-Off segmented toggles, and top-aligning ticks with the leading icons.
+- [web] Replaced the profile-picture picker’s text Upload button with an accessible upload icon button.

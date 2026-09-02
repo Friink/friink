@@ -2,13 +2,12 @@ export const theme = {
   colors: {
     brand: '#33aa55',
     brandDark: '#33aa55',
-    brandSoft: '#eaf5ed',
+    accent: '#33aa55',
     ink: '#111111',
     muted: '#8a908c',
     line: '#e3e6e3',
     paper: '#ffffff',
     background: '#f2f5f1',
-    backgroundAccent: '#e7f2e9',
     danger: '#ed8c6b',
     avatarCoral: '#f4b3a4',
     avatarSage: '#bfdbbd',
@@ -17,7 +16,7 @@ export const theme = {
   },
   fonts: {
     body: "'Inter', sans-serif",
-    display: "'Inter', sans-serif",
+    display: "'Nunito Local', sans-serif",
     logo: "Georgia, 'Times New Roman', serif",
   },
   fontSizes: {
@@ -28,10 +27,10 @@ export const theme = {
     xl: '1.5625rem',
   },
   spacing: {
-    sidebarWidth: '240px',
-    topbarHeight: '52px',
+    sidebarWidth: '256px',
+    topbarHeight: '64px',
     bottomNavHeight: '56px',
-    contentMaxWidth: '640px',
+    contentCol: '720px',
   },
   radius: {
     sm: '8px',

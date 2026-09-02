@@ -1,14 +1,13 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Composer } from '@/components/composer';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { navItems } from '@/lib/data';
-import { mockConversations } from '@/lib/mock-conversations';
+import { acceptChatRequest, listConversations, loadAuthSession, updateChatSettings, type ApiConversation } from '@/lib/auth';
 import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -16,97 +15,113 @@ function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: strin
 }
 
 export function QuestionsScreen() {
-  return <><ScreenHeading eyebrow="Ask your people" title="Questions" copy="Small questions are a good way to start a conversation." /><div className="question-prompt"><span className="prompt-spark">✦</span><div><strong>What are you curious about?</strong><p>Ask your circle anything, big or small.</p></div><button className="primary-button">Ask a question</button></div><div className="section-heading"><h2>Recent questions</h2><button className="text-button">See all <span>→</span></button></div><div className="question-list"><div className="question-card"><div className="question-meta"><span className="avatar avatar-coral">MC</span><span><strong>Maya Chen</strong> asked <small>25 min ago</small></span></div><p>What is one place you would return to in a heartbeat?</p><div className="question-footer"><span>12 answers</span><button className="text-button">Answer →</button></div></div><div className="question-card"><div className="question-meta"><span className="avatar avatar-sage">JB</span><span><strong>Jon Bell</strong> asked <small>1 hr ago</small></span></div><p>What are you listening to on repeat this week?</p><div className="question-footer"><span>7 answers</span><button className="text-button">Answer →</button></div></div></div></>;
+  return <><ScreenHeading eyebrow="Ask your people" title="Questions" copy="Small questions are a good way to start a conversation." /><div className="question-prompt"><span className="prompt-spark">✦</span><div><strong>What are you curious about?</strong><p>Ask your circle anything, big or small.</p></div><button className="primary-button">Ask a question</button></div><div className="section-heading"><h2>Recent questions</h2><button className="text-button">See all <span>→</span></button></div><div className="question-list"><div className="question-card"><div className="question-meta"><ProfileCard name="Maya Chen" handle="@mayachen" tone="coral" initials="MC" /><span><strong>Maya Chen</strong> asked <small>25 min ago</small></span></div><p>What is one place you would return to in a heartbeat?</p><div className="question-footer"><span>12 answers</span><button className="text-button">Answer →</button></div></div><div className="question-card"><div className="question-meta"><ProfileCard name="Jon Bell" handle="@jonbell" tone="sage" initials="JB" /><span><strong>Jon Bell</strong> asked <small>1 hr ago</small></span></div><p>What are you listening to on repeat this week?</p><div className="question-footer"><span>7 answers</span><button className="text-button">Answer →</button></div></div></div></>;
 }
 
-type MessagesTab = 'all' | 'muted' | 'requests';
+type MessagesTab = 'all' | 'muted' | 'requests' | 'archived';
 
 export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
-  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
-  const [draft, setDraft] = useState('');
-
-  const [conversations, setConversations] = useState(mockConversations);
-
   const router = useRouter();
-  const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
+  const [conversations, setConversations] = useState<ApiConversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session) return;
+    let stopped = false;
+    let busy = false;
+    let timer: number | null = null;
+
+    const refresh = async () => {
+      if (stopped || busy || document.visibilityState === 'hidden') return;
+      busy = true;
+      try {
+        const nextConversations = await listConversations(session.accessToken);
+        if (!stopped) setConversations(nextConversations);
+      } finally {
+        busy = false;
+        if (!stopped) setLoading(false);
+      }
+    };
+
+    const schedule = () => {
+      if (!stopped && document.visibilityState !== 'hidden') timer = window.setTimeout(async () => { await refresh(); schedule(); }, 4000);
+    };
+
+    const resume = () => {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = null;
+      void refresh();
+      schedule();
+    };
+
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('focus', resume);
+    void refresh();
+    schedule();
+
+    return () => {
+      stopped = true;
+      if (timer !== null) window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('focus', resume);
+    };
+  }, []);
+
   const visibleConversations = conversations.filter((conversation) => {
-    if (activeTab === 'muted') return conversation.muted === true;
-    if (activeTab === 'requests') return conversation.request === true;
-    return true;
+    if (activeTab === 'muted') return conversation.muted;
+    if (activeTab === 'requests') return conversation.status === 'pending';
+    if (activeTab === 'archived') return conversation.archived;
+    return conversation.status === 'accepted' && !conversation.archived;
   });
 
-  function sendMessage(event: React.FormEvent) {
-    event.preventDefault();
-    const text = draft.trim();
-    if (!text || !activeConversation) return;
-
-    setConversations((current) => current.map((conversation) => conversation.id === activeConversation.id
-      ? {
-          ...conversation,
-          preview: text,
-          createdAt: new Date().toISOString(),
-          messages: [...conversation.messages, { id: Date.now(), from: 'me', text, createdAt: new Date().toISOString() }],
-        }
-      : conversation));
-    setDraft('');
+  async function changeSetting(conversation: ApiConversation, input: { muted?: boolean; archived?: boolean }) {
+    const session = loadAuthSession();
+    if (!session) return;
+    const updated = await updateChatSettings(session.accessToken, conversation.id, input);
+    setConversations((current) => current.map((item) => item.id === updated.id ? updated : item));
   }
 
-  if (activeConversation) {
-    return (
-      <PageSurface className="messages-screen chat-screen">
-        <div className="chat-header">
-          <Link className="chat-contact-link" href={`/${activeConversation.handle.replace('@', '')}`}>
-            <span className={`user-avatar avatar-${activeConversation.tone}`}>{activeConversation.initials}</span>
-            <div className="chat-contact">
-              <strong>{activeConversation.name}</strong>
-              <span>{activeConversation.handle}</span>
-            </div>
-          </Link>
-          <button className="icon-plain chat-more" type="button" aria-label="Conversation options">
-            <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="chat-messages">
-          {activeConversation.messages.length > 0 && <p className="chat-date">{formatRelativeTime(activeConversation.messages[0].createdAt)}</p>}
-          {activeConversation.messages.map((message) => (
-            <div className={`chat-bubble-row ${message.from === 'me' ? 'mine' : ''}`} key={message.id}>
-              <div className="chat-bubble">
-                <p>{message.text}</p>
-                <small>{formatRelativeTime(message.createdAt)}</small>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
-      </PageSurface>
-    );
+  async function acceptRequest(conversation: ApiConversation) {
+    const session = loadAuthSession();
+    if (!session) return;
+    const updated = await acceptChatRequest(session.accessToken, conversation.id);
+    setConversations((current) => current.map((item) => item.id === updated.id ? updated : item));
   }
 
   return (
     <PageSurface className="messages-screen" variant="list">
       <div className="message-list">
-        {visibleConversations.map((conversation) => (
+        {loading && <div className="home-feed-message">Loading chats...</div>}
+        {!loading && visibleConversations.map((conversation) => (
           <ListRow
             key={conversation.id}
             avatar={
-              <Link className="message-row-profile" href={`/${conversation.handle.replace('@', '')}`} aria-label={`Open ${conversation.name} profile`}>
-                <span className={`user-avatar avatar-${conversation.tone}`}>{conversation.initials}</span>
+              <Link className="message-row-profile" href={`/${conversation.participant.username}`} aria-label={`Open ${conversation.participant.display_name || conversation.participant.username} profile`}>
+                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} />
               </Link>
             }
             title={
-              <Link className="message-profile-link" href={`/${conversation.handle.replace('@', '')}`}>
-                {conversation.name}
+              <Link className="message-profile-link" href={`/${conversation.participant.username}`}>
+                {conversation.participant.display_name || conversation.participant.username}
               </Link>
             }
             subtitle={conversation.preview}
-            meta={formatRelativeTime(conversation.createdAt)}
-            trailing={conversation.unread ? <span className="unread-dot" /> : null}
+            meta={formatRelativeTime(conversation.updated_at)}
+            trailing={
+              <span className="chat-row-actions">
+                {conversation.status === 'pending' && conversation.requester_id !== loadAuthSession()?.user.id ? <button className="text-button" type="button" onClick={(event) => { event.stopPropagation(); acceptRequest(conversation).catch(() => undefined); }}>Accept</button> : null}
+                <button className="icon-button" type="button" aria-label={conversation.muted ? 'Unmute chat' : 'Mute chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { muted: !conversation.muted }).catch(() => undefined); }}><i className={`fa-solid ${conversation.muted ? 'fa-bell' : 'fa-bell-slash'}`} aria-hidden="true" /></button>
+                <button className="icon-button" type="button" aria-label={conversation.archived ? 'Unarchive chat' : 'Archive chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { archived: !conversation.archived }).catch(() => undefined); }}><i className={`fa-solid ${conversation.archived ? 'fa-box-open' : 'fa-box-archive'}`} aria-hidden="true" /></button>
+                {conversation.unread_count > 0 ? <span className="unread-count-pill" aria-label={`${conversation.unread_count} unread message${conversation.unread_count === 1 ? '' : 's'}`}>{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span> : null}
+              </span>
+            }
             unread={conversation.unread}
-            onClick={() => router.push(`/${conversation.handle.replace('@', '')}/chat`)}
-            ariaLabel={`Open chat with ${conversation.name}`}
+            onClick={() => router.push(`/${conversation.participant.username}/chat`)}
+            ariaLabel={`Open chat with ${conversation.participant.display_name || conversation.participant.username}`}
           />
         ))}
-        {visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
+        {!loading && visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
       </div>
     </PageSurface>
   );
@@ -192,7 +207,7 @@ export function CalendarScreen() {
 }
 
 export function DirectoryScreen() {
-  return <><ScreenHeading eyebrow="Your people" title="Directory" copy="Everyone you care about, easy to find." /><div className="message-search">⌕ <span>Search your directory</span></div><div className="directory-section"><p className="directory-label">A · 2 people</p><ListRow avatar={<span className="avatar avatar-mint">AM</span>} title="Alex Morgan" subtitle="You · 34 connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /><ListRow avatar={<span className="avatar avatar-coral">AL</span>} title="Alina Ross" subtitle="12 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div><div className="directory-section"><p className="directory-label">J · 1 person</p><ListRow avatar={<span className="avatar avatar-sage">JB</span>} title="Jon Bell" subtitle="8 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div></>;
+  return <><ScreenHeading eyebrow="Your people" title="Directory" copy="Everyone you care about, easy to find." /><div className="message-search">⌕ <span>Search your directory</span></div><div className="directory-section"><p className="directory-label">A · 2 people</p><ListRow avatar={<ProfileCard name="Alex Morgan" handle="@alexmorgan" tone="mint" initials="AM" />} title="Alex Morgan" subtitle="You · 34 connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /><ListRow avatar={<ProfileCard name="Alina Ross" handle="@alinaross" tone="coral" initials="AL" />} title="Alina Ross" subtitle="12 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div><div className="directory-section"><p className="directory-label">J · 1 person</p><ListRow avatar={<ProfileCard name="Jon Bell" handle="@jonbell" tone="sage" initials="JB" />} title="Jon Bell" subtitle="8 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div></>;
 }
 
 export function ScreenForNav({ activeNav }: { activeNav: string }) {

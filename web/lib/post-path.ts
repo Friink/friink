@@ -4,17 +4,26 @@ function normalizeUsername(value: string) {
   return value.replace(/^@/, '').trim();
 }
 
-export function getPostPath(username: string, postId: string) {
+export function getPostPath(username: string, slug: string, publicId: string) {
   const normalizedUsername = normalizeUsername(username);
-  const normalizedPostId = postId.trim();
+  const normalizedSlug = slug.trim();
+  const normalizedPublicId = publicId.trim();
 
-  if (!normalizedUsername || !normalizedPostId) {
+  if (!normalizedUsername || !normalizedPublicId) {
     return '/home';
   }
 
-  return `/${encodeURIComponent(normalizedUsername)}/${encodeURIComponent(normalizedPostId)}`;
+  const segment = normalizedSlug ? `${normalizedSlug}-${normalizedPublicId}` : normalizedPublicId;
+  return `/${encodeURIComponent(normalizedUsername)}/${encodeURIComponent(segment)}`;
 }
 
-export function getPostPathForPost(post: Pick<Post, 'handle' | 'id'>) {
-  return getPostPath(post.handle, post.id);
+export function getPostPathForPost(post: Pick<Post, 'handle' | 'publicId' | 'slug'>) {
+  if (!post.publicId) return '/home';
+  return getPostPath(post.handle, post.slug ?? '', post.publicId);
+}
+
+export function getPublicIdFromPostSegment(segment: string) {
+  const decoded = decodeURIComponent(segment).trim();
+  const candidate = decoded.includes('-') ? decoded.slice(decoded.lastIndexOf('-') + 1) : decoded;
+  return /^[A-Za-z0-9]{8}$/.test(candidate) ? candidate : null;
 }

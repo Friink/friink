@@ -1,5 +1,5 @@
-import { AppShellRoute } from '@/components/app-shell-route';
+import { permanentRedirect } from 'next/navigation';
 
 export default function SettingsPage() {
-  return <AppShellRoute initialScreen="settings" refreshCurrentUser />;
+  permanentRedirect('/settings/general');
 }

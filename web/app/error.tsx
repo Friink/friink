@@ -22,12 +22,12 @@ export default function GlobalError({
   // cookie wins, otherwise use system preference
   const darkVars: Record<string, string> = {
     '--color-background': '#333333',
-    '--color-background-accent': '#3a3a3a',
+    '--color-accent-background': '#3a3a3a',
     '--color-paper': '#3d3d3d',
     '--color-ink': '#f5f5f5',
     '--color-muted': '#c4c4c4',
     '--color-line': '#555555',
-    '--color-brand-soft': '#244d30',
+    '--color-accent-soft': '#244d30',
     '--color-chrome': '#262626',
   };
 
@@ -52,88 +52,23 @@ export default function GlobalError({
   }
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--color-background)',
-        color: 'var(--color-ink)',
-        fontFamily: 'var(--font-body)',
-        position: 'relative',
-      }}
-    >
-      <Link
-        href="/"
-        aria-label="Back to Friink"
-        style={{
-          position: 'absolute',
-          top: 24,
-          left: 24,
-          width: 48,
-          height: 48,
-          borderRadius: 16,
-          display: 'grid',
-          placeItems: 'center',
-          background: 'transparent',
-          color: 'var(--color-brand)',
-          border: 'none',
-          boxShadow: 'none',
-          textDecoration: 'none',
-        }}
-      >
+    <main className="global-error-screen">
+      <Link href="/" aria-label="Back to Friink" className="global-error-home-link">
         <FriinkLogo />
       </Link>
 
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          gap: 18,
-          padding: '32px 24px',
-          maxWidth: 560,
-        }}
-      >
-        <img
-          src="/brand/logoFullBrand.svg"
-          alt="Friink"
-          style={{
-            width: 'min(240px, 60vw)',
-            height: 'auto',
-            display: 'block',
-          }}
-        />
+      <div className="global-error-content">
+        <img className="global-error-logo" src="/brand/logoFullBrand.svg" alt="Friink" />
 
-        <h1
-          style={{
-            margin: 0,
-            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
-            lineHeight: 1.12,
-            letterSpacing: '-0.02em',
-            fontWeight: 700,
-            color: 'var(--color-ink)',
-          }}
-        >
+        <h1 className="global-error-title">
           It looks like we ran into a problem.
         </h1>
 
-        <p
-          style={{
-            margin: 0,
-            fontSize: '1.5rem',
-            color: 'var(--color-muted)',
-            letterSpacing: '0.01em',
-            fontWeight: 700,
-          }}
-        >
+        <p className="global-error-code">
           {`Error Code: ${code}`}
         </p>
 
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div className="global-error-actions">
           <button type="button" onClick={() => reset()} className="signup-back-button">
             Try again
           </button>

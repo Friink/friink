@@ -2,13 +2,13 @@ from datetime import UTC, datetime, timedelta
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.user import User
-from app.schemas.auth import SignupRequest, UpdateCurrentUserRequest
+from app.schemas.auth import ChangePasswordRequest, SignupRequest, UpdateCurrentUserRequest
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.notifications import create_notification
@@ -25,8 +25,15 @@ async def get_user_by_email(session: Session, email: str) -> User | None:
 
 
 async def get_user_by_username(session: Session, username: str) -> User | None:
-    result = session.execute(select(User).where(User.username == username))
+    result = session.execute(select(User).where(func.lower(User.username) == username.lower()))
     return result.scalar_one_or_none()
+
+
+async def is_username_available(session: Session, username: str, exclude_user_id: uuid.UUID | None = None) -> bool:
+    statement = select(User.id).where(func.lower(User.username) == username.lower())
+    if exclude_user_id is not None:
+        statement = statement.where(User.id != exclude_user_id)
+    return session.execute(statement).scalar_one_or_none() is None
 
 
 async def create_user(session: Session, data: SignupRequest, email_service: EmailService | None = None) -> User:
@@ -119,6 +126,14 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
     await commit(session)
     await refresh(session, user)
     return user
+
+
+async def change_password(session: Session, user: User, data: ChangePasswordRequest) -> None:
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")
+
+    user.password_hash = hash_password(data.new_password)
+    await commit(session)
 
 
 async def authenticate_user(session: Session, email: str, password: str) -> User:

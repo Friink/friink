@@ -1,9 +1,12 @@
 export type Post = {
   id: string;
+  publicId?: string;
+  slug?: string;
   kind?: 'post' | 'quote' | 'reply';
   name: string;
   handle: string;
   initials: string;
+  imageUrl?: string | null;
   tone: string;
   createdAt: string;
   text: string;
@@ -13,12 +16,17 @@ export type Post = {
   replies: number;
   quotes: number;
   reactions: number;
+  media?: string[];
   quotedPost?: {
     id: string | null;
+    publicId?: string | null;
+    slug?: string | null;
     authorUsername: string | null;
     authorDisplayName?: string | null;
+    imageUrl?: string | null;
     content: string;
     mediaCount?: number;
+    media?: string[];
     unavailable: boolean;
   } | null;
 };

@@ -29,10 +29,13 @@ function getInitials(value: string) {
 function mapApiPost(post: ApiPost): Post {
   return {
     id: post.id,
+    publicId: post.public_id,
+    slug: post.slug,
     kind: post.kind,
     name: post.author_display_name || post.author_username,
     handle: `@${post.author_username}`,
     initials: getInitials(post.author_display_name || post.author_username),
+    imageUrl: post.profile_picture_url,
     tone: 'mint',
     createdAt: post.created_at,
     text: post.content,
@@ -45,8 +48,11 @@ function mapApiPost(post: ApiPost): Post {
     quotedPost: post.quoted_post
       ? {
           id: post.quoted_post.id,
+          publicId: post.quoted_post.public_id,
+          slug: post.quoted_post.slug,
           authorUsername: post.quoted_post.author_username,
           authorDisplayName: post.quoted_post.author_display_name,
+          imageUrl: post.quoted_post.profile_picture_url,
           content: post.quoted_post.content,
           mediaCount: post.quoted_post.media_count,
           unavailable: post.quoted_post.unavailable,
@@ -91,7 +97,7 @@ export function PostClient({ postId }: PostClientProps) {
     router.replace('/');
   }
 
-  async function handleSend(event: FormEvent<HTMLFormElement>) {
+  async function handleSend(event: FormEvent<HTMLFormElement>, media: File[]) {
     event.preventDefault();
     if (!user || !composeContext) return;
 
@@ -108,6 +114,7 @@ export function PostClient({ postId }: PostClientProps) {
         content: draft.trim(),
         quotedPostId: composeContext.kind === 'quote' ? composeContext.post.id : null,
         parentPostId: composeContext.kind === 'reply' ? composeContext.post.id : null,
+        media,
       });
       const mapped = mapApiPost(created);
       if (mapped.kind === 'reply') {
@@ -143,16 +150,20 @@ export function PostClient({ postId }: PostClientProps) {
           inputLabel="Post"
           sendLabel="Post"
           maxLength={512}
+          draftStorageKey={`friink-draft:${user.id}:post:${postId}:${composeContext.kind}`}
           showCount
+          enableMentions
           contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}
           referencedPreview={{
             name: composeContext.post.name,
             handle: composeContext.post.handle,
             initials: composeContext.post.initials,
             tone: composeContext.post.tone,
+            imageUrl: composeContext.post.imageUrl,
             text: composeContext.post.text,
             mediaCount: 0,
           }}
+          onClearContext={() => setComposeContext(null)}
         />
       ) : false}
     >

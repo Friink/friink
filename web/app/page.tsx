@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import styles from './landing.module.css';
-import { LandingAuthRedirect } from './landing-auth-redirect';
+import { Header } from '@/components/public-header';
 import { SubscribeForm } from './subscribe-form';
 
 export const metadata: Metadata = {
@@ -14,21 +14,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className={styles.page}>
-      <LandingAuthRedirect />
-      <nav className={styles.nav} aria-label="Marketing navigation">
-        <div className={styles.navInner}>
-          <Link href="/" aria-label="Friink home">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoFullWhite.svg" />
-              <Image src="/brand/logoFullBlack.svg" alt="Friink" width={176} height={56} className={styles.logoFull} priority />
-            </picture>
-          </Link>
-          <div className={styles.navActions}>
-            <a className={styles.navLink} href="#vision">Our vision</a>
-            <Link className={styles.cta} href="/login">Early access</Link>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <main className={styles.hero}>
         <section className={`${styles.sectionInner} ${styles.heroInner}`}>
@@ -85,6 +71,53 @@ export default function HomePage() {
                 well-being. The goal is to create a social space that promotes human connection.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section id="plans" className={styles.plans}>
+          <div className={`${styles.sectionInner} ${styles.plansInner}`}>
+            <span className={styles.eyebrow}>Plans</span>
+            <h2>Choose your pace.</h2>
+            <p className={styles.plansIntro}>Start free and find the level of Friink that fits the way you connect.</p>
+            <div className={styles.plansGrid}>
+              <article className={styles.planCard}>
+                <p className={styles.planName}>Friink Free</p>
+                <p className={styles.planPrice}>Free</p>
+                <p className={styles.planDescription}>A calm place to stay connected.</p>
+                <ul className={styles.planList}>
+                  <li>Never expires</li>
+                  <li>Unlimited posts, replies, and quotes</li>
+                  <li>Message your connections</li>
+                </ul>
+                <Link href="/login" className={`${styles.cta} ${styles.secondaryCta}`}>Start free</Link>
+              </article>
+              <article className={`${styles.planCard} ${styles.planCardFeatured}`}>
+                <span className={styles.planBadge}>Most useful</span>
+                <p className={styles.planName}>Friink Pro</p>
+                <p className={styles.planPrice}>USD 4<span>/month</span></p>
+                <p className={styles.planDescription}>More room for your voice and your work.</p>
+                <ul className={styles.planList}>
+                  <li>Everything in Free</li>
+                  <li>Message requests to non-connections</li>
+                  <li>Profile boost and profile views</li>
+                  <li>Posts, replies, and quotes up to 512 characters</li>
+                  <li>Optional professional verification</li>
+                </ul>
+                <span className={styles.planComingSoon}>Coming soon</span>
+              </article>
+              <article className={styles.planCard}>
+                <p className={styles.planName}>Friink Pro+</p>
+                <p className={styles.planPrice}>USD 8<span>/month</span></p>
+                <p className={styles.planDescription}>A fuller view of your presence on Friink.</p>
+                <ul className={styles.planList}>
+                  <li>Everything in Pro</li>
+                  <li>Pro badge</li>
+                  <li>Profile and post analytics</li>
+                </ul>
+                <span className={styles.planComingSoon}>Coming soon</span>
+              </article>
+            </div>
+            <Link href="/subscriptions" className={styles.plansLink}>Compare all plans <span aria-hidden="true">→</span></Link>
           </div>
         </section>
 

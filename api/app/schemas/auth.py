@@ -2,7 +2,7 @@ import re
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
@@ -26,7 +26,7 @@ def validate_password_rules(password: str) -> str:
 def validate_username_rules(username: str) -> str:
     if " " in username or not USERNAME_PATTERN.fullmatch(username):
         raise ValueError("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.")
-    return username
+    return username.lower()
 
 
 def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date | None = None) -> date:
@@ -81,12 +81,43 @@ class UpdateCurrentUserRequest(BaseModel):
         return validate_username_rules(username)
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str
+    confirm_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, password: str) -> str:
+        return validate_password_rules(password)
+
+    @model_validator(mode="after")
+    def validate_confirmation(self) -> "ChangePasswordRequest":
+        if self.new_password != self.confirm_password:
+            raise ValueError("New passwords do not match.")
+        return self
+
+
+class UsernameAvailabilityResponse(BaseModel):
+    username: str
+    available: bool
+
+
+class UpdateSetupRequest(BaseModel):
+    step: int = Field(ge=1, le=2)
+    completed: bool = False
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
     username: str
     display_name: str | None
     about: str | None
+    profile_picture_url: str | None
+    profile_picture_updated_at: datetime | None
+    setup_step: int
+    setup_completed: bool
     is_private: bool
     date_of_birth: date
     location: str | None
@@ -102,6 +133,8 @@ class PublicUserResponse(BaseModel):
     username: str
     display_name: str | None
     about: str | None
+    profile_picture_url: str | None
+    profile_picture_updated_at: datetime | None
     is_private: bool
 
     model_config = {"from_attributes": True}
@@ -116,3 +149,32 @@ class TokenResponse(BaseModel):
 class RefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AuthSessionResponse(BaseModel):
+    id: uuid.UUID
+    device_label: str
+    browser: str | None
+    operating_system: str | None
+    created_at: datetime
+    last_active_at: datetime
+    current: bool
+
+
+class ProfilePictureUploadUrlRequest(BaseModel):
+    content_type: str = Field(min_length=1, max_length=100)
+
+
+class ProfilePictureUploadUrlResponse(BaseModel):
+    upload_url: str
+    public_url: str
+    object_key: str
+
+
+class ProfilePictureConfirmRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=512)
+
+
+class ProfilePictureConfirmResponse(BaseModel):
+    profile_picture_url: str
+    profile_picture_updated_at: datetime

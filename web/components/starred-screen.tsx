@@ -6,6 +6,7 @@ import { useState } from 'react';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
+import { ProfileCard } from '@/components/profile-card';
 
 type StarredScreenProps = {
   posts: Post[];
@@ -36,7 +37,7 @@ export function StarredScreen({ posts, onReply, onQuote }: StarredScreenProps) {
           starredPosts.map((post) => (
             <ListRow
               key={post.id}
-              avatar={<span className={`user-avatar avatar-${post.tone}`}>{post.initials}</span>}
+              avatar={<ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} />}
               title={post.name}
               subtitle={post.text}
               meta={formatRelativeTime(post.createdAt)}

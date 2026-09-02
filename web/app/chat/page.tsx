@@ -1,5 +1,5 @@
-import { AppShellRoute } from '@/components/app-shell-route';
+import { permanentRedirect } from 'next/navigation';
 
 export default function ChatPage() {
-  return <AppShellRoute initialScreen="messages" />;
+  permanentRedirect('/chat/all');
 }

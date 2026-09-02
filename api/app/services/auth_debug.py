@@ -54,6 +54,26 @@ def log_token_issued(*, flow: str, token_type: str, token: str, user_id: str) ->
     )
 
 
+def log_refresh_token_event(*, event: str, flow: str, token_id: str, family_id: str, user_id: str, reason: str | None = None) -> None:
+    if not auth_debug_enabled():
+        return
+
+    logger.info(
+        json.dumps(
+            {
+                "event": event,
+                "flow": flow,
+                "token_id": token_id,
+                "family_id": family_id,
+                "user_id": user_id,
+                "reason": reason,
+                "deployment_sha": get_deployment_sha(),
+                "server_time": int(datetime.now(UTC).timestamp()),
+            }
+        )
+    )
+
+
 def log_token_verification_failure(
     *,
     flow: str,

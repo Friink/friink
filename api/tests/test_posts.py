@@ -1,15 +1,139 @@
 import uuid
 from datetime import UTC, date, datetime
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 
+from app.routers import posts as posts_router
 from app.models.post import Post
 from app.models.post import PostKind
 from app.models.user import User
-from app.schemas.posts import CreatePostRequest
-from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, serialize_post, serialize_quoted_post
+from app.schemas.posts import CreatePostRequest, PostMediaConfirmRequest, PostMediaUploadUrlRequest
+from app.services.post_media import PostMediaUpload
+from app.services.posts import can_view_post, clamp_feed_limit, create_post, decode_post_cursor, encode_post_cursor, extract_mentioned_usernames, serialize_post, serialize_quoted_post
+
+
+@pytest.mark.asyncio
+async def test_post_media_upload_plan_serializes_storage_uploads(monkeypatch) -> None:
+    class Storage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def create_upload(self, user_id):
+            return PostMediaUpload(
+                upload_url="https://r2.example/upload",
+                public_url=None,
+                object_key=f"post-media/{user_id}/image.jpg",
+            )
+
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", Storage)
+
+    result = await posts_router.create_post_media_upload_urls(
+        PostMediaUploadUrlRequest(count=1),
+        SimpleNamespace(id=uuid.uuid4()),
+        SimpleNamespace(),
+    )
+
+    assert result.items[0].upload_url == "https://r2.example/upload"
+    assert result.items[0].public_url is None
+    assert result.items[0].object_key.startswith("post-media/")
+
+
+@pytest.mark.asyncio
+async def test_post_media_upload_plan_exposes_diagnostic_stage(monkeypatch) -> None:
+    class BrokenStorage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def create_upload(self, user_id):
+            raise RuntimeError("presign service unavailable")
+
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", BrokenStorage)
+
+    with pytest.raises(HTTPException) as error:
+        await posts_router.create_post_media_upload_urls(
+            PostMediaUploadUrlRequest(count=1),
+            SimpleNamespace(id=uuid.uuid4()),
+            SimpleNamespace(),
+        )
+
+    assert error.value.status_code == 502
+    assert "Reference:" in error.value.detail
+    assert error.value.headers["X-Friink-Post-Media-Stage"] == "upload_plan_generation"
+    assert error.value.headers["X-Friink-Request-Id"] in error.value.detail
+
+
+@pytest.mark.asyncio
+async def test_post_media_confirmation_returns_public_url(monkeypatch) -> None:
+    class Storage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def confirm(self, object_key, user_id) -> None:
+            assert object_key == "post-media/user/image.jpg"
+
+        def public_url(self, object_key) -> str:
+            return f"https://cdn.example/{object_key}"
+
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", Storage)
+
+    result = await posts_router.confirm_post_media_upload(
+        PostMediaConfirmRequest(object_key="post-media/user/image.jpg"),
+        SimpleNamespace(id=uuid.uuid4()),
+        SimpleNamespace(),
+    )
+
+    assert result.object_key == "post-media/user/image.jpg"
+    assert result.public_url == "https://cdn.example/post-media/user/image.jpg"
+
+
+@pytest.mark.asyncio
+async def test_post_media_database_failure_is_reported_as_association_stage(monkeypatch) -> None:
+    deleted_keys: list[str] = []
+
+    class Storage:
+        def __init__(self, settings) -> None:
+            pass
+
+        def confirm(self, object_key, user_id) -> None:
+            return None
+
+        def public_url(self, object_key) -> str:
+            return f"https://cdn.example/{object_key}"
+
+        def delete(self, object_key, user_id) -> None:
+            deleted_keys.append(object_key)
+
+    class Session:
+        def __init__(self) -> None:
+            self.rollbacks = 0
+
+        def rollback(self) -> None:
+            self.rollbacks += 1
+
+    async def fail_create_post(*args, **kwargs):
+        raise RuntimeError("post_media table unavailable")
+
+    monkeypatch.setattr(posts_router, "PostMediaStorageService", Storage)
+    monkeypatch.setattr(posts_router, "create_post", fail_create_post)
+    session = Session()
+    storage_key = "post-media/user/image.jpg"
+
+    with pytest.raises(HTTPException) as error:
+        await posts_router.create_post_route(
+            CreatePostRequest(content="caption", media=[{"storage_key": storage_key}]),
+            SimpleNamespace(id=uuid.uuid4()),
+            session,
+            SimpleNamespace(),
+        )
+
+    assert error.value.status_code == 500
+    assert "Reference:" in error.value.detail
+    assert error.value.headers["X-Friink-Post-Media-Stage"] == "post_database_association"
+    assert session.rollbacks == 1
+    assert deleted_keys == [storage_key]
 
 
 def test_post_content_rejects_513_characters() -> None:
@@ -19,6 +143,10 @@ def test_post_content_rejects_513_characters() -> None:
 
 def test_post_content_accepts_512_characters() -> None:
     assert CreatePostRequest(content="x" * 512).content == "x" * 512
+
+
+def test_extract_mentioned_usernames_deduplicates_valid_mentions() -> None:
+    assert extract_mentioned_usernames("Hi @areeba, @areeba and (@muflah). email@domain.com") == ["areeba", "muflah"]
 
 
 def test_post_content_is_required_for_posts_and_replies() -> None:
@@ -38,8 +166,15 @@ def test_quote_content_can_be_empty() -> None:
     assert payload.quoted_post_id == quoted_post_id
 
 
-def test_media_payload_validates_max_16_files() -> None:
-    payload = [{"url": f"https://example.com/{index}.jpg"} for index in range(17)]
+def test_media_post_can_have_an_empty_caption() -> None:
+    payload = CreatePostRequest(content="", media=[{"storage_key": "post-media/user/image.jpg"}])
+
+    assert payload.content == ""
+    assert len(payload.media or []) == 1
+
+
+def test_media_payload_validates_max_8_files() -> None:
+    payload = [{"storage_key": f"post-media/user/{index}.jpg"} for index in range(9)]
     with pytest.raises(ValidationError):
         CreatePostRequest(content="text", media=payload)
 
@@ -78,6 +213,8 @@ def test_quote_of_quote_is_allowed_and_serializes_direct_quote_only() -> None:
         id=uuid.uuid4(),
         email="author@example.com",
         username="author",
+        display_name="Author Name",
+        profile_picture_url="https://cdn.example.com/author.jpg",
         password_hash="hash",
         date_of_birth=date(2000, 1, 1),
     )
@@ -89,6 +226,8 @@ def test_quote_of_quote_is_allowed_and_serializes_direct_quote_only() -> None:
 
     assert serialized is not None
     assert serialized.id == quote.id
+    assert serialized.author_display_name == "Author Name"
+    assert serialized.profile_picture_url == "https://cdn.example.com/author.jpg"
     assert serialized.content == "Quote"
 
 
@@ -248,3 +387,63 @@ async def test_quote_creation_blocks_private_posts_even_for_owner() -> None:
         await create_post(Session(), owner, CreatePostRequest(content="Nope", kind="quote", quoted_post_id=quoted.id))
 
     assert error.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_mention_notification_failure_does_not_rollback_post(monkeypatch: pytest.MonkeyPatch) -> None:
+    author = User(
+        id=uuid.uuid4(),
+        email="author@example.com",
+        username="author",
+        display_name="Author",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+    mentioned = User(
+        id=uuid.uuid4(),
+        email="mentioned@example.com",
+        username="mentioned",
+        display_name="Mentioned",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+
+    class Session:
+        def __init__(self) -> None:
+            self.commits = 0
+            self.rollbacks = 0
+
+        def add(self, instance) -> None:
+            self.post = instance
+
+        def execute(self, statement):
+            class Result:
+                def scalars(self):
+                    return self
+
+                def all(self):
+                    return [mentioned]
+
+            return Result()
+
+        def commit(self) -> None:
+            self.commits += 1
+
+        def refresh(self, instance) -> None:
+            return None
+
+        def rollback(self) -> None:
+            self.rollbacks += 1
+
+    session = Session()
+
+    def fail_notification(*args, **kwargs):
+        raise RuntimeError("notification store unavailable")
+
+    monkeypatch.setattr("app.services.posts.create_notification", fail_notification)
+
+    post = await create_post(session, author, CreatePostRequest(content="Hello @mentioned"))
+
+    assert post is session.post
+    assert session.commits == 1
+    assert session.rollbacks == 1
