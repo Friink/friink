@@ -26,7 +26,7 @@ def validate_password_rules(password: str) -> str:
 def validate_username_rules(username: str) -> str:
     if " " in username or not USERNAME_PATTERN.fullmatch(username):
         raise ValueError("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.")
-    return username.lower()
+    return username
 
 
 def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date | None = None) -> date:
@@ -59,6 +59,18 @@ class SignupRequest(BaseModel):
     @classmethod
     def validate_age(cls, date_of_birth: date) -> date:
         return validate_minimum_age(date_of_birth)
+
+
+class SignupStartResponse(BaseModel):
+    accepted: bool = True
+    verification_required: bool
+    reservation_token: str
+    message: str
+
+
+class SignupVerifyRequest(BaseModel):
+    reservation_token: str = Field(min_length=32, max_length=128)
+    otp: str = Field(min_length=6, max_length=6)
 
 
 class LoginRequest(BaseModel):

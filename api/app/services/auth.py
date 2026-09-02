@@ -1,4 +1,6 @@
 from datetime import UTC, datetime, timedelta
+import hashlib
+import secrets
 import uuid
 
 from fastapi import HTTPException, status
@@ -8,43 +10,50 @@ from sqlalchemy.orm import Session
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.user import User
+from app.models.identity_history import UserEmailHistory, UserUsernameHistory
+from app.models.reserved_username import ReservedUsername
+from app.models.signup_reservation import SignupReservation
 from app.schemas.auth import ChangePasswordRequest, SignupRequest, UpdateCurrentUserRequest
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.notifications import create_notification
+from app.services.otp import issue_signup_otp, verify_signup_otp
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
 
+LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, timedelta(hours=24)))
 LOCKOUT_ATTEMPTS = 5
-LOCKOUT_DURATION = timedelta(hours=3)
+LOCKOUT_DURATION = timedelta(hours=24)
+SIGNUP_MESSAGE = "If the signup details can be accepted, verification instructions will be sent."
 
 
 async def get_user_by_email(session: Session, email: str) -> User | None:
-    result = session.execute(select(User).where(User.email == email.lower()))
+    result = session.execute(select(User).where(func.lower(User.email) == email.lower()))
     return result.scalar_one_or_none()
 
 
 async def get_user_by_username(session: Session, username: str) -> User | None:
-    result = session.execute(select(User).where(func.lower(User.username) == username.lower()))
+    result = session.execute(select(User).where(User.username_key == username.casefold()))
     return result.scalar_one_or_none()
 
 
 async def is_username_available(session: Session, username: str, exclude_user_id: uuid.UUID | None = None) -> bool:
-    statement = select(User.id).where(func.lower(User.username) == username.lower())
-    if exclude_user_id is not None:
-        statement = statement.where(User.id != exclude_user_id)
-    return session.execute(statement).scalar_one_or_none() is None
+    existing_user = await get_user_by_username(session, username)
+    if existing_user is not None and existing_user.id != exclude_user_id:
+        return False
+    return session.execute(select(ReservedUsername.id).where(ReservedUsername.username_key == username.casefold(), ReservedUsername.active.is_(True))).scalar_one_or_none() is None
 
 
 async def create_user(session: Session, data: SignupRequest, email_service: EmailService | None = None) -> User:
     if await get_user_by_email(session, data.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
-    if await get_user_by_username(session, data.username):
+    if not await is_username_available(session, data.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
 
     user = User(
         email=data.email.lower(),
         username=data.username,
+        username_key=data.username.casefold(),
         display_name=data.display_name or data.username,
         is_private=False,
         password_hash=hash_password(data.password),
@@ -55,6 +64,9 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
     session.add(user)
     await commit(session)
     await refresh(session, user)
+    session.add(UserEmailHistory(user_id=user.id, email_value=user.email, event_type="created"))
+    session.add(UserUsernameHistory(user_id=user.id, username_key=user.username_key, username_display=user.username, event_type="created"))
+    await commit(session)
 
     # TODO: once OTP verification is reintroduced, keep incomplete registrations
     # reusable by cleaning up or expiring unverified rows before uniqueness checks.
@@ -64,15 +76,82 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
     return user
 
 
+def _reservation_token_hash(token: str) -> bytes:
+    return hashlib.sha256(token.encode("ascii")).digest()
+
+
+async def start_signup_reservation(session: Session, data: SignupRequest, email_service: EmailService) -> str:
+    normalized_email = str(data.email).strip().casefold()
+    # Check email first so an existing address never reveals whether its
+    # submitted username is available or reserved.
+    if await get_user_by_email(session, normalized_email):
+        return secrets.token_urlsafe(32)
+    if not await is_username_available(session, data.username):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+
+    token = secrets.token_urlsafe(32)
+    reservation = SignupReservation(
+        token_hash=_reservation_token_hash(token),
+        email=normalized_email,
+        username=data.username,
+        username_key=data.username.casefold(),
+        display_name=data.display_name or data.username,
+        password_hash=hash_password(data.password),
+        date_of_birth=data.date_of_birth,
+        location=data.location,
+    )
+    session.add(reservation)
+    session.flush()
+    otp_code = issue_signup_otp(session, reservation)
+    await email_service.send_signup_otp(reservation.email, otp_code)
+    await commit(session)
+    return token
+
+
+async def complete_signup_reservation(session: Session, token: str, otp: str) -> User:
+    reservation = session.execute(
+        select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
+    ).scalar_one_or_none()
+    if not reservation or not verify_signup_otp(session, reservation, otp):
+        await commit(session)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+
+    if await get_user_by_email(session, reservation.email) or not await is_username_available(session, reservation.username):
+        await commit(session)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+
+    user = User(
+        email=reservation.email,
+        username=reservation.username,
+        username_key=reservation.username_key,
+        display_name=reservation.display_name,
+        is_private=False,
+        password_hash=reservation.password_hash,
+        date_of_birth=reservation.date_of_birth,
+        location=reservation.location,
+        is_verified=True,
+    )
+    session.add(user)
+    await commit(session)
+    await refresh(session, user)
+    session.add(UserEmailHistory(user_id=user.id, email_value=user.email, event_type="created"))
+    session.add(UserUsernameHistory(user_id=user.id, username_key=user.username_key, username_display=user.username, event_type="created"))
+    session.delete(reservation)
+    await commit(session)
+    return user
+
+
 async def update_current_user(session: Session, user: User, data: UpdateCurrentUserRequest) -> User:
     changed = False
     was_private = user.is_private
 
     if data.username is not None and data.username != user.username:
-        existing_user = await get_user_by_username(session, data.username)
-        if existing_user and existing_user.id != user.id:
+        if not await is_username_available(session, data.username, exclude_user_id=user.id):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+        old_username = user.username
         user.username = data.username
+        user.username_key = data.username.casefold()
+        session.add(UserUsernameHistory(user_id=user.id, username_key=user.username_key, username_display=user.username, event_type="changed"))
         changed = True
 
     if data.email is not None:
@@ -81,7 +160,10 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
             existing_user = await get_user_by_email(session, normalized_email)
             if existing_user and existing_user.id != user.id:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
+            old_email = user.email
             user.email = normalized_email
+            session.add(UserEmailHistory(user_id=user.id, email_value=old_email, event_type="replaced"))
+            session.add(UserEmailHistory(user_id=user.id, email_value=normalized_email, event_type="changed"))
             changed = True
 
     if data.display_name is not None and data.display_name != user.display_name:
@@ -161,9 +243,10 @@ async def authenticate_user(session: Session, email: str, password: str) -> User
 
 async def register_failed_login(session: Session, user: User) -> None:
     user.failed_login_attempts += 1
-    if user.failed_login_attempts >= LOCKOUT_ATTEMPTS:
-        user.locked_until = datetime.now(UTC) + LOCKOUT_DURATION
-        user.failed_login_attempts = 0
+    for threshold, duration in reversed(LOCKOUT_SCHEDULE):
+        if user.failed_login_attempts >= threshold:
+            user.locked_until = datetime.now(UTC) + duration
+            break
     await commit(session)
 
 

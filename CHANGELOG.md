@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-03T22:27:14Z
+
+- [auth/phase2c] Added delivery-independent signup reservations, opaque reservation tokens, hashed six-character alphanumeric OTPs with four-minute expiry/single-use/five-attempt limits, neutral signup-start responses, verification-before-account-creation endpoints, migration `20260903_0021`, and the disabled-by-default `SIGNUP_OTP_ENABLED` flag. Phase 2 remains open pending staging deployment, email delivery integration, and the full staging verification trace.
+
 ## 2026-09-02T20:22:34Z
 
 - [docs/auth-session] Replaced mandatory OTP on every new login with risk-based OTP/MFA, preserving ordinary password login and persistent sessions. Added a server-authoritative device-recognition model for new/suspicious-login challenges and updated Phase 2 accordingly. No runtime behavior was changed.
@@ -1470,3 +1474,16 @@ _Last updated: 2026-09-01_
 - After the staging API redeploy, a fresh live login still returned `Max-Age=1209600` (14 days), proving the running deployment has not received the required 30-day environment value.
 - Rotation and replay-grace behavior continued to pass: login `200`, refresh `200`, first old-token replay `200`, second old-token replay `401`.
 - Phase 1 remains gated pending correction of the Vercel environment scope used by `staging-api.friink.com`.
+## 2026-09-03 — Auth/session Phase 2 identity foundation in progress
+
+- Added canonical `username_key` storage while preserving display casing.
+- Added permanent email and username history tables and database-backed reserved usernames.
+- Added hashed, single-use OTP storage with four-minute expiry and five-attempt limits for future delivery-backed flows.
+- Added progressive failed-login throttling: third failure 30 minutes, fourth 1 hour, fifth 24 hours.
+- Verification: Phase 2 foundation migration applied; 14 focused tests pass. Email delivery and user-facing signup OTP remain pending because no provider is integrated.
+## 2026-09-03 — Auth/session Phase 2 implementation handoff
+
+- Confirmed Phase 1 staging gate completion using the live 30-day refresh-cookie, CORS, rotation, and one-use replay-grace evidence recorded in `docs/Claude-audit-auth-and-session.md`.
+- Began Phase 2 identity work: canonical case-insensitive username keys with preserved display casing, reserved usernames, permanent identity history, progressive failed-login throttling, and hashed OTP storage with four-minute expiry/five-attempt limits.
+- Applied migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` locally.
+- Added and passed Phase 2 foundation tests; signup privacy, delivery-independent OTP endpoint wiring, email/username-change verification, UUID exposure review, and the Phase 2 verification gate remain outstanding.

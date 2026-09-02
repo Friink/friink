@@ -1,4 +1,5 @@
 import uuid
+import secrets
 from datetime import timedelta
 
 from datetime import UTC, datetime
@@ -22,13 +23,15 @@ from app.schemas.auth import (
     RefreshResponse,
     AuthSessionResponse,
     SignupRequest,
+    SignupStartResponse,
+    SignupVerifyRequest,
     TokenResponse,
     UpdateSetupRequest,
     UpdateCurrentUserRequest,
     UsernameAvailabilityResponse,
     UserResponse,
 )
-from app.services.auth import authenticate_user, change_password, create_user, get_user_by_username, is_username_available, update_current_user, user_id_from_subject
+from app.services.auth import authenticate_user, change_password, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_reservation, update_current_user, user_id_from_subject
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
@@ -91,6 +94,35 @@ async def signup(
 ) -> User:
     require_allowed_origin(request, settings)
     return await create_user(session, payload, EmailService())
+
+
+@router.post("/signup/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
+async def signup_start(
+    payload: SignupRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> SignupStartResponse:
+    require_allowed_origin(request, settings)
+    token = await start_signup_reservation(session, payload, EmailService()) if settings.signup_otp_enabled else secrets.token_urlsafe(32)
+    return SignupStartResponse(
+        verification_required=settings.signup_otp_enabled,
+        reservation_token=token,
+        message="If the signup details can be accepted, verification instructions will be sent.",
+    )
+
+
+@router.post("/signup/verify", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def signup_verify(
+    payload: SignupVerifyRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> User:
+    require_allowed_origin(request, settings)
+    if not settings.signup_otp_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup verification is not available.")
+    return await complete_signup_reservation(session, payload.reservation_token, payload.otp)
 
 
 @router.get("/username-availability", response_model=UsernameAvailabilityResponse)

@@ -98,9 +98,11 @@ abuse:
 
 ## 2.1 Implementation division
 
-The complete scope is divided into six implementation phases. Each phase must
-be reviewed and verified before the next phase changes shared auth/session
-behavior.
+The complete scope is divided into six implementation phases. Phase 1 remains
+one unit because it establishes the shared session contract. Phases 2 through
+6 are divided into ordered alphabetic chunks so that each dependency and
+verification boundary is explicit. Every chunk must be reviewed and verified
+before the next chunk changes shared auth/session behavior.
 
 ### Phase 1 — Session reliability
 
@@ -109,63 +111,296 @@ terminal-versus-ambiguous refresh outcomes, refresh retry grace/idempotency,
 CSRF protection, secure access-token handling, JWT key-rotation compatibility,
 clock policy, and startup configuration validation.
 
-Verification gate: capture real staging and production cookie/CORS headers;
-test login, refresh, timeout, network/CORS/5xx failure, key rotation, clock
-boundaries, cross-tab refresh, and lost-refresh-response recovery.
+Verification gate: capture real staging cookie/CORS headers from
+`staging.friink.com` and `staging-api.friink.com`; test login, refresh, timeout,
+network/CORS/5xx failure, key rotation, clock boundaries, cross-tab refresh,
+and lost-refresh-response recovery. Production verification is a separate
+pre-release gate and is deferred until the permanent production infrastructure
+exists.
 
 ### Phase 2 — Account identity
 
-Implement signup requirements, email verification OTP, risk-based OTP/MFA for
-new or suspicious logins, progressive failed-login throttling, email/username changes, permanent
-identity history, reserved usernames, and immutable UUID/public-ID behavior.
+#### Phase 2a — Identity primitives and signup validation
 
-Verification gate: test existing versus new email privacy, OTP expiry/replay,
-incomplete-signup reuse, username casing/reuse, account-age validation, race
-conditions, and stale post URL redirects.
+Implement the canonical case-insensitive email and username model: normalized
+email uniqueness, `username_key`, `username_display`, username syntax, date-of-
+birth and 13-year minimum validation, and authoritative database constraints
+for signup races. Assign every user a random immutable internal UUID and keep
+post ownership on immutable identifiers. UUIDs remain internal and are never
+returned through normal user-facing surfaces.
+
+Verification gate: test normalization, casing preservation, invalid and
+underage dates of birth, duplicate races, concurrent signup attempts, and the
+absence of UUIDs from URLs, normal API responses, UI, notifications, logs, and
+emails.
+
+#### Phase 2b — Reserved names and identity allocation
+
+Implement the database-backed reserved-username registry and enforce it during
+both signup and username changes. Matching is case-insensitive. Seed the
+initial reserved values `admin`, `staff`, `media`, `support`, and `security`,
+with reason, active state, creation timestamp, and optional staff note.
+
+Verification gate: test reserved-name rejection under every casing, inactive
+reservations, signup/change races, and explanatory frontend checks that cannot
+bypass the API or database rule.
+
+#### Phase 2c — Signup email privacy and ownership OTP
+
+Implement the delivery-independent signup contract and wire in the fresh
+six-character alphanumeric email OTP when delivery is available. Responses for
+existing and unrecognized emails must be neutral and indistinguishable in
+body, status, timing, and UI. Store OTPs hashed; expire them after four
+minutes; allow five attempts; make each OTP single-use; invalidate an older
+OTP when a newer one is issued; and rate-limit requests and delivery.
+
+Do not create a partially usable account before the required verification
+decision. A failed or abandoned signup reservation releases its email
+immediately, subject to rate limits, and can never replace or duplicate an
+existing account.
+
+Verification gate: compare existing versus new email behavior, test expiry,
+replay, attempt exhaustion, replacement OTPs, hashed storage, incomplete-
+signup reuse, delivery failure, and enumeration resistance.
+
+#### Phase 2d — Login risk, device recognition, and failed-login throttling
+
+Implement ordinary password login with risk-based OTP/MFA: recognized normal
+logins do not require an OTP, while a new or suspicious login and defined
+high-risk actions can require a fresh four-minute OTP/MFA. A user-enabled
+two-factor setting may require OTP for every new login. Refresh never requires
+password or OTP.
+
+Add server-authoritative device/session recognition using a protected random
+device identifier and coarse signals. Do not trust a client claim, IP address
+alone, or browser fingerprint alone. Missing or changed identifiers trigger a
+step-up challenge rather than proving compromise. Add the configurable
+progressive policy: the third failure starts a 30-minute cooldown, the fourth
+starts one hour, the fifth starts 24 hours, and a successful login resets the
+progressive state. Independent IP/device rate limits remain required.
+
+Verification gate: test recognized versus new and suspicious logins, challenge
+skips and challenges, refresh without OTP, device rotation/invalidation,
+concurrent failures, cooldown boundaries, successful-login reset, and account
+privacy during all failures.
+
+#### Phase 2e — Email and username changes with permanent history
+
+Implement authenticated email changes with current-password or equivalent
+step-up protection where required. Keep the old email active until the new
+email's four-minute ownership OTP succeeds, then enforce uniqueness and retain
+the old value in permanent private history. Implement username changes with an
+authoritative unique `username_key` check, immediate release of the old key,
+preserved display casing, and permanent history for both old and new values.
+
+Use dedicated email and username history tables with timestamps and
+actor/session references. History is never used to resolve a released
+username to its former owner and is not exposed to ordinary users; email
+history has stricter access controls.
+
+Verification gate: test abandoned and successful email changes, OTP replay,
+step-up behavior, username casing-only changes, immediate username reuse,
+history retention/privacy, and concurrent changes.
+
+#### Phase 2f — Public identity and stale URL handling
+
+Preserve username-based profile URLs while making immutable public post IDs
+authoritative. A stale username or cosmetic slug in a post URL must redirect
+to the current canonical URL; the post remains owned by the original user UUID.
+Username reuse must not transfer posts, followers, messages, mentions, or
+history. Historical mention text remains historical text and must not silently
+resolve to the new owner.
+
+Verification gate: test post resolution across username changes and reuse,
+canonical redirects, ownership checks, profile ownership after reuse, and
+historical mention rendering.
 
 ### Phase 3 — Security events and notifications
 
-Implement durable login/security events, in-app login notifications, future
-email-notification integration points, suspicious-login action handling, and
-retryable outbox processing.
+#### Phase 3a — Durable security-event model
 
-Verification gate: prove every successful new login creates one durable event;
-prove refreshes do not create login notifications; simulate notification
-failure and retry without logging the user out.
+Implement durable login and security events with stable event identity,
+timestamp, user/session/device context, event type, and delivery state. A
+successful new login must be distinguishable from refresh, retry, and ordinary
+session activity without exposing internal UUIDs in user-facing content.
+
+Verification gate: prove event uniqueness and transaction boundaries for
+successful logins, retries, refreshes, failed logins, and security actions.
+
+#### Phase 3b — Login notifications and future email hooks
+
+Create the in-app login-security notification from the durable event and add a
+provider-neutral integration point for future email delivery. Include
+suspicious-login actions without making notification delivery a prerequisite
+for keeping the authenticated session alive.
+
+Verification gate: prove every successful new login creates one user-visible
+in-app notification, while refreshes and duplicate request retries do not.
+
+#### Phase 3c — Retryable outbox processing
+
+Implement retryable, idempotent outbox processing for in-app and future email
+notifications. Temporary provider, network, or configuration failures remain
+delivery failures, not authentication failures, and must not log the user out.
+
+Verification gate: simulate duplicate workers, provider failures, delayed
+delivery, retry exhaustion, and recovery while preserving exactly-once
+user-visible event behavior.
 
 ### Phase 4 — User session controls
 
-Complete the session list and revocation UX, revised password-change flow,
-selective/all-other-session controls, device enrollment through a four-minute
-OTP, and session-expiry/recovery messaging.
+#### Phase 4a — Session inventory and current-session identity
 
-Verification gate: test multiple browsers/devices, current-session detection,
-selective revocation, revoke-others, password-change continuity, OTP replay,
-and browser/network recovery behavior.
+Complete the authenticated session list using server-derived session identity.
+Show safe device labels and activity metadata without exposing refresh tokens,
+device identifiers, IP addresses, locations, fingerprints, or internal UUIDs.
+Mark the session represented by the presented refresh cookie as current.
+
+Verification gate: test multiple browsers, browser profiles, app installs,
+refresh rotation within one family, and current-session detection.
+
+#### Phase 4b — Selective and bulk revocation
+
+Implement ending one other session, ending all other sessions, and the current
+session logout path. Revocation must be authoritative, idempotent, and
+consistent with the terminal-versus-ambiguous refresh contract. Do not claim
+immediate revocation of already-issued access JWTs beyond the documented
+boundary.
+
+Verification gate: test selective revocation, revoke-others, current logout,
+replay of revoked refresh tokens, simultaneous actions, and recoverable API or
+network failures.
+
+#### Phase 4c — Password-change continuity
+
+Implement the revised password-change flow: verify the current password or
+approved equivalent step-up, apply the signup password policy, keep the
+current session active after success, and provide user-controlled other-
+session controls. Define which sessions are revoked by policy and surface the
+result clearly.
+
+Verification gate: test wrong current passwords, password policy failures,
+successful continuity, other-session behavior, refresh rotation, and failure
+recovery.
+
+#### Phase 4d — Existing-session device enrollment
+
+Allow an existing authenticated session to enroll another device through a
+fresh four-minute OTP. The code is single-use, stored hashed, rate-limited,
+and bound to the enrollment intent. Successful enrollment creates a separate
+ordinary session and recognition record; it does not expose tokens or device
+identifiers.
+
+Verification gate: test enrollment approval, expiry, replay, replacement
+codes, wrong-device use, rate limits, and creation of the separate session.
+
+#### Phase 4e — Expiry, recovery, and user messaging
+
+Implement session-expiry and recovery messaging that distinguishes confirmed
+terminal session failure from network, CORS, timeout, 5xx, malformed, and
+configuration failures. Preserve the user session through recoverable failures
+and ask for login again only after a confirmed terminal result.
+
+Verification gate: test idle expiry, explicit revocation, expired access-token
+refresh, lost refresh responses, cross-tab recovery, browser reload, and
+offline/online transitions.
 
 ### Phase 5 — Staff and superadmin security
 
-Implement the reserved superadmin bootstrap, staff roles and granular
-permissions, privileged staff sessions, future MFA/OTP support, account
-locking, and administrative session revocation.
+#### Phase 5a — Reserved superadmin bootstrap
 
-Privileged sessions use 16 minutes of inactivity and an eight-hour maximum
-continuous lifetime. Expiry locks staff screens only; it does not log the user
-out of ordinary Friink.
+Implement a one-time, deployment-safe reserved superadmin bootstrap with
+strong password handling, explicit configuration validation, protected audit
+events, and safeguards against accidental takeover or repeated bootstrap.
 
-Verification gate: test permission separation, superadmin protection, staff
-step-up access, privileged-session expiry, account lock behavior, target
-session revocation, and self-lockout safeguards.
+Verification gate: test first-run bootstrap, rerun behavior, invalid
+configuration, secret rotation, recovery, and absence of superadmin bypasses
+through ordinary user APIs.
+
+#### Phase 5b — Staff roles and granular permissions
+
+Implement staff roles and least-privilege permissions with server-side checks
+on every administrative action. Keep permission names and moderation-product
+details extensible, while enforcing the initial security boundaries and
+separating ordinary personal access from staff access.
+
+Verification gate: test allow/deny matrices, role changes, privilege
+escalation attempts, protected identifiers, and separation between staff and
+ordinary user capabilities.
+
+#### Phase 5c — Privileged staff sessions and step-up protection
+
+Implement separate privileged staff-session state, step-up access, and future
+MFA/OTP support. Privileged sessions use 16 minutes of inactivity and an
+eight-hour maximum continuous lifetime. Expiry locks staff screens only; it
+does not log the user out of ordinary Friink.
+
+Verification gate: test step-up success/failure, privileged-session renewal,
+16-minute inactivity expiry, eight-hour maximum lifetime, ordinary-session
+continuity, and cross-tab behavior.
+
+#### Phase 5d — Account locking and administrative revocation
+
+Implement account locking and target-session administrative revocation with
+clear authorization boundaries, audit events, and self-lockout safeguards.
+Ensure lock state is enforced server-side and cannot be bypassed by stale
+access tokens, alternate sessions, or client-only state.
+
+Verification gate: test lock/unlock policy, locked login and refresh behavior,
+target-session revocation, mass administrative actions, self-lockout
+prevention, and recovery paths.
 
 ### Phase 6 — Operations and incident response
 
-Implement migration/rollback safeguards, observability, append-only audit
-protection, secret/key rotation procedures, mass session revocation, account
-lockdown, compromised-admin recovery, and documented incident runbooks.
+#### Phase 6a — Migration and rollback safeguards
 
-Verification gate: rehearse key compromise, refresh-token compromise, admin
-compromise, mass revocation, rollback, and recovery without guessing or
-manually editing production authentication data.
+Implement forward migrations, compatibility windows, rollback procedures, and
+startup checks for auth/session schema and configuration changes. Rollback
+must not require guessing or manually editing production authentication data.
+
+Verification gate: rehearse forward migration, interrupted migration,
+compatible rollback, incompatible rollback detection, and recovery.
+
+#### Phase 6b — Observability and append-only audit protection
+
+Add privacy-preserving metrics, structured operational logs, security alerts,
+and append-only audit storage for sensitive account, session, and staff
+actions. Never log passwords, raw refresh tokens, OTPs, internal UUIDs, or
+other prohibited user-facing identifiers.
+
+Verification gate: inspect representative success/failure telemetry, confirm
+redaction, detect missing or duplicated events, and verify audit integrity.
+
+#### Phase 6c — Secret and signing-key rotation
+
+Document and automate secret rotation, refresh-token invalidation strategy,
+and JWT signing-key rotation with mixed-version verification and clock-safe
+overlap windows. Retire old keys only after the documented expiry/safety
+window.
+
+Verification gate: rehearse key compromise, old/new `kid` verification,
+mixed-version deployment, clock skew, rollback, and safe retirement.
+
+#### Phase 6d — Mass revocation and account lockdown
+
+Provide controlled operations for mass session revocation, account lockdown,
+device-recognition invalidation, and compromised-admin containment. Actions
+must be authorized, auditable, idempotent, and recoverable without directly
+editing authentication rows in production.
+
+Verification gate: rehearse refresh-token compromise, admin compromise, mass
+revocation, account lockdown, partial failure, retry, and restoration.
+
+#### Phase 6e — Incident runbooks and recovery rehearsal
+
+Publish incident runbooks for key compromise, refresh-token compromise,
+account takeover, notification abuse, admin compromise, rollback, and user
+recovery. Define owners, evidence to capture, decision points, and post-
+incident verification while preserving privacy and the non-negotiable rules.
+
+Verification gate: run an end-to-end incident exercise and prove that normal
+service can be restored without guessing, bypassing controls, or manually
+editing production authentication data.
 
 ## 3. Non-negotiable rules
 
@@ -758,10 +993,13 @@ intentional: a host-only cookie for the API host is acceptable when the browser
 only needs to send it to the API; a parent-domain cookie must not be added for
 convenience without a documented security reason.
 
-The staging and production web/API origins must be tested independently. A
-successful authenticated request must demonstrate that the browser sends the
-refresh cookie cross-origin, and the API must return the exact configured web
-origin—not `*`—with `Access-Control-Allow-Credentials: true`.
+The staging web/API origins must be tested as the active implementation
+environment: `https://staging.friink.com` and
+`https://staging-api.friink.com`. A successful authenticated request must
+demonstrate that the browser sends the refresh cookie cross-origin, and the API
+must return the exact configured staging web origin—not `*`—with
+`Access-Control-Allow-Credentials: true`. Production verification is deferred
+to the permanent production infrastructure.
 
 ### Cross-tab refresh races
 
@@ -851,8 +1089,11 @@ Source inspection or compilation alone is insufficient.
 
 #### Cookie and cross-origin browser contract
 
-For both staging and production, capture the complete response headers from a
-successful login with the token value redacted but the attributes preserved.
+For staging, capture the complete response headers from a successful login with
+the token value redacted but the attributes preserved. The required staging
+pair is `https://staging.friink.com` and
+`https://staging-api.friink.com`; production evidence is a separate
+pre-release gate and is intentionally deferred.
 The evidence must show:
 
 - cookie name `friink_refresh_token`
@@ -865,7 +1106,7 @@ The evidence must show:
 - intentional domain/host-only behavior
 
 Also capture credentialed CORS preflight and authenticated request evidence for
-both web/API pairs showing the exact `Access-Control-Allow-Origin`,
+the staging web/API pair showing the exact `Access-Control-Allow-Origin`,
 `Access-Control-Allow-Credentials`, and `Vary` values. Verify in a real browser
 that the refresh cookie is sent to `/auth/refresh` and that the replacement
 cookie is accepted after rotation.

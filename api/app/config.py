@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=30, alias="REFRESH_TOKEN_EXPIRE_DAYS")
     refresh_token_reuse_grace_seconds: int = Field(default=60, alias="REFRESH_TOKEN_REUSE_GRACE_SECONDS")
+    signup_otp_enabled: bool = Field(default=False, alias="SIGNUP_OTP_ENABLED")
     r2_account_id: str = Field(default="", alias="R2_ACCOUNT_ID")
     r2_access_key_id: str = Field(default="", alias="R2_ACCESS_KEY_ID")
     r2_secret_access_key: str = Field(default="", alias="R2_SECRET_ACCESS_KEY")

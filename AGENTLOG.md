@@ -6156,3 +6156,26 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification: Login and refresh returned `200`; first old-token replay returned `200`; second replay returned `401`.
 - Finding: The redeployed runtime still uses the 14-day value. The Vercel variable was likely updated under a scope not used by the deployment attached to `staging-api.friink.com`.
 - Decision: Keep Phase 1 open; do not begin Phase 2 until the live cookie reports `Max-Age=2592000`.
+## 2026-09-03T22:00:00Z — Begin Auth/session Phase 2 identity foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue to Phase 2 after the staging-only Phase 1 gate passed.
+- Changes Made: Added canonical username keys with display casing, permanent identity history, reserved username table/seed, hashed OTP records with expiry/attempt limits, and progressive failed-login throttling.
+- Verification: Alembic migration `20260903_0019` and OTP migration `20260903_0020` applied locally; 14 focused API tests pass; compile check passes.
+- Scope note: Email provider/delivery remains intentionally unimplemented under the documented out-of-scope limitation. Signup privacy/OTP endpoint wiring is the next Phase 2 slice; Phase 2 gate is not closed.
+## 2026-09-03T22:30:00Z — Auth/session handoff for new session
+
+- Phase 1: staging-only gate passed. Live evidence is in `docs/Claude-audit-auth-and-session.md`; production verification is deferred until permanent Droplet/EC2 infrastructure exists.
+- Phase 2: active and incomplete. Implemented canonical username identity/display casing, reserved username seeding/enforcement, permanent email/username history models, progressive lockout schedule (3 failures/30 minutes, 4/1 hour, 5/24 hours), and hashed OTP records with four-minute expiry, single use, invalidation of older codes, and five-attempt limits.
+- Database: migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` applied locally.
+- Verification: Phase 2 foundation suite passed 15 tests; broader auth/session regression suite passed 23 tests. Web TypeScript/build checks from Phase 1 passed.
+- Next work: implement signup privacy/race handling, delivery-independent signup verification endpoints, email/username-change verification behavior, public UUID exposure review, and complete the Phase 2 staging gate.
+## 2026-09-03T22:27:14Z — Phase 2c signup reservation checkpoint
+
+- Prompt Summary: Resume the auth/session implementation from Phase 2 using staging only; verify Phase 1 before continuing.
+- Phase 1 status: staging-only gate confirmed closed from the live evidence in `docs/Claude-audit-auth-and-session.md`; production remains intentionally deferred.
+- Changes Made: Added delivery-independent signup reservation storage, opaque reservation tokens, hashed six-character alphanumeric signup OTPs, four-minute expiry/single-use/five-attempt enforcement, neutral signup-start responses, and verification-before-account-creation endpoints. Added migration `20260903_0021_add_signup_reservations` and the `SIGNUP_OTP_ENABLED` configuration flag, disabled by default until email delivery exists.
+- Verification: Migration applied to the staging database (`20260903_0021 (head)`); focused Phase 2 signup/identity/OTP/lockout/validation tests passed (10 tests); full `api/tests` run reached 64 passed and 10 unrelated pre-existing `connections` fake-session failures; `python -m compileall` and `git diff --check` passed.
+- Staging evidence: CORS preflight and `/health/db` remain `200` on `staging-api.friink.com`; the new `/auth/signup/start` probe returns `404`, proving this working-tree slice has not been deployed to staging yet.
+- Decision: Phase 2 remains open. Do not append Phase 2 gate evidence or advance to Phase 3 until the staging deployment exposes the endpoint and the complete privacy/OTP/identity trace passes there.
