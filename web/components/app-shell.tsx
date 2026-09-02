@@ -32,6 +32,7 @@ import {
   listFollowing,
   listIncomingFollowRequests,
   listNotifications,
+  listConversations,
   listOutgoingFollowRequests,
   markAllNotificationsRead,
   getUnreadNotificationCount,
@@ -357,6 +358,27 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           .catch(() => undefined);
       }
     });
+  }, [activeScreen]);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!session || activeScreen === 'messages') return;
+    let stopped = false;
+    let busy = false;
+    let timer: number | null = null;
+    const sync = async () => {
+      if (stopped || busy || document.visibilityState === 'hidden') return;
+      busy = true;
+      try { await listConversations(loadAuthSession()?.accessToken ?? session.accessToken); } catch { /* delivery sync is best effort */ }
+      finally { busy = false; }
+    };
+    const schedule = () => { if (!stopped && document.visibilityState !== 'hidden') timer = window.setTimeout(async () => { await sync(); schedule(); }, 4000); };
+    const resume = () => { if (timer !== null) window.clearTimeout(timer); timer = null; void sync(); schedule(); };
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('focus', resume);
+    void sync();
+    schedule();
+    return () => { stopped = true; if (timer !== null) window.clearTimeout(timer); document.removeEventListener('visibilitychange', resume); window.removeEventListener('focus', resume); };
   }, [activeScreen]);
 
   useEffect(() => {

@@ -2,6 +2,8 @@
 
 ## 2026-09-02
 
+- [chat] Added visible-app inbox delivery synchronization: every incoming message discovered by the 4-second conversation sync is marked delivered, while viewport scrolling remains the only read trigger.
+
 - [web/chat] Refined stacked outgoing bubble corners and receipt tick presentation with overlapping ticks, circular theme-aware backgrounds, and light/dark read-state contrast.
 
 ## 2026-09-02

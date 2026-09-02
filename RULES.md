@@ -556,7 +556,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-01T16:00:00Z
 
 ### Rule: Chat Read Receipts Use Per-User Cursors
-- **What:** Chat exposes sent, delivered, and read states. The message endpoint records delivery only when the full conversation is fetched; the visible conversation advances the viewer's read cursor through an idempotent endpoint. Polling returns receipt metadata even without new messages, so tick state can change on the existing 4-second cycle.
+- **What:** Chat exposes sent, delivered, and read states. A visible app-level inbox sync or the full conversation endpoint records delivery; the visible conversation advances the viewer's read cursor through an idempotent endpoint. Polling returns receipt metadata even without new messages, so tick state can change on the existing 4-second cycle.
 - **Edge cases:** Unread counts include only incoming messages and appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. Mute and archive do not change receipt state. Blocked conversations do not expose receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
 - **Status:** Active
 - **Platform:** Web/API

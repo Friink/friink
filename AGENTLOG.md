@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-02 — Visible inbox delivery synchronization
+
+- **Task:** Mark all incoming messages discovered by visible inbox synchronization as delivered, preserving viewport-based read receipts.
+- **Implementation:** Conversation-list API advances only `last_delivered_message_id`; the app shell runs the guarded four-second sync outside Chat, while Chat keeps its existing list polling. Hidden tabs pause and focus/visibility recovery resumes.
+- **Verification:** End-to-end chat request/read-receipt regression passed with inbox-sync delivery assertion; TypeScript check, production build, and `git diff --check` passed.
+
+## 2026-09-02 — Global delivery sync
+
+- **Task:** Mark every incoming message discovered by visible inbox synchronization as delivered while preserving viewport-based read state.
+- **Files:** `docs/chat-behavior.md`, `docs/read-receipts.md`, `api/app/services/chat.py`, `api/tests/test_chat_requests.py`, `web/components/app-shell.tsx`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`.
+- **Verification:** End-to-end chat request/read-receipt regression passed; TypeScript, production build, and diff checks passed.
+
 ## 2026-09-02 — Chat receipt cosmetics
 
 - **Task:** Improve stacked outgoing bubble corners and read-receipt styling without changing chat behavior.

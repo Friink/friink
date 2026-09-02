@@ -99,6 +99,9 @@ read behavior remain in use.
   and row state.
   Read receipt behavior and cursor persistence are specified separately in
   `docs/read-receipts.md`.
+- While the signed-in app is visible outside the Chat screen, the app shell runs
+  the same 4-second inbox sync. Every incoming message discovered across the
+  returned conversations is marked delivered; this sync never marks messages read.
 
 ## Out of scope and limitations
 
