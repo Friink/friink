@@ -65,6 +65,9 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 
+### Chat receipt presentation
+- Receipt ticks use a circular theme-surface badge. Sent/delivered ticks use theme muted gray; read ticks use the accent. Consecutive outgoing bubbles reduce the joining top-right radius to the same 4px lower-right radius.
+
 ## Feed Behavior
 
 > Updated to match shipped behavior as of 2026-08-26 — see CHANGELOG.md entry 2026-08-26

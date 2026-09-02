@@ -35,14 +35,14 @@ async def block_user(session: Session, actor: User, username: str) -> None:
     existing = session.execute(select(UserBlock).where(UserBlock.blocker_id == actor.id, UserBlock.blocked_id == target.id)).scalar_one_or_none()
     if not existing:
         session.add(UserBlock(blocker_id=actor.id, blocked_id=target.id))
-    await session.execute(delete(FollowRequest).where(or_(and_(FollowRequest.requester_id == actor.id, FollowRequest.recipient_id == target.id), and_(FollowRequest.requester_id == target.id, FollowRequest.recipient_id == actor.id))))
+    session.execute(delete(FollowRequest).where(or_(and_(FollowRequest.requester_id == actor.id, FollowRequest.recipient_id == target.id), and_(FollowRequest.requester_id == target.id, FollowRequest.recipient_id == actor.id))))
     await commit(session)
 
 async def unblock_user(session: Session, actor: User, username: str) -> None:
     target = await get_user_by_username(session, username)
     if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
-    await session.execute(delete(UserBlock).where(UserBlock.blocker_id == actor.id, UserBlock.blocked_id == target.id))
+    session.execute(delete(UserBlock).where(UserBlock.blocker_id == actor.id, UserBlock.blocked_id == target.id))
     await commit(session)
 
 def is_blocked(session: Session, first_id: uuid.UUID, second_id: uuid.UUID) -> bool:

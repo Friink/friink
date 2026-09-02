@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-02 — Chat receipt cosmetics
+
+- **Task:** Improve stacked outgoing bubble corners and read-receipt styling without changing chat behavior.
+- **Scope:** Shared chat CSS/receipt markup only; posts and receipt state logic unchanged.
+- **Verification:** Web TypeScript check and production build passed; `git diff --check` passed.
+
+## 2026-09-02 — Blocking verification follow-up
+
+- **Task:** Complete end-to-end verification and correct blocking defects.
+- **Result:** Fixed synchronous SQLAlchemy execution in block/unblock cleanup. Added `api/tests/test_blocking.py`.
+- **Tests:** Blocking integration flow passed (block, relationship removal, bilateral profile protection, blocked search, unblock without restoration). Existing `test_chat_requests.py` passed. Web TypeScript check passed. `git diff --check` passed.
+- **Build:** Production `next build` passed after retrying with the required process permissions.
+
 ## 2026-09-02 — Blocking
 
 - **Task:** Document and implement user blocking.

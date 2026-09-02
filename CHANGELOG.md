@@ -2,7 +2,12 @@
 
 ## 2026-09-02
 
+- [web/chat] Refined stacked outgoing bubble corners and receipt tick presentation with overlapping ticks, circular theme-aware backgrounds, and light/dark read-state contrast.
+
+## 2026-09-02
+
 - [blocking] Added bilateral block/unblock APIs, transactional follow cleanup, blocked-profile protection, profile block confirmation, and Privacy blocked-people search/list UI.
+- [blocking] Verified the blocking flow end to end and corrected synchronous database cleanup execution.
 
 ## 2026-09-02
 

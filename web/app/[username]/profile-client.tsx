@@ -29,6 +29,8 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
 
   useEffect(() => {
     if (!user) return;
+    const session = loadAuthSession();
+    if (!session) return;
 
     let active = true;
     const profileHandle = username || user.username;

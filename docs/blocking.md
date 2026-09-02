@@ -1,5 +1,7 @@
 # Friink Blocking
 
+Verification status: focused end-to-end blocking test passes; existing chat request regression passes; web TypeScript check and production build pass.
+
 Status: implementation scope and technical contract.
 
 ## Requirements
