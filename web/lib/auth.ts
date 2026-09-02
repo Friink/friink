@@ -703,6 +703,7 @@ export type ApiConversation = {
   can_send: boolean;
   composer_placeholder: string;
   requester_message_count: number;
+  unread_count: number;
 };
 
 export type ApiChatContext = {
@@ -717,6 +718,8 @@ export type ApiChatContext = {
   composer_placeholder: string;
   status: string;
   requester_message_count: number;
+  unread_count: number;
+  last_read_message_id: string | null;
 };
 
 export type ApiMessage = {
@@ -725,12 +728,20 @@ export type ApiMessage = {
   sender_id: string;
   content: string;
   created_at: string;
+  receipt_status?: 'sent' | 'delivered' | 'read';
 };
+
+export const CHAT_MESSAGE_MAX_LENGTH = 2048;
 
 export type ApiMessagePage = {
   items: ApiMessage[];
   next_cursor: string | null;
   has_more: boolean;
+  unread_count: number;
+  first_unread_message_id: string | null;
+  peer_delivered_message_id: string | null;
+  peer_read_message_id: string | null;
+  last_read_message_id: string | null;
 };
 
 export type ApiNotification = {
@@ -1047,6 +1058,22 @@ export async function listConversationMessages(accessToken: string, conversation
   const query = after ? `?after=${encodeURIComponent(after)}` : '';
   return requestApi<ApiMessagePage>(`/chat/conversations/${conversationId}/messages${query}`, {
     method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function markConversationRead(accessToken: string, conversationId: string, messageId: string): Promise<{ conversation_id: string; last_read_message_id: string | null; unread_count: number }> {
+  return requestApi(`/chat/conversations/${conversationId}/read?message_id=${encodeURIComponent(messageId)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function updateReadReceiptPreference(accessToken: string, enabled: boolean): Promise<{ read_receipts_enabled: boolean }> {
+  return requestApi(`/chat/preferences/read-receipts?enabled=${String(enabled)}`, {
+    method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
   });

@@ -2,6 +2,14 @@
 
 ## 2026-09-02
 
+- [chat] Added per-user delivery/read cursors, receipt privacy infrastructure, unread counts and separators, sent/delivered/read tick states, and polling-based receipt updates. See `docs/read-receipts.md`.
+
+## 2026-09-02
+
+- [chat/web] Set the chat message limit to 2,048 characters with a persistent composer counter and added a 4px gap between consecutive message bubbles.
+
+## 2026-09-02
+
 - [web/chat] Fixed the chat composer using the shared post composer’s multiline and mention-editor variants, restoring the current embedded layout in chat without changing post-mode behavior or applying the post-only character counter.
 
 ## 2026-09-02

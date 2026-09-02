@@ -6,10 +6,15 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.models.user import User
 from app.routers.auth import get_current_user
-from app.schemas.chat import ChatContextResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, SendMessageRequest
-from app.services.chat import accept_request, get_chat_context, list_conversations, list_messages, send_message, send_message_to_user, set_conversation_setting
+from app.schemas.chat import ChatContextResponse, ChatReadResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse, SendMessageRequest
+from app.services.chat import accept_request, get_chat_context, list_conversations, list_messages, mark_messages_read, send_message, send_message_to_user, set_conversation_setting, set_read_receipts_enabled
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.patch("/preferences/read-receipts", response_model=ReadReceiptPreferenceResponse)
+async def update_read_receipt_preference(enabled: bool = Query(...), current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ReadReceiptPreferenceResponse:
+    return await set_read_receipts_enabled(session, current_user, enabled)
 
 
 @router.get("/conversations", response_model=ConversationListResponse)
@@ -51,6 +56,11 @@ async def create_message(
 @router.post("/conversations/{conversation_id}/accept", response_model=ConversationResponse)
 async def accept_chat_request(conversation_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ConversationResponse:
     return await accept_request(session, current_user, conversation_id)
+
+
+@router.post("/conversations/{conversation_id}/read", response_model=ChatReadResponse)
+async def mark_chat_messages_read(conversation_id: uuid.UUID, message_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatReadResponse:
+    return await mark_messages_read(session, current_user, conversation_id, message_id)
 
 
 @router.patch("/conversations/{conversation_id}/settings", response_model=ConversationResponse)

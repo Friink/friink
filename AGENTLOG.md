@@ -24,6 +24,17 @@ IMPORTANT: Do not add a `User` field to any entry. Entries should only include t
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
 
+## 2026-09-02T12:30:00Z — Implement chat read receipts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement polling-based sent, delivered, and read receipts with unread counts and future privacy controls.
+- Changes Made: Added per-user delivery/read cursors, receipt metadata on message pages, idempotent mark-read and privacy-preference endpoints, viewport-based read marking, row unread pills, in-chat unread separator, receipt ticks, blocked-chat receipt suppression, and migration `20260902_0017`.
+- Files: `docs/read-receipts.md`, `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/schemas/chat.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `api/tests/test_chat_requests.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Provide transparent receipt state and unread navigation while preserving the existing 4-second polling architecture and future mutual privacy behavior.
+- Notes: Pending requests use the same receipt rules without auto-accepting; mute/archive remain notification/organization controls only; privacy settings UI remains future work.
+- Verification Status: Passed full API suite (67 tests), focused read-receipt integration test (including privacy and blocked receipt suppression), TypeScript check, production web build, `alembic current` at `20260902_0017 (head)`, and `git diff --check`.
+
 ## 2026-09-02T11:00:00Z — Align chat composer with shared post layout
 
 - Agent: Codex
@@ -34,6 +45,17 @@ AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in
 - Reason: Chat omitted the contextual props that select the current embedded composer layout; the post-only character counter/limit and media upload flow remain intentionally separate.
 - Notes: Post mode continues using its existing multiline, mention, media, and counter configuration.
 - Verification Status: Passed `npm exec tsc -- --noEmit`, `npm run build`, and `git diff --check`; generated `web/tsconfig.tsbuildinfo` was restored so it is not part of the change.
+
+## 2026-09-02T11:30:00Z — Set chat message limit and bubble spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change the chat message limit to 2,048 characters, always show the composer counter, and add spacing between consecutive bubbles.
+- Changes Made: Added the 2,048-character API validation contract and frontend max-length/counter configuration; added a 4px consecutive-bubble spacing rule; added boundary coverage and updated chat/design documentation.
+- Files: `api/app/schemas/chat.py`, `api/tests/test_chat_requests.py`, `web/lib/auth.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/app/globals.css`, `docs/chat-behavior.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Keep backend/frontend limits transparent and prevent adjacent bubbles from visually merging.
+- Notes: Post composer remains at its existing 256-character contract and media behavior.
+- Verification Status: Passed targeted API test, TypeScript, production build (with required process permissions), and `git diff --check`; generated `web/tsconfig.tsbuildinfo` was restored.
 
 ## 2026-09-02T10:34:09Z — Audit chat composer disable paths
 

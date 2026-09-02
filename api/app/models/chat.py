@@ -58,6 +58,8 @@ class ConversationSetting(Base):
     muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     explicitly_muted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    last_delivered_message_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+    last_read_message_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
 
     conversation = relationship("Conversation")
     user = relationship("User")

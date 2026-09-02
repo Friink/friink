@@ -21,6 +21,9 @@ other's profiles, but an existing chat remains readable and the composer is disa
 Block-management UI is outside this implementation and the block table/API are
 provided as infrastructure for the later profile-menu feature.
 
+Chat messages accept up to 2,048 Unicode characters. The chat composer always shows
+a `count/2048` counter and enforces the same limit before submission.
+
 ## Conversation state
 
 Conversation access state is independent from per-user presentation state:
@@ -89,6 +92,8 @@ read behavior remain in use.
   composer without manufacturing a pending conversation.
 - The existing polling transport remains unchanged in concept: it polls only an
   accepted or pending conversation with a real conversation ID and pauses while hidden.
+  Read receipt behavior and cursor persistence are specified separately in
+  `docs/read-receipts.md`.
 
 ## Out of scope and limitations
 

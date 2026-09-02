@@ -1,11 +1,12 @@
-import { getChatContext, listConversationMessages, sendConversationMessage, type ApiChatContext, type ApiMessage } from '@/lib/auth';
+import { getChatContext, listConversationMessages, markConversationRead, sendConversationMessage, type ApiChatContext, type ApiMessage, type ApiMessagePage } from '@/lib/auth';
 
-export type ChatEvent = { type: 'message.created'; message: ApiMessage };
+export type ChatEvent = { type: 'messages.updated'; page: ApiMessagePage };
 
 export interface ChatTransport {
   open(username: string): Promise<ApiChatContext>;
-  loadMessages(conversationId: string, after?: string | null): Promise<{ items: ApiMessage[]; nextCursor: string | null }>;
+  loadMessages(conversationId: string, after?: string | null): Promise<ApiMessagePage>;
   send(conversationId: string, content: string, clientMessageId?: string): Promise<ApiMessage>;
+  markRead(conversationId: string, messageId: string): ReturnType<typeof markConversationRead>;
   subscribe(conversationId: string, after: string | null, onEvent: (event: ChatEvent) => void): () => void;
 }
 
@@ -23,12 +24,15 @@ export class PollingChatTransport implements ChatTransport {
   }
 
   async loadMessages(conversationId: string, after?: string | null) {
-    const page = await listConversationMessages(this.accessToken, conversationId, after);
-    return { items: page.items, nextCursor: page.next_cursor };
+    return listConversationMessages(this.accessToken, conversationId, after);
   }
 
   send(conversationId: string, content: string, clientMessageId = crypto.randomUUID()) {
     return sendConversationMessage(this.accessToken, conversationId, content, clientMessageId);
+  }
+
+  markRead(conversationId: string, messageId: string) {
+    return markConversationRead(this.accessToken, conversationId, messageId);
   }
 
   subscribe(conversationId: string, after: string | null, onEvent: (event: ChatEvent) => void) {
@@ -42,10 +46,8 @@ export class PollingChatTransport implements ChatTransport {
       busy = true;
       try {
         const page = await this.loadMessages(conversationId, cursor);
-        for (const message of page.items) {
-          onEvent({ type: 'message.created', message });
-        }
-        if (page.items.length > 0) cursor = page.nextCursor ?? page.items[page.items.length - 1].id;
+        onEvent({ type: 'messages.updated', page });
+        if (page.items.length > 0) cursor = page.next_cursor ?? page.items[page.items.length - 1].id;
       } finally {
         busy = false;
       }

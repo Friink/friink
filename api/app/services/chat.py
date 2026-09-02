@@ -9,7 +9,7 @@ from app.models.chat import Conversation, ConversationSetting, ConversationStatu
 from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import NotificationType
 from app.models.user import User
-from app.schemas.chat import ChatContextResponse, ChatUserResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse
+from app.schemas.chat import ChatContextResponse, ChatReadResponse, ChatUserResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse
 from app.services.auth import get_user_by_username
 from app.services.notifications import create_notification
 from app.services.session_ops import commit, refresh
@@ -80,6 +80,60 @@ def _muted(session: Session, conversation_id: uuid.UUID, user_id: uuid.UUID) -> 
     return bool(setting and setting.muted)
 
 
+def _message_index(conversation: Conversation, message_id: uuid.UUID | None) -> int:
+    if message_id is None:
+        return -1
+    return next((index for index, message in enumerate(conversation.messages) if message.id == message_id), -1)
+
+
+def _receipt_cursors(session: Session, conversation: Conversation, viewer: User) -> tuple[ConversationSetting | None, ConversationSetting | None]:
+    viewer_setting = _get_setting(session, conversation.id, viewer.id)
+    peer = _participant(conversation, viewer.id)
+    peer_setting = _get_setting(session, conversation.id, peer.id)
+    return viewer_setting, peer_setting
+
+
+def _receipt_visible(session: Session, conversation: Conversation, viewer: User) -> bool:
+    if _is_blocked(session, viewer, _participant(conversation, viewer.id)):
+        return False
+    return bool(getattr(viewer, "read_receipts_enabled", True) and getattr(_participant(conversation, viewer.id), "read_receipts_enabled", True))
+
+
+def _unread_count(conversation: Conversation, viewer: User, viewer_setting: ConversationSetting | None) -> int:
+    read_index = _message_index(conversation, viewer_setting.last_read_message_id if viewer_setting else None)
+    return sum(1 for index, message in enumerate(conversation.messages) if index > read_index and message.sender_id != viewer.id)
+
+
+def _receipt_status(session: Session, conversation: Conversation, message: Message, viewer: User, peer_setting: ConversationSetting | None) -> str:
+    if message.sender_id != viewer.id or not peer_setting or _is_blocked(session, viewer, _participant(conversation, viewer.id)):
+        return "sent"
+    message_index = _message_index(conversation, message.id)
+    if _receipt_visible(session, conversation, viewer) and _message_index(conversation, peer_setting.last_read_message_id) >= message_index:
+        return "read"
+    if _message_index(conversation, peer_setting.last_delivered_message_id) >= message_index:
+        return "delivered"
+    return "sent"
+
+
+def _message_response(session: Session, conversation: Conversation, message: Message, viewer: User, peer_setting: ConversationSetting | None = None) -> MessageResponse:
+    if peer_setting is None:
+        _, peer_setting = _receipt_cursors(session, conversation, viewer)
+    return MessageResponse(id=message.id, conversation_id=message.conversation_id, sender_id=message.sender_id, content=message.content, created_at=message.created_at, receipt_status=_receipt_status(session, conversation, message, viewer, peer_setting))
+
+
+def _receipt_summary(session: Session, conversation: Conversation, viewer: User) -> tuple[int, uuid.UUID | None, uuid.UUID | None, uuid.UUID | None]:
+    viewer_setting, peer_setting = _receipt_cursors(session, conversation, viewer)
+    unread_count = _unread_count(conversation, viewer, viewer_setting)
+    read_index = _message_index(conversation, viewer_setting.last_read_message_id if viewer_setting else None)
+    first_unread = next((message.id for index, message in enumerate(conversation.messages) if index > read_index and message.sender_id != viewer.id), None)
+    return unread_count, first_unread, peer_setting.last_delivered_message_id if peer_setting else None, peer_setting.last_read_message_id if peer_setting and _receipt_visible(session, conversation, viewer) else None
+
+
+def _advance_cursor(conversation: Conversation, setting: ConversationSetting, field: str, message_id: uuid.UUID) -> None:
+    if _message_index(conversation, message_id) > _message_index(conversation, getattr(setting, field)):
+        setattr(setting, field, message_id)
+
+
 def _composer_state(session: Session, conversation: Conversation | None, user: User, other: User) -> tuple[bool, str, str]:
     if conversation and _is_blocked(session, user, other):
         return False, "Chat unavailable.", "blocked"
@@ -103,18 +157,21 @@ def _conversation_response(session: Session, conversation: Conversation, viewer:
     can_send, placeholder, _ = _composer_state(session, conversation, viewer, participant)
     setting = _get_setting(session, conversation.id, viewer.id)
     latest = conversation.messages[-1] if conversation.messages else None
+    unread_count, _, _, _ = _receipt_summary(session, conversation, viewer)
     return ConversationResponse(
         id=conversation.id,
         participant=ChatUserResponse(id=participant.id, username=participant.username, display_name=participant.display_name, profile_picture_url=participant.profile_picture_url),
         preview=latest.content if latest else None,
         updated_at=conversation.updated_at,
         status=conversation.status.value,
+        unread=unread_count > 0,
         requester_id=conversation.requester_id,
         muted=bool(setting and setting.muted),
         archived=bool(setting and setting.archived),
         can_send=can_send,
         composer_placeholder=placeholder,
         requester_message_count=conversation.requester_message_count,
+        unread_count=unread_count,
     )
 
 
@@ -140,7 +197,8 @@ async def get_chat_context(session: Session, user: User, username: str) -> ChatC
         conversation.messages = []
     if conversation:
         response = _conversation_response(session, conversation, user)
-        return ChatContextResponse(conversation=response, participant=response.participant, can_send=response.can_send, composer_placeholder=response.composer_placeholder, status=response.status, requester_message_count=response.requester_message_count)
+        setting = _get_setting(session, conversation.id, user.id)
+        return ChatContextResponse(conversation=response, participant=response.participant, can_send=response.can_send, composer_placeholder=response.composer_placeholder, status=response.status, requester_message_count=response.requester_message_count, unread_count=response.unread_count, last_read_message_id=setting.last_read_message_id if setting else None)
     can_send, placeholder, state = _composer_state(session, None, user, other)
     participant = ChatUserResponse(id=other.id, username=other.username, display_name=other.display_name, profile_picture_url=other.profile_picture_url)
     return ChatContextResponse(conversation=None, participant=participant, can_send=can_send, composer_placeholder=placeholder, status=state)
@@ -183,7 +241,7 @@ async def _send_in_conversation(session: Session, conversation: Conversation, us
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Message cannot be empty.")
     existing = session.execute(select(Message).where(Message.conversation_id == conversation.id, Message.client_message_id == client_message_id)).scalar_one_or_none()
     if existing:
-        return MessageResponse.model_validate(existing)
+        return _message_response(session, conversation, existing, user)
     was_pending = conversation.status == ConversationStatus.pending
     was_requester = conversation.requester_id == user.id
     if was_pending and was_requester and conversation.requester_message_count >= MAX_PENDING_REQUEST_MESSAGES:
@@ -203,7 +261,7 @@ async def _send_in_conversation(session: Session, conversation: Conversation, us
     conversation.updated_at = datetime.now(UTC)
     await commit(session)
     await refresh(session, message)
-    return MessageResponse.model_validate(message)
+    return _message_response(session, conversation, message, user)
 
 
 async def send_message(session: Session, user: User, conversation_id: uuid.UUID, content: str, client_message_id: str) -> MessageResponse:
@@ -274,7 +332,41 @@ async def list_messages(session: Session, user: User, conversation_id: uuid.UUID
     messages = session.execute(statement).scalars().all()
     has_more = len(messages) > MESSAGE_PAGE_SIZE
     items = messages[:MESSAGE_PAGE_SIZE]
-    return MessagePageResponse(items=[MessageResponse.model_validate(item) for item in items], next_cursor=_encode_cursor(items[-1]) if items else cursor, has_more=has_more)
+    viewer_setting, _ = _receipt_cursors(session, conversation, user)
+    if not _is_blocked(session, user, _participant(conversation, user.id)):
+        incoming = [message for message in items if message.sender_id != user.id]
+        if incoming:
+            if not viewer_setting:
+                viewer_setting = ConversationSetting(conversation_id=conversation.id, user_id=user.id)
+                session.add(viewer_setting)
+            _advance_cursor(conversation, viewer_setting, "last_delivered_message_id", incoming[-1].id)
+            await commit(session)
+    unread_count, first_unread, peer_delivered, peer_read = _receipt_summary(session, conversation, user)
+    _, peer_setting = _receipt_cursors(session, conversation, user)
+    return MessagePageResponse(items=[_message_response(session, conversation, item, user, peer_setting) for item in items], next_cursor=_encode_cursor(items[-1]) if items else cursor, has_more=has_more, unread_count=unread_count, first_unread_message_id=first_unread, peer_delivered_message_id=peer_delivered, peer_read_message_id=peer_read, last_read_message_id=viewer_setting.last_read_message_id if viewer_setting else None)
+
+
+async def mark_messages_read(session: Session, user: User, conversation_id: uuid.UUID, message_id: uuid.UUID) -> ChatReadResponse:
+    conversation = await _get_conversation(session, conversation_id, user)
+    message = next((item for item in conversation.messages if item.id == message_id), None)
+    if not message or message.sender_id == user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only an incoming message can be marked read.")
+    if not _is_blocked(session, user, _participant(conversation, user.id)):
+        setting = _get_setting(session, conversation.id, user.id)
+        if not setting:
+            setting = ConversationSetting(conversation_id=conversation.id, user_id=user.id)
+            session.add(setting)
+        _advance_cursor(conversation, setting, "last_delivered_message_id", message.id)
+        _advance_cursor(conversation, setting, "last_read_message_id", message.id)
+        await commit(session)
+    setting = _get_setting(session, conversation.id, user.id)
+    return ChatReadResponse(conversation_id=conversation.id, last_read_message_id=setting.last_read_message_id if setting else None, unread_count=_unread_count(conversation, user, setting))
+
+
+async def set_read_receipts_enabled(session: Session, user: User, enabled: bool) -> ReadReceiptPreferenceResponse:
+    user.read_receipts_enabled = enabled
+    await commit(session)
+    return ReadReceiptPreferenceResponse(read_receipts_enabled=user.read_receipts_enabled)
 
 
 def _encode_cursor(message: Message) -> str:

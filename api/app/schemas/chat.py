@@ -4,8 +4,11 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+CHAT_MESSAGE_MAX_LENGTH = 2048
+
+
 class SendMessageRequest(BaseModel):
-    content: str = Field(min_length=1, max_length=2000)
+    content: str = Field(min_length=1, max_length=CHAT_MESSAGE_MAX_LENGTH)
     client_message_id: str = Field(min_length=1, max_length=64)
 
 
@@ -22,6 +25,7 @@ class MessageResponse(BaseModel):
     sender_id: uuid.UUID
     content: str
     created_at: datetime
+    receipt_status: str = "sent"
 
     model_config = {"from_attributes": True}
 
@@ -30,6 +34,11 @@ class MessagePageResponse(BaseModel):
     items: list[MessageResponse]
     next_cursor: str | None
     has_more: bool
+    unread_count: int = 0
+    first_unread_message_id: uuid.UUID | None = None
+    peer_delivered_message_id: uuid.UUID | None = None
+    peer_read_message_id: uuid.UUID | None = None
+    last_read_message_id: uuid.UUID | None = None
 
 
 class ConversationResponse(BaseModel):
@@ -45,6 +54,7 @@ class ConversationResponse(BaseModel):
     can_send: bool = True
     composer_placeholder: str = "Write a message..."
     requester_message_count: int = 0
+    unread_count: int = 0
 
 
 class ConversationListResponse(BaseModel):
@@ -58,3 +68,15 @@ class ChatContextResponse(BaseModel):
     composer_placeholder: str
     status: str
     requester_message_count: int = 0
+    unread_count: int = 0
+    last_read_message_id: uuid.UUID | None = None
+
+
+class ChatReadResponse(BaseModel):
+    conversation_id: uuid.UUID
+    last_read_message_id: uuid.UUID | None = None
+    unread_count: int = 0
+
+
+class ReadReceiptPreferenceResponse(BaseModel):
+    read_receipts_enabled: bool

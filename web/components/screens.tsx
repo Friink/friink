@@ -78,7 +78,7 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
                 {conversation.status === 'pending' && conversation.requester_id !== loadAuthSession()?.user.id ? <button className="text-button" type="button" onClick={(event) => { event.stopPropagation(); acceptRequest(conversation).catch(() => undefined); }}>Accept</button> : null}
                 <button className="icon-button" type="button" aria-label={conversation.muted ? 'Unmute chat' : 'Mute chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { muted: !conversation.muted }).catch(() => undefined); }}><i className={`fa-solid ${conversation.muted ? 'fa-bell' : 'fa-bell-slash'}`} aria-hidden="true" /></button>
                 <button className="icon-button" type="button" aria-label={conversation.archived ? 'Unarchive chat' : 'Archive chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { archived: !conversation.archived }).catch(() => undefined); }}><i className={`fa-solid ${conversation.archived ? 'fa-box-open' : 'fa-box-archive'}`} aria-hidden="true" /></button>
-                {conversation.unread ? <span className="unread-dot" /> : null}
+                {conversation.unread_count > 0 ? <span className="unread-count-pill" aria-label={`${conversation.unread_count} unread message${conversation.unread_count === 1 ? '' : 's'}`}>{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span> : null}
               </span>
             }
             unread={conversation.unread}
