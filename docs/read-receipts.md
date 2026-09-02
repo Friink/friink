@@ -42,6 +42,9 @@ Date: 2026-09-02
 - Blocked conversations remain readable but cannot send messages.
 - While a block is active, read receipts are not exposed to either participant to avoid
   revealing activity after blocking.
+- While a block is active, delivery does not advance either: inbox sync and message
+  fetches leave existing messages at the sent/single-tick state, preventing activity
+  from leaking through delivery ticks.
 
 ## Privacy
 

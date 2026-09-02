@@ -34,6 +34,9 @@ Conversation access state is independent from per-user presentation state:
   conversation appears in All Chats unless archived by the viewer.
 - `blocked`: an existing conversation is readable by both participants, but sending
   is rejected and the UI uses `Chat unavailable.`.
+- If a pending request is blocked, its requester message count is frozen and the
+  request remains read-only. Unblocking does not reset or extend the eight-message
+  limit; the request may resume from its existing count if it has not reached eight.
 
 There is intentionally no declined state. A receiver may mute a request instead of
 declining it, preserving the request and suppressing notifications. The receiver may

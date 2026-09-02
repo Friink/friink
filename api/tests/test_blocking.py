@@ -48,3 +48,43 @@ def test_block_removes_relationship_hides_profile_and_unblock_does_not_restore()
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(user_ids)))
             session.commit()
+
+
+def test_blocked_pending_request_freezes_count_and_unblock_does_not_extend_cap() -> None:
+    suffix = uuid.uuid4().hex[:18]
+    client = TestClient(app)
+    user_ids: list[uuid.UUID] = []
+    try:
+        requester_id, requester_email, requester_username = _signup(client, f"c{suffix}")
+        recipient_id, recipient_email, recipient_username = _signup(client, f"d{suffix}")
+        user_ids.extend([requester_id, recipient_id])
+        with get_session_factory()() as session:
+            requester = session.get(User, requester_id)
+            assert requester
+            requester.subscription_tier = "pro"
+            session.commit()
+        requester_access = client.post("/auth/login", json={"email": requester_email, "password": "Strong-password-9!"}).json()["access_token"]
+        recipient_access = client.post("/auth/login", json={"email": recipient_email, "password": "Strong-password-9!"}).json()["access_token"]
+        requester_headers = {"Authorization": f"Bearer {requester_access}"}
+        recipient_headers = {"Authorization": f"Bearer {recipient_access}"}
+        first = client.post(f"/chat/conversations/with/{recipient_username}/messages", headers=requester_headers, json={"content": "one", "client_message_id": str(uuid.uuid4())})
+        assert first.status_code == 201, first.text
+        conversation_id = first.json()["conversation_id"]
+        assert client.post(f"/users/{recipient_username}/block", headers=requester_headers).status_code == 200
+        frozen = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": "blocked", "client_message_id": str(uuid.uuid4())})
+        assert frozen.status_code == 403
+        assert client.delete(f"/users/{recipient_username}/block", headers=requester_headers).status_code == 200
+        resumed = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": "two", "client_message_id": str(uuid.uuid4())})
+        assert resumed.status_code == 201, resumed.text
+        for index in range(3, 9):
+            response = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": str(index), "client_message_id": str(uuid.uuid4())})
+            assert response.status_code == 201, response.text
+        capped = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": "nine", "client_message_id": str(uuid.uuid4())})
+        assert capped.status_code == 403
+        recipient_view = client.get(f"/chat/conversations/{conversation_id}/messages", headers=recipient_headers)
+        assert recipient_view.status_code == 200
+        assert len(recipient_view.json()["items"]) == 8
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(user_ids)))
+            session.commit()

@@ -67,6 +67,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 
 ### Chat receipt presentation
 - Receipt ticks use a circular theme-surface badge. Sent/delivered ticks use theme muted gray; read ticks use the accent. Consecutive outgoing bubbles reduce the joining top-right radius to the same 4px lower-right radius.
+- The visible app inbox sync may change a message to delivered; opening and scrolling through the conversation changes messages to read. The UI keeps these states distinct.
 
 ## Feed Behavior
 

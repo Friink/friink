@@ -1,5 +1,11 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-02 — Blocking/read-receipt intersection verification
+
+- **Task:** Document and verify blocked delivery behavior and pending-request count freezing.
+- **Result:** Blocked inbox sync/fetches preserve single-tick state; pending requests remain read-only while blocked and resume after unblock from the unchanged requester count, with the original eight-message cap intact.
+- **Verification:** Combined API end-to-end suite passed (3 tests), TypeScript check passed, production web build passed, and `git diff --check` passed.
+
 ## 2026-09-02 — Visible inbox delivery synchronization
 
 - **Task:** Mark all incoming messages discovered by visible inbox synchronization as delivered, preserving viewport-based read receipts.

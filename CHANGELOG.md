@@ -2,6 +2,8 @@
 
 ## 2026-09-02
 
+- [chat] Added explicit blocked-receipt and pending-request intersection behavior: blocked conversations do not advance delivery ticks, and blocking freezes a pending requester’s existing eight-message count without resetting or extending it after unblock.
+
 - [chat] Added visible-app inbox delivery synchronization: every incoming message discovered by the 4-second conversation sync is marked delivered, while viewport scrolling remains the only read trigger.
 
 - [web/chat] Refined stacked outgoing bubble corners and receipt tick presentation with overlapping ticks, circular theme-aware backgrounds, and light/dark read-state contrast.

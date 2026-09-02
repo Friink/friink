@@ -17,6 +17,9 @@ Status: implementation scope and technical contract.
 - Blocking removes accepted and pending follow relationships in both directions.
   Unblocking never restores them. Existing messages and historical notifications
   are retained; blocking creates no notification.
+- Blocking a pending chat request freezes its existing requester-message count and
+  keeps the request read-only. Unblocking does not reset or extend the eight-message
+  cap; if the cap was already reached, the requester remains capped.
 - Privacy settings contains a Blocked people action. It opens the existing modal,
   shows a searchable, cursor-paginated list, and allows unblocking with
   confirmation. The list is database-backed: search is case-insensitive partial
