@@ -1459,3 +1459,14 @@ _Last updated: 2026-09-01_
 - Changed web access-token handling to memory-only storage, retained cross-tab coordination, and limited automatic logout to coded terminal refresh failures.
 - Added auth-origin protection and Phase 1 contract tests for cookie attributes, origin policy, rotation grace, and token resilience.
 - Verification: API Phase 1 contract, refresh-rotation, and token-resilience tests pass (10 tests); web TypeScript check and production build pass. Live staging success-login headers remain required before the Phase 1 gate can close.
+### Phase 1 live verification attempt
+
+- Staging login and refresh succeeded with the authorized test account.
+- Live headers showed `HttpOnly; Max-Age=1209600; Path=/; SameSite=none; Secure` on login, refresh, and the one-use replay-grace response.
+- The required 30-day value is `Max-Age=2592000`; staging is still configured for 14 days, so the Phase 1 gate remains open until the Vercel staging environment variable is updated and redeployed.
+- Rotation behavior passed live: first old-token replay returned `200`; second replay returned `401`.
+### Phase 1 live verification follow-up
+
+- After the staging API redeploy, a fresh live login still returned `Max-Age=1209600` (14 days), proving the running deployment has not received the required 30-day environment value.
+- Rotation and replay-grace behavior continued to pass: login `200`, refresh `200`, first old-token replay `200`, second old-token replay `401`.
+- Phase 1 remains gated pending correction of the Vercel environment scope used by `staging-api.friink.com`.

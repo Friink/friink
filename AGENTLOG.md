@@ -6144,3 +6144,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `api/app/routers/auth.py`, `api/app/config.py`, `api/app/models/refresh_token.py`, `api/alembic/versions/20260902_0018_add_refresh_reuse_grace.py`, `api/tests/test_refresh_token_rotation.py`, `api/tests/test_phase1_contract.py`, `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, environment templates, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason/Decision: Preserve the X/Instagram-style persistent UX while distinguishing terminal session invalidation from transient/network failures and protecting rotation against lost-response races.
 - Verification: 10 focused API tests pass; `npm exec tsc -- --noEmit` passes; `npm run build` passes. Phase 1 remains open pending deployment migration and real successful-login `Set-Cookie` traces from staging (and production if required by the gate).
+## 2026-09-03T21:20:00Z — Phase 1 live verification attempt
+
+- Verification: Authorized staging login succeeded. Sanitized live `Set-Cookie`: `friink_refresh_token=[REDACTED]; HttpOnly; Max-Age=1209600; Path=/; SameSite=none; Secure`.
+- Verification: Staging refresh returned `200` with the same cookie attributes; first immediately-previous-token replay returned `200`; second replay returned `401`.
+- Verification: Staging CORS preflight returned `Access-Control-Allow-Origin: https://staging.friink.com`, `Access-Control-Allow-Credentials: true`, and the expected methods.
+- Finding: staging Vercel environment still supplies `REFRESH_TOKEN_EXPIRE_DAYS=14`; repository and Phase 1 requirement are 30 days (`Max-Age=2592000`). Phase 1 gate is not closed and no Phase 2 work has begun.
+## 2026-09-03T21:35:00Z — Phase 1 live verification after redeploy
+
+- Verification: Fresh staging login still emitted sanitized `Set-Cookie` attributes `HttpOnly; Max-Age=1209600; Path=/; SameSite=none; Secure`.
+- Verification: Login and refresh returned `200`; first old-token replay returned `200`; second replay returned `401`.
+- Finding: The redeployed runtime still uses the 14-day value. The Vercel variable was likely updated under a scope not used by the deployment attached to `staging-api.friink.com`.
+- Decision: Keep Phase 1 open; do not begin Phase 2 until the live cookie reports `Max-Age=2592000`.
