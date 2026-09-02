@@ -8,7 +8,7 @@ All implementation verification in this audit is performed against the temporary
 
 - Frontend: `https://staging.friink.com`
 - API: `https://staging-api.friink.com`
-- Branch/deployment: `staging`, commit `0c754ad`
+- Branch/deployment: `staging`, latest Phase 2 deployment commit `a234b35` (Phase 1 evidence references the earlier `0c754ad` deployment)
 
 Production verification is intentionally deferred until the permanent production infrastructure is deployed to the Droplet/EC2 environment. The production smoke test will then verify the same cookie, CORS, refresh, rotation, and deployment behavior against that final infrastructure. The temporary production environment is not a release target and is not used as evidence in this audit.
 
@@ -103,3 +103,156 @@ passed
 The Phase 2 identity foundation currently includes canonical case-insensitive username keys with preserved display casing, reserved username enforcement, permanent identity-history tables, progressive login throttling, and hashed OTP storage. Its focused foundation suite currently passes 15 tests.
 
 The Phase 2 gate remains open pending signup privacy behavior, delivery-independent OTP endpoint wiring, email/username-change verification behavior, public UUID exposure review, race-condition coverage, and the complete staging verification trace.
+
+### Phase 2 staging deployment checkpoint (not a gate pass)
+
+The Phase 2 signup-start slice is now deployed to staging. OTP remains
+explicitly disabled because no email provider is configured.
+
+Target API: `https://staging-api.friink.com`
+
+Staging database health:
+
+```text
+GET /health/db
+HTTP 200
+{"database":true}
+```
+
+Signup-start probes at `2026-09-02T22:37:03Z` used disposable, unrecognized
+emails and distinct usernames. Both returned the same status and public field
+shape; reservation tokens are opaque and redacted here:
+
+```text
+POST /auth/signup/start
+Origin: https://staging.friink.com
+
+HTTP 202 Accepted
+Access-Control-Allow-Origin: https://staging.friink.com
+Access-Control-Allow-Credentials: true
+Vary: Origin
+{"accepted":true,"verification_required":false,
+ "reservation_token":"[REDACTED]",
+ "message":"If the signup details can be accepted, verification instructions will be sent."}
+```
+
+Credentialed preflight for the same endpoint returned:
+
+```text
+OPTIONS /auth/signup/start
+HTTP 200
+Access-Control-Allow-Origin: https://staging.friink.com
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
+Vary: Origin
+```
+
+This checkpoint proves that the deployed endpoint is reachable and that the
+staging default is safe while delivery is unavailable. It is not a complete
+existing-versus-new email privacy test because the two probes did not use a
+known existing account, and it does not test OTP completion while
+`SIGNUP_OTP_ENABLED=false`.
+
+### Phase 2 phase-boundary clarification
+
+The phase labels are intentionally distinct:
+
+- **Phase 2c** owns signup email-ownership OTP: neutral signup responses,
+  reservation reuse, hashed six-character codes, expiry, replay, attempt
+  exhaustion, replacement codes, and verification before account creation.
+- **Phase 2d** owns login-risk OTP/MFA: recognized versus new or suspicious
+  devices, step-up challenges, device invalidation, failed-login throttling, and
+  privacy-preserving failure behavior. Refresh does not require OTP.
+- **Phase 2e** does **not** mean OTP generally. It owns email and username
+  changes, verification where required for an email change, permanent private
+  identity history, casing preservation, immediate username-key reuse, and
+  race-condition behavior.
+
+Phase 2e has not started. This is a phase-ordering decision: the overall Phase 2
+gate remains open because Phase 2c still lacks live OTP/provider evidence and
+existing-versus-new email comparison, while Phase 2d still lacks the live device
+cookie trace and the new/suspicious-device OTP/MFA challenge evidence. Phase 2e
+is therefore blocked by the preceding verification gates, not because Phase 2e
+itself is an OTP phase.
+
+### Phase 2 identity-rule checkpoint (not a gate pass)
+
+Read-only staging checks against the deployed identity foundation returned:
+
+```text
+GET /auth/username-availability?username=AdMiN
+HTTP 200
+{"username":"AdMiN","available":false}
+
+GET /auth/username-availability?username=SECURITY
+HTTP 200
+{"username":"SECURITY","available":false}
+
+GET /auth/username-availability?username=bad%20name
+HTTP 422
+{"detail":"... Username may contain only letters, numbers, '-', '_', and '.' with no spaces. ..."}
+```
+
+All responses included `Access-Control-Allow-Origin:
+https://staging.friink.com`, `Access-Control-Allow-Credentials: true`, and
+`Vary: Origin`. These checks confirm case-insensitive reserved-name rejection
+and syntax validation on staging. Signup/change race coverage and the full
+Phase 2 gate remain open.
+
+### Phase 2d device-recognition implementation checkpoint (not a gate pass)
+
+The server-authoritative recognition substrate was implemented and its additive
+migration was applied to the configured staging database. No production systems
+were accessed.
+
+Implementation evidence:
+
+- `api/app/models/recognized_device.py` stores only a 32-byte hash of an opaque
+  random identifier, with browser/OS coarse signals and revocation timestamps.
+- `api/app/models/auth_session.py` links each new login session to the recognized
+  device record through nullable `device_id`.
+- `api/app/routers/auth.py` issues `friink_device_id` as an HttpOnly cookie with a
+  one-year lifetime; the raw identifier is not in the JSON response.
+- `api/alembic/versions/20260903_0022_add_recognized_devices.py` adds the device
+  table and session foreign key without invalidating existing sessions.
+
+Database and focused-test trace:
+
+```text
+python -m alembic upgrade head
+INFO  Running upgrade 20260903_0021 -> 20260903_0022,
+     add server-managed recognized devices
+
+python -m alembic current
+20260903_0022 (head)
+
+python -m pytest tests/test_phase2_device.py tests/test_phase2_signup.py \
+  tests/test_phase2_identity.py tests/test_otp_storage.py tests/test_lockout.py
+5 passed, 1 warning in 30.52s
+
+python -m compileall -q app alembic
+passed
+
+git diff --check
+passed (LF-to-CRLF working-tree warnings only)
+```
+
+The focused test proves two logins with the same client cookie reuse one
+recognition record, a separate client receives a separate record, three sessions
+are linked to the two records, raw identifiers are absent from the login JSON,
+and stored identifiers are 32-byte hashes.
+
+Staging live-header evidence is still pending deployment of this checkpoint:
+
+```text
+Expected next staging trace after deployment:
+POST /auth/login
+HTTP 200
+Set-Cookie: friink_device_id=[REDACTED]; HttpOnly; Max-Age=31536000; Path=/; SameSite=none; Secure
+```
+
+This is deliberately not asserted as live evidence yet. The 2d verification gate
+also remains open for new/suspicious-device OTP/MFA challenges, challenge skip
+rules, device invalidation, concurrent failures, cooldown boundaries, and privacy
+checks. `SIGNUP_OTP_ENABLED=false` remains correct until a real delivery provider
+is configured.

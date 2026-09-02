@@ -10,8 +10,10 @@ from sqlalchemy.orm import Session
 from app.config import Settings
 from app.models.refresh_token import RefreshToken
 from app.models.auth_session import AuthSession
+from app.models.recognized_device import RecognizedDevice
 
 DEAD_TOKEN_RETENTION = timedelta(days=30)
+DEVICE_COOKIE_NAME = "friink_device_id"
 
 
 @dataclass(frozen=True)
@@ -22,6 +24,10 @@ class IssuedRefreshToken:
 
 def hash_refresh_token(raw_token: str) -> bytes:
     return hashlib.sha256(raw_token.encode("utf-8")).digest()
+
+
+def hash_device_identifier(raw_identifier: str) -> bytes:
+    return hashlib.sha256(raw_identifier.encode("utf-8")).digest()
 
 
 def issue_refresh_token(session: Session, user_id: uuid.UUID, settings: Settings, family_id: uuid.UUID | None = None, session_id: uuid.UUID | None = None) -> IssuedRefreshToken:
@@ -48,7 +54,7 @@ def get_refresh_token(session: Session, raw_token: str) -> RefreshToken | None:
     return session.execute(select(RefreshToken).where(RefreshToken.token_hash == hash_refresh_token(raw_token))).scalar_one_or_none()
 
 
-def create_auth_session(session: Session, user_id: uuid.UUID, request) -> AuthSession:
+def _user_agent_details(request) -> tuple[str, str | None, str | None, str | None]:
     user_agent = request.headers.get("user-agent") or ""
     try:
         from user_agents import parse
@@ -61,12 +67,49 @@ def create_auth_session(session: Session, user_id: uuid.UUID, request) -> AuthSe
         device = "Unknown device"
         browser = None
         operating_system = None
+    return device, browser, operating_system, user_agent[:512] or None
+
+
+def get_or_create_recognized_device(
+    session: Session, user_id: uuid.UUID, request, raw_identifier: str | None
+) -> tuple[RecognizedDevice, str, bool]:
+    """Resolve a server-issued device token without trusting client device claims."""
+    _device, browser, operating_system, _ = _user_agent_details(request)
+    if raw_identifier:
+        recognized = session.execute(
+            select(RecognizedDevice).where(
+                RecognizedDevice.user_id == user_id,
+                RecognizedDevice.token_hash == hash_device_identifier(raw_identifier),
+                RecognizedDevice.revoked_at.is_(None),
+            )
+        ).scalar_one_or_none()
+        if recognized:
+            recognized.last_seen_at = datetime.now(UTC)
+            return recognized, raw_identifier, True
+
+    raw_identifier = secrets.token_urlsafe(32)
+    recognized = RecognizedDevice(
+        user_id=user_id,
+        token_hash=hash_device_identifier(raw_identifier),
+        browser=browser,
+        operating_system=operating_system,
+    )
+    session.add(recognized)
+    session.flush()
+    return recognized, raw_identifier, False
+
+
+def create_auth_session(
+    session: Session, user_id: uuid.UUID, request, device_id: uuid.UUID | None = None
+) -> AuthSession:
+    device, browser, operating_system, user_agent = _user_agent_details(request)
     auth_session = AuthSession(
         user_id=user_id,
+        device_id=device_id,
         device_label=device,
         browser=browser,
         operating_system=operating_system,
-        user_agent=user_agent[:512] or None,
+        user_agent=user_agent,
     )
     session.add(auth_session)
     session.flush()

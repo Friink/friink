@@ -40,6 +40,17 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 
 DESIGN SYSTEM RULE: Before making any visual, UI, layout, spacing, or styling change, you MUST read packages/design/design.md in full — specifically the "Tokens" and "Component Contracts" sections. All rules, dimensions, alignments, and component variants documented there are binding and must be strictly adhered to without creating ad-hoc overrides.
 
+## 2026-09-02T22:47:13Z — Phase 2d device-recognition checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue Phase 2 in alphabetic chunks, documenting gaps; implement the next staging-only identity/session slice.
+- Changes Made: Added server-managed recognized-device records with hashed opaque identifiers, linked `auth_sessions.device_id`, a one-year HttpOnly device cookie, and login-time same-cookie reuse/new-cookie record creation. Added migration `20260903_0022`, model exports/Alembic metadata registration, and focused device coverage.
+- Files: `api/app/models/recognized_device.py`, `api/app/models/auth_session.py`, `api/app/models/__init__.py`, `api/app/services/session_service.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260903_0022_add_recognized_devices.py`, `api/alembic/env.py`, `api/tests/test_phase2_device.py`.
+- Reason: Establish the server-authoritative recognition substrate required by Phase 2d without trusting client claims, IP alone, or browser fingerprints alone.
+- Notes: The new/suspicious-login OTP/MFA challenge is not enabled; no email provider is configured. New devices therefore remain an explicit open risk-control gap and this is not a Phase 2 gate pass. No production systems were accessed.
+- Verification Status: `python -m alembic upgrade head` applied `20260903_0021 -> 20260903_0022` to the configured staging database. Focused suite `python -m pytest tests/test_phase2_device.py tests/test_phase2_signup.py tests/test_phase2_identity.py tests/test_otp_storage.py tests/test_lockout.py` returned `5 passed, 1 warning` in 30.52s. `python -m compileall -q app alembic` and `git diff --check` passed.
+
 Before modifying a file another agent recently touched (per this log or git history), briefly verify the current state of that file matches what the log describes — do not assume the log is authoritative over the actual code.
 
 REUSE RULE: Do not create new components unnecessarily when an existing shared primitive can be extended or reused.
@@ -6179,3 +6190,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification: Migration applied to the staging database (`20260903_0021 (head)`); focused Phase 2 signup/identity/OTP/lockout/validation tests passed (10 tests); full `api/tests` run reached 64 passed and 10 unrelated pre-existing `connections` fake-session failures; `python -m compileall` and `git diff --check` passed.
 - Staging evidence: CORS preflight and `/health/db` remain `200` on `staging-api.friink.com`; the new `/auth/signup/start` probe returns `404`, proving this working-tree slice has not been deployed to staging yet.
 - Decision: Phase 2 remains open. Do not append Phase 2 gate evidence or advance to Phase 3 until the staging deployment exposes the endpoint and the complete privacy/OTP/identity trace passes there.
+## 2026-09-03T22:37:14Z — Phase 2c staging deployment checkpoint
+
+- Staging deployment now exposes `POST /auth/signup/start` at `https://staging-api.friink.com`; the previous `404` deployment boundary is resolved.
+- Live evidence: `/health/db` returned `200` with `{"database":true}`; signup-start returned `202` with `verification_required:false`, neutral messaging, and an opaque reservation token; credentialed preflight returned `200` with `Access-Control-Allow-Origin: https://staging.friink.com`, credentials enabled, `Vary: Origin`, and the expected methods.
+- Limitation: probes used disposable unrecognized emails. Existing-account comparison and OTP completion are not claimed because `SIGNUP_OTP_ENABLED=false` and no email provider is configured.
+- Decision: Phase 2 remains open; the detailed trace is recorded in `docs/Claude-audit-auth-and-session.md` and no Phase 2 verification gate has been marked passed.
+## 2026-09-03T22:38:30Z — Phase 2 identity-rule staging checkpoint
+
+- Read-only staging checks confirmed `AdMiN` and `SECURITY` are unavailable through `GET /auth/username-availability`, and an embedded-space username returns `422` with the documented syntax error.
+- All three responses included the exact staging CORS origin, credentials, and `Vary: Origin` headers.
+- This verifies deployed reserved-name and syntax behavior only; signup/change race coverage, email privacy with a known existing account, OTP completion, and the overall Phase 2 gate remain open.

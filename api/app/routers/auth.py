@@ -38,7 +38,9 @@ from app.services.email import EmailService
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
 from app.services.session_service import (
+    DEVICE_COOKIE_NAME,
     create_auth_session,
+    get_or_create_recognized_device,
     get_refresh_token,
     get_refresh_token_for_update,
     issue_refresh_token,
@@ -112,6 +114,18 @@ async def signup_start(
     )
 
 
+def set_device_cookie(response: Response, token: str, settings: Settings) -> None:
+    response.set_cookie(
+        key=DEVICE_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=settings.environment.lower() not in {"development", "test"},
+        samesite="none" if settings.environment.lower() not in {"development", "test"} else "lax",
+        max_age=int(timedelta(days=365).total_seconds()),
+        path="/",
+    )
+
+
 @router.post("/signup/verify", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup_verify(
     payload: SignupVerifyRequest,
@@ -152,7 +166,10 @@ async def login(
     require_allowed_origin(request, settings)
     user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
-    auth_session = create_auth_session(session, user.id, request)
+    recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
+        session, user.id, request, request.cookies.get(DEVICE_COOKIE_NAME)
+    )
+    auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
     await commit(session)
     log_token_issued(flow="fresh_login", token_type="access", token=access_token, user_id=str(user.id))
@@ -164,6 +181,7 @@ async def login(
         user_id=str(user.id),
     )
     set_refresh_cookie(response, issued_refresh.raw_token, settings)
+    set_device_cookie(response, device_identifier, settings)
     return TokenResponse(access_token=access_token, user=UserResponse.model_validate(user))
 
 

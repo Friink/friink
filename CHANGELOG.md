@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-02T22:47:13Z
+
+- [auth/phase2d] Added the staging-database/server substrate for recognized devices: hashed opaque device identifiers, auth-session linkage, and a protected one-year HttpOnly device cookie. Same-cookie login reuse and new-cookie rotation are covered by a focused test. The risk-based OTP/MFA challenge for new or suspicious devices remains open because delivery is disabled; Phase 2 is not closed.
+
+## 2026-09-03T22:37:14Z
+
+- [verification/phase2c] Confirmed the new signup-start endpoint is deployed on staging. `/health/db` returned `200`; signup-start returned `202` with `verification_required:false`; and credentialed staging CORS preflight returned the expected origin, credentials, methods, and `Vary: Origin`. OTP completion and existing-email comparison remain unverified because delivery is disabled.
+
+## 2026-09-03T22:38:30Z
+
+- [verification/phase2a-b] Confirmed staging reserved-name enforcement for `AdMiN` and `SECURITY`, plus syntax rejection for usernames containing spaces. The Phase 2 gate remains open.
+
 ## 2026-09-03T22:27:14Z
 
 - [auth/phase2c] Added delivery-independent signup reservations, opaque reservation tokens, hashed six-character alphanumeric OTPs with four-minute expiry/single-use/five-attempt limits, neutral signup-start responses, verification-before-account-creation endpoints, migration `20260903_0021`, and the disabled-by-default `SIGNUP_OTP_ENABLED` flag. Phase 2 remains open pending staging deployment, email delivery integration, and the full staging verification trace.
