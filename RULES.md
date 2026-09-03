@@ -589,6 +589,15 @@ the entry, so history isn't lost.
 
 ## Infrastructure & Deployment
 
+### Rule: Staging And Production Use Separate Databases
+- **What:** `api-staging` uses the existing staging Neon database and `api-production` uses its separate production Neon database. The production database is currently hosted temporarily on Neon and is planned to move to the Droplet later. The web projects do not receive `DATABASE_URL`; they receive only their environment-specific `NEXT_PUBLIC_API_BASE_URL`.
+- **Do not:** Treat rows, object keys, sessions, or media URLs from one deployed environment as available in the other environment. Do not add a media bucket/environment identifier column as a workaround for the old shared-database topology.
+- **Deployment:** Apply the full Alembic chain to a new production database before deploying production API code. A fresh production database must reach the repository head and pass `alembic check`; staging migrations and data remain independent.
+
+### Rule: Media Storage Follows The API Environment
+- **What:** Avatar and post-media upload services use the active API environment's `R2_BUCKET_NAME`; public delivery uses its configured `R2_PUBLIC_URL`. Staging uses `friink-staging`; production uses `friink-prod-media` with `https://media.friink.com`.
+- **Edge cases:** Media rows are safe across environments because the databases are separate. New profile-picture records store an object key, while existing post-media records retain their key and URL fields. No bucket/environment column is required while database isolation is maintained.
+
 ### Rule: FastAPI Uses Sync SQLAlchemy Sessions
 - **What:** The backend uses FastAPI with synchronous SQLAlchemy sessions and psycopg3 database URLs. Alembic migrations define the database schema.
 - **Status:** Active
