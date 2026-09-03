@@ -6351,3 +6351,85 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - `AGENTLOG.md`
 - Reason/Decision: Body-level portal mounting removes ancestor stacking-context conflicts, while a bounded flex layout prevents modal content from pushing the header or actions off-screen at mobile, tablet, and desktop sizes.
 - Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T18:25:32Z — Use the hollow envelope for Header Chat
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the Header Chat icon to the hollow envelope shown in the attached reference.
+- Changes Made:
+  - Replaced the outlined comment glyph with the outlined regular envelope glyph.
+  - Updated the Header design contract and changelog.
+- Files:
+  - `web/components/header.tsx`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Chat keeps the message/envelope shape requested by the user, while `fa-regular` gives it the same hollow treatment as the surrounding header icons.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T20:02:30Z — Implement documented post Likes and Stars
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement the agreed post-only Like/Star behavior, verify against the new contract, test end to end, and update the project rules/design/history documentation.
+- Changes Made:
+  - Added `docs/like-and-star.md` with requirements, scope, API/data design, privacy policy, UI behavior, implementation details, acceptance checks, risks, and limitations.
+  - Added durable `post_likes` and `post_stars` relations, unique `(post_id, user_id)` constraints, post counters, the `likes_visible` user preference, Like notification type, and migration `20260904_0024`.
+  - Added authenticated idempotent Like/Unlike and Star/Unstar routes, Like actor search/cursor pagination with private/block/privacy filtering, the authenticated profile Likes feed, and the current-user Starred feed.
+  - Added public reaction counts and authenticated viewer state to post responses; counts remain available without authentication while toggle state is null for anonymous viewers.
+  - Wired shared `FeedPost` optimistic reactions, rollback/error handling, counted action-row layout, Like actor modal, Settings > Privacy visibility control, profile Likes tab, and neutral post-unavailable handling. Replies do not expose post-only reaction controls.
+  - Updated `README.md`, `RULES.md`, `packages/design/design.md`, and `CHANGELOG.md` to describe the feature and its current verification state.
+- Files:
+  - `docs/like-and-star.md`
+  - `api/alembic/versions/20260904_0024_add_post_likes_and_stars.py`
+  - `api/app/models/post.py`
+  - `api/app/models/user.py`
+  - `api/app/services/reactions.py`
+  - `api/app/routers/posts.py`
+  - `api/app/routers/users.py`
+  - `api/tests/test_reactions.py`
+  - `web/components/feed-post.tsx`
+  - `web/components/post-likes-modal.tsx`
+  - `web/components/profile-screen.tsx`
+  - `web/components/starred-screen.tsx`
+  - `web/components/account-screens.tsx`
+  - `web/app/[username]/likes/page.tsx`
+  - `web/app/globals.css`
+  - `README.md`
+  - `RULES.md`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Keep reaction ownership and privacy authoritative in the API, use denormalized counters for fast post rendering, and reuse the existing FeedPost/Modal/ListRow/ProfileCard primitives so Likes and Stars behave consistently across feed, detail, profile, and saved-post surfaces.
+- Verification:
+  - Passed web TypeScript check (`npm exec -- tsc --noEmit -p tsconfig.json`).
+  - Passed Python compilation (`python -m compileall -q app alembic tests`).
+  - Passed production web build (`npm run build`).
+  - Confirmed OpenAPI imports and exposes `/posts/starred`, `/posts/{post_id}/like`, `/posts/{post_id}/likes`, `/posts/{post_id}/star`, and `/users/{username}/likes`.
+- Initial local verification found no database connection or JWT secret configured in the checkout, so the focused reaction E2E test was deferred rather than run against a fake localhost target. The later staging/production database verification is recorded below.
+
+## 2026-09-03T20:19:38Z — Apply Likes and Stars migration to both databases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the new Like/Star database migration to staging and production for a non-technical user, then verify the databases safely.
+- Changes Made:
+  - Applied Alembic migration `20260904_0024` to the staging Neon database and verified `20260904_0024 (head)`.
+  - Applied the same migration to the production Neon database and verified `20260904_0024 (head)`.
+  - Ran the focused authenticated reaction E2E flow against staging using temporary test records; the test passed and cleaned up its records.
+  - Performed read-only production verification confirming `post_likes`, `post_stars`, `posts.like_count`, `posts.star_count`, and `users.likes_visible`.
+  - Corrected the E2E assertion so a Like after an Unlike is treated as a new Like event notification, while concurrent duplicate requests remain idempotent.
+- Reason/Decision: The migration is additive and transactionally applied. Staging received the full write-based flow verification; production was intentionally limited to read-only schema verification to avoid creating temporary data in the live database.
+- Verification: Staging reaction E2E `1 passed in 51.27s`; production read-only schema/revision check passed. Deployed browser verification remains after the application code is deployed.
+
+## 2026-09-03T20:20:34Z — Mark Likes and Stars ready for environment testing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm whether both environments are ready for testing and make the final relevant documentation update.
+- Changes Made:
+  - Updated the Likes/Stars contract with a release-readiness section.
+  - Updated the README, changelog, and agent log to record both migrated databases and the remaining deploy/browser-testing step.
+- Reason/Decision: Database readiness is confirmed in both environments, while application behavior becomes testable there only after the current web/API code is deployed.
+- Verification: Staging authenticated E2E passed; production migration and schema were verified read-only. Manual browser testing remains the next release action.

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-03T20:20:34Z
+
+- [release-readiness] Confirmed both staging and production databases are at migration head `20260904_0024`. Staging’s authenticated Likes/Stars E2E flow passed; production schema verification passed without writing test data.
+- [docs] Recorded that the remaining step is deploying the current web/API code to both environments and completing browser/manual verification across mobile, tablet, and desktop.
+
+## 2026-09-03T20:19:38Z
+
+- [database] Applied migration `20260904_0024` successfully to both staging and production Neon databases; both now report the migration as head.
+- [verification] The focused authenticated Likes/Stars E2E test passed against staging, including concurrent idempotency, notification/privacy behavior, lists, and cleanup. Production passed read-only verification for the migration revision, reaction tables, counters, and `likes_visible` column; no temporary test records were written to production.
+- [verification] The corrected test now treats UnLike → Like as a new Like event, which correctly creates a new owner notification; concurrent duplicate requests while already liked remain idempotent.
+
+## 2026-09-03T20:02:30Z
+
+- [reactions] Added the documented first-release Likes and Stars implementation: durable unique post relations, denormalized public counts, authenticated idempotent toggles, Like-owner notifications, current-user Starred feed, profile Likes tab, privacy-controlled Like identity/list visibility, responsive Like actor modal with search/cursor pagination, and neutral unavailable-post handling.
+- [web] Reworked shared post actions so comment/quote/Like/Star counts stay together while Share sits beside More; replies do not expose post-only reaction controls.
+- [verification] Web TypeScript, Python compilation, OpenAPI route discovery, regression tests with local test settings, and the production build passed. Live reaction API/migration E2E remains open because this checkout has no configured database connection or JWT secret; a fake localhost database was not used as a substitute.
+- [docs] Added `docs/like-and-star.md` and synchronized `RULES.md`, `packages/design/design.md`, `README.md`, and `AGENTLOG.md`.
+
+## 2026-09-03T18:25:32Z
+
+- [web/header] Corrected Chat to use the hollow envelope glyph requested in the header reference while retaining the existing placement, unread dot, routing, and equal action-cell sizing.
+
 ## 2026-09-03T17:51:27Z
 
 - [web/modal] Hardened the shared Modal across mobile, tablet, and desktop: it now portals to `document.body` at the top application layer, constrains itself to the viewport, keeps header/actions visible while the body scrolls, and scales the profile crop stage for short or narrow screens.

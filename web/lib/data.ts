@@ -13,8 +13,11 @@ export type Post = {
   connectionType: 'followers' | 'following';
   isConnection: boolean;
   isStarred: boolean;
+  isLiked: boolean;
   replies: number;
   quotes: number;
+  likeCount: number;
+  starCount: number;
   reactions: number;
   media?: string[];
   quotedPost?: {

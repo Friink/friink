@@ -41,9 +41,12 @@ function mapApiPost(post: ApiPost): Post {
     text: post.content,
     connectionType: 'following',
     isConnection: true,
-    isStarred: false,
+    isStarred: post.starred ?? false,
+    isLiked: post.liked ?? false,
     replies: post.reply_count,
     quotes: post.quote_count,
+    likeCount: post.like_count ?? 0,
+    starCount: post.star_count ?? 0,
     reactions: 0,
     quotedPost: post.quoted_post
       ? {
@@ -69,6 +72,8 @@ export function PostClient({ postId }: PostClientProps) {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [composeContext, setComposeContext] = useState<{ kind: 'reply' | 'quote'; post: Post } | null>(null);
+  const [reactionError, setReactionError] = useState('');
+  const [postUnavailable, setPostUnavailable] = useState(false);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -82,7 +87,7 @@ export function PostClient({ postId }: PostClientProps) {
     getPost(postId)
       .then((apiPost) => setPost(mapApiPost(apiPost)))
       .catch(() => {
-        router.replace('/home');
+        setPostUnavailable(true);
       });
 
     listPostReplies(postId)
@@ -129,7 +134,18 @@ export function PostClient({ postId }: PostClientProps) {
     }
   }
 
-  if (!user || !post) return null;
+  if (!user) return null;
+
+  if (!post) {
+    return postUnavailable ? (
+      <AppShell user={user} onLogout={handleLogout} initialScreen="home" showTabs={false} showFloatingBar={false}>
+        <section className="post-unavailable" aria-live="polite">
+          <h1>Post unavailable</h1>
+          <p>This post may have been deleted or is no longer visible to you.</p>
+        </section>
+      </AppShell>
+    ) : null;
+  }
 
   return (
     <AppShell
@@ -172,6 +188,9 @@ export function PostClient({ postId }: PostClientProps) {
         replies={replies}
         onReply={(target) => setComposeContext({ kind: 'reply', post: target })}
         onQuote={(target) => setComposeContext({ kind: 'quote', post: target })}
+        onPostUpdated={(updated) => { if (updated.id === post.id) setPost(updated); setReplies((current) => current.map((item) => item.id === updated.id ? updated : item)); }}
+        onReactionError={setReactionError}
+        reactionError={reactionError}
       />
     </AppShell>
   );

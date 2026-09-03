@@ -25,6 +25,8 @@ class Post(Base):
     __table_args__ = (
         CheckConstraint("char_length(content) <= 512", name="ck_posts_content_max_length"),
         CheckConstraint("media_count >= 0 AND media_count <= 16", name="ck_posts_media_count_range"),
+        CheckConstraint("like_count >= 0", name="ck_posts_like_count_nonnegative"),
+        CheckConstraint("star_count >= 0", name="ck_posts_star_count_nonnegative"),
         UniqueConstraint("public_id", name="uq_posts_public_id"),
         Index("ix_posts_public_id", "public_id", unique=False),
     )
@@ -52,12 +54,16 @@ class Post(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    star_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
     user = relationship("User", back_populates="posts")
     parent_post = relationship("Post", remote_side=[id], foreign_keys=[parent_post_id], back_populates="replies")
     replies = relationship("Post", foreign_keys=[parent_post_id], back_populates="parent_post")
     quoted_post = relationship("Post", remote_side=[id], foreign_keys=[quoted_post_id])
     media = relationship("PostMedia", back_populates="post", cascade="all, delete-orphan")
+    likes = relationship("PostLike", back_populates="post", cascade="all, delete-orphan")
+    stars = relationship("PostStar", back_populates="post", cascade="all, delete-orphan")
     reply_count: Mapped[int] = query_expression()
     quote_count: Mapped[int] = query_expression()
 
@@ -72,3 +78,37 @@ class PostMedia(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     post = relationship("Post", back_populates="media")
+
+
+class PostLike(Base):
+    __tablename__ = "post_likes"
+    __table_args__ = (
+        UniqueConstraint("post_id", "user_id", name="uq_post_likes_post_user"),
+        Index("ix_post_likes_user_created", "user_id", "created_at"),
+        Index("ix_post_likes_post_created", "post_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    post = relationship("Post", back_populates="likes")
+    user = relationship("User")
+
+
+class PostStar(Base):
+    __tablename__ = "post_stars"
+    __table_args__ = (
+        UniqueConstraint("post_id", "user_id", name="uq_post_stars_post_user"),
+        Index("ix_post_stars_user_created", "user_id", "created_at"),
+        Index("ix_post_stars_post_created", "post_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    post = relationship("Post", back_populates="stars")
+    user = relationship("User")

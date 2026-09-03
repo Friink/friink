@@ -11,6 +11,7 @@ export type AuthUser = {
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
+  likesVisible: boolean;
   setupStep: 1 | 2;
   setupCompleted: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
@@ -53,6 +54,7 @@ type ApiUser = {
   display_name: string | null;
   about: string | null;
   is_private: boolean;
+  likes_visible: boolean;
   setup_step: 1 | 2;
   setup_completed: boolean;
   is_verified: boolean;
@@ -70,6 +72,7 @@ type ApiPublicUser = {
   profile_picture_url: string | null;
   profile_picture_updated_at: string | null;
   is_private: boolean;
+  likes_visible: boolean;
 };
 
 export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string };
@@ -124,6 +127,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
+    likesVisible: true,
     setupStep: 1,
     setupCompleted: true,
     status: 'active',
@@ -413,7 +417,7 @@ function refreshErrorFromState(state: RefreshCoordinationState): AuthApiError {
 
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string; isPrivate?: boolean },
+  input: { username?: string; email?: string; displayName?: string; about?: string; isPrivate?: boolean; likesVisible?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
@@ -427,6 +431,7 @@ export async function updateCurrentUser(
       display_name: input.displayName,
       about: input.about,
       is_private: input.isPrivate,
+      likes_visible: input.likesVisible,
     }),
   });
 
@@ -497,7 +502,7 @@ export async function updateProfileSetup(accessToken: string, input: { step: 1 |
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string, accessToken?: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
+export async function getPublicUser(username: string, accessToken?: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'likesVisible' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
     ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
@@ -509,6 +514,7 @@ export async function getPublicUser(username: string, accessToken?: string): Pro
     username: response.username,
     about: response.about ?? '',
     isPrivate: response.is_private,
+    likesVisible: response.likes_visible,
     profilePictureUrl: response.profile_picture_url,
     profilePictureUpdatedAt: response.profile_picture_updated_at,
   };
@@ -651,6 +657,10 @@ export type ApiPost = {
   quoted_post_id: string | null;
   reply_count: number;
   quote_count: number;
+  like_count: number;
+  star_count: number;
+  liked: boolean | null;
+  starred: boolean | null;
   quoted_post: {
     id: string | null;
     public_id: string | null;
@@ -679,6 +689,66 @@ export type ApiFeedContext = {
   next_cursor: string | null;
   has_more: boolean;
 };
+
+export type ApiReaction = {
+  post_id: string;
+  like_count: number;
+  star_count: number;
+  liked: boolean;
+  starred: boolean;
+};
+
+export type LikeActor = {
+  id: string;
+  username: string;
+  displayName: string;
+  profilePictureUrl: string | null;
+};
+
+export type LikeActorPage = {
+  items: LikeActor[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+
+function authenticatedRequest<T>(accessToken: string, path: string, method = 'GET'): Promise<T> {
+  return requestApi<T>(path, {
+    method,
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function setPostLike(accessToken: string, postId: string, liked: boolean): Promise<ApiReaction> {
+  return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/like`, liked ? 'POST' : 'DELETE');
+}
+
+export async function setPostStar(accessToken: string, postId: string, starred: boolean): Promise<ApiReaction> {
+  return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/star`, starred ? 'POST' : 'DELETE');
+}
+
+export async function listPostLikes(accessToken: string, postId: string, input: { query?: string; cursor?: string | null; limit?: number } = {}): Promise<LikeActorPage> {
+  const params = new URLSearchParams({ query: input.query ?? '', limit: String(input.limit ?? 24) });
+  if (input.cursor) params.set('cursor', input.cursor);
+  const response = await authenticatedRequest<{ items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null }>; next_cursor: string | null; has_more: boolean }>(accessToken, `/posts/${encodeURIComponent(postId)}/likes?${params.toString()}`);
+  return {
+    items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url })),
+    next_cursor: response.next_cursor,
+    has_more: response.has_more,
+  };
+}
+
+export async function listLikedPosts(accessToken: string, username: string, cursor?: string | null): Promise<ApiFeedPage> {
+  const params = new URLSearchParams({ limit: '20' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/likes?${params.toString()}`);
+}
+
+export async function listStarredPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
+  const params = new URLSearchParams({ limit: '20' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/starred?${params.toString()}`);
+}
 
 export type ApiConnectionUser = {
   id: string;
@@ -771,7 +841,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;
@@ -1359,6 +1429,7 @@ function mapApiUser(user: ApiUser): AuthUser {
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,
+    likesVisible: user.likes_visible ?? true,
     setupStep: user.setup_step,
     setupCompleted: user.setup_completed,
     status: user.is_verified ? 'active' : 'pending_email_verification',

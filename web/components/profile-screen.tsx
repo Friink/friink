@@ -14,11 +14,17 @@ import { blockUser, loadAuthSession } from '@/lib/auth';
 type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
+  likedPosts?: Post[];
+  likedPostsHasMore?: boolean;
+  likedPostsLoading?: boolean;
+  onLoadMoreLikedPosts?: () => void;
   profileStats?: { followers: number; following: number } | null;
   profileConnectionsBasePath?: string;
   isOwnProfile?: boolean;
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
+  onPostUpdated?: (post: Post) => void;
+  onReactionError?: (message: string) => void;
   onEditProfile?: () => void;
   onMessage?: () => void;
   onBlocked?: () => void;
@@ -31,11 +37,12 @@ type ProfileScreenProps = {
   onTabChange?: (tab: ProfileTab) => void;
 };
 
-type ProfileTab = 'posts' | 'replies';
+export type ProfileTab = 'posts' | 'replies' | 'likes';
 
 const profileTabs: { id: ProfileTab; label: string }[] = [
   { id: 'posts', label: 'Posts' },
   { id: 'replies', label: 'Replies' },
+  { id: 'likes', label: 'Likes' },
 ];
 
 function getInitials(value: string) {
@@ -54,11 +61,17 @@ function getInitials(value: string) {
 export function ProfileScreen({
   user,
   posts,
+  likedPosts = [],
+  likedPostsHasMore = false,
+  likedPostsLoading = false,
+  onLoadMoreLikedPosts,
   profileStats = null,
   profileConnectionsBasePath,
   isOwnProfile = true,
   onReply,
   onQuote,
+  onPostUpdated,
+  onReactionError,
   onEditProfile,
   onMessage,
   onBlocked,
@@ -75,9 +88,18 @@ export function ProfileScreen({
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [blockBusy, setBlockBusy] = useState(false);
+  const likesLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setActiveTab(initialTab), [initialTab]);
+  useEffect(() => {
+    if (activeTab !== 'likes' || !likedPostsHasMore || likedPostsLoading || !likesLoadMoreRef.current || !onLoadMoreLikedPosts) return;
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) onLoadMoreLikedPosts(); }, { rootMargin: '240px' });
+    observer.observe(likesLoadMoreRef.current);
+    return () => observer.disconnect();
+  }, [activeTab, likedPostsHasMore, likedPostsLoading, onLoadMoreLikedPosts]);
   const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
+  const showLikesTab = isOwnProfile || user.likesVisible;
+  const visibleProfileTabs = showLikesTab ? profileTabs : profileTabs.filter((tab) => tab.id !== 'likes');
   const aboutText = user.about?.trim();
   const action = getConnectionAction(connectionState, { onFollow, onCancelRequest, onUnfollow });
 
@@ -142,7 +164,7 @@ export function ProfileScreen({
       {confirmBlock && <Modal title="Block user" onClose={() => !blockBusy && setConfirmBlock(false)} actions={<><button className="button-secondary" type="button" onClick={() => setConfirmBlock(false)} disabled={blockBusy}>Cancel</button><button className="button-primary" type="button" disabled={blockBusy} onClick={async () => { const session = loadAuthSession(); if (!session) return; setBlockBusy(true); try { await blockUser(session.accessToken, user.username); onBlocked?.(); } finally { setBlockBusy(false); setConfirmBlock(false); } }}> {blockBusy ? 'Blocking…' : 'Block user'} </button></>}><p>They will not be able to view your profile or message you. Follow relationships will be removed and existing chats will become read-only.</p></Modal>}
 
       <Tabs
-        tabs={profileTabs}
+        tabs={visibleProfileTabs}
         activeId={activeTab}
         onChange={(id) => {
           const tab = id as ProfileTab;
@@ -155,13 +177,21 @@ export function ProfileScreen({
 
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (
-          profilePosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} />)
+          profilePosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+        ) : activeTab === 'likes' && showLikesTab && likedPosts.length > 0 ? (
+          likedPosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+        ) : activeTab === 'likes' && !showLikesTab ? (
+          <div className="profile-empty">
+            <i className="fa-regular fa-heart" aria-hidden="true" />
+            <p>Likes are hidden.</p>
+          </div>
         ) : (
           <div className="profile-empty">
             <i className="fa-regular fa-comment" aria-hidden="true" />
             <p>Nothing here yet.</p>
           </div>
         )}
+        {activeTab === 'likes' && showLikesTab && likedPostsHasMore && <div ref={likesLoadMoreRef} className="profile-likes-load-more" aria-live="polite">{likedPostsLoading ? 'Loading more likes…' : null}</div>}
       </div>
     </PageSurface>
   );
