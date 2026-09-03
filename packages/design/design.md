@@ -436,6 +436,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ## Current Implementation Notes
 
 - Post media currently uses the fixed 3:5 crop flow described above. Final crop width, height, and aspect ratio are not persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
+- Deployment boundary: staging and production use separate Neon databases and separate R2 buckets. The production database is temporarily hosted on Neon with a planned future move to the Droplet; the production R2 delivery domain is `media.friink.com`. Web deployments receive only their environment-specific API origin, and no media bucket/environment identifier is part of the application data model.
+- Media delivery: profile-picture keys are resolved against the active environment's configured public media URL; post-media uploads use the active environment's configured bucket and public URL. Cross-environment media sharing is not a supported behavior.
 - The logged-in app has no known design-contract violations in the current working tree. Deployment configuration, R2 health, and end-to-end browser verification remain release checks outside this design contract.
 
 - ### Blocking surfaces

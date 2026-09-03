@@ -241,6 +241,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               minLength={8}
               pattern={PASSWORD_PATTERN.source}
               title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
+              aria-describedby="signup-password-criteria"
               required
               trailing={
                 <button
@@ -256,6 +257,15 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               }
             />
 
+            <ul id="signup-password-criteria" className="password-criteria" aria-label="Password requirements">
+              <li className={password.length >= 8 ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />At least 8 characters</li>
+              <li className={/[A-Z]/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One uppercase letter</li>
+              <li className={/[a-z]/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One lowercase letter</li>
+              <li className={/\d/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One number</li>
+              <li className={/[^A-Za-z0-9\s]/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One special character</li>
+              <li className={!/\s/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />No spaces</li>
+            </ul>
+
             <InputField
               label="Confirm Password"
               type={showConfirmPassword ? 'text' : 'password'}
@@ -266,6 +276,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               minLength={8}
               pattern={PASSWORD_PATTERN.source}
               title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
+              aria-describedby="signup-password-criteria"
               required
               trailing={
                 <button

@@ -262,6 +262,20 @@ explicit unresolved item, not an assumption.
 - Profile-picture APIs and implementation were not touched by the post-media
   changes.
 
+## MVP profile-picture key storage checkpoint
+
+New profile-picture confirmations now store `users.profile_picture_key` rather
+than persisting the environment-specific public host in the new record. The API
+continues to return `profile_picture_url` for the existing frontend contract by
+combining the stored object key with the active environment's `R2_PUBLIC_URL`.
+Legacy `profile_picture_url` rows were intentionally left untouched for this MVP
+shortcut and may stop rendering if their old delivery host is disabled.
+
+This removes wrong-host persistence for new uploads but does not make a shared
+database safe with separate staging and production buckets: both environments
+can still read the same key while only one bucket contains its object. Separate
+databases remain required before production and staging media are isolated.
+
 ## Recommended verification sequence
 
 1. Confirm Vercel API Preview is running `fcd468d` and Vercel web Preview is

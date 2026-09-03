@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, func
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +20,20 @@ class FollowRequest(Base):
     __tablename__ = "follow_requests"
     __table_args__ = (
         CheckConstraint("requester_id <> recipient_id", name="ck_follow_requests_not_self"),
+        Index(
+            "uq_follow_requests_pending_pair",
+            "requester_id",
+            "recipient_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+        Index(
+            "uq_follow_requests_accepted_pair",
+            "requester_id",
+            "recipient_id",
+            unique=True,
+            postgresql_where=text("status = 'accepted'"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

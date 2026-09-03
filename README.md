@@ -12,7 +12,7 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Web client:** Next.js 14, React 18, TypeScript, Font Awesome — hosted on Vercel
 - **Mobile client:** TBD
 - **API:** FastAPI with Uvicorn — hosted on Vercel as a separate project
-- **Database:** PostgreSQL via Neon
+- **Database:** PostgreSQL via Neon, with separate databases for each deployed environment: staging remains on the existing Neon database, while production now uses the separate `ep-restless-paper-b3szoet8` Neon database temporarily (planned future move to the Droplet)
 - **ORM / migrations:** SQLAlchemy with synchronous `Session`/psycopg3 connections, Alembic
 - **Object storage:** Cloudflare R2 for profile pictures and submit-time post-image uploads. Post images use the `post-media/{user_id}/{random}.jpg` namespace and the existing `post_media` association table. See `R2.md` for environment setup.
 - **Authentication and session:** FastAPI routes, PyJWT access tokens, HTTP-only refresh-token cookie, bcrypt password hashing
@@ -52,6 +52,7 @@ dashboard.
 
 - Staging: `staging.friink.com` / `staging-api.friink.com`
 - Production: `friink.com`
+- **Database isolation:** `api-staging` continues using the existing staging Neon connection; `api-production` uses its separate production Neon connection. The web projects do not receive `DATABASE_URL`; each web deployment only receives its API origin.
 
 ## Current Web-App Architecture
 

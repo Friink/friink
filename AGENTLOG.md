@@ -1,5 +1,29 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-03T01:25:30Z — Production database split and media E2E checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move production onto its own Neon database, keep staging on the existing database, migrate production from empty, verify schema/isolation/media, and document the topology.
+- Changes Made: Updated local `api/.env.production` to the new production Neon endpoint; aligned ORM index/constraint metadata with the existing Alembic migrations so a fresh database passes `alembic check`; updated the README Stack/deployment sections and synchronized `RULES.md` plus `packages/design/design.md` with the separate-database/media boundary. No bucket/environment identifier column was added.
+- Database Evidence: Before migration, production `alembic current` returned no revision. `python -m alembic upgrade head` applied the complete chain through `20260903_0023`. Afterward, `alembic current` and `alembic heads` both returned `20260903_0023 (head)`, and `alembic check` returned `No new upgrade operations detected.`
+- Isolation Evidence: A temporary production user/post was found in production with counts `1/1` and in staging with counts `0/0`; a temporary staging user/post was found in staging with counts `1/1` and in production with counts `0/0`. Both test pairs were removed after verification.
+- Media Evidence: With `R2_BUCKET_NAME=friink-prod-media` and `R2_PUBLIC_URL=https://media.friink.com`, avatar PUT returned `200`, post-media PUT returned `200`, avatar GET returned `200 image/jpeg 33`, post-media GET returned `200 image/jpeg 37`, and production DB persistence returned `db_user_count=1` and `db_media_count=1`. Temporary rows and objects were cleaned up.
+- Files: `api/app/models/auth_session.py`, `api/app/models/chat.py`, `api/app/models/connection.py`, `api/app/models/otp.py`, `api/app/models/post.py`, `api/app/models/refresh_token.py`, `api/app/models/user.py`, `api/.env.production`, `README.md`, `RULES.md`, `packages/design/design.md`.
+- Notes: `api/.env.production` is tracked by Git despite the `.env.*` ignore rule; it must not be committed or pushed because it contains the production database credential. Vercel production must be redeployed with the same new connection string. Staging's connection was not changed.
+- Verification Status: Production database split, fresh migration chain, clean Alembic check, bidirectional DB isolation, and production R2 upload/read integration passed. Neon CLI browser authentication remained unavailable, so the database was verified using the supplied connection string rather than `neon link/deploy`.
+
+## 2026-09-03T00:35:45Z — MVP profile-picture key storage checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply a quick MVP fix so new profile-picture records save an object key and environment configuration supplies the public URL; existing media data need not be migrated.
+- Changes Made: Added `users.profile_picture_key`; new confirmations save the object key and clear the legacy URL field; API responses derive `profile_picture_url` from the active `R2_PUBLIC_URL`. Updated profile, public-user, post, chat, and blocked-user response paths. Added migration `20260903_0023` and focused compatibility tests.
+- Files: `api/app/models/user.py`, `api/app/services/profile_media.py`, `api/app/routers/auth.py`, `api/app/services/posts.py`, `api/app/services/chat.py`, `api/app/services/blocking.py`, `api/alembic/versions/20260903_0023_add_profile_picture_key.py`, `api/tests/test_profile_media.py`.
+- Reason: Prevent environment-specific R2 hostnames from being permanently stored in new profile-picture records.
+- Notes: Existing legacy full URLs remain unchanged. A shared database with separate staging/production buckets can still break the other environment when either environment writes a new key; separate databases remain required. No production writes were performed.
+- Verification Status: Staging database migrated `20260903_0022 -> 20260903_0023`; `python -m alembic current` returned `20260903_0023 (head)`. Focused regression suite returned `30 passed, 1 warning in 32.98s`; compile and `git diff --check` passed.
+
 ## 2026-09-02 — Blocking/read-receipt intersection verification
 
 - **Task:** Document and verify blocked delivery behavior and pending-request count freezing.

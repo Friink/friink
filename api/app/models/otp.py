@@ -22,9 +22,11 @@ class OtpCode(Base):
     __tablename__ = "otp_codes"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     signup_reservation_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("signup_reservations.id", ondelete="CASCADE"), nullable=True
+        UUID(as_uuid=True), ForeignKey("signup_reservations.id", ondelete="CASCADE"), nullable=True, index=True
     )
     otp_hash: Mapped[bytes] = mapped_column(LargeBinary(length=32), nullable=False)
     purpose: Mapped[OtpPurpose] = mapped_column(Enum(OtpPurpose, name="otp_purpose"), nullable=False)

@@ -19,6 +19,7 @@ from app.services.session_ops import commit, refresh, rollback
 from app.services.post_slug import generate_post_slug
 from app.services.post_ids import generate_public_id
 from app.services.notifications import create_notification
+from app.services.profile_media import profile_picture_url_for
 
 DEFAULT_FEED_LIMIT = 20
 MAX_FEED_LIMIT = 100
@@ -363,7 +364,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         kind=PostKindSchema(post.kind.value),
         author_username=post.user.username,
         author_display_name=post.user.display_name,
-        profile_picture_url=post.user.profile_picture_url,
+        profile_picture_url=profile_picture_url_for(post.user),
         content=post.content,
         media_count=post.media_count,
         media=[PostMediaResponse(url=item.url) for item in post.media if item.url],
@@ -404,7 +405,7 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         slug=getattr(quoted_post, "slug", None),
         author_username=quoted_post.user.username,
         author_display_name=quoted_post.user.display_name,
-        profile_picture_url=quoted_post.user.profile_picture_url,
+        profile_picture_url=profile_picture_url_for(quoted_post.user),
         content=quoted_post.content,
         media_count=quoted_post.media_count,
         media=[PostMediaResponse(url=item.url) for item in quoted_post.media if item.url],
