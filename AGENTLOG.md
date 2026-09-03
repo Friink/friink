@@ -6295,3 +6295,59 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - `AGENTLOG.md`
 - Reason/Decision: Native horizontal scrolling keeps dense mobile tabs usable while retaining the existing sleek visual treatment; the conditional chevrons provide a clear affordance without adding permanent chrome when all items are already visible.
 - Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T17:44:01Z — Make tab overflow controls responsive to actual overflow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify that covered tabs may occur on tablet or desktop, not only mobile.
+- Changes Made:
+  - Made the existing conditional tab arrows available at every viewport width.
+  - Kept the arrows dependent on measured overflow and scroll position, with the right control disabled at the end and the left control hidden at the starting position.
+  - Preserved hidden scrollbars, native horizontal scrolling, one-tab movement, and the existing tab strip styling.
+  - Updated the Tabs design contract and changelog.
+- Files:
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Overflow affordances should respond to actual available space rather than a device breakpoint, so a covered tab remains discoverable on mobile, tablet, and desktop.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T17:47:57Z — Align header action icons after visual review
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the attached header screenshot and fix unequal-looking icon sizing/spacing plus the filled Chat icon treatment.
+- Changes Made:
+  - Changed the Header Chat glyph from the filled envelope to the outlined regular comment icon.
+  - Fixed Search, Chat, and Notifications to equal `2rem` action cells with a shared centered `1.125rem` icon box and explicit column spacing.
+  - Updated the Header design contract and changelog.
+- Files:
+  - `web/components/header.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Equal action-cell geometry removes wrapper-size variation, while the regular comment glyph matches the hollow visual language shown by the other header icons.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T17:51:27Z — Make the shared Modal responsive and topmost
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Visually inspect the single shared modal behavior across screen sizes and fix underlapping and poor scaling.
+- Changes Made:
+  - Portaled modal backdrops to `document.body` and raised the shared layer above existing navigation, menus, floating bars, and toasts.
+  - Made modal dialogs viewport-constrained flex shells with independently scrollable bodies and fixed-visible headers/actions.
+  - Added wrapped action controls, long-title handling, touch scrolling, and safe backdrop overscroll behavior.
+  - Made the profile-picture crop stage scale with both viewport width and viewport height, including short-screen behavior.
+  - Updated the Modal design contract and changelog.
+- Files:
+  - `web/components/modal.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Body-level portal mounting removes ancestor stacking-context conflicts, while a bounded flex layout prevents modal content from pushing the header or actions off-screen at mobile, tablet, and desktop sizes.
+- Verification: Targeted TypeScript check and `git diff --check` passed.

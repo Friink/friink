@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-03T17:51:27Z
+
+- [web/modal] Hardened the shared Modal across mobile, tablet, and desktop: it now portals to `document.body` at the top application layer, constrains itself to the viewport, keeps header/actions visible while the body scrolls, and scales the profile crop stage for short or narrow screens.
+
+## 2026-09-03T17:47:57Z
+
+- [web/header] Corrected header action icon presentation after visual review: Search, Chat, and Notifications now use equal fixed action cells with a shared centered icon box, and Chat uses the outlined regular comment icon to match the surrounding hollow icon treatment.
+
+## 2026-09-03T17:44:01Z
+
+- [web/tabs] Made overflow arrows viewport-agnostic: whenever the tab strip is wider than its available space, the arrows now appear on mobile, tablet, and desktop. The right arrow disables at the end and the left arrow remains conditional on the current scroll position.
+
 ## 2026-09-03T17:39:45Z
 
 - [web/tabs] Improved mobile tab discoverability without changing the tab strip's visual language. Overflowing tabs now use a hidden-scrollbar horizontal viewport, with a conditional right chevron that advances one item at a time and a left chevron that appears after scrolling back from the default position. The right control disables at the end, and the design contract was updated.

@@ -156,7 +156,7 @@ export function Header({
             }}
             aria-label={hasUnreadMessages ? 'Chat, new message' : 'Chat'}
           >
-            <i className="fa-solid fa-envelope" aria-hidden="true" />
+            <i className="fa-regular fa-comment" aria-hidden="true" />
             {hasUnreadMessages ? <span className="topbar-chat-dot" aria-hidden="true" /> : null}
           </a>
           <div className="topbar-notification-wrap" ref={notificationRef}>
