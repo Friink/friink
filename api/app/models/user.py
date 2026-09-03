@@ -18,6 +18,7 @@ class User(Base):
     display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     about: Mapped[str | None] = mapped_column(String(256), nullable=True)
     profile_picture_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    profile_picture_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     profile_picture_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     setup_step: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     setup_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-03T00:35:45Z
+
+- [media/profile-picture] New profile-picture uploads now save an environment-neutral object key and derive the public URL from `R2_PUBLIC_URL` at response time. Existing legacy URL rows were not migrated. Migration `20260903_0023` and focused regression coverage passed; the shared DB/separate-bucket staging-vs-production conflict remains open.
+
 ## 2026-09-02T22:47:13Z
 
 - [auth/phase2d] Added the staging-database/server substrate for recognized devices: hashed opaque device identifiers, auth-session linkage, and a protected one-year HttpOnly device cookie. Same-cookie login reuse and new-cookie rotation are covered by a focused test. The risk-based OTP/MFA challenge for new or suspicious devices remains open because delivery is disabled; Phase 2 is not closed.

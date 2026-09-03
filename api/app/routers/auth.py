@@ -35,6 +35,7 @@ from app.services.auth import authenticate_user, change_password, complete_signu
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
+from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
 from app.services.session_service import (
@@ -93,9 +94,9 @@ async def signup(
     request: Request,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
-) -> User:
+) -> UserResponse:
     require_allowed_origin(request, settings)
-    return await create_user(session, payload, EmailService())
+    return user_response(await create_user(session, payload, EmailService()), settings)
 
 
 @router.post("/signup/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -126,17 +127,29 @@ def set_device_cookie(response: Response, token: str, settings: Settings) -> Non
     )
 
 
+def user_response(user: User, settings: Settings) -> UserResponse:
+    return UserResponse.model_validate(user).model_copy(
+        update={"profile_picture_url": profile_picture_url_for(user, settings)}
+    )
+
+
+def public_user_response(user: User, settings: Settings) -> PublicUserResponse:
+    return PublicUserResponse.model_validate(user).model_copy(
+        update={"profile_picture_url": profile_picture_url_for(user, settings)}
+    )
+
+
 @router.post("/signup/verify", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup_verify(
     payload: SignupVerifyRequest,
     request: Request,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
-) -> User:
+) -> UserResponse:
     require_allowed_origin(request, settings)
     if not settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup verification is not available.")
-    return await complete_signup_reservation(session, payload.reservation_token, payload.otp)
+    return user_response(await complete_signup_reservation(session, payload.reservation_token, payload.otp), settings)
 
 
 @router.get("/username-availability", response_model=UsernameAvailabilityResponse)
@@ -182,7 +195,7 @@ async def login(
     )
     set_refresh_cookie(response, issued_refresh.raw_token, settings)
     set_device_cookie(response, device_identifier, settings)
-    return TokenResponse(access_token=access_token, user=UserResponse.model_validate(user))
+    return TokenResponse(access_token=access_token, user=user_response(user, settings))
 
 
 @router.post("/refresh", response_model=RefreshResponse)
@@ -423,8 +436,11 @@ async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme),
 
 
 @router.get("/me", response_model=UserResponse)
-async def me(current_user: User = Depends(get_current_user)) -> User:
-    return current_user
+async def me(
+    current_user: User = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+) -> UserResponse:
+    return user_response(current_user, settings)
 
 
 @router.get("/sessions", response_model=list[AuthSessionResponse])
@@ -490,7 +506,12 @@ async def revoke_other_sessions(
 
 
 @router.get("/users/{username}", response_model=PublicUserResponse)
-async def get_public_user(username: str, session: Session = Depends(get_session), current_user: User | None = Depends(get_optional_user)) -> User:
+async def get_public_user(
+    username: str,
+    session: Session = Depends(get_session),
+    current_user: User | None = Depends(get_optional_user),
+    settings: Settings = Depends(get_settings),
+) -> PublicUserResponse:
     user = await get_user_by_username(session, username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
@@ -498,7 +519,7 @@ async def get_public_user(username: str, session: Session = Depends(get_session)
         from app.services.blocking import is_blocked
         if is_blocked(session, current_user.id, user.id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile unavailable.")
-    return user
+    return public_user_response(user, settings)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -506,8 +527,9 @@ async def update_me(
     payload: UpdateCurrentUserRequest,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
-) -> User:
-    return await update_current_user(session, current_user, payload)
+    settings: Settings = Depends(get_settings),
+) -> UserResponse:
+    return user_response(await update_current_user(session, current_user, payload), settings)
 
 
 @router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)
@@ -525,11 +547,12 @@ async def update_setup(
     payload: UpdateSetupRequest,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
-) -> User:
+    settings: Settings = Depends(get_settings),
+) -> UserResponse:
     current_user.setup_step = payload.step
     current_user.setup_completed = payload.completed
     await commit(session)
-    return current_user
+    return user_response(current_user, settings)
 
 
 @router.post("/me/profile-picture/upload-url", response_model=ProfilePictureUploadUrlResponse)
@@ -570,11 +593,7 @@ async def confirm_profile_picture_upload(
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The profile picture upload could not be completed.") from exc
 
-    previous_key = None
-    if current_user.profile_picture_url and settings.r2_public_url:
-        prefix = f"{settings.r2_public_url.rstrip('/')}/"
-        if current_user.profile_picture_url.startswith(prefix):
-            previous_key = current_user.profile_picture_url[len(prefix):]
+    previous_key = current_user.profile_picture_key
 
     if previous_key and previous_key != payload.object_key:
         try:
@@ -585,11 +604,12 @@ async def confirm_profile_picture_upload(
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The previous profile picture could not be removed.") from exc
 
     updated_at = datetime.now(UTC)
-    current_user.profile_picture_url = f"{settings.r2_public_url.rstrip('/')}/{payload.object_key}"
+    current_user.profile_picture_key = payload.object_key
+    current_user.profile_picture_url = None
     current_user.profile_picture_updated_at = updated_at
     await commit(session)
 
     return ProfilePictureConfirmResponse(
-        profile_picture_url=current_user.profile_picture_url,
+        profile_picture_url=profile_picture_url_for(current_user, settings),
         profile_picture_updated_at=current_user.profile_picture_updated_at,
     )

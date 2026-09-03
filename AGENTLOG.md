@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-03T00:35:45Z — MVP profile-picture key storage checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply a quick MVP fix so new profile-picture records save an object key and environment configuration supplies the public URL; existing media data need not be migrated.
+- Changes Made: Added `users.profile_picture_key`; new confirmations save the object key and clear the legacy URL field; API responses derive `profile_picture_url` from the active `R2_PUBLIC_URL`. Updated profile, public-user, post, chat, and blocked-user response paths. Added migration `20260903_0023` and focused compatibility tests.
+- Files: `api/app/models/user.py`, `api/app/services/profile_media.py`, `api/app/routers/auth.py`, `api/app/services/posts.py`, `api/app/services/chat.py`, `api/app/services/blocking.py`, `api/alembic/versions/20260903_0023_add_profile_picture_key.py`, `api/tests/test_profile_media.py`.
+- Reason: Prevent environment-specific R2 hostnames from being permanently stored in new profile-picture records.
+- Notes: Existing legacy full URLs remain unchanged. A shared database with separate staging/production buckets can still break the other environment when either environment writes a new key; separate databases remain required. No production writes were performed.
+- Verification Status: Staging database migrated `20260903_0022 -> 20260903_0023`; `python -m alembic current` returned `20260903_0023 (head)`. Focused regression suite returned `30 passed, 1 warning in 32.98s`; compile and `git diff --check` passed.
+
 ## 2026-09-02 — Blocking/read-receipt intersection verification
 
 - **Task:** Document and verify blocked delivery behavior and pending-request count freezing.
