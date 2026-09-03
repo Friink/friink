@@ -74,6 +74,14 @@ the entry, so history isn't lost.
 - **File(s):** `web/components/contextual-dropdown.tsx`, `web/components/header.tsx`, `web/app/globals.css`, `packages/design/design.md`
 - **Since:** 2026-08-30 (Asia/Karachi)
 
+### Rule: Header Chat Link Reflects Conversation Unread State
+- **What:** The global signed-in Header owns the Chat link between Search and Notifications. It routes to `/chats` and shows a small accent dot whenever the authenticated conversation list contains one or more unread messages. Chat is not duplicated in the SideDrawer.
+- **Edge cases:** The unread state is server-authoritative, uses the existing visibility-aware four-second conversation polling loop, pauses while the document is hidden, and resumes on focus or visibility recovery. A failed refresh does not invent a new unread state. The legacy `/chat` root remains a compatibility redirect to `/chats`; username-scoped conversation routes remain `/{username}/chat`.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/header.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/lib/data.ts`, `web/app/chats/page.tsx`, `web/app/globals.css`
+- **Since:** 2026-09-03T17:20:29Z
+
 ### Rule: Public Post URLs Use Public IDs
 - **What:** Post detail URLs use the author username, an on-the-fly slug from the first eight content words capped at 64 characters, and an 8-character random mixed-case alphanumeric `public_id`. Empty slugs omit the slug text.
 - **Edge cases:** The username and slug are cosmetic; the trailing `public_id` is authoritative for lookup. The UUID primary key and all UUID foreign-key relationships remain unchanged. Existing rows receive IDs through the Alembic backfill migration.
@@ -181,7 +189,7 @@ the entry, so history isn't lost.
 ### Rule: Web Settings Saves Confirm And Persist Through API
 - **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
 - **Edge cases:** If an API-backed save fails, the UI reverts to the last known saved value. Theme and privacy changes require an explicit tick confirmation. Direct Messages and Mentions currently use client-side draft/save controls until corresponding backend settings exist.
-- **Presentation:** Each expanded setting shows its title and summary once; its input/control body must not repeat the setting title as a second visible label, while retaining an accessible control name.
+- **Presentation:** Each expanded setting shows its title and summary once; its input/control body must not repeat the setting title as a second visible label, while retaining an accessible control name. Every settings row uses a left setting icon, a shrinkable middle setting body, and a right-side action rail; right-side save and action controls are square icon-only controls with accessible labels/tooltips.
 
 ### Rule: Empty About Is Owner-Only Prompt
 - **What:** New accounts and profiles with a deleted About keep the stored About value empty. Visitors see no placeholder text; the signed-in owner sees `Add about in settings.` instead.
@@ -548,7 +556,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-18T00:00:00Z
 
 ### Rule: Chat Uses REST With Polling Delivery
-- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chat` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
+- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
 - **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription billing, profile hiding, and block controls remain future work; see `docs/chat-behavior.md`.
 - **Status:** Active
 - **Platform:** Web/API
@@ -564,7 +572,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-02 (UTC)
 
 ### Rule: Chat List Refreshes Through Visibility-Aware Polling
-- **What:** The `/chat` conversation-list screen refreshes `GET /chat/conversations` every 4 seconds while visible. Each response refreshes previews, latest-activity ordering, unread counts, unread styling, and the row state for the currently selected All, Muted, Requests, or Archived tab.
+- **What:** The `/chats` conversation-list screen refreshes `GET /chat/conversations` every 4 seconds while visible. Each response refreshes previews, latest-activity ordering, unread counts, unread styling, and the row state for the currently selected All, Muted, Requests, or Archived tab.
 - **Edge cases:** Polling pauses without requests or timer rescheduling while the document is hidden, resumes immediately on visibility or focus recovery, prevents overlapping requests, and cleans up its timer and listeners on unmount. The server remains authoritative for filtering and unread counts; no database migration or separate unread-count endpoint is required.
 - **Status:** Active
 - **Platform:** Web only

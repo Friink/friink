@@ -72,8 +72,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         return `/${encodeURIComponent(user.username)}`;
       case 'connections':
         return `/${encodeURIComponent(user.username)}/connections`;
-      case 'messages':
-        return '/chat/all';
       case 'starred':
         return '/starred';
       case 'settings':

@@ -6225,3 +6225,129 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Read-only staging checks confirmed `AdMiN` and `SECURITY` are unavailable through `GET /auth/username-availability`, and an embedded-space username returns `422` with the documented syntax error.
 - All three responses included the exact staging CORS origin, credentials, and `Vary: Origin` headers.
 - This verifies deployed reserved-name and syntax behavior only; signup/change race coverage, email privacy with a known existing account, OTP completion, and the overall Phase 2 gate remain open.
+## 2026-09-03T17:20:29Z — Move Chat navigation into the global header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read the project documentation and move the Chat icon from the side drawer into the header between Search and Notifications, with an unread-message dot and `/chats` navigation.
+- Changes Made:
+  - Removed Chat from `sidebarNavItems` so the SideDrawer no longer renders the Chat destination.
+  - Added an accessible `/chats` anchor to the Header between Search and Notifications using the existing envelope icon.
+  - Reused the shell's visibility-aware four-second `GET /chat/conversations` sync to set the header dot from server-authoritative `unread_count` values.
+  - Added the `/chats` route, changed the shell Chat destination to `/chats`, and kept `/chat` as a compatibility redirect.
+  - Updated the design contract, README, active rules, and changelog.
+  - Updated `docs/chat-behavior.md` to record the `/chats` list route and Header unread-dot behavior.
+- Files:
+  - `web/components/header.tsx`
+  - `web/components/app-shell.tsx`
+  - `web/components/side-drawer.tsx`
+  - `web/lib/data.ts`
+  - `web/app/globals.css`
+  - `web/app/chats/page.tsx`
+  - `web/app/chats/layout.tsx`
+  - `web/app/chat/page.tsx`
+  - `packages/design/design.md`
+  - `README.md`
+  - `RULES.md`
+  - `CHANGELOG.md`
+  - `docs/chat-behavior.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Chat is a global utility alongside Search and Notifications, while its unread indicator should reflect actual conversation unread counts rather than the broader notification count. The existing shell conversation sync provided the smallest shared state change and preserves delivery synchronization.
+- Verification: Targeted source inspection, `npm exec tsc -- --noEmit --incremental false` in `web`, and `git diff --check` passed.
+
+## 2026-09-03T17:33:00Z — Standardize settings rows into three columns
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make settings rows use equal-height rounded setting/action squares, icon-only right-side controls, and a shared middle setting-content column.
+- Changes Made:
+  - Changed settings rows to an explicit three-column grid with `3rem` leading and trailing columns and a shrinkable middle column.
+  - Matched the left setting icon height to the right-side action height.
+  - Converted save, upload, view-plans, blocked-people, and session logout controls to square icon-only actions while preserving accessible labels and tooltips.
+  - Moved Privacy and Safety toggles into the middle setting body so the right column contains only the save action.
+  - Updated the settings design contract, active settings presentation rule, changelog, and agent log.
+- Files:
+  - `web/components/account-screens.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `RULES.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Keeping the leading icon, setting content, and action control in fixed left/middle/right columns makes every settings row align consistently while allowing the middle control area to absorb available width.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+## 2026-09-03T17:39:45Z — Add mobile overflow controls to Tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make mobile tab strips horizontally scrollable without visible scrollbars and add contextual one-item left/right arrow controls.
+- Changes Made:
+  - Added a scrollbar-hidden horizontal viewport around the shared tab list.
+  - Replaced the previous mobile swipe-to-select behavior with native horizontal scrolling of the tab strip.
+  - Added a right chevron whenever tabs overflow; it advances one tab at a time and remains visible but disabled at the end.
+  - Added a left chevron only after the tab strip moves away from its default scroll position; it moves back one tab at a time and disappears at the start.
+  - Kept arrows hidden on desktop and preserved the existing tab height, labels, spacing, and selected indicator treatment.
+  - Updated the Tabs design contract, changelog, and agent log.
+- Files:
+  - `web/components/tabs.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Native horizontal scrolling keeps dense mobile tabs usable while retaining the existing sleek visual treatment; the conditional chevrons provide a clear affordance without adding permanent chrome when all items are already visible.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T17:44:01Z — Make tab overflow controls responsive to actual overflow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify that covered tabs may occur on tablet or desktop, not only mobile.
+- Changes Made:
+  - Made the existing conditional tab arrows available at every viewport width.
+  - Kept the arrows dependent on measured overflow and scroll position, with the right control disabled at the end and the left control hidden at the starting position.
+  - Preserved hidden scrollbars, native horizontal scrolling, one-tab movement, and the existing tab strip styling.
+  - Updated the Tabs design contract and changelog.
+- Files:
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Overflow affordances should respond to actual available space rather than a device breakpoint, so a covered tab remains discoverable on mobile, tablet, and desktop.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T17:47:57Z — Align header action icons after visual review
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the attached header screenshot and fix unequal-looking icon sizing/spacing plus the filled Chat icon treatment.
+- Changes Made:
+  - Changed the Header Chat glyph from the filled envelope to the outlined regular comment icon.
+  - Fixed Search, Chat, and Notifications to equal `2rem` action cells with a shared centered `1.125rem` icon box and explicit column spacing.
+  - Updated the Header design contract and changelog.
+- Files:
+  - `web/components/header.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Equal action-cell geometry removes wrapper-size variation, while the regular comment glyph matches the hollow visual language shown by the other header icons.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
+
+## 2026-09-03T17:51:27Z — Make the shared Modal responsive and topmost
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Visually inspect the single shared modal behavior across screen sizes and fix underlapping and poor scaling.
+- Changes Made:
+  - Portaled modal backdrops to `document.body` and raised the shared layer above existing navigation, menus, floating bars, and toasts.
+  - Made modal dialogs viewport-constrained flex shells with independently scrollable bodies and fixed-visible headers/actions.
+  - Added wrapped action controls, long-title handling, touch scrolling, and safe backdrop overscroll behavior.
+  - Made the profile-picture crop stage scale with both viewport width and viewport height, including short-screen behavior.
+  - Updated the Modal design contract and changelog.
+- Files:
+  - `web/components/modal.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Body-level portal mounting removes ancestor stacking-context conflicts, while a bounded flex layout prevents modal content from pushing the header or actions off-screen at mobile, tablet, and desktop sizes.
+- Verification: Targeted TypeScript check and `git diff --check` passed.

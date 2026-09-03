@@ -13,6 +13,7 @@ type HeaderProps = {
   onToggleSidebar: () => void;
   notificationCount?: number;
   notifications?: NotificationItem[];
+  hasUnreadMessages?: boolean;
 };
 
 export function Header({
@@ -21,6 +22,7 @@ export function Header({
   onToggleSidebar,
   notificationCount = 0,
   notifications = [],
+  hasUnreadMessages = false,
 }: HeaderProps) {
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement | null>(null);
@@ -144,6 +146,19 @@ export function Header({
               />
             ) : null}
           </div>
+          <a
+            className="topbar-chat"
+            href="/chats"
+            onClick={(event) => {
+              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              onNavigate('messages');
+            }}
+            aria-label={hasUnreadMessages ? 'Chat, new message' : 'Chat'}
+          >
+            <i className="fa-regular fa-comment" aria-hidden="true" />
+            {hasUnreadMessages ? <span className="topbar-chat-dot" aria-hidden="true" /> : null}
+          </a>
           <div className="topbar-notification-wrap" ref={notificationRef}>
             <button
               className="topbar-bell"

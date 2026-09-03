@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 
 type ModalProps = {
   title: string;
@@ -15,6 +16,12 @@ type ModalProps = {
 
 export function Modal({ title, children, actions, onClose, onBack, closeLabel = 'Close', backLabel = 'Back', className = '' }: ModalProps) {
   const titleId = useId();
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -23,7 +30,7 @@ export function Modal({ title, children, actions, onClose, onBack, closeLabel = 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  return (
+  const modal = (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className={`modal-dialog${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="modal-header">
@@ -36,4 +43,6 @@ export function Modal({ title, children, actions, onClose, onBack, closeLabel = 
       </section>
     </div>
   );
+
+  return portalRoot ? createPortal(modal, portalRoot) : null;
 }

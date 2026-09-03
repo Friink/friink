@@ -1565,9 +1565,16 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  column-gap: 0.75rem;
   margin-left: auto;
   padding-right: 0;
+}
+
+.topbar-search-wrap:not(.topbar-search-wrap-open),
+.topbar-chat,
+.topbar-notification-wrap {
+  flex: 0 0 2rem;
+  width: 2rem;
 }
 
 .topbar-search-wrap {
@@ -1582,6 +1589,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .topbar-search,
+.topbar-chat,
 .topbar-bell {
   display: inline-grid;
   place-items: center;
@@ -1596,13 +1604,15 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .topbar-search i,
+.topbar-chat i,
 .topbar-bell i {
-  display: block;
-  width: 1rem;
-  height: 1rem;
+  display: inline-grid;
+  place-items: center;
+  width: 1.125rem;
+  height: 1.125rem;
   color: var(--color-ink);
-  font-size: 1rem;
-  line-height: 1rem;
+  font-size: 1.125rem;
+  line-height: 1;
   text-align: center;
 }
 
@@ -1747,6 +1757,29 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .topbar-bell {
   position: relative;
   margin-right: 0;
+}
+
+.topbar-chat {
+  position: relative;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.topbar-chat:hover,
+.topbar-chat:focus-visible {
+  color: var(--color-accent);
+  outline: none;
+}
+
+.topbar-chat-dot {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border: 2px solid var(--color-chrome);
+  border-radius: 50%;
+  background: var(--color-accent);
 }
 
 .topbar-notification-wrap {
@@ -1969,6 +2002,10 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+  align-items: start;
+  column-gap: 0.75rem;
   min-height: 0;
   padding-top: 0.875rem;
   padding-bottom: 0.875rem;
@@ -1981,13 +2018,13 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-row .list-row-avatar {
-  align-self: flex-start;
-  padding-top: 0.125rem;
+  align-self: start;
+  padding-top: 0;
 }
 
 .settings-row .list-row-trailing {
-  align-self: flex-start;
-  padding-top: 0.125rem;
+  align-self: start;
+  padding-top: 0;
   gap: 0.5rem;
 }
 
@@ -1998,8 +2035,8 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .settings-icon {
   display: inline-grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 3rem;
+  height: 3rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-ink);
@@ -2054,10 +2091,15 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-secondary-button {
-  min-height: 2.75rem;
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  min-height: 3rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  padding: 0 0.8rem;
+  padding: 0;
   color: var(--color-ink);
   background: var(--color-paper);
   font: inherit;
@@ -2113,22 +2155,26 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .modal-backdrop {
   position: fixed;
-  z-index: 2000;
+  z-index: 10000;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 1rem;
-  overflow: hidden;
+  padding: clamp(0.5rem, 3vw, 1.5rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(17, 17, 17, 0.62);
 }
 
 .modal-dialog {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 30rem);
   min-width: 0;
   max-height: min(90vh, 42rem);
+  max-height: min(calc(100dvh - 2rem), 42rem);
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   background: var(--color-paper);
@@ -2144,10 +2190,15 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .modal-header {
   justify-content: space-between;
+  flex: 0 0 auto;
+  min-width: 0;
   padding: 1rem 1rem 0;
 }
 
 .modal-header h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin: 0;
   color: var(--color-ink);
   font-size: var(--text-lg);
@@ -2173,7 +2224,12 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.75rem 1rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .profile-setup-dialog {
@@ -2225,24 +2281,35 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .modal-actions {
   justify-content: flex-end;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   padding: 0.75rem 1rem 1rem;
   border-top: 1px solid var(--color-line);
 }
 
 .profile-picture-crop-dialog {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   width: min(100%, 30rem);
   min-width: 0;
   max-height: min(90vh, 42rem);
+  max-height: min(calc(100dvh - 2rem), 42rem);
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 1rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   background: var(--color-paper);
   box-shadow: 0 1rem 3rem rgba(17, 17, 17, 0.28);
+}
+
+.profile-picture-crop-dialog .modal-body {
+  padding: 0;
+}
+
+.profile-picture-crop-dialog .modal-actions {
+  margin: 0 -1rem -1rem;
 }
 
 .profile-picture-crop-header,
@@ -2282,8 +2349,9 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   position: relative;
   width: 100%;
   min-width: 0;
-  height: min(70vw, 24rem);
-  min-height: 14rem;
+  height: min(70vw, 24rem, 60vh);
+  max-height: min(70vw, 24rem, 60dvh);
+  min-height: min(14rem, 35dvh);
   overflow: hidden;
   border-radius: var(--radius-sm);
   background: #111;
@@ -2321,7 +2389,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   margin: 0;
   background: var(--color-paper);
   border-bottom: 1px solid var(--color-line);
-  touch-action: pan-y;
+  touch-action: auto;
 }
 
 .section-tabs {
@@ -2340,11 +2408,24 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   padding-top: var(--space-top-tabs-height);
 }
 
+.tabs__viewport {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+.tabs__viewport::-webkit-scrollbar {
+  display: none;
+}
+
 .tabs__inner {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   padding: 0 0.75rem;
 }
 
@@ -2381,6 +2462,44 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   border-radius: 1px;
   transition: left 160ms ease, width 160ms ease;
 }
+
+.tabs__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: 0 0 0 0.35rem var(--color-paper);
+  font-size: 0.65rem;
+  transform: translateY(-50%);
+}
+
+.tabs__arrow-left {
+  left: 0.35rem;
+}
+
+.tabs__arrow-right {
+  right: 0.35rem;
+}
+
+.tabs__arrow:hover,
+.tabs__arrow:focus-visible {
+  color: var(--color-accent);
+  outline: none;
+}
+
+.tabs__arrow:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .settings-field {
   display: grid;
   gap: 0.45rem;
@@ -2533,18 +2652,14 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .settings-update-button {
   flex: 0 0 auto;
   display: inline-grid;
-  grid-auto-flow: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   place-items: center;
+  width: 3rem;
   min-width: 3rem;
-  width: auto;
   min-height: 3rem;
   height: 3rem;
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 0 1rem;
+  padding: 0;
   color: var(--color-paper);
   background: var(--color-accent);
   font-size: 1rem;
@@ -2553,14 +2668,12 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .settings-upload-trigger {
   display: inline-grid;
-  grid-auto-flow: column;
-  gap: 0.5rem;
   place-items: center;
-  width: auto;
+  width: 3rem;
   min-width: 3rem;
   height: 3rem;
   min-height: 3rem;
-  padding: 0 1rem;
+  padding: 0;
 }
 
 .settings-row .list-row-trailing > .settings-update-button + .settings-update-button,

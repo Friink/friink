@@ -95,11 +95,13 @@ read behavior remain in use.
   composer without manufacturing a pending conversation.
 - The existing polling transport remains unchanged in concept: it polls only an
   accepted or pending conversation with a real conversation ID and pauses while hidden.
-  The `/chat` conversation-list screen also polls `GET /chat/conversations` every
+  The `/chats` conversation-list screen also polls `GET /chat/conversations` every
   four seconds while visible. It pauses while the document is hidden, resumes
   immediately on visibility/focus recovery, cancels on unmount, preserves the active
   All/Muted/Requests/Archived tab, and refreshes previews, ordering, unread counts,
   and row state.
+  The legacy `/chat` root redirects to `/chats`, and the global Header Chat link
+  shows a dot whenever any returned conversation has unread messages.
   Read receipt behavior and cursor persistence are specified separately in
   `docs/read-receipts.md`.
 - While the signed-in app is visible outside the Chat screen, the app shell runs

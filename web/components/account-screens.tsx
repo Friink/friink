@@ -747,7 +747,9 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               subtitle="Manage the browsers and devices signed in to your account."
               className="settings-row settings-row-expanded settings-sessions-row"
               trailing={authSessions.some((item) => !item.current) ? (
-                <button className="settings-secondary-button" type="button" disabled={sessionsBusyId !== null} onClick={handleRevokeOtherSessions}>Log out other sessions</button>
+                <button className="settings-secondary-button" type="button" aria-label="Log out other sessions" title="Log out other sessions" disabled={sessionsBusyId !== null} onClick={handleRevokeOtherSessions}>
+                  <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
+                </button>
               ) : null}
             >
               {sessionsLoading ? <p className="settings-field-message" role="status">Loading sessions…</p> : null}
@@ -763,7 +765,9 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                         <small>Logged in {formatSessionDate(item.created_at)} · Last active {formatSessionDate(item.last_active_at)}</small>
                       </div>
                       {item.current ? <span className="settings-session-current">Current session</span> : (
-                        <button className="settings-secondary-button" type="button" disabled={sessionsBusyId !== null} onClick={() => handleSessionRevoke(item.id)}>{sessionsBusyId === item.id ? 'Logging out…' : 'Log out'}</button>
+                        <button className="settings-secondary-button" type="button" aria-label={sessionsBusyId === item.id ? 'Logging out' : 'Log out'} title={sessionsBusyId === item.id ? 'Logging out' : 'Log out'} disabled={sessionsBusyId !== null} onClick={() => handleSessionRevoke(item.id)}>
+                          <i className={`fa-solid ${sessionsBusyId === item.id ? 'fa-spinner fa-spin' : 'fa-right-from-bracket'}`} aria-hidden="true" />
+                        </button>
                       )}
                     </div>
                   ))}
@@ -782,7 +786,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Current plan"
               subtitle="Your Friink plan and subscription options."
               className="settings-row settings-row-expanded"
-              trailing={<Link className="settings-secondary-button settings-subscription-link" href="/subscriptions">View plans</Link>}
+              trailing={<Link className="settings-secondary-button settings-subscription-link" href="/subscriptions" aria-label="View plans" title="View plans"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></Link>}
             >
               <div className="settings-plan-summary">
                 <strong>Friink Free</strong>
@@ -801,7 +805,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Profile picture"
               subtitle="Choose an optional JPG, PNG, or WebP picture for your profile."
               className="settings-row settings-row-expanded"
-              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /><span>Upload</span></button>}
+              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /></button>}
             >
               <div className="profile-picture-picker">
                 <div className="profile-picture-preview" aria-hidden="true">
@@ -911,46 +915,37 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Private profile"
               subtitle="Only approved followers can view your public posts."
               className="settings-row"
-              trailing={
-                <>
-                  <SettingsToggle value={privacyDraft} onChange={setPrivacyDraft} disabled={isUpdatingPrivacy} />
-                  <SaveTickButton disabled={!canUpdatePrivacy} busy={isUpdatingPrivacy} onClick={handlePrivacyUpdate} label="Update private profile" />
-                </>
-              }
-            />
+              trailing={<SaveTickButton disabled={!canUpdatePrivacy} busy={isUpdatingPrivacy} onClick={handlePrivacyUpdate} label="Update private profile" />}
+            >
+              <SettingsToggle value={privacyDraft} onChange={setPrivacyDraft} disabled={isUpdatingPrivacy} />
+            </SettingsRow>
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-check-double" aria-hidden="true" /></span>}
               title="Read receipts"
               subtitle="Show when messages have been read. This setting is mutual with the other person."
               className="settings-row"
-              trailing={
-                <>
-                  <SettingsToggle value={readReceiptsDraft} onChange={setReadReceiptsDraft} disabled={isUpdatingReadReceipts} />
-                  <SaveTickButton disabled={!canUpdateReadReceipts} busy={isUpdatingReadReceipts} onClick={handleReadReceiptsUpdate} label="Update read receipts" />
-                </>
-              }
-            />
+              trailing={<SaveTickButton disabled={!canUpdateReadReceipts} busy={isUpdatingReadReceipts} onClick={handleReadReceiptsUpdate} label="Update read receipts" />}
+            >
+              <SettingsToggle value={readReceiptsDraft} onChange={setReadReceiptsDraft} disabled={isUpdatingReadReceipts} />
+            </SettingsRow>
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-paper-plane" aria-hidden="true" /></span>}
               title="Direct messages"
               subtitle="You can message people who follow you back."
               className="settings-row"
-              trailing={
-                <>
-                  <SettingsToggle value={directMessagesDraft} onChange={setDirectMessagesDraft} />
-                  <SaveTickButton disabled={!canUpdateDirectMessages} busy={false} onClick={() => { setDirectMessagesSaved(directMessagesDraft); onToast?.('Direct messages setting updated.', 'success'); }} label="Update direct messages" />
-                </>
-              }
-            />
+              trailing={<SaveTickButton disabled={!canUpdateDirectMessages} busy={false} onClick={() => { setDirectMessagesSaved(directMessagesDraft); onToast?.('Direct messages setting updated.', 'success'); }} label="Update direct messages" />}
+            >
+              <SettingsToggle value={directMessagesDraft} onChange={setDirectMessagesDraft} />
+            </SettingsRow>
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-ban" aria-hidden="true" /></span>}
               title="Blocked people"
               subtitle="Review and unblock people you have blocked."
               className="settings-row"
-              trailing={<button className="settings-update-button" type="button" onClick={() => setBlockedOpen(true)}>View blocked people</button>}
+              trailing={<button className="settings-update-button" type="button" aria-label="View blocked people" title="View blocked people" onClick={() => setBlockedOpen(true)}><i className="fa-solid fa-eye" aria-hidden="true" /></button>}
             />
 
             <SettingsRow
@@ -958,17 +953,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Mentions"
               subtitle="Control who can mention you in conversations."
               className="settings-row"
-              trailing={
-                <>
-                  <SettingsToggle value={mentionsDraft} onChange={setMentionsDraft} />
-                  <SaveTickButton disabled={!canUpdateMentions} busy={false} onClick={() => { setMentionsSaved(mentionsDraft); onToast?.('Mentions setting updated.', 'success'); }} label="Update mentions" />
-                </>
-              }
-            />
+              trailing={<SaveTickButton disabled={!canUpdateMentions} busy={false} onClick={() => { setMentionsSaved(mentionsDraft); onToast?.('Mentions setting updated.', 'success'); }} label="Update mentions" />}
+            >
+              <SettingsToggle value={mentionsDraft} onChange={setMentionsDraft} />
+            </SettingsRow>
           </div>
         </div>
       )}
-      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="settings-update-button" type="button" onClick={() => setUnblockTarget(item)}>Unblock</button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
+      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="settings-update-button" type="button" aria-label={`Unblock ${item.displayName}`} title={`Unblock ${item.displayName}`} onClick={() => setUnblockTarget(item)}><i className="fa-solid fa-unlock" aria-hidden="true" /></button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
     </PageSurface>
   );
 }
@@ -987,7 +979,6 @@ function SaveTickButton({
   return (
     <button className="settings-update-button" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>
       <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" />
-      <span>{busy ? 'Updating…' : label}</span>
     </button>
   );
 }

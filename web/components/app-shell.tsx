@@ -107,6 +107,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [followers, setFollowers] = useState<Connection[]>([]);
   const [following, setFollowing] = useState<Connection[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
@@ -278,7 +279,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         router.push('/settings/general');
         break;
       case 'messages':
-        router.push('/chat/all');
+        router.push('/chats');
         break;
       case 'notifications':
         router.push('/notifications');
@@ -362,14 +363,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (!session || activeScreen === 'messages') return;
+    if (!session) return;
     let stopped = false;
     let busy = false;
     let timer: number | null = null;
     const sync = async () => {
       if (stopped || busy || document.visibilityState === 'hidden') return;
       busy = true;
-      try { await listConversations(loadAuthSession()?.accessToken ?? session.accessToken); } catch { /* delivery sync is best effort */ }
+      try {
+        const conversations = await listConversations(loadAuthSession()?.accessToken ?? session.accessToken);
+        if (!stopped) setHasUnreadMessages(conversations.some((conversation) => conversation.unread_count > 0));
+      } catch { /* delivery sync and header state are best effort */ }
       finally { busy = false; }
     };
     const schedule = () => { if (!stopped && document.visibilityState !== 'hidden') timer = window.setTimeout(async () => { await sync(); schedule(); }, 4000); };
@@ -379,7 +383,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     void sync();
     schedule();
     return () => { stopped = true; if (timer !== null) window.clearTimeout(timer); document.removeEventListener('visibilitychange', resume); window.removeEventListener('focus', resume); };
-  }, [activeScreen]);
+  }, []);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -840,6 +844,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
           notificationCount={unreadNotificationCount}
           notifications={notifications}
+          hasUnreadMessages={hasUnreadMessages}
         />
 
         <section className="main-panel">

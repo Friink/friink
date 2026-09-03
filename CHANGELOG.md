@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-03T17:51:27Z
+
+- [web/modal] Hardened the shared Modal across mobile, tablet, and desktop: it now portals to `document.body` at the top application layer, constrains itself to the viewport, keeps header/actions visible while the body scrolls, and scales the profile crop stage for short or narrow screens.
+
+## 2026-09-03T17:47:57Z
+
+- [web/header] Corrected header action icon presentation after visual review: Search, Chat, and Notifications now use equal fixed action cells with a shared centered icon box, and Chat uses the outlined regular comment icon to match the surrounding hollow icon treatment.
+
+## 2026-09-03T17:44:01Z
+
+- [web/tabs] Made overflow arrows viewport-agnostic: whenever the tab strip is wider than its available space, the arrows now appear on mobile, tablet, and desktop. The right arrow disables at the end and the left arrow remains conditional on the current scroll position.
+
+## 2026-09-03T17:39:45Z
+
+- [web/tabs] Improved mobile tab discoverability without changing the tab strip's visual language. Overflowing tabs now use a hidden-scrollbar horizontal viewport, with a conditional right chevron that advances one item at a time and a left chevron that appears after scrolling back from the default position. The right control disables at the end, and the design contract was updated.
+
+## 2026-09-03T17:33:00Z
+
+- [web/settings] Standardized settings rows into three columns: equal `3rem` rounded setting and action squares on the left and right, with the shared setting title/summary/control body in the middle. Converted right-side settings actions to icon-only controls with accessible labels and moved privacy toggles into the middle content column. Updated the design contract and settings presentation rule.
+
+## 2026-09-03T17:20:29Z
+
+- [web/navigation] Moved Chat from the side drawer into the global header between Search and Notifications. The header Chat link routes to `/chats`, shows an accent dot when any conversation has unread messages using the existing four-second conversation polling loop, and the legacy `/chat` root now redirects to `/chats`. Added the `/chats` list route and synchronized the README, chat behavior contract, design contract, and active navigation rules.
+
 ## 2026-09-03T01:25:30Z
 
 - [infra/database] Production now uses its own temporary Neon database (`ep-restless-paper-b3szoet8`), while staging remains on the existing Neon database. The fresh production database migrated through `20260903_0023`; `alembic current`/`heads` matched and `alembic check` passed cleanly. Bidirectional test-row isolation and production `friink-prod-media` avatar/post-media PUT+GET verification passed; temporary test data was removed. Synchronized the README Stack, `RULES.md`, and `packages/design/design.md` with this environment boundary. Future production migration to the Droplet remains planned.
