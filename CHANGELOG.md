@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-03T01:25:30Z
+
+- [infra/database] Production now uses its own temporary Neon database (`ep-restless-paper-b3szoet8`), while staging remains on the existing Neon database. The fresh production database migrated through `20260903_0023`; `alembic current`/`heads` matched and `alembic check` passed cleanly. Bidirectional test-row isolation and production `friink-prod-media` avatar/post-media PUT+GET verification passed; temporary test data was removed. Future production migration to the Droplet remains planned.
+
 ## 2026-09-03T00:35:45Z
 
 - [media/profile-picture] New profile-picture uploads now save an environment-neutral object key and derive the public URL from `R2_PUBLIC_URL` at response time. Existing legacy URL rows were not migrated. Migration `20260903_0023` and focused regression coverage passed; the shared DB/separate-bucket staging-vs-production conflict remains open.

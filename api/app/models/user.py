@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, Index, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,11 +10,12 @@ from app.db import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (Index("uq_users_username_key", "username_key", unique=True),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
-    username: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
-    username_key: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    username: Mapped[str] = mapped_column(String(64), nullable=False)
+    username_key: Mapped[str] = mapped_column(String(64), nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     about: Mapped[str | None] = mapped_column(String(256), nullable=True)
     profile_picture_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)

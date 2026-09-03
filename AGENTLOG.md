@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-03T01:25:30Z — Production database split and media E2E checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move production onto its own Neon database, keep staging on the existing database, migrate production from empty, verify schema/isolation/media, and document the topology.
+- Changes Made: Updated local `api/.env.production` to the new production Neon endpoint; aligned ORM index/constraint metadata with the existing Alembic migrations so a fresh database passes `alembic check`; updated the README Stack/deployment sections. No bucket/environment identifier column was added.
+- Database Evidence: Before migration, production `alembic current` returned no revision. `python -m alembic upgrade head` applied the complete chain through `20260903_0023`. Afterward, `alembic current` and `alembic heads` both returned `20260903_0023 (head)`, and `alembic check` returned `No new upgrade operations detected.`
+- Isolation Evidence: A temporary production user/post was found in production with counts `1/1` and in staging with counts `0/0`; a temporary staging user/post was found in staging with counts `1/1` and in production with counts `0/0`. Both test pairs were removed after verification.
+- Media Evidence: With `R2_BUCKET_NAME=friink-prod-media` and `R2_PUBLIC_URL=https://media.friink.com`, avatar PUT returned `200`, post-media PUT returned `200`, avatar GET returned `200 image/jpeg 33`, post-media GET returned `200 image/jpeg 37`, and production DB persistence returned `db_user_count=1` and `db_media_count=1`. Temporary rows and objects were cleaned up.
+- Files: `api/app/models/auth_session.py`, `api/app/models/chat.py`, `api/app/models/connection.py`, `api/app/models/otp.py`, `api/app/models/post.py`, `api/app/models/refresh_token.py`, `api/app/models/user.py`, `api/.env.production`, `README.md`.
+- Notes: `api/.env.production` is tracked by Git despite the `.env.*` ignore rule; it must not be committed or pushed because it contains the production database credential. Vercel production must be redeployed with the same new connection string. Staging's connection was not changed.
+- Verification Status: Production database split, fresh migration chain, clean Alembic check, bidirectional DB isolation, and production R2 upload/read integration passed. Neon CLI browser authentication remained unavailable, so the database was verified using the supplied connection string rather than `neon link/deploy`.
+
 ## 2026-09-03T00:35:45Z — MVP profile-picture key storage checkpoint
 
 - Agent: Codex
