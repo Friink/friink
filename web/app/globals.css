@@ -1582,6 +1582,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .topbar-search,
+.topbar-chat,
 .topbar-bell {
   display: inline-grid;
   place-items: center;
@@ -1596,6 +1597,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .topbar-search i,
+.topbar-chat i,
 .topbar-bell i {
   display: block;
   width: 1rem;
@@ -1747,6 +1749,29 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .topbar-bell {
   position: relative;
   margin-right: 0;
+}
+
+.topbar-chat {
+  position: relative;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.topbar-chat:hover,
+.topbar-chat:focus-visible {
+  color: var(--color-accent);
+  outline: none;
+}
+
+.topbar-chat-dot {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border: 2px solid var(--color-chrome);
+  border-radius: 50%;
+  background: var(--color-accent);
 }
 
 .topbar-notification-wrap {

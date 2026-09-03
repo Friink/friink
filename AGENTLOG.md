@@ -6225,3 +6225,32 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Read-only staging checks confirmed `AdMiN` and `SECURITY` are unavailable through `GET /auth/username-availability`, and an embedded-space username returns `422` with the documented syntax error.
 - All three responses included the exact staging CORS origin, credentials, and `Vary: Origin` headers.
 - This verifies deployed reserved-name and syntax behavior only; signup/change race coverage, email privacy with a known existing account, OTP completion, and the overall Phase 2 gate remain open.
+## 2026-09-03T17:20:29Z — Move Chat navigation into the global header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read the project documentation and move the Chat icon from the side drawer into the header between Search and Notifications, with an unread-message dot and `/chats` navigation.
+- Changes Made:
+  - Removed Chat from `sidebarNavItems` so the SideDrawer no longer renders the Chat destination.
+  - Added an accessible `/chats` anchor to the Header between Search and Notifications using the existing envelope icon.
+  - Reused the shell's visibility-aware four-second `GET /chat/conversations` sync to set the header dot from server-authoritative `unread_count` values.
+  - Added the `/chats` route, changed the shell Chat destination to `/chats`, and kept `/chat` as a compatibility redirect.
+  - Updated the design contract, README, active rules, and changelog.
+  - Updated `docs/chat-behavior.md` to record the `/chats` list route and Header unread-dot behavior.
+- Files:
+  - `web/components/header.tsx`
+  - `web/components/app-shell.tsx`
+  - `web/components/side-drawer.tsx`
+  - `web/lib/data.ts`
+  - `web/app/globals.css`
+  - `web/app/chats/page.tsx`
+  - `web/app/chats/layout.tsx`
+  - `web/app/chat/page.tsx`
+  - `packages/design/design.md`
+  - `README.md`
+  - `RULES.md`
+  - `CHANGELOG.md`
+  - `docs/chat-behavior.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Chat is a global utility alongside Search and Notifications, while its unread indicator should reflect actual conversation unread counts rather than the broader notification count. The existing shell conversation sync provided the smallest shared state change and preserves delivery synchronization.
+- Verification: Targeted source inspection, `npm exec tsc -- --noEmit --incremental false` in `web`, and `git diff --check` passed.

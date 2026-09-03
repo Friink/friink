@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-03T17:20:29Z
+
+- [web/navigation] Moved Chat from the side drawer into the global header between Search and Notifications. The header Chat link routes to `/chats`, shows an accent dot when any conversation has unread messages using the existing four-second conversation polling loop, and the legacy `/chat` root now redirects to `/chats`. Added the `/chats` list route and synchronized the README, chat behavior contract, design contract, and active navigation rules.
+
 ## 2026-09-03T01:25:30Z
 
 - [infra/database] Production now uses its own temporary Neon database (`ep-restless-paper-b3szoet8`), while staging remains on the existing Neon database. The fresh production database migrated through `20260903_0023`; `alembic current`/`heads` matched and `alembic check` passed cleanly. Bidirectional test-row isolation and production `friink-prod-media` avatar/post-media PUT+GET verification passed; temporary test data was removed. Synchronized the README Stack, `RULES.md`, and `packages/design/design.md` with this environment boundary. Future production migration to the Droplet remains planned.

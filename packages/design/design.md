@@ -10,7 +10,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 
 - **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
 - **Top Headers**:
-  - Desktop uses the top `Header` (`4rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, and Notifications bell (`/notifications`).
+  - Desktop uses the top `Header` (`4rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, Chat link (`/chats`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines. The direct chat route also uses this shared surface for its message composer and keeps it visible while changing enabled state and placeholder according to the chat policy contract.
 - **Profile Composer Rule**: The shared floating composer is not rendered on profile pages. Profile pages remain focused on identity, profile actions, and profile content; the app-wide post composer remains available on feed and other explicitly supported surfaces.
@@ -44,20 +44,20 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Profile (`fa-user` → `/[username]`)
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
-   - Chat (`fa-envelope` → `/chat` — labeled "Chat", route `/chat`)
    - Starred (`fa-star` → `/starred`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
+   - Chat (`fa-envelope` → `/chats`) sits between Search and Notifications and shows a green dot when any conversation has unread messages; activating it opens the Chat list.
   - Notifications (`fa-bell`) opens a floating recent-notifications dropdown with up to four items, a green unread indicator on the bell, an unread-count pill, and an `All Notifications` link to `/notifications`.
-  - Notification freshness: the unread count uses a 4-second adaptive polling transport that pauses while the document is hidden and resumes on focus/visibility recovery; the full notification list refreshes while `/notifications` is open.
+  - Freshness: the Chat unread dot and notification unread count use 4-second adaptive polling that pauses while the document is hidden and resumes on focus/visibility recovery; the full notification list refreshes while `/notifications` is open.
 
 ### Tab URL Contract
 
 - Every tab is addressable by its own path segment so tabs can be bookmarked, refreshed, and navigated with browser history.
 - Home uses `/home/explore` and `/home/connections`.
 - Connections uses `/connections/all`, `/connections/followers`, `/connections/following`, and `/connections/requests`; another user's directory uses `/{username}/connections/{tab}`.
-- Chat uses `/chat/all`, `/chat/muted`, and `/chat/requests`; conversation routes use `/{username}/chat`.
+- Chat list opens at `/chats`; its filter tabs remain addressable at `/chat/all`, `/chat/muted`, `/chat/requests`, and `/chat/archived`; conversation routes use `/{username}/chat`. The legacy `/chat` root redirects to `/chats`.
 - Chat read receipts use single/double tick states, a 4-second visible-app inbox sync, a numeric unread pill in conversation rows, and an `Unread messages` separator before the first unread message. Inbox sync marks discovered messages delivered; viewport scrolling marks messages read. Consecutive chat bubbles retain the shared 4px rhythm.
 - The `/chat` conversation list refreshes its server-authoritative previews, ordering, unread pills, and row state every 4 seconds while visible; hidden documents pause polling and focus/visibility recovery resumes it immediately.
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
@@ -302,7 +302,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Desktop `Header`**:
   - Fixed top bar (`height: 4rem`, `--space-topbar-height`).
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
-  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search submit icon before the close (`fa-xmark`) button. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown uses the shared `ContextualDropdown`, appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, shows up to four rows, and includes an `Open Search` link to `/search`; it stays naturally sized without a scrollbar when four or fewer rows are present.
+  - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search submit icon before the close (`fa-xmark`) button. Chat link (`fa-envelope`) sits between Search and Notifications, routes to `/chats`, and shows a green dot whenever any conversation has an unread message. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown uses the shared `ContextualDropdown`, appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, shows up to four rows, and includes an `Open Search` link to `/search`; it stays naturally sized without a scrollbar when four or fewer rows are present.
   - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.
   - Notifications bell button (`fa-bell`) matches search icon height, stays aligned at the right edge of the header actions, and opens a floating dropdown anchored to the bell. The dropdown shows up to four recent notifications, an `x new` pill using the actual unread count (`99+` when above 99), and an `All Notifications` link to `/notifications`. The bell shows a small green dot only when unread notifications exist; the dot is hidden at `0`. Header spacing must reserve room so the indicator is not clipped at the viewport edge.
   - Both header dropdowns use the shared `ContextualDropdown`, including the same bordered footer-bar treatment for `Open Search` and `All Notifications`, and render a centered `Nothing to show.` empty state with whitespace when their item list is empty.
@@ -319,7 +319,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`).
-  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Chat (`fa-envelope`), Starred (`fa-star`). Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
+  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Starred (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
   3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`).
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
