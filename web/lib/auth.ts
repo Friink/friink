@@ -43,6 +43,8 @@ let refreshPromise: Promise<AuthSession> | null = null;
 let authSessionGeneration = 0;
 const tabId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 let coordinationListenerInstalled = false;
+let inMemoryAuthSession: AuthSession | null = null;
+let authBroadcastChannel: BroadcastChannel | null = null;
 
 type ApiUser = {
   id: string;
@@ -69,6 +71,10 @@ type ApiPublicUser = {
   profile_picture_updated_at: string | null;
   is_private: boolean;
 };
+
+export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string };
+export type BlockedUserPage = { items: BlockedUser[]; next_cursor: string | null };
+type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null; blocked_at: string }>; next_cursor: string | null };
 
 type ApiTokenResponse = {
   access_token: string;
@@ -172,44 +178,30 @@ export async function checkUsernameAvailability(username: string): Promise<{ use
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  inMemoryAuthSession = session;
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user: session.user }));
+  authBroadcastChannel?.postMessage({ type: 'session-updated', session });
 }
 
 export function loadAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
   installAuthCoordinationListener();
-
-  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-  if (!raw) return null;
-
-  try {
-    const session = JSON.parse(raw) as Partial<AuthSession>;
-    return isStoredAuthSession(session) ? session : null;
-  } catch {
-    return null;
-  }
+  return inMemoryAuthSession;
 }
 
 export function loadPersistedAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
   installAuthCoordinationListener();
-
-  const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-  if (!raw) return null;
-
-  try {
-    const session = JSON.parse(raw) as Partial<AuthSession>;
-    return isStoredAuthSession(session) && session.user.email !== DEFAULT_DEMO_EMAIL ? session : null;
-  } catch {
-    return null;
-  }
+  return inMemoryAuthSession?.user.email !== DEFAULT_DEMO_EMAIL ? inMemoryAuthSession : null;
 }
 
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
   authSessionGeneration += 1;
+  inMemoryAuthSession = null;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
+  authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
@@ -243,9 +235,22 @@ type RefreshCoordinationState = {
 function installAuthCoordinationListener() {
   if (typeof window === 'undefined' || coordinationListenerInstalled) return;
   coordinationListenerInstalled = true;
+  if (typeof BroadcastChannel !== 'undefined') {
+    authBroadcastChannel = new BroadcastChannel('friink-auth-session');
+    authBroadcastChannel.addEventListener('message', (event: MessageEvent) => {
+      const message = event.data as { type?: string; session?: Partial<AuthSession> } | null;
+      if (message?.type === 'session-cleared') {
+        authSessionGeneration += 1;
+        inMemoryAuthSession = null;
+      } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
+        inMemoryAuthSession = message.session;
+      }
+    });
+  }
   window.addEventListener('storage', (event) => {
     if (event.key === AUTH_SESSION_KEY && event.newValue === null) {
       authSessionGeneration += 1;
+      inMemoryAuthSession = null;
     }
   });
 }
@@ -311,7 +316,7 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
     }
 
     try {
-      const session = await performRefresh(generation);
+      const session = await performRefresh(generation, operationId);
       publishRefreshCoordination({
         ...started,
         status: 'succeeded',
@@ -320,7 +325,7 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
       return session;
     } catch (error) {
       const refreshError = error instanceof AuthApiError ? error : new AuthApiError(error instanceof Error ? error.message : 'Refresh failed.', 0);
-      if (isExplicitUnauthorized(refreshError)) {
+      if (isTerminalRefreshFailure(refreshError)) {
         clearAuthSession();
       }
       publishRefreshCoordination({
@@ -334,7 +339,7 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
   }
 }
 
-async function performRefresh(generation: number): Promise<AuthSession> {
+async function performRefresh(generation: number, operationId: string): Promise<AuthSession> {
   const currentSession = loadPersistedAuthSession();
   const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
     method: 'POST',
@@ -357,6 +362,7 @@ async function performRefresh(generation: number): Promise<AuthSession> {
       tokenType: 'Bearer',
     };
     saveAuthSession(nextSession);
+    authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
     return nextSession;
   }
 
@@ -375,6 +381,7 @@ async function performRefresh(generation: number): Promise<AuthSession> {
     user: mapApiUser(restoredUser),
   };
   saveAuthSession(restoredSession);
+  authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
   return restoredSession;
 }
 
@@ -490,9 +497,10 @@ export async function updateProfileSetup(accessToken: string, input: { step: 1 |
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
+export async function getPublicUser(username: string, accessToken?: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
   });
 
   return {
@@ -504,6 +512,21 @@ export async function getPublicUser(username: string): Promise<Pick<AuthUser, 'i
     profilePictureUrl: response.profile_picture_url,
     profilePictureUpdatedAt: response.profile_picture_updated_at,
   };
+}
+
+export async function blockUser(accessToken: string, username: string): Promise<void> {
+  await requestApi(`/users/${encodeURIComponent(username)}/block`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+}
+
+export async function unblockUser(accessToken: string, username: string): Promise<void> {
+  await requestApi(`/users/${encodeURIComponent(username)}/block`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+}
+
+export async function listBlockedUsers(accessToken: string, query = '', cursor?: string | null): Promise<BlockedUserPage> {
+  const params = new URLSearchParams({ query, limit: '24' });
+  if (cursor) params.set('cursor', cursor);
+  const response = await requestApi<ApiBlockedUserPage>(`/users/blocked?${params.toString()}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  return { items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url, blockedAt: item.blocked_at })), next_cursor: response.next_cursor };
 }
 
 export type ProfilePictureUpload = {
@@ -1354,8 +1377,13 @@ function isStoredAuthSession(session: Partial<AuthSession>): session is AuthSess
   );
 }
 
-function isExplicitUnauthorized(error: unknown): error is AuthApiError {
-  return error instanceof AuthApiError && error.status === 401;
+export function isTerminalRefreshFailure(error: unknown): error is AuthApiError {
+  return error instanceof AuthApiError && error.status === 401 && (
+    error.code === 'TOKEN_EXPIRED' ||
+    error.code === 'SESSION_NOT_FOUND' ||
+    error.code === 'REFRESH_TOKEN_MISSING' ||
+    error.code === 'REFRESH_TOKEN_INVALID'
+  );
 }
 
 function withAuthorizationHeader(headers: HeadersInit | undefined, accessToken: string): HeadersInit {

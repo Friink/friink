@@ -3217,21 +3217,43 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   font: inherit;
 }
 
+.chat-bubble-row.mine + .chat-bubble-row.mine .chat-bubble {
+  border-top-right-radius: 0.25rem;
+}
+
 .chat-receipt {
+  position: relative;
   display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
   margin-left: 0.35rem;
-  letter-spacing: -0.12em;
-  font-size: 0.75rem;
+  border-radius: 50%;
+  background: var(--color-background);
+  vertical-align: -0.35rem;
+  color: var(--color-muted);
+  font-size: 0.7rem;
 }
 
 .chat-receipt-sent,
 .chat-receipt-delivered {
-  opacity: 0.55;
+  color: var(--color-muted);
 }
 
 .chat-receipt-read {
-  color: var(--color-paper);
+  color: var(--color-accent);
   opacity: 1;
+}
+
+.chat-receipt-mark {
+  position: absolute;
+  top: 50%;
+  left: 0.34rem;
+  transform: translateY(-50%);
+  line-height: 1;
+}
+
+.chat-receipt-mark-second {
+  left: 0.55rem;
 }
 
 .chat-unread-divider {

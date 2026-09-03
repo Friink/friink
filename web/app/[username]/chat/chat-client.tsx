@@ -193,7 +193,7 @@ export function ChatClient({ username }: ChatClientProps) {
               <div className={`chat-bubble-row ${message.sender_id === user.id ? 'mine' : ''}`} data-message-id={message.id}>
                 <div className="chat-bubble">
                   <p>{message.content}</p>
-                  <small>{formatRelativeTime(message.created_at)}{message.sender_id === user.id ? <span className={`chat-receipt chat-receipt-${getReceiptStatus(message)}`} aria-label={`${getReceiptStatus(message)} message`} title={`${getReceiptStatus(message)} message`}>{getReceiptStatus(message) === 'sent' ? '✓' : '✓✓'}</span> : null}</small>
+                  <small>{formatRelativeTime(message.created_at)}{message.sender_id === user.id ? <span className={`chat-receipt chat-receipt-${getReceiptStatus(message)}`} aria-label={`${getReceiptStatus(message)} message`} title={`${getReceiptStatus(message)} message`}><span className="chat-receipt-mark">✓</span>{getReceiptStatus(message) !== 'sent' ? <span className="chat-receipt-mark chat-receipt-mark-second">✓</span> : null}</span> : null}</small>
                 </div>
               </div>
             </Fragment>

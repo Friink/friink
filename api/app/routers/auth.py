@@ -1,4 +1,5 @@
 import uuid
+import secrets
 from datetime import timedelta
 
 from datetime import UTC, datetime
@@ -22,20 +23,24 @@ from app.schemas.auth import (
     RefreshResponse,
     AuthSessionResponse,
     SignupRequest,
+    SignupStartResponse,
+    SignupVerifyRequest,
     TokenResponse,
     UpdateSetupRequest,
     UpdateCurrentUserRequest,
     UsernameAvailabilityResponse,
     UserResponse,
 )
-from app.services.auth import authenticate_user, change_password, create_user, get_user_by_username, is_username_available, update_current_user, user_id_from_subject
+from app.services.auth import authenticate_user, change_password, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_reservation, update_current_user, user_id_from_subject
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailService
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
 from app.services.session_service import (
+    DEVICE_COOKIE_NAME,
     create_auth_session,
+    get_or_create_recognized_device,
     get_refresh_token,
     get_refresh_token_for_update,
     issue_refresh_token,
@@ -50,8 +55,24 @@ from app.services.storage import StorageNotConfiguredError, StorageObjectError, 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 REFRESH_COOKIE_NAME = "friink_refresh_token"
+
+
+def require_allowed_origin(request: Request, settings: Settings) -> None:
+    """Reject browser cross-site auth requests while allowing non-browser clients."""
+    origin = request.headers.get("origin")
+    if not origin:
+        return
+    allowed_origins = {
+        str(settings.frontend_url).rstrip("/"),
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://staging.friink.com",
+    }
+    if origin.rstrip("/") not in allowed_origins:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Request origin is not allowed.")
 
 
 def set_refresh_cookie(response: Response, token: str, settings: Settings) -> None:
@@ -67,8 +88,55 @@ def set_refresh_cookie(response: Response, token: str, settings: Settings) -> No
 
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(payload: SignupRequest, session: Session = Depends(get_session)) -> User:
+async def signup(
+    payload: SignupRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> User:
+    require_allowed_origin(request, settings)
     return await create_user(session, payload, EmailService())
+
+
+@router.post("/signup/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
+async def signup_start(
+    payload: SignupRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> SignupStartResponse:
+    require_allowed_origin(request, settings)
+    token = await start_signup_reservation(session, payload, EmailService()) if settings.signup_otp_enabled else secrets.token_urlsafe(32)
+    return SignupStartResponse(
+        verification_required=settings.signup_otp_enabled,
+        reservation_token=token,
+        message="If the signup details can be accepted, verification instructions will be sent.",
+    )
+
+
+def set_device_cookie(response: Response, token: str, settings: Settings) -> None:
+    response.set_cookie(
+        key=DEVICE_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=settings.environment.lower() not in {"development", "test"},
+        samesite="none" if settings.environment.lower() not in {"development", "test"} else "lax",
+        max_age=int(timedelta(days=365).total_seconds()),
+        path="/",
+    )
+
+
+@router.post("/signup/verify", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def signup_verify(
+    payload: SignupVerifyRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> User:
+    require_allowed_origin(request, settings)
+    if not settings.signup_otp_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup verification is not available.")
+    return await complete_signup_reservation(session, payload.reservation_token, payload.otp)
 
 
 @router.get("/username-availability", response_model=UsernameAvailabilityResponse)
@@ -95,9 +163,13 @@ async def login(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
+    require_allowed_origin(request, settings)
     user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
-    auth_session = create_auth_session(session, user.id, request)
+    recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
+        session, user.id, request, request.cookies.get(DEVICE_COOKIE_NAME)
+    )
+    auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
     await commit(session)
     log_token_issued(flow="fresh_login", token_type="access", token=access_token, user_id=str(user.id))
@@ -109,6 +181,7 @@ async def login(
         user_id=str(user.id),
     )
     set_refresh_cookie(response, issued_refresh.raw_token, settings)
+    set_device_cookie(response, device_identifier, settings)
     return TokenResponse(access_token=access_token, user=UserResponse.model_validate(user))
 
 
@@ -120,6 +193,7 @@ async def refresh(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> RefreshResponse:
+    require_allowed_origin(request, settings)
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -152,6 +226,37 @@ async def refresh(
 
     now = datetime.now(UTC)
     if token_record.rotated_at is not None or token_record.revoked_at is not None:
+        replacement = session.get(type(token_record), token_record.replaced_by_id) if token_record.replaced_by_id else None
+        grace_is_valid = (
+            token_record.rotated_at is not None
+            and token_record.revoked_at is None
+            and token_record.reuse_grace_used_at is None
+            and (now - token_record.rotated_at).total_seconds() <= settings.refresh_token_reuse_grace_seconds
+            and replacement is not None
+            and replacement.revoked_at is None
+            and replacement.expires_at > now
+        )
+        if grace_is_valid:
+            token_record.reuse_grace_used_at = now
+            user = session.get(User, token_record.user_id)
+            auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
+            if not user or (auth_session and auth_session.revoked_at is not None):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
+            if auth_session:
+                auth_session.last_active_at = now
+            issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
+            access_token = create_access_token(user.id)
+            await commit(session)
+            log_refresh_token_event(
+                event="auth_refresh_token_grace_replayed",
+                flow="refresh_exchange",
+                token_id=str(token_record.id),
+                family_id=str(token_record.family_id),
+                user_id=str(user.id),
+                reason="immediately_previous_token",
+            )
+            set_refresh_cookie(response, issued_refresh.raw_token, settings)
+            return RefreshResponse(access_token=access_token)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
         await commit(session)
         log_refresh_token_event(
@@ -217,11 +322,13 @@ async def refresh(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
+    request: Request,
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> Response:
+    require_allowed_origin(request, settings)
     if refresh_token:
         token_record = get_refresh_token_for_update(session, refresh_token)
         if token_record:
@@ -305,6 +412,16 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme), session: Session = Depends(get_session)) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = decode_token(token, "access")
+        return session.get(User, user_id_from_subject(str(payload.get("sub", ""))))
+    except TokenValidationError:
+        return None
+
+
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
@@ -373,10 +490,14 @@ async def revoke_other_sessions(
 
 
 @router.get("/users/{username}", response_model=PublicUserResponse)
-async def get_public_user(username: str, session: Session = Depends(get_session)) -> User:
+async def get_public_user(username: str, session: Session = Depends(get_session), current_user: User | None = Depends(get_optional_user)) -> User:
     user = await get_user_by_username(session, username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    if current_user and current_user.id != user.id:
+        from app.services.blocking import is_blocked
+        if is_blocked(session, current_user.id, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile unavailable.")
     return user
 
 

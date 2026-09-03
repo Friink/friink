@@ -1,6 +1,55 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-02 — Blocking/read-receipt intersection verification
+
+- **Task:** Document and verify blocked delivery behavior and pending-request count freezing.
+- **Result:** Blocked inbox sync/fetches preserve single-tick state; pending requests remain read-only while blocked and resume after unblock from the unchanged requester count, with the original eight-message cap intact.
+- **Verification:** Combined API end-to-end suite passed (3 tests), TypeScript check passed, production web build passed, and `git diff --check` passed.
+
+## 2026-09-02 — Visible inbox delivery synchronization
+
+- **Task:** Mark all incoming messages discovered by visible inbox synchronization as delivered, preserving viewport-based read receipts.
+- **Implementation:** Conversation-list API advances only `last_delivered_message_id`; the app shell runs the guarded four-second sync outside Chat, while Chat keeps its existing list polling. Hidden tabs pause and focus/visibility recovery resumes.
+- **Verification:** End-to-end chat request/read-receipt regression passed with inbox-sync delivery assertion; TypeScript check, production build, and `git diff --check` passed.
+
+## 2026-09-02 — Global delivery sync
+
+- **Task:** Mark every incoming message discovered by visible inbox synchronization as delivered while preserving viewport-based read state.
+- **Files:** `docs/chat-behavior.md`, `docs/read-receipts.md`, `api/app/services/chat.py`, `api/tests/test_chat_requests.py`, `web/components/app-shell.tsx`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`.
+- **Verification:** End-to-end chat request/read-receipt regression passed; TypeScript, production build, and diff checks passed.
+
+## 2026-09-02 — Chat receipt cosmetics
+
+- **Task:** Improve stacked outgoing bubble corners and read-receipt styling without changing chat behavior.
+- **Scope:** Shared chat CSS/receipt markup only; posts and receipt state logic unchanged.
+- **Verification:** Web TypeScript check and production build passed; `git diff --check` passed.
+
+## 2026-09-02 — Blocking verification follow-up
+
+- **Task:** Complete end-to-end verification and correct blocking defects.
+- **Result:** Fixed synchronous SQLAlchemy execution in block/unblock cleanup. Added `api/tests/test_blocking.py`.
+- **Tests:** Blocking integration flow passed (block, relationship removal, bilateral profile protection, blocked search, unblock without restoration). Existing `test_chat_requests.py` passed. Web TypeScript check passed. `git diff --check` passed.
+- **Build:** Production `next build` passed after retrying with the required process permissions.
+
+## 2026-09-02 — Blocking
+
+- **Task:** Document and implement user blocking.
+- **Scope:** `docs/blocking.md`; block/unblock API; transactional relationship cleanup; bilateral profile protection; profile confirmation; Privacy blocked list with database search and cursor loading; existing chat read-only enforcement.
+- **Verification:** Python compile/import passed; web TypeScript check passed. Full API tests require the API working directory/PYTHONPATH and a live test database; the attempted database-backed run did not complete cleanly in this environment.
+- **Notes:** No schema migration was needed because `user_blocks` already exists from chat infrastructure.
+
 DESIGN SYSTEM RULE: Before making any visual, UI, layout, spacing, or styling change, you MUST read packages/design/design.md in full — specifically the "Tokens" and "Component Contracts" sections. All rules, dimensions, alignments, and component variants documented there are binding and must be strictly adhered to without creating ad-hoc overrides.
+
+## 2026-09-02T22:47:13Z — Phase 2d device-recognition checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue Phase 2 in alphabetic chunks, documenting gaps; implement the next staging-only identity/session slice.
+- Changes Made: Added server-managed recognized-device records with hashed opaque identifiers, linked `auth_sessions.device_id`, a one-year HttpOnly device cookie, and login-time same-cookie reuse/new-cookie record creation. Added migration `20260903_0022`, model exports/Alembic metadata registration, and focused device coverage.
+- Files: `api/app/models/recognized_device.py`, `api/app/models/auth_session.py`, `api/app/models/__init__.py`, `api/app/services/session_service.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260903_0022_add_recognized_devices.py`, `api/alembic/env.py`, `api/tests/test_phase2_device.py`.
+- Reason: Establish the server-authoritative recognition substrate required by Phase 2d without trusting client claims, IP alone, or browser fingerprints alone.
+- Notes: The new/suspicious-login OTP/MFA challenge is not enabled; no email provider is configured. New devices therefore remain an explicit open risk-control gap and this is not a Phase 2 gate pass. No production systems were accessed.
+- Verification Status: `python -m alembic upgrade head` applied `20260903_0021 -> 20260903_0022` to the configured staging database. Focused suite `python -m pytest tests/test_phase2_device.py tests/test_phase2_signup.py tests/test_phase2_identity.py tests/test_otp_storage.py tests/test_lockout.py` returned `5 passed, 1 warning` in 30.52s. `python -m compileall -q app alembic` and `git diff --check` passed.
 
 Before modifying a file another agent recently touched (per this log or git history), briefly verify the current state of that file matches what the log describes — do not assume the log is authoritative over the actual code.
 
@@ -23,6 +72,61 @@ DATABASE MIGRATION RULE: After any backend change that adds, removes, or changes
 IMPORTANT: Do not add a `User` field to any entry. Entries should only include the date/time, agent, model, prompt summary, changes, files, reason, notes, and verification status.
 
 AUTH/SESSION CHANGE CONTROL: The authoritative session/refresh model recorded in `RULES.md` is the single source of truth. Auth and session logic must never be changed without explicit human approval. Any future prompt touching auth/session must reference that model and obtain sign-off before implementation, not after.
+
+## 2026-09-02T20:22:34Z — Align login OTP with persistent-session UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the conflict between mandatory OTP on every new login and the requested X/Instagram-like persistent login experience.
+- Changes Made: Replaced default OTP on every new login with risk-based OTP/MFA; retained mandatory signup email verification, four-minute OTPs for high-risk flows, and future user-enabled two-factor authentication. Added server-authoritative device-recognition requirements and updated Phase 2.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Preserve low-friction ordinary password login while challenging new or suspicious devices and sensitive actions.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only review; `git diff --check` pending.
+
+## 2026-09-02T20:16:12Z — Consolidate auth requirements and implementation phases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the previously implemented auth requirements, new OTP/lockout decisions, security safeguards, and the six approved implementation phases to the auth/session design.
+- Changes Made: Added signup/date-of-birth/location requirements, six-character four-minute signup/login OTP rules, incomplete-signup email reuse, progressive login cooldowns, access-token storage and CSRF requirements, durable outbox wording, and phase-specific verification gates for reliability, identity, notifications, user sessions, staff security, and operations.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Give a future implementation agent one complete, phased, auditable specification for rock-solid authentication and sessions.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only review; `git diff --check` pending.
+
+## 2026-09-02T19:48:53Z — Add mandatory auth/session acceptance evidence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Strengthen the auth/session design document so implementation cannot be declared complete without proving cookie, failure-classification, key-rotation, clock-skew, and login-race behavior.
+- Changes Made: Added explicit cookie/CORS/deployed-header requirements, literal frontend conditional and transient-failure evidence requirements, JWT `kid` overlap and clock-boundary tests, and duplicate-login race/idempotency evidence requirements.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Convert previously open spec statements into auditable acceptance criteria before implementation.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only diff review; `git diff --check` pending.
+
+## 2026-09-02T19:42:11Z — Clarify approved auth/session planning decisions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the reviewed conflicts between the current implementation and the proposed auth/session architecture.
+- Changes Made: Clarified that the target is a 30-day sliding idle session, added the terminal-versus-ambiguous refresh failure contract, and explicitly confirmed login security events/notifications, permanent identity history, and reserved usernames as in-scope planning work.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Make the intended user experience and remaining implementation scope unambiguous before any runtime changes.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed.
+- Verification Status: Documentation-only diff review; `git diff --check` pending.
+
+## 2026-09-02T19:20:54Z — Document proposed auth and session architecture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Consolidate the approved direction for authentication, ordinary sessions, identity history, OTP, security notifications, staff access, and administrative controls before implementation.
+- Changes Made: Added `docs/auth-and-session.md` with requirements, scope, non-negotiable rules, signup and identity-change flows, username reuse and public-ID URL behavior, persistent session model, session management, password handling, login notifications, four-minute OTP enrollment, staff roles/permissions, superadmin bootstrap, account locking, audit events, rate limits, risks, limitations, and rollout verification requirements.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`
+- Reason: Establish one reviewable design document before making any auth/session runtime changes.
+- Notes: No application code, schema, migration, deployment configuration, or database state was changed. The existing authoritative reactive refresh/session model remains in force until explicit implementation approval.
+- Verification Status: Documentation-only review; confirmed the current auth/session implementation and recent agent history before writing the proposal.
 
 ## 2026-09-02T13:30:00Z — Poll the chat conversation list
 
@@ -6042,3 +6146,58 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - `AGENTLOG.md`
 - Reason/Decision: Submission progress is already communicated by the disabled Post button, spinner, and accessible posting label. Replacing the editor placeholder is misleading, especially when the draft is intentionally empty for media-only and quote submissions.
 - Verification: Targeted source inspection, TypeScript check, and `git diff --check`.
+## 2026-09-03T21:00:00Z — Implement auth/session Phase 1 foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin the six-phase auth/session implementation exactly in order, with evidence gates.
+- Changes Made: Added bounded refresh replay grace and its migration/configuration; narrowed frontend terminal logout classification; moved access-token persistence to memory with cross-tab synchronization; enforced auth request origins; added Phase 1 contract coverage.
+- Files: `api/app/routers/auth.py`, `api/app/config.py`, `api/app/models/refresh_token.py`, `api/alembic/versions/20260902_0018_add_refresh_reuse_grace.py`, `api/tests/test_refresh_token_rotation.py`, `api/tests/test_phase1_contract.py`, `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, environment templates, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason/Decision: Preserve the X/Instagram-style persistent UX while distinguishing terminal session invalidation from transient/network failures and protecting rotation against lost-response races.
+- Verification: 10 focused API tests pass; `npm exec tsc -- --noEmit` passes; `npm run build` passes. Phase 1 remains open pending deployment migration and real successful-login `Set-Cookie` traces from staging (and production if required by the gate).
+## 2026-09-03T21:20:00Z — Phase 1 live verification attempt
+
+- Verification: Authorized staging login succeeded. Sanitized live `Set-Cookie`: `friink_refresh_token=[REDACTED]; HttpOnly; Max-Age=1209600; Path=/; SameSite=none; Secure`.
+- Verification: Staging refresh returned `200` with the same cookie attributes; first immediately-previous-token replay returned `200`; second replay returned `401`.
+- Verification: Staging CORS preflight returned `Access-Control-Allow-Origin: https://staging.friink.com`, `Access-Control-Allow-Credentials: true`, and the expected methods.
+- Finding: staging Vercel environment still supplies `REFRESH_TOKEN_EXPIRE_DAYS=14`; repository and Phase 1 requirement are 30 days (`Max-Age=2592000`). Phase 1 gate is not closed and no Phase 2 work has begun.
+## 2026-09-03T21:35:00Z — Phase 1 live verification after redeploy
+
+- Verification: Fresh staging login still emitted sanitized `Set-Cookie` attributes `HttpOnly; Max-Age=1209600; Path=/; SameSite=none; Secure`.
+- Verification: Login and refresh returned `200`; first old-token replay returned `200`; second replay returned `401`.
+- Finding: The redeployed runtime still uses the 14-day value. The Vercel variable was likely updated under a scope not used by the deployment attached to `staging-api.friink.com`.
+- Decision: Keep Phase 1 open; do not begin Phase 2 until the live cookie reports `Max-Age=2592000`.
+## 2026-09-03T22:00:00Z — Begin Auth/session Phase 2 identity foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue to Phase 2 after the staging-only Phase 1 gate passed.
+- Changes Made: Added canonical username keys with display casing, permanent identity history, reserved username table/seed, hashed OTP records with expiry/attempt limits, and progressive failed-login throttling.
+- Verification: Alembic migration `20260903_0019` and OTP migration `20260903_0020` applied locally; 14 focused API tests pass; compile check passes.
+- Scope note: Email provider/delivery remains intentionally unimplemented under the documented out-of-scope limitation. Signup privacy/OTP endpoint wiring is the next Phase 2 slice; Phase 2 gate is not closed.
+## 2026-09-03T22:30:00Z — Auth/session handoff for new session
+
+- Phase 1: staging-only gate passed. Live evidence is in `docs/Claude-audit-auth-and-session.md`; production verification is deferred until permanent Droplet/EC2 infrastructure exists.
+- Phase 2: active and incomplete. Implemented canonical username identity/display casing, reserved username seeding/enforcement, permanent email/username history models, progressive lockout schedule (3 failures/30 minutes, 4/1 hour, 5/24 hours), and hashed OTP records with four-minute expiry, single use, invalidation of older codes, and five-attempt limits.
+- Database: migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` applied locally.
+- Verification: Phase 2 foundation suite passed 15 tests; broader auth/session regression suite passed 23 tests. Web TypeScript/build checks from Phase 1 passed.
+- Next work: implement signup privacy/race handling, delivery-independent signup verification endpoints, email/username-change verification behavior, public UUID exposure review, and complete the Phase 2 staging gate.
+## 2026-09-03T22:27:14Z — Phase 2c signup reservation checkpoint
+
+- Prompt Summary: Resume the auth/session implementation from Phase 2 using staging only; verify Phase 1 before continuing.
+- Phase 1 status: staging-only gate confirmed closed from the live evidence in `docs/Claude-audit-auth-and-session.md`; production remains intentionally deferred.
+- Changes Made: Added delivery-independent signup reservation storage, opaque reservation tokens, hashed six-character alphanumeric signup OTPs, four-minute expiry/single-use/five-attempt enforcement, neutral signup-start responses, and verification-before-account-creation endpoints. Added migration `20260903_0021_add_signup_reservations` and the `SIGNUP_OTP_ENABLED` configuration flag, disabled by default until email delivery exists.
+- Verification: Migration applied to the staging database (`20260903_0021 (head)`); focused Phase 2 signup/identity/OTP/lockout/validation tests passed (10 tests); full `api/tests` run reached 64 passed and 10 unrelated pre-existing `connections` fake-session failures; `python -m compileall` and `git diff --check` passed.
+- Staging evidence: CORS preflight and `/health/db` remain `200` on `staging-api.friink.com`; the new `/auth/signup/start` probe returns `404`, proving this working-tree slice has not been deployed to staging yet.
+- Decision: Phase 2 remains open. Do not append Phase 2 gate evidence or advance to Phase 3 until the staging deployment exposes the endpoint and the complete privacy/OTP/identity trace passes there.
+## 2026-09-03T22:37:14Z — Phase 2c staging deployment checkpoint
+
+- Staging deployment now exposes `POST /auth/signup/start` at `https://staging-api.friink.com`; the previous `404` deployment boundary is resolved.
+- Live evidence: `/health/db` returned `200` with `{"database":true}`; signup-start returned `202` with `verification_required:false`, neutral messaging, and an opaque reservation token; credentialed preflight returned `200` with `Access-Control-Allow-Origin: https://staging.friink.com`, credentials enabled, `Vary: Origin`, and the expected methods.
+- Limitation: probes used disposable unrecognized emails. Existing-account comparison and OTP completion are not claimed because `SIGNUP_OTP_ENABLED=false` and no email provider is configured.
+- Decision: Phase 2 remains open; the detailed trace is recorded in `docs/Claude-audit-auth-and-session.md` and no Phase 2 verification gate has been marked passed.
+## 2026-09-03T22:38:30Z — Phase 2 identity-rule staging checkpoint
+
+- Read-only staging checks confirmed `AdMiN` and `SECURITY` are unavailable through `GET /auth/username-availability`, and an embedded-space username returns `422` with the documented syntax error.
+- All three responses included the exact staging CORS origin, credentials, and `Vary: Origin` headers.
+- This verifies deployed reserved-name and syntax behavior only; signup/change race coverage, email privacy with a known existing account, OTP completion, and the overall Phase 2 gate remain open.

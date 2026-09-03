@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-09-02T22:47:13Z
+
+- [auth/phase2d] Added the staging-database/server substrate for recognized devices: hashed opaque device identifiers, auth-session linkage, and a protected one-year HttpOnly device cookie. Same-cookie login reuse and new-cookie rotation are covered by a focused test. The risk-based OTP/MFA challenge for new or suspicious devices remains open because delivery is disabled; Phase 2 is not closed.
+
+## 2026-09-03T22:37:14Z
+
+- [verification/phase2c] Confirmed the new signup-start endpoint is deployed on staging. `/health/db` returned `200`; signup-start returned `202` with `verification_required:false`; and credentialed staging CORS preflight returned the expected origin, credentials, methods, and `Vary: Origin`. OTP completion and existing-email comparison remain unverified because delivery is disabled.
+
+## 2026-09-03T22:38:30Z
+
+- [verification/phase2a-b] Confirmed staging reserved-name enforcement for `AdMiN` and `SECURITY`, plus syntax rejection for usernames containing spaces. The Phase 2 gate remains open.
+
+## 2026-09-03T22:27:14Z
+
+- [auth/phase2c] Added delivery-independent signup reservations, opaque reservation tokens, hashed six-character alphanumeric OTPs with four-minute expiry/single-use/five-attempt limits, neutral signup-start responses, verification-before-account-creation endpoints, migration `20260903_0021`, and the disabled-by-default `SIGNUP_OTP_ENABLED` flag. Phase 2 remains open pending staging deployment, email delivery integration, and the full staging verification trace.
+
+## 2026-09-02T20:22:34Z
+
+- [docs/auth-session] Replaced mandatory OTP on every new login with risk-based OTP/MFA, preserving ordinary password login and persistent sessions. Added a server-authoritative device-recognition model for new/suspicious-login challenges and updated Phase 2 accordingly. No runtime behavior was changed.
+
+## 2026-09-02T20:16:12Z
+
+- [docs/auth-session] Incorporated the prior signup/login requirements and decisions: six-character four-minute OTPs, fresh OTP on every new login, immediate reuse of incomplete signup emails, progressive login cooldowns, in-memory access-token preference, CSRF protection, durable outbox requirement, and six phased implementation/verification gates. No runtime behavior was changed.
+
+## 2026-09-02T19:48:53Z
+
+- [docs/auth-session] Converted cookie behavior, frontend failure classification, JWT rotation/clock skew, and duplicate-login races into mandatory implementation evidence and acceptance checks. No runtime behavior was changed.
+
+## 2026-09-02T19:42:11Z
+
+- [docs/auth-session] Clarified the approved planning decisions in `docs/auth-and-session.md`: persistent sessions use a 30-day sliding idle target, refresh failures must distinguish terminal invalid-session results from ambiguous failures, and login security events/notifications plus identity history and reserved usernames are explicitly in scope. No runtime behavior was changed.
+
+## 2026-09-02T19:20:54Z
+
+- [docs/auth-session] Added `docs/auth-and-session.md`, consolidating the proposed authentication and session architecture: privacy-preserving signup/email verification, cosmetic username casing and history, reserved usernames, durable sessions, login security notifications, OTP device enrollment, staff roles and permissions, superadmin bootstrap, account locking, audit events, rate limits, risks, limitations, and rollout requirements. No runtime behavior was changed.
+
+## 2026-09-02
+
+- [chat] Added explicit blocked-receipt and pending-request intersection behavior: blocked conversations do not advance delivery ticks, and blocking freezes a pending requester’s existing eight-message count without resetting or extending it after unblock.
+
+- [chat] Added visible-app inbox delivery synchronization: every incoming message discovered by the 4-second conversation sync is marked delivered, while viewport scrolling remains the only read trigger.
+
+- [web/chat] Refined stacked outgoing bubble corners and receipt tick presentation with overlapping ticks, circular theme-aware backgrounds, and light/dark read-state contrast.
+
+## 2026-09-02
+
+- [blocking] Added bilateral block/unblock APIs, transactional follow cleanup, blocked-profile protection, profile block confirmation, and Privacy blocked-people search/list UI.
+- [blocking] Verified the blocking flow end to end and corrected synchronous database cleanup execution.
+
 ## 2026-09-02
 
 - [web/chat] Added visibility-aware 4-second polling to the `/chat` conversation list so previews, ordering, unread pills, and row state stay current across tabs and devices.
@@ -1419,3 +1468,34 @@ _Last updated: 2026-09-01_
 - [web] Extracted the profile-picture crop dialog into a reusable global `Modal` with a top-right close cross and bottom action ribbon, placing Cancel beside the upload tick.
 - [web] Corrected Privacy settings layout by moving all two-state controls into the right action rail, adding left-On/right-Off segmented toggles, and top-aligning ticks with the leading icons.
 - [web] Replaced the profile-picture picker’s text Upload button with an accessible upload icon button.
+## 2026-09-03 — Auth/session Phase 1 implementation in progress
+
+- Added a 60-second, one-use refresh-token grace path for the immediately previous token, preserving family revocation for repeated or stale replay.
+- Added the refresh-token grace migration and configured the 30-day refresh lifetime/grace settings in environment templates.
+- Changed web access-token handling to memory-only storage, retained cross-tab coordination, and limited automatic logout to coded terminal refresh failures.
+- Added auth-origin protection and Phase 1 contract tests for cookie attributes, origin policy, rotation grace, and token resilience.
+- Verification: API Phase 1 contract, refresh-rotation, and token-resilience tests pass (10 tests); web TypeScript check and production build pass. Live staging success-login headers remain required before the Phase 1 gate can close.
+### Phase 1 live verification attempt
+
+- Staging login and refresh succeeded with the authorized test account.
+- Live headers showed `HttpOnly; Max-Age=1209600; Path=/; SameSite=none; Secure` on login, refresh, and the one-use replay-grace response.
+- The required 30-day value is `Max-Age=2592000`; staging is still configured for 14 days, so the Phase 1 gate remains open until the Vercel staging environment variable is updated and redeployed.
+- Rotation behavior passed live: first old-token replay returned `200`; second replay returned `401`.
+### Phase 1 live verification follow-up
+
+- After the staging API redeploy, a fresh live login still returned `Max-Age=1209600` (14 days), proving the running deployment has not received the required 30-day environment value.
+- Rotation and replay-grace behavior continued to pass: login `200`, refresh `200`, first old-token replay `200`, second old-token replay `401`.
+- Phase 1 remains gated pending correction of the Vercel environment scope used by `staging-api.friink.com`.
+## 2026-09-03 — Auth/session Phase 2 identity foundation in progress
+
+- Added canonical `username_key` storage while preserving display casing.
+- Added permanent email and username history tables and database-backed reserved usernames.
+- Added hashed, single-use OTP storage with four-minute expiry and five-attempt limits for future delivery-backed flows.
+- Added progressive failed-login throttling: third failure 30 minutes, fourth 1 hour, fifth 24 hours.
+- Verification: Phase 2 foundation migration applied; 14 focused tests pass. Email delivery and user-facing signup OTP remain pending because no provider is integrated.
+## 2026-09-03 — Auth/session Phase 2 implementation handoff
+
+- Confirmed Phase 1 staging gate completion using the live 30-day refresh-cookie, CORS, rotation, and one-use replay-grace evidence recorded in `docs/Claude-audit-auth-and-session.md`.
+- Began Phase 2 identity work: canonical case-insensitive username keys with preserved display casing, reserved usernames, permanent identity history, progressive failed-login throttling, and hashed OTP storage with four-minute expiry/five-attempt limits.
+- Applied migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` locally.
+- Added and passed Phase 2 foundation tests; signup privacy, delivery-independent OTP endpoint wiring, email/username-change verification, UUID exposure review, and the Phase 2 verification gate remain outstanding.

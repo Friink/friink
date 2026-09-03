@@ -76,7 +76,11 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
         old_client = TestClient(app)
         old_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
         reused = old_client.post("/auth/refresh")
-        assert reused.status_code == 401, reused.text
+        assert reused.status_code == 200, reused.text
+        repeated_client = TestClient(app)
+        repeated_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
+        repeated_reuse = repeated_client.post("/auth/refresh")
+        assert repeated_reuse.status_code == 401, repeated_reuse.text
         family_rows = [row for row in _rows(user_id) if row.family_id == first_family]
         assert family_rows and all(row.revoked_at is not None for row in family_rows)
 

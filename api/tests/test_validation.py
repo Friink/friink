@@ -15,7 +15,7 @@ def test_password_requires_complexity() -> None:
 
 
 def test_username_allows_documented_characters_only() -> None:
-    assert validate_username_rules("Friink.User-1_ok") == "friink.user-1_ok"
+    assert validate_username_rules("Friink.User-1_ok") == "Friink.User-1_ok"
     with pytest.raises(ValueError):
         validate_username_rules("friink user")
     with pytest.raises(ValueError):

@@ -58,12 +58,16 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Home uses `/home/explore` and `/home/connections`.
 - Connections uses `/connections/all`, `/connections/followers`, `/connections/following`, and `/connections/requests`; another user's directory uses `/{username}/connections/{tab}`.
 - Chat uses `/chat/all`, `/chat/muted`, and `/chat/requests`; conversation routes use `/{username}/chat`.
-- Chat read receipts use single/double tick states, a 4-second polling refresh, a numeric unread pill in conversation rows, and an `Unread messages` separator before the first unread message. Consecutive chat bubbles retain the shared 4px rhythm.
+- Chat read receipts use single/double tick states, a 4-second visible-app inbox sync, a numeric unread pill in conversation rows, and an `Unread messages` separator before the first unread message. Inbox sync marks discovered messages delivered; viewport scrolling marks messages read. Consecutive chat bubbles retain the shared 4px rhythm.
 - The `/chat` conversation list refreshes its server-authoritative previews, ordering, unread pills, and row state every 4 seconds while visible; hidden documents pause polling and focus/visibility recovery resumes it immediately.
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
+
+### Chat receipt presentation
+- Receipt ticks use a circular theme-surface badge. Sent/delivered ticks use theme muted gray; read ticks use the accent. Consecutive outgoing bubbles reduce the joining top-right radius to the same 4px lower-right radius.
+- The visible app inbox sync may change a message to delivered; opening and scrolling through the conversation changes messages to read. The UI keeps these states distinct.
 
 ## Feed Behavior
 
@@ -434,3 +438,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - Post media currently uses the fixed 3:5 crop flow described above. Final crop width, height, and aspect ratio are not persisted in the database; freeform crop bounds and first-image carousel-ratio locking are not implemented.
 - The logged-in app has no known design-contract violations in the current working tree. Deployment configuration, R2 health, and end-to-end browser verification remain release checks outside this design contract.
 
+- ### Blocking surfaces
+- Profile overflow uses the shared `ActionMenu` and `Modal` for block confirmation.
+- Privacy > Blocked people uses the shared `Modal`, `ListRow`, and `ProfileCard`; search is API-backed and loading uses an opaque cursor.
+- A blocked profile, including a direct URL, renders the neutral `Profile unavailable.` state. Existing chats remain visible but read-only.

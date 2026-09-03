@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db import get_session
@@ -22,6 +22,7 @@ from app.services.connections import (
     send_follow_request,
     serialize_follow_request,
 )
+from app.services.blocking import is_blocked
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 
@@ -32,6 +33,8 @@ async def send_request(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> FollowRequestResponse:
+    if payload.recipient_id and is_blocked(session, current_user.id, payload.recipient_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This user is unavailable.")
     return serialize_follow_request(await send_follow_request(session, current_user, payload))
 
 

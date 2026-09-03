@@ -61,6 +61,11 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         assert recipient_context.json()["conversation"]["status"] == "pending"
         assert recipient_context.json()["composer_placeholder"] == "Reply to accept."
 
+        inbox_sync = client.get("/chat/conversations", headers=recipient_headers)
+        assert inbox_sync.status_code == 200, inbox_sync.text
+        requester_after_inbox_sync = client.get(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers)
+        assert requester_after_inbox_sync.json()["items"][0]["receipt_status"] == "delivered"
+
         recipient_messages = client.get(f"/chat/conversations/{conversation_id}/messages", headers=recipient_headers)
         assert recipient_messages.status_code == 200, recipient_messages.text
         assert recipient_messages.json()["unread_count"] == 1
@@ -111,6 +116,10 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         blocked_receipts = client.get(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers)
         assert blocked_receipts.status_code == 200, blocked_receipts.text
         assert blocked_receipts.json()["items"][0]["receipt_status"] == "sent"
+        blocked_inbox_sync = client.get("/chat/conversations", headers=requester_headers)
+        assert blocked_inbox_sync.status_code == 200, blocked_inbox_sync.text
+        blocked_after_sync = client.get(f"/chat/conversations/{conversation_id}/messages", headers=recipient_headers)
+        assert blocked_after_sync.json()["items"][0]["receipt_status"] == "sent"
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(user_ids)))

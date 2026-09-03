@@ -211,6 +211,24 @@ async def list_conversations(session: Session, user: User) -> ConversationListRe
         .where(or_(Conversation.user_one_id == user.id, Conversation.user_two_id == user.id))
         .order_by(Conversation.updated_at.desc())
     ).scalars().all()
+    changed = False
+    for conversation in conversations:
+        other = _participant(conversation, user.id)
+        if _is_blocked(session, user, other):
+            continue
+        incoming = [message for message in conversation.messages if message.sender_id != user.id]
+        if not incoming:
+            continue
+        setting = _get_setting(session, conversation.id, user.id)
+        if not setting:
+            setting = ConversationSetting(conversation_id=conversation.id, user_id=user.id)
+            session.add(setting)
+            changed = True
+        previous = setting.last_delivered_message_id
+        _advance_cursor(conversation, setting, "last_delivered_message_id", incoming[-1].id)
+        changed = changed or setting.last_delivered_message_id != previous
+    if changed:
+        await commit(session)
     return ConversationListResponse(items=[_conversation_response(session, conversation, user) for conversation in conversations])
 
 

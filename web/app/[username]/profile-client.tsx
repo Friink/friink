@@ -29,6 +29,8 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
 
   useEffect(() => {
     if (!user) return;
+    const session = loadAuthSession();
+    if (!session) return;
 
     let active = true;
     const profileHandle = username || user.username;
@@ -43,7 +45,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     }
 
     setProfileStatus('loading');
-    getPublicUser(profileHandle)
+    getPublicUser(profileHandle, session.accessToken)
       .then((publicUser) => {
         if (!active) return;
         setProfileUser({
@@ -119,7 +121,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     >
       {resolvedProfile ? undefined : (
         <section className="profile-unavailable" aria-live="polite">
-          <p>{profileUnavailable ? 'Does not exist or unavailable.' : 'Loading profile...'}</p>
+          <p>{profileUnavailable ? 'Profile unavailable.' : 'Loading profile...'}</p>
         </section>
       )}
     </AppShell>

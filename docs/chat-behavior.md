@@ -34,6 +34,9 @@ Conversation access state is independent from per-user presentation state:
   conversation appears in All Chats unless archived by the viewer.
 - `blocked`: an existing conversation is readable by both participants, but sending
   is rejected and the UI uses `Chat unavailable.`.
+- If a pending request is blocked, its requester message count is frozen and the
+  request remains read-only. Unblocking does not reset or extend the eight-message
+  limit; the request may resume from its existing count if it has not reached eight.
 
 There is intentionally no declined state. A receiver may mute a request instead of
 declining it, preserving the request and suppressing notifications. The receiver may
@@ -99,6 +102,9 @@ read behavior remain in use.
   and row state.
   Read receipt behavior and cursor persistence are specified separately in
   `docs/read-receipts.md`.
+- While the signed-in app is visible outside the Chat screen, the app shell runs
+  the same 4-second inbox sync. Every incoming message discovered across the
+  returned conversations is marked delivered; this sync never marks messages read.
 
 ## Out of scope and limitations
 
