@@ -350,9 +350,10 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Accessibility**: The gallery exposes its image count through an accessible label, and every image receives an author-specific position-aware alt description.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with animated sliding indicator line.
-- **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`). Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap.
+- **Layout**: Horizontal tab pill row (`.tabs__pill`, `role="tab"`) with sliding underline indicator (`.tabs__indicator`). Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap. The tab row scrolls horizontally when its items exceed the available width, with the scrollbar hidden to preserve the sleek strip appearance.
 - **Props Contract**: `tabs?: Tab[]`, `activeId?: string`, `onChange?: (id: string) => void`, `ariaLabel?: string`, `className?: string`.
-- **Mobile Swipe Rule**: On mobile widths, horizontal swipes on the tab strip move one tab at a time: right-to-left selects the next tab, left-to-right selects the previous tab. Vertical scroll gestures must not trigger tab changes.
+- **Mobile Overflow Controls**: When tabs overflow on mobile, a right chevron appears at the edge and scrolls the strip forward by one tab per activation; it remains visible but disabled at the end. A left chevron appears only after the strip has moved away from its initial position and scrolls back one tab per activation; it disappears at the initial position. The controls are conditional and do not appear when all tabs fit.
+- **Mobile Scroll Rule**: Touch and trackpad horizontal scrolling moves the tab strip itself without changing the selected tab. Vertical page scrolling remains available.
 
 ### 10. Form Inputs & Username Prefix Pattern (`InputField`, `account-screens.tsx`)
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.

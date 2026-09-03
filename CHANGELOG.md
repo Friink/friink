@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-03T17:39:45Z
+
+- [web/tabs] Improved mobile tab discoverability without changing the tab strip's visual language. Overflowing tabs now use a hidden-scrollbar horizontal viewport, with a conditional right chevron that advances one item at a time and a left chevron that appears after scrolling back from the default position. The right control disables at the end, and the design contract was updated.
+
 ## 2026-09-03T17:33:00Z
 
 - [web/settings] Standardized settings rows into three columns: equal `3rem` rounded setting and action squares on the left and right, with the shared setting title/summary/control body in the middle. Converted right-side settings actions to icon-only controls with accessible labels and moved privacy toggles into the middle content column. Updated the design contract and settings presentation rule.

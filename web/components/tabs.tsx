@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Tab = { id: string; label: string };
 
@@ -27,12 +27,13 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
   const active = activeId ?? internalActive;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const indicatorRef = useRef<HTMLDivElement | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+  const [scrollState, setScrollState] = useState({ hasOverflow: false, canScrollLeft: false, canScrollRight: false });
 
   useEffect(() => {
-    const update = () => {
+    const updateIndicator = () => {
       const container = containerRef.current;
       if (!container) return;
       const btn = container.querySelector<HTMLButtonElement>(`button[data-tab="${active}"]`);
@@ -48,9 +49,38 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
       });
     };
 
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    const updateScrollState = () => {
+      const viewport = scrollViewportRef.current;
+      if (!viewport) return;
+      const hasOverflow = viewport.scrollWidth > viewport.clientWidth + 1;
+      const nextState = {
+        hasOverflow,
+        canScrollLeft: viewport.scrollLeft > 1,
+        canScrollRight: viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1,
+      };
+      setScrollState((current) => current.hasOverflow === nextState.hasOverflow && current.canScrollLeft === nextState.canScrollLeft && current.canScrollRight === nextState.canScrollRight ? current : nextState);
+    };
+
+    const viewport = scrollViewportRef.current;
+    updateIndicator();
+    updateScrollState();
+    window.addEventListener('resize', updateIndicator);
+    viewport?.addEventListener('scroll', updateIndicator, { passive: true });
+    viewport?.addEventListener('scroll', updateScrollState, { passive: true });
+    const resizeObserver = typeof ResizeObserver === 'undefined' || !viewport
+      ? null
+      : new ResizeObserver(() => {
+          updateIndicator();
+          updateScrollState();
+        });
+    if (resizeObserver && viewport) resizeObserver.observe(viewport);
+
+    return () => {
+      window.removeEventListener('resize', updateIndicator);
+      viewport?.removeEventListener('scroll', updateIndicator);
+      viewport?.removeEventListener('scroll', updateScrollState);
+      resizeObserver?.disconnect();
+    };
   }, [active, tabsList]);
 
   const handleClick = (id: string) => {
@@ -58,60 +88,59 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
     else setInternalActive(id);
   };
 
-  const handleSwipeTab = (direction: 'next' | 'previous') => {
-    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) return;
+  const scrollOneTab = (direction: 'next' | 'previous') => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
 
-    const activeIndex = tabsList.findIndex((tab) => tab.id === active);
-    if (activeIndex === -1) return;
+    const buttons = Array.from(viewport.querySelectorAll<HTMLButtonElement>('button[data-tab]'));
+    const viewportRect = viewport.getBoundingClientRect();
+    const firstButton = buttons[0];
+    if (!firstButton) return;
 
-    const nextIndex = direction === 'next' ? activeIndex + 1 : activeIndex - 1;
-    const nextTab = tabsList[nextIndex];
-    if (!nextTab) return;
+    const firstButtonRect = firstButton.getBoundingClientRect();
+    const contentInset = firstButtonRect.left - viewportRect.left + viewport.scrollLeft;
+    const edge = viewportRect.left + contentInset;
+    const target = direction === 'next'
+      ? buttons.find((button) => button.getBoundingClientRect().left > edge + 1)
+      : [...buttons].reverse().find((button) => button.getBoundingClientRect().left < edge - 1);
+    if (!target) return;
 
-    handleClick(nextTab.id);
-  };
-
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    const touch = event.touches[0];
-    if (!touch) return;
-
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  };
-
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    const touch = event.changedTouches[0];
-    if (!start || !touch) return;
-
-    const deltaX = touch.clientX - start.x;
-    const deltaY = touch.clientY - start.y;
-    if (Math.abs(deltaX) < 48 || Math.abs(deltaY) > 40 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
-
-    handleSwipeTab(deltaX < 0 ? 'next' : 'previous');
+    const targetRect = target.getBoundingClientRect();
+    const targetScrollLeft = viewport.scrollLeft + targetRect.left - viewportRect.left - contentInset;
+    viewport.scrollTo({ left: Math.max(0, targetScrollLeft), behavior: 'smooth' });
   };
 
   return (
     <div
       className={`tabs ${className}`.trim()}
       ref={containerRef}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
-      <div className="tabs__inner" role="tablist" aria-label={ariaLabel}>
-        {tabsList.map((t) => (
-          <button
-            key={t.id}
-            data-tab={t.id}
-            className="tabs__pill"
-            role="tab"
-            aria-selected={active === t.id}
-            onClick={() => handleClick(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="tabs__viewport" ref={scrollViewportRef}>
+        <div className="tabs__inner" role="tablist" aria-label={ariaLabel}>
+          {tabsList.map((t) => (
+            <button
+              key={t.id}
+              data-tab={t.id}
+              className="tabs__pill"
+              role="tab"
+              aria-selected={active === t.id}
+              onClick={() => handleClick(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
+      {scrollState.hasOverflow && scrollState.canScrollLeft ? (
+        <button className="tabs__arrow tabs__arrow-left" type="button" onClick={() => scrollOneTab('previous')} aria-label="Scroll tabs left">
+          <i className="fa-solid fa-chevron-left" aria-hidden="true" />
+        </button>
+      ) : null}
+      {scrollState.hasOverflow ? (
+        <button className="tabs__arrow tabs__arrow-right" type="button" onClick={() => scrollOneTab('next')} aria-label="Scroll tabs right" disabled={!scrollState.canScrollRight}>
+          <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+        </button>
+      ) : null}
       <div ref={indicatorRef} className="tabs__indicator" aria-hidden="true" />
     </div>
   );

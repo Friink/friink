@@ -6275,3 +6275,23 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - `AGENTLOG.md`
 - Reason/Decision: Keeping the leading icon, setting content, and action control in fixed left/middle/right columns makes every settings row align consistently while allowing the middle control area to absorb available width.
 - Verification: Targeted TypeScript check and `git diff --check` passed.
+## 2026-09-03T17:39:45Z — Add mobile overflow controls to Tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make mobile tab strips horizontally scrollable without visible scrollbars and add contextual one-item left/right arrow controls.
+- Changes Made:
+  - Added a scrollbar-hidden horizontal viewport around the shared tab list.
+  - Replaced the previous mobile swipe-to-select behavior with native horizontal scrolling of the tab strip.
+  - Added a right chevron whenever tabs overflow; it advances one tab at a time and remains visible but disabled at the end.
+  - Added a left chevron only after the tab strip moves away from its default scroll position; it moves back one tab at a time and disappears at the start.
+  - Kept arrows hidden on desktop and preserved the existing tab height, labels, spacing, and selected indicator treatment.
+  - Updated the Tabs design contract, changelog, and agent log.
+- Files:
+  - `web/components/tabs.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Native horizontal scrolling keeps dense mobile tabs usable while retaining the existing sleek visual treatment; the conditional chevrons provide a clear affordance without adding permanent chrome when all items are already visible.
+- Verification: Targeted TypeScript check and `git diff --check` passed.
