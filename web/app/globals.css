@@ -1994,6 +1994,10 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+  align-items: start;
+  column-gap: 0.75rem;
   min-height: 0;
   padding-top: 0.875rem;
   padding-bottom: 0.875rem;
@@ -2006,13 +2010,13 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-row .list-row-avatar {
-  align-self: flex-start;
-  padding-top: 0.125rem;
+  align-self: start;
+  padding-top: 0;
 }
 
 .settings-row .list-row-trailing {
-  align-self: flex-start;
-  padding-top: 0.125rem;
+  align-self: start;
+  padding-top: 0;
   gap: 0.5rem;
 }
 
@@ -2023,8 +2027,8 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .settings-icon {
   display: inline-grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 3rem;
+  height: 3rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-ink);
@@ -2079,10 +2083,15 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-secondary-button {
-  min-height: 2.75rem;
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  min-height: 3rem;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  padding: 0 0.8rem;
+  padding: 0;
   color: var(--color-ink);
   background: var(--color-paper);
   font: inherit;
@@ -2558,18 +2567,14 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .settings-update-button {
   flex: 0 0 auto;
   display: inline-grid;
-  grid-auto-flow: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   place-items: center;
+  width: 3rem;
   min-width: 3rem;
-  width: auto;
   min-height: 3rem;
   height: 3rem;
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 0 1rem;
+  padding: 0;
   color: var(--color-paper);
   background: var(--color-accent);
   font-size: 1rem;
@@ -2578,14 +2583,12 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .settings-upload-trigger {
   display: inline-grid;
-  grid-auto-flow: column;
-  gap: 0.5rem;
   place-items: center;
-  width: auto;
+  width: 3rem;
   min-width: 3rem;
   height: 3rem;
   min-height: 3rem;
-  padding: 0 1rem;
+  padding: 0;
 }
 
 .settings-row .list-row-trailing > .settings-update-button + .settings-update-button,

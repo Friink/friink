@@ -6254,3 +6254,24 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - `AGENTLOG.md`
 - Reason/Decision: Chat is a global utility alongside Search and Notifications, while its unread indicator should reflect actual conversation unread counts rather than the broader notification count. The existing shell conversation sync provided the smallest shared state change and preserves delivery synchronization.
 - Verification: Targeted source inspection, `npm exec tsc -- --noEmit --incremental false` in `web`, and `git diff --check` passed.
+
+## 2026-09-03T17:33:00Z — Standardize settings rows into three columns
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make settings rows use equal-height rounded setting/action squares, icon-only right-side controls, and a shared middle setting-content column.
+- Changes Made:
+  - Changed settings rows to an explicit three-column grid with `3rem` leading and trailing columns and a shrinkable middle column.
+  - Matched the left setting icon height to the right-side action height.
+  - Converted save, upload, view-plans, blocked-people, and session logout controls to square icon-only actions while preserving accessible labels and tooltips.
+  - Moved Privacy and Safety toggles into the middle setting body so the right column contains only the save action.
+  - Updated the settings design contract, active settings presentation rule, changelog, and agent log.
+- Files:
+  - `web/components/account-screens.tsx`
+  - `web/app/globals.css`
+  - `packages/design/design.md`
+  - `RULES.md`
+  - `CHANGELOG.md`
+  - `AGENTLOG.md`
+- Reason/Decision: Keeping the leading icon, setting content, and action control in fixed left/middle/right columns makes every settings row align consistently while allowing the middle control area to absorb available width.
+- Verification: Targeted TypeScript check and `git diff --check` passed.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-03T17:33:00Z
+
+- [web/settings] Standardized settings rows into three columns: equal `3rem` rounded setting and action squares on the left and right, with the shared setting title/summary/control body in the middle. Converted right-side settings actions to icon-only controls with accessible labels and moved privacy toggles into the middle content column. Updated the design contract and settings presentation rule.
+
 ## 2026-09-03T17:20:29Z
 
 - [web/navigation] Moved Chat from the side drawer into the global header between Search and Notifications. The header Chat link routes to `/chats`, shows an accent dot when any conversation has unread messages using the existing four-second conversation polling loop, and the legacy `/chat` root now redirects to `/chats`. Added the `/chats` list route and synchronized the README, chat behavior contract, design contract, and active navigation rules.
