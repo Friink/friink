@@ -118,15 +118,23 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-01 (UTC)
 
 ### Rule: Signup Creates Active Public Accounts
-- **What:** A successful signup creates a user with a lowercased unique email, a lowercased unique username, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`.
-- **Edge cases:** Signup validates username syntax and checks username availability before submission. The API remains authoritative and rejects duplicate usernames case-insensitively with `409`; the database enforces the same invariant. OTP records/services exist only as stubs; no OTP challenge is active in signup.
+- **What:** A completed signup creates a user with a lowercased unique email, a lowercased unique username, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`. When signup OTP is enabled, completion occurs only through successful email verification.
+- **Edge cases:** Signup validates username syntax and checks username availability before submission. The API remains authoritative and rejects duplicate usernames case-insensitively with `409`; the database enforces the same invariant. The direct signup endpoint is unavailable while OTP is enabled, preventing a client-side bypass.
 - **Status:** Active
 - **Platform:** All
-- **File(s):** `api/app/services/auth.py`, `api/app/schemas/auth.py`, `api/app/models/user.py`
-- **Since:** 2026-08-29T07:15:00Z
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `api/app/models/user.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`
+- **Since:** 2026-09-04T22:06:53Z
+
+### Rule: Signup Email Ownership OTP
+- **What:** With `SIGNUP_OTP_ENABLED=true`, signup uses `/auth/signup/start` followed by `/auth/signup/verify`; no user row is created before successful verification. Codes are six uppercase alphanumeric characters, expire after four minutes, are single-use, and a newer code invalidates the previous code.
+- **Edge cases:** Verification is limited to five attempts. The API returns neutral signup-start responses and generic delivery failures. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
+- **Status:** Active for staging implementation; live verification pending deployment and DNS/provider checks.
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/services/otp.py`, `api/app/config.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_email.py`
+- **Since:** 2026-09-04T22:06:53Z
 
 ### Rule: Password And Username Validation
-- **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form.
+- **What:** Passwords must be 8–16 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
@@ -189,7 +197,7 @@ the entry, so history isn't lost.
 
 ### Rule: Users Can Change Their Password From Account Settings
 - **What:** An authenticated user may change their password from `/settings/account` after providing the current password, a new password that satisfies the standard password rules, and a matching confirmation.
-- **Edge cases:** The backend verifies the current password and remains authoritative for validation. Signup and Settings expose native `minLength`, `pattern`, and `title` hints for password-manager/browser guidance. Focusing the New password field exposes the live six-item password checklist. Failed changes do not alter the stored password; successful changes preserve the current session.
+- **Edge cases:** The backend verifies the current password and remains authoritative for validation. Signup and Settings expose native `minLength`, `maxLength`, `pattern`, and `title` hints for password-manager/browser guidance. Focusing the New password field exposes the shared concise password checklist. Failed changes do not alter the stored password; successful changes preserve the current session.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/components/account-screens.tsx`, `web/lib/auth.ts`

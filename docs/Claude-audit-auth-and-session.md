@@ -1,6 +1,6 @@
 # Claude Audit — Auth and Session
 
-This file records verification evidence for `docs/auth-and-session.md`. Refresh-token values are intentionally redacted; cookie attributes and response results are preserved.
+This file records verification evidence for `docs/auth-and-session.md`. Refresh-token values are intentionally redacted; cookie attributes and response results are preserved. Staging signup OTP implementation notes are recorded separately from live evidence.
 
 ## Verification scope
 
@@ -102,12 +102,12 @@ passed
 
 The Phase 2 identity foundation currently includes canonical case-insensitive username keys with preserved display casing, reserved username enforcement, permanent identity-history tables, progressive login throttling, and hashed OTP storage. Its focused foundation suite currently passes 15 tests.
 
-The Phase 2 gate remains open pending signup privacy behavior, delivery-independent OTP endpoint wiring, email/username-change verification behavior, public UUID exposure review, race-condition coverage, and the complete staging verification trace.
+The Phase 2 gate remains open pending signup privacy behavior, live staging OTP/provider evidence, email/username-change verification behavior, public UUID exposure review, race-condition coverage, and the complete staging verification trace. Delivery-independent signup OTP endpoint wiring is implemented; it is no longer an outstanding implementation item.
 
 ### Phase 2 staging deployment checkpoint (not a gate pass)
 
-The Phase 2 signup-start slice is now deployed to staging. OTP remains
-explicitly disabled because no email provider is configured.
+The Phase 2 signup-start slice was deployed to staging with OTP explicitly
+disabled because no email provider was configured at that checkpoint.
 
 Target API: `https://staging-api.friink.com`
 
@@ -147,11 +147,34 @@ Access-Control-Allow-Methods: DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
 Vary: Origin
 ```
 
-This checkpoint proves that the deployed endpoint is reachable and that the
-staging default is safe while delivery is unavailable. It is not a complete
+This checkpoint proves that the deployed endpoint was reachable and that the
+staging default was safe while delivery was unavailable. It is not a complete
 existing-versus-new email privacy test because the two probes did not use a
 known existing account, and it does not test OTP completion while
 `SIGNUP_OTP_ENABLED=false`.
+
+### Phase 2c staging implementation checkpoint (not a gate pass)
+
+The working-tree implementation now enables signup email-ownership OTP through
+the existing reservation and verification endpoints when
+`SIGNUP_OTP_ENABLED=true`. Resend is used as the staging delivery adapter:
+
+- `RESEND_API_KEY` is read only by the API; `RESEND_FROM_EMAIL` and
+  `RESEND_FROM_NAME` configure the sender.
+- The web signup flow submits `/auth/signup/start`, collects the six-character
+  verification code, then submits `/auth/signup/verify` before logging in.
+- Direct `/auth/signup` account creation is rejected while OTP is enabled, so
+  the browser cannot bypass email ownership verification.
+- Delivery failures return a generic `503`; provider credentials and recipient
+  existence are not exposed.
+- The existing backend policy remains authoritative: four-minute expiry,
+  single-use codes, newer-code replacement, and five-attempt exhaustion.
+
+This is a staging implementation checkpoint, not live evidence. The API and web
+deployments still need to contain these changes, and the staging API hostname
+must resolve before a browser/signup trace can be recorded. The final production
+provider/account, durable email outbox, and production delivery rollout remain
+deferred.
 
 ### Phase 2 phase-boundary clarification
 
@@ -254,5 +277,6 @@ Set-Cookie: friink_device_id=[REDACTED]; HttpOnly; Max-Age=31536000; Path=/; Sam
 This is deliberately not asserted as live evidence yet. The 2d verification gate
 also remains open for new/suspicious-device OTP/MFA challenges, challenge skip
 rules, device invalidation, concurrent failures, cooldown boundaries, and privacy
-checks. `SIGNUP_OTP_ENABLED=false` remains correct until a real delivery provider
-is configured.
+checks. `SIGNUP_OTP_ENABLED=true` is permitted only in an environment with a
+configured delivery provider; ordinary login remains password-only unless the
+separate Phase 2d risk-based flow is enabled.

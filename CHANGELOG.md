@@ -1575,3 +1575,13 @@ _Last updated: 2026-09-01_
 - [api] Resend provider and password validation tests passed (`8 passed`).
 - [api] Python compilation passed.
 - [web] TypeScript check passed.
+
+## 2026-09-04
+
+### Changed
+- [docs] Synchronized the auth audit with the staging Resend signup-OTP implementation and its still-open live verification gate.
+- [docs] Updated the design contract for the signup verification step and the shared 8–16 password checklist.
+- [docs] Updated auth rules to describe conditional signup OTP, server-only Resend delivery, and the 8–16 password range.
+
+### Verified
+- [repo] Documentation diff reviewed; live staging OTP evidence remains pending deployment, API DNS resolution, and provider delivery checks.

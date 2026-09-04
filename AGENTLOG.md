@@ -6455,3 +6455,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The existing OTP reservation and verification backend was present but the frontend bypassed it, email delivery was a no-op, and Resend settings were not consumed.
 - Notes: This enables signup ownership verification only. Ordinary login remains password-only for recognized normal logins; risk-based login OTP is a separate Phase 2d capability. Staging API must be redeployed with `SIGNUP_OTP_ENABLED=true`, and the web app must also be redeployed to include the OTP screen.
 - Verification Status: Resend provider tests and password validation tests returned `8 passed`; Python compilation, web TypeScript check, and `git diff --check` passed. Database-backed signup E2E was not run locally because no `DATABASE_URL` is configured in this checkout.
+
+## 2026-09-04T22:13:29Z — Synchronize auth/OTP contracts and audit notes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the Claude auth audit and the relevant design, rules, agent-log, and changelog documentation after the staging signup OTP implementation.
+- Changes Made: Recorded the staging Resend adapter and current live-verification boundary in `docs/Claude-audit-auth-and-session.md`; added the signup verification-step contract and 8–16 password checklist contract to `packages/design/design.md`; replaced stale OTP-stub and password-range language in `RULES.md`; clarified the Resend environment template.
+- Files: `docs/Claude-audit-auth-and-session.md`, `packages/design/design.md`, `RULES.md`, `api/.env.example`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Keep implementation, design contracts, operational rules, and verification evidence aligned without claiming that staging live verification or production delivery is complete.
+- Notes: `SIGNUP_OTP_ENABLED=true` is only appropriate after the staging API/web deployments include the implementation, the API hostname resolves, and Resend sender/recipient delivery is testable. Production provider/account and durable outbox remain deferred.
+- Verification Status: Documentation diff reviewed; prior focused provider/password tests, Python compilation, web TypeScript check, and `git diff --check` remain the relevant implementation checks. Live staging OTP evidence is still pending.
