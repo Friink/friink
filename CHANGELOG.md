@@ -1564,3 +1564,14 @@ _Last updated: 2026-09-01_
 - [web] TypeScript check passed.
 - [api] Password validation tests passed (`6 passed`).
 - [repo] `git diff --check` passed.
+
+## 2026-09-04
+
+### Changed
+- [api] Wired signup ownership OTP delivery through Resend using server-only `RESEND_API_KEY`, configurable sender values, and safe delivery-failure handling.
+- [web] Connected signup to the existing `/auth/signup/start` and `/auth/signup/verify` endpoints and added the six-character email verification step.
+
+### Verified
+- [api] Resend provider and password validation tests passed (`8 passed`).
+- [api] Python compilation passed.
+- [web] TypeScript check passed.

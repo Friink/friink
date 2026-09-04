@@ -142,13 +142,44 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
   };
 }
 
-export async function signUp(input: {
+export type SignupInput = {
   name: string;
   email: string;
   username: string;
   password: string;
   dateOfBirth: string;
-}): Promise<AuthSession> {
+};
+
+export type SignupStartResponse = {
+  accepted: boolean;
+  verification_required: boolean;
+  reservation_token: string;
+  message: string;
+};
+
+export async function startSignup(input: SignupInput): Promise<SignupStartResponse> {
+  return requestApi<SignupStartResponse>('/auth/signup/start', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: input.email,
+      username: input.username,
+      display_name: input.name,
+      password: input.password,
+      date_of_birth: input.dateOfBirth,
+    }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function verifySignup(reservationToken: string, otp: string): Promise<void> {
+  await requestApi<ApiUser>('/auth/signup/verify', {
+    method: 'POST',
+    body: JSON.stringify({ reservation_token: reservationToken, otp }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function signUp(input: SignupInput): Promise<AuthSession> {
   await requestApi<ApiUser>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({

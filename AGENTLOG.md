@@ -6444,3 +6444,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: Keep password guidance concise and consistent across password creation surfaces while keeping client and server validation aligned.
 - Notes: Existing password complexity rules remain: uppercase, lowercase, number, special character, and no spaces. Existing login-password entry was not capped so legacy credentials are not artificially truncated.
 - Verification Status: `npm exec -- tsc --noEmit -p tsconfig.json` passed; `python -m pytest tests/test_validation.py` returned `6 passed`; `git diff --check` passed.
+
+## 2026-09-04T22:06:53Z — Enable staging signup email OTP through Resend
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved Phase 2c signup email-ownership OTP flow for staging using the configured Resend account.
+- Changes Made: Added Resend API settings and server-side delivery through `EmailService`; converted delivery failures to a safe 503 response; blocked direct account creation when OTP is enabled; wired the web signup flow through `/auth/signup/start` and `/auth/signup/verify`; added the six-character OTP entry step; documented Resend environment variables and added provider tests.
+- Files: `api/app/config.py`, `api/.env.example`, `api/app/services/email.py`, `api/app/routers/auth.py`, `api/tests/test_email.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`.
+- Reason: The existing OTP reservation and verification backend was present but the frontend bypassed it, email delivery was a no-op, and Resend settings were not consumed.
+- Notes: This enables signup ownership verification only. Ordinary login remains password-only for recognized normal logins; risk-based login OTP is a separate Phase 2d capability. Staging API must be redeployed with `SIGNUP_OTP_ENABLED=true`, and the web app must also be redeployed to include the OTP screen.
+- Verification Status: Resend provider tests and password validation tests returned `8 passed`; Python compilation, web TypeScript check, and `git diff --check` passed. Database-backed signup E2E was not run locally because no `DATABASE_URL` is configured in this checkout.

@@ -34,7 +34,7 @@ from app.schemas.auth import (
 from app.services.auth import authenticate_user, change_password, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_reservation, update_current_user, user_id_from_subject
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
-from app.services.email import EmailService
+from app.services.email import EmailDeliveryError, EmailService
 from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
@@ -96,7 +96,9 @@ async def signup(
     settings: Settings = Depends(get_settings),
 ) -> UserResponse:
     require_allowed_origin(request, settings)
-    return user_response(await create_user(session, payload, EmailService()), settings)
+    if settings.signup_otp_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
+    return user_response(await create_user(session, payload, EmailService(settings)), settings)
 
 
 @router.post("/signup/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -107,7 +109,10 @@ async def signup_start(
     settings: Settings = Depends(get_settings),
 ) -> SignupStartResponse:
     require_allowed_origin(request, settings)
-    token = await start_signup_reservation(session, payload, EmailService()) if settings.signup_otp_enabled else secrets.token_urlsafe(32)
+    try:
+        token = await start_signup_reservation(session, payload, EmailService(settings)) if settings.signup_otp_enabled else secrets.token_urlsafe(32)
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
     return SignupStartResponse(
         verification_required=settings.signup_otp_enabled,
         reservation_token=token,

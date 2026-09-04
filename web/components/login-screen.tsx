@@ -5,7 +5,7 @@ import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
-import { checkUsernameAvailability, login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
+import { checkUsernameAvailability, login, saveAuthSession, signUp, startSignup, verifySignup, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
@@ -14,7 +14,7 @@ type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
 };
 
-type AuthStep = 'login' | 'signup-email' | 'signup-password' | 'signup-profile';
+type AuthStep = 'login' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
 
 export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [email, setEmail] = useState('');
@@ -26,6 +26,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [step, setStep] = useState<AuthStep>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signupOtp, setSignupOtp] = useState('');
+  const [signupReservationToken, setSignupReservationToken] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -33,7 +35,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const isSignupEmailStep = step === 'signup-email';
   const isSignupPasswordStep = step === 'signup-password';
   const isSignupProfileStep = step === 'signup-profile';
-  const signupProgressLabel = isSignupProfileStep ? 'Step 3 of 3' : isSignupPasswordStep ? 'Step 2 of 3' : 'Step 1 of 3';
+  const isSignupOtpStep = step === 'signup-otp';
+  const signupProgressLabel = isSignupOtpStep ? 'Step 4 of 4' : isSignupProfileStep ? 'Step 3 of 4' : isSignupPasswordStep ? 'Step 2 of 4' : 'Step 1 of 4';
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -94,7 +97,16 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           return;
         }
 
-        const session = await signUp({ name: fullName, email, username, password, dateOfBirth });
+        const signupInput: SignupInput = { name: fullName, email, username, password, dateOfBirth };
+        const signupStart = await startSignup(signupInput);
+        if (signupStart.verification_required) {
+          setSignupReservationToken(signupStart.reservation_token);
+          setSignupOtp('');
+          setStep('signup-otp');
+          return;
+        }
+
+        const session = await signUp(signupInput);
         if (session.accessToken) {
           saveAuthSession(session);
           onAuthenticated(session.user);
@@ -103,6 +115,26 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           saveAuthSession(loginSession);
           onAuthenticated(loginSession.user);
         }
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (isSignupOtpStep) {
+      if (!/^[A-Za-z0-9]{6}$/.test(signupOtp)) {
+        setErrorMessage('Enter the 6-character verification code from your email.');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        await verifySignup(signupReservationToken, signupOtp);
+        const session = await login(email, password);
+        saveAuthSession(session);
+        onAuthenticated(session.user);
       } catch (error) {
         setErrorMessage(getAuthErrorMessage(error));
       } finally {
@@ -346,6 +378,38 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               </button>
               <Button className="login-submit" type="submit">
                 {isSubmitting ? 'Please wait...' : 'Create account'}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {isSignupOtpStep && (
+          <>
+            <div className="signup-step-copy" aria-label="Signup progress">
+              <p>{signupProgressLabel}</p>
+              <span>We sent a 6-character verification code to your email.</span>
+            </div>
+
+            <InputField
+              label="Verification code"
+              type="text"
+              value={signupOtp}
+              onChange={(event) => setSignupOtp(event.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase())}
+              placeholder="Verification code"
+              autoComplete="one-time-code"
+              inputMode="text"
+              minLength={6}
+              maxLength={6}
+              pattern="[A-Za-z0-9]{6}"
+              required
+            />
+
+            <div className="signup-actions signup-actions-single">
+              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('signup-profile'); }}>
+                Back
+              </button>
+              <Button className="login-submit" type="submit">
+                {isSubmitting ? 'Please wait...' : 'Verify email'}
               </Button>
             </div>
           </>
