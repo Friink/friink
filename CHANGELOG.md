@@ -1607,3 +1607,15 @@ _Last updated: 2026-09-01_
 
 ### Pending
 - [staging] Run `python -m alembic upgrade head` against the staging database, redeploy the API if required, and capture the successful OTP delivery/verification trace.
+
+## 2026-09-05
+
+### Fixed
+- [staging] Applied migration `20260905_0025` to the staging Neon database; Alembic now reports `20260905_0025 (head)`.
+- [staging] Verified the email-first signup request returns `202` with `verification_required: true` for the authorized test recipient.
+- [staging/web] Confirmed the live browser transitions directly from the email step to the OTP screen (`Step 2 of 4`).
+
+### Verified
+- [staging] Database health and signup CORS preflight return `200`.
+- [staging] Synthetic recipient delivery failure returns the intended safe `503`; authorized delivery returns `202`.
+- [staging] Final OTP entry and account creation remain pending the recipient's code.

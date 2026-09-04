@@ -102,7 +102,12 @@ passed
 
 The Phase 2 identity foundation currently includes canonical case-insensitive username keys with preserved display casing, reserved username enforcement, permanent identity-history tables, progressive login throttling, and hashed OTP storage. Its focused foundation suite currently passes 15 tests.
 
-The Phase 2 gate remains open pending signup privacy behavior, live staging OTP/provider evidence, email/username-change verification behavior, public UUID exposure review, race-condition coverage, and the complete staging verification trace. Delivery-independent signup OTP endpoint wiring is implemented; it is no longer an outstanding implementation item.
+The Phase 2 gate remains open pending the existing-versus-new email privacy
+comparison, complete OTP expiry/replay/attempt-exhaustion evidence, email and
+username-change verification behavior, public UUID exposure review,
+race-condition coverage, and the complete staging verification trace. Live
+email-first OTP delivery and the browser transition are now verified; they are
+no longer outstanding implementation items.
 
 ### Phase 2 staging deployment checkpoint (not a gate pass)
 
@@ -203,6 +208,34 @@ The most likely deployment-state cause is that staging is running the new
 email-only reservation code against the pre-`20260905_0025` schema. This must be
 confirmed and corrected by running the additive migration against the staging
 database before recording successful OTP evidence.
+
+### Phase 2c live verification update
+
+The staging Neon database was at `20260904_0024`. The additive migration
+`20260905_0025` was applied successfully and the database is now at head.
+Subsequent live checks returned:
+
+```text
+GET  /health/db
+HTTP 200
+
+POST /auth/signup/email/start with a synthetic example recipient
+HTTP 503
+{"detail":"Verification email could not be sent. Please try again later."}
+
+POST /auth/signup/email/start with the authorized staging test recipient
+HTTP 202
+{"accepted":true,"verification_required":true,
+ "reservation_token":"[REDACTED]", ...}
+```
+
+The 503 is the intended safe provider failure for the synthetic recipient; it
+includes the staging CORS headers. The authorized delivery request returned
+202, and the live browser then displayed `Step 2 of 4`, the verification-code
+field, and `We sent a 6-character verification code to your email.` Signup OTP
+delivery and the email-first transition are therefore verified live. Completing
+the code and final account creation remains a user-data-dependent test and is
+not recorded here without the recipient's code.
 
 ### Phase 2 phase-boundary clarification
 

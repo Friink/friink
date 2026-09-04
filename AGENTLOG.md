@@ -6488,3 +6488,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The browser's `Failed to fetch` masks an API-side 500 response. The new email-only reservation requires migration `20260905_0025`.
 - Notes: No production system was accessed. This workspace has no staging `DATABASE_URL`, API `.env`, Vercel CLI, or project link, so the migration could not be executed here.
 - Verification Status: Live `GET /health/db` and signup CORS preflight passed; live signup POST remains blocked until the staging database is upgraded and the API is redeployed/verified.
+
+## 2026-09-04T23:05:52Z — Verify staging email-first OTP after migration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the provided staging database connection, verify the email-first signup flow in the browser, and record the result.
+- Changes Made: Applied migration `20260905_0025` to staging, confirmed the database is at head, verified the live signup-start route returns `202`, and confirmed the browser displays the OTP screen immediately after email submission.
+- Files: `docs/Claude-audit-auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: The previous live `500` was caused by the staging database being one migration behind; the migration was required before OTP delivery could be tested.
+- Notes: A synthetic example recipient correctly returned safe `503` delivery failure; the authorized staging test recipient returned `202`. No OTP or database secret was recorded. Production was not accessed.
+- Verification Status: Staging `/health/db` `200`; signup CORS preflight `200`; authorized `/auth/signup/email/start` `202`; live browser displayed `Step 2 of 4` with the verification-code field. Final code entry/account creation remains pending the recipient's OTP.
