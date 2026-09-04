@@ -1585,3 +1585,16 @@ _Last updated: 2026-09-01_
 
 ### Verified
 - [repo] Documentation diff reviewed; live staging OTP evidence remains pending deployment, API DNS resolution, and provider delivery checks.
+
+## 2026-09-05
+
+### Changed
+- [api] Added email-first signup OTP challenge and completion routes, keeping password/profile data out of the pre-verification reservation.
+- [api] Added additive migration `20260905_0025_email_first_signup_otp` for email-only pre-verification reservations.
+- [web] Signup now requests OTP immediately after the email step, then collects password and profile details after successful verification.
+- [docs] Updated the source auth document, audit, design contract, and rules to match the email → OTP → password/profile flow.
+
+### Verified
+- [api] Python compilation passed.
+- [web] TypeScript check passed.
+- [repo] Documentation and code diff review pending focused database-backed verification.

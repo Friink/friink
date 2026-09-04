@@ -370,7 +370,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Responsive Width Rule**: The auth form fills the available viewport width, caps at `31rem` on larger screens, and must remain shrinkable on narrow devices without horizontal overflow.
 - **Dark Mode Rule**: When the system prefers dark mode, the auth screen background is `#161616`.
 - **Mobile Action Rule**: At widths up to `480px`, auth action groups are right-aligned, while the Forgot password control remains left-aligned.
-- **Signup Email Verification Rule**: When signup OTP is enabled, signup adds a verification-code step after profile details and before account creation. The six-character code field uses the shared input treatment, `autocomplete="one-time-code"`, uppercase alphanumeric normalization, and a clear `Verify email` action. Expiry, attempt limits, replacement, single use, and account creation timing remain server-controlled.
+- **Signup Email Verification Rule**: When signup OTP is enabled, signup shows a verification-code step immediately after the email step, before password and profile details. The six-character code field uses the shared input treatment, `autocomplete="one-time-code"`, uppercase alphanumeric normalization, and a clear `Verify email` action. Expiry, attempt limits, replacement, single use, and account creation timing remain server-controlled.
 
 ### 11. ToastStack (`web/components/toast-stack.tsx`)
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.

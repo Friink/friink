@@ -157,6 +157,48 @@ export type SignupStartResponse = {
   message: string;
 };
 
+export async function startSignupEmail(email: string): Promise<SignupStartResponse> {
+  return requestApi<SignupStartResponse>('/auth/signup/email/start', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function verifySignupEmail(reservationToken: string, otp: string): Promise<void> {
+  await requestApi<{ verified: boolean }>('/auth/signup/email/verify', {
+    method: 'POST',
+    body: JSON.stringify({ reservation_token: reservationToken, otp }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession> {
+  await requestApi<ApiUser>('/auth/signup/complete', {
+    method: 'POST',
+    body: JSON.stringify({
+      reservation_token: reservationToken,
+      email: input.email,
+      username: input.username,
+      display_name: input.name,
+      password: input.password,
+      date_of_birth: input.dateOfBirth,
+    }),
+    skipAuthRefresh: true,
+  });
+
+  const session = await login(input.email, input.password);
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      name: input.name || session.user.name,
+      setupStep: 1,
+      setupCompleted: false,
+    },
+  };
+}
+
 export async function startSignup(input: SignupInput): Promise<SignupStartResponse> {
   return requestApi<SignupStartResponse>('/auth/signup/start', {
     method: 'POST',

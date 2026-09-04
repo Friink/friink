@@ -108,6 +108,63 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
     return token
 
 
+async def start_signup_email_reservation(session: Session, email: str, email_service: EmailService) -> str:
+    normalized_email = email.strip().casefold()
+    token = secrets.token_urlsafe(32)
+    reservation = SignupReservation(
+        token_hash=_reservation_token_hash(token),
+        email=normalized_email,
+    )
+    session.add(reservation)
+    session.flush()
+    otp_code = issue_signup_otp(session, reservation)
+    await email_service.send_signup_otp(reservation.email, otp_code)
+    await commit(session)
+    return token
+
+
+async def verify_signup_email_reservation(session: Session, token: str, otp: str) -> None:
+    reservation = session.execute(
+        select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
+    ).scalar_one_or_none()
+    if not reservation or reservation.email_verified_at is not None or not verify_signup_otp(session, reservation, otp):
+        await commit(session)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+    reservation.email_verified_at = datetime.now(UTC)
+    await commit(session)
+
+
+async def complete_signup_email_reservation(session: Session, token: str, data: SignupRequest) -> User:
+    reservation = session.execute(
+        select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
+    ).scalar_one_or_none()
+    normalized_email = str(data.email).strip().casefold()
+    if not reservation or reservation.email_verified_at is None or normalized_email != reservation.email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email verification is required before signup.")
+    if await get_user_by_email(session, reservation.email) or not await is_username_available(session, data.username):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The signup details could not be accepted.")
+
+    user = User(
+        email=reservation.email,
+        username=data.username,
+        username_key=data.username.casefold(),
+        display_name=data.display_name or data.username,
+        is_private=False,
+        password_hash=hash_password(data.password),
+        date_of_birth=data.date_of_birth,
+        location=data.location,
+        is_verified=True,
+    )
+    session.add(user)
+    await commit(session)
+    await refresh(session, user)
+    session.add(UserEmailHistory(user_id=user.id, email_value=user.email, event_type="created"))
+    session.add(UserUsernameHistory(user_id=user.id, username_key=user.username_key, username_display=user.username, event_type="created"))
+    session.delete(reservation)
+    await commit(session)
+    return user
+
+
 async def complete_signup_reservation(session: Session, token: str, otp: str) -> User:
     reservation = session.execute(
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))

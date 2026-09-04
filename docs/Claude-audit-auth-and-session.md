@@ -161,8 +161,10 @@ the existing reservation and verification endpoints when
 
 - `RESEND_API_KEY` is read only by the API; `RESEND_FROM_EMAIL` and
   `RESEND_FROM_NAME` configure the sender.
-- The web signup flow submits `/auth/signup/start`, collects the six-character
-  verification code, then submits `/auth/signup/verify` before logging in.
+- The web signup flow submits `/auth/signup/email/start` immediately after the
+  email step, collects the six-character verification code, submits
+  `/auth/signup/email/verify`, then collects password/profile details and
+  submits `/auth/signup/complete` before logging in.
 - Direct `/auth/signup` account creation is rejected while OTP is enabled, so
   the browser cannot bypass email ownership verification.
 - Delivery failures return a generic `503`; provider credentials and recipient

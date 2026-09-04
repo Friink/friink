@@ -26,9 +26,10 @@ The following points are part of the planned scope:
 - Permanent email/username history and the database-backed reserved-username
   registry are in scope now.
 - Signup email confirmation uses a fresh six-character alphanumeric OTP once
-  email delivery is available. Ordinary password login does not require an OTP
-  when the login is recognized as normal; risk-based OTP/MFA is used for a new
-  or suspicious device/login and for defined high-risk actions. Access-token
+  email delivery is available. The user-facing signup order is email, OTP,
+  password, then profile details. Ordinary password login does not require an
+  OTP when the login is recognized as normal; risk-based OTP/MFA is used for a
+  new or suspicious device/login and for defined high-risk actions. Access-token
   refresh never requires an OTP.
 - Failed-login lockout uses a configurable progressive policy: the third
   failure starts a 30-minute cooldown, the fourth starts a one-hour cooldown,
@@ -87,8 +88,8 @@ abuse:
 
 ### Out of scope for this design
 
-- Email provider selection or automated email delivery implementation.
-- Choosing a final OTP delivery vendor.
+- Final production email-provider selection, production delivery rollout, and
+  the durable email outbox.
 - Full staff dashboard and moderation product requirements.
 - Staff permission names beyond the initial security boundaries.
 - Billing, subscription entitlements, professional verification, or badges.
@@ -148,16 +149,22 @@ bypass the API or database rule.
 #### Phase 2c — Signup email privacy and ownership OTP
 
 Implement the delivery-independent signup contract and wire in the fresh
-six-character alphanumeric email OTP when delivery is available. Responses for
-existing and unrecognized emails must be neutral and indistinguishable in
-body, status, timing, and UI. Store OTPs hashed; expire them after four
-minutes; allow five attempts; make each OTP single-use; invalidate an older
-OTP when a newer one is issued; and rate-limit requests and delivery.
+six-character alphanumeric email OTP when delivery is available. The UI starts
+the flow with the email-only `/auth/signup/email/start` route, shows the OTP
+screen immediately after the email step, verifies through
+`/auth/signup/email/verify`, and collects password/profile details only after
+email ownership succeeds. Final account creation uses
+`/auth/signup/complete`. Responses for existing and unrecognized emails must be
+neutral and indistinguishable in body, status, timing, and UI. Store OTPs
+hashed; expire them after four minutes; allow five attempts; make each OTP
+single-use; invalidate an older OTP when a newer one is issued; and rate-limit
+requests and delivery.
 
 Do not create a partially usable account before the required verification
-decision. A failed or abandoned signup reservation releases its email
-immediately, subject to rate limits, and can never replace or duplicate an
-existing account.
+decision. The pre-verification record stores only the normalized email and
+hashed OTP; password/profile data is submitted after email verification. A
+failed or abandoned signup reservation releases its email immediately, subject
+to rate limits, and can never replace or duplicate an existing account.
 
 Verification gate: compare existing versus new email behavior, test expiry,
 replay, attempt exhaustion, replacement OTPs, hashed storage, incomplete-

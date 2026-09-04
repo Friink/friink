@@ -23,6 +23,9 @@ from app.schemas.auth import (
     RefreshResponse,
     AuthSessionResponse,
     SignupRequest,
+    SignupCompleteRequest,
+    SignupEmailStartRequest,
+    SignupEmailVerifyResponse,
     SignupStartResponse,
     SignupVerifyRequest,
     TokenResponse,
@@ -31,7 +34,7 @@ from app.schemas.auth import (
     UsernameAvailabilityResponse,
     UserResponse,
 )
-from app.services.auth import authenticate_user, change_password, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_reservation, update_current_user, user_id_from_subject
+from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailDeliveryError, EmailService
@@ -118,6 +121,59 @@ async def signup_start(
         reservation_token=token,
         message="If the signup details can be accepted, verification instructions will be sent.",
     )
+
+
+@router.post("/signup/email/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
+async def signup_email_start(
+    payload: SignupEmailStartRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> SignupStartResponse:
+    require_allowed_origin(request, settings)
+    if not settings.signup_otp_enabled:
+        return SignupStartResponse(
+            verification_required=False,
+            reservation_token=secrets.token_urlsafe(32),
+            message="If the signup details can be accepted, verification instructions will be sent.",
+        )
+    try:
+        token = await start_signup_email_reservation(session, str(payload.email), EmailService(settings))
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
+    return SignupStartResponse(
+        verification_required=True,
+        reservation_token=token,
+        message="If the signup details can be accepted, verification instructions will be sent.",
+    )
+
+
+@router.post("/signup/email/verify", response_model=SignupEmailVerifyResponse)
+async def signup_email_verify(
+    payload: SignupVerifyRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> SignupEmailVerifyResponse:
+    require_allowed_origin(request, settings)
+    if not settings.signup_otp_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup verification is not available.")
+    await verify_signup_email_reservation(session, payload.reservation_token, payload.otp)
+    return SignupEmailVerifyResponse()
+
+
+@router.post("/signup/complete", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def signup_complete(
+    payload: SignupCompleteRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> UserResponse:
+    require_allowed_origin(request, settings)
+    if not settings.signup_otp_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup completion is not available.")
+    data = SignupRequest.model_validate(payload.model_dump(exclude={"reservation_token"}))
+    return user_response(await complete_signup_email_reservation(session, payload.reservation_token, data), settings)
 
 
 def set_device_cookie(response: Response, token: str, settings: Settings) -> None:

@@ -6466,3 +6466,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: Keep implementation, design contracts, operational rules, and verification evidence aligned without claiming that staging live verification or production delivery is complete.
 - Notes: `SIGNUP_OTP_ENABLED=true` is only appropriate after the staging API/web deployments include the implementation, the API hostname resolves, and Resend sender/recipient delivery is testable. Production provider/account and durable outbox remain deferred.
 - Verification Status: Documentation diff reviewed; prior focused provider/password tests, Python compilation, web TypeScript check, and `git diff --check` remain the relevant implementation checks. Live staging OTP evidence is still pending.
+
+## 2026-09-05T22:20:00Z — Move signup OTP immediately after email
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match the implementation to the auth document's required email → OTP → password/profile signup order.
+- Changes Made: Added email-only signup challenge routes; made pre-verification reservations email-only; added the additive `20260905_0025` migration; moved the web OTP screen to immediately follow email; added post-verification signup completion; updated the source auth document and derivative contracts.
+- Files: `api/app/models/signup_reservation.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260905_0025_email_first_signup_otp.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `docs/Claude-audit-auth-and-session.md`, `packages/design/design.md`, `RULES.md`.
+- Reason: The documented signup order requires email ownership verification before collecting the remaining signup data; the previous implementation incorrectly sent OTP only after the profile step.
+- Notes: No account is created before verification. Production delivery remains deferred; staging must apply the migration and redeploy API/web.
+- Verification Status: Python compilation and web TypeScript check passed; focused API tests and migration execution remain to be run where database configuration permits.

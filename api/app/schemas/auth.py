@@ -70,9 +70,21 @@ class SignupStartResponse(BaseModel):
     message: str
 
 
+class SignupEmailStartRequest(BaseModel):
+    email: EmailStr
+
+
+class SignupEmailVerifyResponse(BaseModel):
+    verified: bool = True
+
+
 class SignupVerifyRequest(BaseModel):
     reservation_token: str = Field(min_length=32, max_length=128)
     otp: str = Field(min_length=6, max_length=6)
+
+
+class SignupCompleteRequest(SignupRequest):
+    reservation_token: str = Field(min_length=32, max_length=128)
 
 
 class LoginRequest(BaseModel):

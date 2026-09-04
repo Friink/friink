@@ -126,8 +126,8 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-04T22:06:53Z
 
 ### Rule: Signup Email Ownership OTP
-- **What:** With `SIGNUP_OTP_ENABLED=true`, signup uses `/auth/signup/start` followed by `/auth/signup/verify`; no user row is created before successful verification. Codes are six uppercase alphanumeric characters, expire after four minutes, are single-use, and a newer code invalidates the previous code.
-- **Edge cases:** Verification is limited to five attempts. The API returns neutral signup-start responses and generic delivery failures. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
+- **What:** With `SIGNUP_OTP_ENABLED=true`, signup uses `/auth/signup/email/start` immediately after email, followed by `/auth/signup/email/verify`, then `/auth/signup/complete`; no user row is created before successful verification. Codes are six uppercase alphanumeric characters, expire after four minutes, are single-use, and a newer code invalidates the previous code.
+- **Edge cases:** Verification is limited to five attempts. The pre-verification record contains only the normalized email and hashed OTP; password/profile data is submitted after verification. The API returns neutral signup-start responses and generic delivery failures. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
 - **Status:** Active for staging implementation; live verification pending deployment and DNS/provider checks.
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/services/otp.py`, `api/app/config.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_email.py`
