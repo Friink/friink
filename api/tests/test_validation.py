@@ -11,6 +11,8 @@ def test_password_requires_complexity() -> None:
         validate_password_rules("password")
     with pytest.raises(ValueError):
         validate_password_rules("Password 1!")
+    with pytest.raises(ValueError):
+        validate_password_rules("Password123456789!")
     assert validate_password_rules("Password1!") == "Password1!"
 
 

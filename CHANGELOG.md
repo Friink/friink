@@ -1553,3 +1553,14 @@ _Last updated: 2026-09-01_
 - Began Phase 2 identity work: canonical case-insensitive username keys with preserved display casing, reserved usernames, permanent identity history, progressive failed-login throttling, and hashed OTP storage with four-minute expiry/five-attempt limits.
 - Applied migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` locally.
 - Added and passed Phase 2 foundation tests; signup privacy, delivery-independent OTP endpoint wiring, email/username-change verification, UUID exposure review, and the Phase 2 verification gate remain outstanding.
+
+## 2026-09-04
+
+### Changed
+- [web] Added a shared reference-style password checklist to signup and Settings > Account, covering 8–16 characters, mixed letters/numbers/symbols, and no spaces.
+- [web/api] Added the 16-character maximum to new-password controls and server-side password validation while preserving the existing complexity rules.
+
+### Verified
+- [web] TypeScript check passed.
+- [api] Password validation tests passed (`6 passed`).
+- [repo] `git diff --check` passed.

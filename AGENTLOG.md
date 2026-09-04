@@ -6433,3 +6433,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - Updated the README, changelog, and agent log to record both migrated databases and the remaining deploy/browser-testing step.
 - Reason/Decision: Database readiness is confirmed in both environments, while application behavior becomes testable there only after the current web/API code is deployed.
 - Verification: Staging authenticated E2E passed; production migration and schema were verified read-only. Manual browser testing remains the next release action.
+
+## 2026-09-04T20:55:15Z — Add shared password criteria and 8–16 character validation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use concise reference-style password requirement messages while enforcing Friink's 8–16 character password range.
+- Changes Made: Added the shared `PasswordCriteria` component for signup and Settings password changes; displayed minimum, maximum, character-mix, and no-space requirements; added frontend `maxLength` and aligned password patterns; enforced the 16-character maximum in API validation; added a regression test.
+- Files: `web/components/password-criteria.tsx`, `web/components/login-screen.tsx`, `web/components/account-screens.tsx`, `api/app/schemas/auth.py`, `api/tests/test_validation.py`.
+- Reason: Keep password guidance concise and consistent across password creation surfaces while keeping client and server validation aligned.
+- Notes: Existing password complexity rules remain: uppercase, lowercase, number, special character, and no spaces. Existing login-password entry was not capped so legacy credentials are not artificially truncated.
+- Verification Status: `npm exec -- tsc --noEmit -p tsconfig.json` passed; `python -m pytest tests/test_validation.py` returned `6 passed`; `git diff --check` passed.

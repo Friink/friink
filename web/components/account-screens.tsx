@@ -11,6 +11,7 @@ import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/c
 import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal';
 import { Modal } from '@/components/modal';
 import { ProfileCard } from '@/components/profile-card';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
@@ -62,8 +63,6 @@ function SettingsToggle({ value, onChange, disabled = false }: { value: boolean;
 }
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]+$/;
-const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,}$/;
-
 function getProfilePictureErrorDetail(error: AuthApiError) {
   const detail = error.detail.toLowerCase();
   if (detail.includes('reached r2')) {
@@ -242,7 +241,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
   const canUpdateReadReceipts = readReceiptsDraft !== readReceiptsSaved && !isUpdatingReadReceipts;
   const canUpdateLikesVisible = likesVisibleDraft !== likesVisibleSaved && !isUpdatingLikesVisible;
-  const isNewPasswordValid = newPassword.length >= 8
+  const isNewPasswordValid = newPassword.length >= PASSWORD_MIN_LENGTH
+    && newPassword.length <= PASSWORD_MAX_LENGTH
     && !/\s/.test(newPassword)
     && /[A-Z]/.test(newPassword)
     && /[a-z]/.test(newPassword)
@@ -742,26 +742,19 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                 <label className="settings-field">
                   <span>New password</span>
                   <div className="settings-password-input">
-                    <input name="change-new-password" type={showNewPassword ? 'text' : 'password'} value={newPassword} onFocus={() => setShowPasswordCriteria(true)} onChange={(event) => { setNewPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" minLength={8} pattern={PASSWORD_PATTERN.source} title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces." aria-describedby="password-criteria" />
+                    <input name="change-new-password" type={showNewPassword ? 'text' : 'password'} value={newPassword} onFocus={() => setShowPasswordCriteria(true)} onChange={(event) => { setNewPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} pattern={PASSWORD_PATTERN.source} title="Use 8 to 16 characters with uppercase, lowercase, number, and special character, with no spaces." aria-describedby="password-criteria" />
                     <button className="password-toggle" type="button" onClick={() => setShowNewPassword((current) => !current)} aria-label={showNewPassword ? 'Hide new password' : 'Show new password'} aria-pressed={showNewPassword}>
                       <i className={`fa-regular ${showNewPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
                     </button>
                   </div>
                   {(showPasswordCriteria || newPassword.length > 0) && (
-                    <ul id="password-criteria" className="password-criteria" aria-label="Password requirements">
-                      <li className={newPassword.length >= 8 ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />At least 8 characters</li>
-                      <li className={/[A-Z]/.test(newPassword) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One uppercase letter</li>
-                      <li className={/[a-z]/.test(newPassword) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One lowercase letter</li>
-                      <li className={/\d/.test(newPassword) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One number</li>
-                      <li className={/[^A-Za-z0-9\s]/.test(newPassword) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One special character</li>
-                      <li className={!/\s/.test(newPassword) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />No spaces</li>
-                    </ul>
+                    <PasswordCriteria value={newPassword} id="password-criteria" />
                   )}
                 </label>
                 <label className="settings-field">
                   <span>Confirm new password</span>
                   <div className="settings-password-input">
-                    <input name="change-confirm-password" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" minLength={8} pattern={PASSWORD_PATTERN.source} title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces." />
+                    <input name="change-confirm-password" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setPasswordStatus(''); }} autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} pattern={PASSWORD_PATTERN.source} title="Use 8 to 16 characters with uppercase, lowercase, number, and special character, with no spaces." />
                     <button className="password-toggle" type="button" onClick={() => setShowConfirmPassword((current) => !current)} aria-label={showConfirmPassword ? 'Hide new password confirmation' : 'Show new password confirmation'} aria-pressed={showConfirmPassword}>
                       <i className={`fa-regular ${showConfirmPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
                     </button>

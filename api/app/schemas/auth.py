@@ -10,6 +10,8 @@ USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 def validate_password_rules(password: str) -> str:
     if len(password) < 8:
         raise ValueError("Password must be at least 8 characters long.")
+    if len(password) > 16:
+        raise ValueError("Password must be no more than 16 characters long.")
     if any(character.isspace() for character in password):
         raise ValueError("Password must not contain spaces.")
     if not re.search(r"[A-Z]", password):

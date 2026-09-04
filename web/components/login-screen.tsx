@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
 import { checkUsernameAvailability, login, saveAuthSession, signUp, type AuthUser } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
-const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,}$/;
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 type LoginScreenProps = {
@@ -69,7 +69,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         return;
       }
 
-      if (!PASSWORD_PATTERN.test(password)) {
+      if (!PASSWORD_PATTERN.test(password) || password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
         setErrorMessage('Password does not meet complexity requirements.');
         return;
       }
@@ -238,7 +238,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
               autoComplete="new-password"
-              minLength={8}
+              minLength={PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
               pattern={PASSWORD_PATTERN.source}
               title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
               aria-describedby="signup-password-criteria"
@@ -257,14 +258,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               }
             />
 
-            <ul id="signup-password-criteria" className="password-criteria" aria-label="Password requirements">
-              <li className={password.length >= 8 ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />At least 8 characters</li>
-              <li className={/[A-Z]/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One uppercase letter</li>
-              <li className={/[a-z]/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One lowercase letter</li>
-              <li className={/\d/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One number</li>
-              <li className={/[^A-Za-z0-9\s]/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />One special character</li>
-              <li className={!/\s/.test(password) ? 'met' : ''}><i className="fa-solid fa-check" aria-hidden="true" />No spaces</li>
-            </ul>
+            <PasswordCriteria value={password} id="signup-password-criteria" />
 
             <InputField
               label="Confirm Password"
@@ -273,7 +267,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Confirm Password"
               autoComplete="new-password"
-              minLength={8}
+              minLength={PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
               pattern={PASSWORD_PATTERN.source}
               title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
               aria-describedby="signup-password-criteria"
