@@ -24,6 +24,8 @@ type HomeScreenProps = {
   onFilterChange?: (id: string) => void;
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
+  onPostUpdated?: (post: Post) => void;
+  onReactionError?: (message: string) => void;
   injectedPost?: Post | null;
   onInjectedPostConsumed?: () => void;
 };
@@ -63,9 +65,12 @@ function mapApiPost(post: ApiPost): Post {
     text: post.content,
     connectionType: 'following',
     isConnection: true,
-    isStarred: false,
+    isStarred: post.starred ?? false,
+    isLiked: post.liked ?? false,
     replies: post.reply_count,
     quotes: post.quote_count,
+    likeCount: post.like_count ?? 0,
+    starCount: post.star_count ?? 0,
     reactions: 0,
     media: post.media.map((item) => item.url),
     quotedPost: post.quoted_post
@@ -189,7 +194,7 @@ function getTopVisiblePostId() {
   return partiallyVisible?.dataset.feedPostId ?? null;
 }
 
-export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, onReply, onQuote, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
+export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
   void onFilterChange;
   const initialSeedPosts = useMemo(() => dedupeAndSortPosts(posts), [posts]);
   const [feedPosts, setFeedPosts] = useState<Post[]>(initialSeedPosts);
@@ -612,7 +617,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
 
       {visiblePosts.map((post) => (
         <div key={post.id} data-feed-post-id={post.id}>
-          <FeedPost post={post} onReply={onReply} onQuote={onQuote} />
+          <FeedPost post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />
         </div>
       ))}
 

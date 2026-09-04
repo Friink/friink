@@ -107,6 +107,10 @@ class PostResponse(BaseModel):
     quoted_post_id: uuid.UUID | None
     reply_count: int = 0
     quote_count: int = 0
+    like_count: int = 0
+    star_count: int = 0
+    liked: bool | None = None
+    starred: bool | None = None
     quoted_post: QuotedPostResponse | None
     created_at: datetime
     updated_at: datetime
@@ -121,5 +125,26 @@ class FeedPageResponse(BaseModel):
 class FeedContextResponse(BaseModel):
     items: list[PostResponse]
     anchor_post_id: uuid.UUID
+    next_cursor: str | None = None
+    has_more: bool
+
+
+class ReactionResponse(BaseModel):
+    post_id: uuid.UUID
+    like_count: int
+    star_count: int
+    liked: bool
+    starred: bool
+
+
+class LikeActorResponse(BaseModel):
+    id: uuid.UUID
+    username: str
+    display_name: str | None = None
+    profile_picture_url: str | None = None
+
+
+class LikeActorPageResponse(BaseModel):
+    items: list[LikeActorResponse]
     next_cursor: str | None = None
     has_more: bool

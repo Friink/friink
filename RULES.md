@@ -98,6 +98,15 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`
 - **Since:** 2026-09-01 (Asia/Karachi)
 
+### Rule: Post Likes And Stars Are Durable, Unique Reactions
+- **What:** Signed-in users may Like/Unlike and Star/Unstar visible `POST` records. Each user can have at most one Like and one Star per post at a time. Like and Star counts are public post aggregates; viewer-specific active state is returned only to an authenticated viewer. Replies are not reaction targets.
+- **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Star operations are silent. Deleted, private, blocked, or otherwise inaccessible posts cannot be reacted to and are omitted from the user's Liked/Starred lists. Direct unavailable post URLs render the neutral unavailable state.
+- **Privacy:** `likes_visible` defaults to true and is managed under Settings > Privacy. When disabled, the user's Like identity is omitted from actor lists and their Likes tab is hidden from other signed-in users, while counts and the user's own view remain intact. Stars have no actor list and are not controlled by this setting.
+- **Status:** Active; staging migration and authenticated reaction E2E passed, production migration/schema verified read-only. Deployed browser verification remains a release step after the code is deployed.
+- **Platform:** Web/API
+- **File(s):** `api/app/models/post.py`, `api/app/models/user.py`, `api/app/services/reactions.py`, `api/app/routers/posts.py`, `api/app/routers/users.py`, `api/app/services/posts.py`, `web/components/feed-post.tsx`, `web/components/post-likes-modal.tsx`, `web/components/profile-screen.tsx`, `web/components/starred-screen.tsx`, `web/components/account-screens.tsx`, `docs/like-and-star.md`
+- **Since:** 2026-09-03T20:02:30Z
+
 ## Authentication & Accounts
 
 ### Rule: Authoritative Web Session And Refresh Model

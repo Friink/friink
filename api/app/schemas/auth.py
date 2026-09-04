@@ -84,6 +84,7 @@ class UpdateCurrentUserRequest(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=120)
     about: str | None = Field(default=None, max_length=256)
     is_private: bool | None = None
+    likes_visible: bool | None = None
 
     @field_validator("username")
     @classmethod
@@ -131,6 +132,7 @@ class UserResponse(BaseModel):
     setup_step: int
     setup_completed: bool
     is_private: bool
+    likes_visible: bool
     date_of_birth: date
     location: str | None
     is_verified: bool
@@ -148,6 +150,7 @@ class PublicUserResponse(BaseModel):
     profile_picture_url: str | None
     profile_picture_updated_at: datetime | None
     is_private: bool
+    likes_visible: bool
 
     model_config = {"from_attributes": True}
 

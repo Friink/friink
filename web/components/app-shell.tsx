@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
-import { ProfileScreen } from '@/components/profile-screen';
+import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
 import { StarredScreen } from '@/components/starred-screen';
 import { Header } from '@/components/header';
 import { NavigationBar } from '@/components/navigationbar';
@@ -60,14 +60,18 @@ type AppShellProps = {
   showFloatingBar?: boolean;
   onUserChange?: (user: AuthUser) => void;
   profileStats?: { followers: number; following: number } | null;
+  profileLikedPosts?: Post[];
+  profileLikedPostsHasMore?: boolean;
+  profileLikedPostsLoading?: boolean;
+  onLoadMoreProfileLikedPosts?: () => void;
   profileConnectionsBasePath?: string;
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
   initialHomeFilter?: 'all' | 'following';
   initialMessagesTab?: 'all' | 'muted' | 'requests' | 'archived';
   initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
-  profileTab?: 'posts' | 'replies';
-  onProfileTabChange?: (tab: 'posts' | 'replies') => void;
+  profileTab?: ProfileTab;
+  onProfileTabChange?: (tab: ProfileTab) => void;
 };
 
 type ComposeContext =
@@ -88,7 +92,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -96,6 +100,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   const [accentColor, setAccentColor] = useState('#33aa55');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [profileLikedPosts, setProfileLikedPosts] = useState<Post[]>(profileLikedPostsProp ?? []);
   const [homeInjectedPost, setHomeInjectedPost] = useState<Post | null>(null);
   const [floatingDraft, setFloatingDraft] = useState('');
   const [floatingPostBusy, setFloatingPostBusy] = useState(false);
@@ -122,6 +127,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
   useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
   useEffect(() => setMessagesTab(initialMessagesTab), [initialMessagesTab]);
   useEffect(() => setSettingsTab(initialSettingsTab), [initialSettingsTab]);
+  useEffect(() => setProfileLikedPosts(profileLikedPostsProp ?? []), [profileLikedPostsProp]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
   const connectionsTabs = !viewingOtherConnections
@@ -331,6 +337,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         },
       ];
     });
+  }
+
+  function handlePostUpdated(updatedPost: Post) {
+    setPosts((current) => current.map((post) => post.id === updatedPost.id ? updatedPost : post));
+    setProfileLikedPosts((current) => updatedPost.isLiked
+      ? current.some((post) => post.id === updatedPost.id)
+        ? current.map((post) => post.id === updatedPost.id ? updatedPost : post)
+        : [updatedPost, ...current]
+      : current.filter((post) => post.id !== updatedPost.id));
   }
 
   function dismissToast(id: number) {
@@ -567,9 +582,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       text: post.content,
       connectionType: 'following',
       isConnection: true,
-      isStarred: false,
+      isStarred: post.starred ?? false,
+      isLiked: post.liked ?? false,
       replies: post.reply_count,
       quotes: post.quote_count,
+      likeCount: post.like_count ?? 0,
+      starCount: post.star_count ?? 0,
       reactions: 0,
       media: post.media.map((item) => item.url),
       quotedPost: post.quoted_post
@@ -609,18 +627,20 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const postAuthorDisplayName = typeof payload.post_author_display_name === 'string' ? payload.post_author_display_name : null;
     const requesterName = typeof payload.requester_display_name === 'string' && payload.requester_display_name ? payload.requester_display_name : requesterUsername;
     const recipientName = typeof payload.recipient_display_name === 'string' && payload.recipient_display_name ? payload.recipient_display_name : recipientUsername;
-    const actorName = postAuthorDisplayName || requesterName || recipientName || 'Friink';
-    const actorHandle = postAuthorUsername || requesterUsername || recipientUsername || 'friink';
+    const likeActorName = typeof payload.actor_display_name === 'string' && payload.actor_display_name ? payload.actor_display_name : null;
+    const likeActorHandle = typeof payload.actor_username === 'string' && payload.actor_username ? payload.actor_username : null;
+    const actorName = likeActorName || postAuthorDisplayName || requesterName || recipientName || 'Friink';
+    const actorHandle = likeActorHandle || postAuthorUsername || requesterUsername || recipientUsername || 'friink';
     const chatActorName = typeof payload.actor_display_name === 'string' && payload.actor_display_name ? payload.actor_display_name : actorName;
     const chatActorHandle = typeof payload.actor_username === 'string' && payload.actor_username ? payload.actor_username : actorHandle;
     const postPublicId = typeof payload.post_public_id === 'string' ? payload.post_public_id : null;
     const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
-    const notificationHref = notification.type === 'mention' && postAuthorUsername && postPublicId
-      ? getPostPath(postAuthorUsername, postSlug, postPublicId)
+    const notificationHref = (notification.type === 'mention' || notification.type === 'like') && postPublicId
+      ? getPostPath(postAuthorUsername || actorHandle, postSlug, postPublicId)
       : undefined;
     return {
       id: notification.id,
-      kind: notification.type === 'mention' ? 'mention' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      kind: notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
       name: notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
       handle: `@${notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle),
@@ -636,6 +656,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     switch (type) {
       case 'mention':
         return `${actorName} (@${actorHandle}) mentioned you.`;
+      case 'like':
+        return `${actorName} (@${actorHandle}) liked your post.`;
       case 'follow_sent_public':
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'You are now following this profile.';
       case 'new_follower':
@@ -915,6 +937,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                       onReply={handleReply}
                       onQuote={handleQuote}
+                      onPostUpdated={handlePostUpdated}
+                      onReactionError={(message) => addToast(message)}
                       injectedPost={homeInjectedPost}
                       onInjectedPostConsumed={() => setHomeInjectedPost(null)}
                     />
@@ -923,11 +947,17 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                     <ProfileScreen
                       user={profileUser ?? user}
                       posts={posts}
+                      likedPosts={profileLikedPosts}
+                      likedPostsHasMore={profileLikedPostsHasMore}
+                      likedPostsLoading={profileLikedPostsLoading}
+                      onLoadMoreLikedPosts={onLoadMoreProfileLikedPosts}
                       profileStats={profileStats}
                       profileConnectionsBasePath={profileConnectionsBasePath}
                       isOwnProfile={!profileUser}
                       onReply={handleReply}
                       onQuote={handleQuote}
+                      onPostUpdated={handlePostUpdated}
+                      onReactionError={(message) => addToast(message)}
                       onEditProfile={openProfileSettings}
                       onMessage={() => router.push(`/${encodeURIComponent((profileUser ?? user).username)}/chat`)}
                       onBlocked={() => router.refresh()}
@@ -955,7 +985,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} />}
+                  {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen notifications={notifications} />}
                   {activeScreen === 'settings' && (

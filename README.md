@@ -66,6 +66,7 @@ dashboard.
 - Other-user profiles expose a functional Message action that opens `/{username}/chat`; chat access still requires mutual accepted follows.
 - Other-user profile connection actions resolve from the authenticated relationship status after profile loading; they must not inherit the self-profile state.
 - The signed-in account's Connections surface always exposes Requests; pending incoming requests provide Accept and Reject actions from the authenticated API.
+- Post Likes and Stars are implemented for posts with public aggregate counts, authenticated toggles, Like notifications, profile Likes, private Starred posts, and privacy-controlled Like identity visibility. Both staging and production databases are migrated to `20260904_0024`; browser/manual verification remains after deploying the current code.
 - Current post media uses a fixed `3:5` crop tool, submit-time R2 upload, a `3:4` frame for multi-image galleries, and natural-ratio display for single images. Final crop dimensions/aspect ratio are not currently persisted.
 - Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. Mutual accepted follows enable chat immediately; a paid-tier user can initiate a non-mutual request with up to eight requester messages, after which the receiver must accept or reply. Pending requests appear in Requests, accepted chats in All, and per-user mute/archive settings control notifications and placement. See `docs/chat-behavior.md` for the complete contract.
 - Notifications use a 4-second adaptive unread-count polling transport with visibility/focus recovery; the full list refreshes while Notifications is open.
@@ -87,6 +88,7 @@ these files, and the live implementation, are:**
 - **`AGENTLOG.md`** — detailed per-change entries (agent, model, prompt summary,
   files touched, reasoning). Updated alongside every `CHANGELOG.md` entry.
 - **`docs/chat-behavior.md`** — the implementation contract for chat requests, composer states, notifications, mute/archive behavior, blocking infrastructure, and subscription boundaries.
+- **`docs/like-and-star.md`** — the implementation contract for durable post Likes and Stars, privacy behavior, Like actor lists, notifications, API routes, risks, limitations, and end-to-end acceptance checks.
 
 When these were prepared, this set was considered sufficient to fully rebuild Friink
 from scratch.

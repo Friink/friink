@@ -3,18 +3,50 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getPublicUser, listFollowers, listFollowing, loadAuthSession, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, getPublicUser, listFollowers, listFollowing, listLikedPosts, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
   username: string;
-  initialTab?: 'posts' | 'replies';
+  initialTab?: 'posts' | 'replies' | 'likes';
 };
+
+function getInitials(value: string) {
+  return value.replace(/[^A-Za-z0-9]+/g, ' ').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('').slice(0, 2) || 'FR';
+}
+
+function mapApiPost(post: ApiPost): Post {
+  return {
+    id: post.id, publicId: post.public_id, slug: post.slug, kind: post.kind,
+    name: post.author_display_name || post.author_username, handle: `@${post.author_username}`,
+    initials: getInitials(post.author_display_name || post.author_username), imageUrl: post.profile_picture_url,
+    tone: 'mint', createdAt: post.created_at, text: post.content, connectionType: 'following', isConnection: true,
+    isStarred: post.starred ?? false, isLiked: post.liked ?? false, replies: post.reply_count, quotes: post.quote_count,
+    likeCount: post.like_count ?? 0, starCount: post.star_count ?? 0, reactions: 0, media: post.media.map((item) => item.url),
+    quotedPost: post.quoted_post ? {
+      id: post.quoted_post.id,
+      publicId: post.quoted_post.public_id,
+      slug: post.quoted_post.slug,
+      authorUsername: post.quoted_post.author_username,
+      authorDisplayName: post.quoted_post.author_display_name,
+      imageUrl: post.quoted_post.profile_picture_url,
+      content: post.quoted_post.content,
+      mediaCount: post.quoted_post.media_count,
+      media: post.quoted_post.media.map((item) => item.url),
+      unavailable: post.quoted_post.unavailable,
+    } : null,
+  };
+}
 
 export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profileUser, setProfileUser] = useState<AuthUser | null>(null);
   const [profileStats, setProfileStats] = useState<{ followers: number; following: number } | null>(null);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+  const [likedCursor, setLikedCursor] = useState<string | null>(null);
+  const [likedHasMore, setLikedHasMore] = useState(false);
+  const [likedLoading, setLikedLoading] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   useEffect(() => {
@@ -55,6 +87,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
           username: publicUser.username,
           about: publicUser.about,
           isPrivate: publicUser.isPrivate,
+          likesVisible: publicUser.likesVisible,
           profilePictureUrl: publicUser.profilePictureUrl,
           profilePictureUpdatedAt: publicUser.profilePictureUpdatedAt,
           email: `${publicUser.username}@friink.local`,
@@ -71,6 +104,36 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
       active = false;
     };
   }, [user, username]);
+
+  async function loadLikedPosts(reset = false) {
+    if (!user || likedLoading || (!reset && !likedCursor)) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    setLikedLoading(true);
+    try {
+      const page = await listLikedPosts(session.accessToken, username || user.username, reset ? null : likedCursor);
+      const incoming = page.items.map(mapApiPost);
+      setLikedPosts((current) => reset ? incoming : [...current, ...incoming.filter((item) => !current.some((old) => old.id === item.id))]);
+      setLikedCursor(page.next_cursor);
+      setLikedHasMore(page.has_more);
+    } catch {
+      if (reset) {
+        setLikedPosts([]);
+        setLikedCursor(null);
+        setLikedHasMore(false);
+      }
+    } finally {
+      setLikedLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (initialTab !== 'likes') return;
+    setLikedPosts([]);
+    setLikedCursor(null);
+    setLikedHasMore(false);
+    void loadLikedPosts(true);
+  }, [user, username, initialTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -113,6 +176,10 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
       user={user}
       profileUser={isOwnProfile ? undefined : (profileUser ?? undefined)}
       profileStats={profileStats}
+      profileLikedPosts={likedPosts}
+      profileLikedPostsHasMore={likedHasMore}
+      profileLikedPostsLoading={likedLoading}
+      onLoadMoreProfileLikedPosts={() => { void loadLikedPosts(); }}
       profileConnectionsBasePath={profileConnectionsBasePath}
       onLogout={handleLogout}
       initialScreen="profile"

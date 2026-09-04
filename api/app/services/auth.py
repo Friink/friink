@@ -178,6 +178,10 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
         user.is_private = data.is_private
         changed = True
 
+    if data.likes_visible is not None and data.likes_visible != user.likes_visible:
+        user.likes_visible = data.likes_visible
+        changed = True
+
     if was_private and data.is_private is False:
         now = datetime.now(UTC)
         pending_requests = session.execute(

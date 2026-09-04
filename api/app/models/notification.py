@@ -17,6 +17,7 @@ class NotificationType(str, enum.Enum):
     unfollow_confirmed = "unfollow_confirmed"
     request_accepted = "request_accepted"
     mention = "mention"
+    like = "like"
     chat_request_received = "chat_request_received"
     chat_message = "chat_message"
     chat_request_accepted = "chat_request_accepted"

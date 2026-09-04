@@ -131,6 +131,9 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [readReceiptsDraft, setReadReceiptsDraft] = useState(true);
   const [readReceiptsSaved, setReadReceiptsSaved] = useState(true);
   const [isUpdatingReadReceipts, setIsUpdatingReadReceipts] = useState(false);
+  const [likesVisibleDraft, setLikesVisibleDraft] = useState(user.likesVisible);
+  const [likesVisibleSaved, setLikesVisibleSaved] = useState(user.likesVisible);
+  const [isUpdatingLikesVisible, setIsUpdatingLikesVisible] = useState(false);
   const [blockedOpen, setBlockedOpen] = useState(false);
   const [blockedQuery, setBlockedQuery] = useState('');
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
@@ -149,6 +152,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setAbout(user.about);
     setIsPrivate(user.isPrivate);
     setPrivacyDraft(user.isPrivate);
+    setLikesVisibleDraft(user.likesVisible);
+    setLikesVisibleSaved(user.likesVisible);
     setAppearanceDraft(appearance);
     setAccentColorDraft(accentColor);
     setProfilePicturePreview(user.profilePictureUrl);
@@ -165,7 +170,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setShowConfirmPassword(false);
     setShowPasswordCriteria(false);
     setPasswordStatus('');
-  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.profilePictureUrl, appearance, accentColor]);
+  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
 
   useEffect(() => {
     if (activeTab !== 'account') return;
@@ -236,6 +241,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
   const canUpdateReadReceipts = readReceiptsDraft !== readReceiptsSaved && !isUpdatingReadReceipts;
+  const canUpdateLikesVisible = likesVisibleDraft !== likesVisibleSaved && !isUpdatingLikesVisible;
   const isNewPasswordValid = newPassword.length >= 8
     && !/\s/.test(newPassword)
     && /[A-Z]/.test(newPassword)
@@ -498,6 +504,30 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update read receipts.');
     } finally {
       setIsUpdatingReadReceipts(false);
+    }
+  }
+
+  async function handleLikesVisibleUpdate() {
+    if (!canUpdateLikesVisible) return;
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update Like visibility.');
+      return;
+    }
+    setIsUpdatingLikesVisible(true);
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, { likesVisible: likesVisibleDraft });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setLikesVisibleDraft(updatedSession.user.likesVisible);
+      setLikesVisibleSaved(updatedSession.user.likesVisible);
+      onToast?.(`Like visibility ${updatedSession.user.likesVisible ? 'enabled' : 'disabled'}.`, 'success');
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update Like visibility.');
+      setLikesVisibleDraft(likesVisibleSaved);
+    } finally {
+      setIsUpdatingLikesVisible(false);
     }
   }
 
@@ -928,6 +958,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               trailing={<SaveTickButton disabled={!canUpdateReadReceipts} busy={isUpdatingReadReceipts} onClick={handleReadReceiptsUpdate} label="Update read receipts" />}
             >
               <SettingsToggle value={readReceiptsDraft} onChange={setReadReceiptsDraft} disabled={isUpdatingReadReceipts} />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-regular fa-heart" aria-hidden="true" /></span>}
+              title="Show my Likes"
+              subtitle="Let signed-in people see your liked posts and identify you in Like lists. Like counts remain public when this is off."
+              className="settings-row"
+              trailing={<SaveTickButton disabled={!canUpdateLikesVisible} busy={isUpdatingLikesVisible} onClick={handleLikesVisibleUpdate} label="Update Like visibility" />}
+            >
+              <SettingsToggle value={likesVisibleDraft} onChange={setLikesVisibleDraft} disabled={isUpdatingLikesVisible} />
             </SettingsRow>
 
             <SettingsRow
