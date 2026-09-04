@@ -6477,3 +6477,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The documented signup order requires email ownership verification before collecting the remaining signup data; the previous implementation incorrectly sent OTP only after the profile step.
 - Notes: No account is created before verification. Production delivery remains deferred; staging must apply the migration and redeploy API/web.
 - Verification Status: Python compilation and web TypeScript check passed; focused API tests and migration execution remain to be run where database configuration permits.
+
+## 2026-09-04T22:53:39Z — Reproduce staging email-first OTP failure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the deployed email-first signup flow and fix the failure after email submission.
+- Changes Made: Reproduced the live failure with a synthetic email; confirmed staging API health and CORS preflight return `200`, while `POST /auth/signup/email/start` returns `500`; recorded the migration dependency in the auth audit.
+- Files: `docs/Claude-audit-auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: The browser's `Failed to fetch` masks an API-side 500 response. The new email-only reservation requires migration `20260905_0025`.
+- Notes: No production system was accessed. This workspace has no staging `DATABASE_URL`, API `.env`, Vercel CLI, or project link, so the migration could not be executed here.
+- Verification Status: Live `GET /health/db` and signup CORS preflight passed; live signup POST remains blocked until the staging database is upgraded and the API is redeployed/verified.

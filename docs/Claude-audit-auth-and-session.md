@@ -178,6 +178,32 @@ must resolve before a browser/signup trace can be recorded. The final production
 provider/account, durable email outbox, and production delivery rollout remain
 deferred.
 
+### Phase 2c live failure trace
+
+After the email-first web build was deployed, a direct staging check reproduced
+the browser failure:
+
+```text
+GET  https://staging-api.friink.com/health/db
+HTTP 200
+
+OPTIONS https://staging-api.friink.com/auth/signup/email/start
+HTTP 200
+Access-Control-Allow-Origin: https://staging.friink.com
+
+POST https://staging-api.friink.com/auth/signup/email/start
+HTTP 500 Internal Server Error
+```
+
+The POST used only a synthetic test email. The live web bundle contains the new
+email-first route and the API host resolves, so the browser's `Failed to fetch`
+message is caused by the API's unhandled 500 response (which lacks the CORS
+headers on the error path), not by the web transition or the Resend variable.
+The most likely deployment-state cause is that staging is running the new
+email-only reservation code against the pre-`20260905_0025` schema. This must be
+confirmed and corrected by running the additive migration against the staging
+database before recording successful OTP evidence.
+
 ### Phase 2 phase-boundary clarification
 
 The phase labels are intentionally distinct:

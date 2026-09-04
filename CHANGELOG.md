@@ -1598,3 +1598,12 @@ _Last updated: 2026-09-01_
 - [api] Python compilation passed.
 - [web] TypeScript check passed.
 - [repo] Documentation and code diff review pending focused database-backed verification.
+
+## 2026-09-05
+
+### Fixed / Diagnosed
+- [staging] Confirmed the email-first signup frontend and API route are deployed and reachable.
+- [staging] Identified the remaining failure as `HTTP 500` from `POST /auth/signup/email/start`, caused by the staging database not yet being upgraded for migration `20260905_0025`; the browser surfaces this as `Failed to fetch` because the error response lacks CORS headers.
+
+### Pending
+- [staging] Run `python -m alembic upgrade head` against the staging database, redeploy the API if required, and capture the successful OTP delivery/verification trace.
