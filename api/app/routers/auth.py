@@ -15,6 +15,11 @@ from app.models.auth_session import AuthSession
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
+    LoginChallengeResponse,
+    LoginVerifyRequest,
+    EmailChangeStartRequest,
+    EmailChangeStartResponse,
+    EmailChangeVerifyRequest,
     ProfilePictureConfirmRequest,
     ProfilePictureConfirmResponse,
     ProfilePictureUploadUrlRequest,
@@ -35,15 +40,19 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
+from app.services.email_change import complete_email_change, start_email_change
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailDeliveryError, EmailService
 from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
+from app.services.login_challenges import create_login_challenge, derive_pending_device_identifier, get_login_challenge, verify_login_challenge
 from app.services.session_service import (
     DEVICE_COOKIE_NAME,
     create_auth_session,
+    device_signals_changed,
+    get_recognized_device,
     get_or_create_recognized_device,
     get_refresh_token,
     get_refresh_token_for_update,
@@ -112,10 +121,9 @@ async def signup_start(
     settings: Settings = Depends(get_settings),
 ) -> SignupStartResponse:
     require_allowed_origin(request, settings)
-    try:
-        token = await start_signup_reservation(session, payload, EmailService(settings)) if settings.signup_otp_enabled else secrets.token_urlsafe(32)
-    except EmailDeliveryError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
+    if settings.signup_otp_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
+    token = secrets.token_urlsafe(32)
     return SignupStartResponse(
         verification_required=settings.signup_otp_enabled,
         reservation_token=token,
@@ -189,13 +197,17 @@ def set_device_cookie(response: Response, token: str, settings: Settings) -> Non
 
 
 def user_response(user: User, settings: Settings) -> UserResponse:
-    return UserResponse.model_validate(user).model_copy(
+    values = {name: getattr(user, name) for name in UserResponse.model_fields if name != "id"}
+    values["id"] = user.public_id
+    return UserResponse.model_validate(values).model_copy(
         update={"profile_picture_url": profile_picture_url_for(user, settings)}
     )
 
 
 def public_user_response(user: User, settings: Settings) -> PublicUserResponse:
-    return PublicUserResponse.model_validate(user).model_copy(
+    values = {name: getattr(user, name) for name in PublicUserResponse.model_fields if name != "id"}
+    values["id"] = user.public_id
+    return PublicUserResponse.model_validate(values).model_copy(
         update={"profile_picture_url": profile_picture_url_for(user, settings)}
     )
 
@@ -229,19 +241,17 @@ async def username_availability(
     )
 
 
-@router.post("/login", response_model=TokenResponse)
-async def login(
-    payload: LoginRequest,
+async def _issue_login_session(
+    user: User,
     request: Request,
     response: Response,
-    session: Session = Depends(get_session),
-    settings: Settings = Depends(get_settings),
+    session: Session,
+    settings: Settings,
+    raw_device_identifier: str | None,
 ) -> TokenResponse:
-    require_allowed_origin(request, settings)
-    user = await authenticate_user(session, payload.email, payload.password)
     access_token = create_access_token(user.id)
     recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
-        session, user.id, request, request.cookies.get(DEVICE_COOKIE_NAME)
+        session, user.id, request, raw_device_identifier
     )
     auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
@@ -257,6 +267,69 @@ async def login(
     set_refresh_cookie(response, issued_refresh.raw_token, settings)
     set_device_cookie(response, device_identifier, settings)
     return TokenResponse(access_token=access_token, user=user_response(user, settings))
+
+
+@router.post("/login", response_model=TokenResponse | LoginChallengeResponse)
+async def login(
+    payload: LoginRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> TokenResponse | LoginChallengeResponse:
+    require_allowed_origin(request, settings)
+    user = await authenticate_user(session, payload.identifier, payload.password)
+    raw_device_identifier = request.cookies.get(DEVICE_COOKIE_NAME)
+    recognized_device = get_recognized_device(session, user.id, raw_device_identifier)
+    requires_risk_challenge = bool(settings.login_risk_otp_enabled and settings.resend_api_key.strip()) and (
+        recognized_device is None or device_signals_changed(session, recognized_device, request)
+    )
+    if requires_risk_challenge:
+        challenge, challenge_token, otp_code = create_login_challenge(
+            session, user, recognized_device.id if recognized_device else None, settings
+        )
+        try:
+            await EmailService(settings).send_login_otp(user.email, otp_code)
+        except EmailDeliveryError as exc:
+            session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Verification email could not be sent. Please try again later.",
+            ) from exc
+        await commit(session)
+        return LoginChallengeResponse(
+            challenge_token=challenge_token,
+            message="We sent a verification code to your email to approve this login.",
+        )
+    return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
+
+
+@router.post("/login/verify", response_model=TokenResponse)
+async def login_verify(
+    payload: LoginVerifyRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> TokenResponse:
+    require_allowed_origin(request, settings)
+    challenge = get_login_challenge(session, payload.challenge_token)
+    user = session.get(User, challenge.user_id) if challenge else None
+    if not challenge or not user or user.account_locked:
+        if user and user.account_locked:
+            raise HTTPException(status_code=status.HTTP_423_LOCKED, detail="Your account is locked. Contact support.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+    if not verify_login_challenge(session, challenge, user, payload.otp):
+        await commit(session)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+    challenge.consumed_at = datetime.now(UTC)
+    raw_device_identifier = request.cookies.get(DEVICE_COOKIE_NAME)
+    if challenge.device_id:
+        if not raw_device_identifier:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+    else:
+        raw_device_identifier = derive_pending_device_identifier(payload.challenge_token, settings)
+    return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
 
 
 @router.post("/refresh", response_model=RefreshResponse)
@@ -314,7 +387,14 @@ async def refresh(
             token_record.reuse_grace_used_at = now
             user = session.get(User, token_record.user_id)
             auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
-            if not user or (auth_session and auth_session.revoked_at is not None):
+            if not user or user.account_locked or (auth_session and auth_session.revoked_at is not None):
+                if user and user.account_locked:
+                    revoke_refresh_family(session, token_record.family_id, "account_locked", now)
+                    await commit(session)
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail=auth_error_detail("Your account is locked. Contact support.", AuthErrorCode.SESSION_NOT_FOUND),
+                    )
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
             if auth_session:
                 auth_session.last_active_at = now
@@ -371,6 +451,13 @@ async def refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.SESSION_NOT_FOUND),
+        )
+    if user.account_locked:
+        revoke_refresh_family(session, token_record.family_id, "account_locked", now)
+        await commit(session)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Your account is locked. Contact support.", AuthErrorCode.SESSION_NOT_FOUND),
         )
     auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
     if auth_session and auth_session.revoked_at is not None:
@@ -590,7 +677,49 @@ async def update_me(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> UserResponse:
+    if payload.email is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email changes require ownership verification.",
+        )
     return user_response(await update_current_user(session, current_user, payload), settings)
+
+
+@router.post("/me/email/change/start", response_model=EmailChangeStartResponse, status_code=status.HTTP_202_ACCEPTED)
+async def start_my_email_change(
+    payload: EmailChangeStartRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> EmailChangeStartResponse:
+    require_allowed_origin(request, settings)
+    try:
+        challenge_token, message = await start_email_change(
+            session, current_user, str(payload.email), payload.current_password, EmailService(settings)
+        )
+    except EmailDeliveryError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Verification email could not be sent. Please try again later.",
+        ) from exc
+    return EmailChangeStartResponse(challenge_token=challenge_token, message=message)
+
+
+@router.post("/me/email/change/verify", response_model=UserResponse)
+async def verify_my_email_change(
+    payload: EmailChangeVerifyRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> UserResponse:
+    require_allowed_origin(request, settings)
+    return user_response(
+        await complete_email_change(session, current_user, payload.challenge_token, payload.otp),
+        settings,
+    )
 
 
 @router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)

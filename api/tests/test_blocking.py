@@ -12,9 +12,11 @@ from app.models.user import User
 def _signup(client: TestClient, suffix: str) -> tuple[uuid.UUID, str, str]:
     email = f"block-{suffix}@example.com"
     username = f"block_{suffix}"
-    response = client.post("/auth/signup", json={"email": email, "username": username, "display_name": username, "password": "Strong-password-9!", "date_of_birth": "1990-01-01"})
+    response = client.post("/auth/signup", json={"email": email, "username": username, "display_name": username, "password": "Strong-pass9!", "date_of_birth": "1990-01-01"})
     assert response.status_code == 201, response.text
-    return uuid.UUID(response.json()["id"]), email, username
+    with get_session_factory()() as session:
+        user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
+    return user_id, email, username
 
 
 def test_block_removes_relationship_hides_profile_and_unblock_does_not_restore() -> None:
@@ -25,8 +27,8 @@ def test_block_removes_relationship_hides_profile_and_unblock_does_not_restore()
         first_id, first_email, first_username = _signup(client, f"a{suffix}")
         second_id, second_email, second_username = _signup(client, f"b{suffix}")
         user_ids.extend([first_id, second_id])
-        first_access = client.post("/auth/login", json={"email": first_email, "password": "Strong-password-9!"}).json()["access_token"]
-        second_access = client.post("/auth/login", json={"email": second_email, "password": "Strong-password-9!"}).json()["access_token"]
+        first_access = client.post("/auth/login", json={"email": first_email, "password": "Strong-pass9!"}).json()["access_token"]
+        second_access = client.post("/auth/login", json={"email": second_email, "password": "Strong-pass9!"}).json()["access_token"]
         first_headers = {"Authorization": f"Bearer {first_access}"}
         second_headers = {"Authorization": f"Bearer {second_access}"}
 
@@ -63,8 +65,8 @@ def test_blocked_pending_request_freezes_count_and_unblock_does_not_extend_cap()
             assert requester
             requester.subscription_tier = "pro"
             session.commit()
-        requester_access = client.post("/auth/login", json={"email": requester_email, "password": "Strong-password-9!"}).json()["access_token"]
-        recipient_access = client.post("/auth/login", json={"email": recipient_email, "password": "Strong-password-9!"}).json()["access_token"]
+        requester_access = client.post("/auth/login", json={"email": requester_email, "password": "Strong-pass9!"}).json()["access_token"]
+        recipient_access = client.post("/auth/login", json={"email": recipient_email, "password": "Strong-pass9!"}).json()["access_token"]
         requester_headers = {"Authorization": f"Bearer {requester_access}"}
         recipient_headers = {"Authorization": f"Bearer {recipient_access}"}
         first = client.post(f"/chat/conversations/with/{recipient_username}/messages", headers=requester_headers, json={"content": "one", "client_message_id": str(uuid.uuid4())})

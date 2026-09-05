@@ -20,6 +20,7 @@ class SignupReservation(Base):
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

@@ -64,9 +64,30 @@ def _user_agent_details(request) -> tuple[str, str | None, str | None, str | Non
         browser = parsed.browser.family if parsed.browser.family and parsed.browser.family.lower() != "other" else None
         operating_system = parsed.os.family if parsed.os.family and parsed.os.family.lower() != "other" else None
     except Exception:
-        device = "Unknown device"
-        browser = None
-        operating_system = None
+        lowered = user_agent.lower()
+        device = "Mobile device" if any(marker in lowered for marker in ("mobile", "android", "iphone", "ipad")) else "Desktop"
+        if "edg/" in lowered:
+            browser = "Edge"
+        elif "chrome/" in lowered:
+            browser = "Chrome"
+        elif "firefox/" in lowered:
+            browser = "Firefox"
+        elif "safari/" in lowered and "chrome/" not in lowered:
+            browser = "Safari"
+        else:
+            browser = None
+        if "windows" in lowered:
+            operating_system = "Windows"
+        elif "android" in lowered:
+            operating_system = "Android"
+        elif "iphone" in lowered or "ipad" in lowered or "ios" in lowered:
+            operating_system = "iOS"
+        elif "mac os" in lowered:
+            operating_system = "macOS"
+        elif "linux" in lowered:
+            operating_system = "Linux"
+        else:
+            operating_system = None
     return device, browser, operating_system, user_agent[:512] or None
 
 
@@ -84,6 +105,8 @@ def get_or_create_recognized_device(
             )
         ).scalar_one_or_none()
         if recognized:
+            recognized.browser = browser
+            recognized.operating_system = operating_system
             recognized.last_seen_at = datetime.now(UTC)
             return recognized, raw_identifier, True
 
@@ -97,6 +120,23 @@ def get_or_create_recognized_device(
     session.add(recognized)
     session.flush()
     return recognized, raw_identifier, False
+
+
+def get_recognized_device(session: Session, user_id: uuid.UUID, raw_identifier: str | None) -> RecognizedDevice | None:
+    if not raw_identifier:
+        return None
+    return session.execute(
+        select(RecognizedDevice).where(
+            RecognizedDevice.user_id == user_id,
+            RecognizedDevice.token_hash == hash_device_identifier(raw_identifier),
+            RecognizedDevice.revoked_at.is_(None),
+        )
+    ).scalar_one_or_none()
+
+
+def device_signals_changed(session: Session, recognized: RecognizedDevice, request) -> bool:
+    _device, browser, operating_system, _ = _user_agent_details(request)
+    return recognized.browser != browser or recognized.operating_system != operating_system
 
 
 def create_auth_session(

@@ -28,6 +28,12 @@ class OtpCode(Base):
     signup_reservation_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("signup_reservations.id", ondelete="CASCADE"), nullable=True, index=True
     )
+    login_challenge_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("login_challenges.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    email_change_request_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("email_change_requests.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     otp_hash: Mapped[bytes] = mapped_column(LargeBinary(length=32), nullable=False)
     purpose: Mapped[OtpPurpose] = mapped_column(Enum(OtpPurpose, name="otp_purpose"), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

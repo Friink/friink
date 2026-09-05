@@ -1,8 +1,9 @@
 import re
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, EmailStr, Field, field_validator, model_validator
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
@@ -88,8 +89,40 @@ class SignupCompleteRequest(SignupRequest):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    identifier: str = Field(
+        min_length=1,
+        max_length=320,
+        validation_alias=AliasChoices("identifier", "email"),
+    )
     password: str
+
+
+class LoginChallengeResponse(BaseModel):
+    challenge_required: Literal[True] = True
+    challenge_token: str = Field(min_length=32, max_length=128)
+    message: str
+
+
+class LoginVerifyRequest(BaseModel):
+    challenge_token: str = Field(min_length=32, max_length=128)
+    otp: str = Field(min_length=6, max_length=6)
+
+
+class EmailChangeStartRequest(BaseModel):
+    email: EmailStr
+    current_password: str = Field(min_length=1)
+
+
+class EmailChangeStartResponse(BaseModel):
+    accepted: bool = True
+    verification_required: Literal[True] = True
+    challenge_token: str = Field(min_length=32, max_length=128)
+    message: str
+
+
+class EmailChangeVerifyRequest(BaseModel):
+    challenge_token: str = Field(min_length=32, max_length=128)
+    otp: str = Field(min_length=6, max_length=6)
 
 
 class UpdateCurrentUserRequest(BaseModel):
@@ -136,7 +169,7 @@ class UpdateSetupRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     email: EmailStr
     username: str
     display_name: str | None
@@ -147,8 +180,6 @@ class UserResponse(BaseModel):
     setup_completed: bool
     is_private: bool
     likes_visible: bool
-    date_of_birth: date
-    location: str | None
     is_verified: bool
     created_at: datetime
     updated_at: datetime
@@ -157,7 +188,7 @@ class UserResponse(BaseModel):
 
 
 class PublicUserResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     username: str
     display_name: str | None
     about: str | None

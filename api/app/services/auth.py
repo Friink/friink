@@ -4,7 +4,7 @@ import secrets
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models.connection import FollowRequest, FollowRequestStatus
@@ -25,16 +25,24 @@ LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, tim
 LOCKOUT_ATTEMPTS = 5
 LOCKOUT_DURATION = timedelta(hours=24)
 SIGNUP_MESSAGE = "If the signup details can be accepted, verification instructions will be sent."
+SIGNUP_RESERVATION_TTL = timedelta(minutes=30)
 
 
 async def get_user_by_email(session: Session, email: str) -> User | None:
-    result = session.execute(select(User).where(func.lower(User.email) == email.lower()))
+    result = session.execute(select(User).where(func.lower(User.email) == email.strip().casefold()))
     return result.scalar_one_or_none()
 
 
 async def get_user_by_username(session: Session, username: str) -> User | None:
     result = session.execute(select(User).where(User.username_key == username.casefold()))
     return result.scalar_one_or_none()
+
+
+async def get_user_by_login_identifier(session: Session, identifier: str) -> User | None:
+    normalized_identifier = identifier.strip()
+    if "@" in normalized_identifier:
+        return await get_user_by_email(session, normalized_identifier)
+    return await get_user_by_username(session, normalized_identifier)
 
 
 async def is_username_available(session: Session, username: str, exclude_user_id: uuid.UUID | None = None) -> bool:
@@ -51,7 +59,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
 
     user = User(
-        email=data.email.lower(),
+        email=str(data.email).strip().casefold(),
         username=data.username,
         username_key=data.username.casefold(),
         display_name=data.display_name or data.username,
@@ -68,9 +76,6 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
     session.add(UserUsernameHistory(user_id=user.id, username_key=user.username_key, username_display=user.username, event_type="created"))
     await commit(session)
 
-    # TODO: once OTP verification is reintroduced, keep incomplete registrations
-    # reusable by cleaning up or expiring unverified rows before uniqueness checks.
-    # TODO: wire up OTP once email is configured.
     if email_service:
         await email_service.send_registration_successful(user)
     return user
@@ -89,7 +94,9 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
     if not await is_username_available(session, data.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
 
+    session.execute(delete(SignupReservation).where(SignupReservation.email == normalized_email))
     token = secrets.token_urlsafe(32)
+    now = datetime.now(UTC)
     reservation = SignupReservation(
         token_hash=_reservation_token_hash(token),
         email=normalized_email,
@@ -99,6 +106,7 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
+        expires_at=now + SIGNUP_RESERVATION_TTL,
     )
     session.add(reservation)
     session.flush()
@@ -110,10 +118,13 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
 
 async def start_signup_email_reservation(session: Session, email: str, email_service: EmailService) -> str:
     normalized_email = email.strip().casefold()
+    session.execute(delete(SignupReservation).where(SignupReservation.email == normalized_email))
     token = secrets.token_urlsafe(32)
+    now = datetime.now(UTC)
     reservation = SignupReservation(
         token_hash=_reservation_token_hash(token),
         email=normalized_email,
+        expires_at=now + SIGNUP_RESERVATION_TTL,
     )
     session.add(reservation)
     session.flush()
@@ -127,7 +138,7 @@ async def verify_signup_email_reservation(session: Session, token: str, otp: str
     reservation = session.execute(
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
     ).scalar_one_or_none()
-    if not reservation or reservation.email_verified_at is not None or not verify_signup_otp(session, reservation, otp):
+    if not reservation or reservation.expires_at <= datetime.now(UTC) or reservation.email_verified_at is not None or not verify_signup_otp(session, reservation, otp):
         await commit(session)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
     reservation.email_verified_at = datetime.now(UTC)
@@ -139,7 +150,7 @@ async def complete_signup_email_reservation(session: Session, token: str, data: 
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
     ).scalar_one_or_none()
     normalized_email = str(data.email).strip().casefold()
-    if not reservation or reservation.email_verified_at is None or normalized_email != reservation.email:
+    if not reservation or reservation.expires_at <= datetime.now(UTC) or reservation.email_verified_at is None or normalized_email != reservation.email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email verification is required before signup.")
     if await get_user_by_email(session, reservation.email) or not await is_username_available(session, data.username):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The signup details could not be accepted.")
@@ -169,7 +180,7 @@ async def complete_signup_reservation(session: Session, token: str, otp: str) ->
     reservation = session.execute(
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
     ).scalar_one_or_none()
-    if not reservation or not verify_signup_otp(session, reservation, otp):
+    if not reservation or reservation.expires_at <= datetime.now(UTC) or not verify_signup_otp(session, reservation, otp):
         await commit(session)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
 
@@ -198,6 +209,18 @@ async def complete_signup_reservation(session: Session, token: str, otp: str) ->
     return user
 
 
+def purge_expired_signup_reservations(session: Session, now: datetime | None = None, batch_size: int = 500) -> int:
+    """Bounded maintenance hook that releases abandoned signup emails."""
+    now = now or datetime.now(UTC)
+    ids = session.execute(
+        select(SignupReservation.id).where(SignupReservation.expires_at <= now).limit(batch_size)
+    ).scalars().all()
+    if not ids:
+        return 0
+    result = session.execute(delete(SignupReservation).where(SignupReservation.id.in_(ids)))
+    return result.rowcount or 0
+
+
 async def update_current_user(session: Session, user: User, data: UpdateCurrentUserRequest) -> User:
     changed = False
     was_private = user.is_private
@@ -208,11 +231,12 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
         old_username = user.username
         user.username = data.username
         user.username_key = data.username.casefold()
+        session.add(UserUsernameHistory(user_id=user.id, username_key=old_username.casefold(), username_display=old_username, event_type="released"))
         session.add(UserUsernameHistory(user_id=user.id, username_key=user.username_key, username_display=user.username, event_type="changed"))
         changed = True
 
     if data.email is not None:
-        normalized_email = data.email.lower()
+        normalized_email = str(data.email).strip().casefold()
         if normalized_email != user.email:
             existing_user = await get_user_by_email(session, normalized_email)
             if existing_user and existing_user.id != user.id:
@@ -279,14 +303,31 @@ async def change_password(session: Session, user: User, data: ChangePasswordRequ
     await commit(session)
 
 
-async def authenticate_user(session: Session, email: str, password: str) -> User:
-    user = await get_user_by_email(session, email)
+async def authenticate_user(session: Session, identifier: str, password: str) -> User:
+    user = await get_user_by_login_identifier(session, identifier)
     now = datetime.now(UTC)
 
-    if user and user.locked_until and user.locked_until > now:
+    if user and user.account_locked:
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
-            detail=f"Account locked, try again after {user.locked_until.isoformat()}.",
+            detail="Your account is locked. Contact support.",
+        )
+
+    if user and user.locked_until and user.locked_until > now:
+        remaining = user.locked_until - now
+        if remaining.total_seconds() <= 30 * 60 + 1:
+            tier = "30 minutes"
+        elif remaining.total_seconds() <= 60 * 60 + 1:
+            tier = "1 hour"
+        else:
+            tier = "24 hours"
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "message": f"Too many login attempts. Try again in about {tier}, around {user.locked_until.isoformat()} UTC.",
+                "code": "LOGIN_COOLDOWN",
+                "retry_at": user.locked_until.isoformat(),
+            },
         )
 
     if not user or not verify_password(password, user.password_hash):
@@ -298,7 +339,6 @@ async def authenticate_user(session: Session, email: str, password: str) -> User
     user.locked_until = None
     await commit(session)
     await refresh(session, user)
-    # TODO: insert OTP challenge here between password check and token issuance, once email is configured.
     return user
 
 

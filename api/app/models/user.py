@@ -1,7 +1,8 @@
 import uuid
+import secrets
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Index, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, Index, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,9 +11,13 @@ from app.db import Base
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = (Index("uq_users_username_key", "username_key", unique=True),)
+    __table_args__ = (
+        Index("uq_users_username_key", "username_key", unique=True),
+        Index("uq_users_email_casefold", text("lower(email)"), unique=True),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    public_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(24))
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
     username: Mapped[str] = mapped_column(String(64), nullable=False)
     username_key: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -33,6 +38,7 @@ class User(Base):
     likes_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     failed_login_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    account_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

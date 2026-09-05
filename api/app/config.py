@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=30, alias="REFRESH_TOKEN_EXPIRE_DAYS")
     refresh_token_reuse_grace_seconds: int = Field(default=60, alias="REFRESH_TOKEN_REUSE_GRACE_SECONDS")
     signup_otp_enabled: bool = Field(default=False, alias="SIGNUP_OTP_ENABLED")
+    login_risk_otp_enabled: bool = Field(default=True, alias="LOGIN_RISK_OTP_ENABLED")
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
     resend_from_email: str = Field(default="onboarding@resend.dev", alias="RESEND_FROM_EMAIL")
     resend_from_name: str = Field(default="Friink", alias="RESEND_FROM_NAME")

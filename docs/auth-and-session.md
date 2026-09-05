@@ -1,8 +1,8 @@
 # Friink Authentication and Session Architecture
 
-Status: Proposed design; requirements below approved for planning, implementation not yet approved
+Status: Proposed architecture; Phase 1 ordinary-session baseline is implemented; multi-account and later phases remain planned
 
-Last updated: 2026-09-02T20:22:34Z
+Last updated: 2026-09-05T03:00:00Z
 
 This document consolidates the agreed direction for Friink authentication,
 ordinary login sessions, account identity changes, security notifications,
@@ -27,14 +27,40 @@ The following points are part of the planned scope:
   registry are in scope now.
 - Signup email confirmation uses a fresh six-character alphanumeric OTP once
   email delivery is available. The user-facing signup order is email, OTP,
-  password, then profile details. Ordinary password login does not require an
-  OTP when the login is recognized as normal; risk-based OTP/MFA is used for a
-  new or suspicious device/login and for defined high-risk actions. Access-token
-  refresh never requires an OTP.
+  password, then profile details. Login accepts either the account email or
+  username, with both identifiers matched case-insensitively. Signup remains
+  email-first and email ownership remains the OTP boundary. Ordinary password
+  login does not require an OTP when the login is recognized as normal;
+  risk-based OTP/MFA is used for a new or suspicious device/login and for
+  defined high-risk actions. Access-token refresh never requires an OTP.
 - Failed-login lockout uses a configurable progressive policy: the third
   failure starts a 30-minute cooldown, the fourth starts a one-hour cooldown,
   and the fifth starts a 24-hour cooldown. A successful login resets the
   progressive failure state. The policy may be strengthened later.
+- Multiple-account support has a fixed user flow: `Add account` in the side
+  drawer opens a design-system login/signup modal; successful authentication
+  adds the account to the current browser profile or mobile installation; and
+  `Change account` appears only once at least two accounts are authenticated.
+- A browser profile or mobile installation may remember the number of
+  independent authenticated accounts configured by
+  `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`. The safe default is `5`; this is a
+  per-device switcher limit, not a limit on how many accounts a person may
+  create. To exceed the configured limit, the user must remove one remembered
+  account first.
+- The setting accepts values from `1` through `16`. A value of `1` keeps the
+  single-account path available while effectively disabling account
+  switching. Sixteen is the current operational ceiling for the planned
+  per-account-cookie design; supporting more accounts would require revisiting
+  browser cookie and credential-storage architecture first.
+- Ordinary sessions have both a 30-day sliding idle target and a 180-day
+  maximum lifetime. Re-authentication is required after the absolute maximum,
+  even if the account was used recently.
+- `Log out` removes the active account from the current device and revokes its
+  current device session only. Other remembered accounts remain available.
+  Settings session controls remain scoped to the active account.
+- Phase 1's ordinary-session behavior is the current implemented baseline.
+  Its subphases below are verification boundaries, not a request to replace
+  the working refresh/session foundation.
 
 ## 1. Product goals
 
@@ -53,6 +79,8 @@ abuse:
 - Users can see and end their other active sessions.
 - A successful new login creates an in-app security notification and is
   designed for future email notification delivery.
+- After login, users can add and switch between multiple successfully
+  authenticated Friink accounts on web and mobile.
 - Staff use normal Friink accounts plus role- and permission-controlled
   administrative features.
 - Administrative access has stronger, time-limited protection without
@@ -85,11 +113,15 @@ abuse:
   administrative session revocation.
 - Security/audit events for sensitive account and staff actions.
 - Progressive failed-login throttling with independent IP/device protections.
+- Multiple-account support with an authenticated account switcher on web and
+  mobile.
 
 ### Out of scope for this design
 
-- Final production email-provider selection, production delivery rollout, and
-  the durable email outbox.
+- Final production email-provider selection, email-template wording, and
+  production email-delivery rollout. Durable security events and the
+  provider-neutral in-app notification path are in scope; the external email
+  transport/outbox remains a later implementation step.
 - Full staff dashboard and moderation product requirements.
 - Staff permission names beyond the initial security boundaries.
 - Billing, subscription entitlements, professional verification, or badges.
@@ -99,25 +131,87 @@ abuse:
 
 ## 2.1 Implementation division
 
-The complete scope is divided into six implementation phases. Phase 1 remains
-one unit because it establishes the shared session contract. Phases 2 through
+The complete scope is divided into six implementation phases. Phase 1 is
+already implemented as the current session foundation, but it is split below
+into smaller audit and release units so that staging evidence, production
+verification, and future regressions have clear boundaries. Phases 2 through
 6 are divided into ordered alphabetic chunks so that each dependency and
 verification boundary is explicit. Every chunk must be reviewed and verified
 before the next chunk changes shared auth/session behavior.
 
 ### Phase 1 — Session reliability
 
-Implement the persistent cookie contract, 30-day sliding idle policy, explicit
-terminal-versus-ambiguous refresh outcomes, refresh retry grace/idempotency,
-CSRF protection, secure access-token handling, JWT key-rotation compatibility,
-clock policy, and startup configuration validation.
+Phase 1 is the implemented baseline for ordinary one-account sessions. The
+subphases below do not change that behavior; they make its contract testable
+and identify the remaining environment-specific evidence.
 
-Verification gate: capture real staging cookie/CORS headers from
-`staging.friink.com` and `staging-api.friink.com`; test login, refresh, timeout,
-network/CORS/5xx failure, key rotation, clock boundaries, cross-tab refresh,
-and lost-refresh-response recovery. Production verification is a separate
-pre-release gate and is deferred until the permanent production infrastructure
-exists.
+#### Phase 1a — Cookie, origin, and startup boundary
+
+Keep the refresh credential in an explicit persistent HTTP-only cookie. Validate
+at startup that the database URL, JWT signing configuration, cookie settings,
+allowed origins, and environment-specific API/web origins are present and
+consistent. Staging uses `https://staging.friink.com` and
+`https://staging-api.friink.com`; production is a separate release target.
+
+Verification gate: capture redacted login and refresh response headers,
+credentialed CORS preflight, and a real browser request proving the cookie is
+sent to the API and accepted after rotation.
+
+#### Phase 1b — Sliding idle lifetime
+
+Use the 30-day target sliding idle window. Successful login and successful
+refresh extend the server-side idle deadline. Explicit logout, revocation,
+account lock, or confirmed terminal session failure ends the session. Access
+token expiry alone must enter the refresh path.
+
+Verification gate: test activity just before and after the idle boundary,
+browser reload, ordinary deployment/restart, and explicit terminal actions.
+
+#### Phase 1c — Rotation, replay, and recoverable refresh
+
+Rotate refresh tokens transactionally within a token family. A legitimate
+retry or lost response may use the deliberately bounded grace/idempotency
+contract. A confirmed reuse of a dead token revokes the family. Timeout,
+network/CORS failure, 5xx, malformed response, and configuration failure are
+ambiguous and must not clear local auth.
+
+Verification gate: test concurrent refreshes, replacement-cookie acceptance,
+lost-refresh responses, replay of a dead token, and each terminal versus
+ambiguous outcome.
+
+#### Phase 1d — Reactive web refresh and cross-tab coordination
+
+Keep the web client reactive: after `401 TOKEN_EXPIRED`, refresh once and retry
+the original request once. Coordinate concurrent refreshes across tabs and
+retain local auth through recoverable failures. Do not add proactive refresh or
+clear auth because an arbitrary response happens to be `401`.
+
+Verification gate: exercise multiple tabs, concurrent expired requests,
+offline/online transitions, non-expiry `401` responses, and recovery after a
+refresh response is lost.
+
+#### Phase 1e — Token and key-handling boundary
+
+Keep access tokens short-lived and in memory on web clients. Verify JWTs by
+key ID and retain the previous verification key throughout the documented
+rotation overlap. Never log passwords, OTPs, raw refresh tokens, internal
+UUIDs, or signing secrets. Keep server clocks on synchronized UTC with an
+explicit, tested skew policy.
+
+Verification gate: run mixed-key verification, expiry-boundary tests, clock
+offset tests, and log inspection for secret leakage.
+
+#### Phase 1f — Release evidence and regression gate
+
+The implementation baseline is complete only when the preceding contracts are
+verified in staging and the same checks pass against the permanent production
+origins before release. A staging `Failed to fetch` result is not sufficient
+evidence of an auth failure: inspect the API status, CORS headers, deployment
+configuration, and database health separately.
+
+Verification gate: record the staging evidence now; repeat the production
+cookie/CORS, login, refresh, terminal-failure, and recovery evidence as a
+pre-release gate. Production verification is not implied by staging success.
 
 ### Phase 2 — Account identity
 
@@ -172,11 +266,24 @@ signup reuse, delivery failure, and enumeration resistance.
 
 #### Phase 2d — Login risk, device recognition, and failed-login throttling
 
+The login contract accepts either an email address or a username in one
+identifier field. Email matching is case-insensitive; username matching uses
+the authoritative case-folded `username_key`, so casing differences do not
+create a second identity. The API accepts the canonical `identifier` field
+and temporarily accepts the legacy `email` field for existing clients. Unknown
+or malformed identifiers use the same generic invalid-credentials response as
+an incorrect password and follow the same lockout and rate-limit policy. The
+web login screen labels the field `Email or username` and keeps signup
+email-only. This identifier support and the risk/device work below are
+implemented in the current Phase 2 build; live staging deployment evidence
+remains the final acceptance step for this phase.
+
 Implement ordinary password login with risk-based OTP/MFA: recognized normal
 logins do not require an OTP, while a new or suspicious login and defined
 high-risk actions can require a fresh four-minute OTP/MFA. A user-enabled
 two-factor setting may require OTP for every new login. Refresh never requires
-password or OTP.
+password or OTP. Username login must pass through exactly the same risk,
+device-recognition, lockout, and OTP decisions as email login.
 
 Add server-authoritative device/session recognition using a protected random
 device identifier and coarse signals. Do not trust a client claim, IP address
@@ -186,10 +293,11 @@ progressive policy: the third failure starts a 30-minute cooldown, the fourth
 starts one hour, the fifth starts 24 hours, and a successful login resets the
 progressive state. Independent IP/device rate limits remain required.
 
-Verification gate: test recognized versus new and suspicious logins, challenge
-skips and challenges, refresh without OTP, device rotation/invalidation,
-concurrent failures, cooldown boundaries, successful-login reset, and account
-privacy during all failures.
+Verification gate: test email login, username login, mixed-case identifiers,
+recognized versus new and suspicious logins, challenge skips and challenges,
+refresh without OTP, device rotation/invalidation, concurrent failures,
+cooldown boundaries, successful-login reset, and account privacy during all
+failures.
 
 #### Phase 2e — Email and username changes with permanent history
 
@@ -301,7 +409,43 @@ identifiers.
 Verification gate: test enrollment approval, expiry, replay, replacement
 codes, wrong-device use, rate limits, and creation of the separate session.
 
-#### Phase 4e — Expiry, recovery, and user messaging
+#### Phase 4e — Multiple-account device sessions and switching
+
+Implement the device-scoped session-slot and opaque account-slot model described in
+section 8.5. Keep the existing login and signup endpoints as the authentication
+authority, then register a successful account on the current browser profile
+or mobile installation. Add safe account listing, account switching, account
+removal, account-scoped refresh/session selection, and account-scoped client
+state isolation. Do not expose user IDs or move refresh tokens into
+JavaScript-readable storage. Preserve the single-account session path and
+existing refresh/revocation semantics.
+
+Break implementation into these delivery parts:
+
+- **4e-a — Server contract:** additive slot/session data model, exact account
+  summary and switch/remove response schemas, validated
+  `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` enforcement, ownership checks,
+  idempotency, and independent-account isolation.
+- **4e-b — Web auth state:** one active account context, slot-scoped refresh
+  cookies and cross-tab coordination, safe persisted summaries, state/cache
+  partitioning, and recovery without logging out other accounts.
+- **4e-c — Add-account experience:** design-system modal, reused login/signup
+  flow, OTP handling, duplicate-account behavior, limit messaging, and
+  accessibility.
+- **4e-d — Account lifecycle:** switching, removal, logout, locked/revoked
+  accounts, password changes/resets, session inventory, notifications, and
+  security-event behavior.
+- **4e-e — Mobile:** platform secure-storage entries, app restart/background
+  recovery, account switching, and mobile-specific failure/accessibility tests.
+
+Verification gate: test Add account login, Add account signup through OTP,
+modal cancellation, duplicate/retry behavior, safe account-list fields,
+switch success and failure, hidden Change account with fewer than two accounts,
+account removal, logout/revocation boundaries, browser reload, multiple tabs,
+mobile secure-storage recovery, account-scoped notifications, and cross-account
+data/cache isolation.
+
+#### Phase 4f — Expiry, recovery, and user messaging
 
 Implement session-expiry and recovery messaging that distinguishes confirmed
 terminal session failure from network, CORS, timeout, 5xx, malformed, and
@@ -433,6 +577,16 @@ editing production authentication data.
    actually invalid/expired refresh session may end an ordinary session.
 10. A transient failure must not be interpreted as proof that credentials are
     invalid.
+11. Account switching must never trust a client-supplied user ID, email, or
+    username as proof of the selected account. The server must validate an
+    opaque account slot belonging to the authenticated device/session.
+12. Every account-scoped request, token, refresh family, device session slot, security
+    event, and notification must remain isolated to its account. Adding an
+    account must not merge identities or broaden access to another account's
+    private data.
+13. Account lists and switch responses may contain only safe display metadata.
+    Passwords, OTPs, raw refresh tokens, token hashes, internal UUIDs, and
+    device secrets never cross the user-facing boundary.
 
 ## 4. Account signup
 
@@ -484,6 +638,12 @@ associated with an account:
 The future email flow must avoid leaking account existence through timing,
 different response bodies, different status codes, or visibly different UI.
 
+### 4.2a Login identifiers
+
+Login accepts an email address or username plus password. Email and username
+matching are case-insensitive. A phone number is not a login identifier and is
+not collected at signup in this version.
+
 ### 4.3 Signup OTP
 
 When email delivery exists, a fresh six-character alphanumeric
@@ -507,6 +667,14 @@ signup reservation does not permanently claim the email. The email can be
 used again immediately, subject to rate limits. An already-existing account is
 never replaced or duplicated.
 
+The reservation token is a short-lived, single-purpose secret separate from
+the OTP. It must expire after 30 minutes, be stored only as a hash, be bound to
+the normalized email and signup flow, and be invalidated after completion,
+expiry, or deliberate cancellation. A cleanup path must remove expired
+reservations and their OTP records. The legacy full-payload signup-start path
+must not remain an alternate way to submit password/profile data before the
+email-only OTP step; it should be removed or changed to the same contract.
+
 ### 4.4 Risk-based login OTP/MFA
 
 Once email delivery or an authenticator mechanism exists, ordinary recognized
@@ -521,7 +689,7 @@ explicit user/security-policy choice rather than the default.
 
 The normal login flow is:
 
-1. Verify email and password.
+1. Verify the email or username identifier and password.
 2. Apply failed-login and account-lock rules.
 3. Evaluate the login risk and challenge with a fresh four-minute OTP/MFA only
    when required.
@@ -574,13 +742,15 @@ to the old address where policy and delivery support permit.
 ### 5.2 Username change
 
 Username changes require an authoritative database availability check and a
-unique constraint on `username_key`. No email OTP is required for an ordinary
-username change, although a future step-up challenge may protect high-risk
-accounts.
+unique constraint on `username_key`. No email OTP or step-up authentication is
+required for a username change.
 
 The old username is released immediately after the transaction succeeds. The
 new display casing is stored as the current presentation value, and both old
 and new values are retained in username history with timestamps.
+
+This immediate-release rule also applies to high-profile usernames. Released
+usernames have no cooldown period.
 
 ### 5.3 Identity history tables
 
@@ -615,7 +785,8 @@ username changes. The database/API must enforce the rule; the frontend check
 is only explanatory.
 
 The list can later include impersonation-sensitive brand names, system names,
-or temporarily protected names after a high-profile username change.
+or other names that are permanently unsuitable for user accounts. A released
+high-profile username is not temporarily protected by this registry.
 
 ## 7. URLs, post identity, and username reuse
 
@@ -657,6 +828,8 @@ Use a sliding idle policy:
 
 - Target idle expiry: 30 days without successful session activity.
 - Login and refresh extend the idle window.
+- A session has a 180-day absolute maximum lifetime from session creation;
+  refresh cannot extend beyond that boundary.
 - Session revocation, explicit logout, account lock, or a confirmed security
   action ends it immediately.
 - Access-token expiry alone does not log the user out; it triggers refresh.
@@ -666,16 +839,22 @@ third-party platform's private expiry policy.
 
 ### 8.2 Session identity
 
-One refresh-token family represents one user-visible session:
+One refresh-token family represents one account-specific user-visible session:
 
 - Separate browsers are separate sessions.
 - Separate browser profiles are separate sessions.
 - Separate mobile-app installations are separate sessions.
 - Logging in again creates a new session.
 - Refresh rotation within one family does not create a new visible session.
+- A device may hold multiple account-specific sessions after multiple-account
+  support is enabled; one account is active at a time.
+- The active account is selected through a server-validated opaque account
+  slot, not a client-supplied user ID or username.
 
-The server determines the current session from the presented refresh cookie.
-The browser never supplies a session ID to claim that it is current.
+The server determines the current account/session from the presented
+account-specific refresh credential and its device-scoped session slot. The browser
+or mobile client never supplies a session ID or user ID to claim that it is
+current.
 
 ### 8.3 Current implementation to preserve
 
@@ -691,7 +870,10 @@ The repository already has the main server-side foundation:
 
 Future work must preserve the authoritative reactive-only model in `RULES.md`.
 It must not reintroduce proactive refresh, logout on ambiguous refresh failures,
-or cross-environment mutation fallback.
+or cross-environment mutation fallback. Multiple-account support is an
+additive extension: existing one-account sessions remain valid, and the
+single-account path remains the fallback until an account is explicitly added
+to a device.
 
 ### 8.4 Terminal and ambiguous refresh failures
 
@@ -713,6 +895,219 @@ refresh result, not merely because an arbitrary refresh response has status
 401. This protects the intended UX: users are asked to log in again only when
 their session is actually no longer usable.
 
+## 8.5 Multiple logged-in accounts and account switching
+
+Multiple-account support is a confirmed product requirement for both web and
+mobile. Each account is a fully independent Friink identity: there is no
+account-to-account linking, shared identity record, merged profile, shared
+security state, or cross-account data access. The device-level records below
+exist only to remember separate authenticated sessions for the switcher; they
+are not social, ownership, or identity relationships between accounts.
+
+The UI contract is fixed; the storage and API contract below is the technical
+implementation target. It extends the existing account/session model without
+changing password hashing, signup OTP validation, access-token claims, or
+refresh-token rotation semantics.
+
+### 8.5.1 User flow
+
+1. After a successful login, the side drawer includes `Add account`.
+2. Selecting `Add account` opens a modal that renders the login-page fields and
+   buttons using the Friink app design system.
+3. The modal supports both login and signup. Signup uses the approved email →
+   OTP → password → profile flow and shows the OTP screen immediately after
+   the email step.
+4. After login or signup succeeds, the authenticated account is registered as
+   an available independent account session for the current browser profile or
+   mobile app installation. The newly authenticated account becomes active.
+5. `Change account` is hidden until at least two accounts have successfully
+   authenticated on that browser profile or app installation.
+6. `Change account` lists only accounts registered on that device and switches
+   to the selected account without merging identities.
+7. The switcher supports up to the server-configured
+   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value, defaulting to five. When the
+   limit is reached, `Add account` explains that the user must remove one
+   account before adding another; it never silently replaces an existing
+   account.
+8. When the active account logs out and other accounts remain, the most
+   recently used remaining account becomes active. If none remain, the user
+   returns to the signed-out login screen.
+
+The modal reuses the primary login/signup validation, loading, error, OTP,
+session, accessibility, and recovery behavior. Add-account failure must not
+log out or replace the currently active account. A canceled or abandoned
+add-account flow must not create a device session slot or partially usable
+account.
+
+### 8.5.2 Independent accounts and device session slots
+
+Add a device-scoped account session-slot record, or an equivalent server-side
+record, for each independently authenticated account, with at least:
+
+- internal account/user UUID
+- server-managed device or installation identifier, stored as a protected
+  hash or equivalent non-displayable value
+- random opaque account-slot identifier (or a server-side mapping to one)
+- the account-specific `auth_session`/refresh-token family reference
+- created-at, last-used-at, and revoked-at timestamps
+- optional safe display metadata reference, such as avatar and username
+
+The account-switcher summary contains only the opaque slot, display name,
+username, avatar, active state, availability state, and last-used timestamp.
+Email addresses are not shown in the switcher by default.
+
+The account slot is an opaque capability reference, not an account ID. It is
+generated by the server, scoped to one account's device session, and invalid
+after removal or revocation. The same physical device may have separate slots
+for multiple independent accounts; the slots do not link those accounts to
+each other. Device recognition and security events remain account-specific.
+
+The existing `auth_sessions` and `refresh_tokens` remain the authority for
+session validity. Multiple-account support permits multiple valid
+account-specific session families on one device; it does not combine them into
+one refresh family, one user identity, or one database account relationship.
+
+### 8.5.3 Web credential boundary
+
+The web client keeps only the short-lived access token for the active account
+in memory, plus safe account summaries needed to render the switcher. It must
+not store refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or
+device secrets in JavaScript-readable storage.
+
+The web implementation will use one server-managed HTTP-only, Secure refresh
+credential per account slot, with cookie names in the form
+`friink_refresh_<opaque_slot>`. The active slot is a safe opaque value held in
+the current tab's auth state and sent with refresh/switch requests; the server
+validates it against the protected device session record before selecting the
+matching cookie. The browser may send several refresh cookies, but the API
+must process only the validated active slot.
+
+The account-slot cookies are host-only API cookies with `Path=/`; deployed
+HTTPS uses `Secure` and the cross-origin web/API contract uses the documented
+`SameSite` setting. Cookie deletion must target the exact slot cookie. Refresh
+coordination keys and BroadcastChannel messages are slot-scoped so one tab's
+Account A refresh cannot update Account B. The active slot itself is not an
+account ID, username, or credential and must not be trusted without server
+validation. Refresh credentials must never move into `localStorage`,
+IndexedDB, ordinary non-HttpOnly cookies, or client-visible account objects.
+
+### 8.5.4 Mobile credential boundary
+
+The mobile client keeps one secure-storage entry per account slot using the
+platform Keychain/Keystore/Secure Storage facility or its equivalent. The
+mapping contains only what is required to recover that account's session and
+safe display metadata. Tokens are never logged, placed in analytics payloads,
+or stored in ordinary unencrypted application preferences.
+
+Switching loads the selected account's access context, refreshes only that
+account's session when necessary, and replaces the active in-memory account
+state atomically. A failed switch leaves the previously active account usable
+when its session is still valid.
+
+### 8.5.5 API behavior
+
+The implementation may use equivalent route names, but it must provide these
+server-authoritative operations:
+
+- `GET /auth/accounts`: return safe summaries for non-revoked account session
+  slots on the current device, ordered by last used; never return UUIDs,
+  tokens, or secrets. The server enforces the validated
+  `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value.
+- Existing login and signup endpoints: after successful authentication,
+  create or restore only that account's device-scoped session slot and return
+  the active account's normal access context. The primary and add-account
+  flows use the same endpoints and security checks; they never link identities.
+- `POST /auth/accounts/switch`: accept only an opaque account-slot reference;
+  verify the current device/session and slot state; then issue or activate the
+  selected account's normal short-lived access context.
+- `DELETE /auth/accounts/{slot}`: remove the account from this device and
+  revoke that account's device-specific session slot. This is not the same as
+  global account deletion and does not revoke unrelated sessions on other
+  devices or touch another independent account.
+- Existing logout and Settings session controls: `Log out` of the active
+  account revokes and removes only its current device session slot; `Log out
+  all other sessions` revokes that account's other sessions. Neither action
+  silently revokes another remembered independent account.
+
+All operations must enforce account ownership server-side, be idempotent where
+retries are expected, and return the existing terminal-versus-ambiguous
+failure classes. A network or CORS failure during add, switch, or removal must
+not clear the previously active account unless the server confirmed a terminal
+result. Adding an account that already has a non-revoked slot must focus or
+activate that existing slot rather than create a duplicate. A revoked or
+expired slot is shown as unavailable with clear re-authenticate/remove actions
+and must not affect other accounts.
+
+`MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is server-only configuration. It defaults
+to `5` and must be validated at startup as an integer between `1` and `16`.
+The browser and mobile client must not provide or override it. If an operator
+lowers the value below the number of existing slots, existing sessions remain
+usable and no account is silently removed; new additions are blocked until the
+device is under the configured limit.
+
+### 8.5.6 Isolation, notifications, and session management
+
+Every request after switching is authorized against the selected account's
+access token and server-side session context. Caches, query keys, optimistic
+state, uploads, notifications, drafts, and analytics must be partitioned by
+account; switching must clear or replace account-scoped client state before
+rendering the new account.
+
+Each successful add-account login creates the normal account-specific login
+security event and notification. Switching an already authenticated account
+does not create a new-login event. Suspicious login, OTP, lockout, revocation,
+and device-enrollment records are always attached to the correct account and
+session.
+
+Settings session management remains account-scoped. A user viewing Account A
+can manage Account A's sessions; remembered Account B sessions are not exposed
+as if they were Account A sessions. Removing an account from the device
+revokes only that independent account's device session while global “log out all” remains
+an account-level action unless an explicit cross-account action is designed.
+
+### 8.5.7 Compatibility and rollout
+
+The feature requires an additive migration and a backward-compatible rollout:
+
+1. Add the device-scoped account-session-slot data model without invalidating existing
+   refresh/session rows.
+2. Deploy server support that continues to accept the current one-account
+cookie/session path and creates a device session slot after the next successful
+   login or explicit account addition.
+3. Deploy the web/mobile account list, modal, switch, removal, and isolated
+   client-state behavior behind a controlled feature flag if needed.
+4. Verify single-account login, refresh, logout, OTP, session management, and
+   failure recovery before enabling multiple accounts broadly.
+5. Enable the feature gradually and monitor account-scoped session, switch,
+   revocation, and cross-account isolation failures.
+
+Existing users must not be forced to log in again solely because the new tables
+or account-switching UI are deployed. Existing account/session rows are
+associated with a device session slot only through a deliberate migration or
+the next authenticated request, with the same server-side ownership checks as
+a fresh authentication. This operational association must never create an
+account-to-account relationship.
+
+### 8.5.8 Impact on already implemented auth/session
+
+The low-impact portion is additive: password hashing, signup email/OTP
+verification, login risk checks, JWT verification, refresh rotation, and
+terminal-versus-ambiguous error classification remain shared.
+
+The higher-impact changes are in client auth state and session selection:
+account-aware refresh credentials, the active-account boundary, account-scoped
+cache/state reset, and switch/add/remove UI. Session inventory, device
+recognition, login notifications, logout, and revocation gain an account-slot
+dimension but retain their existing security rules. The rollout must preserve
+the current one-account path and must not invalidate existing sessions merely
+because multi-account support is introduced.
+
+Final identity decision: the existing unique-email-per-account rule is
+permanent and applies across multiple independent accounts. The same email
+address may never be associated with more than one Friink account, including
+under multi-account support. Independent accounts do not change this
+uniqueness boundary.
+
 ## 9. Session management UI and behavior
 
 Settings > Account lists active sessions using safe fields:
@@ -724,9 +1119,36 @@ Settings > Account lists active sessions using safe fields:
 - last-active time
 - current-session indicator
 
+Session management is account-scoped. In a multi-account device, the Account
+page shows sessions for the currently active account only; the side-drawer
+account switcher is the separate mechanism for moving to another remembered
+account. A remembered account may have its own current device session without
+being presented as a session belonging to the active account.
+
 The current session has no revoke action in its row. Other sessions can be
 revoked individually or through a confirmed `Log out all other sessions`
 action. Repeated revoke requests are idempotent.
+
+### 9.1 User-facing lockout messaging
+
+User-facing messaging must distinguish a full account lock from a temporary
+progressive rate-limit cooldown:
+
+- **Full account lock (administrative or security-triggered):** show exactly
+  `Your account is locked. Contact support.` Do not show a reason, duration,
+  retry time, or other account-security detail.
+- **Temporary progressive cooldown:** after the failed-login tiers in section
+  16, show a distinct message such as `Too many attempts. Try again in about
+  30 minutes, around 3:45 PM.` Use the applicable 30-minute, one-hour, or
+  24-hour tier and an approximate retry time when available. This message is
+  not the full-account-lock message and must never be conflated with it.
+
+The side-drawer `Log out` action is different from `Log out all other
+sessions`: it ends and removes only the active account's current device session
+slot. It does not sign out other remembered accounts. Removing another account
+from the switcher ends that account's device session slot without affecting
+the active account or unrelated sessions. Removing the active account requires
+confirmation and leaves the device signed in only to the remaining accounts.
 
 Revoking a session:
 
@@ -734,8 +1156,12 @@ Revoking a session:
 - Prevents future refresh from that session.
 - Retains history for audit and display rules.
 - Does not delete posts or account data.
-- Does not necessarily invalidate an already-issued access JWT before its
-  normal short expiry.
+- Does not invalidate an already-issued access JWT before its normal short
+  expiry.
+
+Removing an account from the device revokes that account's device session slot
+and removes it from the local account list. It does not delete the
+account, revoke unrelated sessions, or remove another remembered account.
 
 Raw tokens, token hashes, UUIDs, IP addresses, and full user-agent strings are
 not shown to normal users.
@@ -764,19 +1190,48 @@ does not silently end every session.
 
 ### 10.1 Access-token storage
 
-The preferred web implementation keeps the short-lived access token in memory
-and uses the HTTP-only refresh cookie for session recovery. It must not persist
-the access token in `localStorage` unless a later security review explicitly
-accepts the increased impact of an XSS vulnerability. The refresh token itself
-must never be readable by JavaScript.
+The preferred web implementation keeps only the short-lived access token for
+the active account in memory and uses the account-specific HTTP-only refresh
+credential for session recovery. Safe account summaries may be retained for
+rendering the switcher, but account secrets must not be persisted in
+`localStorage`, IndexedDB, ordinary cookies, or other JavaScript-readable
+storage. The refresh token itself must never be readable by JavaScript.
 
-### 10.2 CSRF protection
+When switching accounts, replace the active in-memory access context and
+partition or clear account-scoped client state before rendering the selected
+account. A refresh failure for the selected account must not erase other
+remembered account session slots or incorrectly log out the previously active account.
+Mobile implementations must use platform secure storage with one isolated
+credential entry per account slot.
+
+### 10.2 Password recovery
+
+Password recovery is part of the account lifecycle and uses the same privacy
+and OTP protections as signup:
+
+1. An unauthenticated request accepts an email and always returns the same
+   neutral response, whether or not an account exists.
+2. If appropriate, the account receives a six-character alphanumeric,
+   single-use password-reset OTP. Store only its hash, expire it after four
+   minutes, allow five attempts, invalidate older reset requests when a newer
+   one is issued, and rate-limit by IP, email, and device.
+3. The user sets a new password using the standard 8–16 character policy.
+4. Successful recovery revokes every existing refresh-token family for that
+   account, invalidates remembered device session slots, creates a security
+   event, and requires a fresh login. Already-issued access tokens may remain
+   valid only until their documented short expiry.
+
+Recovery must not reveal whether an email exists, and reset OTPs must not
+appear in URLs, analytics payloads, browser history, or support screenshots.
+
+### 10.3 CSRF protection
 
 Credentialed cookie requests must include explicit CSRF protection for
-state-changing endpoints. CORS and `SameSite` are not sufficient by
-themselves. The implementation may use a CSRF token, strict `Origin` checking,
-or a combination appropriate to the deployment, but it must be tested for
-cross-site state-changing requests and legitimate staging/production requests.
+state-changing endpoints. Friink will use exact allowed-`Origin` validation as
+the baseline and a CSRF token for state-changing requests that use a refresh
+cookie. CORS and `SameSite` are defense-in-depth, not the sole protection.
+The implementation must be tested for cross-site state-changing requests and
+legitimate staging/production requests.
 
 ## 11. Login security notifications
 
@@ -892,14 +1347,13 @@ Account locking should be capable of:
 
 - preventing new login
 - preventing refresh from existing sessions
-- optionally blocking protected API access immediately if the security policy
-  requires it
+- allowing already-issued short-lived access tokens to remain valid until
+  normal expiry
 - retaining all account content and history
 
-Whether existing access JWTs are rejected immediately is a deliberate security
-tradeoff. The privileged account-locking design must support immediate
-enforcement later without requiring ordinary API requests to perform a session
-database lookup.
+Account locking and administrative session revocation do not immediately
+invalidate already-issued access JWTs. They block login and refresh only; no
+revocation or token-version check is added for this case.
 
 ## 15. Audit and security events
 
@@ -960,6 +1414,8 @@ Likely additive schema areas:
 - reserved usernames table
 - security events/outbox table
 - OTP/device-enrollment records
+- device-scoped account session slots with opaque identifiers and
+  account-specific session references
 - staff roles, permissions, and user-role assignments
 - account lock state and administrative audit fields
 - optional MFA/privileged-session records
@@ -974,16 +1430,17 @@ be invalidated merely because these tables are added.
 
 Immediate username reuse means old profile URLs can point to a new user. This
 is inherent to username URLs. Immutable post IDs, clear current-author
-rendering, history/audit records, reserved names, and possible future cooldowns
-reduce confusion but cannot make an old profile URL identify its former owner.
+rendering, history/audit records, and reserved names reduce confusion but
+cannot make an old profile URL identify its former owner. Released usernames,
+including high-profile usernames, become available immediately with no
+cooldown.
 
 ### Already-issued access tokens
 
-Session revocation and account locking primarily stop refresh. A previously
-issued access token may remain valid until its short expiry unless protected
-requests add a revocation/version check. Immediate enforcement has a request-
-time database/cache cost and should be added deliberately for staff lock and
-high-risk security actions if required.
+Account locking and administrative session revocation block new login and
+future refresh only. A previously issued short-lived access token remains valid
+until its normal expiry. No revocation or token-version check is added for this
+case.
 
 ### Cookie and deployment configuration
 
@@ -991,6 +1448,15 @@ Persistent sessions depend on correct HTTP-only cookie, Secure, SameSite, CORS,
 frontend-origin, and API-origin configuration. A deployment that changes the
 JWT secret, cookie behavior, domain, or environment incorrectly can appear to
 users as a mass logout. Deployment verification is part of the feature.
+
+Multiple-account support adds an account-slot selection boundary. Every
+account-specific refresh credential must remain HttpOnly and server-validated;
+the active slot must not be a raw user ID or an untrusted client-only claim.
+Cookie collision, path, domain, and `SameSite` behavior must be tested with
+two authenticated accounts in the same browser profile, including reload,
+logout, switch, and concurrent refresh. A change that makes one account's
+refresh cookie overwrite or select another account's session is a release
+blocker.
 
 The implementation must not rely on a browser session cookie or on server-side
 expiry alone. The deployed API must issue an explicit persistent refresh cookie
@@ -1077,6 +1543,13 @@ Before implementation is considered complete, verify at minimum:
 - persistence through ordinary deploy/restart, VPN, network failure, and API
   recovery scenarios
 - two browsers/devices appearing as separate sessions
+- Add account login and signup, including the email → OTP → password/profile
+  sequence inside the modal
+- account list privacy, opaque-slot validation, successful/failed switching,
+  account removal, and Change account visibility at one versus two accounts
+- two authenticated accounts in one browser profile and one mobile
+  installation, including reload, concurrent refresh, and active-account
+  state/cache isolation
 - current-session detection and selective session revocation
 - revoke-others preserving the current session
 - login notification creation and durable retry behavior
@@ -1086,6 +1559,9 @@ Before implementation is considered complete, verify at minimum:
 - privileged 16-minute idle and eight-hour absolute timeout
 - account locking and target-session revocation
 - audit records without secrets or raw identifiers
+- 180-day absolute session expiry in addition to the 30-day idle expiry
+- password-recovery privacy, single-use reset behavior, session revocation, and
+  fresh-login requirement
 - migration state and at least one real request/response check for each new
   endpoint
 
@@ -1112,6 +1588,14 @@ The evidence must show:
 - intentional `SameSite` behavior
 - intentional domain/host-only behavior
 
+When multiple-account support is enabled, also capture the account-slot cookie
+or equivalent HttpOnly selection mechanism with its value redacted. Evidence
+must show that two account-specific refresh credentials do not collide, that a
+switch changes only the active account context, and that removing one account
+does not revoke or expose the other account's device session slot. No raw account ID,
+UUID, refresh token, or token hash may appear in the response, browser storage,
+or account-list payload.
+
 Also capture credentialed CORS preflight and authenticated request evidence for
 the staging web/API pair showing the exact `Access-Control-Allow-Origin`,
 `Access-Control-Allow-Credentials`, and `Vary` values. Verify in a real browser
@@ -1135,6 +1619,21 @@ Verify with focused tests or controlled browser/network traces that:
 
 The evidence must identify the exact response status/code for every case; a
 generic “request failed” result is not sufficient.
+
+#### API privacy and signup compatibility evidence
+
+Inspect the actual JSON schemas and representative responses for login, signup,
+refresh, current-user, public-user, account-list, and session-management
+endpoints. Normal responses must not expose internal database UUIDs, date of
+birth, location, raw tokens, token hashes, or other private fields beyond the
+documented safe account summary. Session-management and account-switching
+references must use opaque public handles.
+
+With email OTP enabled, verify that every reachable signup path follows
+email-only start → OTP verification → password/profile submission. The legacy
+full-payload signup-start path must be removed or closed to prevent a bypass.
+Verify reservation-token expiry at 30 minutes, cancellation cleanup, expired
+reservation cleanup, and that an abandoned reservation releases the email.
 
 #### Key rotation and time evidence
 
@@ -1181,6 +1680,10 @@ configuration in each environment.
 - `docs/session-hardening-design.md` and `docs/session-updates.md` document the
   already-implemented opaque refresh-token work and its deliberate rejection of
   legacy stateless-refresh migration.
+- `docs/auth-and-session-progress.md` records staging evidence for the
+  implemented Phase 1 baseline and must remain evidence-only; planned
+  multi-account behavior is not considered verified until its dedicated gate
+  passes.
 - `docs/session-management.md` documents the earlier session-management feature
   and is superseded by this consolidated proposal where the two differ.
 - `packages/design/design.md` governs any future Settings, OTP, session-list,
@@ -1193,9 +1696,6 @@ configuration in each environment.
 - Final email provider and email-template wording.
 - Final OTP delivery method: email, authenticator, or another mechanism.
 - Exact staff role names and complete permission catalog.
-- Whether account locking immediately rejects already-issued access JWTs.
-- Whether high-risk username changes require step-up authentication.
-- Whether released high-profile usernames receive a temporary cooldown.
 - Final staff/superadmin recovery procedure after MFA is available.
 - Exact outbox implementation details, while durable login/security events and
   retryable notification processing are required.

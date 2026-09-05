@@ -1,5 +1,27 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-05T03:05:00Z — Auth/session final verification follow-up
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the final Phase 1/2 auth/session verification and remove stale implementation-status wording.
+- Changes Made: Added the required current-password field to the email-change OTP-start schema, synchronized the progress and changelog records, and marked the completed Phase 2d risk/device work in the architecture document while retaining live staging deployment as the remaining acceptance step.
+- Files: `api/app/schemas/auth.py`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep the request contract, source-of-truth architecture, and recorded verification status consistent before staging deployment.
+- Notes: No runtime behavior beyond exposing the already-implemented current-password requirement was changed. Production remains a separate deployment and acceptance gate.
+- Verification Status: The focused Phase 1/2 auth/session set passed `23 passed, 1 warning` against Neon at `20260905_0030 (head)`; Python compilation, `alembic check`, `git diff --check`, and the Next production build passed.
+
+## 2026-09-05T02:30:00Z — Auth/session Phase 1 and Phase 2 implementation checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close the remaining Phase 1/2 gaps against `docs/auth-and-session.md`, including signup OTP completion, risk-based login/device recognition, identity-change verification, and the four final security decisions.
+- Changes Made: Finished the email-first signup contract with 30-minute reservation expiry, replacement/cleanup behavior, and closure of the legacy full-payload signup-start bypass. Added risk-based login OTP for new/changed devices, hashed server-managed login challenges, coarse device-signal recognition, username-or-email parity, dedicated email-change OTP endpoints with current-password confirmation, permanent case-insensitive email uniqueness, opaque public user handles, private auth response boundaries, and distinct full-lock/progressive-cooldown messaging. Locked accounts block login and refresh only; already-issued access JWTs remain valid until expiry. Username changes remain no-step-up and immediately release the old key.
+- Files: `api/app/config.py`, `api/app/models/user.py`, `api/app/models/otp.py`, `api/app/models/signup_reservation.py`, `api/app/models/auth_challenge.py`, `api/app/models/email_change.py`, `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/services/email.py`, `api/app/services/email_change.py`, `api/app/services/login_challenges.py`, `api/app/services/otp.py`, `api/app/services/session_service.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`, `api/alembic/versions/20260905_0027_email_change_requests.py`, `api/alembic/versions/20260905_0028_signup_reservation_expiry.py`, `api/alembic/versions/20260905_0029_casefold_email_uniqueness.py`, `api/alembic/versions/20260905_0030_user_public_handles.py`, `api/tests/test_phase2_auth_flows.py`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `RULES.md`, `packages/design/design.md`.
+- Reason: Align the implemented authentication boundary with the approved X-like persistent-session model while keeping independent accounts, permanent email uniqueness, and the documented access-token/lock behavior authoritative.
+- Notes: The configured Neon staging database was migrated from `20260905_0025` through `20260905_0030`. The code is ready for the staging web/API deployment. Live browser/provider evidence for the newly added login-risk and email-change flows must be captured after that deployment; production remains a separate pre-release gate.
+- Verification Status: `python -m alembic upgrade head`, `python -m alembic current`, and `python -m alembic check` passed at `20260905_0030`; 23 focused auth/session tests passed against the migrated Neon database; Python compilation, TypeScript with `--incremental false`, Next production build, and `git diff --check` passed. The explicit `pytest tests -q` run still contains unrelated legacy fake-session connection failures; those are not part of this auth change.
+
 ## 2026-09-03T01:25:30Z — Production database split and media E2E checkpoint
 
 - Agent: Codex
@@ -6201,7 +6223,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Scope note: Email provider/delivery remains intentionally unimplemented under the documented out-of-scope limitation. Signup privacy/OTP endpoint wiring is the next Phase 2 slice; Phase 2 gate is not closed.
 ## 2026-09-03T22:30:00Z — Auth/session handoff for new session
 
-- Phase 1: staging-only gate passed. Live evidence is in `docs/Claude-audit-auth-and-session.md`; production verification is deferred until permanent Droplet/EC2 infrastructure exists.
+- Phase 1: staging-only gate passed. Live evidence is in `docs/auth-and-session-progress.md`; production verification is deferred until permanent Droplet/EC2 infrastructure exists.
 - Phase 2: active and incomplete. Implemented canonical username identity/display casing, reserved username seeding/enforcement, permanent email/username history models, progressive lockout schedule (3 failures/30 minutes, 4/1 hour, 5/24 hours), and hashed OTP records with four-minute expiry, single use, invalidation of older codes, and five-attempt limits.
 - Database: migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` applied locally.
 - Verification: Phase 2 foundation suite passed 15 tests; broader auth/session regression suite passed 23 tests. Web TypeScript/build checks from Phase 1 passed.
@@ -6209,7 +6231,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 ## 2026-09-03T22:27:14Z — Phase 2c signup reservation checkpoint
 
 - Prompt Summary: Resume the auth/session implementation from Phase 2 using staging only; verify Phase 1 before continuing.
-- Phase 1 status: staging-only gate confirmed closed from the live evidence in `docs/Claude-audit-auth-and-session.md`; production remains intentionally deferred.
+- Phase 1 status: staging-only gate confirmed closed from the live evidence in `docs/auth-and-session-progress.md`; production remains intentionally deferred.
 - Changes Made: Added delivery-independent signup reservation storage, opaque reservation tokens, hashed six-character alphanumeric signup OTPs, four-minute expiry/single-use/five-attempt enforcement, neutral signup-start responses, and verification-before-account-creation endpoints. Added migration `20260903_0021_add_signup_reservations` and the `SIGNUP_OTP_ENABLED` configuration flag, disabled by default until email delivery exists.
 - Verification: Migration applied to the staging database (`20260903_0021 (head)`); focused Phase 2 signup/identity/OTP/lockout/validation tests passed (10 tests); full `api/tests` run reached 64 passed and 10 unrelated pre-existing `connections` fake-session failures; `python -m compileall` and `git diff --check` passed.
 - Staging evidence: CORS preflight and `/health/db` remain `200` on `staging-api.friink.com`; the new `/auth/signup/start` probe returns `404`, proving this working-tree slice has not been deployed to staging yet.
@@ -6219,7 +6241,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Staging deployment now exposes `POST /auth/signup/start` at `https://staging-api.friink.com`; the previous `404` deployment boundary is resolved.
 - Live evidence: `/health/db` returned `200` with `{"database":true}`; signup-start returned `202` with `verification_required:false`, neutral messaging, and an opaque reservation token; credentialed preflight returned `200` with `Access-Control-Allow-Origin: https://staging.friink.com`, credentials enabled, `Vary: Origin`, and the expected methods.
 - Limitation: probes used disposable unrecognized emails. Existing-account comparison and OTP completion are not claimed because `SIGNUP_OTP_ENABLED=false` and no email provider is configured.
-- Decision: Phase 2 remains open; the detailed trace is recorded in `docs/Claude-audit-auth-and-session.md` and no Phase 2 verification gate has been marked passed.
+- Decision: Phase 2 remains open; the detailed trace is recorded in `docs/auth-and-session-progress.md` and no Phase 2 verification gate has been marked passed.
 ## 2026-09-03T22:38:30Z — Phase 2 identity-rule staging checkpoint
 
 - Read-only staging checks confirmed `AdMiN` and `SECURITY` are unavailable through `GET /auth/username-availability`, and an embedded-space username returns `422` with the documented syntax error.
@@ -6461,8 +6483,8 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Update the Claude auth audit and the relevant design, rules, agent-log, and changelog documentation after the staging signup OTP implementation.
-- Changes Made: Recorded the staging Resend adapter and current live-verification boundary in `docs/Claude-audit-auth-and-session.md`; added the signup verification-step contract and 8–16 password checklist contract to `packages/design/design.md`; replaced stale OTP-stub and password-range language in `RULES.md`; clarified the Resend environment template.
-- Files: `docs/Claude-audit-auth-and-session.md`, `packages/design/design.md`, `RULES.md`, `api/.env.example`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Changes Made: Recorded the staging Resend adapter and current live-verification boundary in `docs/auth-and-session-progress.md`; added the signup verification-step contract and 8–16 password checklist contract to `packages/design/design.md`; replaced stale OTP-stub and password-range language in `RULES.md`; clarified the Resend environment template.
+- Files: `docs/auth-and-session-progress.md`, `packages/design/design.md`, `RULES.md`, `api/.env.example`, `AGENTLOG.md`, `CHANGELOG.md`.
 - Reason: Keep implementation, design contracts, operational rules, and verification evidence aligned without claiming that staging live verification or production delivery is complete.
 - Notes: `SIGNUP_OTP_ENABLED=true` is only appropriate after the staging API/web deployments include the implementation, the API hostname resolves, and Resend sender/recipient delivery is testable. Production provider/account and durable outbox remain deferred.
 - Verification Status: Documentation diff reviewed; prior focused provider/password tests, Python compilation, web TypeScript check, and `git diff --check` remain the relevant implementation checks. Live staging OTP evidence is still pending.
@@ -6473,7 +6495,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Model: GPT-5
 - Prompt Summary: Match the implementation to the auth document's required email → OTP → password/profile signup order.
 - Changes Made: Added email-only signup challenge routes; made pre-verification reservations email-only; added the additive `20260905_0025` migration; moved the web OTP screen to immediately follow email; added post-verification signup completion; updated the source auth document and derivative contracts.
-- Files: `api/app/models/signup_reservation.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260905_0025_email_first_signup_otp.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `docs/Claude-audit-auth-and-session.md`, `packages/design/design.md`, `RULES.md`.
+- Files: `api/app/models/signup_reservation.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260905_0025_email_first_signup_otp.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `packages/design/design.md`, `RULES.md`.
 - Reason: The documented signup order requires email ownership verification before collecting the remaining signup data; the previous implementation incorrectly sent OTP only after the profile step.
 - Notes: No account is created before verification. Production delivery remains deferred; staging must apply the migration and redeploy API/web.
 - Verification Status: Python compilation and web TypeScript check passed; focused API tests and migration execution remain to be run where database configuration permits.
@@ -6484,7 +6506,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Model: GPT-5
 - Prompt Summary: Test the deployed email-first signup flow and fix the failure after email submission.
 - Changes Made: Reproduced the live failure with a synthetic email; confirmed staging API health and CORS preflight return `200`, while `POST /auth/signup/email/start` returns `500`; recorded the migration dependency in the auth audit.
-- Files: `docs/Claude-audit-auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Files: `docs/auth-and-session-progress.md`, `AGENTLOG.md`, `CHANGELOG.md`.
 - Reason: The browser's `Failed to fetch` masks an API-side 500 response. The new email-only reservation requires migration `20260905_0025`.
 - Notes: No production system was accessed. This workspace has no staging `DATABASE_URL`, API `.env`, Vercel CLI, or project link, so the migration could not be executed here.
 - Verification Status: Live `GET /health/db` and signup CORS preflight passed; live signup POST remains blocked until the staging database is upgraded and the API is redeployed/verified.
@@ -6495,7 +6517,106 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Model: GPT-5
 - Prompt Summary: Apply the provided staging database connection, verify the email-first signup flow in the browser, and record the result.
 - Changes Made: Applied migration `20260905_0025` to staging, confirmed the database is at head, verified the live signup-start route returns `202`, and confirmed the browser displays the OTP screen immediately after email submission.
-- Files: `docs/Claude-audit-auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Files: `docs/auth-and-session-progress.md`, `AGENTLOG.md`, `CHANGELOG.md`.
 - Reason: The previous live `500` was caused by the staging database being one migration behind; the migration was required before OTP delivery could be tested.
 - Notes: A synthetic example recipient correctly returned safe `503` delivery failure; the authorized staging test recipient returned `202`. No OTP or database secret was recorded. Production was not accessed.
 - Verification Status: Staging `/health/db` `200`; signup CORS preflight `200`; authorized `/auth/signup/email/start` `202`; live browser displayed `Step 2 of 4` with the verification-code field. Final code entry/account creation remains pending the recipient's OTP.
+
+## 2026-09-04T23:21:00Z — Record multiple-account switching requirement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the requested web/mobile multiple-account behavior to the auth/session architecture document without making identity-policy assumptions.
+- Changes Made: Added the confirmed Add account side-drawer option, design-system login/signup modal, account addition after successful authentication, and conditional Change account option for devices with at least two authenticated accounts. Recorded same-email reuse as an explicit unresolved policy question.
+- Files: `docs/auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Establish the user-facing account-switching contract before implementation planning.
+- Notes: No runtime behavior or token-storage strategy was changed.
+- Verification Status: Documentation diff reviewed; implementation remains unapproved and pending the same-email policy decision.
+
+## 2026-09-04T23:28:41Z — Complete auth/session architecture and phase breakdown
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the auth/session document complete for the approved multiple-account behavior and split already-implemented Phase 1 into useful verification units.
+- Changes Made: Split Phase 1 into cookie/origin, sliding lifetime, rotation/replay, reactive web refresh, token/key handling, and release-evidence subphases. Added the Phase 4e multiple-account implementation contract covering the user flow, account/device/session model, web and mobile credential boundaries, API behavior, isolation, rollout compatibility, and impact on the existing auth foundation. Added account-scoped session/UI rules, schema boundaries, deployment risks, and verification evidence requirements. Synchronized the active rules and design contract as explicitly planned behavior.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Keep the architecture document technically actionable while preserving the implemented single-account session path and distinguishing planned behavior from verified staging evidence.
+- Notes: No runtime code, migration, environment variable, or deployed system was changed. Same-email reuse remains intentionally unresolved.
+- Verification Status: `git diff --check` passed; documentation consistency review completed. Multiple-account runtime behavior remains unimplemented and unverified.
+
+## 2026-09-04T23:35:21Z — Clarify independent-account boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record that all accounts are fully independent with no linking between accounts.
+- Changes Made: Revised the auth/session architecture, active rules, design contract, staging audit, and changelog to distinguish device-scoped session slots from account relationships. Explicitly prohibited merged identities, shared security state, and cross-account data access.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Prevent the account switcher’s operational device-session registry from being interpreted as account-to-account linking.
+- Notes: No runtime code, migration, environment variable, or deployed system was changed.
+- Verification Status: Documentation consistency review and `git diff --check` completed; multiple-account runtime behavior remains unimplemented and unverified.
+
+## 2026-09-04T23:56:59Z — Complete auth/session design gaps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the auth/session architecture from UX, product, architecture, SQA, and product-engineering perspectives, then fill the identified gaps for a non-technical founder.
+- Changes Made: Set the initial remembered-account limit to five per browser profile or mobile installation; defined 180-day absolute session expiry, logout/removal behavior, duplicate and revoked-slot handling, reservation-token expiry/cleanup, password recovery, explicit CSRF protection, a single web multi-account cookie strategy, account-slot delivery parts, privacy evidence, and broader verification cases. Clarified the email-outbox scope boundary.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Make the design actionable without requiring the founder to resolve low-level security and lifecycle choices manually.
+- Notes: The five-account limit is device-local, not a global account-creation limit. No runtime code, migration, environment variable, or deployment was changed.
+- Verification Status: Documentation consistency review and `git diff --check` completed; multi-account runtime behavior remains unimplemented and unverified.
+
+## 2026-09-04T23:58:22Z — Fill auth/session design gaps with founder-friendly defaults
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fill the remaining auth/session architecture gaps and recommend a sensible maximum multiple-account limit for a Twitter/X-like experience.
+- Changes Made: Set five remembered accounts per browser profile or mobile installation; added a 180-day absolute session lifetime, precise logout/removal and switcher-limit behavior, duplicate/stale-slot handling, reservation-token expiry and cleanup, password recovery, concrete CSRF requirements, a single web slot-cookie model, account-switching delivery parts, API privacy evidence, and expanded SQA scenarios.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Complete the design with practical defaults so implementation does not depend on the founder resolving low-level auth/session choices.
+- Notes: Five is a device-local remembered-account limit, not a global account-creation limit. No runtime code, migration, environment variable, or deployment was changed.
+- Verification Status: Documentation consistency review and `git diff --check` completed; multi-account runtime behavior remains unimplemented and unverified.
+
+## 2026-09-05T00:00:39Z — Make remembered-account limit configurable
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change the multiple-account device limit from a fixed value to an environment-controlled setting.
+- Changes Made: Replaced the fixed five-account wording with server-only `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, default `5`, startup-valid range `2–10`, and safe lower-limit behavior that never silently removes existing accounts. Synchronized the architecture, rules, design contract, and progress audit.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Allow staging, production, and future deployments to tune the device-local switcher limit without a code change.
+- Notes: The setting is documented for the planned Phase 4 implementation and is not yet read by runtime code.
+- Verification Status: Documentation consistency review and `git diff --check` completed.
+
+## 2026-09-05T00:03:00Z — Expand remembered-account configuration ceiling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Allow the configurable remembered-account limit to support 16 accounts instead of enforcing an arbitrary 10-account maximum.
+- Changes Made: Updated `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` validation guidance from `2–10` to `1–16`. Documented that `1` disables switching while preserving single-account login, and that values above `16` require a different browser credential-storage design.
+- Files: `docs/auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Keep the configuration flexible for a 16-account product requirement while retaining an operational guard for the planned per-account-cookie architecture.
+- Notes: This remains a planned server setting; runtime code does not read it yet.
+- Verification Status: Documentation review completed; `git diff --check` pending final pass.
+
+## 2026-09-04T23:37:00Z — Rename auth/session progress audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rename the auth/session audit file to `auth-and-session-progress.md` and remove the unnecessary Claude title reference.
+- Changes Made: Renamed the file and updated all repository references, including historical audit and changelog entries.
+- Files: `docs/auth-and-session-progress.md`, `docs/auth-and-session.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Use a neutral progress-document name that describes the file's purpose.
+- Notes: No document content or runtime behavior was changed by the rename.
+- Verification Status: Old-name reference scan and `git diff --check` completed.
+
+## 2026-09-05T00:08:41Z — Add username login
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Allow users to log in with their username as well as their email address.
+- Changes Made: Added an `identifier` login field with temporary legacy `email` request-key compatibility, case-insensitive email/username lookup, and the shared existing password, lockout, device, and future OTP path. Updated the web login field to `Email or username` and added focused API regression tests.
+- Files: `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/tests/test_auth_updates.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Let people use the handle they already know while preserving one independent account identity and the same security controls.
+- Notes: Signup remains email-first and OTP-gated; username login does not bypass lockout or any future risk-based OTP decision.
+- Verification Status: Focused API tests, frontend type/build verification, and `git diff --check` pending.

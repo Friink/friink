@@ -60,8 +60,10 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
             session.commit()
 
         client = TestClient(app)
-        existing = client.post("/auth/signup/start", json={**payload, "email": existing_email})
-        fresh = client.post("/auth/signup/start", json=payload)
+        legacy = client.post("/auth/signup/start", json=payload)
+        assert legacy.status_code == 404
+        existing = client.post("/auth/signup/email/start", json={"email": existing_email})
+        fresh = client.post("/auth/signup/email/start", json={"email": payload["email"]})
         assert existing.status_code == fresh.status_code == 202
         assert existing.json()["accepted"] is True
         assert fresh.json()["accepted"] is True
@@ -78,25 +80,31 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
             assert otp.otp_hash and len(otp.otp_hash) == 32
             assert otp.user_id is None
 
-        assert len(sent_codes) == 1
-        assert re.fullmatch(r"[A-Z0-9]{6}", sent_codes[0])
+        assert len(sent_codes) == 2
+        assert all(re.fullmatch(r"[A-Z0-9]{6}", code) for code in sent_codes)
         invalid = client.post(
-            "/auth/signup/verify",
+            "/auth/signup/email/verify",
             json={"reservation_token": fresh.json()["reservation_token"], "otp": "AAAAAA"},
         )
         assert invalid.status_code == 400
 
+        verified_email = client.post(
+            "/auth/signup/email/verify",
+            json={"reservation_token": fresh.json()["reservation_token"], "otp": sent_codes[-1].lower()},
+        )
+        assert verified_email.status_code == 200, verified_email.text
         verified = client.post(
-            "/auth/signup/verify",
-            json={"reservation_token": fresh.json()["reservation_token"], "otp": sent_codes[0].lower()},
+            "/auth/signup/complete",
+            json={**payload, "reservation_token": fresh.json()["reservation_token"]},
         )
         assert verified.status_code == 201, verified.text
-        new_user_id = verified.json()["id"]
+        with get_session_factory()() as session:
+            new_user_id = session.execute(select(User.id).where(User.email == payload["email"])).scalar_one()
         assert verified.json()["email"] == payload["email"].lower()
 
         replay = client.post(
-            "/auth/signup/verify",
-            json={"reservation_token": fresh.json()["reservation_token"], "otp": sent_codes[0]},
+            "/auth/signup/email/verify",
+            json={"reservation_token": fresh.json()["reservation_token"], "otp": sent_codes[-1]},
         )
         assert replay.status_code == 400
     finally:

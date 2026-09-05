@@ -15,6 +15,15 @@ class EmailService:
         self.settings = settings
 
     async def send_signup_otp(self, email: str, otp_code: str) -> None:
+        await self._send_otp(email, otp_code, "verify your Friink email address")
+
+    async def send_login_otp(self, email: str, otp_code: str) -> None:
+        await self._send_otp(email, otp_code, "approve this Friink login")
+
+    async def send_email_change_otp(self, email: str, otp_code: str) -> None:
+        await self._send_otp(email, otp_code, "confirm your new Friink email address")
+
+    async def _send_otp(self, email: str, otp_code: str, action: str) -> None:
         if not self.settings.resend_api_key:
             raise EmailDeliveryError("Email delivery is not configured.")
 
@@ -27,7 +36,7 @@ class EmailService:
             "to": [email],
             "subject": "Your Friink verification code",
             "html": (
-                "<p>Use this code to verify your Friink email address:</p>"
+                f"<p>Use this code to {escape(action)}:</p>"
                 f"<p style=\"font-size: 24px; font-weight: 700; letter-spacing: 0.18em;\">{escape(otp_code)}</p>"
                 "<p>This code expires in 4 minutes and can only be used once.</p>"
             ),

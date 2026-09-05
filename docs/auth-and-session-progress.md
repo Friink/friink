@@ -1,4 +1,4 @@
-# Claude Audit — Auth and Session
+# Auth and Session Progress Audit
 
 This file records verification evidence for `docs/auth-and-session.md`. Refresh-token values are intentionally redacted; cookie attributes and response results are preserved. Staging signup OTP implementation notes are recorded separately from live evidence.
 
@@ -341,3 +341,98 @@ rules, device invalidation, concurrent failures, cooldown boundaries, and privac
 checks. `SIGNUP_OTP_ENABLED=true` is permitted only in an environment with a
 configured delivery provider; ordinary login remains password-only unless the
 separate Phase 2d risk-based flow is enabled.
+
+## Planned multiple-account extension
+
+The consolidated architecture now defines the approved web/mobile flow:
+side-drawer `Add account`, a design-system login/signup modal, account
+registration after successful authentication, and `Change account` only after
+two independent accounts are authenticated. It also defines the required
+device-scoped session slot, opaque account-slot, account-specific session,
+secure-storage, API, isolation, and rollout boundaries. The device session
+registry is operational only and does not link the accounts to each other.
+The architecture currently recommends a default of five remembered accounts
+per browser profile or mobile installation, controlled by the server-only
+`MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` setting; this is not a global account-
+creation limit.
+
+This section is a planning note, not live verification. No multiple-account
+runtime behavior is claimed as implemented or staging-tested until the Phase 4e
+verification gate in `docs/auth-and-session.md` is completed.
+
+## Current Phase 1/2 implementation gate — ready for staging deployment
+
+The earlier “not a gate pass” checkpoint language above records what was true at
+the time of each earlier deployment. The current working tree closes the
+remaining Phase 1/2 implementation gaps and is ready to push to staging. The
+production gate remains separate and is not implied by this checkpoint.
+
+### Phase 2c — Signup email ownership OTP
+
+The reachable staging-enabled signup contract is now email-only start → OTP
+verification → password/profile completion. `/auth/signup/start` returns `404`
+when signup OTP is enabled, so the legacy full-payload path cannot bypass email
+ownership. Reservations store only the email before verification, expire after
+30 minutes, are replaced on a newer start for the same email, and have a
+bounded cleanup hook that removes expired reservations and cascaded OTP rows.
+
+### Phase 2d — Risk-based login and device recognition
+
+Email and username login use the same password, lockout, device, and challenge
+decisions. With `LOGIN_RISK_OTP_ENABLED=true` and a configured Resend key,
+missing or changed server-recognized device state returns a four-minute login
+challenge. Approval creates the ordinary session and HttpOnly device cookie;
+recognized normal logins proceed without OTP. Refresh never requires OTP.
+
+### Phase 2e — Identity changes and final decisions
+
+Email changes now require current-password confirmation plus a dedicated
+four-minute ownership OTP sent to the new address; the old address remains
+active until verification. Database-backed
+case-insensitive uniqueness prevents shared email addresses permanently. Auth
+responses use opaque public user handles and omit date of birth, location, and
+internal user UUIDs. Username changes retain the documented no-step-up,
+immediate-release/no-cooldown behavior.
+
+Full account locks return exactly `Your account is locked. Contact support.`
+and block login and refresh only. Already-issued access JWTs are not
+force-invalidated. Progressive cooldowns return a distinct `429` response with
+the 30-minute, one-hour, or 24-hour tier and an approximate retry time.
+
+### Database and request/response evidence
+
+The configured Neon staging database was migrated successfully:
+
+```text
+python -m alembic current
+20260905_0030 (head)
+
+python -m alembic upgrade head
+INFO  Running upgrade 20260905_0029 -> 20260905_0030,
+     add opaque public user handles
+```
+
+The migration-backed request suite passed against that database:
+
+```text
+python -m pytest tests/test_phase2_auth_flows.py tests/test_phase2_signup.py \
+  tests/test_phase2_device.py tests/test_phase2_identity.py \
+  tests/test_auth_updates.py tests/test_lockout.py tests/test_otp_storage.py \
+  tests/test_refresh_token_rotation.py tests/test_phase1_contract.py -q
+23 passed, 11 warnings
+```
+
+The suite includes real request/response assertions for signup OTP completion,
+expiry/cleanup, email and username login, new/changed/recognized-device
+challenges, challenge approval, email-change OTP, full-lock behavior,
+progressive cooldown copy, refresh blocking, and access-token continuity.
+Python compilation, TypeScript with incremental output disabled, the Next
+production build, `alembic check`, and `git diff --check` also passed.
+
+### Deployment acceptance still required
+
+This is a green flag for pushing the current API/web build to staging, not a
+claim that the not-yet-deployed build has live browser evidence. After deploy,
+capture the section 19 staging traces for the new login-risk and email-change
+endpoints, including CORS/cookie headers and a real recipient OTP. Production
+verification remains a separate pre-release gate.

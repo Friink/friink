@@ -20,16 +20,18 @@ def _signup(client: TestClient, prefix: str) -> tuple[uuid.UUID, str, str]:
             "email": email,
             "username": username,
             "display_name": username,
-            "password": "Strong-password-9!",
+            "password": "Strong-pass9!",
             "date_of_birth": "1990-01-01",
         },
     )
     assert response.status_code == 201, response.text
-    return uuid.UUID(response.json()["id"]), email, username
+    with get_session_factory()() as session:
+        user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
+    return user_id, email, username
 
 
 def _login(client: TestClient, email: str) -> dict[str, str]:
-    response = client.post("/auth/login", json={"email": email, "password": "Strong-password-9!"})
+    response = client.post("/auth/login", json={"email": email, "password": "Strong-pass9!"})
     assert response.status_code == 200, response.text
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 

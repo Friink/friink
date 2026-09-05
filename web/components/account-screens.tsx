@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, getReadReceiptPreference, listAuthSessions, listBlockedUsers, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, type AuthUser, type BlockedUser, type ManagedAuthSession } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, getReadReceiptPreference, listAuthSessions, listBlockedUsers, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -104,6 +104,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const profilePictureInputRef = useRef<HTMLInputElement | null>(null);
   const [usernameStatus, setUsernameStatus] = useState('');
   const [emailStatus, setEmailStatus] = useState('');
+  const [emailChangeToken, setEmailChangeToken] = useState('');
+  const [emailChangeOtp, setEmailChangeOtp] = useState('');
   const [nameStatus, setNameStatus] = useState('');
   const [aboutStatus, setAboutStatus] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -147,6 +149,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
+    setEmailChangeToken('');
+    setEmailChangeOtp('');
     setDisplayName(user.name);
     setAbout(user.about);
     setIsPrivate(user.isPrivate);
@@ -226,7 +230,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const canUpdateUsername = hasUsernameChanged && isUsernameValid && !isUpdatingUsername;
   const hasEmailChanged = email.trim().toLowerCase() !== user.email.toLowerCase();
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canUpdateEmail = hasEmailChanged && isEmailValid && !isUpdatingEmail;
+  const canUpdateEmail = hasEmailChanged && isEmailValid && (emailChangeToken ? /^[A-Za-z0-9]{6}$/.test(emailChangeOtp) : Boolean(currentPassword)) && !isUpdatingEmail;
   const isDisplayNameValid = displayName.trim().length > 0 && displayName.trim().length <= 120;
   const isAboutValid = about.length <= 256;
   const hasNameChanged = displayName.trim() !== user.name;
@@ -304,11 +308,20 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setIsUpdatingEmail(true);
     setEmailStatus('');
     try {
-      const updatedUser = await updateCurrentUser(session.accessToken, { email: email.trim() });
+      if (!emailChangeToken) {
+        const challenge = await startEmailChange(session.accessToken, email.trim(), currentPassword);
+        setEmailChangeToken(challenge.challenge_token);
+        setEmailChangeOtp('');
+        setEmailStatus(challenge.message);
+        return;
+      }
+      const updatedUser = await verifyEmailChange(session.accessToken, emailChangeToken, emailChangeOtp);
       const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
       saveAuthSession(updatedSession);
       onUserChange?.(updatedSession.user);
       setEmail(updatedSession.user.email);
+      setEmailChangeToken('');
+      setEmailChangeOtp('');
       setEmailStatus('Email updated.');
       onToast?.('Email updated.', 'success');
     } catch (error) {
@@ -702,7 +715,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Email"
               subtitle="Update the email address for this account."
               className="settings-row settings-row-expanded"
-              save={{ disabled: !canUpdateEmail, busy: isUpdatingEmail, onClick: handleEmailUpdate, label: 'Update email' }}
+              save={{ disabled: !canUpdateEmail, busy: isUpdatingEmail, onClick: handleEmailUpdate, label: emailChangeToken ? 'Verify email' : 'Send verification code' }}
             >
               <label className="settings-field">
                 <div className="settings-field-row">
@@ -718,6 +731,29 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                     autoComplete="email"
                   />
                 </div>
+                {!emailChangeToken && (
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    placeholder="Current password to verify"
+                    aria-label="Current password to verify email change"
+                    autoComplete="current-password"
+                  />
+                )}
+                {emailChangeToken && (
+                  <input
+                    type="text"
+                    value={emailChangeOtp}
+                    onChange={(event) => setEmailChangeOtp(event.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase())}
+                    placeholder="Verification code"
+                    aria-label="Email verification code"
+                    autoComplete="one-time-code"
+                    inputMode="text"
+                    minLength={6}
+                    maxLength={6}
+                  />
+                )}
                 {emailStatus && <span className="settings-field-message" role="status">{emailStatus}</span>}
               </label>
             </SettingsRow>

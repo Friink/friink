@@ -24,6 +24,12 @@ export type AuthSession = {
   user: AuthUser;
 };
 
+export type LoginChallenge = {
+  challengeRequired: true;
+  challengeToken: string;
+  message: string;
+};
+
 export type ManagedAuthSession = {
   id: string;
   device_label: string;
@@ -83,6 +89,12 @@ type ApiTokenResponse = {
   access_token: string;
   token_type: string;
   user: ApiUser;
+};
+
+type ApiLoginChallengeResponse = {
+  challenge_required: true;
+  challenge_token: string;
+  message: string;
 };
 
 type AuthErrorCode =
@@ -157,6 +169,13 @@ export type SignupStartResponse = {
   message: string;
 };
 
+type ApiEmailChangeStartResponse = {
+  accepted: boolean;
+  verification_required: true;
+  challenge_token: string;
+  message: string;
+};
+
 export async function startSignupEmail(email: string): Promise<SignupStartResponse> {
   return requestApi<SignupStartResponse>('/auth/signup/email/start', {
     method: 'POST',
@@ -173,7 +192,7 @@ export async function verifySignupEmail(reservationToken: string, otp: string): 
   });
 }
 
-export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession> {
+export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession | LoginChallenge> {
   await requestApi<ApiUser>('/auth/signup/complete', {
     method: 'POST',
     body: JSON.stringify({
@@ -188,6 +207,7 @@ export async function completeSignup(reservationToken: string, input: SignupInpu
   });
 
   const session = await login(input.email, input.password);
+  if (isLoginChallenge(session)) return session;
   return {
     ...session,
     user: {
@@ -221,7 +241,7 @@ export async function verifySignup(reservationToken: string, otp: string): Promi
   });
 }
 
-export async function signUp(input: SignupInput): Promise<AuthSession> {
+export async function signUp(input: SignupInput): Promise<AuthSession | LoginChallenge> {
   await requestApi<ApiUser>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({
@@ -234,6 +254,7 @@ export async function signUp(input: SignupInput): Promise<AuthSession> {
   });
 
   const session = await login(input.email, input.password);
+  if (isLoginChallenge(session)) return session;
   return {
     ...session,
     user: {
@@ -250,6 +271,25 @@ export async function checkUsernameAvailability(username: string): Promise<{ use
     method: 'GET',
     skipAuthRefresh: true,
   });
+}
+
+export async function startEmailChange(accessToken: string, email: string, currentPassword: string): Promise<ApiEmailChangeStartResponse> {
+  return requestApi<ApiEmailChangeStartResponse>('/auth/me/email/change/start', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ email, current_password: currentPassword }),
+  });
+}
+
+export async function verifyEmailChange(accessToken: string, challengeToken: string, otp: string): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me/email/change/verify', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ challenge_token: challengeToken, otp }),
+  });
+  return mapApiUser(response);
 }
 
 export function saveAuthSession(session: AuthSession) {
@@ -281,13 +321,33 @@ export function clearAuthSession() {
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
-export async function login(email: string, password: string): Promise<AuthSession> {
-  const response = await requestApi<ApiTokenResponse>('/auth/login', {
+export async function login(identifier: string, password: string): Promise<AuthSession | LoginChallenge> {
+  const response = await requestApi<ApiTokenResponse | ApiLoginChallengeResponse>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ identifier, password }),
   });
 
+  if ('challenge_required' in response && response.challenge_required) {
+    return {
+      challengeRequired: true,
+      challengeToken: response.challenge_token,
+      message: response.message,
+    };
+  }
+  return mapTokenResponse(response as ApiTokenResponse);
+}
+
+export async function verifyLoginChallenge(challengeToken: string, otp: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/verify', {
+    method: 'POST',
+    body: JSON.stringify({ challenge_token: challengeToken, otp }),
+    skipAuthRefresh: true,
+  });
   return mapTokenResponse(response);
+}
+
+export function isLoginChallenge(value: AuthSession | LoginChallenge): value is LoginChallenge {
+  return 'challengeRequired' in value && value.challengeRequired === true;
 }
 
 export async function refreshAuthSession(): Promise<AuthSession> {
