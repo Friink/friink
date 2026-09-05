@@ -9,7 +9,7 @@ import { PostMediaGallery } from '@/components/post-media-gallery';
 import type { Post } from '@/lib/data';
 import { getPostPath, getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
-import { loadAuthSession, setPostLike, setPostStar } from '@/lib/auth';
+import { loadAuthSession, setPostLike, setPostSave } from '@/lib/auth';
 import { PostLikesModal } from '@/components/post-likes-modal';
 
 type FeedPostProps = {
@@ -28,7 +28,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
   const [isExpanded, setIsExpanded] = useState(false);
   const [bodyOverflows, setBodyOverflows] = useState(false);
   const [reactionPost, setReactionPost] = useState(post);
-  const [reactionBusy, setReactionBusy] = useState<'like' | 'star' | null>(null);
+  const [reactionBusy, setReactionBusy] = useState<'like' | 'save' | null>(null);
   const [likesOpen, setLikesOpen] = useState(false);
   const postPath = getPostPathForPost(post);
   const shouldClampBody = !isExpanded;
@@ -38,13 +38,13 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
     setReactionPost(post);
   }, [post]);
 
-  async function toggleReaction(kind: 'like' | 'star') {
+  async function toggleReaction(kind: 'like' | 'save') {
     const session = loadAuthSession();
     if (!session || reactionBusy) return;
-    const nextValue = kind === 'like' ? !reactionPost.isLiked : !reactionPost.isStarred;
+    const nextValue = kind === 'like' ? !reactionPost.isLiked : !reactionPost.isSaved;
     const optimistic = {
       ...reactionPost,
-      ...(kind === 'like' ? { isLiked: nextValue, likeCount: Math.max(0, reactionPost.likeCount + (nextValue ? 1 : -1)) } : { isStarred: nextValue, starCount: Math.max(0, reactionPost.starCount + (nextValue ? 1 : -1)) }),
+      ...(kind === 'like' ? { isLiked: nextValue, likeCount: Math.max(0, reactionPost.likeCount + (nextValue ? 1 : -1)) } : { isSaved: nextValue, savedCount: Math.max(0, reactionPost.savedCount + (nextValue ? 1 : -1)) }),
     };
     setReactionPost(optimistic);
     onPostUpdated?.(optimistic);
@@ -52,8 +52,8 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
     try {
       const result = kind === 'like'
         ? await setPostLike(session.accessToken, reactionPost.id, nextValue)
-        : await setPostStar(session.accessToken, reactionPost.id, nextValue);
-      const confirmed = { ...reactionPost, isLiked: result.liked, isStarred: result.starred, likeCount: result.like_count, starCount: result.star_count };
+        : await setPostSave(session.accessToken, reactionPost.id, nextValue);
+      const confirmed = { ...reactionPost, isLiked: result.liked, isSaved: result.saved, likeCount: result.like_count, savedCount: result.saved_count };
       setReactionPost(confirmed);
       onPostUpdated?.(confirmed);
     } catch (error) {
@@ -101,11 +101,6 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
           <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} imageUrl={post.imageUrl} />
         </Link>
         <div className="feed-post-options" aria-label="Post actions">
-          {canReact && (
-            <button className={`icon-plain feed-post-star${reactionPost.isStarred ? ' feed-post-star-highlighted' : ''}`} type="button" aria-label={reactionPost.isStarred ? 'Unstar post' : 'Star post'} aria-pressed={reactionPost.isStarred} disabled={reactionBusy !== null} onClick={() => { void toggleReaction('star'); }}>
-              <i className={reactionPost.isStarred ? 'fa-solid fa-star' : 'fa-regular fa-star'} aria-hidden="true" />
-            </button>
-          )}
           <button className="icon-plain feed-post-share" type="button" aria-label="Share post">
             <i className="fa-solid fa-share-nodes" aria-hidden="true" />
           </button>
@@ -177,11 +172,11 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
               </button>
               <button className="feed-post-count" type="button" aria-label={`View ${reactionPost.likeCount} likes`} onClick={() => setLikesOpen(true)}>{reactionPost.likeCount}</button>
             </span>
-            <span className="feed-post-action-group feed-post-star-count">
-              <span className={reactionPost.isStarred ? 'feed-post-action-active' : ''} aria-label={`${reactionPost.starCount} stars`}>
-                <i className={reactionPost.isStarred ? 'fa-solid fa-star' : 'fa-regular fa-star'} aria-hidden="true" />
-              </span>
-              <span>{reactionPost.starCount}</span>
+            <span className="feed-post-action-group feed-post-save-count">
+              <button className={reactionPost.isSaved ? 'feed-post-action-active' : ''} type="button" aria-label={reactionPost.isSaved ? 'Remove from saved' : 'Save post'} aria-pressed={reactionPost.isSaved} disabled={reactionBusy !== null} onClick={() => { void toggleReaction('save'); }}>
+                <i className={reactionPost.isSaved ? 'fa-solid fa-star' : 'fa-regular fa-star'} aria-hidden="true" />
+              </button>
+              <span className="feed-post-count" aria-label={`${reactionPost.savedCount} saves`}>{reactionPost.savedCount}</span>
             </span>
           </>
         )}

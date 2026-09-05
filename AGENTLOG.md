@@ -1,5 +1,58 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T02:00:00+05:00 — Add Saved posts/profiles routes and consolidate Save action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add `/saved/posts` and `/saved/profiles`, reserve profile saving for later, and make the lower post star the only Save control.
+- Changes Made: Added route-backed Saved Posts and Saved Profiles pages with `/saved` and legacy `/starred` redirects to `/saved/posts`; wired the Saved tabs to those routes; removed the redundant header Save star; converted the lower counted star into the accessible Save/Unsave button; updated the design contract and reaction documentation.
+- Files: `web/app/saved/page.tsx`, `web/app/saved/posts/page.tsx`, `web/app/saved/profiles/page.tsx`, `web/app/starred/page.tsx`, `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/components/saved-screen.tsx`, `web/components/feed-post.tsx`, `web/app/globals.css`, `packages/design/design.md`, `docs/like-and-star.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Give Saved posts and the future Saved profiles surface stable URLs while keeping one clear, accessible Save affordance per post.
+- Verification Status: `npx tsc --noEmit --incremental false` passed; `npm run build` passed and the build output lists `/saved/posts` and `/saved/profiles`.
+
+## 2026-09-06T00:24:20+05:00 — Document auth/session Phase 7 decision boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add Phase 7 failed-login-attempt notification requirements to the auth/session architecture and progress records.
+- Changes Made: Added the documentation-only Phase 7 contract. It selects the third consecutive failure/30-minute cooldown as the trigger, limits delivery to one notification per account per rolling 24-hour window, specifies the registered-address/privacy and password-reset-link boundaries, excludes deactivated/pending-deletion reactivation flows, and defines the staging send/receive evidence gate.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Record the scoped business decision and verification boundary without changing existing lockout behavior or claiming unverified delivery.
+- Notes: No `account-lifecycle.md` file is present in this checkout; the Phase 7 text preserves the separately referenced reactivation-modal contract. No runtime code, database, or deployment changes were made.
+- Verification Status: Documentation diff review completed; `git diff --check` passed with only the repository's normal LF-to-CRLF working-tree warnings. Phase 7 staging email send/receive evidence is absent, so no green flag was raised.
+
+## 2026-09-06T00:35:00+05:00 — Add draft account lifecycle contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create the account lifecycle document and record the unresolved pre-development gaps in both lifecycle and Phase 7 documentation.
+- Changes Made: Added `docs/account-lifecycle.md` covering active, deactivated, pending-deletion, and deleted states; deactivation; 32-day deletion; reactivation routing; presentation rules; and the four-day deletion warning. Added an explicit discussion gate for the conflict between lifecycle login alerts and Phase 7's active-account-only rule, immediate access-token invalidation, failure boundaries, reset-link contracts, transition races, and abuse controls. Linked the same gate from Phase 7.
+- Files: `docs/account-lifecycle.md`, `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Establish the lifecycle business draft without silently resolving the cross-document conflicts before product and architecture review.
+- Notes: No runtime code, database, billing, or deployment changes were made. Phase 7 remains unimplemented and has no staging send/receive evidence.
+- Verification Status: Documentation diff review completed; `git diff --check` passed with only the repository's normal LF-to-CRLF working-tree warnings. No runtime verification was performed because this is a draft documentation contract.
+
+## 2026-09-06T01:20:19+05:00 — Rename Stars to Saves
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rename the Star reaction vocabulary to Saved in the database and frontend.
+- Changes Made: Added data-preserving Alembic migration `20260906_0031` to rename `posts.star_count` to `saved_count`, `post_stars` to `post_saves`, and their constraint/index identifiers. Renamed the ORM/model, API response fields and routes (`/save`, `/saved`), frontend state and labels, canonical route to `/saved`, and retained `/starred` as a legacy redirect. Synchronized reaction documentation, rules, design contract, README, and tests.
+- Files: `api/alembic/versions/20260906_0031_rename_stars_to_saves.py`, reaction API/model/schema/service files, `web/`, `docs/like-and-star.md`, `RULES.md`, `packages/design/design.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Make “Saved” the canonical product and persistence vocabulary while preserving existing saved reaction rows through a schema rename.
+- Notes: The migration has not been applied in this checkout because `DATABASE_URL` and `JWT_SECRET_KEY` are unavailable. Staging/production must be migrated before deploying the renamed API/web pair; the old `/starred` frontend path redirects to `/saved`.
+- Verification Status: Python compilation, web TypeScript (`--incremental false`), Next production build, and `git diff --check` passed. The focused API reaction test could not collect because the required `JWT_SECRET_KEY` is absent; no live database verification was claimed.
+
+## 2026-09-06T01:32:00+05:00 — Apply Save terminology migration to staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the supplied Neon connection to upgrade the database for the Star-to-Save rename.
+- Changes Made: Verified the configured Neon database at `20260905_0030`, applied Alembic migration `20260906_0031`, and confirmed the database reports `20260906_0031 (head)`. Alembic reports no pending upgrade operations.
+- Database Evidence: The focused `tests/test_reactions.py` Like/Save flow passed against the migrated database (`1 passed, 4 warnings`); its temporary reaction/user data was cleaned up by the test.
+- Notes: The supplied connection was used for the configured staging database only. Production was not accessed or modified. The API/web deployment must follow the staging schema update; the old `/starred` frontend path remains a redirect to `/saved`.
+- Verification Status: Migration and staging reaction verification passed. Production migration and browser/manual verification remain open.
+
 ## 2026-09-05T03:30:00Z — Live staging post-OTP crash hardening
 
 - Agent: Codex

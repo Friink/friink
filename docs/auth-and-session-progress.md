@@ -450,3 +450,40 @@ but omits the embedded `user` object by fetching `/auth/me` with that token
 before reading user fields. Redeploy the web project, then retest login and
 signup OTP approval on staging. No production or database change is required
 for this client-only fix.
+
+## Phase 7 — Failed-login-attempt notification
+
+### Decision record
+
+Phase 7 is planned but its verification gate is not passed. The notification
+will trigger on the third consecutive failed login for a normal active account,
+when the existing 30-minute cooldown begins. This is the earliest existing
+lockout tier that avoids notifying on every ordinary typo or retry.
+
+The notification will be sent at most once per account in a rolling 24-hour
+window. The fourth-failure one-hour tier and fifth-failure 24-hour tier do not
+send additional emails within that window. A successful login resets the
+progressive failure counter but does not reset the notification suppression
+window. Concurrent triggering requests must be deduplicated through the durable
+security-event/outbox boundary.
+
+The message will go only to the account record's registered email address and
+will contain suspicious-activity guidance plus an opaque, single-use,
+expiring password-reset link. Unknown or malformed identifiers never trigger
+delivery. A bounce or other delivery failure remains an internal redacted
+outcome and must not alter the unauthenticated response, timing, UI, logs, or
+telemetry in a way that reveals account existence; the submitted login
+identifier is never used as a fallback destination. Deactivated or
+pending-deletion accounts remain on the separate `account-lifecycle.md`
+reactivation-modal flow and do not enter this active-account notification
+path.
+
+### Verification status — not a green flag
+
+No staging send/receive evidence for Phase 7 is recorded in this checkout.
+The required gate remains open until staging proves the third-failure trigger,
+provider acceptance, actual receipt in the authorized test inbox, the reset
+link, suppression of duplicate fourth/fifth-tier emails within 24 hours, and
+the unchanged privacy/reactivation behavior for non-active-account paths.
+Source inspection or an outbox record alone will not close the gate. No Phase 7
+green flag is raised by this documentation update.

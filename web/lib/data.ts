@@ -12,12 +12,12 @@ export type Post = {
   text: string;
   connectionType: 'followers' | 'following';
   isConnection: boolean;
-  isStarred: boolean;
+  isSaved: boolean;
   isLiked: boolean;
   replies: number;
   quotes: number;
   likeCount: number;
-  starCount: number;
+  savedCount: number;
   reactions: number;
   media?: string[];
   quotedPost?: {
@@ -34,7 +34,7 @@ export type Post = {
   } | null;
 };
 
-export type Screen = 'home' | 'profile' | 'connections' | 'starred' | 'search' | 'messages' | 'notifications' | 'settings';
+export type Screen = 'home' | 'profile' | 'connections' | 'saved' | 'search' | 'messages' | 'notifications' | 'settings';
 
 export type NavItem = {
   id: Screen;
@@ -53,7 +53,7 @@ export const sidebarNavItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
   { id: 'profile', label: 'Profile', icon: 'fa-solid fa-user' },
   { id: 'connections', label: 'Connections', icon: 'fa-solid fa-user-group' },
-  { id: 'starred', label: 'Starred', icon: 'fa-solid fa-star' },
+  { id: 'saved', label: 'Saved', icon: 'fa-solid fa-star' },
 ];
 
 export const initialPosts: Post[] = [];

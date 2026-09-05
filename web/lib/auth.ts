@@ -791,9 +791,9 @@ export type ApiPost = {
   reply_count: number;
   quote_count: number;
   like_count: number;
-  star_count: number;
+  saved_count: number;
   liked: boolean | null;
-  starred: boolean | null;
+  saved: boolean | null;
   quoted_post: {
     id: string | null;
     public_id: string | null;
@@ -826,9 +826,9 @@ export type ApiFeedContext = {
 export type ApiReaction = {
   post_id: string;
   like_count: number;
-  star_count: number;
+  saved_count: number;
   liked: boolean;
-  starred: boolean;
+  saved: boolean;
 };
 
 export type LikeActor = {
@@ -856,8 +856,8 @@ export async function setPostLike(accessToken: string, postId: string, liked: bo
   return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/like`, liked ? 'POST' : 'DELETE');
 }
 
-export async function setPostStar(accessToken: string, postId: string, starred: boolean): Promise<ApiReaction> {
-  return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/star`, starred ? 'POST' : 'DELETE');
+export async function setPostSave(accessToken: string, postId: string, saved: boolean): Promise<ApiReaction> {
+  return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/save`, saved ? 'POST' : 'DELETE');
 }
 
 export async function listPostLikes(accessToken: string, postId: string, input: { query?: string; cursor?: string | null; limit?: number } = {}): Promise<LikeActorPage> {
@@ -877,10 +877,10 @@ export async function listLikedPosts(accessToken: string, username: string, curs
   return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/likes?${params.toString()}`);
 }
 
-export async function listStarredPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
+export async function listSavedPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
   const params = new URLSearchParams({ limit: '20' });
   if (cursor) params.set('cursor', cursor);
-  return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/starred?${params.toString()}`);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/saved?${params.toString()}`);
 }
 
 export type ApiConnectionUser = {

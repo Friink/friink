@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-06
+
+- [reactions] Renamed the persisted Star reaction vocabulary to Save: `star_count`/`post_stars` become `saved_count`/`post_saves`, API state and routes use `saved`/`save`, and the frontend uses the `/saved` surface with a legacy `/starred` redirect. Alembic migration `20260906_0031` is data-preserving; staging is migrated and production remains pending.
+- [verification] Applied migration `20260906_0031` to the configured Neon staging database; Alembic reports `20260906_0031 (head)`, no pending operations remain, and the focused authenticated Like/Save reaction flow passed. Production remains a separate migration and release gate.
+- [docs/account-lifecycle] Added the draft account lifecycle contract for deactivation, pending deletion, reactivation, permanent deletion, login routing, and the required pre-development discussion gate.
+- [docs/auth] Added a Phase 7 pre-development note linking the lifecycle draft and preserving the active-account-only notification rule until the notification conflict and related architecture gaps are resolved.
+- [web] Split the Saved surface into route-backed `/saved/posts` and `/saved/profiles` views, with the latter reserved for future profile saving. Removed the redundant post-header Save star and made the counted lower-row star the Save/Unsave control.
+- [docs/auth] Added planned Phase 7 for failed-login-attempt notification: trigger at the third consecutive failure/30-minute cooldown, suppress repeats to one per rolling 24-hour window, preserve account privacy and deactivated/pending-deletion reactivation behavior, and require staging send/receive evidence before a green flag. No Phase 7 green flag is claimed.
+
 ## 2026-09-05
 
 - [web/auth] Hardened token-response handling after live staging showed a post-OTP `user.id` crash when the token response omitted the embedded user object; the client now hydrates `/auth/me` from the approved access token before building the session.

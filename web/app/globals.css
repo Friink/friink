@@ -4199,7 +4199,6 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   height: 1.75rem;
 }
 
-.feed-post-options .feed-post-star,
 .feed-post-options .feed-post-more,
 .feed-post-options .feed-post-share {
   display: inline-grid;
@@ -4211,7 +4210,6 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   line-height: 1;
 }
 
-.feed-post-options .feed-post-star i,
 .feed-post-options .feed-post-more i,
 .feed-post-options .feed-post-share i {
   display: block;
@@ -4222,37 +4220,33 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   text-align: center;
 }
 
-.feed-post-star-highlighted {
-  color: var(--color-accent);
-}
-
-.starred-feed {
+.saved-feed {
   width: 100%;
 }
 
-.starred-list {
+.saved-list {
   display: grid;
 }
 
-.starred-row {
+.saved-row {
   min-height: 0;
 }
 
-.starred-row .list-row-subtitle {
+.saved-row .list-row-subtitle {
   white-space: nowrap;
 }
 
-.starred-row-icon {
+.saved-row-icon {
   color: var(--color-accent);
 }
 
-.starred-row-actions {
+.saved-row-actions {
   display: inline-flex;
   align-items: center;
   gap: 0.85rem;
 }
 
-.starred-row-actions button {
+.saved-row-actions button {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -4263,8 +4257,8 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   font-size: var(--text-xs);
 }
 
-.starred-row-actions button:hover,
-.starred-row-actions button:focus-visible {
+.saved-row-actions button:hover,
+.saved-row-actions button:focus-visible {
   color: var(--color-ink);
   outline: none;
 }
@@ -4481,7 +4475,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .feed-post-actions .feed-post-action-active,
-.feed-post-star-count .feed-post-action-active {
+.feed-post-save-count .feed-post-action-active {
   color: var(--color-accent);
 }
 
@@ -4491,7 +4485,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   opacity: 0.65;
 }
 
-.feed-post-star-count > span:last-child {
+.feed-post-save-count > span:last-child {
   color: var(--color-muted);
   font-size: var(--text-xs);
   font-weight: 700;

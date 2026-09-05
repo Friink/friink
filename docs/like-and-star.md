@@ -1,27 +1,28 @@
-# Likes and Stars
+# Likes and Saves
 
-Status: implementation contract for the first Likes and Stars release. The
-implementation is present, both databases are migrated to `20260904_0024`,
-and the authenticated reaction E2E flow passes against staging. Production
-has passed read-only schema verification. Deploy the current web/API code to
-each environment, then complete the browser/manual checklist below.
+Status: implementation contract for the first Likes and Saves release. The
+base reaction implementation is present and both databases were migrated to
+`20260904_0024`; the configured staging database is now at terminology/data
+migration `20260906_0031`. Production still needs the same migration before
+the renamed API and frontend are deployed there. The authenticated reaction
+E2E flow passes against the configured staging database, and production passed
+read-only schema verification before this rename.
 
 ## Release readiness
 
-- Database readiness: staging and production are both at migration head
-  `20260904_0024`.
-- API readiness: the focused authenticated reaction E2E flow passed against
-  staging; production has read-only schema verification.
-- Remaining release step: deploy the current application code to both
-  environments and manually verify the browser flows at mobile, tablet, and
-  desktop sizes.
+- Database readiness: configured staging is at `20260906_0031 (head)`; apply
+  the same migration to production before deploying the renamed API there.
+- API readiness: the focused authenticated Like/Save flow passes against the
+  migrated staging database; production remains a separate release gate.
+- Remaining release step: deploy the API/web changes and manually verify the
+  browser flows at mobile, tablet, and desktop sizes.
 
 ## Product summary
 
-Likes are public social engagement. Stars are private-to-the-user saves, similar
-to bookmarks. Both reactions belong only to posts, both expose a public
-aggregate count, and both can be toggled repeatedly. A user
-can have at most one Like and one Star on a post at any moment.
+Likes are public social engagement. Saves are private to the user, similar to
+bookmarks. Both reactions belong only to posts, both expose a public aggregate
+count, and both can be toggled repeatedly. A user can have at most one Like and
+one Save on a post at any moment.
 
 ## Requirements
 
@@ -40,17 +41,18 @@ can have at most one Like and one Star on a post at any moment.
   `/{username}/likes`. The tab is visible to signed-in viewers for now.
 - The signed-in user can always see their own liked posts.
 
-### Stars
+### Saves
 
-- A signed-in user can Star or Unstar any post they are allowed to view,
+- A signed-in user can Save or Unsave any post they are allowed to view,
   including their own posts.
-- A Star is unique per `(user, post)` pair. Repeated requests must not create
+- A Save is unique per `(user, post)` pair. Repeated requests must not create
   duplicate rows or increment the count more than once.
-- Every viewer can see the post's Star count.
-- The Starred drawer destination remains the user's private Starred page.
-  Other users must not be able to use it to inspect someone else's Stars.
-- Star and Unstar never notify the post owner.
-- The post owner can see the aggregate Star count but cannot see who Starred it.
+- Every viewer can see the post's Save count.
+- The Saved drawer destination is the user's private Saved Posts page at
+  `/saved/posts`; `/saved/profiles` is reserved for future profile saving. Other users
+  must not be able to use it to inspect someone else's Saves.
+- Save and Unsave never notify the post owner.
+- The post owner can see the aggregate Save count but cannot see who saved it.
 
 ### Privacy
 
@@ -63,7 +65,7 @@ can have at most one Like and one Star on a post at any moment.
   view their own liked posts.
 - Disabling Like visibility does not remove the Like, change the aggregate Like
   count, or affect notifications already created.
-- Stars are not controlled by this setting.
+- Saves are not controlled by this setting.
 - Keep the visibility check server-side and centralized so a future paid
   per-post or account-level privacy policy can replace the current default
   without changing reaction storage or client contracts.
@@ -87,13 +89,13 @@ can have at most one Like and one Star on a post at any moment.
 
 Post actions retain the existing visual language and are arranged as:
 
-`comment count · quote count · like count · star count                 share · more`
+`comment count · quote count · like count · save count                 share · more`
 
 - Like uses an outlined heart when inactive and a filled heart when active.
-- Star uses an outlined star when inactive and a filled star when active.
+- Save uses an outlined star when inactive and a filled star when active.
 - The Like count is a keyboard-accessible button that opens the actor list and
-  exposes its count through an accessible label. The Star count is a labelled,
-  read-only aggregate because Star actors are private.
+  exposes its count through an accessible label. The Save count is a labelled,
+  read-only aggregate because Save actors are private.
 - Share sits beside the three-dot menu and is no longer mixed into the counted
   reaction group.
 - Counts are always rendered, including zero, to preserve alignment.
@@ -102,21 +104,21 @@ Post actions retain the existing visual language and are arranged as:
 
 ### In scope
 
-- Durable Like and Star relations for posts.
+- Durable Like and Save relations for posts.
 - Unique constraints and idempotent toggle behavior.
 - Public post aggregate counts.
-- Authenticated Like and Star controls on shared post cards and post detail.
-- Authenticated Liked-post profile tab and existing private Starred page.
+- Authenticated Like and Save controls on shared post cards and post detail.
+- Authenticated Liked-post profile tab and private Saved page.
 - Like actor modal with ProfileCard rows, search, and cursor pagination.
 - Like visibility preference in Settings > Privacy.
 - In-app Like notifications to post owners.
-- Removal of inaccessible posts from Liked and Starred lists.
+- Removal of inaccessible posts from Liked and Saved lists.
 - A neutral Post unavailable response for direct access to inaccessible posts.
 
 ### Out of scope
 
 - Likes on replies, comments, quotes, users, or other non-post objects.
-- Star actor lists.
+- Save actor lists.
 - Email, push, or realtime reaction delivery.
 - Notification grouping, notification retraction, or unlike notifications.
 - Paid privacy entitlements. The setting and API policy seam are included so
@@ -130,10 +132,10 @@ Post actions retain the existing visual language and are arranged as:
 
 - Add a `post_likes` table with an opaque UUID primary key, `post_id`,
   `user_id`, and `created_at`.
-- Add a `post_stars` table with the same shape.
+- Add a `post_saves` table with the same shape.
 - Both tables use foreign keys to `posts` and `users` with cascade deletion,
   indexes for post and user lookups, and a unique `(post_id, user_id)` pair.
-- Add a `like_count` and `star_count` denormalized counter to `posts`, both
+- Add a `like_count` and `saved_count` denormalized counter to `posts`, both
   non-negative and defaulting to zero. The database mutation that creates or
   deletes a relation must update the matching counter atomically.
 - Add a user preference field such as `likes_visible` with a default of true.
@@ -149,22 +151,22 @@ All reaction and list endpoints require the current authenticated user.
   post's current `like_count` and `liked` state.
 - `DELETE /posts/{post_id}/like` — remove the current user's Like; return the
   current count and `liked: false`.
-- `POST /posts/{post_id}/star` — create a Star idempotently; return the
-  current `star_count` and `starred` state.
-- `DELETE /posts/{post_id}/star` — remove the current user's Star; return the
-  current count and `starred: false`.
+- `POST /posts/{post_id}/save` — create a Save idempotently; return the
+  current `saved_count` and `saved` state.
+- `DELETE /posts/{post_id}/save` — remove the current user's Save; return the
+  current count and `saved: false`.
 - `GET /posts/{post_id}/likes?query=&cursor=&limit=` — return visible
   ProfileCard-compatible actors, `next_cursor`, and `has_more`.
 - `GET /users/{username}/likes?cursor=&limit=` — return the authenticated
   viewer's visible liked-post page for the requested profile, subject to the
   requested user's Like visibility and profile/access rules.
-- `GET /posts/starred?cursor=&limit=` — return only the authenticated user's
-  Starred posts. This must not accept an arbitrary username.
+- `GET /posts/saved?cursor=&limit=` — return only the authenticated user's
+  Saved posts. This must not accept an arbitrary username.
 - `GET /auth/me` and `PATCH /auth/me` — read and update the current user's
   `likes_visible` preference through the existing settings preference contract.
 
-Post responses include public `like_count` and `star_count` for every viewer.
-The authenticated viewer additionally receives `liked` and `starred` state;
+Post responses include public `like_count` and `saved_count` for every viewer.
+The authenticated viewer additionally receives `liked` and `saved` state;
 unauthenticated responses leave those state fields null and expose no reaction
 lists or toggle affordances.
 
@@ -200,8 +202,8 @@ lists or toggle affordances.
 ## Implementation details
 
 - Extend the existing `Post` response mapping and shared `Post` client model;
-  do not create a second post-card implementation for Liked or Starred pages.
-- Extend `FeedPost` so the Like and Star buttons have real handlers, active
+  do not create a second post-card implementation for Liked or Saved pages.
+- Extend `FeedPost` so the Like and Save buttons have real handlers, active
   states, counts, and count-button modal behavior.
 - Reuse `Modal`, `ListRow`, `ProfileCard`, `PageSurface`, and the blocked-list
   cursor/search pattern. Add semantic classes and shared CSS only in
@@ -209,7 +211,7 @@ lists or toggle affordances.
   in TSX.
 - Extend `ProfileScreen` tabs/route handling for `/username/likes`, keeping
   the profile header and existing tab URL contract intact.
-- Replace demo-only local Starred filtering with server-backed data while
+- Replace demo-only local Saved filtering with server-backed data while
   retaining the existing drawer entry and destination.
 - Add the Like visibility preference to the existing Privacy settings section
   and persist it through the API with the existing save/toggle feedback pattern.
@@ -221,25 +223,28 @@ lists or toggle affordances.
 Before considering this feature complete, verify with API tests and a real
 authenticated request/response flow:
 
-1. Create two users and posts; Like, Unlike, Star, and Unstar each post.
+1. Create two users and posts; Like, Unlike, Save, and Unsave each post.
 2. Confirm duplicate and concurrent-like attempts leave one relation and the
    correct count.
 3. Confirm self-Like increments the count without creating a notification.
 4. Confirm another user's Like increments the count and creates one in-app
    notification for the owner; UnLike leaves that notification intact.
-5. Confirm Stars change counts but never create owner notifications.
+5. Confirm Saves change counts but never create owner notifications.
 6. Confirm post responses expose counts and viewer state only to authenticated
    users.
 7. Confirm the Like modal searches the database, paginates with a cursor,
    reuses ProfileCard, and excludes private/blocked/privacy-disabled actors.
 8. Confirm the privacy toggle hides the user's identity and profile Likes tab
    from other signed-in users while preserving counts and the owner's own view.
-9. Confirm `/starred` shows only the current user's Starred posts and does not
-   accept another user's identity as a filter.
+9. Confirm `/saved/posts` shows only the current user's Saved posts, `/saved`
+   redirects there, and `/saved/profiles` shows the reserved placeholder without
+   attempting profile-save functionality. Neither route should accept another
+   user's identity as a filter.
 10. Confirm deleted/private/blocked posts disappear from reaction lists and
     direct access renders the neutral unavailable state.
-11. Confirm the action-row layout at mobile, tablet, and desktop widths and
-    keyboard activation/labels for every reaction and count control.
+11. Confirm the action-row layout at mobile, tablet, and desktop widths, that the
+    lower Save star is the only Save control on a post, and keyboard
+    activation/labels for every reaction and count control.
 12. Run the focused API tests, web TypeScript check, production build, and
     browser end-to-end flow after the implementation.
 

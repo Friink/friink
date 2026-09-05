@@ -131,7 +131,7 @@ abuse:
 
 ## 2.1 Implementation division
 
-The complete scope is divided into six implementation phases. Phase 1 is
+The complete scope is divided into seven implementation phases. Phase 1 is
 already implemented as the current session foundation, but it is split below
 into smaller audit and release units so that staging evidence, production
 verification, and future regressions have clear boundaries. Phases 2 through
@@ -552,6 +552,77 @@ incident verification while preserving privacy and the non-negotiable rules.
 Verification gate: run an end-to-end incident exercise and prove that normal
 service can be restored without guessing, bypassing controls, or manually
 editing production authentication data.
+
+### Phase 7 — Failed-login-attempt notification
+
+Add a passive email notification for suspicious activity after repeated failed
+login attempts on a normal active account. This is separate from the live,
+user-facing progressive cooldown message in section 9.1: the email is sent to
+the account owner whether the attempts are from the legitimate owner or from
+someone else. It must not change the existing cooldown tiers, generic login
+responses, or successful-login reset behavior.
+
+**Pre-development discussion gate:** `docs/account-lifecycle.md` is now the
+draft lifecycle contract, but it contains an unresolved conflict: its draft
+rules mention failed/attempted-login notifications for deactivated accounts,
+while this phase applies only to normal active-account failures. Resolve that
+conflict, along with the lifecycle document's token-invalidation,
+failure-boundary, reset-link, state-transition, and abuse-control questions,
+before implementing Phase 7 or account-lifecycle runtime behavior. Until then,
+Phase 7 remains active-account-only and deactivated/pending-deletion attempts
+must not enter this notification path.
+
+#### Phase 7a — Trigger, suppression, privacy, and account-state decisions
+
+The notification trigger is the **third consecutive failed login**, when the
+existing 30-minute progressive cooldown begins. This is the earliest reasonable
+tier because it notifies the owner promptly while avoiding an email for an
+ordinary typo or isolated retry. The fourth-failure one-hour tier and the
+fifth-failure 24-hour tier do not create additional notification emails by
+themselves.
+
+Send at most one failed-login notification per account in a rolling 24-hour
+window. A successful login still resets the progressive failure counter, but it
+does not reset the notification window. After the window expires, a later
+threshold crossing may send one new notification. Delivery must be idempotent
+for concurrent requests, using a durable event/outbox deduplication boundary;
+the login response must not wait for an external email provider.
+
+The email is addressed only to the account's registered, on-file email address
+resolved from the account record. It must contain safe suspicious-activity
+wording and an opaque, single-use, expiring password-reset link. It must not
+include an internal UUID, raw token, password, full IP address, precise
+location, or other sensitive login detail. Unknown or malformed identifiers do
+not produce an email. A delivery failure or bounce for the registered address
+must remain an internal, redacted delivery outcome: it must not change the
+unauthenticated response, timing, UI, logs, or telemetry in a way that reveals
+whether an account exists, and the system must never substitute the
+user-supplied identifier as a destination.
+
+This phase applies only after the account is classified as a normal active
+account. Deactivated and pending-deletion accounts stay on the distinct
+reactivation-modal flow defined by `account-lifecycle.md`; those attempts must
+not increment the active-account failed-login notification state, enqueue this
+email, or interfere with reactivation behavior.
+
+#### Phase 7b — Delivery and staging evidence gate
+
+Implement the notification through the durable security-event/outbox path used
+for other future email notifications. A provider outage, bounce, or retry
+exhaustion is a delivery result, not an authentication failure, and must not
+log the user out or turn the login response into an account-existence signal.
+
+Verification gate: staging evidence must show, for a dedicated active test
+account, two failed attempts with no notification, the third consecutive
+failure starting the 30-minute cooldown, the provider accepting the message,
+and the message actually arriving at the account's authorized test inbox with
+the password-reset link present. The trace must also show that fourth and fifth
+failures do not send duplicate emails within the rolling 24-hour window, that
+a successful login resets the progressive counter, and that unknown/malformed
+identifiers plus deactivated/pending-deletion attempts follow their existing
+privacy/reactivation paths without this notification. Source inspection or a
+queued outbox row alone is not sufficient; no Phase 7 green flag may be raised
+until the staging send/receive trace is recorded.
 
 ## 3. Non-negotiable rules
 

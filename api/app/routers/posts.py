@@ -16,7 +16,7 @@ from app.config import Settings, get_settings
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, LikeActorPageResponse, PostMediaCleanupRequest, PostMediaConfirmRequest, PostMediaConfirmResponse, PostMediaUploadUrlItem, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse, ReactionResponse
 from app.services.post_media import PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
 from app.services.posts import can_view_post, create_post, delete_post, get_feed_context, get_newer_posts, get_post, get_post_by_public_id, get_post_for_response, get_post_replies, get_posts_page, serialize_post
-from app.services.reactions import list_like_actors, list_starred_posts, set_like, set_star
+from app.services.reactions import list_like_actors, list_saved_posts, set_like, set_save
 from app.services.session_ops import rollback
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -216,14 +216,14 @@ async def list_post_updates(
     return [serialize_post(post, viewer=current_user, session=session) for post in await get_newer_posts(session, after_created_at=after_created_at, after_post_id=after_id, limit=limit, viewer=current_user, feed=feed)]
 
 
-@router.get("/starred", response_model=FeedPageResponse)
-async def get_starred_posts(
+@router.get("/saved", response_model=FeedPageResponse)
+async def get_saved_posts(
     cursor: str | None = None,
     limit: int = 20,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> FeedPageResponse:
-    return await list_starred_posts(session, current_user, cursor, limit)
+    return await list_saved_posts(session, current_user, cursor, limit)
 
 
 @router.get("/context/{post_id}", response_model=FeedContextResponse)
@@ -267,14 +267,14 @@ async def unlike_post(post_id: uuid.UUID, current_user: User = Depends(get_curre
     return await set_like(session, current_user, post_id, False)
 
 
-@router.post("/{post_id}/star", response_model=ReactionResponse)
-async def star_post(post_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ReactionResponse:
-    return await set_star(session, current_user, post_id, True)
+@router.post("/{post_id}/save", response_model=ReactionResponse)
+async def save_post(post_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ReactionResponse:
+    return await set_save(session, current_user, post_id, True)
 
 
-@router.delete("/{post_id}/star", response_model=ReactionResponse)
-async def unstar_post(post_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ReactionResponse:
-    return await set_star(session, current_user, post_id, False)
+@router.delete("/{post_id}/save", response_model=ReactionResponse)
+async def unsave_post(post_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ReactionResponse:
+    return await set_save(session, current_user, post_id, False)
 
 
 @router.get("/{post_id}/likes", response_model=LikeActorPageResponse)

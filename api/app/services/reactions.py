@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.models.chat import UserBlock
 from app.models.notification import NotificationType
-from app.models.post import Post, PostKind, PostLike, PostStar
+from app.models.post import Post, PostKind, PostLike, PostSave
 from app.models.user import User
 from app.schemas.posts import FeedPageResponse, LikeActorPageResponse, LikeActorResponse, ReactionResponse
 from app.services.notifications import create_notification
@@ -41,15 +41,15 @@ def _reaction_response(post: Post, viewer: User, session: Session) -> ReactionRe
     liked = session.execute(
         select(PostLike.id).where(PostLike.post_id == post.id, PostLike.user_id == viewer.id)
     ).scalar_one_or_none() is not None
-    starred = session.execute(
-        select(PostStar.id).where(PostStar.post_id == post.id, PostStar.user_id == viewer.id)
+    saved = session.execute(
+        select(PostSave.id).where(PostSave.post_id == post.id, PostSave.user_id == viewer.id)
     ).scalar_one_or_none() is not None
     return ReactionResponse(
         post_id=post.id,
         like_count=post.like_count or 0,
-        star_count=post.star_count or 0,
+        saved_count=post.saved_count or 0,
         liked=liked,
-        starred=starred,
+        saved=saved,
     )
 
 
@@ -60,7 +60,7 @@ def _get_reactable_post(session: Session, viewer: User, post_id: uuid.UUID) -> P
     if not post or post.deleted_at is not None or not can_view_post(session, viewer, post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
     if post.kind != PostKind.POST:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only posts can be liked or starred.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only posts can be liked or saved.")
     return post
 
 
@@ -96,18 +96,18 @@ async def set_like(session: Session, viewer: User, post_id: uuid.UUID, active: b
     return _reaction_response(post, viewer, session)
 
 
-async def set_star(session: Session, viewer: User, post_id: uuid.UUID, active: bool) -> ReactionResponse:
+async def set_save(session: Session, viewer: User, post_id: uuid.UUID, active: bool) -> ReactionResponse:
     post = _get_reactable_post(session, viewer, post_id)
     existing = session.execute(
-        select(PostStar).where(PostStar.post_id == post.id, PostStar.user_id == viewer.id)
+        select(PostSave).where(PostSave.post_id == post.id, PostSave.user_id == viewer.id)
     ).scalar_one_or_none()
 
     if active and not existing:
-        session.add(PostStar(post_id=post.id, user_id=viewer.id))
-        post.star_count = (post.star_count or 0) + 1
+        session.add(PostSave(post_id=post.id, user_id=viewer.id))
+        post.saved_count = (post.saved_count or 0) + 1
     elif not active and existing:
         session.delete(existing)
-        post.star_count = max(0, (post.star_count or 0) - 1)
+        post.saved_count = max(0, (post.saved_count or 0) - 1)
 
     await commit(session)
     return _reaction_response(post, viewer, session)
@@ -199,19 +199,19 @@ async def list_liked_posts(session: Session, viewer: User, username: str, cursor
     )
 
 
-async def list_starred_posts(session: Session, viewer: User, cursor: str | None, limit: int) -> FeedPageResponse:
+async def list_saved_posts(session: Session, viewer: User, cursor: str | None, limit: int) -> FeedPageResponse:
     page_size = max(1, min(limit, REACTION_PAGE_SIZE))
     statement = (
-        select(PostStar, Post)
+        select(PostSave, Post)
         .options(*post_load_options())
-        .join(Post, Post.id == PostStar.post_id)
-        .where(PostStar.user_id == viewer.id, Post.deleted_at.is_(None), Post.kind == PostKind.POST)
-        .order_by(PostStar.created_at.desc(), PostStar.id.desc())
+        .join(Post, Post.id == PostSave.post_id)
+        .where(PostSave.user_id == viewer.id, Post.deleted_at.is_(None), Post.kind == PostKind.POST)
+        .order_by(PostSave.created_at.desc(), PostSave.id.desc())
     )
     if cursor:
         created_at, row_id = _decode_cursor(cursor)
         statement = statement.where(
-            or_(PostStar.created_at < created_at, and_(PostStar.created_at == created_at, PostStar.id < row_id))
+            or_(PostSave.created_at < created_at, and_(PostSave.created_at == created_at, PostSave.id < row_id))
         )
 
     rows = list(session.execute(statement.limit(page_size + 1)).all())

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
 import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
-import { StarredScreen } from '@/components/starred-screen';
+import { SavedScreen } from '@/components/saved-screen';
 import { Header } from '@/components/header';
 import { NavigationBar } from '@/components/navigationbar';
 // legacy TabBar removed
@@ -70,6 +70,7 @@ type AppShellProps = {
   initialHomeFilter?: 'all' | 'following';
   initialMessagesTab?: 'all' | 'muted' | 'requests' | 'archived';
   initialSettingsTab?: 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
+  initialSavedSection?: 'posts' | 'profiles';
   profileTab?: ProfileTab;
   onProfileTabChange?: (tab: ProfileTab) => void;
 };
@@ -92,7 +93,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -250,8 +251,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         return 'Profile';
       case 'connections':
         return 'Connections';
-      case 'starred':
-        return 'Starred';
+      case 'saved':
+        return 'Saved';
       case 'search':
         return 'Search';
       case 'messages':
@@ -278,8 +279,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       case 'connections':
         router.push(`/${encodeURIComponent(user.username)}/connections`);
         break;
-      case 'starred':
-        router.push('/starred');
+      case 'saved':
+        router.push('/saved/posts');
         break;
       case 'settings':
         router.push('/settings/general');
@@ -582,12 +583,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       text: post.content,
       connectionType: 'following',
       isConnection: true,
-      isStarred: post.starred ?? false,
+      isSaved: post.saved ?? false,
       isLiked: post.liked ?? false,
       replies: post.reply_count,
       quotes: post.quote_count,
       likeCount: post.like_count ?? 0,
-      starCount: post.star_count ?? 0,
+      savedCount: post.saved_count ?? 0,
       reactions: 0,
       media: post.media.map((item) => item.url),
       quotedPost: post.quoted_post
@@ -985,7 +986,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
-                  {activeScreen === 'starred' && <StarredScreen posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
+                  {activeScreen === 'saved' && <SavedScreen section={initialSavedSection} posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen notifications={notifications} />}
                   {activeScreen === 'settings' && (

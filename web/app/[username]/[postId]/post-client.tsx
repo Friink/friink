@@ -41,12 +41,12 @@ function mapApiPost(post: ApiPost): Post {
     text: post.content,
     connectionType: 'following',
     isConnection: true,
-    isStarred: post.starred ?? false,
+    isSaved: post.saved ?? false,
     isLiked: post.liked ?? false,
     replies: post.reply_count,
     quotes: post.quote_count,
     likeCount: post.like_count ?? 0,
-    starCount: post.star_count ?? 0,
+    savedCount: post.saved_count ?? 0,
     reactions: 0,
     quotedPost: post.quoted_post
       ? {

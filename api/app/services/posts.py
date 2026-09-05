@@ -357,17 +357,17 @@ def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:
 
 def serialize_post(post: Post, viewer: User | None = None, session: Session | None = None) -> PostResponse:
     liked = False
-    starred = False
+    saved = False
     like_count = post.like_count or 0
-    star_count = post.star_count or 0
+    saved_count = post.saved_count or 0
     if viewer and session:
-        from app.models.post import PostLike, PostStar
+        from app.models.post import PostLike, PostSave
 
         liked = session.execute(
             select(PostLike.id).where(PostLike.post_id == post.id, PostLike.user_id == viewer.id)
         ).scalar_one_or_none() is not None
-        starred = session.execute(
-            select(PostStar.id).where(PostStar.post_id == post.id, PostStar.user_id == viewer.id)
+        saved = session.execute(
+            select(PostSave.id).where(PostSave.post_id == post.id, PostSave.user_id == viewer.id)
         ).scalar_one_or_none() is not None
 
     return PostResponse(
@@ -387,9 +387,9 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         reply_count=post.reply_count or 0,
         quote_count=post.quote_count or 0,
         like_count=like_count,
-        star_count=star_count,
+        saved_count=saved_count,
         liked=liked if viewer else None,
-        starred=starred if viewer else None,
+        saved=saved if viewer else None,
         quoted_post=serialize_quoted_post(post.quoted_post, post.quoted_post_id, viewer=viewer, session=session),
         created_at=post.created_at,
         updated_at=post.updated_at,

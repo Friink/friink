@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function LegacyStarredPage() {
+export default function SavedPage() {
   redirect('/saved/posts');
 }

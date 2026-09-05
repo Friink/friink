@@ -108,9 +108,9 @@ class PostResponse(BaseModel):
     reply_count: int = 0
     quote_count: int = 0
     like_count: int = 0
-    star_count: int = 0
+    saved_count: int = 0
     liked: bool | None = None
-    starred: bool | None = None
+    saved: bool | None = None
     quoted_post: QuotedPostResponse | None
     created_at: datetime
     updated_at: datetime
@@ -132,9 +132,9 @@ class FeedContextResponse(BaseModel):
 class ReactionResponse(BaseModel):
     post_id: uuid.UUID
     like_count: int
-    star_count: int
+    saved_count: int
     liked: bool
-    starred: bool
+    saved: bool
 
 
 class LikeActorResponse(BaseModel):

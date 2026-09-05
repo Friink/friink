@@ -45,7 +45,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Profile (`fa-user` → `/[username]`)
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
-   - Starred (`fa-star` → `/starred`)
+   - Saved (`fa-star` → `/saved/posts`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
@@ -64,6 +64,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
+- Saved uses `/saved/posts` and `/saved/profiles`; `/saved` redirects to `/saved/posts`. Posts contains the current user's private saved posts, while Profiles is reserved for future profile saving.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 
 ### Chat receipt presentation
@@ -76,9 +77,9 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 
 - **Home Timeline**: Offers two primary tabs: `Explore` (default public feed) and `Following` (posts strictly from accounts the signed-in user follows).
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
-- **Starred Feed**: A preset saved-post view containing only starred posts. It uses the shared `ListRow` summary pattern instead of full feed cards, with post detail opening the full post surface.
-- **Starred Posts**: Starred posts display the brand-colored filled star icon (`fa-solid fa-star`).
-- **Post Reactions**: Shared `FeedPost` cards expose public Like and Star counts in the counted action row. Signed-in users can toggle the outlined heart/star controls for posts; active reactions use filled glyphs. Clicking the Like count opens the shared responsive actor modal, while the Star count is display-only because Star actors are private. Replies do not render reaction controls.
+- **Saved Feed**: A preset saved-post view containing only saved posts at `/saved/posts`. The sibling `/saved/profiles` route is reserved for future profile saving and currently shows a coming-soon empty state.
+- **Saved Posts**: Saved posts display the brand-colored filled star icon (`fa-solid fa-star`).
+- **Post Reactions**: Shared `FeedPost` cards expose public Like and Save counts in the counted action row. Signed-in users can toggle the outlined heart/star controls for posts; active reactions use filled glyphs. Clicking the Like count opens the shared responsive actor modal, while the Save count is display-only because Save actors are private. Replies do not render reaction controls.
 - **Liked Posts**: Profile tabs include `Likes` at `/{username}/likes` when the profile's Like visibility permits it. The tab reuses `FeedPost` and cursor-paginated API data; unavailable/deleted posts are omitted.
 - **Post Card Navigation Rule**: Clicking a non-interactive area of a post card opens the canonical post detail page.
 - **Post Text Expansion Rule**: `Show more...` appears only when post body text overflows four visible lines on feed or post detail surfaces. Activating it expands that post card in place to show the full text; it does not navigate.
@@ -116,7 +117,7 @@ Standard app surfaces should be reusable components. Page-specific markup/conten
 - **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses `Modal` with the title `Let's update your settings`, supports optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
 - **ProfilePictureCropModal** (`web/components/profile-picture-crop-modal.tsx`): Shared square crop interaction used by Settings and ProfileSetupWizard; it owns the crop modal presentation while callers own upload/confirmation state.
 - **PostLikesModal** (`web/components/post-likes-modal.tsx`): Shared responsive `Modal` for Like actors. It uses `ListRow` and `ProfileCard`, server-side search, opaque-cursor pagination, duplicate suppression, and privacy/block filtering supplied by the API.
-- **FeedPost reactions** (`web/components/feed-post.tsx`): The shared post surface owns optimistic Like/Star state, server-authoritative count reconciliation, rollback/error feedback, and the Like-count modal entry point. Reaction presentation stays in the shared app CSS.
+- **FeedPost reactions** (`web/components/feed-post.tsx`): The shared post surface owns optimistic Like/Save state, server-authoritative count reconciliation, rollback/error feedback, and the Like-count modal entry point. Reaction presentation stays in the shared app CSS.
 
 ---
 
@@ -133,7 +134,7 @@ The following design tokens are locked hard values extracted directly from the c
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.messages-toolbar .icon-plain`)
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -283,22 +284,19 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Fixed Internal Layout Order**:
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
-     - Right action cluster (`.feed-post-options`) containing Star and More buttons with a visible fixed gap.
-     - Star button (`.feed-post-star`, right-aligned) uses the same button and icon box height as `NavigationBar` overflow.
+     - Right action cluster (`.feed-post-options`) containing Share and More buttons with a visible fixed gap.
      - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
      - The quoted post identity uses the original author's display name, username, and profile picture when available, with the shared avatar fallback otherwise.
   5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
-  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
+  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), and Save (`fa-star`) controls. Save is operated from this lower action row; there is no redundant header Save control.
   - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
   - **Mention Rule**: Recognized `@username` mentions in post and quoted-post text are links to the mentioned profile, use the current app accent, and do not display an underline in any interaction state. Mention notification copy links to the canonical post that contains the mention.
 - **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
-- **Variants**:
-  - `highlightedStar = true`: Brand filled star icon (`fa-solid fa-star`, `.feed-post-star-highlighted`).
-  - `highlightedStar = false`: Outline star icon (`fa-regular fa-star`).
+- **Save state**: Active Save uses the brand filled star icon (`fa-solid fa-star`); inactive Save uses the outline star (`fa-regular fa-star`). The adjacent Save count is display-only because Save actors are private.
 - **Props Contract**:
   - `post: Post` (required)
   - `highlightedStar?: boolean` (optional, default `false`)
@@ -324,7 +322,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`).
-  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Starred (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
+  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
   3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`). Planned multi-account actions add `Add account` here after authentication; `Change account` is conditional and remains hidden until at least two independent accounts have authenticated on the current browser profile or mobile installation. The switcher limit comes from the server-side `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` setting, defaulting to five; when full, it asks the user to remove one before adding another. The switcher is a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
