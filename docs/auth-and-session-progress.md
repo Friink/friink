@@ -487,3 +487,48 @@ link, suppression of duplicate fourth/fifth-tier emails within 24 hours, and
 the unchanged privacy/reactivation behavior for non-active-account paths.
 Source inspection or an outbox record alone will not close the gate. No Phase 7
 green flag is raised by this documentation update.
+
+## Phase 3 — Security events and notifications
+
+### Verification status
+
+**Phase 3 gate passed:** 2026-09-05, against both supplied Neon staging and
+production databases. Both databases were at `20260906_0031` and migrated
+transactionally to `20260906_0032`; `alembic check` reports no drift in either
+environment.
+
+The implementation adds durable security events with stable event keys and
+user/session/device context, a unique event/channel notification outbox, and
+the `login_security` in-app notification type. A successful fresh login emits
+one event and one in-app delivery job; refreshes, retries, and ordinary session
+activity do not create another login notification. Login delivery is best
+effort after the authentication transaction commits, so outbox failures cannot
+log the user out. Row locking, event-linked notification uniqueness, retry
+backoff, stale-processing recovery, and the provider-neutral email hook protect
+duplicate workers and delayed delivery.
+
+### Evidence
+
+```text
+staging: python -m pytest tests/test_phase3_security_events.py -q
+1 passed
+
+production: python -m pytest tests/test_phase3_security_events.py -q
+1 passed
+
+api: python -m compileall -q app alembic
+staging/production: python -m alembic check
+No new upgrade operations detected.
+
+web: npm exec tsc -- --noEmit --incremental false
+passed
+
+web: npm run build
+passed
+```
+
+The end-to-end test used a temporary account and cleaned it up. It verified
+fresh-login notification uniqueness, refresh non-duplication, durable event
+coverage, unavailable-email-adapter failure retention, and recovery through a
+successful injected provider adapter. The email channel remains a hook only;
+no production email provider was enabled by Phase 3.

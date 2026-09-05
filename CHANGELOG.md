@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-05T22:02:50Z
+
+- [auth/security] Completed Phase 3a/3b/3c with durable security events, fresh-login in-app notifications, a unique retryable notification outbox, stale-job recovery, and a provider-neutral future email adapter hook.
+- [database] Applied Alembic migration `20260906_0032` to both supplied staging and production Neon databases; both advanced from `20260906_0031` and pass `alembic check`.
+- [verification] Phase 3 acceptance passed against staging and production; API compilation, web TypeScript, and Next production build passed. The email channel remains unconfigured by design and is not claimed as live email delivery.
+
 ## 2026-09-06
 
 - [reactions] Renamed the persisted Star reaction vocabulary to Save: `star_count`/`post_stars` become `saved_count`/`post_saves`, API state and routes use `saved`/`save`, and the frontend uses the `/saved` surface with a legacy `/starred` redirect. Alembic migration `20260906_0031` is data-preserving; staging is migrated and production remains pending.
@@ -1669,3 +1675,12 @@ _Last updated: 2026-09-01_
 
 ### Docs
 - [docs] Synchronized the auth/session architecture, active rules, and login/signup design contract with username login behavior.
+
+## 2026-09-05
+
+### Fixed
+- [production/api] Upgraded the production database from Alembic revision `20260904_0024` to `20260906_0031 (head)`, including the email-first signup OTP reservation migration `20260905_0025` and all subsequent additive migrations.
+- [production/web] Verified that signup email submission no longer fails as a browser-level `Failed to fetch`; it now reaches the API and surfaces the safe email-delivery `503` response.
+
+### Pending
+- [production/email] Resend delivery is still failing after the schema upgrade. Verify the API project's Production-scope `RESEND_API_KEY` and a Resend-verified `RESEND_FROM_EMAIL`, then redeploy the API if either value changed.

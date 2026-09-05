@@ -636,14 +636,16 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const chatActorHandle = typeof payload.actor_username === 'string' && payload.actor_username ? payload.actor_username : actorHandle;
     const postPublicId = typeof payload.post_public_id === 'string' ? payload.post_public_id : null;
     const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
-    const notificationHref = (notification.type === 'mention' || notification.type === 'like') && postPublicId
+    const notificationHref = notification.type === 'login_security'
+      ? (typeof payload.action_href === 'string' ? payload.action_href : '/settings')
+      : (notification.type === 'mention' || notification.type === 'like') && postPublicId
       ? getPostPath(postAuthorUsername || actorHandle, postSlug, postPublicId)
       : undefined;
     return {
       id: notification.id,
-      kind: notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
-      name: notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
-      handle: `@${notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
+      kind: notification.type === 'login_security' ? 'login' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      name: notification.type === 'login_security' ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
+      handle: `@${notification.type === 'login_security' ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle),
       createdAt: notification.created_at,
       initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
@@ -655,6 +657,8 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
 
   function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string) {
     switch (type) {
+      case 'login_security':
+        return 'A new login to your Friink account was successful. Review sessions if this was not you.';
       case 'mention':
         return `${actorName} (@${actorHandle}) mentioned you.`;
       case 'like':

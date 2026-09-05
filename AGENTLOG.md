@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-05T22:02:50Z — Implement Phase 3 security events and notifications
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the complete auth/session Phase 3 (3a durable security events, 3b login notifications and email hook, 3c retryable outbox), update staging and production databases, verify, and document the result.
+- Changes Made: Added `SecurityEvent` and `NotificationOutbox` models and migration `20260906_0032`; instrumented fresh login, refresh, failed login, logout, and refresh-reuse events; added one-user-visible-notification-per-fresh-login behavior with event-linked uniqueness; added row-locked, retryable outbox processing with stale-processing recovery and injectable provider-neutral email delivery; added the login-security notification type and web presentation/action link; added Phase 3 acceptance coverage.
+- Files: `api/app/models/security_event.py`, `api/app/models/notification_outbox.py`, `api/app/models/notification.py`, `api/app/models/__init__.py`, `api/app/services/security_events.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260906_0032_security_events_outbox.py`, `api/tests/test_phase3_security_events.py`, `web/lib/auth.ts`, `web/components/app-shell.tsx`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`, `RULES.md`, `packages/design/design.md`.
+- Reason: Establish the durable security-event boundary and make login-security notifications recoverable without coupling delivery failures to authentication.
+- Database Evidence: Staging and production both migrated from `20260906_0031` to `20260906_0032`; both pass `alembic check`.
+- Verification Status: Phase 3 acceptance passed once against staging and once against production; API compilation, web TypeScript with incremental output disabled, Next production build, and `git diff --check` passed. The email channel is a provider-neutral hook and remains intentionally unconfigured.
+
 ## 2026-09-06T02:00:00+05:00 — Add Saved posts/profiles routes and consolidate Save action
 
 - Agent: Codex
@@ -6694,3 +6705,13 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: Let people use the handle they already know while preserving one independent account identity and the same security controls.
 - Notes: Signup remains email-first and OTP-gated; username login does not bypass lockout or any future risk-based OTP decision.
 - Verification Status: Focused API tests, frontend type/build verification, and `git diff --check` pending.
+
+## 2026-09-05T21:31:59Z — Upgrade production database for email-first OTP
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the production signup OTP `Failed to fetch` failure and correct the production database schema.
+- Changes Made: Confirmed production was at Alembic revision `20260904_0024`, then applied migrations `20260905_0025` through `20260906_0031`. Production now reports `20260906_0031 (head)`.
+- Reason: The production email-first signup endpoint requires the email-only reservation schema introduced by `20260905_0025`; the stale schema caused the API-side failure that the browser presented as `Failed to fetch`.
+- Notes: A controlled post-migration browser signup request now reaches the API and returns its safe `503` delivery message rather than `Failed to fetch`. The remaining issue is Resend production delivery configuration or sender verification; no credentials or recipient details were recorded.
+- Verification Status: Alembic `current` verified `20260906_0031 (head)`; live production browser reproduced the pre-migration failure and confirmed the post-migration application-level response.

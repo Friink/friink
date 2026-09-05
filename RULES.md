@@ -157,6 +157,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
 - **Since:** 2026-08-27T00:00:00Z
 
+### Rule: Security Events And Login Notifications Are Durable And Idempotent
+- **What:** Successful fresh logins create one durable security event and one user-visible `login_security` notification. Refreshes, retries, and ordinary session activity never create duplicate fresh-login notifications. Security events may record refreshes, failed logins, logout, login challenges, and refresh-token reuse with stable event keys and server-side user/session/device context.
+- **Edge cases:** Notification delivery runs through a row-locked, retryable outbox after authentication commits. Provider, network, or configuration failures remain delivery failures and must not log the user out. Event-linked notification uniqueness and stale-processing recovery protect duplicate workers and delayed delivery. Future email delivery uses the provider-neutral outbox hook and is not required for in-app login notification success.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/models/security_event.py`, `api/app/models/notification_outbox.py`, `api/app/models/notification.py`, `api/app/services/security_events.py`, `api/app/routers/auth.py`, `web/components/app-shell.tsx`
+- **Since:** 2026-09-05T22:02:50Z
+
 ### Rule: Minimum Signup Age
 - **What:** Signup requires users to be at least 13 years old based on `date_of_birth`.
 - **Status:** Active

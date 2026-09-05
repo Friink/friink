@@ -47,6 +47,8 @@ from app.services.email import EmailDeliveryError, EmailService
 from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
+from app.services.security_events import process_notification_outbox, record_security_event
+from app.models.security_event import SecurityEventType
 from app.services.login_challenges import create_login_challenge, derive_pending_device_identifier, get_login_challenge, verify_login_challenge
 from app.services.session_service import (
     DEVICE_COOKIE_NAME,
@@ -255,7 +257,25 @@ async def _issue_login_session(
     )
     auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
+    record_security_event(
+        session,
+        event_type=SecurityEventType.fresh_login,
+        event_key=f"fresh-login:{auth_session.id}",
+        user_id=user.id,
+        session_id=auth_session.id,
+        device_id=recognized_device.id,
+        payload={"kind": "login", "message": "A new login to your Friink account was successful.", "action": "review_sessions", "action_href": "/settings"},
+        notify_in_app=True,
+    )
     await commit(session)
+    # Delivery is best-effort after authentication is committed. A failed drain leaves
+    # the durable job available for a later worker/request and never logs the user out.
+    if hasattr(session, "get"):
+        try:
+            process_notification_outbox(session)
+            await commit(session)
+        except Exception:
+            await session.rollback()
     log_token_issued(flow="fresh_login", token_type="access", token=access_token, user_id=str(user.id))
     log_refresh_token_event(
         event="auth_refresh_token_issued",
@@ -412,6 +432,14 @@ async def refresh(
             set_refresh_cookie(response, issued_refresh.raw_token, settings)
             return RefreshResponse(access_token=access_token)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
+        record_security_event(
+            session,
+            event_type=SecurityEventType.refresh_reuse_detected,
+            event_key=f"refresh-reuse:{token_record.id}",
+            user_id=token_record.user_id,
+            session_id=token_record.session_id,
+            payload={"kind": "refresh_reuse"},
+        )
         await commit(session)
         log_refresh_token_event(
             event="auth_refresh_token_reuse_detected",
@@ -468,6 +496,14 @@ async def refresh(
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
     access_token = create_access_token(user.id)
+    record_security_event(
+        session,
+        event_type=SecurityEventType.refresh,
+        event_key=f"refresh:{issued_refresh.record.id}",
+        user_id=user.id,
+        session_id=token_record.session_id,
+        payload={"kind": "refresh"},
+    )
     await commit(session)
     log_token_issued(flow="refresh_exchange", token_type="access", token=access_token, user_id=str(user.id))
     log_refresh_token_event(
@@ -501,6 +537,14 @@ async def logout(
                     revoke_refresh_family(session, token_record.family_id, "logout")
             else:
                 revoke_refresh_family(session, token_record.family_id, "logout")
+            record_security_event(
+                session,
+                event_type=SecurityEventType.logout,
+                event_key=f"logout:{token_record.id}:{uuid.uuid4()}",
+                user_id=token_record.user_id,
+                session_id=token_record.session_id,
+                payload={"kind": "logout"},
+            )
             await commit(session)
             log_refresh_token_event(
                 event="auth_refresh_token_family_revoked",
