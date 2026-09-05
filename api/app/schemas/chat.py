@@ -13,7 +13,7 @@ class SendMessageRequest(BaseModel):
 
 
 class ChatUserResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     username: str
     display_name: str | None
     profile_picture_url: str | None
@@ -22,7 +22,7 @@ class ChatUserResponse(BaseModel):
 class MessageResponse(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
-    sender_id: uuid.UUID
+    sender_id: str
     content: str
     created_at: datetime
     receipt_status: str = "sent"
@@ -48,7 +48,7 @@ class ConversationResponse(BaseModel):
     updated_at: datetime
     unread: bool = False
     status: str = "accepted"
-    requester_id: uuid.UUID | None = None
+    requester_id: str | None = None
     muted: bool = False
     archived: bool = False
     can_send: bool = True

@@ -37,7 +37,11 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         user_ids.extend([requester_id, recipient_id])
         with get_session_factory()() as session:
             requester = session.get(User, requester_id)
+            recipient = session.get(User, recipient_id)
             assert requester
+            assert recipient
+            requester_public_id = requester.public_id
+            recipient_public_id = recipient.public_id
             requester.subscription_tier = "pro"
             session.commit()
 
@@ -49,11 +53,15 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         new_context = client.post(f"/chat/conversations/with/{recipient_username}", headers=requester_headers)
         assert new_context.status_code == 200
         assert new_context.json()["conversation"] is None
+        assert new_context.json()["participant"]["id"] == recipient_public_id
+        assert new_context.json()["participant"]["id"] != str(recipient_id)
         assert new_context.json()["can_send"] is True
 
         first = client.post(f"/chat/conversations/with/{recipient_username}/messages", headers=requester_headers, json={"content": "x" * 2048, "client_message_id": str(uuid.uuid4())})
         assert first.status_code == 201, first.text
         conversation_id = first.json()["conversation_id"]
+        assert first.json()["sender_id"] == requester_public_id
+        assert first.json()["sender_id"] != str(requester_id)
 
         rejected_length = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": "x" * 2049, "client_message_id": str(uuid.uuid4())})
         assert rejected_length.status_code == 422
@@ -61,6 +69,9 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         recipient_context = client.post(f"/chat/conversations/with/{requester_username}", headers=recipient_headers)
         assert recipient_context.status_code == 200
         assert recipient_context.json()["conversation"]["status"] == "pending"
+        assert recipient_context.json()["conversation"]["participant"]["id"] == requester_public_id
+        assert recipient_context.json()["conversation"]["requester_id"] == requester_public_id
+        assert recipient_context.json()["conversation"]["requester_id"] != str(requester_id)
         assert recipient_context.json()["composer_placeholder"] == "Reply to accept."
 
         inbox_sync = client.get("/chat/conversations", headers=recipient_headers)
