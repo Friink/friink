@@ -1,0 +1,3 @@
+{
+  "buildCommand": "python scripts/migrate_before_deploy.py"
+}

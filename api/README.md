@@ -45,8 +45,16 @@ Hello, World!
 
 ## Migrations
 
+The Vercel API project runs the migration gate in `vercel.json` before the API
+build is allowed to proceed. It runs `alembic upgrade head` and then
+`alembic check`; either a migration failure or schema drift exits non-zero and
+blocks the deployment. The API project's `DATABASE_URL` must therefore be set
+in Vercel before a deployment.
+
+Run the same gate locally:
+
 ```powershell
-alembic upgrade head
+python scripts/migrate_before_deploy.py
 ```
 
 The initial migration creates `users` and `otp_codes`. OTP storage and service stubs exist, but OTP is not active yet.
