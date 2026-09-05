@@ -18,7 +18,7 @@ class SendFollowRequestPayload(BaseModel):
 
 
 class ConnectionUserResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     username: str
     is_private: bool = False
 

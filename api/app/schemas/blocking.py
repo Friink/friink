@@ -1,11 +1,10 @@
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
 
 
 class BlockedUserResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     username: str
     display_name: str | None
     profile_picture_url: str | None

@@ -60,4 +60,4 @@ async def list_blocked(session: Session, actor: User, query: str, cursor: str | 
     result = session.execute(statement.order_by(UserBlock.created_at.desc(), UserBlock.id.desc()).limit(min(limit, BLOCK_PAGE_SIZE) + 1)).all()
     has_more = len(result) > min(limit, BLOCK_PAGE_SIZE)
     rows = result[:min(limit, BLOCK_PAGE_SIZE)]
-    return BlockedUserListResponse(items=[BlockedUserResponse(id=user.id, username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user), blocked_at=block.created_at) for block, user in rows], next_cursor=_encode_cursor(rows[-1][0].created_at, rows[-1][0].id) if has_more and rows else None)
+    return BlockedUserListResponse(items=[BlockedUserResponse(id=user.public_id, username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user), blocked_at=block.created_at) for block, user in rows], next_cursor=_encode_cursor(rows[-1][0].created_at, rows[-1][0].id) if has_more and rows else None)

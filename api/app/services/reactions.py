@@ -153,7 +153,7 @@ async def list_like_actors(session: Session, viewer: User, post_id: uuid.UUID, q
     return LikeActorPageResponse(
         items=[
             LikeActorResponse(
-                id=user.id,
+                id=user.public_id,
                 username=user.username,
                 display_name=user.display_name,
                 profile_picture_url=profile_picture_url_for(user),

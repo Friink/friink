@@ -95,7 +95,7 @@ class PostResponse(BaseModel):
     id: uuid.UUID
     public_id: str
     slug: str
-    user_id: uuid.UUID
+    user_id: str
     kind: PostKind
     author_username: str
     author_display_name: str | None = None
@@ -138,7 +138,7 @@ class ReactionResponse(BaseModel):
 
 
 class LikeActorResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     username: str
     display_name: str | None = None
     profile_picture_url: str | None = None
