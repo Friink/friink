@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-05T03:30:00Z — Live staging post-OTP crash hardening
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the staging `Cannot read properties of undefined (reading 'id')` error reported after OTP delivery.
+- Changes Made: Checked `https://staging.friink.com` directly and confirmed the deployed signup flow reaches the OTP screen and the real-recipient delivery path works. Hardened the web token-response mapper so a valid access token can hydrate `/auth/me` when the token response omits its embedded user object, preventing the post-OTP `user.id` crash.
+- Files: `web/lib/auth.ts`, `CHANGELOG.md`, `AGENTLOG.md`, `docs/auth-and-session-progress.md`.
+- Reason: Keep a valid OTP-approved session from failing on an incomplete but recoverable token response during staged API/web rollout.
+- Notes: The final OTP entry could not be completed from this environment because the recipient inbox is user-controlled. The fix must be deployed to the staging web project before retesting; no database or production changes were made.
+- Verification Status: TypeScript with incremental output disabled, Next production build, and `git diff --check` passed. Live staging signup email → OTP screen was observed; provider delivery was accepted for the real test recipient.
+
 ## 2026-09-05T03:05:00Z — Auth/session final verification follow-up
 
 - Agent: Codex

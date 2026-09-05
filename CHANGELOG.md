@@ -2,6 +2,7 @@
 
 ## 2026-09-05
 
+- [web/auth] Hardened token-response handling after live staging showed a post-OTP `user.id` crash when the token response omitted the embedded user object; the client now hydrates `/auth/me` from the approved access token before building the session.
 - [auth/signup] Closed the email-first signup OTP flow: the legacy full-payload signup-start route is unavailable when OTP is enabled, reservations expire after 30 minutes, newer starts replace older reservations, and expired reservations have a bounded cleanup hook.
 - [auth/login] Added risk-based OTP for new or changed devices, server-managed hashed device recognition, username-or-email login parity, and distinct progressive cooldown versus full-account-lock messaging. Locked accounts block login and refresh while already-issued access JWTs expire normally.
 - [auth/identity] Added dedicated email-change ownership OTP endpoints with current-password confirmation and opaque public user handles; auth responses no longer expose date of birth, location, or internal user UUIDs. Added database-enforced case-insensitive email uniqueness.

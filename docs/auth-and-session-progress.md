@@ -436,3 +436,17 @@ claim that the not-yet-deployed build has live browser evidence. After deploy,
 capture the section 19 staging traces for the new login-risk and email-change
 endpoints, including CORS/cookie headers and a real recipient OTP. Production
 verification remains a separate pre-release gate.
+
+### Live staging post-OTP follow-up
+
+The live staging web flow was checked at `https://staging.friink.com`: email
+signup reached the OTP screen and the configured provider accepted delivery to
+the real test recipient. A synthetic `@example.com` recipient correctly
+returned the delivery fallback. The final OTP entry could not be completed
+from this environment because the recipient inbox is user-controlled.
+
+The web client now tolerates a token response that contains the access token
+but omits the embedded `user` object by fetching `/auth/me` with that token
+before reading user fields. Redeploy the web project, then retest login and
+signup OTP approval on staging. No production or database change is required
+for this client-only fix.

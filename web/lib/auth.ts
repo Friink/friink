@@ -88,7 +88,7 @@ type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display
 type ApiTokenResponse = {
   access_token: string;
   token_type: string;
-  user: ApiUser;
+  user?: ApiUser;
 };
 
 type ApiLoginChallengeResponse = {
@@ -1544,11 +1544,17 @@ async function getApiError(response: Response): Promise<{ message: string; code?
   return { message: `Friink API request failed with ${response.status}.` };
 }
 
-function mapTokenResponse(response: ApiTokenResponse): AuthSession {
+async function mapTokenResponse(response: ApiTokenResponse): Promise<AuthSession> {
+  const user = response.user ?? await requestApi<ApiUser>('/auth/me', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${response.access_token}` },
+    authContext: 'authenticated_request',
+    skipAuthRefresh: true,
+  });
   return {
     accessToken: response.access_token,
     tokenType: 'Bearer',
-    user: mapApiUser(response.user),
+    user: mapApiUser(user),
   };
 }
 
