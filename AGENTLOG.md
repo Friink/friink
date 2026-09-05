@@ -10,6 +10,16 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Reason: Give Saved posts and the future Saved profiles surface stable URLs while keeping one clear, accessible Save affordance per post.
 - Verification Status: `npx tsc --noEmit --incremental false` passed; `npm run build` passed and the build output lists `/saved/posts` and `/saved/profiles`.
 
+## 2026-09-06T02:05:00+05:00 — Synchronize Saved rules contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check whether `RULES.md` needed to reflect the Saved route and Save-control changes.
+- Changes Made: Added the stable `/saved/posts` and `/saved/profiles` route contract, documented `/saved` and `/starred` redirects, recorded the future profile-saving placeholder, and replaced stale “star” post-card interaction wording with Save.
+- Files: `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep the repository's authoritative product rules aligned with the implemented Saved routes and interaction model.
+- Verification Status: Documentation review completed; no runtime behavior changed.
+
 ## 2026-09-06T00:24:20+05:00 — Document auth/session Phase 7 decision boundary
 
 - Agent: Codex

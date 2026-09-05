@@ -7,6 +7,7 @@
 - [docs/account-lifecycle] Added the draft account lifecycle contract for deactivation, pending deletion, reactivation, permanent deletion, login routing, and the required pre-development discussion gate.
 - [docs/auth] Added a Phase 7 pre-development note linking the lifecycle draft and preserving the active-account-only notification rule until the notification conflict and related architecture gaps are resolved.
 - [web] Split the Saved surface into route-backed `/saved/posts` and `/saved/profiles` views, with the latter reserved for future profile saving. Removed the redundant post-header Save star and made the counted lower-row star the Save/Unsave control.
+- [docs] Updated `RULES.md` with the Saved route contract and the single lower-row Save control rule.
 - [docs/auth] Added planned Phase 7 for failed-login-attempt notification: trigger at the third consecutive failure/30-minute cooldown, suppress repeats to one per rolling 24-hour window, preserve account privacy and deactivated/pending-deletion reactivation behavior, and require staging send/receive evidence before a green flag. No Phase 7 green flag is claimed.
 
 ## 2026-09-05

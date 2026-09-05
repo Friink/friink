@@ -107,6 +107,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/models/post.py`, `api/app/models/user.py`, `api/app/services/reactions.py`, `api/app/routers/posts.py`, `api/app/routers/users.py`, `api/app/services/posts.py`, `web/components/feed-post.tsx`, `web/components/post-likes-modal.tsx`, `web/components/profile-screen.tsx`, `web/components/saved-screen.tsx`, `web/components/account-screens.tsx`, `docs/like-and-star.md`
 - **Since:** 2026-09-03T20:02:30Z
 
+### Rule: Saved Surfaces Use Stable Post And Profile Routes
+- **What:** The signed-in Saved area uses `/saved/posts` for the user's private saved-post feed and `/saved/profiles` as the reserved future profile-saving surface. `/saved` and legacy `/starred` redirect to `/saved/posts`. The `/saved/profiles` view remains a placeholder until profile saving is implemented.
+- **Interaction:** Each post has one Save/Unsave control: the star in the lower counted action row. The redundant header star is not rendered. The adjacent Save count is display-only because Save actors are private.
+- **Status:** Active; profile saving is planned, not implemented.
+- **Platform:** Web only
+- **File(s):** `web/app/saved/page.tsx`, `web/app/saved/posts/page.tsx`, `web/app/saved/profiles/page.tsx`, `web/app/starred/page.tsx`, `web/components/saved-screen.tsx`, `web/components/feed-post.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`
+- **Since:** 2026-09-06 (Asia/Karachi)
+
 ## Authentication & Accounts
 
 ### Rule: Authoritative Web Session And Refresh Model
@@ -473,7 +481,7 @@ the entry, so history isn't lost.
 
 ### Rule: Web Post Cards Navigate And Expand Text Locally
 - **What:** Clicking a non-interactive area of a web post card opens the canonical post detail page. `Show more...` appears only when the body text exceeds four visible lines and expands that card in place instead of navigating.
-- **Edge cases:** Profile links, reply/quote/like/share, star, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
+- **Edge cases:** Profile links, reply/quote/like/share, Save, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/feed-post.tsx`, `web/app/globals.css`
