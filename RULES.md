@@ -98,14 +98,22 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`
 - **Since:** 2026-09-01 (Asia/Karachi)
 
-### Rule: Post Likes And Stars Are Durable, Unique Reactions
-- **What:** Signed-in users may Like/Unlike and Star/Unstar visible `POST` records. Each user can have at most one Like and one Star per post at a time. Like and Star counts are public post aggregates; viewer-specific active state is returned only to an authenticated viewer. Replies are not reaction targets.
-- **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Star operations are silent. Deleted, private, blocked, or otherwise inaccessible posts cannot be reacted to and are omitted from the user's Liked/Starred lists. Direct unavailable post URLs render the neutral unavailable state.
-- **Privacy:** `likes_visible` defaults to true and is managed under Settings > Privacy. When disabled, the user's Like identity is omitted from actor lists and their Likes tab is hidden from other signed-in users, while counts and the user's own view remain intact. Stars have no actor list and are not controlled by this setting.
+### Rule: Post Likes And Saves Are Durable, Unique Reactions
+- **What:** Signed-in users may Like/Unlike and Save/Unsave visible `POST` records. Each user can have at most one Like and one Save per post at a time. Like and Save counts are public post aggregates; viewer-specific active state is returned only to an authenticated viewer. Replies are not reaction targets.
+- **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Save operations are silent. Deleted, private, blocked, or otherwise inaccessible posts cannot be reacted to and are omitted from the user's Liked/Saved lists. Direct unavailable post URLs render the neutral unavailable state.
+- **Privacy:** `likes_visible` defaults to true and is managed under Settings > Privacy. When disabled, the user's Like identity is omitted from actor lists and their Likes tab is hidden from other signed-in users, while counts and the user's own view remain intact. Saves have no actor list and are not controlled by this setting.
 - **Status:** Active; staging migration and authenticated reaction E2E passed, production migration/schema verified read-only. Deployed browser verification remains a release step after the code is deployed.
 - **Platform:** Web/API
-- **File(s):** `api/app/models/post.py`, `api/app/models/user.py`, `api/app/services/reactions.py`, `api/app/routers/posts.py`, `api/app/routers/users.py`, `api/app/services/posts.py`, `web/components/feed-post.tsx`, `web/components/post-likes-modal.tsx`, `web/components/profile-screen.tsx`, `web/components/starred-screen.tsx`, `web/components/account-screens.tsx`, `docs/like-and-star.md`
+- **File(s):** `api/app/models/post.py`, `api/app/models/user.py`, `api/app/services/reactions.py`, `api/app/routers/posts.py`, `api/app/routers/users.py`, `api/app/services/posts.py`, `web/components/feed-post.tsx`, `web/components/post-likes-modal.tsx`, `web/components/profile-screen.tsx`, `web/components/saved-screen.tsx`, `web/components/account-screens.tsx`, `docs/like-and-star.md`
 - **Since:** 2026-09-03T20:02:30Z
+
+### Rule: Saved Surfaces Use Stable Post And Profile Routes
+- **What:** The signed-in Saved area uses `/saved/posts` for the user's private saved-post feed and `/saved/profiles` as the reserved future profile-saving surface. `/saved` and legacy `/starred` redirect to `/saved/posts`. The `/saved/profiles` view remains a placeholder until profile saving is implemented.
+- **Interaction:** Each post has one Save/Unsave control: the star in the lower counted action row. The redundant header star is not rendered. The adjacent Save count is display-only because Save actors are private.
+- **Status:** Active; profile saving is planned, not implemented.
+- **Platform:** Web only
+- **File(s):** `web/app/saved/page.tsx`, `web/app/saved/posts/page.tsx`, `web/app/saved/profiles/page.tsx`, `web/app/starred/page.tsx`, `web/components/saved-screen.tsx`, `web/components/feed-post.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`
+- **Since:** 2026-09-06 (Asia/Karachi)
 
 ## Authentication & Accounts
 
@@ -117,16 +125,33 @@ the entry, so history isn't lost.
 - **File(s):** `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell-route.tsx`
 - **Since:** 2026-09-01 (UTC)
 
+### Rule: Multiple Account Switching (Planned)
+- **What:** After authentication, the side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile or mobile installation. `Change account` remains hidden until at least two accounts are authenticated, then switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to five; this does not limit account creation.
+- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only, and all account-scoped data, notifications, caches, and session controls remain isolated.
+- **Compatibility:** This is a planned additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Runtime implementation requires explicit auth/session approval and the verification gate in `docs/auth-and-session.md` Phase 4e.
+- **Status:** Planned; not implemented or staging-verified
+- **Platform:** Web and mobile
+- **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`
+- **Since:** 2026-09-04T23:28:41Z
+
 ### Rule: Signup Creates Active Public Accounts
-- **What:** A successful signup creates a user with a lowercased unique email, a lowercased unique username, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`.
-- **Edge cases:** Signup validates username syntax and checks username availability before submission. The API remains authoritative and rejects duplicate usernames case-insensitively with `409`; the database enforces the same invariant. OTP records/services exist only as stubs; no OTP challenge is active in signup.
+- **What:** A completed signup creates a user with a normalized unique email, a case-insensitive unique username key with preserved display casing, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`. When signup OTP is enabled, completion occurs only through successful email verification.
+- **Edge cases:** Signup validates username syntax and checks username availability before submission. The API remains authoritative and rejects duplicate usernames case-insensitively with `409`; the database enforces the same invariant. The direct signup endpoint is unavailable while OTP is enabled, preventing a client-side bypass.
 - **Status:** Active
 - **Platform:** All
-- **File(s):** `api/app/services/auth.py`, `api/app/schemas/auth.py`, `api/app/models/user.py`
-- **Since:** 2026-08-29T07:15:00Z
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `api/app/models/user.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`
+- **Since:** 2026-09-04T22:06:53Z
+
+### Rule: Signup Email Ownership OTP
+- **What:** With `SIGNUP_OTP_ENABLED=true`, signup uses `/auth/signup/email/start` immediately after email, followed by `/auth/signup/email/verify`, then `/auth/signup/complete`; no user row is created before successful verification. Codes are six uppercase alphanumeric characters, expire after four minutes, are single-use, and a newer code invalidates the previous code.
+- **Edge cases:** Verification is limited to five attempts. The pre-verification record contains only the normalized email and hashed OTP; password/profile data is submitted after verification. The API returns neutral signup-start responses and generic delivery failures. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
+- **Status:** Active; implementation and database-backed request tests pass. Live staging browser/provider verification remains a deployment acceptance step.
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/services/otp.py`, `api/app/config.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_email.py`
+- **Since:** 2026-09-04T22:06:53Z
 
 ### Rule: Password And Username Validation
-- **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form.
+- **What:** Passwords must be 8–16 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
@@ -140,11 +165,48 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27T00:00:00Z
 
 ### Rule: Login Lockout
-- **What:** Five failed login attempts for an existing account lock the account for 3 hours. A locked account returns `423` with an ISO retry timestamp. Successful login clears failed-attempt state.
+- **What:** Progressive failed-login cooldowns begin at the third failure for 30 minutes, the fourth for one hour, and the fifth for 24 hours; a successful login clears the progressive state. A separate full account lock returns `423` with exactly `Your account is locked. Contact support.` and no reason, duration, or retry detail. Cooldown responses use `429`, identify the applicable tier, and include an approximate retry time.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/services/auth.py`, `api/tests/test_lockout.py`
 - **Since:** 2026-08-27T00:00:00Z
+
+### Rule: Login With Email Or Username
+- **What:** The login identifier accepts either the account email or username. Email and username matching are case-insensitive; username lookup uses the authoritative `username_key`. The web field is labeled `Email or username`, while signup remains email-only.
+- **Edge cases:** Unknown identifiers and wrong passwords return the same generic invalid-credentials result. Username login follows the same lockout, rate-limit, device-recognition, and future risk-based OTP decisions as email login. The API may accept the legacy `email` request key during client migration, but new clients send `identifier`.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_auth_updates.py`
+- **Since:** 2026-09-05T00:00:00Z
+
+### Rule: Permanent Email Uniqueness
+- **What:** One normalized email address can belong to only one Friink account permanently. This rule applies across all accounts and remains in force when multiple-account support is added; accounts are never linked or allowed to share an email.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/models/user.py`, `api/app/services/auth.py`, `api/alembic/versions/20260905_0029_casefold_email_uniqueness.py`
+- **Since:** 2026-09-05T00:00:00Z
+
+### Rule: Risk-Based Login And Device Recognition
+- **What:** Email and username password logins use the same server-authoritative risk decision. Recognized normal devices proceed without OTP; new or suspicious devices receive a fresh four-minute email OTP when delivery is configured. The device identifier is opaque, hashed at rest, HttpOnly on web, and separate from refresh tokens and sessions.
+- **Edge cases:** Missing or changed device signals trigger the challenge; successful approval records the current coarse signals. Refresh never requires OTP, and no client claim, IP address alone, or browser fingerprint alone establishes trust.
+- **Status:** Active; implementation and database-backed request tests pass. Live staging browser/provider verification remains a deployment acceptance step.
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/login_challenges.py`, `api/app/services/session_service.py`, `api/app/services/email.py`, `api/app/config.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`
+- **Since:** 2026-09-05T00:00:00Z
+
+### Rule: Account Lock And Access-Token Boundary
+- **What:** Account locking blocks password login and refresh only. Already-issued short-lived access JWTs are not force-invalidated and remain valid until normal expiry; no lock-state revocation/version check is added to authenticated access-token validation.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/models/user.py`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`
+- **Since:** 2026-09-05T00:00:00Z
+
+### Rule: Username Release And Lockout Copy
+- **What:** Username changes require no step-up authentication. Released usernames, including high-profile usernames, are immediately available with no cooldown. Full account locks show exactly `Your account is locked. Contact support.`; progressive cooldowns show a distinct tier-specific retry message and must never use the full-lock copy.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `api/app/services/auth.py`, `api/app/routers/auth.py`, `packages/design/design.md`, `docs/auth-and-session.md`
+- **Since:** 2026-09-05T00:00:00Z
 
 ### Rule: JWT Sessions
 - **What:** Login returns a bearer access token and sets an HTTP-only opaque refresh-token cookie. Access tokens default to 30 minutes; refresh tokens default to 14 days. Access JWT payloads are minimal and stable: `sub`, `typ`, `iat`, and `exp`, with a `kid` header identifying the signing key. Refresh tokens are stored server-side by SHA-256 hash only.
@@ -179,7 +241,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-29T12:23:00Z
 
 ### Rule: Current User Updates
-- **What:** Authenticated users may update username, email, display name, about text, and privacy status. Settings validates username availability before submission, and the API/database remain authoritative: username/email updates reject conflicts with another user, with username conflicts compared case-insensitively.
+- **What:** Authenticated users may update username, display name, about text, and privacy status. Email changes require current-password confirmation followed by the dedicated new-email ownership OTP flow; direct email updates through the general profile endpoint are rejected. Settings validates username availability before submission, and the API/database remain authoritative: username/email updates reject conflicts with another user, with both identifiers compared case-insensitively.
 - **Edge cases:** If no submitted value changes the user, the API returns the existing user without committing. `about` is capped at 256 characters and display name at 120.
 - **Web input limit:** The Settings About textarea limits input to 128 characters and shows the live `x/128` count inside the lower-right of the field; the API's broader 256-character ceiling remains a backend safety limit.
 - **Status:** Active
@@ -189,7 +251,7 @@ the entry, so history isn't lost.
 
 ### Rule: Users Can Change Their Password From Account Settings
 - **What:** An authenticated user may change their password from `/settings/account` after providing the current password, a new password that satisfies the standard password rules, and a matching confirmation.
-- **Edge cases:** The backend verifies the current password and remains authoritative for validation. Signup and Settings expose native `minLength`, `pattern`, and `title` hints for password-manager/browser guidance. Focusing the New password field exposes the live six-item password checklist. Failed changes do not alter the stored password; successful changes preserve the current session.
+- **Edge cases:** The backend verifies the current password and remains authoritative for validation. Signup and Settings expose native `minLength`, `maxLength`, `pattern`, and `title` hints for password-manager/browser guidance. Focusing the New password field exposes the shared concise password checklist. Failed changes do not alter the stored password; successful changes preserve the current session.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/components/account-screens.tsx`, `web/lib/auth.ts`
@@ -230,8 +292,8 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Web Session Persistence
-- **What:** The web client stores authenticated sessions in `localStorage` under `friink-auth-session`; logout clears that stored session.
-- **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions.
+- **What:** The web client stores only safe authenticated account metadata in `localStorage` under `friink-auth-session`; the short-lived access token remains in memory and the refresh credential remains an HTTP-only cookie. Logout clears the stored metadata and the current in-memory session.
+- **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions. Planned multiple-account support may store safe summaries for more than one account, but must not store access/refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or device secrets in browser-readable storage.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/lib/auth.ts`, `web/app/landing-auth-redirect.tsx`, `web/components/login-screen.tsx`
@@ -419,7 +481,7 @@ the entry, so history isn't lost.
 
 ### Rule: Web Post Cards Navigate And Expand Text Locally
 - **What:** Clicking a non-interactive area of a web post card opens the canonical post detail page. `Show more...` appears only when the body text exceeds four visible lines and expands that card in place instead of navigating.
-- **Edge cases:** Profile links, reply/quote/like/share, star, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
+- **Edge cases:** Profile links, reply/quote/like/share, Save, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/feed-post.tsx`, `web/app/globals.css`

@@ -72,8 +72,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         return `/${encodeURIComponent(user.username)}`;
       case 'connections':
         return `/${encodeURIComponent(user.username)}/connections`;
-      case 'starred':
-        return '/starred';
+      case 'saved':
+        return '/saved/posts';
       case 'settings':
         return '/settings/general';
       default:

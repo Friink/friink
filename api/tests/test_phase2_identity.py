@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from api.index import app
 from app.db import get_session_factory
@@ -37,7 +37,8 @@ def test_reserved_username_and_display_casing_contract() -> None:
             },
         )
         assert created.status_code == 201, created.text
-        user_id = created.json()["id"]
+        with get_session_factory()() as session:
+            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
         assert created.json()["username"] == username
 
         availability = client.get(f"/auth/username-availability?username={username.lower()}")

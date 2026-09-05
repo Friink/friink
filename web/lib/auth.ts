@@ -24,6 +24,12 @@ export type AuthSession = {
   user: AuthUser;
 };
 
+export type LoginChallenge = {
+  challengeRequired: true;
+  challengeToken: string;
+  message: string;
+};
+
 export type ManagedAuthSession = {
   id: string;
   device_label: string;
@@ -82,7 +88,13 @@ type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display
 type ApiTokenResponse = {
   access_token: string;
   token_type: string;
-  user: ApiUser;
+  user?: ApiUser;
+};
+
+type ApiLoginChallengeResponse = {
+  challenge_required: true;
+  challenge_token: string;
+  message: string;
 };
 
 type AuthErrorCode =
@@ -142,13 +154,94 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
   };
 }
 
-export async function signUp(input: {
+export type SignupInput = {
   name: string;
   email: string;
   username: string;
   password: string;
   dateOfBirth: string;
-}): Promise<AuthSession> {
+};
+
+export type SignupStartResponse = {
+  accepted: boolean;
+  verification_required: boolean;
+  reservation_token: string;
+  message: string;
+};
+
+type ApiEmailChangeStartResponse = {
+  accepted: boolean;
+  verification_required: true;
+  challenge_token: string;
+  message: string;
+};
+
+export async function startSignupEmail(email: string): Promise<SignupStartResponse> {
+  return requestApi<SignupStartResponse>('/auth/signup/email/start', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function verifySignupEmail(reservationToken: string, otp: string): Promise<void> {
+  await requestApi<{ verified: boolean }>('/auth/signup/email/verify', {
+    method: 'POST',
+    body: JSON.stringify({ reservation_token: reservationToken, otp }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession | LoginChallenge> {
+  await requestApi<ApiUser>('/auth/signup/complete', {
+    method: 'POST',
+    body: JSON.stringify({
+      reservation_token: reservationToken,
+      email: input.email,
+      username: input.username,
+      display_name: input.name,
+      password: input.password,
+      date_of_birth: input.dateOfBirth,
+    }),
+    skipAuthRefresh: true,
+  });
+
+  const session = await login(input.email, input.password);
+  if (isLoginChallenge(session)) return session;
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      name: input.name || session.user.name,
+      setupStep: 1,
+      setupCompleted: false,
+    },
+  };
+}
+
+export async function startSignup(input: SignupInput): Promise<SignupStartResponse> {
+  return requestApi<SignupStartResponse>('/auth/signup/start', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: input.email,
+      username: input.username,
+      display_name: input.name,
+      password: input.password,
+      date_of_birth: input.dateOfBirth,
+    }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function verifySignup(reservationToken: string, otp: string): Promise<void> {
+  await requestApi<ApiUser>('/auth/signup/verify', {
+    method: 'POST',
+    body: JSON.stringify({ reservation_token: reservationToken, otp }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function signUp(input: SignupInput): Promise<AuthSession | LoginChallenge> {
   await requestApi<ApiUser>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({
@@ -161,6 +254,7 @@ export async function signUp(input: {
   });
 
   const session = await login(input.email, input.password);
+  if (isLoginChallenge(session)) return session;
   return {
     ...session,
     user: {
@@ -177,6 +271,25 @@ export async function checkUsernameAvailability(username: string): Promise<{ use
     method: 'GET',
     skipAuthRefresh: true,
   });
+}
+
+export async function startEmailChange(accessToken: string, email: string, currentPassword: string): Promise<ApiEmailChangeStartResponse> {
+  return requestApi<ApiEmailChangeStartResponse>('/auth/me/email/change/start', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ email, current_password: currentPassword }),
+  });
+}
+
+export async function verifyEmailChange(accessToken: string, challengeToken: string, otp: string): Promise<AuthUser> {
+  const response = await requestApi<ApiUser>('/auth/me/email/change/verify', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ challenge_token: challengeToken, otp }),
+  });
+  return mapApiUser(response);
 }
 
 export function saveAuthSession(session: AuthSession) {
@@ -208,13 +321,33 @@ export function clearAuthSession() {
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
-export async function login(email: string, password: string): Promise<AuthSession> {
-  const response = await requestApi<ApiTokenResponse>('/auth/login', {
+export async function login(identifier: string, password: string): Promise<AuthSession | LoginChallenge> {
+  const response = await requestApi<ApiTokenResponse | ApiLoginChallengeResponse>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ identifier, password }),
   });
 
+  if ('challenge_required' in response && response.challenge_required) {
+    return {
+      challengeRequired: true,
+      challengeToken: response.challenge_token,
+      message: response.message,
+    };
+  }
+  return mapTokenResponse(response as ApiTokenResponse);
+}
+
+export async function verifyLoginChallenge(challengeToken: string, otp: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/verify', {
+    method: 'POST',
+    body: JSON.stringify({ challenge_token: challengeToken, otp }),
+    skipAuthRefresh: true,
+  });
   return mapTokenResponse(response);
+}
+
+export function isLoginChallenge(value: AuthSession | LoginChallenge): value is LoginChallenge {
+  return 'challengeRequired' in value && value.challengeRequired === true;
 }
 
 export async function refreshAuthSession(): Promise<AuthSession> {
@@ -658,9 +791,9 @@ export type ApiPost = {
   reply_count: number;
   quote_count: number;
   like_count: number;
-  star_count: number;
+  saved_count: number;
   liked: boolean | null;
-  starred: boolean | null;
+  saved: boolean | null;
   quoted_post: {
     id: string | null;
     public_id: string | null;
@@ -693,9 +826,9 @@ export type ApiFeedContext = {
 export type ApiReaction = {
   post_id: string;
   like_count: number;
-  star_count: number;
+  saved_count: number;
   liked: boolean;
-  starred: boolean;
+  saved: boolean;
 };
 
 export type LikeActor = {
@@ -723,8 +856,8 @@ export async function setPostLike(accessToken: string, postId: string, liked: bo
   return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/like`, liked ? 'POST' : 'DELETE');
 }
 
-export async function setPostStar(accessToken: string, postId: string, starred: boolean): Promise<ApiReaction> {
-  return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/star`, starred ? 'POST' : 'DELETE');
+export async function setPostSave(accessToken: string, postId: string, saved: boolean): Promise<ApiReaction> {
+  return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/save`, saved ? 'POST' : 'DELETE');
 }
 
 export async function listPostLikes(accessToken: string, postId: string, input: { query?: string; cursor?: string | null; limit?: number } = {}): Promise<LikeActorPage> {
@@ -744,10 +877,10 @@ export async function listLikedPosts(accessToken: string, username: string, curs
   return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/likes?${params.toString()}`);
 }
 
-export async function listStarredPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
+export async function listSavedPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
   const params = new URLSearchParams({ limit: '20' });
   if (cursor) params.set('cursor', cursor);
-  return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/starred?${params.toString()}`);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/saved?${params.toString()}`);
 }
 
 export type ApiConnectionUser = {
@@ -1411,11 +1544,17 @@ async function getApiError(response: Response): Promise<{ message: string; code?
   return { message: `Friink API request failed with ${response.status}.` };
 }
 
-function mapTokenResponse(response: ApiTokenResponse): AuthSession {
+async function mapTokenResponse(response: ApiTokenResponse): Promise<AuthSession> {
+  const user = response.user ?? await requestApi<ApiUser>('/auth/me', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${response.access_token}` },
+    authContext: 'authenticated_request',
+    skipAuthRefresh: true,
+  });
   return {
     accessToken: response.access_token,
     tokenType: 'Bearer',
-    user: mapApiUser(response.user),
+    user: mapApiUser(user),
   };
 }
 

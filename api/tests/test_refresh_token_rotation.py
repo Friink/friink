@@ -37,7 +37,7 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
     suffix = uuid.uuid4().hex
     email = f"session-{suffix}@example.com"
     username = f"session_{suffix[:24]}"
-    password = "Strong-password-9!"
+    password = "Strong-pass9!"
     client = TestClient(app)
     user_id: uuid.UUID | None = None
 
@@ -53,7 +53,8 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
             },
         )
         assert signup.status_code == 201, signup.text
-        user_id = uuid.UUID(signup.json()["id"])
+        with get_session_factory()() as session:
+            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
 
         old_token = _login(client, email, password)
         rows = _rows(user_id)
@@ -119,7 +120,7 @@ def test_session_management_lists_current_and_revokes_independently() -> None:
     suffix = uuid.uuid4().hex
     email = f"managed-session-{suffix}@example.com"
     username = f"managed_session_{suffix[:22]}"
-    password = "Strong-password-9!"
+    password = "Strong-pass9!"
     signup_client = TestClient(app)
     user_id: uuid.UUID | None = None
 
@@ -135,7 +136,8 @@ def test_session_management_lists_current_and_revokes_independently() -> None:
             },
         )
         assert signup.status_code == 201, signup.text
-        user_id = uuid.UUID(signup.json()["id"])
+        with get_session_factory()() as session:
+            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
 
         first_client = TestClient(app)
         first_login = first_client.post("/auth/login", json={"email": email, "password": password})

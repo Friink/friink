@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from starlette.responses import Response
 
 from api.index import app
@@ -37,7 +38,7 @@ def test_auth_origin_contract_allows_configured_origin_and_rejects_cross_site() 
         "email": email,
         "username": f"phase1_{uuid.uuid4().hex[:20]}",
         "display_name": "Phase 1 Contract",
-        "password": "Strong-password-9!",
+        "password": "Strong-pass9!",
         "date_of_birth": "1990-01-01",
     }
     allowed = None
@@ -58,5 +59,7 @@ def test_auth_origin_contract_allows_configured_origin_and_rejects_cross_site() 
             from sqlalchemy import delete
 
             with get_session_factory()() as session:
-                session.execute(delete(User).where(User.id == allowed.json()["id"]))
+                user_id = session.execute(select(User.id).where(User.email == email)).scalar_one_or_none()
+                if user_id:
+                    session.execute(delete(User).where(User.id == user_id))
                 session.commit()

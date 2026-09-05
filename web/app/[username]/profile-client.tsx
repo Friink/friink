@@ -21,8 +21,8 @@ function mapApiPost(post: ApiPost): Post {
     name: post.author_display_name || post.author_username, handle: `@${post.author_username}`,
     initials: getInitials(post.author_display_name || post.author_username), imageUrl: post.profile_picture_url,
     tone: 'mint', createdAt: post.created_at, text: post.content, connectionType: 'following', isConnection: true,
-    isStarred: post.starred ?? false, isLiked: post.liked ?? false, replies: post.reply_count, quotes: post.quote_count,
-    likeCount: post.like_count ?? 0, starCount: post.star_count ?? 0, reactions: 0, media: post.media.map((item) => item.url),
+    isSaved: post.saved ?? false, isLiked: post.liked ?? false, replies: post.reply_count, quotes: post.quote_count,
+    likeCount: post.like_count ?? 0, savedCount: post.saved_count ?? 0, reactions: 0, media: post.media.map((item) => item.url),
     quotedPost: post.quoted_post ? {
       id: post.quoted_post.id,
       publicId: post.quoted_post.public_id,

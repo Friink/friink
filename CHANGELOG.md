@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-06
+
+- [reactions] Renamed the persisted Star reaction vocabulary to Save: `star_count`/`post_stars` become `saved_count`/`post_saves`, API state and routes use `saved`/`save`, and the frontend uses the `/saved` surface with a legacy `/starred` redirect. Alembic migration `20260906_0031` is data-preserving; staging is migrated and production remains pending.
+- [verification] Applied migration `20260906_0031` to the configured Neon staging database; Alembic reports `20260906_0031 (head)`, no pending operations remain, and the focused authenticated Like/Save reaction flow passed. Production remains a separate migration and release gate.
+- [docs/account-lifecycle] Added the draft account lifecycle contract for deactivation, pending deletion, reactivation, permanent deletion, login routing, and the required pre-development discussion gate.
+- [docs/auth] Added a Phase 7 pre-development note linking the lifecycle draft and preserving the active-account-only notification rule until the notification conflict and related architecture gaps are resolved.
+- [web] Split the Saved surface into route-backed `/saved/posts` and `/saved/profiles` views, with the latter reserved for future profile saving. Removed the redundant post-header Save star and made the counted lower-row star the Save/Unsave control.
+- [docs] Updated `RULES.md` with the Saved route contract and the single lower-row Save control rule.
+- [docs/auth] Added planned Phase 7 for failed-login-attempt notification: trigger at the third consecutive failure/30-minute cooldown, suppress repeats to one per rolling 24-hour window, preserve account privacy and deactivated/pending-deletion reactivation behavior, and require staging send/receive evidence before a green flag. No Phase 7 green flag is claimed.
+
+## 2026-09-05
+
+- [web/auth] Hardened token-response handling after live staging showed a post-OTP `user.id` crash when the token response omitted the embedded user object; the client now hydrates `/auth/me` from the approved access token before building the session.
+- [auth/signup] Closed the email-first signup OTP flow: the legacy full-payload signup-start route is unavailable when OTP is enabled, reservations expire after 30 minutes, newer starts replace older reservations, and expired reservations have a bounded cleanup hook.
+- [auth/login] Added risk-based OTP for new or changed devices, server-managed hashed device recognition, username-or-email login parity, and distinct progressive cooldown versus full-account-lock messaging. Locked accounts block login and refresh while already-issued access JWTs expire normally.
+- [auth/identity] Added dedicated email-change ownership OTP endpoints with current-password confirmation and opaque public user handles; auth responses no longer expose date of birth, location, or internal user UUIDs. Added database-enforced case-insensitive email uniqueness.
+- [verification] Applied Alembic migrations through `20260905_0030` to the configured Neon database. The auth/session regression set passed 23 tests; Python compilation, TypeScript (`--incremental false`), Next production build, and `git diff --check` passed.
+
 ## 2026-09-03T20:20:34Z
 
 - [release-readiness] Confirmed both staging and production databases are at migration head `20260904_0024`. Staging’s authenticated Likes/Stars E2E flow passed; production schema verification passed without writing test data.
@@ -1549,7 +1567,105 @@ _Last updated: 2026-09-01_
 - Verification: Phase 2 foundation migration applied; 14 focused tests pass. Email delivery and user-facing signup OTP remain pending because no provider is integrated.
 ## 2026-09-03 — Auth/session Phase 2 implementation handoff
 
-- Confirmed Phase 1 staging gate completion using the live 30-day refresh-cookie, CORS, rotation, and one-use replay-grace evidence recorded in `docs/Claude-audit-auth-and-session.md`.
+- Confirmed Phase 1 staging gate completion using the live 30-day refresh-cookie, CORS, rotation, and one-use replay-grace evidence recorded in `docs/auth-and-session-progress.md`.
 - Began Phase 2 identity work: canonical case-insensitive username keys with preserved display casing, reserved usernames, permanent identity history, progressive failed-login throttling, and hashed OTP storage with four-minute expiry/five-attempt limits.
 - Applied migrations `20260903_0019_identity_foundation` and `20260903_0020_harden_otp_storage` locally.
 - Added and passed Phase 2 foundation tests; signup privacy, delivery-independent OTP endpoint wiring, email/username-change verification, UUID exposure review, and the Phase 2 verification gate remain outstanding.
+
+## 2026-09-04
+
+### Changed
+- [web] Added a shared reference-style password checklist to signup and Settings > Account, covering 8–16 characters, mixed letters/numbers/symbols, and no spaces.
+- [web/api] Added the 16-character maximum to new-password controls and server-side password validation while preserving the existing complexity rules.
+
+### Verified
+- [web] TypeScript check passed.
+- [api] Password validation tests passed (`6 passed`).
+- [repo] `git diff --check` passed.
+
+## 2026-09-04
+
+### Changed
+- [api] Wired signup ownership OTP delivery through Resend using server-only `RESEND_API_KEY`, configurable sender values, and safe delivery-failure handling.
+- [web] Connected signup to the existing `/auth/signup/start` and `/auth/signup/verify` endpoints and added the six-character email verification step.
+
+### Verified
+- [api] Resend provider and password validation tests passed (`8 passed`).
+- [api] Python compilation passed.
+- [web] TypeScript check passed.
+
+## 2026-09-04
+
+### Changed
+- [docs] Synchronized the auth audit with the staging Resend signup-OTP implementation and its still-open live verification gate.
+- [docs] Updated the design contract for the signup verification step and the shared 8–16 password checklist.
+- [docs] Updated auth rules to describe conditional signup OTP, server-only Resend delivery, and the 8–16 password range.
+
+### Verified
+- [repo] Documentation diff reviewed; live staging OTP evidence remains pending deployment, API DNS resolution, and provider delivery checks.
+
+## 2026-09-05
+
+### Changed
+- [api] Added email-first signup OTP challenge and completion routes, keeping password/profile data out of the pre-verification reservation.
+- [api] Added additive migration `20260905_0025_email_first_signup_otp` for email-only pre-verification reservations.
+- [web] Signup now requests OTP immediately after the email step, then collects password and profile details after successful verification.
+- [docs] Updated the source auth document, audit, design contract, and rules to match the email → OTP → password/profile flow.
+
+### Verified
+- [api] Python compilation passed.
+- [web] TypeScript check passed.
+- [repo] Documentation and code diff review pending focused database-backed verification.
+
+## 2026-09-05
+
+### Fixed / Diagnosed
+- [staging] Confirmed the email-first signup frontend and API route are deployed and reachable.
+- [staging] Identified the remaining failure as `HTTP 500` from `POST /auth/signup/email/start`, caused by the staging database not yet being upgraded for migration `20260905_0025`; the browser surfaces this as `Failed to fetch` because the error response lacks CORS headers.
+
+### Pending
+- [staging] Run `python -m alembic upgrade head` against the staging database, redeploy the API if required, and capture the successful OTP delivery/verification trace.
+
+## 2026-09-05
+
+### Fixed
+- [staging] Applied migration `20260905_0025` to the staging Neon database; Alembic now reports `20260905_0025 (head)`.
+- [staging] Verified the email-first signup request returns `202` with `verification_required: true` for the authorized test recipient.
+- [staging/web] Confirmed the live browser transitions directly from the email step to the OTP screen (`Step 2 of 4`).
+
+### Verified
+- [staging] Database health and signup CORS preflight return `200`.
+- [staging] Synthetic recipient delivery failure returns the intended safe `503`; authorized delivery returns `202`.
+- [staging] Final OTP entry and account creation remain pending the recipient's code.
+
+## 2026-09-05
+
+### Planned
+- [docs] Added the confirmed multiple-account requirement for web and mobile: side-drawer `Add account`, design-system login/signup modal, account addition after successful authentication, and conditional `Change account` when at least two accounts are authenticated.
+- [docs] Left same-email reuse explicitly unresolved; no identity uniqueness policy was changed.
+
+## 2026-09-05
+
+### Planned
+- [docs] Completed the auth/session architecture for the approved multiple-account flow, including account/device/session data boundaries, web/mobile secure credential handling, server-authoritative switch/add/remove behavior, account isolation, compatibility rollout, and impact on the existing auth foundation.
+- [docs] Broke the implemented Phase 1 session foundation into six verification/release subphases and synchronized the staging audit with the planned Phase 4e multiple-account gate.
+- [docs] Added the planned multiple-account rule to `RULES.md` and the Add account/Change account modal contract to `packages/design/design.md`.
+- [docs] No runtime implementation or database migration was made; same-email reuse remains unresolved.
+- [docs] Clarified that multiple-account support keeps every account fully independent; device session slots are operational only and do not link accounts.
+- [docs] Renamed the auth/session audit file to `docs/auth-and-session-progress.md` and updated repository references.
+- [docs] Filled the remaining auth/session design gaps, including a five-account device-local limit, absolute session lifetime, password recovery, logout/removal semantics, reservation cleanup, explicit CSRF behavior, concrete web slot-cookie handling, and expanded verification criteria.
+- [docs] Added founder-friendly defaults for the account switcher: five remembered accounts per device, predictable fallback after logout, safe account-summary fields, and exact password-reset OTP behavior.
+- [docs] Made the remembered-account limit server-configurable through `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to `5` with validated `2–10` bounds.
+- [docs] Expanded the planned setting to validated `1–16` bounds so 16 remembered accounts are supported; `1` disables switching while retaining single-account login.
+
+## 2026-09-05
+
+### Fixed
+- [auth] Login now accepts either an email address or username, case-insensitively, while preserving the same generic failure, lockout, device-recognition, and future OTP behavior.
+- [web] Replaced the login field's email-only label and validation with `Email or username` and the password-manager-compatible username autocomplete contract.
+
+### Tests
+- [auth] Added regression coverage for canonical identifier parsing, legacy `email` request compatibility, case-insensitive username lookup, and username password authentication.
+
+### Docs
+- [docs] Synchronized the auth/session architecture, active rules, and login/signup design contract with username login behavior.

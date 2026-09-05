@@ -29,6 +29,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Absolute TSX Design Ban**: Never define or modify visual design in logged-in web-app TSX components. TSX is limited to structure, semantic class names, state, behavior, and accessibility. Colors, spacing, sizing, positioning, typography, borders, shadows, and layout must be changed only in `web/app/globals.css` using canonical tokens from `web/theme.config.ts`. This is a styling ownership rule; it does not prohibit TSX state or behavior changes and does not govern the public site.
 - **Exclusive Design File Rule**: For the logged-in web app, design changes may be made only in `web/theme.config.ts` and `web/app/globals.css`. `theme.config.ts` is the sole owner of canonical token values; `globals.css` is the sole owner of generated variables and shared visual/layout rules. Never add design rules to TSX, page-specific CSS, CSS Modules, route stylesheets, or any other web-app file. The public site remains outside this contract.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and password. Internal database UUIDs are not shown in the normal Account screen.
+- **Authentication Copy Surfaces**: The login identifier field is labeled `Email or username`; signup remains email-first and shows the verification-code screen before password/profile fields. Email changes first confirm the current password, then verify ownership of the new address with an OTP. A full account lock shows exactly `Your account is locked. Contact support.` with no reason or duration. Progressive failed-login cooldowns use distinct tier-specific copy with an approximate retry time and must never be presented as a full account lock.
 - **About Empty State**: A profile with no About text renders no visitor-facing About copy. The signed-in owner sees `Add about in settings.` as the only placeholder.
 
 ## Navigation
@@ -44,7 +45,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Profile (`fa-user` → `/[username]`)
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
-   - Starred (`fa-star` → `/starred`)
+   - Saved (`fa-star` → `/saved/posts`)
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
@@ -63,6 +64,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
+- Saved uses `/saved/posts` and `/saved/profiles`; `/saved` redirects to `/saved/posts`. Posts contains the current user's private saved posts, while Profiles is reserved for future profile saving.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 
 ### Chat receipt presentation
@@ -75,9 +77,9 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 
 - **Home Timeline**: Offers two primary tabs: `Explore` (default public feed) and `Following` (posts strictly from accounts the signed-in user follows).
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
-- **Starred Feed**: A preset saved-post view containing only starred posts. It uses the shared `ListRow` summary pattern instead of full feed cards, with post detail opening the full post surface.
-- **Starred Posts**: Starred posts display the brand-colored filled star icon (`fa-solid fa-star`).
-- **Post Reactions**: Shared `FeedPost` cards expose public Like and Star counts in the counted action row. Signed-in users can toggle the outlined heart/star controls for posts; active reactions use filled glyphs. Clicking the Like count opens the shared responsive actor modal, while the Star count is display-only because Star actors are private. Replies do not render reaction controls.
+- **Saved Feed**: A preset saved-post view containing only saved posts at `/saved/posts`. The sibling `/saved/profiles` route is reserved for future profile saving and currently shows a coming-soon empty state.
+- **Saved Posts**: Saved posts display the brand-colored filled star icon (`fa-solid fa-star`).
+- **Post Reactions**: Shared `FeedPost` cards expose public Like and Save counts in the counted action row. Signed-in users can toggle the outlined heart/star controls for posts; active reactions use filled glyphs. Clicking the Like count opens the shared responsive actor modal, while the Save count is display-only because Save actors are private. Replies do not render reaction controls.
 - **Liked Posts**: Profile tabs include `Likes` at `/{username}/likes` when the profile's Like visibility permits it. The tab reuses `FeedPost` and cursor-paginated API data; unavailable/deleted posts are omitted.
 - **Post Card Navigation Rule**: Clicking a non-interactive area of a post card opens the canonical post detail page.
 - **Post Text Expansion Rule**: `Show more...` appears only when post body text overflows four visible lines on feed or post detail surfaces. Activating it expands that post card in place to show the full text; it does not navigate.
@@ -115,7 +117,7 @@ Standard app surfaces should be reusable components. Page-specific markup/conten
 - **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses `Modal` with the title `Let's update your settings`, supports optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
 - **ProfilePictureCropModal** (`web/components/profile-picture-crop-modal.tsx`): Shared square crop interaction used by Settings and ProfileSetupWizard; it owns the crop modal presentation while callers own upload/confirmation state.
 - **PostLikesModal** (`web/components/post-likes-modal.tsx`): Shared responsive `Modal` for Like actors. It uses `ListRow` and `ProfileCard`, server-side search, opaque-cursor pagination, duplicate suppression, and privacy/block filtering supplied by the API.
-- **FeedPost reactions** (`web/components/feed-post.tsx`): The shared post surface owns optimistic Like/Star state, server-authoritative count reconciliation, rollback/error feedback, and the Like-count modal entry point. Reaction presentation stays in the shared app CSS.
+- **FeedPost reactions** (`web/components/feed-post.tsx`): The shared post surface owns optimistic Like/Save state, server-authoritative count reconciliation, rollback/error feedback, and the Like-count modal entry point. Reaction presentation stays in the shared app CSS.
 
 ---
 
@@ -132,7 +134,7 @@ The following design tokens are locked hard values extracted directly from the c
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.feed-post-star`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.messages-toolbar .icon-plain`)
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -282,22 +284,19 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Fixed Internal Layout Order**:
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
-     - Right action cluster (`.feed-post-options`) containing Star and More buttons with a visible fixed gap.
-     - Star button (`.feed-post-star`, right-aligned) uses the same button and icon box height as `NavigationBar` overflow.
+     - Right action cluster (`.feed-post-options`) containing Share and More buttons with a visible fixed gap.
      - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
      - The quoted post identity uses the original author's display name, username, and profile picture when available, with the shared avatar fallback otherwise.
   5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
-  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), Share (`fa-share-nodes`).
+  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), and Save (`fa-star`) controls. Save is operated from this lower action row; there is no redundant header Save control.
   - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
   - **Mention Rule**: Recognized `@username` mentions in post and quoted-post text are links to the mentioned profile, use the current app accent, and do not display an underline in any interaction state. Mention notification copy links to the canonical post that contains the mention.
 - **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
 - **Spacing Rule**: Uses the shared surface inset tokens: horizontal padding `var(--space-content-inset-inline)` and top padding `var(--space-content-inset-block)`.
-- **Variants**:
-  - `highlightedStar = true`: Brand filled star icon (`fa-solid fa-star`, `.feed-post-star-highlighted`).
-  - `highlightedStar = false`: Outline star icon (`fa-regular fa-star`).
+- **Save state**: Active Save uses the brand filled star icon (`fa-solid fa-star`); inactive Save uses the outline star (`fa-regular fa-star`). The adjacent Save count is display-only because Save actors are private.
 - **Props Contract**:
   - `post: Post` (required)
   - `highlightedStar?: boolean` (optional, default `false`)
@@ -323,8 +322,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`).
-  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Starred (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
-  3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`).
+  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
+  3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`). Planned multi-account actions add `Add account` here after authentication; `Change account` is conditional and remains hidden until at least two independent accounts have authenticated on the current browser profile or mobile installation. The switcher limit comes from the server-side `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` setting, defaulting to five; when full, it asks the user to remove one before adding another. The switcher is a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
   - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
@@ -370,6 +369,9 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Responsive Width Rule**: The auth form fills the available viewport width, caps at `31rem` on larger screens, and must remain shrinkable on narrow devices without horizontal overflow.
 - **Dark Mode Rule**: When the system prefers dark mode, the auth screen background is `#161616`.
 - **Mobile Action Rule**: At widths up to `480px`, auth action groups are right-aligned, while the Forgot password control remains left-aligned.
+- **Login Identifier Rule**: The login form uses one required text field labeled `Email or username`, with `autocomplete="username"`, and accepts either identifier case-insensitively. Signup keeps its separate email-only field and OTP sequence.
+- **Signup Email Verification Rule**: When signup OTP is enabled, signup shows a verification-code step immediately after the email step, before password and profile details. The six-character code field uses the shared input treatment, `autocomplete="one-time-code"`, uppercase alphanumeric normalization, and a clear `Verify email` action. Expiry, attempt limits, replacement, single use, and account creation timing remain server-controlled.
+- **Planned Add-account Modal Rule**: The authenticated side-drawer `Add account` action opens a modal that reuses the login/signup fields, buttons, validation, OTP flow, loading states, errors, and accessibility treatment from this screen. A successful login or signup adds the independently authenticated account to the device session list and may activate it; an add-account failure must not log out or replace the currently active account. No account relationship is created.
 
 ### 11. ToastStack (`web/components/toast-stack.tsx`)
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.
@@ -394,7 +396,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Save Feedback Rule**: Every successful settings save, including tick-button saves and API-backed toggles, shows a success toast.
 - **Spacing Rule**: Settings rows align to the same `--space-content-inset-inline` token used by `FeedPost` and base list rows.
 - **Profile Picture Rule**: Settings > Profile includes an optional profile-picture picker with a circular preview, an icon-only Upload control in the shared right-side action rail, and visible loading/error feedback. The preview must remain the last server-confirmed image until the complete crop, processing, transfer, and API confirmation flow succeeds. The crop modal's labeled `Upload` confirmation action is the sole upload action after file selection; it closes only after successful confirmation. The existing default avatar remains the fallback when no picture URL exists. Upload failures must identify the failed stage (API start, R2 transfer, or API confirmation) and include an actionable configuration or session hint when the failure is environment-related.
-- **Password Change Rule**: Settings > Account includes a password-change row with Current password, New password, and Confirm new password fields. Password fields are empty in React state on entry, use the same accessible eye visibility controls as Login/Signup, and the current-password field uses the standard `autocomplete="current-password"` contract so password managers can offer saved credentials. New-password fields provide native `minLength`, `pattern`, and `title` hints matching the signup policy. Focusing New password reveals a live checklist for the six signup rules: minimum length, uppercase, lowercase, number, special character, and no spaces; satisfied rules use the brand state. The action is disabled until the new password meets those rules and both new-password fields match; the backend remains authoritative and requires the current password before replacing the stored hash. A successful change keeps the current session active and clears the password fields.
+- **Password Change Rule**: Settings > Account includes a password-change row with Current password, New password, and Confirm new password fields. Password fields are empty in React state on entry, use the same accessible eye visibility controls as Login/Signup, and the current-password field uses the standard `autocomplete="current-password"` contract so password managers can offer saved credentials. New-password fields provide native `minLength`, `maxLength`, `pattern`, and `title` hints matching the signup policy. Focusing New password reveals the shared concise checklist: 8–16 characters, a mix of letters/numbers/symbols, and no spaces; satisfied rules use the brand state. The action is disabled until the new password meets the full server-aligned complexity rules and both new-password fields match; the backend remains authoritative and requires the current password before replacing the stored hash. A successful change keeps the current session active and clears the password fields.
 - **Session Management Rule**: Settings > Account includes a Sessions section using the shared settings-row pattern. It lists active server-managed sessions with device, browser, operating system, logged-in time, last-active time, and a server-derived current-session state. The current session has no revoke action; other sessions can be logged out individually or through a confirmed `Log out other sessions` action. Missing device metadata is rendered as an unknown/fallback value, and raw tokens, hashes, IPs, and internal UUIDs are never shown.
 - **Profile Picture Processing Rule**: The picker accepts JPG/JPEG, PNG, and WebP inputs, rejects source images whose shorter edge is below 128px before opening the cropper, and presents the draggable/zoomable square crop step in an accessible modal dialog with backdrop, title, cancel, and icon-only tick confirmation controls. The file-selection action is labeled `Upload`, while the subsequent upload action is labeled `Upload profile picture`. The cropper maximum zoom is calculated as `shorterEdge / 128`. It then displays a processing state while normalizing the crop to JPEG at the shared avatar compression preset before upload. HEIC/HEIF and other formats are rejected with a specific message; transparent pixels flatten to white. The avatar preset targets 512px square and ~250KB without upscaling smaller crops. The crop dialog must not introduce horizontal overflow or a bottom scrollbar.
 - **Post Media Compression Rule**: The shared compression utility's `postMedia` preset targets a maximum 1024px longest edge, preserved aspect ratio, JPEG output, and ~500KB. The submit flow uses this preset before direct R2 upload; the API independently verifies JPEG content and the 500KB ceiling.

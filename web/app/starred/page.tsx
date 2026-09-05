@@ -1,5 +1,5 @@
-import { AppShellRoute } from '@/components/app-shell-route';
+import { redirect } from 'next/navigation';
 
-export default function StarredPage() {
-  return <AppShellRoute initialScreen="starred" />;
+export default function LegacyStarredPage() {
+  redirect('/saved/posts');
 }
