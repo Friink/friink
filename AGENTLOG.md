@@ -7076,3 +7076,8 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Updated `/auth/accounts` and add-account availability to backfill a missing slot for the active legacy session.
 - Added visible frontend feedback when account listing or switching fails.
 - Validation: API compile, targeted auth tests, and web TypeScript check passed; account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T21:15:00Z — Isolate Add account authentication
+- Added an explicit Add account auth flow that preserves the active account's generic refresh cookie and stores the new account in its own slot-specific cookie.
+- Propagated the flow through password login, signup, login OTP, and approved-login completion.
+- Added a regression assertion that Add account does not overwrite `friink_refresh_token`.
+- Validation: API compile, auth tests (`10 passed`), web TypeScript check, and diff check passed; account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.

@@ -52,7 +52,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
       try {
         const status = await getLoginApprovalStatus(loginChallengeToken);
         if (stopped || status === 'pending') return;
-        if (status === 'approved') finishAuthentication(await completeApprovedLogin(loginChallengeToken));
+        if (status === 'approved') finishAuthentication(await completeApprovedLogin(loginChallengeToken, { addAccount: mode === 'account-modal' }));
         else if (status === 'denied') setErrorMessage('This login request was denied.');
         else setErrorMessage('This login request expired. Please try again.');
       } catch { /* The OTP path remains available if polling is unavailable. */ }
@@ -69,7 +69,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
     if (isLoginStep) {
       setIsSubmitting(true);
       try {
-        const result = await login(loginIdentifier, password);
+        const result = await login(loginIdentifier, password, { addAccount: mode === 'account-modal' });
         if (isLoginChallenge(result)) {
           setLoginChallengeToken(result.challengeToken);
           setLifecycleStatus(result.lifecycleStatus ?? null);
@@ -150,8 +150,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
 
         const signupInput: SignupInput = { name: fullName, email, username, password, dateOfBirth };
         const session = signupReservationToken
-          ? await completeSignup(signupReservationToken, signupInput)
-          : await signUp(signupInput);
+          ? await completeSignup(signupReservationToken, signupInput, { addAccount: mode === 'account-modal' })
+          : await signUp(signupInput, { addAccount: mode === 'account-modal' });
         if (!isLoginChallenge(session)) {
           finishAuthentication(session);
         } else {
@@ -176,7 +176,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
 
       setIsSubmitting(true);
       try {
-        finishAuthentication(await verifyLoginChallenge(loginChallengeToken, loginOtp));
+        finishAuthentication(await verifyLoginChallenge(loginChallengeToken, loginOtp, { addAccount: mode === 'account-modal' }));
       } catch (error) {
         setErrorMessage(getAuthErrorMessage(error));
       } finally {

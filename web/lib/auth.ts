@@ -120,6 +120,7 @@ type ApiErrorBody = {
 };
 
 type AuthRequestContext = 'fresh_login' | 'refresh_exchange' | 'authenticated_request';
+type AuthFlowOptions = { addAccount?: boolean };
 
 export class AuthApiError extends Error {
   status: number;
@@ -201,9 +202,10 @@ export async function verifySignupEmail(reservationToken: string, otp: string): 
   });
 }
 
-export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession | LoginChallenge> {
+export async function completeSignup(reservationToken: string, input: SignupInput, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
   const response = await requestApi<ApiTokenResponse>('/auth/signup/complete', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({
       reservation_token: reservationToken,
       email: input.email,
@@ -240,9 +242,10 @@ export async function verifySignup(reservationToken: string, otp: string): Promi
   });
 }
 
-export async function signUp(input: SignupInput): Promise<AuthSession | LoginChallenge> {
+export async function signUp(input: SignupInput, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
   const response = await requestApi<ApiTokenResponse>('/auth/signup', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({
       email: input.email,
       username: input.username,
@@ -343,9 +346,10 @@ export function clearAuthSession() {
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
-export async function login(identifier: string, password: string): Promise<AuthSession | LoginChallenge> {
+export async function login(identifier: string, password: string, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
   const response = await requestApi<ApiTokenResponse | ApiLoginChallengeResponse>('/auth/login', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({ identifier, password }),
   });
 
@@ -360,9 +364,10 @@ export async function login(identifier: string, password: string): Promise<AuthS
   return mapTokenResponse(response as ApiTokenResponse);
 }
 
-export async function verifyLoginChallenge(challengeToken: string, otp: string): Promise<AuthSession> {
+export async function verifyLoginChallenge(challengeToken: string, otp: string, options: AuthFlowOptions = {}): Promise<AuthSession> {
   const response = await requestApi<ApiTokenResponse>('/auth/login/verify', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({ challenge_token: challengeToken, otp }),
     skipAuthRefresh: true,
   });
@@ -675,8 +680,8 @@ export async function getLoginApprovalStatus(challengeToken: string): Promise<'p
   return response.status;
 }
 
-export async function completeApprovedLogin(challengeToken: string): Promise<AuthSession> {
-  const response = await requestApi<ApiTokenResponse>('/auth/login/complete-approved', { method: 'POST', body: JSON.stringify({ challenge_token: challengeToken, otp: '000000' }), skipAuthRefresh: true });
+export async function completeApprovedLogin(challengeToken: string, options: AuthFlowOptions = {}): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/complete-approved', { method: 'POST', headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined, body: JSON.stringify({ challenge_token: challengeToken, otp: '000000' }), skipAuthRefresh: true });
   return mapTokenResponse(response);
 }
 

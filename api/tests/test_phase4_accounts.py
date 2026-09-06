@@ -39,11 +39,16 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         assert first.status_code == 200, first.text
         first_json = first.json()
         first_slot = first_json["account_slot"]
-        second = client.post("/auth/login", json={"identifier": seeded[1].email, "password": password})
+        second = client.post(
+            "/auth/login",
+            json={"identifier": seeded[1].email, "password": password},
+            headers={"X-Friink-Account-Flow": "add-account"},
+        )
         assert second.status_code == 200, second.text
         second_json = second.json()
         second_slot = second_json["account_slot"]
         assert first_slot != second_slot
+        assert "friink_refresh_token=" not in second.headers.get("set-cookie", "")
         accounts = client.get("/auth/accounts", headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert accounts.status_code == 200, accounts.text
         assert {item["account_slot"] for item in accounts.json()} == {first_slot, second_slot}

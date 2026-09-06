@@ -86,6 +86,8 @@ optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error
 
 REFRESH_COOKIE_NAME = "friink_refresh_token"
 ACCOUNT_SLOT_HEADER = "X-Friink-Account-Slot"
+ACCOUNT_FLOW_HEADER = "X-Friink-Account-Flow"
+ADD_ACCOUNT_FLOW = "add-account"
 
 
 def require_allowed_origin(request: Request, settings: Settings) -> None:
@@ -284,6 +286,7 @@ async def _issue_login_session(
     settings: Settings,
     raw_device_identifier: str | None,
 ) -> TokenResponse:
+    is_add_account_flow = request.headers.get(ACCOUNT_FLOW_HEADER) == ADD_ACCOUNT_FLOW
     access_token = create_access_token(user.id)
     recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
         session, user.id, request, raw_device_identifier
@@ -307,6 +310,9 @@ async def _issue_login_session(
             session.rollback()
             raise HTTPException(status_code=409, detail="Remove an account before adding another.") from exc
         raise
+    if is_add_account_flow and not slot:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="This account could not be added to the current browser. Please try again.")
     await commit(session)
     # Delivery is best-effort after authentication is committed. A failed drain leaves
     # the durable job available for a later worker/request and never logs the user out.
@@ -324,7 +330,8 @@ async def _issue_login_session(
         family_id=str(issued_refresh.record.family_id),
         user_id=str(user.id),
     )
-    set_refresh_cookie(response, issued_refresh.raw_token, settings)
+    if not is_add_account_flow:
+        set_refresh_cookie(response, issued_refresh.raw_token, settings)
     if slot:
         set_account_refresh_cookie(response, slot, issued_refresh.raw_token, settings)
     set_device_cookie(response, device_identifier, settings)

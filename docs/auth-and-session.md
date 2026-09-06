@@ -60,6 +60,9 @@ The following points are part of the planned scope:
 - `Log out` removes the active account from the current device and revokes its
   current device session only. Other remembered accounts remain available.
   Settings session controls remain scoped to the active account.
+- Add-account authentication must preserve the active account's generic legacy
+  refresh cookie and issue only the newly authenticated account's slot-specific
+  refresh cookie. Ordinary standalone login retains the generic cookie behavior.
 - Phase 1's ordinary-session behavior is the current implemented baseline.
   Its subphases below are verification boundaries, not a request to replace
   the working refresh/session foundation.
