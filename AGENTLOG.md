@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T23:55:00Z — Record pushed staging auth-hardening verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the pushed auth/session hardening commit and synchronize release evidence.
+- Changes Made: Confirmed commit `84127a8` is present on both local `staging` and `origin/staging`; recorded named test coverage and the final staging run in `docs/auth-and-session-progress.md`.
+- Verification Status: `test_deactivation_rejects_existing_access_token_but_lock_does_not`, `test_risk_login_challenges_new_changed_and_recognized_devices`, and `test_refresh_rotation_reuse_logout_legacy` passed together (`3 passed`). Worktree was clean before this documentation-only update.
+
 ## 2026-09-06T23:45:00Z — Harden auth lifecycle boundary and refresh-reuse signaling
 
 - Agent: Codex

@@ -601,3 +601,19 @@ semantics, billing cancellation/resubscription integration, full transition
 concurrency/idempotency coverage, lifecycle abuse limits, and a complete
 audited staff override/event trail. No deployment go-ahead should imply those
 items are complete.
+
+## Auth/session hardening — staging push evidence (2026-09-06)
+
+The deactivation/lockout boundary, refresh-reuse signal, and fail-closed device
+cookie guards are committed as `84127a8` (`AUth work`) and the `staging` branch
+matches `origin/staging` at that commit.
+
+Named verification coverage:
+
+- `test_deactivation_rejects_existing_access_token_but_lock_does_not`
+- `test_risk_login_challenges_new_changed_and_recognized_devices`
+- `test_refresh_rotation_reuse_logout_legacy`
+
+The three-test staging run passed: `3 passed`. The broader auth-boundary and
+refresh-reuse run passed: `8 passed`. No schema migration was required for
+refresh-reuse signaling, and no account-lifecycle contract was changed.

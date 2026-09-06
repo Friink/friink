@@ -2,6 +2,13 @@
 
 ## 2026-09-06
 
+- [verification] Confirmed auth/session hardening commit `84127a8` is pushed to
+  `origin/staging`; the staging branch and remote match.
+- [verification] Reran the three named regression tests for lifecycle-vs-lock,
+  fail-closed device cookies, and refresh-reuse signaling: `3 passed`.
+
+## 2026-09-06
+
 - [auth/security] Added regression guards proving lifecycle deactivation rejects
   pre-issued access tokens while ordinary account locks do not; added explicit
   documentation at the lifecycle enforcement boundary.
