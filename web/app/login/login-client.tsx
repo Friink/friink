@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/login-screen';
-import { isTerminalRefreshFailure, loadAuthSession, refreshAuthSession } from '@/lib/auth';
+import { loadAuthSession, refreshAuthSession } from '@/lib/auth';
 
 export function LoginClient() {
   const router = useRouter();
@@ -20,7 +20,11 @@ export function LoginClient() {
     refreshAuthSession()
       .then(() => router.replace('/home'))
       .catch((error) => {
-        if (isTerminalRefreshFailure(error)) setSessionChecked(true);
+        // A failed refresh is not proof that the user has no session: network,
+        // CORS, timeout, and server errors are intentionally ambiguous. On the
+        // signed-out login route there is no local session to clear, so render
+        // the form for a fresh login instead of leaving the page blank forever.
+        setSessionChecked(true);
       });
   }, [router]);
 
