@@ -175,6 +175,7 @@ export type SignupStartResponse = {
   verification_required: boolean;
   reservation_token: string;
   message: string;
+  existing_account: boolean;
 };
 
 type ApiEmailChangeStartResponse = {

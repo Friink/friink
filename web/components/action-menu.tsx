@@ -9,6 +9,8 @@ export type ActionMenuItem = {
   icon: string;
   href?: string;
   onClick?: () => void;
+  disabled?: boolean;
+  dividerBefore?: boolean;
 };
 
 type ActionMenuProps = {
@@ -127,11 +129,13 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
           </Link>
         ) : (
           <button
-            className="action-menu-item"
+            className={`action-menu-item${item.dividerBefore ? ' action-menu-item-divider' : ''}`}
             type="button"
             role="menuitem"
             key={item.label}
+            disabled={item.disabled}
             onClick={() => {
+              if (item.disabled) return;
               item.onClick?.();
               onClose?.();
             }}

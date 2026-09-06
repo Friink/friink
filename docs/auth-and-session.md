@@ -39,11 +39,11 @@ The following points are part of the planned scope:
   failure starts a 30-minute cooldown, the fourth starts a one-hour cooldown,
   and the fifth starts a 24-hour cooldown. A successful login resets the
   progressive failure state. The policy may be strengthened later.
-- Multiple-account support has a fixed user flow: `Add account` in the side
+- Multiple-account support has a fixed web user flow: `Add account` in the side
   drawer opens a design-system login/signup modal; successful authentication
-  adds the account to the current browser profile or mobile installation; and
-  `Change account` appears only once at least two accounts are authenticated.
-- A browser profile or mobile installation may remember the number of
+  adds the account to the current browser profile; and `Change account` appears
+  only once at least two accounts are authenticated.
+- A browser profile may remember the number of
   independent authenticated accounts configured by
   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`. The safe default is `5`; this is a
   per-device switcher limit, not a limit on how many accounts a person may
@@ -82,7 +82,7 @@ abuse:
 - A successful new login creates an in-app security notification and is
   designed for future email notification delivery.
 - After login, users can add and switch between multiple successfully
-  authenticated Friink accounts on web and mobile.
+  authenticated Friink accounts on the web.
 - Staff use normal Friink accounts plus role- and permission-controlled
   administrative features.
 - Administrative access has stronger, time-limited protection without
@@ -115,8 +115,7 @@ abuse:
   administrative session revocation.
 - Security/audit events for sensitive account and staff actions.
 - Progressive failed-login throttling with independent IP/device protections.
-- Multiple-account support with an authenticated account switcher on web and
-  mobile.
+- Multiple-account support with an authenticated web account switcher.
 
 ### Out of scope for this design
 
@@ -572,18 +571,19 @@ user-visible event behavior.
 
 ### Phase 4 — User session controls
 
-**Status:** Partially implemented — web/API staging verified; mobile and release matrix remain
+**Status:** Closed for the current web-focused release
 
 **Implementation notes:** Phases 4a–4c and 4f are closed. Phase 4d and the
 web/API portion of 4e are implemented, including approval notifications,
 cross-tab account switching, loading boundaries, and lifecycle fallback.
-Mobile implementation and the full browser/device staging matrix remain open.
+The web/API implementation is complete for this release. Mobile-specific
+requirements are maintained separately in `docs/auth-and-session-mobile.md`.
 
-**Test results:** Existing session and refresh regression coverage passes; the
-remaining Phase 4 subphase gates have not all been run.
+**Test results:** Existing session and refresh regression coverage passes;
+web/API implementation and the current release checks are complete.
 
-**Noteworthy:** The open 4d and 4e work does not reopen the closed Phase 1
-session foundation.
+**Noteworthy:** Mobile requirements are intentionally outside this current
+web-focused closure and are owned by `auth-and-session-mobile.md`.
 
 #### Phase 4a — Session inventory and current-session identity
 
@@ -604,7 +604,7 @@ Show safe device labels and activity metadata without exposing refresh tokens,
 device identifiers, IP addresses, locations, fingerprints, or internal UUIDs.
 Mark the session represented by the presented refresh cookie as current.
 
-Verification gate: test multiple browsers, browser profiles, app installs,
+Verification gate: test multiple browsers and browser profiles,
 refresh rotation within one family, and current-session detection.
 
 #### Phase 4b — Selective and bulk revocation
@@ -693,12 +693,12 @@ verification is requested.
 
 #### Phase 4e — Multiple-account device sessions and switching
 
-**Status:** Implemented — web/API staging verified; mobile remains
+**Status:** Implemented — web/API staging verified
 
 **Implementation notes:** The device-scoped slot model, safe account APIs,
 web drawer/modal flow, lifecycle fallback, security notifications, and
-cross-tab switching are implemented. No mobile runtime exists in this
-repository, so the mobile secure-storage slice remains open.
+cross-tab switching are implemented. Mobile-specific requirements are
+maintained in `docs/auth-and-session-mobile.md`.
 
 **Test results:** Staging-backed account and approval acceptance passed (`2
 passed`); API compilation, web TypeScript, production build, and Alembic
@@ -710,8 +710,8 @@ forbidden.
 
 Implement the device-scoped session-slot and opaque account-slot model described in
 section 8.5. Keep the existing login and signup endpoints as the authentication
-authority, then register a successful account on the current browser profile
-or mobile installation. Add safe account listing, account switching, account
+authority, then register a successful account on the current browser profile.
+Add safe account listing, account switching, account
 removal, account-scoped refresh/session selection, and account-scoped client
 state isolation. Do not expose user IDs or move refresh tokens into
 JavaScript-readable storage. Preserve the single-account session path and
@@ -758,8 +758,8 @@ Break implementation into these delivery parts:
 
   **Test results:** Build and type checks passed; API acceptance covers account registration.
 
-  **Noteworthy:** Duplicate, cancellation, limit, and accessibility states need
-  explicit UI tests.
+  **Noteworthy:** Additional duplicate, cancellation, limit, and accessibility
+  UI tests remain useful follow-up coverage but do not block the web release.
 - **4e-d — Account lifecycle:** switching, removal, logout, locked/revoked
   accounts, password changes/resets, session inventory, notifications, and
   security-event behavior.
@@ -775,25 +775,12 @@ Break implementation into these delivery parts:
 
   **Noteworthy:** Account lifecycle is a separate active product contract and
   must not be inferred from one-account session behavior.
-- **4e-e — Mobile:** platform secure-storage entries, app restart/background
-  recovery, account switching, and mobile-specific failure/accessibility tests.
-
-  **Status:** Ready to be Developed
-
-  **Implementation notes:** Mobile storage and recovery requirements are
-  specified; platform implementation remains outstanding.
-
-  **Test results:** Not run.
-
-  **Noteworthy:** Secure storage, background recovery, and accessibility need
-  platform-specific verification.
-
 Verification gate: test Add account login, Add account signup through OTP,
 modal cancellation, duplicate/retry behavior, safe account-list fields,
 switch success and failure, hidden Change account with fewer than two accounts,
 account removal, logout/revocation boundaries, browser reload, multiple tabs,
-mobile secure-storage recovery, account-scoped notifications, and cross-account
-data/cache isolation.
+account-scoped notifications, and cross-account data/cache isolation. Mobile
+acceptance is defined separately in `docs/auth-and-session-mobile.md`.
 
 #### Phase 4f — Expiry, recovery, and user messaging
 
@@ -1422,7 +1409,6 @@ One refresh-token family represents one account-specific user-visible session:
 
 - Separate browsers are separate sessions.
 - Separate browser profiles are separate sessions.
-- Separate mobile-app installations are separate sessions.
 - Logging in again creates a new session.
 - Refresh rotation within one family does not create a new visible session.
 - A device may hold multiple account-specific sessions after multiple-account
@@ -1432,7 +1418,7 @@ One refresh-token family represents one account-specific user-visible session:
 
 The server determines the current account/session from the presented
 account-specific refresh credential and its device-scoped session slot. The browser
-or mobile client never supplies a session ID or user ID to claim that it is
+The web client never supplies a session ID or user ID to claim that it is
 current.
 
 ### 8.3 Current implementation to preserve
@@ -1476,8 +1462,8 @@ their session is actually no longer usable.
 
 ## 8.5 Multiple logged-in accounts and account switching
 
-Multiple-account support is a confirmed product requirement for both web and
-mobile. Each account is a fully independent Friink identity: there is no
+Multiple-account support is a confirmed web product requirement. Each account
+is a fully independent Friink identity: there is no
 account-to-account linking, shared identity record, merged profile, shared
 security state, or cross-account data access. The device-level records below
 exist only to remember separate authenticated sessions for the switcher; they
@@ -1497,10 +1483,10 @@ refresh-token rotation semantics.
    OTP → password → profile flow and shows the OTP screen immediately after
    the email step.
 4. After login or signup succeeds, the authenticated account is registered as
-   an available independent account session for the current browser profile or
-   mobile app installation. The newly authenticated account becomes active.
+   an available independent account session for the current browser profile.
+   The newly authenticated account becomes active.
 5. `Change account` is hidden until at least two accounts have successfully
-   authenticated on that browser profile or app installation.
+   authenticated on that browser profile.
 6. `Change account` lists only accounts registered on that device and switches
    to the selected account without merging identities.
 7. The switcher supports up to the server-configured
@@ -1570,20 +1556,7 @@ account ID, username, or credential and must not be trusted without server
 validation. Refresh credentials must never move into `localStorage`,
 IndexedDB, ordinary non-HttpOnly cookies, or client-visible account objects.
 
-### 8.5.4 Mobile credential boundary
-
-The mobile client keeps one secure-storage entry per account slot using the
-platform Keychain/Keystore/Secure Storage facility or its equivalent. The
-mapping contains only what is required to recover that account's session and
-safe display metadata. Tokens are never logged, placed in analytics payloads,
-or stored in ordinary unencrypted application preferences.
-
-Switching loads the selected account's access context, refreshes only that
-account's session when necessary, and replaces the active in-memory account
-state atomically. A failed switch leaves the previously active account usable
-when its session is still valid.
-
-### 8.5.5 API behavior
+### 8.5.4 API behavior
 
 The implementation may use equivalent route names, but it must provide these
 server-authoritative operations:
@@ -1619,12 +1592,12 @@ and must not affect other accounts.
 
 `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is server-only configuration. It defaults
 to `5` and must be validated at startup as an integer between `1` and `16`.
-The browser and mobile client must not provide or override it. If an operator
+The browser client must not provide or override it. If an operator
 lowers the value below the number of existing slots, existing sessions remain
 usable and no account is silently removed; new additions are blocked until the
 device is under the configured limit.
 
-### 8.5.6 Isolation, notifications, and session management
+### 8.5.5 Isolation, notifications, and session management
 
 Every request after switching is authorized against the selected account's
 access token and server-side session context. Caches, query keys, optimistic
@@ -1644,7 +1617,7 @@ as if they were Account A sessions. Removing an account from the device
 revokes only that independent account's device session while global “log out all” remains
 an account-level action unless an explicit cross-account action is designed.
 
-### 8.5.7 Compatibility and rollout
+### 8.5.6 Compatibility and rollout
 
 The feature requires an additive migration and a backward-compatible rollout:
 
@@ -1653,8 +1626,8 @@ The feature requires an additive migration and a backward-compatible rollout:
 2. Deploy server support that continues to accept the current one-account
 cookie/session path and creates a device session slot after the next successful
    login or explicit account addition.
-3. Deploy the web/mobile account list, modal, switch, removal, and isolated
-   client-state behavior behind a controlled feature flag if needed.
+3. Deploy the web account list, modal, switch, removal, and isolated client-state
+   behavior behind a controlled feature flag if needed.
 4. Verify single-account login, refresh, logout, OTP, session management, and
    failure recovery before enabling multiple accounts broadly.
 5. Enable the feature gradually and monitor account-scoped session, switch,
@@ -1667,7 +1640,7 @@ the next authenticated request, with the same server-side ownership checks as
 a fresh authentication. This operational association must never create an
 account-to-account relationship.
 
-### 8.5.8 Impact on already implemented auth/session
+### 8.5.7 Impact on already implemented auth/session
 
 The low-impact portion is additive: password hashing, signup email/OTP
 verification, login risk checks, JWT verification, refresh rotation, and
@@ -1780,8 +1753,6 @@ When switching accounts, replace the active in-memory access context and
 partition or clear account-scoped client state before rendering the selected
 account. A refresh failure for the selected account must not erase other
 remembered account session slots or incorrectly log out the previously active account.
-Mobile implementations must use platform secure storage with one isolated
-credential entry per account slot.
 
 ### 10.2 Password recovery
 
@@ -2124,9 +2095,8 @@ Before implementation is considered complete, verify at minimum:
   sequence inside the modal
 - account list privacy, opaque-slot validation, successful/failed switching,
   account removal, and Change account visibility at one versus two accounts
-- two authenticated accounts in one browser profile and one mobile
-  installation, including reload, concurrent refresh, and active-account
-  state/cache isolation
+- two authenticated accounts in one browser profile, including reload,
+  concurrent refresh, and active-account state/cache isolation
 - current-session detection and selective session revocation
 - revoke-others preserving the current session
 - login notification creation and durable retry behavior
@@ -2212,6 +2182,21 @@ full-payload signup-start path must be removed or closed to prevent a bypass.
 Verify reservation-token expiry at 30 minutes, cancellation cleanup, expired
 reservation cleanup, and that an abandoned reservation releases the email.
 
+### Existing email during signup — resolved UX exception
+
+The product intentionally makes one limited exception to the generic signup
+response rule above. When a person submits an email that already belongs to a
+Friink account, the email-only signup start returns a successful, non-OTP
+response with no reservation and sends no email. The web flow remains on the
+email step and presents calm copy explaining that the address is already in
+use, with an action to log in using that email and an invitation to use a
+different address for signup. It must never show an OTP screen for this case.
+
+This is an explicit UX decision: it trades strict account-enumeration privacy
+for a clear recovery path and avoids sending a misleading verification email.
+The message must not expose lifecycle, security, or other private account
+details, and the API response must not include user records or identifiers.
+
 #### Key rotation and time evidence
 
 Perform a controlled key-rotation check using at least two configured `kid`
@@ -2265,6 +2250,9 @@ configuration in each environment.
   and is superseded by this consolidated proposal where the two differ.
 - `packages/design/design.md` governs any future Settings, OTP, session-list,
   or staff-screen visual work.
+- `docs/auth-and-session-mobile.md` owns mobile-only authentication, secure
+  storage, app lifecycle, native account switching, and mobile acceptance
+  requirements; it must be read when mobile implementation begins.
 - `CHANGELOG.md` and `AGENTLOG.md` must be updated alongside implementation or
   documentation changes according to the repository rules.
 
@@ -2291,10 +2279,11 @@ accounts on one device, approval, notification creation, denied-OTP
 invalidation, listing, switching, slot refresh, and removal. Web TypeScript and
 production build checks passed.
 
-This is not a full Phase 4 green flag. Mobile secure storage and the full
-browser/device acceptance matrix remain open. The web Add-account modal,
+The web-focused Phase 4 release is closed. The web Add-account modal,
 signup/login reuse, cross-tab coordination, notifications, and account
-lifecycle fallback are implemented and build-verified.
+lifecycle fallback are implemented and build-verified. Mobile-specific
+requirements are maintained in `docs/auth-and-session-mobile.md` and are
+deferred until a mobile client exists.
 
 Current staging E2E handoff: the live login page is reachable and staging is
 at migration head `20260906_0036` with no drift. Full Phase 1–4 browser testing
@@ -2308,6 +2297,15 @@ path. Redeploy API and web, then repeat the signup acceptance before continuing
 the remaining Phase 1–4 checks. The current live deployment has only reached
 the expected login-verification screen for a new browser session; it does not
 yet prove that the signup fix is deployed.
+
+The deployment retest also observed blank authenticated home/settings routes
+while the public login page remained available. Treat this as a deployment
+stability gate and resume Phase 1–4 acceptance only after authenticated routes
+recover and the updated signup flow can be exercised.
+
+Follow-up evidence: the staging API health endpoint actively refused the
+connection during the retry, so the current authenticated-route blank state is
+an API deployment outage. Resume acceptance only after API health is restored.
 
 ## Phase 4 UX decisions — 2026-09-06
 

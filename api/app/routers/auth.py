@@ -47,7 +47,7 @@ from app.schemas.auth import (
     UsernameAvailabilityResponse,
     UserResponse,
 )
-from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
+from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_email, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
 from app.services.email_change import complete_email_change, start_email_change
 from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
@@ -170,8 +170,16 @@ async def signup_email_start(
             reservation_token=secrets.token_urlsafe(32),
             message="If the signup details can be accepted, verification instructions will be sent.",
         )
+    normalized_email = str(payload.email).strip().casefold()
+    if await get_user_by_email(session, normalized_email):
+        return SignupStartResponse(
+            verification_required=False,
+            reservation_token="",
+            existing_account=True,
+            message="You already have a Friink account with this email. Log in instead, or use a different email address to sign up.",
+        )
     try:
-        token = await start_signup_email_reservation(session, str(payload.email), EmailService(settings))
+        token = await start_signup_email_reservation(session, normalized_email, EmailService(settings))
     except EmailDeliveryError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
     return SignupStartResponse(

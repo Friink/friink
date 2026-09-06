@@ -67,8 +67,9 @@ class SignupRequest(BaseModel):
 class SignupStartResponse(BaseModel):
     accepted: bool = True
     verification_required: bool
-    reservation_token: str
+    reservation_token: str = ""
     message: str
+    existing_account: bool = False
 
 
 class SignupEmailStartRequest(BaseModel):

@@ -646,6 +646,10 @@ production build passed. The Add-account modal/OTP UX, complete isolation,
 mobile recovery and the full browser/device release gate remain open; Phase
 4d runtime implementation is verified for the approval path.
 
+This historical checkpoint is superseded by the current web-focused Phase 4
+closure recorded below; mobile recovery is now maintained in
+`auth-and-session-mobile.md` rather than tracked as an open web release gate.
+
 ## Phase 4 UX decision record — 2026-09-06
 
 Add account uses the existing modal with Login first and Create account below;
@@ -702,6 +706,16 @@ test account in a new browser session. This is not evidence that the signup
 fix is deployed; staging must run the updated API/web build before signup can
 be repeated and the redundant-OTP acceptance can be closed.
 
+During the subsequent deployment, the public login page remained reachable but
+authenticated home and settings routes rendered blank after reload. This is a
+staging deployment-stability gate; E2E testing is paused until authenticated
+routes render normally again.
+
+Follow-up evidence: `https://staging-api.friink.com/health/db` actively
+refused the connection during the retry. The current blocker is the staging
+API deployment being unavailable, not an E2E assertion against application
+behavior.
+
 ## Phase 4 coordination verification — 2026-09-06
 
 The web/API account slice now synchronizes active-slot state across open tabs,
@@ -709,4 +723,23 @@ reloads account-scoped UI state after a switch, and applies the agreed
 most-recent-account fallback after active logout/removal. The dedicated
 staging-backed suite passed (`2 passed`), including notification creation and
 denied-OTP invalidation. Mobile secure storage and full browser/device staging
-coverage remain the only material Phase 4 release gates not exercised here.
+coverage were not exercised here; they are now tracked separately in
+[`auth-and-session-mobile.md`](auth-and-session-mobile.md).
+
+Mobile Phase 4 requirements remain intentionally retained but deferred because
+no mobile client exists yet. They are not treated as a current web/API blocker
+and must be resumed when mobile implementation begins.
+
+Phase 4 is therefore considered closed for the current web-focused release.
+The deferred mobile gate remains mandatory before mobile support is released;
+its requirements and acceptance evidence live in
+[`auth-and-session-mobile.md`](auth-and-session-mobile.md).
+
+### Duplicate signup email handling — 2026-09-07
+
+The signup email-start flow now detects an existing account before creating a
+reservation or issuing an OTP. It returns a non-OTP response; the web client
+stays on the email step and offers login with the submitted email or signup
+with a different address. This is the agreed UX exception to the otherwise
+generic signup-response privacy rule. Focused API regression coverage passed
+(`1 passed`); staging deployment and live browser acceptance remain pending.

@@ -1,6 +1,27 @@
 # Changelog
 
+## 2026-09-07
+
+- [routing/auth] Made `/login` signed-out-only. Persisted sessions now redirect
+  to `/home` before the standalone form renders, including demo sessions;
+  authenticated account addition continues through the SideDrawer modal.
+- [ux/accounts] Moved account switching, account management, and add-account
+  controls out of the SideDrawer footer into an account caret attached to the
+  drawer profile card. The menu shows the active account, all remembered
+  accounts, Manage accounts, and Add account; no backend behavior changed.
+- [docs/auth] Split mobile-specific authentication and session requirements into `docs/auth-and-session-mobile.md`; the general document now owns shared backend and web scope without duplicating mobile implementation details.
+- [phase4] Closed the current web/API-focused Phase 4 release scope. Mobile account-session requirements remain preserved and deferred until a mobile client exists.
+- [phase4] Deferred mobile account-session implementation and acceptance until a mobile client exists; requirements remain preserved as a future gate.
+- [auth/signup] Repeated signup with an existing email no longer creates a reservation or sends an OTP. The flow stays on the email step with a clear login-or-different-email recovery action.
+- [auth] Recorded the deliberate signup UX exception to generic account-enumeration responses: no account details or identifiers are exposed, but the submitted address is confirmed as already in use to prevent a misleading OTP flow.
+
 ## 2026-09-06
+
+- [ui/setup] Restyled the account setup wizard to use the existing Friink
+  theme, progress treatment, ProfileCard preview, iconography, upload action,
+  and responsive modal spacing instead of the former plain presentation.
+- [verification] Live staging still shows the pre-fix wizard until the updated
+  web build is deployed; local TypeScript and production build checks pass.
 
 - [docs/auth] Added a Phase 4 handoff checkpoint documenting the verified
   web/API state and the remaining mobile and full browser/device staging gates.

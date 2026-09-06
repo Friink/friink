@@ -29,7 +29,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Absolute TSX Design Ban**: Never define or modify visual design in logged-in web-app TSX components. TSX is limited to structure, semantic class names, state, behavior, and accessibility. Colors, spacing, sizing, positioning, typography, borders, shadows, and layout must be changed only in `web/app/globals.css` using canonical tokens from `web/theme.config.ts`. This is a styling ownership rule; it does not prohibit TSX state or behavior changes and does not govern the public site.
 - **Exclusive Design File Rule**: For the logged-in web app, design changes may be made only in `web/theme.config.ts` and `web/app/globals.css`. `theme.config.ts` is the sole owner of canonical token values; `globals.css` is the sole owner of generated variables and shared visual/layout rules. Never add design rules to TSX, page-specific CSS, CSS Modules, route stylesheets, or any other web-app file. The public site remains outside this contract.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and password. Internal database UUIDs are not shown in the normal Account screen.
-- **Authentication Copy Surfaces**: The login identifier field is labeled `Email or username`; signup remains email-first and shows the verification-code screen before password/profile fields. Email changes first confirm the current password, then verify ownership of the new address with an OTP. A full account lock shows exactly `Your account is locked. Contact support.` with no reason or duration. Progressive failed-login cooldowns use distinct tier-specific copy with an approximate retry time and must never be presented as a full account lock.
+- **Authentication Copy Surfaces**: The login identifier field is labeled `Email or username`; signup remains email-first and shows the verification-code screen before password/profile fields. If the submitted signup email is already registered, the flow stays on the email step, sends no OTP, and offers calm login-or-different-email recovery copy. Email changes first confirm the current password, then verify ownership of the new address with an OTP. A full account lock shows exactly `Your account is locked. Contact support.` with no reason or duration. Progressive failed-login cooldowns use distinct tier-specific copy with an approximate retry time and must never be presented as a full account lock.
 - **About Empty State**: A profile with no About text renders no visitor-facing About copy. The signed-in owner sees `Add about in settings.` as the only placeholder.
 
 ## Navigation
@@ -41,7 +41,8 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 1. **FloatingBar (Core Post Action)**:
    - Post composer (`Composer`) submits posts directly from the floating bar.
 2. **SideDrawer (Personal Identity & Network)**:
-   - Signed-in User Identity Block (`ProfileCard` at top)
+   - Signed-in User Identity Block (`ProfileCard` at top) with a dedicated account caret; expanded drawers place the caret to the right of the identity block, while collapsed desktop drawers overlay it at the avatar's bottom-right corner.
+   - The account caret opens the shared `ActionMenu`: active-account summary first, all remembered accounts in server-provided order, then Manage accounts and Add account.
    - Profile (`fa-user` → `/[username]`)
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
@@ -114,7 +115,7 @@ Fallback and error screens should be quiet, centered, and branded.
 Standard app surfaces should be reusable components. Page-specific markup/content may remain local when it is not reused elsewhere, but logged-in app design rules must never be page-specific; they belong only in `web/theme.config.ts` and `web/app/globals.css`.
 
 - **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, an optional left-side back-arrow control, a top-right cross close control, and a bottom action ribbon for adjacent actions. The modal portals to `document.body`, and its backdrop is the topmost application layer (`z-index: 10000`) so dialogs and their controls remain above navigation, floating bars, menus, and toasts regardless of the caller's stacking context. Dialogs use a responsive viewport-constrained shell; the body owns overflow scrolling while the header and action ribbon remain visible. The back arrow is shown only when `onBack` is provided and must perform the flow's previous-step action without replacing the close control.
-- **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses `Modal` with the title `Let's update your settings`, supports optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
+- **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses the shared themed `Modal`, accent progress treatment, icon-led step headings, helper copy, ProfileCard identity preview, optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
 - **ProfilePictureCropModal** (`web/components/profile-picture-crop-modal.tsx`): Shared square crop interaction used by Settings and ProfileSetupWizard; it owns the crop modal presentation while callers own upload/confirmation state.
 - **PostLikesModal** (`web/components/post-likes-modal.tsx`): Shared responsive `Modal` for Like actors. It uses `ListRow` and `ProfileCard`, server-side search, opaque-cursor pagination, duplicate suppression, and privacy/block filtering supplied by the API.
 - **FeedPost reactions** (`web/components/feed-post.tsx`): The shared post surface owns optimistic Like/Save state, server-authoritative count reconciliation, rollback/error feedback, and the Like-count modal entry point. Reaction presentation stays in the shared app CSS.
@@ -230,6 +231,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `anchorRef: RefObject<HTMLElement>` (required trigger reference)
   - `align?: 'start' | 'end'` (optional horizontal alignment, default `'end'`)
   - `onClose?: () => void` (optional dismissal callback)
+- Account-switcher menus may use the optional `header`, disabled items for the active account, and `dividerBefore` on the first management action. Account switching remains device-session behavior; this menu does not create account relationships.
 - **Viewport Placement Rule**: Renders through a document-body portal with fixed positioning. It measures the trigger and menu, flips above when below-space is insufficient, clamps to the viewport edges, and recalculates on resize and scroll.
 
 The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-link`). `Add media` selects up to eight local images; images upload only when the user submits the post, while `Add link` remains reserved for a future link flow.
@@ -321,9 +323,9 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### 7. SideDrawer (`web/components/side-drawer.tsx`)
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
-  1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`).
+  1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`) with a separate caret trigger (`.sidebar-account-menu-button`) for account actions. The ProfileCard itself is not the account-menu trigger; the drawer's Profile navigation item remains the profile destination.
   2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
-  3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`), Log out (`fa-right-from-bracket`). Planned multi-account actions add `Add account` here after authentication; `Change account` is conditional and remains hidden until at least two independent accounts have authenticated on the current browser profile or mobile installation. The switcher limit comes from the server-side `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` setting, defaulting to five; when full, it asks the user to remove one before adding another. The switcher is a device-session convenience, not an account-linking surface.
+  3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`) and Log out (`fa-right-from-bracket`). Account switching, Add account, and Manage accounts live in the profile-card account menu. The switcher remains a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
   - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
@@ -478,6 +480,11 @@ existing Notifications surface, shows a security toast when a new request is
 detected, and reloads account-scoped state when another open tab switches the
 active account. Mobile secure-storage behavior remains a platform contract.
 
+Profile setup uses the same themed Modal surface and design tokens as the rest
+of the authenticated app: accent progress, calm helper copy, ProfileCard
+identity preview, icon-led steps, and responsive actions. Optional setup work
+must remain skippable and preserve the existing saved-progress behavior.
+
 ### Account switcher slice
 
 The authenticated drawer may show `Add account` and, once two safe
@@ -485,3 +492,11 @@ server-provided account summaries exist, `Change account` entries. Entries use
 the existing drawer action treatment and show username only. The existing
 Add-account modal is implemented for the web slice; mobile remains a platform
 contract.
+
+The setup-wizard restyle is build-verified in the working tree. Live staging
+visual acceptance remains pending deployment because the current staging tab
+still shows the older plain wizard presentation.
+
+The current account-switcher and setup-wizard contracts are web-only for this
+release. Native mobile visual and interaction requirements are maintained in
+`docs/auth-and-session-mobile.md` and are deferred until a mobile client exists.

@@ -25,6 +25,11 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Local development:** `localhost/localhost.ps1`, Next.js on port 3000, FastAPI on port 8000
 - **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
 
+Current auth/session scope: Phases 1–3 are closed, and Phase 4 is closed for
+the current web/API-focused release. Mobile authentication and session
+requirements are preserved separately in `docs/auth-and-session-mobile.md` and
+are deferred until a mobile client exists.
+
 ## Local Development
 
 ```
@@ -87,6 +92,10 @@ these files, and the live implementation, are:**
   at the top. Read first for project history and current state.
 - **`AGENTLOG.md`** — detailed per-change entries (agent, model, prompt summary,
   files touched, reasoning). Updated alongside every `CHANGELOG.md` entry.
+- **`docs/auth-and-session.md`** — shared backend and web authentication/session
+  contract and implementation status.
+- **`docs/auth-and-session-mobile.md`** — mobile-only authentication/session
+  requirements, intentionally deferred until a mobile client exists.
 - **`docs/chat-behavior.md`** — the implementation contract for chat requests, composer states, notifications, mute/archive behavior, blocking infrastructure, and subscription boundaries.
 - **`docs/like-and-star.md`** — the implementation contract for durable post Likes and Saves, privacy behavior, Like actor lists, notifications, API routes, risks, limitations, and end-to-end acceptance checks.
 

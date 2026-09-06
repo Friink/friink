@@ -2,6 +2,7 @@ import { sidebarNavItems, type Screen } from '@/lib/data';
 import { ProfileCard } from '@/components/profile-card';
 import { Modal } from '@/components/modal';
 import { LoginScreen } from '@/components/login-screen';
+import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import type { AuthUser } from '@/lib/auth';
 import { useEffect, useRef, useState } from 'react';
 import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
@@ -36,6 +37,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const [accountModal, setAccountModal] = useState<'add' | 'manage' | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AccountSummary | null>(null);
   const [accountNotice, setAccountNotice] = useState('');
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     function handleOutside(e: Event) {
@@ -155,10 +158,61 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     }
   }
 
+  const menuAccounts = accounts.length > 0 ? accounts : [{
+    accountSlot: '',
+    username: user.username,
+    displayName: user.name,
+    profilePictureUrl: user.profilePictureUrl,
+    active: true,
+    available: true,
+    lastUsedAt: '',
+  } satisfies AccountSummary];
+  const accountMenuItems: ActionMenuItem[] = [
+    ...menuAccounts.map((account) => ({
+      label: `@${account.username}${account.active ? ' (current)' : ''}`,
+      icon: account.active ? 'fa-check' : 'fa-circle-user',
+      disabled: account.active || accountBusy,
+      onClick: () => void handleAccountSwitch(account),
+    })),
+    {
+      label: 'Manage accounts',
+      icon: 'fa-users-gear',
+      dividerBefore: true,
+      onClick: () => {
+        setAccountMenuOpen(false);
+        setAccountModal('manage');
+      },
+    },
+    {
+      label: 'Add account',
+      icon: 'fa-user-plus',
+      onClick: () => void handleAddAccount(),
+    },
+  ];
+
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
         <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} imageUrl={user.profilePictureUrl} />
+        <button
+          ref={accountMenuButtonRef}
+          className="sidebar-account-menu-button"
+          type="button"
+          aria-label="Switch account"
+          aria-expanded={accountMenuOpen}
+          onClick={() => setAccountMenuOpen((open) => !open)}
+        >
+          <i className="fa-solid fa-caret-down" aria-hidden="true" />
+        </button>
+        <ActionMenu
+          open={accountMenuOpen}
+          anchorRef={accountMenuButtonRef}
+          onClose={() => setAccountMenuOpen(false)}
+          ariaLabel="Account switcher"
+          className="account-switcher-menu"
+          header={<div className="action-menu-profile"><strong>Using as @{user.username}</strong><span>{user.name}</span></div>}
+          items={accountMenuItems}
+        />
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
@@ -182,21 +236,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-action" type="button" disabled={accountBusy} onClick={() => void handleAddAccount()}>
-          <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-user-plus" /></span>
-          <span>Add account</span>
-        </button>
-        {accounts.length > 1 ? <div className="sidebar-account-switcher" aria-label="Change account">
-          <span className="sidebar-account-label">Change account</span>
-          {accounts.map((account) => <button className="sidebar-action" type="button" key={account.accountSlot} disabled={accountBusy || account.active} onClick={() => void handleAccountSwitch(account)}>
-            <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-circle-user" /></span>
-            <span>@{account.username}{account.active ? ' (current)' : ''}</span>
-          </button>)}
-        </div> : null}
-        <button className="sidebar-action" type="button" onClick={() => setAccountModal('manage')}>
-          <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-users-gear" /></span>
-          <span>Manage accounts</span>
-        </button>
         <a
           className="sidebar-action"
           href={getNavigationHref('settings')}

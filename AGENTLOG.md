@@ -1,5 +1,73 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T20:15:00Z — Make login route signed-out only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent authenticated users from opening the standalone `/login` route while preserving in-app account addition.
+- Changes Made: Removed the demo-session exception from the login route guard, added a session-check gate so the standalone form is not rendered during redirect, and documented that authenticated login/signup for another account remains inside the SideDrawer Add account modal.
+- Files: `web/app/login/login-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript check and `git diff --check` pending.
+
+## 2026-09-06T19:57:29Z — Move account controls into drawer profile menu
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rework the SideDrawer account UX without changing backend behavior.
+- Changes Made: Added a caret trigger to the drawer profile card for both expanded and collapsed desktop states. Reused `ActionMenu` for the active-account header, remembered-account list, Manage accounts, and Add account actions. Removed the former account-control group from the drawer footer and added disabled/divider support to the shared menu item contract.
+- Files: `web/components/side-drawer.tsx`, `web/components/action-menu.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` from `web/` passed; `git diff --check` passed. Backend was not changed.
+
+## 2026-09-07T02:00:00Z — Split mobile auth/session requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Separate shared backend/web authentication requirements from mobile-specific requirements without duplication.
+- Changes Made: Created `docs/auth-and-session-mobile.md` for mobile-only credential storage, app lifecycle, native account switching, notification/deep-link, and mobile accessibility/acceptance requirements. Removed mobile implementation detail from the general auth/session document and replaced it with focused cross-references. Kept Phase 4 closed for the current web release and mobile explicitly deferred.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-mobile.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; split-document consistency review and `git diff --check` passed.
+
+## 2026-09-07T01:30:00Z — Close web-focused Phase 4 scope
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Treat Phase 4 as complete for the current web-focused release while retaining mobile requirements as deferred.
+- Changes Made: Marked Phase 4 closed for web/API scope, explicitly retained the mobile requirements as a deferred 4e-e gate, and noted that mobile does not block the current phase closure.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; `git diff --check` passed.
+
+## 2026-09-07T01:15:00Z — Defer Phase 4 mobile gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: No mobile client exists; preserve the mobile requirements but defer them for now.
+- Changes Made: Updated Phase 4 status and verification language to distinguish completed web/API work from the deferred mobile implementation and acceptance gate. Mobile requirements remain intact and mandatory before mobile release.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; `git diff --check` passed.
+
+## 2026-09-07T01:00:00Z — Prevent misleading OTP on duplicate signup
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: When signup uses an existing email, avoid sending an OTP and provide a login-or-different-email recovery path.
+- Changes Made: Added an explicit existing-account result to email signup start, checked the normalized email before reservation/OTP creation, kept the web flow on the email step, and added a login action using the submitted email. Updated auth requirements, progress evidence, and changelog documentation.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/tests/test_phase2_signup.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused API regression passed (`1 passed`); frontend production build, TypeScript check, and `git diff --check` passed. Staging deployment and live browser acceptance remain pending.
+
+## 2026-09-07T00:30:00Z — Restyle account setup wizard
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the account setup wizard so it follows the application theme and no longer looks like a plain mockup.
+- Changes Made: Reworked the wizard hierarchy with an accent progress bar, themed intro, icon-led step headings, ProfileCard preview, stronger profile-picture treatment, themed upload action, improved About copy, and responsive modal action spacing. Reused the existing design tokens and components.
+- Verification Status: Sequential web TypeScript validation and Next production build passed; `git diff --check` passed. Staging visual verification remains dependent on the staging API/deployment recovering.
+
+Follow-up evidence: the live staging wizard still renders the pre-fix plain
+presentation (`Let's update your settings`, unstyled Step 1 copy, plain
+Upload action). The updated visual implementation is therefore ready in the
+working tree but requires the web deployment before visual acceptance can be
+closed.
+
 ## 2026-09-06T17:45:00Z — Begin Phase 1–4 staging E2E campaign
 
 - Agent: Codex
@@ -64,6 +132,16 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Prompt Summary: Resume Phase 1–4 staging E2E testing after fixing the redundant signup OTP.
 - Changes Made: Opened the live staging login flow and submitted the isolated test account credentials. Staging reached login verification in the new browser session.
 - Verification Status: This confirms the current account/login path is reachable, but does not verify the signup fix because a new-browser login OTP is expected. The signup acceptance must be repeated after the updated API and web builds are deployed to staging.
+
+## 2026-09-06T19:20:00Z — Staging deployment transient failure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue Phase 1–4 E2E testing while the updated build deploys.
+- Finding: During deployment, the public staging login page remained available, but authenticated `/home/explore` and `/settings/account` rendered blank after navigation/reload.
+- Verification Status: E2E testing is paused at the deployment boundary. This is not recorded as an application failure until the deployment settles, but no further acceptance evidence will be collected while authenticated routes are blank.
+
+Follow-up evidence: after an additional wait, `https://staging-api.friink.com/health/db` actively refused the connection. The staging API deployment is therefore unavailable; authenticated web-route blank states are consistent with that outage. Testing remains paused until API health returns.
 
 ## 2026-09-06T17:30:00Z — Phase 4 handoff checkpoint
 

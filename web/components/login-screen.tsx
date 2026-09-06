@@ -34,6 +34,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [lifecycleStatus, setLifecycleStatus] = useState<'deactivated' | 'pending_deletion' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [signupEmailAlreadyRegistered, setSignupEmailAlreadyRegistered] = useState(false);
 
   const isLoginStep = step === 'login';
   const isLoginOtpStep = step === 'login-otp';
@@ -93,6 +94,12 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
       setIsSubmitting(true);
       try {
         const signupStart = await startSignupEmail(email);
+        if (signupStart.existing_account) {
+          setSignupEmailAlreadyRegistered(true);
+          setErrorMessage(signupStart.message);
+          setSignupReservationToken('');
+          return;
+        }
         if (signupStart.verification_required) {
           setSignupReservationToken(signupStart.reservation_token);
           setSignupOtp('');
@@ -197,6 +204,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
   function handleStartSignup() {
     setErrorMessage('');
+    setSignupEmailAlreadyRegistered(false);
     setStep('signup-email');
   }
 
@@ -322,11 +330,30 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               label="Email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setSignupEmailAlreadyRegistered(false);
+                setErrorMessage('');
+              }}
               placeholder="Email"
               autoComplete="email"
               required
             />
+
+            {signupEmailAlreadyRegistered && (
+              <button
+                className="forgot-password"
+                type="button"
+                onClick={() => {
+                  setLoginIdentifier(email);
+                  setSignupEmailAlreadyRegistered(false);
+                  setErrorMessage('');
+                  setStep('login');
+                }}
+              >
+                Log in with this email
+              </button>
+            )}
 
             <div className="signup-actions signup-actions-single">
               <button

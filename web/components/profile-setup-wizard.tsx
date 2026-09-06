@@ -6,6 +6,7 @@ import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { AuthApiError, loadAuthSession, saveAuthSession, updateCurrentUser, updateProfileSetup, uploadProfilePicture, type AuthUser } from '@/lib/auth';
+import { ProfileCard } from '@/components/profile-card';
 
 type ProfileSetupWizardProps = {
   user: AuthUser;
@@ -170,25 +171,37 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
           </>
         }
       >
-        <p className="profile-setup-progress">Step {step} of 2</p>
+        <div className="profile-setup-intro">
+          <span className="profile-setup-eyebrow">Make it yours</span>
+          <p className="profile-setup-progress">Step {step} of 2</p>
+          <div className="profile-setup-progress-track" role="progressbar" aria-label={`Profile setup progress: step ${step} of 2`} aria-valuemin={1} aria-valuemax={2} aria-valuenow={step}>
+            <span style={{ width: `${step === 1 ? 50 : 100}%` }} />
+          </div>
+          <p className="profile-setup-intro-copy">A couple of small details help people recognize you around Friink.</p>
+        </div>
         {step === 1 ? (
           <div className="profile-setup-step">
-            <h3>Profile picture</h3>
-            <p>Choose an optional picture so people can recognize you.</p>
+            <div className="profile-setup-step-heading">
+              <span className="profile-setup-step-icon"><i className="fa-regular fa-image" aria-hidden="true" /></span>
+              <div><h3>Profile picture</h3><p>Choose an optional picture so people can recognize you.</p></div>
+            </div>
+            <div className="profile-setup-profile-card"><ProfileCard name={user.name || user.username} handle={`@${user.username}`} tone="mint" imageUrl={user.profilePictureUrl} /></div>
             <div className="profile-setup-picture-preview">
-              {user.profilePictureUrl ? <img src={user.profilePictureUrl} alt="" /> : <i className="fa-regular fa-user" aria-hidden="true" />}
+              {user.profilePictureUrl ? <img src={user.profilePictureUrl} alt="Current profile picture" /> : <i className="fa-regular fa-user" aria-hidden="true" />}
             </div>
             <input ref={inputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleFileSelected(event.target.files?.[0])} />
-            <button className="settings-secondary-button" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>Upload</button>
+            <button className="profile-setup-upload" type="button" disabled={busy} onClick={() => inputRef.current?.click()}><i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true" />{user.profilePictureUrl ? 'Change picture' : 'Upload picture'}</button>
           </div>
         ) : (
           <div className="profile-setup-step">
-            <h3>About</h3>
-            <p>Add a short introduction to your profile.</p>
+            <div className="profile-setup-step-heading">
+              <span className="profile-setup-step-icon"><i className="fa-regular fa-comment" aria-hidden="true" /></span>
+              <div><h3>About you</h3><p>Add a short introduction to your profile.</p></div>
+            </div>
             <label className="settings-field">
-              <span className="settings-field-label">About</span>
+              <span className="settings-field-label">Your intro</span>
               <div className="settings-about-control">
-                <textarea className="settings-about-field" value={about} maxLength={128} onChange={(event) => setAbout(event.target.value)} placeholder="About" />
+                <textarea className="settings-about-field" value={about} maxLength={128} onChange={(event) => setAbout(event.target.value)} placeholder="Tell people a little about yourself" />
                 <span className="settings-field-count">{about.length}/128</span>
               </div>
             </label>
