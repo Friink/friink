@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T00:00:00Z — Synchronize auth/session closeout references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update supporting documentation so auth/session hardening can move forward.
+- Changes Made: Corrected the staging-commit reference in `docs/auth-and-session-progress.md` to distinguish the code commit `84127a8` from the documentation commit `4c6b629`; recorded the documentation closeout in this log and `CHANGELOG.md`.
+- Verification Status: Documentation references checked against `git log`; no runtime code or database changes made.
+
 ## 2026-09-06T23:55:00Z — Record pushed staging auth-hardening verification
 
 - Agent: Codex

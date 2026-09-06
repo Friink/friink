@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-07
+
+- [docs] Synchronized auth/session closeout references: code hardening is in
+  `84127a8`, supporting progress documentation is in `4c6b629`, and
+  `staging` matches `origin/staging`.
+- [docs] Recorded that no runtime, migration, or account-lifecycle contract
+  changes were made in this documentation-only follow-up.
+
 ## 2026-09-06
 
 - [verification] Confirmed auth/session hardening commit `84127a8` is pushed to

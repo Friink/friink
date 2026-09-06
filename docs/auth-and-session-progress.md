@@ -605,8 +605,9 @@ items are complete.
 ## Auth/session hardening — staging push evidence (2026-09-06)
 
 The deactivation/lockout boundary, refresh-reuse signal, and fail-closed device
-cookie guards are committed as `84127a8` (`AUth work`) and the `staging` branch
-matches `origin/staging` at that commit.
+cookie guards are committed as `84127a8` (`AUth work`). The supporting
+documentation is committed as `4c6b629`, and `staging` matches
+`origin/staging` at the documentation commit.
 
 Named verification coverage:
 
