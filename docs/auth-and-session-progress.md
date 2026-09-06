@@ -664,6 +664,44 @@ next resume point is platform/mobile secure-storage work and the full
 browser/device staging matrix. No runtime changes are implied by this
 checkpoint.
 
+## Phase 1–4 staging E2E campaign — started 2026-09-06
+
+The live staging login page is reachable and the database is at migration head
+`20260906_0036` with no Alembic drift. The campaign is awaiting the password
+for the user-provided staging test email before the first authenticated step.
+No runtime changes or test-account deletion have occurred yet.
+
+Live checkpoint: signup for `muflahulfurqan@gmail.com` reached Step 2 of 4
+and staging confirmed that a six-character email verification code was sent.
+The campaign is waiting for that OTP before continuing; no account exists yet.
+
+After the browser tab expired between turns, signup was safely restarted and a
+fresh OTP was requested. Staging is again at Step 2 of 4; the earlier OTP is
+superseded and no account has been created.
+
+The user completed the fresh OTP successfully. The live UI is now at signup
+Step 3 of 4 (Password), awaiting a staging-only password before profile
+completion; no account has been created yet.
+
+The temporary password and synthetic profile are now filled. Staging is at
+the final Step 4 of 4 with `Create account` ready. Account creation is paused
+for confirmation; no test account exists yet.
+
+The user submitted `Create account`; staging advanced to the login-verification
+screen and issued a fresh six-character OTP for the new test account. The
+first authenticated session is not yet verified; cleanup remains pending.
+
+This exposed a defect: the deployed signup client created the account and then
+called ordinary login, causing a redundant second OTP. The working-tree fix
+now returns the authenticated signup session directly from both signup
+completion endpoints and consumes it in the web client. Staging must be
+redeployed before the E2E campaign continues.
+
+The next live check reached the expected login-verification screen for the
+test account in a new browser session. This is not evidence that the signup
+fix is deployed; staging must run the updated API/web build before signup can
+be repeated and the redundant-OTP acceptance can be closed.
+
 ## Phase 4 coordination verification — 2026-09-06
 
 The web/API account slice now synchronizes active-slot state across open tabs,

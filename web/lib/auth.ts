@@ -201,7 +201,7 @@ export async function verifySignupEmail(reservationToken: string, otp: string): 
 }
 
 export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession | LoginChallenge> {
-  await requestApi<ApiUser>('/auth/signup/complete', {
+  const response = await requestApi<ApiTokenResponse>('/auth/signup/complete', {
     method: 'POST',
     body: JSON.stringify({
       reservation_token: reservationToken,
@@ -214,17 +214,7 @@ export async function completeSignup(reservationToken: string, input: SignupInpu
     skipAuthRefresh: true,
   });
 
-  const session = await login(input.email, input.password);
-  if (isLoginChallenge(session)) return session;
-  return {
-    ...session,
-    user: {
-      ...session.user,
-      name: input.name || session.user.name,
-      setupStep: 1,
-      setupCompleted: false,
-    },
-  };
+  return mapTokenResponse(response);
 }
 
 export async function startSignup(input: SignupInput): Promise<SignupStartResponse> {
@@ -250,7 +240,7 @@ export async function verifySignup(reservationToken: string, otp: string): Promi
 }
 
 export async function signUp(input: SignupInput): Promise<AuthSession | LoginChallenge> {
-  await requestApi<ApiUser>('/auth/signup', {
+  const response = await requestApi<ApiTokenResponse>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify({
       email: input.email,
@@ -261,17 +251,7 @@ export async function signUp(input: SignupInput): Promise<AuthSession | LoginCha
     }),
   });
 
-  const session = await login(input.email, input.password);
-  if (isLoginChallenge(session)) return session;
-  return {
-    ...session,
-    user: {
-      ...session.user,
-      name: input.name || session.user.name,
-      setupStep: 1,
-      setupCompleted: false,
-    },
-  };
+  return mapTokenResponse(response);
 }
 
 export async function checkUsernameAvailability(username: string): Promise<{ username: string; available: boolean }> {

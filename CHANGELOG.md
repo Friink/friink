@@ -32,6 +32,10 @@
   to Settings; account switching synchronizes across open tabs.
 - [verification] Re-ran staging-backed Phase 4 acceptance (`2 passed`), API
   compile, web TypeScript, production build, and `git diff --check`.
+- [auth/signup] Fixed a staging-discovered defect where signup completed
+  email verification, then unnecessarily called login and triggered a second
+  risk OTP. Signup now returns the authenticated session directly; deployment
+  and live re-verification remain required.
 
 ## 2026-09-07
 

@@ -2296,6 +2296,19 @@ browser/device acceptance matrix remain open. The web Add-account modal,
 signup/login reuse, cross-tab coordination, notifications, and account
 lifecycle fallback are implemented and build-verified.
 
+Current staging E2E handoff: the live login page is reachable and staging is
+at migration head `20260906_0036` with no drift. Full Phase 1–4 browser testing
+has started and is awaiting the credentials for the designated staging test
+account; OTPs will be supplied interactively when required.
+
+E2E finding: the deployed signup flow requested a redundant login OTP after
+successful signup email verification. The working-tree fix makes signup issue
+the authenticated session directly, preserving the agreed single signup OTP
+path. Redeploy API and web, then repeat the signup acceptance before continuing
+the remaining Phase 1–4 checks. The current live deployment has only reached
+the expected login-verification screen for a new browser session; it does not
+yet prove that the signup fix is deployed.
+
 ## Phase 4 UX decisions — 2026-09-06
 
 The agreed UX follows familiar social-platform conventions: Add account opens

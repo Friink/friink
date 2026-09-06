@@ -100,7 +100,8 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
         assert verified.status_code == 201, verified.text
         with get_session_factory()() as session:
             new_user_id = session.execute(select(User.id).where(User.email == payload["email"])).scalar_one()
-        assert verified.json()["email"] == payload["email"].lower()
+        assert verified.json()["user"]["email"] == payload["email"].lower()
+        assert verified.json()["access_token"]
 
         replay = client.post(
             "/auth/signup/email/verify",

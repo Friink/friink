@@ -1,5 +1,70 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T17:45:00Z — Begin Phase 1–4 staging E2E campaign
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the live staging implementation across Phases 1–4 and preserve resumable audit evidence.
+- Changes Made: Confirmed the staging database is at Alembic head `20260906_0036` with no drift; opened the live staging login page and verified the login form is available. No runtime changes were made.
+- Verification Status: E2E campaign is started but awaiting the staging password for the user-provided test email. OTPs will be requested from the user when the live email flows are reached. Test data will be isolated and deleted only after confirmation of the newly created staging test account.
+
+## 2026-09-06T17:55:00Z — Phase 1–4 E2E signup checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the live staging campaign with a newly created test account.
+- Changes Made: Opened `https://staging.friink.com/login`, selected Sign up, submitted `muflahulfurqan@gmail.com`, and reached the live email-verification screen.
+- Verification Status: Staging returned the expected Step 2 of 4 state and confirmed that a six-character verification code was sent. Awaiting the user-provided OTP; no account has been created yet.
+
+## 2026-09-06T18:05:00Z — Phase 1–4 E2E signup retry checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resume the staging campaign after the temporary browser tab expired.
+- Changes Made: Reopened staging, repeated the signup email step, and requested a fresh verification code. The prior code was not submitted and is superseded by the new request.
+- Verification Status: Live staging is again at signup Step 2 of 4 with the expected six-character OTP prompt. Awaiting the newest user-provided OTP; no account has been created.
+
+## 2026-09-06T18:15:00Z — Phase 1–4 E2E signup OTP passed
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the live staging campaign from the user-completed OTP step.
+- Changes Made: Reattached to the preserved staging tab and verified that the signup flow advanced to Step 3 of 4 after OTP verification.
+- Verification Status: Email ownership verification passed in the live staging UI. The campaign is awaiting a staging-only password before profile completion; no account has been created yet.
+
+## 2026-09-06T18:25:00Z — Phase 1–4 E2E pre-creation checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the live staging signup profile before beginning authenticated phase tests.
+- Changes Made: Entered the temporary staging password and filled synthetic profile data: `Friink Phase 4 Test`, username `phase4test20260906`, date of birth `1990-01-01`.
+- Verification Status: Staging is at the final Step 4 of 4 with the `Create account` action ready. Account creation is intentionally paused for user confirmation; no account has been created.
+
+## 2026-09-06T18:35:00Z — Phase 1–4 E2E test account created
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the staging campaign after the user submitted the final signup action.
+- Changes Made: Verified the staging UI advanced from profile creation to the login-verification screen for the new test account.
+- Verification Status: The isolated staging account creation action completed and staging issued a six-character login OTP. Awaiting that OTP before verifying the first authenticated session; cleanup remains pending until testing finishes.
+
+## 2026-09-06T18:45:00Z — Find and fix redundant post-signup OTP
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the staging E2E failure where a newly created account requested a second OTP.
+- Finding: The signup client created the account and then called the ordinary `/auth/login` endpoint, which correctly applied the new-device risk gate but incorrectly duplicated signup email verification.
+- Changes Made: `/auth/signup` and `/auth/signup/complete` now issue the authenticated session directly; web `signUp` and `completeSignup` consume that session instead of calling `/auth/login`. Updated the signup regression expectation to assert the returned token.
+- Verification Status: Affected signup and Phase 4 suites passed (`3 passed`); API compilation, web TypeScript, and diff checks passed. The fix is not live on staging until the updated API/web code is deployed.
+
+## 2026-09-06T19:00:00Z — E2E deployment gate for signup fix
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resume Phase 1–4 staging E2E testing after fixing the redundant signup OTP.
+- Changes Made: Opened the live staging login flow and submitted the isolated test account credentials. Staging reached login verification in the new browser session.
+- Verification Status: This confirms the current account/login path is reachable, but does not verify the signup fix because a new-browser login OTP is expected. The signup acceptance must be repeated after the updated API and web builds are deployed to staging.
+
 ## 2026-09-06T17:30:00Z — Phase 4 handoff checkpoint
 
 - Agent: Codex

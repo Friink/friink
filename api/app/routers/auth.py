@@ -115,17 +115,19 @@ def set_refresh_cookie(response: Response, token: str, settings: Settings) -> No
     )
 
 
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
     payload: SignupRequest,
     request: Request,
+    response: Response,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
-) -> UserResponse:
+) -> TokenResponse:
     require_allowed_origin(request, settings)
     if settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
-    return user_response(await create_user(session, payload, EmailService(settings)), settings)
+    user = await create_user(session, payload, EmailService(settings))
+    return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
 @router.post("/signup/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -193,18 +195,20 @@ async def signup_email_verify(
     return SignupEmailVerifyResponse()
 
 
-@router.post("/signup/complete", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/signup/complete", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup_complete(
     payload: SignupCompleteRequest,
     request: Request,
+    response: Response,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
-) -> UserResponse:
+) -> TokenResponse:
     require_allowed_origin(request, settings)
     if not settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup completion is not available.")
     data = SignupRequest.model_validate(payload.model_dump(exclude={"reservation_token"}))
-    return user_response(await complete_signup_email_reservation(session, payload.reservation_token, data), settings)
+    user = await complete_signup_email_reservation(session, payload.reservation_token, data)
+    return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
 def set_device_cookie(response: Response, token: str, settings: Settings) -> None:
