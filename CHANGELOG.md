@@ -2,6 +2,12 @@
 
 ## 2026-09-07
 
+- [ux/accounts] Removed the redundant active-account header from the account
+  switcher and reordered its final actions to Add account, then Manage
+  accounts.
+- [ux/accounts] Simplified the account switcher header to show only `Using as
+  @username`; documented the management-action divider as a shared thin-line
+  grouping treatment.
 - [auth/accounts] Fixed `@username` login normalization and preserved legacy
   active sessions by migrating the current account into a device slot before
   another account is added. This keeps the previous account available in the

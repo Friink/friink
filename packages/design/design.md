@@ -42,7 +42,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Post composer (`Composer`) submits posts directly from the floating bar.
 2. **SideDrawer (Personal Identity & Network)**:
    - Signed-in User Identity Block (`ProfileCard` at top) with a dedicated account caret; expanded drawers place the caret to the right of the identity block, while collapsed desktop drawers overlay it at the avatar's bottom-right corner.
-   - The account caret opens the shared `ActionMenu`: active-account summary first, all remembered accounts in server-provided order, then Manage accounts and Add account.
+   - The account caret opens the shared `ActionMenu`: all remembered accounts in server-provided order, then Add account and Manage accounts.
    - Profile (`fa-user` → `/[username]`)
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
@@ -231,7 +231,7 @@ Every shared/reusable component in the codebase must strictly satisfy the contra
   - `anchorRef: RefObject<HTMLElement>` (required trigger reference)
   - `align?: 'start' | 'end'` (optional horizontal alignment, default `'end'`)
   - `onClose?: () => void` (optional dismissal callback)
-- Account-switcher menus may use the optional `header`, disabled items for the active account, and `dividerBefore` on the first management action. Account switching remains device-session behavior; this menu does not create account relationships.
+- Account-switcher menus may use disabled items for the active account and `dividerBefore` on the first management action. The divider groups account selection and Add account from Manage accounts using the shared thin-line treatment. Account switching remains device-session behavior; this menu does not create account relationships.
 - **Viewport Placement Rule**: Renders through a document-body portal with fixed positioning. It measures the trigger and menu, flips above when below-space is insufficient, clamps to the viewport edges, and recalculates on resize and scroll.
 
 The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-link`). `Add media` selects up to eight local images; images upload only when the user submits the post, while `Add link` remains reserved for a future link flow.

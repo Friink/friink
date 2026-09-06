@@ -175,6 +175,11 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       onClick: () => void handleAccountSwitch(account),
     })),
     {
+      label: 'Add account',
+      icon: 'fa-user-plus',
+      onClick: () => void handleAddAccount(),
+    },
+    {
       label: 'Manage accounts',
       icon: 'fa-users-gear',
       dividerBefore: true,
@@ -182,11 +187,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         setAccountMenuOpen(false);
         setAccountModal('manage');
       },
-    },
-    {
-      label: 'Add account',
-      icon: 'fa-user-plus',
-      onClick: () => void handleAddAccount(),
     },
   ];
 
@@ -210,7 +210,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           onClose={() => setAccountMenuOpen(false)}
           ariaLabel="Account switcher"
           className="account-switcher-menu"
-          header={<div className="action-menu-profile"><strong>Using as @{user.username}</strong><span>{user.name}</span></div>}
           items={accountMenuItems}
         />
       </div>

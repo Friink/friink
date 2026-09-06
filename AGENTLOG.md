@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T20:26:34Z — Simplify account switcher actions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the unnecessary active-account header and put Add account before Manage accounts.
+- Changes Made: Removed the account-menu header, reordered the final actions, and kept the divider immediately before Manage accounts so Add account remains grouped with account selection.
+- Files: `web/components/side-drawer.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
+## 2026-09-06T20:25:02Z — Simplify account switcher header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove redundant active-account display text from the account switcher and clarify the management divider contract.
+- Changes Made: Removed the repeated display-name line below `Using as @username`. Kept the separator above Manage accounts and documented it as the shared thin-line grouping treatment between account selection and management actions.
+- Files: `web/components/side-drawer.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
 ## 2026-09-06T20:18:01Z — Fix username login and preserve account switch slots
 
 - Agent: Codex
