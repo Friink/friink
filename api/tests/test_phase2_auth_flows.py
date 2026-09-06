@@ -10,6 +10,7 @@ from app.db import get_session_factory
 from app.models.auth_challenge import LoginChallenge
 from app.models.otp import OtpCode
 from app.models.signup_reservation import SignupReservation
+from app.models.security_event import SecurityEvent, SecurityEventType
 from app.models.user import User
 from app.services.auth import purge_expired_signup_reservations
 from app.services.security import hash_password
@@ -106,6 +107,10 @@ def test_risk_login_challenges_new_changed_and_recognized_devices(monkeypatch) -
         new_device = TestClient(app).post("/auth/login", json={"identifier": email, "password": password}, headers={"user-agent": safari_ua})
         assert new_device.status_code == 200, new_device.text
         assert new_device.json()["challenge_required"] is True
+
+        missing_device = TestClient(app).post("/auth/login", json={"identifier": email, "password": password}, headers={"user-agent": chrome_ua})
+        assert missing_device.status_code == 200, missing_device.text
+        assert missing_device.json()["challenge_required"] is True
     finally:
         app.dependency_overrides.pop(get_settings, None)
         _delete_user(user_id)
@@ -136,6 +141,37 @@ def test_account_lock_blocks_login_and_refresh_but_not_existing_access_token() -
     finally:
         app.dependency_overrides.pop(get_settings, None)
         _delete_user(user_id)
+
+
+def test_deactivation_rejects_existing_access_token_but_lock_does_not() -> None:
+    password = "Strong1!pass"
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    deactivated_id = _seed_user(f"deactivated-{uuid.uuid4().hex}@example.com", f"deactivated_{uuid.uuid4().hex[:18]}", password)
+    locked_id = _seed_user(f"locked-boundary-{uuid.uuid4().hex}@example.com", f"locked_boundary_{uuid.uuid4().hex[:16]}", password)
+    try:
+        deactivated_client = TestClient(app)
+        with get_session_factory()() as session:
+            deactivated_email = session.get(User, deactivated_id).email
+            locked_email = session.get(User, locked_id).email
+        deactivated_login = deactivated_client.post("/auth/login", json={"identifier": deactivated_email, "password": password})
+        locked_client = TestClient(app)
+        locked_login = locked_client.post("/auth/login", json={"identifier": locked_email, "password": password})
+        assert deactivated_login.status_code == locked_login.status_code == 200
+        deactivated_token = deactivated_login.json()["access_token"]
+        locked_token = locked_login.json()["access_token"]
+        with get_session_factory()() as session:
+            session.get(User, deactivated_id).lifecycle_status = "deactivated"
+            session.get(User, locked_id).account_locked = True
+            session.commit()
+
+        rejected = deactivated_client.get("/auth/me", headers={"Authorization": f"Bearer {deactivated_token}"})
+        allowed = locked_client.get("/auth/me", headers={"Authorization": f"Bearer {locked_token}"})
+        assert rejected.status_code == 401
+        assert allowed.status_code == 200, allowed.text
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+        _delete_user(deactivated_id)
+        _delete_user(locked_id)
 
 
 def test_progressive_cooldown_has_distinct_tier_message() -> None:

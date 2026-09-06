@@ -28,6 +28,7 @@ export type LoginChallenge = {
   challengeRequired: true;
   challengeToken: string;
   message: string;
+  lifecycleStatus?: 'deactivated' | 'pending_deletion';
 };
 
 export type ManagedAuthSession = {
@@ -95,6 +96,7 @@ type ApiLoginChallengeResponse = {
   challenge_required: true;
   challenge_token: string;
   message: string;
+  lifecycle_status?: 'deactivated' | 'pending_deletion';
 };
 
 type AuthErrorCode =
@@ -292,6 +294,33 @@ export async function verifyEmailChange(accessToken: string, challengeToken: str
   return mapApiUser(response);
 }
 
+export async function deactivateAccount(accessToken: string, currentPassword: string): Promise<void> {
+  await requestApi<void>('/auth/me/deactivate', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ current_password: currentPassword }),
+  });
+}
+
+export async function startAccountDeletion(accessToken: string, currentPassword: string): Promise<{ challenge_token: string; message: string }> {
+  return requestApi<{ challenge_token: string; message: string }>('/auth/me/delete/start', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ current_password: currentPassword }),
+  });
+}
+
+export async function confirmAccountDeletion(accessToken: string, challengeToken: string, otp: string): Promise<void> {
+  await requestApi<void>('/auth/me/delete/confirm', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({ challenge_token: challengeToken, otp }),
+  });
+}
+
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
@@ -332,6 +361,7 @@ export async function login(identifier: string, password: string): Promise<AuthS
       challengeRequired: true,
       challengeToken: response.challenge_token,
       message: response.message,
+      lifecycleStatus: response.lifecycle_status,
     };
   }
   return mapTokenResponse(response as ApiTokenResponse);
@@ -974,7 +1004,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;

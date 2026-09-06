@@ -75,8 +75,8 @@ async def mark_all_notifications_read(session: Session, user: User) -> None:
 def serialize_notification(notification: Notification) -> NotificationResponse:
     return NotificationResponse(
         id=notification.id,
-        recipient_user_id=notification.recipient_user_id,
-        actor_user_id=notification.actor_user_id,
+        recipient_user_id=notification.recipient.public_id,
+        actor_user_id=notification.actor.public_id if notification.actor else None,
         type=notification.type,
         payload=notification.payload,
         read=notification.read,

@@ -2,7 +2,7 @@ from functools import lru_cache
 import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,13 +22,24 @@ class Settings(BaseSettings):
     signup_otp_enabled: bool = Field(default=False, alias="SIGNUP_OTP_ENABLED")
     login_risk_otp_enabled: bool = Field(default=True, alias="LOGIN_RISK_OTP_ENABLED")
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
-    resend_from_email: str = Field(default="onboarding@resend.dev", alias="RESEND_FROM_EMAIL")
+    resend_from_domain: str = Field(default="", alias="RESEND_FROM_DOMAIN")
     resend_from_name: str = Field(default="Friink", alias="RESEND_FROM_NAME")
     r2_account_id: str = Field(default="", alias="R2_ACCOUNT_ID")
     r2_access_key_id: str = Field(default="", alias="R2_ACCESS_KEY_ID")
     r2_secret_access_key: str = Field(default="", alias="R2_SECRET_ACCESS_KEY")
     r2_bucket_name: str = Field(default="", alias="R2_BUCKET_NAME")
     r2_public_url: str = Field(default="", alias="R2_PUBLIC_URL")
+    account_deletion_grace_days: int = Field(default=32, alias="ACCOUNT_DELETION_GRACE_DAYS")
+    account_deletion_warning_days: int = Field(default=4, alias="ACCOUNT_DELETION_WARNING_DAYS")
+    account_lifecycle_internal_token: str = Field(default="", alias="ACCOUNT_LIFECYCLE_INTERNAL_TOKEN")
+
+    @model_validator(mode="after")
+    def validate_lifecycle_timing(self) -> "Settings":
+        if self.account_deletion_grace_days <= 0:
+            raise ValueError("ACCOUNT_DELETION_GRACE_DAYS must be positive.")
+        if self.account_deletion_warning_days <= 0 or self.account_deletion_warning_days >= self.account_deletion_grace_days:
+            raise ValueError("ACCOUNT_DELETION_WARNING_DAYS must be positive and shorter than the grace period.")
+        return self
 
     @property
     def is_production(self) -> bool:

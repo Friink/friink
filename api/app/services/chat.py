@@ -119,7 +119,8 @@ def _receipt_status(session: Session, conversation: Conversation, message: Messa
 def _message_response(session: Session, conversation: Conversation, message: Message, viewer: User, peer_setting: ConversationSetting | None = None) -> MessageResponse:
     if peer_setting is None:
         _, peer_setting = _receipt_cursors(session, conversation, viewer)
-    return MessageResponse(id=message.id, conversation_id=message.conversation_id, sender_id=message.sender_id, content=message.content, created_at=message.created_at, receipt_status=_receipt_status(session, conversation, message, viewer, peer_setting))
+    sender = session.get(User, message.sender_id)
+    return MessageResponse(id=message.id, conversation_id=message.conversation_id, sender_id=sender.public_id, content=message.content, created_at=message.created_at, receipt_status=_receipt_status(session, conversation, message, viewer, peer_setting))
 
 
 def _receipt_summary(session: Session, conversation: Conversation, viewer: User) -> tuple[int, uuid.UUID | None, uuid.UUID | None, uuid.UUID | None]:
@@ -161,12 +162,12 @@ def _conversation_response(session: Session, conversation: Conversation, viewer:
     unread_count, _, _, _ = _receipt_summary(session, conversation, viewer)
     return ConversationResponse(
         id=conversation.id,
-        participant=ChatUserResponse(id=participant.id, username=participant.username, display_name=participant.display_name, profile_picture_url=profile_picture_url_for(participant)),
+        participant=ChatUserResponse(id=participant.public_id, username=participant.username, display_name=participant.display_name, profile_picture_url=profile_picture_url_for(participant)),
         preview=latest.content if latest else None,
         updated_at=conversation.updated_at,
         status=conversation.status.value,
         unread=unread_count > 0,
-        requester_id=conversation.requester_id,
+        requester_id=session.get(User, conversation.requester_id).public_id if conversation.requester_id else None,
         muted=bool(setting and setting.muted),
         archived=bool(setting and setting.archived),
         can_send=can_send,
@@ -201,7 +202,7 @@ async def get_chat_context(session: Session, user: User, username: str) -> ChatC
         setting = _get_setting(session, conversation.id, user.id)
         return ChatContextResponse(conversation=response, participant=response.participant, can_send=response.can_send, composer_placeholder=response.composer_placeholder, status=response.status, requester_message_count=response.requester_message_count, unread_count=response.unread_count, last_read_message_id=setting.last_read_message_id if setting else None)
     can_send, placeholder, state = _composer_state(session, None, user, other)
-    participant = ChatUserResponse(id=other.id, username=other.username, display_name=other.display_name, profile_picture_url=profile_picture_url_for(other))
+    participant = ChatUserResponse(id=other.public_id, username=other.username, display_name=other.display_name, profile_picture_url=profile_picture_url_for(other))
     return ChatContextResponse(conversation=None, participant=participant, can_send=can_send, composer_placeholder=placeholder, status=state)
 
 

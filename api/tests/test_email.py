@@ -33,7 +33,7 @@ async def test_resend_signup_otp_sends_server_side_payload(monkeypatch) -> None:
         _env_file=None,
         JWT_SECRET_KEY="email-test-secret",
         RESEND_API_KEY="re_test_key",
-        RESEND_FROM_EMAIL="onboarding@resend.dev",
+        RESEND_FROM_DOMAIN="mail.friink.com",
         RESEND_FROM_NAME="Friink",
     )
 
@@ -43,7 +43,7 @@ async def test_resend_signup_otp_sends_server_side_payload(monkeypatch) -> None:
         "url": "https://api.resend.com/emails",
         "headers": {"Authorization": "Bearer re_test_key"},
         "json": {
-            "from": "Friink <onboarding@resend.dev>",
+            "from": "Friink <noreply@mail.friink.com>",
             "to": ["person@example.com"],
             "subject": "Your Friink verification code",
             "html": "<p>Use this code to verify your Friink email address:</p><p style=\"font-size: 24px; font-weight: 700; letter-spacing: 0.18em;\">A1B2C3</p><p>This code expires in 4 minutes and can only be used once.</p>",

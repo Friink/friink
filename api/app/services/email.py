@@ -10,6 +10,13 @@ class EmailDeliveryError(RuntimeError):
     """Raised when a configured email provider cannot accept a message."""
 
 
+FROM_ALIASES = {
+    "otp": "noreply",
+    "welcome": "hello",
+    "security": "security",
+}
+
+
 class EmailService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -23,11 +30,14 @@ class EmailService:
     async def send_email_change_otp(self, email: str, otp_code: str) -> None:
         await self._send_otp(email, otp_code, "confirm your new Friink email address")
 
+    async def send_lifecycle_otp(self, email: str, otp_code: str) -> None:
+        await self._send_otp(email, otp_code, "confirm your Friink account reactivation or deletion request")
+
     async def _send_otp(self, email: str, otp_code: str, action: str) -> None:
         if not self.settings.resend_api_key:
             raise EmailDeliveryError("Email delivery is not configured.")
 
-        from_address = self.settings.resend_from_email
+        from_address = self._from_address("otp")
         if self.settings.resend_from_name.strip():
             from_address = f"{self.settings.resend_from_name.strip()} <{from_address}>"
 
@@ -52,6 +62,13 @@ class EmailService:
                 response.raise_for_status()
         except (httpx.HTTPError, ValueError) as exc:
             raise EmailDeliveryError("Email delivery failed.") from exc
+
+    def _from_address(self, purpose: str) -> str:
+        domain = self.settings.resend_from_domain.strip().lstrip("@").lower()
+        alias = FROM_ALIASES[purpose]
+        if not domain:
+            raise EmailDeliveryError("Email sender domain is not configured.")
+        return f"{alias}@{domain}"
 
     async def send_registration_successful(self, user: User) -> None:
         return None

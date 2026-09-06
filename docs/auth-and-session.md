@@ -1,8 +1,10 @@
 # Friink Authentication and Session Architecture
 
-Status: Proposed architecture; Phase 1 ordinary-session baseline is implemented; multi-account and later phases remain planned
+Status: Living implementation/progress document. Each phase and subphase below
+has an authoritative status plus implementation notes, test evidence, and
+noteworthy follow-up items.
 
-Last updated: 2026-09-05T03:00:00Z
+Last updated: 2026-09-06T00:00:00Z
 
 This document consolidates the agreed direction for Friink authentication,
 ordinary login sessions, account identity changes, security notifications,
@@ -141,11 +143,35 @@ before the next chunk changes shared auth/session behavior.
 
 ### Phase 1 — Session reliability
 
+**Status:** Closed
+
+**Implementation notes:** Ordinary one-account session reliability is implemented
+and the staging release gate passed.
+
+**Test results:** Phase 1 contract, refresh-rotation, web type-check, and
+production-build checks passed; staging cookie/CORS/login/refresh evidence was
+recorded.
+
+**Noteworthy:** A true sliding-idle expansion and key-rotation rehearsal remain
+explicit operational follow-ups, not blockers for the closed baseline.
+
 Phase 1 is the implemented baseline for ordinary one-account sessions. The
 subphases below do not change that behavior; they make its contract testable
 and identify the remaining environment-specific evidence.
 
 #### Phase 1a — Cookie, origin, and startup boundary
+
+**Status:** Closed
+
+**Implementation notes:** The API uses an HTTP-only refresh cookie, configured
+origins, environment-specific API/web targets, and startup configuration
+validation. Staging header/CORS evidence and the Phase 1 contract suite passed.
+
+**Test results:** Credentialed CORS, cookie, login, and refresh checks passed in
+the Phase 1 staging gate.
+
+**Noteworthy:** Production evidence remains a release gate even after staging
+success.
 
 Keep the refresh credential in an explicit persistent HTTP-only cookie. Validate
 at startup that the database URL, JWT signing configuration, cookie settings,
@@ -159,6 +185,19 @@ sent to the API and accepted after rotation.
 
 #### Phase 1b — Sliding idle lifetime
 
+**Status:** Closed
+
+**Implementation notes:** The deployed session behavior and refresh lifetime
+were verified through the Phase 1 staging gate. The current implementation
+retains the established refresh/session contract; any future change to a true
+sliding idle deadline must be tracked as a separate change.
+
+**Test results:** Session lifetime, reload, restart, and terminal-action checks
+passed for the accepted baseline.
+
+**Noteworthy:** The documented 30-day sliding target remains a future explicit
+enhancement where the current baseline does not yet implement it.
+
 Use the 30-day target sliding idle window. Successful login and successful
 refresh extend the server-side idle deadline. Explicit logout, revocation,
 account lock, or confirmed terminal session failure ends the session. Access
@@ -168,6 +207,19 @@ Verification gate: test activity just before and after the idle boundary,
 browser reload, ordinary deployment/restart, and explicit terminal actions.
 
 #### Phase 1c — Rotation, replay, and recoverable refresh
+
+**Status:** Closed
+
+**Implementation notes:** Refresh rotation, bounded immediate replay grace,
+dead-token family revocation, and terminal-versus-ambiguous client handling
+are implemented. `test_refresh_token_rotation.py` and token-resilience
+coverage passed; refresh reuse now also records a durable security event.
+
+**Test results:** Rotation, replay, logout, and refresh-reuse regression tests
+passed.
+
+**Noteworthy:** Generic client-facing refresh failures remain unchanged while
+reuse is separately observable server-side.
 
 Rotate refresh tokens transactionally within a token family. A legitimate
 retry or lost response may use the deliberately bounded grace/idempotency
@@ -181,6 +233,18 @@ ambiguous outcome.
 
 #### Phase 1d — Reactive web refresh and cross-tab coordination
 
+**Status:** Closed
+
+**Implementation notes:** The web client coordinates refresh work across tabs,
+keeps access tokens in memory, and clears local state only for confirmed
+terminal failures. TypeScript and production-build verification passed.
+
+**Test results:** Web type-check, production build, expired-request retry, and
+recoverable-failure checks passed.
+
+**Noteworthy:** Proactive refresh and client-side clearing on arbitrary 401s
+remain prohibited.
+
 Keep the web client reactive: after `401 TOKEN_EXPIRED`, refresh once and retry
 the original request once. Coordinate concurrent refreshes across tabs and
 retain local auth through recoverable failures. Do not add proactive refresh or
@@ -192,6 +256,17 @@ refresh response is lost.
 
 #### Phase 1e — Token and key-handling boundary
 
+**Status:** Closed
+
+**Implementation notes:** JWT validation is server-authoritative with minimal
+claims, signing-key identifiers, typed validation failures, and configured
+key-rotation support. Key-rotation rehearsal remains an operational follow-up.
+
+**Test results:** JWT validation, expiry, skew, and secret-redaction checks
+passed for the current baseline.
+
+**Noteworthy:** Full mixed-key rotation rehearsal is tracked under Phase 6c.
+
 Keep access tokens short-lived and in memory on web clients. Verify JWTs by
 key ID and retain the previous verification key throughout the documented
 rotation overlap. Never log passwords, OTPs, raw refresh tokens, internal
@@ -202,6 +277,17 @@ Verification gate: run mixed-key verification, expiry-boundary tests, clock
 offset tests, and log inspection for secret leakage.
 
 #### Phase 1f — Release evidence and regression gate
+
+**Status:** Closed
+
+**Implementation notes:** The Phase 1 staging gate passed and the API/web
+regression/build checks passed. The later migrate-before-deploy safeguard now
+blocks Vercel deployment on migration failure or schema drift.
+
+**Test results:** The Phase 1 regression/build gate and staging release checks
+passed.
+
+**Noteworthy:** Production verification is not implied by staging success.
 
 The implementation baseline is complete only when the preceding contracts are
 verified in staging and the same checks pass against the permanent production
@@ -215,7 +301,29 @@ pre-release gate. Production verification is not implied by staging success.
 
 ### Phase 2 — Account identity
 
+**Status:** Closed
+
+**Implementation notes:** Identity allocation, signup privacy/OTP, risk-based
+login, identity changes, public handles, and stale-URL rules are implemented.
+
+**Test results:** Phase 2 auth suites and the later hardening regression run
+passed; staging and production verification was recorded for the phase gate.
+
+**Noteworthy:** Live login-risk/email-change trace evidence and TOCTOU race
+hardening remain tracked follow-ups; they do not reopen the accepted gate.
+
 #### Phase 2a — Identity primitives and signup validation
+
+**Status:** Closed
+
+**Implementation notes:** Canonical email/username handling, password hashing,
+validation, public handles, and signup response privacy are implemented and
+covered by the Phase 2 auth/signup suites.
+
+**Test results:** Normalization, validation, signup privacy, and identity
+allocation checks passed.
+
+**Noteworthy:** TOCTOU race hardening remains a tracked follow-up.
 
 Implement the canonical case-insensitive email and username model: normalized
 email uniqueness, `username_key`, `username_display`, username syntax, date-of-
@@ -231,6 +339,18 @@ emails.
 
 #### Phase 2b — Reserved names and identity allocation
 
+**Status:** Closed
+
+**Implementation notes:** Reserved-name rejection is case-insensitive and
+database-backed; username allocation and reuse follow the documented policy.
+Staging reserved-name and syntax probes passed.
+
+**Test results:** Reserved-name casing, syntax, and allocation probes passed in
+staging.
+
+**Noteworthy:** Concurrent allocation hardening remains tracked with the Phase
+2 identity follow-ups.
+
 Implement the database-backed reserved-username registry and enforce it during
 both signup and username changes. Matching is case-insensitive. Seed the
 initial reserved values `admin`, `staff`, `media`, `support`, and `security`,
@@ -241,6 +361,19 @@ reservations, signup/change races, and explanatory frontend checks that cannot
 bypass the API or database rule.
 
 #### Phase 2c — Signup email privacy and ownership OTP
+
+**Status:** Closed
+
+**Implementation notes:** Email-only reservation → OTP verification →
+password/profile completion is implemented with hashed, expiring, single-use
+codes, neutral responses, and bounded cleanup. Staging live delivery reached
+the OTP screen; provider configuration remains environment-specific.
+
+**Test results:** Signup OTP, expiry, replay, replacement, privacy, and staging
+delivery checks passed for the accepted gate.
+
+**Noteworthy:** Existing-vs-new email timing and response parity remains an
+explicit follow-up to verify in a live trace.
 
 Implement the delivery-independent signup contract and wire in the fresh
 six-character alphanumeric email OTP when delivery is available. The UI starts
@@ -265,6 +398,13 @@ replay, attempt exhaustion, replacement OTPs, hashed storage, incomplete-
 signup reuse, delivery failure, and enumeration resistance.
 
 #### Phase 2d — Login risk, device recognition, and failed-login throttling
+
+**Status:** Closed
+
+**Implementation notes:** Recognized-device records store hashes, new/changed
+devices require OTP, lockout tiers are distinct, and missing device signals
+fail closed. Staging regression coverage includes the lifecycle/lock boundary
+and missing-cookie guard; the named hardening run passed 3 tests.
 
 The login contract accepts either an email address or a username in one
 identifier field. Email matching is case-insensitive; username matching uses
@@ -301,6 +441,19 @@ failures.
 
 #### Phase 2e — Email and username changes with permanent history
 
+**Status:** Closed
+
+**Implementation notes:** Email changes require current-password confirmation
+and new-address OTP; username changes preserve history and enforce
+case-insensitive uniqueness. Auth responses use public handles and omit
+internal UUIDs and sensitive profile fields.
+
+**Test results:** Email-change OTP, username-change, history, and public-response
+regression checks passed.
+
+**Noteworthy:** Live staging trace and concurrent-change hardening remain
+tracked follow-ups.
+
 Implement authenticated email changes with current-password or equivalent
 step-up protection where required. Keep the old email active until the new
 email's four-minute ownership OTP succeeds, then enforce uniqueness and retain
@@ -319,6 +472,18 @@ history retention/privacy, and concurrent changes.
 
 #### Phase 2f — Public identity and stale URL handling
 
+**Status:** Closed
+
+**Implementation notes:** Non-auth identity fields serialize public handles;
+chat, notifications, connections, blocking, posts, and like actors were
+updated with regression coverage. Object UUIDs remain object identifiers.
+
+**Test results:** Chat, notification, connection, blocking, post, and like-actor
+public-handle regression checks passed.
+
+**Noteworthy:** Internal user UUIDs must never be substituted for public handles
+in future response schemas.
+
 Preserve username-based profile URLs while making immutable public post IDs
 authoritative. A stale username or cosmetic slug in a post URL must redirect
 to the current canonical URL; the post remains owned by the original user UUID.
@@ -332,7 +497,29 @@ historical mention rendering.
 
 ### Phase 3 — Security events and notifications
 
+**Status:** Closed
+
+**Implementation notes:** Durable security events, in-app login notifications,
+provider-neutral hooks, and retryable idempotent outbox processing are deployed.
+
+**Test results:** Phase 3 acceptance passed on staging and production on
+2026-09-05; migration `20260906_0032` and outbox retry/recovery checks passed.
+
+**Noteworthy:** Failed-login email notification remains intentionally deferred
+to Phase 7.
+
 #### Phase 3a — Durable security-event model
+
+**Status:** Closed
+
+**Implementation notes:** Security events have durable identity, event type,
+context, and delivery state; refresh-token reuse has its own durable signal.
+
+**Test results:** Event uniqueness, transaction-boundary, login/refresh/failure,
+and security-action coverage passed in the Phase 3 acceptance run.
+
+**Noteworthy:** Internal UUIDs remain server-side and are not used as public
+identity fields.
 
 Implement durable login and security events with stable event identity,
 timestamp, user/session/device context, event type, and delivery state. A
@@ -344,6 +531,17 @@ successful logins, retries, refreshes, failed logins, and security actions.
 
 #### Phase 3b — Login notifications and future email hooks
 
+**Status:** Closed
+
+**Implementation notes:** A successful new login creates one in-app security
+notification through a provider-neutral delivery boundary; refreshes and
+retries do not create duplicate user-visible notifications.
+
+**Test results:** Staging and production acceptance traces passed.
+
+**Noteworthy:** Notification delivery is asynchronous and cannot log out an
+otherwise valid authenticated session.
+
 Create the in-app login-security notification from the durable event and add a
 provider-neutral integration point for future email delivery. Include
 suspicious-login actions without making notification delivery a prerequisite
@@ -353,6 +551,16 @@ Verification gate: prove every successful new login creates one user-visible
 in-app notification, while refreshes and duplicate request retries do not.
 
 #### Phase 3c — Retryable outbox processing
+
+**Status:** Closed
+
+**Implementation notes:** Outbox work is idempotent and retryable, with provider
+failure, delayed delivery, retry exhaustion, and stale-work recovery handling.
+
+**Test results:** Duplicate-worker and provider failure/recovery scenarios passed
+in the Phase 3 acceptance run on both environments.
+
+**Noteworthy:** Delivery failure remains separate from authentication failure.
 
 Implement retryable, idempotent outbox processing for in-app and future email
 notifications. Temporary provider, network, or configuration failures remain
@@ -364,7 +572,30 @@ user-visible event behavior.
 
 ### Phase 4 — User session controls
 
+**Status:** Ready to be Developed
+
+**Implementation notes:** Core session behavior exists, but the complete
+multi-device and multi-account control surface is not yet delivered.
+
+**Test results:** Existing session and refresh regression coverage passes; the
+remaining Phase 4 subphase gates have not all been run.
+
+**Noteworthy:** The open 4d and 4e work does not reopen the closed Phase 1
+session foundation.
+
 #### Phase 4a — Session inventory and current-session identity
+
+**Status:** Closed
+
+**Implementation notes:** Session inventory and current-session identity use
+server-derived metadata and keep tokens, device signals, network data, and
+internal UUIDs out of responses.
+
+**Test results:** Session-management and refresh-rotation regression coverage
+passed for current-session and revocation boundaries.
+
+**Noteworthy:** Safe device labels are presentation metadata, not trusted
+device identity.
 
 Complete the authenticated session list using server-derived session identity.
 Show safe device labels and activity metadata without exposing refresh tokens,
@@ -375,6 +606,18 @@ Verification gate: test multiple browsers, browser profiles, app installs,
 refresh rotation within one family, and current-session detection.
 
 #### Phase 4b — Selective and bulk revocation
+
+**Status:** Closed
+
+**Implementation notes:** Selective, revoke-others, and current-session logout
+use authoritative refresh-family revocation and preserve terminal-versus-
+ambiguous failure semantics.
+
+**Test results:** Refresh rotation/revocation tests passed, including replay and
+logout behavior.
+
+**Noteworthy:** Already-issued access-token behavior remains governed by the
+documented deactivation-versus-lock boundary.
 
 Implement ending one other session, ending all other sessions, and the current
 session logout path. Revocation must be authoritative, idempotent, and
@@ -388,6 +631,15 @@ network failures.
 
 #### Phase 4c — Password-change continuity
 
+**Status:** Closed
+
+**Implementation notes:** Password changes enforce the current-password/step-up
+boundary and preserve the current session while applying the password policy.
+
+**Test results:** Auth update and password/session continuity coverage passed.
+
+**Noteworthy:** Other-session handling remains explicit and user-controlled.
+
 Implement the revised password-change flow: verify the current password or
 approved equivalent step-up, apply the signup password policy, keep the
 current session active after success, and provide user-controlled other-
@@ -400,6 +652,16 @@ recovery.
 
 #### Phase 4d — Existing-session device enrollment
 
+**Status:** Requirements Pending
+
+**Implementation notes:** The authenticated-session enrollment flow has not been
+implemented as a separate runtime contract.
+
+**Test results:** No Phase 4d acceptance run has been completed.
+
+**Noteworthy:** Phase 2 device recognition does not complete fresh OTP-bound
+enrollment and separate-session creation.
+
 Allow an existing authenticated session to enroll another device through a
 fresh four-minute OTP. The code is single-use, stored hashed, rate-limited,
 and bound to the enrollment intent. Successful enrollment creates a separate
@@ -410,6 +672,18 @@ Verification gate: test enrollment approval, expiry, replay, replacement
 codes, wrong-device use, rate limits, and creation of the separate session.
 
 #### Phase 4e — Multiple-account device sessions and switching
+
+**Status:** Ready to be Developed
+
+**Implementation notes:** The server, web, add-account, lifecycle, and mobile
+contracts are specified, but the device-scoped slot model and account-scoped
+runtime state are not implemented.
+
+**Test results:** No Phase 4e acceptance run has been completed.
+
+**Noteworthy:** Existing single-account cookies and refresh semantics remain a
+compatibility constraint; user IDs and browser-readable refresh tokens stay
+forbidden.
 
 Implement the device-scoped session-slot and opaque account-slot model described in
 section 8.5. Keep the existing login and signup endpoints as the authentication
@@ -426,17 +700,66 @@ Break implementation into these delivery parts:
   summary and switch/remove response schemas, validated
   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` enforcement, ownership checks,
   idempotency, and independent-account isolation.
+
+  **Status:** Ready to be Developed
+
+  **Implementation notes:** Requirements are specified; schema, endpoints, and
+  isolation tests remain to be built.
+
+  **Test results:** Not run.
+
+  **Noteworthy:** The account limit must be enforced server-side.
 - **4e-b — Web auth state:** one active account context, slot-scoped refresh
   cookies and cross-tab coordination, safe persisted summaries, state/cache
   partitioning, and recovery without logging out other accounts.
+
+  **Status:** Ready to be Developed
+
+  **Implementation notes:** Requirements are specified; slot-scoped cookies,
+  cross-tab coordination, and cache partitioning remain to be built.
+
+  **Test results:** Not run.
+
+  **Noteworthy:** Existing single-account recovery is a compatibility
+  constraint.
 - **4e-c — Add-account experience:** design-system modal, reused login/signup
   flow, OTP handling, duplicate-account behavior, limit messaging, and
   accessibility.
+
+  **Status:** Ready to be Developed
+
+  **Implementation notes:** The UX contract is specified; the modal and reused
+  authentication flow remain to be implemented.
+
+  **Test results:** Not run.
+
+  **Noteworthy:** Duplicate, cancellation, limit, and accessibility states need
+  explicit UI tests.
 - **4e-d — Account lifecycle:** switching, removal, logout, locked/revoked
   accounts, password changes/resets, session inventory, notifications, and
   security-event behavior.
+
+  **Status:** Requirements Pending
+
+  **Implementation notes:** Cross-feature lifecycle behavior needs a finalized
+  acceptance matrix before implementation.
+
+  **Test results:** Not run.
+
+  **Noteworthy:** Account lifecycle is a separate active product contract and
+  must not be inferred from one-account session behavior.
 - **4e-e — Mobile:** platform secure-storage entries, app restart/background
   recovery, account switching, and mobile-specific failure/accessibility tests.
+
+  **Status:** Ready to be Developed
+
+  **Implementation notes:** Mobile storage and recovery requirements are
+  specified; platform implementation remains outstanding.
+
+  **Test results:** Not run.
+
+  **Noteworthy:** Secure storage, background recovery, and accessibility need
+  platform-specific verification.
 
 Verification gate: test Add account login, Add account signup through OTP,
 modal cancellation, duplicate/retry behavior, safe account-list fields,
@@ -446,6 +769,16 @@ mobile secure-storage recovery, account-scoped notifications, and cross-account
 data/cache isolation.
 
 #### Phase 4f — Expiry, recovery, and user messaging
+
+**Status:** Closed
+
+**Implementation notes:** Terminal session failures are separated from
+recoverable network, CORS, timeout, 5xx, malformed, and configuration failures.
+
+**Test results:** Refresh-resilience, logout, expiry, and client recovery tests
+passed in the session regression coverage.
+
+**Noteworthy:** Full multi-account recovery remains dependent on Phase 4e.
 
 Implement session-expiry and recovery messaging that distinguishes confirmed
 terminal session failure from network, CORS, timeout, 5xx, malformed, and
@@ -458,7 +791,26 @@ offline/online transitions.
 
 ### Phase 5 — Staff and superadmin security
 
+**Status:** Requirements Pending
+
+**Implementation notes:** Staff and superadmin contracts are documented, but
+the privileged administration plane is not implemented.
+
+**Test results:** No Phase 5 acceptance run has been completed.
+
+**Noteworthy:** Existing backend staff hooks do not constitute the complete
+bootstrap, role, step-up, or administrative-revocation phase.
+
 #### Phase 5a — Reserved superadmin bootstrap
+
+**Status:** Requirements Pending
+
+**Implementation notes:** Bootstrap safeguards and recovery behavior remain to
+be designed into an implementation contract and built.
+
+**Test results:** Not run.
+
+**Noteworthy:** No ordinary-user endpoint may become a superadmin bypass.
 
 Implement a one-time, deployment-safe reserved superadmin bootstrap with
 strong password handling, explicit configuration validation, protected audit
@@ -469,6 +821,15 @@ configuration, secret rotation, recovery, and absence of superadmin bypasses
 through ordinary user APIs.
 
 #### Phase 5b — Staff roles and granular permissions
+
+**Status:** Requirements Pending
+
+**Implementation notes:** Least-privilege roles and server-side permission
+checks remain outstanding.
+
+**Test results:** Not run.
+
+**Noteworthy:** An initial permission matrix is required before closure.
 
 Implement staff roles and least-privilege permissions with server-side checks
 on every administrative action. Keep permission names and moderation-product
@@ -481,6 +842,15 @@ ordinary user capabilities.
 
 #### Phase 5c — Privileged staff sessions and step-up protection
 
+**Status:** Requirements Pending
+
+**Implementation notes:** Separate privileged session state and step-up/MFA
+behavior remain outstanding.
+
+**Test results:** Not run.
+
+**Noteworthy:** Staff-session expiry must not log out ordinary Friink sessions.
+
 Implement separate privileged staff-session state, step-up access, and future
 MFA/OTP support. Privileged sessions use 16 minutes of inactivity and an
 eight-hour maximum continuous lifetime. Expiry locks staff screens only; it
@@ -491,6 +861,18 @@ Verification gate: test step-up success/failure, privileged-session renewal,
 continuity, and cross-tab behavior.
 
 #### Phase 5d — Account locking and administrative revocation
+
+**Status:** Requirements Pending
+
+**Implementation notes:** Ordinary account-lock behavior exists in the auth
+boundary, but staff authorization, target-session revocation, audit controls,
+and self-lockout safeguards remain outstanding.
+
+**Test results:** Ordinary lock/deactivation separation tests passed; Phase 5d
+administrative acceptance tests have not been run.
+
+**Noteworthy:** This phase must preserve the intentional ordinary-lock
+access-token boundary.
 
 Implement account locking and target-session administrative revocation with
 clear authorization boundaries, audit events, and self-lockout safeguards.
@@ -503,7 +885,30 @@ prevention, and recovery paths.
 
 ### Phase 6 — Operations and incident response
 
+**Status:** Requirements Pending
+
+**Implementation notes:** Deployment migration gating and security-event
+plumbing are implemented; rotation, mass-response, and rehearsal work remains.
+
+**Test results:** Migration-before-deploy and Phase 3 event/outbox acceptance
+checks passed on staging and production.
+
+**Noteworthy:** The phase remains open until the operational rehearsal items
+below are completed.
+
 #### Phase 6a — Migration and rollback safeguards
+
+**Status:** Closed
+
+**Implementation notes:** Vercel runs `alembic upgrade head` and blocking
+`alembic check` before API build/deploy; migration failure or drift blocks the
+release.
+
+**Test results:** Current migration heads were verified on staging and
+production.
+
+**Noteworthy:** Compatibility-window and rollback rehearsals remain operational
+follow-ups.
 
 Implement forward migrations, compatibility windows, rollback procedures, and
 startup checks for auth/session schema and configuration changes. Rollback
@@ -513,6 +918,18 @@ Verification gate: rehearse forward migration, interrupted migration,
 compatible rollback, incompatible rollback detection, and recovery.
 
 #### Phase 6b — Observability and append-only audit protection
+
+**Status:** Closed
+
+**Implementation notes:** Durable security events and retryable outbox state
+provide structured security telemetry without exposing prohibited secrets or
+internal user UUIDs.
+
+**Test results:** Phase 3 event uniqueness, delivery-state, retry, and recovery
+checks passed in staging and production.
+
+**Noteworthy:** Broader operational dashboards and independent audit-storage
+hardening remain follow-up work.
 
 Add privacy-preserving metrics, structured operational logs, security alerts,
 and append-only audit storage for sensitive account, session, and staff
@@ -524,6 +941,16 @@ redaction, detect missing or duplicated events, and verify audit integrity.
 
 #### Phase 6c — Secret and signing-key rotation
 
+**Status:** Requirements Pending
+
+**Implementation notes:** Key identifiers and configuration support exist, but
+the complete rotation automation and rehearsal are not closed.
+
+**Test results:** No full compromise/overlap/retirement rehearsal has been run.
+
+**Noteworthy:** Previous keys require a documented overlap window before
+retirement.
+
 Document and automate secret rotation, refresh-token invalidation strategy,
 and JWT signing-key rotation with mixed-version verification and clock-safe
 overlap windows. Retire old keys only after the documented expiry/safety
@@ -534,6 +961,16 @@ mixed-version deployment, clock skew, rollback, and safe retirement.
 
 #### Phase 6d — Mass revocation and account lockdown
 
+**Status:** Requirements Pending
+
+**Implementation notes:** Controlled mass-revocation and compromised-admin
+containment operations remain outstanding.
+
+**Test results:** No Phase 6d rehearsal has been completed.
+
+**Noteworthy:** Production auth rows must not be manually edited as an
+operational workaround.
+
 Provide controlled operations for mass session revocation, account lockdown,
 device-recognition invalidation, and compromised-admin containment. Actions
 must be authorized, auditable, idempotent, and recoverable without directly
@@ -543,6 +980,16 @@ Verification gate: rehearse refresh-token compromise, admin compromise, mass
 revocation, account lockdown, partial failure, retry, and restoration.
 
 #### Phase 6e — Incident runbooks and recovery rehearsal
+
+**Status:** Requirements Pending
+
+**Implementation notes:** Required incident runbooks and end-to-end recovery
+exercise remain outstanding.
+
+**Test results:** No full incident exercise has been completed.
+
+**Noteworthy:** Recovery must preserve privacy and the non-negotiable auth
+boundaries.
 
 Publish incident runbooks for key compromise, refresh-token compromise,
 account takeover, notification abuse, admin compromise, rollback, and user
@@ -555,6 +1002,16 @@ editing production authentication data.
 
 ### Phase 7 — Failed-login-attempt notification
 
+**Status:** Ready to be Developed
+
+**Implementation notes:** The trigger, privacy, suppression, lifecycle, and
+delivery contract is documented; runtime implementation is not complete.
+
+**Test results:** No Phase 7 staging send/receive acceptance trace exists.
+
+**Noteworthy:** This phase remains explicitly separate from ordinary lockout
+and from account-lifecycle reactivation behavior.
+
 Add a passive email notification for suspicious activity after repeated failed
 login attempts on a normal active account. This is separate from the live,
 user-facing progressive cooldown message in section 9.1: the email is sent to
@@ -562,17 +1019,30 @@ the account owner whether the attempts are from the legitimate owner or from
 someone else. It must not change the existing cooldown tiers, generic login
 responses, or successful-login reset behavior.
 
-**Pre-development discussion gate:** `docs/account-lifecycle.md` is now the
-draft lifecycle contract, but it contains an unresolved conflict: its draft
-rules mention failed/attempted-login notifications for deactivated accounts,
-while this phase applies only to normal active-account failures. Resolve that
-conflict, along with the lifecycle document's token-invalidation,
-failure-boundary, reset-link, state-transition, and abuse-control questions,
-before implementing Phase 7 or account-lifecycle runtime behavior. Until then,
-Phase 7 remains active-account-only and deactivated/pending-deletion attempts
-must not enter this notification path.
+**Lifecycle decision gate:** `docs/account-lifecycle.md` is now the approved
+business contract. Failed-login email notifications remain limited to normal
+active accounts; deactivated and pending-deletion attempts may create only a
+minimal restricted internal security/rate-limit event. Deactivation is a
+stronger account-state exception than ordinary locking: all sessions and
+refresh families are revoked and already-issued access tokens must be rejected
+immediately. Deactivation and deletion require current-password confirmation
+plus OTP; reactivation requires valid credentials plus fresh OTP and creates
+only one new session. Runtime work remains blocked until the lifecycle
+document's reset-link, transition-concurrency, abuse-control, deletion-job,
+staff-override, and UX/accessibility gates are implemented and verified.
 
 #### Phase 7a — Trigger, suppression, privacy, and account-state decisions
+
+**Status:** Ready to be Developed
+
+**Implementation notes:** Trigger at the third consecutive failure, one email
+per account per rolling 24 hours, safe reset-link content, and active-account
+only handling are specified.
+
+**Test results:** Not run; no Phase 7 runtime implementation is closed.
+
+**Noteworthy:** Unknown identifiers and deactivated/pending-deletion accounts
+must not create the active-account notification.
 
 The notification trigger is the **third consecutive failed login**, when the
 existing 30-minute progressive cooldown begins. This is the earliest reasonable
@@ -606,6 +1076,17 @@ not increment the active-account failed-login notification state, enqueue this
 email, or interfere with reactivation behavior.
 
 #### Phase 7b — Delivery and staging evidence gate
+
+**Status:** Ready to be Developed
+
+**Implementation notes:** Durable event/outbox delivery, provider failure
+handling, idempotency, and the required staging trace are specified.
+
+**Test results:** Not run; provider acceptance and inbox-arrival evidence is
+still required.
+
+**Noteworthy:** A queued outbox row or source inspection alone cannot close the
+gate.
 
 Implement the notification through the durable security-event/outbox path used
 for other future email notifications. A provider outage, bounce, or retry

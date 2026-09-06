@@ -1,5 +1,146 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T00:00:00Z — Synchronize auth/session closeout references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update supporting documentation so auth/session hardening can move forward.
+- Changes Made: Corrected the staging-commit reference in `docs/auth-and-session-progress.md` to distinguish the code commit `84127a8` from the documentation commit `4c6b629`; recorded the documentation closeout in this log and `CHANGELOG.md`.
+- Verification Status: Documentation references checked against `git log`; no runtime code or database changes made.
+
+## 2026-09-06T23:55:00Z — Record pushed staging auth-hardening verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the pushed auth/session hardening commit and synchronize release evidence.
+- Changes Made: Confirmed commit `84127a8` is present on both local `staging` and `origin/staging`; recorded named test coverage and the final staging run in `docs/auth-and-session-progress.md`.
+- Verification Status: `test_deactivation_rejects_existing_access_token_but_lock_does_not`, `test_risk_login_challenges_new_changed_and_recognized_devices`, and `test_refresh_rotation_reuse_logout_legacy` passed together (`3 passed`). Worktree was clean before this documentation-only update.
+
+## 2026-09-06T23:45:00Z — Harden auth lifecycle boundary and refresh-reuse signaling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add regression guards for lifecycle-vs-lockout access tokens, refresh-token reuse signaling, and fail-closed device recognition.
+- Changes Made: Confirmed lifecycle access-token rejection remains structurally separate from ordinary account locking; added an enforcement comment; verified existing durable `refresh_reuse_detected` signaling without schema changes; added paired lock/deactivation, missing-device-cookie, and reuse-event assertions; synchronized the three targeted RULES.md addenda.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase2_auth_flows.py`, `api/tests/test_refresh_token_rotation.py`, `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Against staging/current working tree, auth-boundary and refresh-reuse suite passed `8 passed`; API compilation passed; item 3 required no runtime fix because the existing path was already fail-closed.
+
+## 2026-09-06T23:30:00Z — Centralize Resend sender domain and aliases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use one verified Resend domain and generate sender aliases centrally.
+- Changes Made: Replaced `RESEND_FROM_EMAIL` with `RESEND_FROM_DOMAIN`; centralized `noreply` OTP, `hello` welcome, and `security` sender aliases; synchronized staging/example/API README templates and auth progress documentation.
+- Verification Status: Email payload regression expectations updated; API compilation and focused email tests pending final run.
+
+## 2026-09-06T23:15:00Z — Synchronize API environment template
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the example environment file after account-lifecycle configuration was added.
+- Changes Made: Added JWT key-rotation, login-risk OTP, and account-lifecycle timing/internal-token variables to `api/.env.example`, with server-only and stored-deadline guidance.
+- Verification Status: Compared the template against `api/app/config.py`; secret values remain blank.
+
+## 2026-09-06T23:00:00Z — Implement account lifecycle runtime slice
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved account-lifecycle contract, migrate
+  staging before production, verify both environments, and document evidence.
+- Changes Made: Added lifecycle state/deadline/failure storage and migrations
+  `20260906_0033` and `20260906_0034`; implemented password-confirmed
+  deactivation, password+OTP deletion, OTP reactivation, immediate session/
+  refresh/device revocation, retained-chat identity handling, public-content
+  deletion, staff-token worker/recovery endpoints, settings controls, login
+  reactivation copy, and logged-out confirmation pages.
+- Database: Staging was upgraded and verified before production. Both are at
+  `20260906_0034 (head)` and both pass `alembic check` with no drift.
+- Verification Status: Staging lifecycle integration tests `2 passed`; API
+  compilation passed; web `npm run build` passed.
+- Notes: The lifecycle green flag remains open for warning-link token delivery,
+  billing-provider integration, exhaustive transition concurrency/idempotency,
+  abuse controls, and a fully audited staff override trail. RULES.md was not
+  changed in this pass; proposed rules text is supplied separately for review.
+
+## Auth & Session — Phase 1/2/3 closeout (2026-09-06)
+
+Phase 1 (session reliability): gate passed, staging-verified 2026-09-03.
+
+Phase 2 (account identity): implementation complete (2c/2d/2e). Closeout
+work completed in this pass:
+
+- Migrate-before-deploy safeguard added (commit 5ecf57d) — Vercel
+  buildCommand + blocking migration/drift script.
+- Public UUID exposure fixed across chat (7def988 — also fixed a live
+  frontend/backend field mismatch, not just a privacy gap), and
+  notifications/connections/blocking/posts/like-actors (771fc91).
+- Remaining deferred items, NOT blockers for moving on:
+  - Live staging trace for login-risk + email-change endpoints
+  - Race-condition hardening (TOCTOU on signup/username-change → clean 409s)
+  - Pre-existing unrelated connection unit test fixture failures
+    (FakeSession.execute) — flagged for follow-up, not caused by this work
+
+Phase 3 (security events): gate passed on staging AND production,
+2026-09-05.
+
+Decision: auth/session work is paused here to prioritize product
+development (account lifecycle next). Deferred items above are tracked,
+not abandoned — revisit before production launch.
+
+Explicitly out of scope until reopened: Phase 7 (failed-login
+notification). Account-lifecycle is a SEPARATE upcoming spec, now active.
+
+## 2026-09-06T04:30:00+05:00 — Replace non-auth user UUIDs with public handles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the approved public-handle response contract to notifications, connections, blocking, posts, and like actors after the independent chat fix.
+- Changes Made: API response schemas now type user-identity fields as strings and serializers emit `User.public_id`; object identifiers such as notification, post, request, message, and session IDs remain unchanged. Frontend audit found no raw-UUID dependency in these surfaces.
+- Files: `api/app/schemas/notifications.py`, `api/app/services/notifications.py`, `api/app/schemas/connections.py`, `api/app/services/connections.py`, `api/app/schemas/blocking.py`, `api/app/services/blocking.py`, `api/app/schemas/posts.py`, `api/app/services/posts.py`, `api/app/services/reactions.py`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Internal user UUIDs must never be serialized as user identifiers outside the auth contract.
+- Verification Status: Python compilation and API-backed reaction/notification and blocking tests passed. Existing connection unit tests still fail in their pre-existing `FakeSession` fixture because it lacks `execute`; no serializer assertion failed.
+
+## 2026-09-06T04:10:00+05:00 — Fix chat public-handle identity comparisons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace raw chat user UUIDs with public handles and add regression coverage for the active frontend comparison bug.
+- Changes Made: `MessageResponse.sender_id`, chat participant IDs, and `ConversationResponse.requester_id` now serialize `User.public_id`; response annotations are strings. Added assertions that each value equals the public handle and differs from the internal UUID.
+- Files: `api/app/schemas/chat.py`, `api/app/services/chat.py`, `api/tests/test_chat_requests.py`.
+- Reason: The frontend compares these fields with `session.user.id`, which is already the public handle.
+- Verification Status: Focused staging chat regression passed: `1 passed`.
+
+## 2026-09-06T03:00:00+05:00 — Add automated migrate-before-deploy gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the manual API migration release step with a Vercel build gate and audit non-auth public UUID exposure.
+- Changes Made: Added `api/vercel.json` with a blocking build command that runs `alembic upgrade head` followed by `alembic check`; added the reusable local `api/scripts/migrate_before_deploy.py` entrypoint and updated `api/README.md` to document the same gate. Task B was audited only; no UUID exposure code was changed.
+- Files: `api/vercel.json`, `api/scripts/migrate_before_deploy.py`, `api/README.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Prevent the API from being built or deployed against a pre-migration schema, and make schema drift a hard release failure after the prior manual-ordering incident.
+- Verification Status: Python compilation and `api/vercel.json` parsing passed. The local gate correctly exited non-zero before deployment because required `JWT_SECRET_KEY`/database settings are not configured in this checkout; live database execution remains an environment/deploy verification step.
+
+## 2026-09-05T22:32:26Z — Refine and approve account lifecycle contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the account lifecycle requirements with the user and update the lifecycle documentation with the agreed UX, architecture, security, billing, deletion, and staff-operation decisions.
+- Changes Made: Replaced the draft with a consistent approved business contract covering always-on current-password plus OTP step-up, calm logged-out/reactivation UX, subscription behavior, public-data deletion with retained UUID tombstones/history/billing/security records/chats, 32-day deletion and final-hour reactivation, retryable deletion with staff failure flags, new-session-only reactivation, 24-hour post-reactivation deactivation cooldown, and minimal internal-only failed-login events for inactive accounts. Synchronized the Phase 7/lifecycle boundary in `docs/auth-and-session.md`.
+- Files: `docs/account-lifecycle.md`, `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Resolve the product decisions that gate lifecycle runtime work and prevent later auth/session phases from encoding contradictory state, billing, privacy, or deletion behavior.
+- Verification Status: Documentation-only review completed; no runtime, database, or deployment changes made.
+
+## 2026-09-05T22:02:50Z — Implement Phase 3 security events and notifications
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the complete auth/session Phase 3 (3a durable security events, 3b login notifications and email hook, 3c retryable outbox), update staging and production databases, verify, and document the result.
+- Changes Made: Added `SecurityEvent` and `NotificationOutbox` models and migration `20260906_0032`; instrumented fresh login, refresh, failed login, logout, and refresh-reuse events; added one-user-visible-notification-per-fresh-login behavior with event-linked uniqueness; added row-locked, retryable outbox processing with stale-processing recovery and injectable provider-neutral email delivery; added the login-security notification type and web presentation/action link; added Phase 3 acceptance coverage.
+- Files: `api/app/models/security_event.py`, `api/app/models/notification_outbox.py`, `api/app/models/notification.py`, `api/app/models/__init__.py`, `api/app/services/security_events.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260906_0032_security_events_outbox.py`, `api/tests/test_phase3_security_events.py`, `web/lib/auth.ts`, `web/components/app-shell.tsx`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`, `RULES.md`, `packages/design/design.md`.
+- Reason: Establish the durable security-event boundary and make login-security notifications recoverable without coupling delivery failures to authentication.
+- Database Evidence: Staging and production both migrated from `20260906_0031` to `20260906_0032`; both pass `alembic check`.
+- Verification Status: Phase 3 acceptance passed once against staging and once against production; API compilation, web TypeScript with incremental output disabled, Next production build, and `git diff --check` passed. The email channel is a provider-neutral hook and remains intentionally unconfigured.
+
 ## 2026-09-06T02:00:00+05:00 — Add Saved posts/profiles routes and consolidate Save action
 
 - Agent: Codex
@@ -6694,3 +6835,13 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: Let people use the handle they already know while preserving one independent account identity and the same security controls.
 - Notes: Signup remains email-first and OTP-gated; username login does not bypass lockout or any future risk-based OTP decision.
 - Verification Status: Focused API tests, frontend type/build verification, and `git diff --check` pending.
+
+## 2026-09-05T21:31:59Z — Upgrade production database for email-first OTP
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the production signup OTP `Failed to fetch` failure and correct the production database schema.
+- Changes Made: Confirmed production was at Alembic revision `20260904_0024`, then applied migrations `20260905_0025` through `20260906_0031`. Production now reports `20260906_0031 (head)`.
+- Reason: The production email-first signup endpoint requires the email-only reservation schema introduced by `20260905_0025`; the stale schema caused the API-side failure that the browser presented as `Failed to fetch`.
+- Notes: A controlled post-migration browser signup request now reaches the API and returns its safe `503` delivery message rather than `Failed to fetch`. The remaining issue is Resend production delivery configuration or sender verification; no credentials or recipient details were recorded.
+- Verification Status: Alembic `current` verified `20260906_0031 (head)`; live production browser reproduced the pre-migration failure and confirmed the post-migration application-level response.

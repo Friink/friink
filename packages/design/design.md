@@ -447,6 +447,15 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - Deployment boundary: staging and production use separate Neon databases and separate R2 buckets. The production database is temporarily hosted on Neon with a planned future move to the Droplet; the production R2 delivery domain is `media.friink.com`. Web deployments receive only their environment-specific API origin, and no media bucket/environment identifier is part of the application data model.
 - Media delivery: profile-picture keys are resolved against the active environment's configured public media URL; post-media uploads use the active environment's configured bucket and public URL. Cross-environment media sharing is not a supported behavior.
 - The logged-in app has no known design-contract violations in the current working tree. Deployment configuration, R2 health, and end-to-end browser verification remain release checks outside this design contract.
+- Account lifecycle UX must use calm, explicit confirmation surfaces. Deactivation must explain all-session logout, continued subscription billing, reactivation availability, and read-only chats. Reactivation and pending-deletion screens must require OTP before restoring access, distinguish cancellation of deletion from ordinary login, and provide clear loading, error, retry, focus, and keyboard-accessible states across viewport sizes.
+- Security notifications use the shared Notifications surface with the shield icon and a settings action link for reviewing sessions. Login-security copy must not expose internal UUIDs, device identifiers, IP addresses, or other sensitive session metadata.
+
+- Account lifecycle controls use calm, explicit settings rows. Deactivation
+  requires the current password and ends all sessions; deletion requires the
+  current password followed by a fresh email OTP. The logged-out deactivation
+  and deletion screens explain continued billing/deletion grace respectively.
+  Login must distinguish reactivation from pending-deletion cancellation and
+  require OTP before creating the single new session.
 
 - ### Blocking surfaces
 - Profile overflow uses the shared `ActionMenu` and `Modal` for block confirmation.

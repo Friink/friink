@@ -27,8 +27,19 @@ FRONTEND_URL=http://localhost:3000
 ENVIRONMENT=development
 JWT_SECRET_KEY=
 JWT_ALGORITHM=HS256
+JWT_ACTIVE_KID=default
+JWT_KEYS=
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=14
+REFRESH_TOKEN_REUSE_GRACE_SECONDS=60
+SIGNUP_OTP_ENABLED=false
+LOGIN_RISK_OTP_ENABLED=true
+RESEND_API_KEY=
+RESEND_FROM_DOMAIN=mail.friink.com
+RESEND_FROM_NAME=Friink
+ACCOUNT_DELETION_GRACE_DAYS=32
+ACCOUNT_DELETION_WARNING_DAYS=4
+ACCOUNT_LIFECYCLE_INTERNAL_TOKEN=
 ```
 
 ## Run
@@ -45,8 +56,16 @@ Hello, World!
 
 ## Migrations
 
+The Vercel API project runs the migration gate in `vercel.json` before the API
+build is allowed to proceed. It runs `alembic upgrade head` and then
+`alembic check`; either a migration failure or schema drift exits non-zero and
+blocks the deployment. The API project's `DATABASE_URL` must therefore be set
+in Vercel before a deployment.
+
+Run the same gate locally:
+
 ```powershell
-alembic upgrade head
+python scripts/migrate_before_deploy.py
 ```
 
 The initial migration creates `users` and `otp_codes`. OTP storage and service stubs exist, but OTP is not active yet.

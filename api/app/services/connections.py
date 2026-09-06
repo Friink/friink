@@ -191,6 +191,7 @@ async def list_followers(session: Session, user: User) -> ConnectionListResponse
         select(User)
         .join(FollowRequest, FollowRequest.requester_id == User.id)
         .where(FollowRequest.recipient_id == user.id, FollowRequest.status == FollowRequestStatus.accepted)
+        .where(User.lifecycle_status == "active")
         .order_by(User.username)
     )
     users = [serialize_connection_user(item) for item in result.scalars().all()]
@@ -202,6 +203,7 @@ async def list_following(session: Session, user: User) -> ConnectionListResponse
         select(User)
         .join(FollowRequest, FollowRequest.recipient_id == User.id)
         .where(FollowRequest.requester_id == user.id, FollowRequest.status == FollowRequestStatus.accepted)
+        .where(User.lifecycle_status == "active")
         .order_by(User.username)
     )
     users = [serialize_connection_user(item) for item in result.scalars().all()]
@@ -259,7 +261,7 @@ async def get_follow_request(session: Session, request_id: uuid.UUID) -> FollowR
 
 
 def serialize_connection_user(user: User) -> ConnectionUserResponse:
-    return ConnectionUserResponse(id=user.id, username=user.username, is_private=user.is_private)
+    return ConnectionUserResponse(id=user.public_id, username=user.username, is_private=user.is_private)
 
 
 def serialize_follow_request(request: FollowRequest) -> FollowRequestResponse:

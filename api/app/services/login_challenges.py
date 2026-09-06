@@ -21,13 +21,14 @@ def hash_challenge_token(token: str) -> bytes:
 
 
 def create_login_challenge(
-    session: Session, user: User, device_id, settings: Settings
+    session: Session, user: User, device_id, settings: Settings, *, kind: str = "login"
 ) -> tuple[LoginChallenge, str, str]:
     raw_token = secrets.token_urlsafe(32)
     challenge = LoginChallenge(
         token_hash=hash_challenge_token(raw_token),
         user_id=user.id,
         device_id=device_id,
+        kind=kind,
         expires_at=datetime.now(UTC) + LOGIN_CHALLENGE_TTL,
     )
     session.add(challenge)

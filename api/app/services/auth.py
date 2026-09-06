@@ -20,6 +20,8 @@ from app.services.notifications import create_notification
 from app.services.otp import issue_signup_otp, verify_signup_otp
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
+from app.models.security_event import SecurityEventType
+from app.services.security_events import record_security_event
 
 LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, timedelta(hours=24)))
 LOCKOUT_ATTEMPTS = 5
@@ -348,6 +350,13 @@ async def register_failed_login(session: Session, user: User) -> None:
         if user.failed_login_attempts >= threshold:
             user.locked_until = datetime.now(UTC) + duration
             break
+    record_security_event(
+        session,
+        event_type=SecurityEventType.failed_login,
+        event_key=f"failed-login:{user.id}:{uuid.uuid4()}",
+        user_id=user.id,
+        payload={"kind": "failed_login"},
+    )
     await commit(session)
 
 

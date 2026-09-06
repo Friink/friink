@@ -164,8 +164,10 @@ The working-tree implementation now enables signup email-ownership OTP through
 the existing reservation and verification endpoints when
 `SIGNUP_OTP_ENABLED=true`. Resend is used as the staging delivery adapter:
 
-- `RESEND_API_KEY` is read only by the API; `RESEND_FROM_EMAIL` and
-  `RESEND_FROM_NAME` configure the sender.
+- `RESEND_API_KEY` is read only by the API; `RESEND_FROM_DOMAIN` and
+  `RESEND_FROM_NAME` configure the sender. Purpose-specific aliases are
+  generated centrally (`noreply` for OTP, `hello` for welcome, and `security`
+  for security mail).
 - The web signup flow submits `/auth/signup/email/start` immediately after the
   email step, collects the six-character verification code, submits
   `/auth/signup/email/verify`, then collects password/profile details and
@@ -487,3 +489,132 @@ link, suppression of duplicate fourth/fifth-tier emails within 24 hours, and
 the unchanged privacy/reactivation behavior for non-active-account paths.
 Source inspection or an outbox record alone will not close the gate. No Phase 7
 green flag is raised by this documentation update.
+
+## Phase 3 — Security events and notifications
+
+### Verification status
+
+**Phase 3 gate passed:** 2026-09-05, against both supplied Neon staging and
+production databases. Both databases were at `20260906_0031` and migrated
+transactionally to `20260906_0032`; `alembic check` reports no drift in either
+environment.
+
+The implementation adds durable security events with stable event keys and
+user/session/device context, a unique event/channel notification outbox, and
+the `login_security` in-app notification type. A successful fresh login emits
+one event and one in-app delivery job; refreshes, retries, and ordinary session
+activity do not create another login notification. Login delivery is best
+effort after the authentication transaction commits, so outbox failures cannot
+log the user out. Row locking, event-linked notification uniqueness, retry
+backoff, stale-processing recovery, and the provider-neutral email hook protect
+duplicate workers and delayed delivery.
+
+### Evidence
+
+```text
+staging: python -m pytest tests/test_phase3_security_events.py -q
+1 passed
+
+production: python -m pytest tests/test_phase3_security_events.py -q
+1 passed
+
+api: python -m compileall -q app alembic
+staging/production: python -m alembic check
+No new upgrade operations detected.
+
+web: npm exec tsc -- --noEmit --incremental false
+passed
+
+web: npm run build
+passed
+```
+
+The end-to-end test used a temporary account and cleaned it up. It verified
+fresh-login notification uniqueness, refresh non-duplication, durable event
+coverage, unavailable-email-adapter failure retention, and recovery through a
+successful injected provider adapter. The email channel remains a hook only;
+no production email provider was enabled by Phase 3.
+
+## Auth & Session — Phase 1/2/3 closeout (2026-09-06)
+
+Phase 1 (session reliability): gate passed, staging-verified 2026-09-03.
+
+Phase 2 (account identity): implementation complete (2c/2d/2e). Closeout
+work completed in this pass:
+
+- Migrate-before-deploy safeguard added (commit `5ecf57d`) — Vercel
+  `buildCommand` plus a blocking migration/drift script.
+- Public UUID exposure fixed across chat (`7def988`; this also fixed a live
+  frontend/backend field mismatch, not just a privacy gap), and across
+  notifications, connections, blocking, posts, and like-actors (`771fc91`).
+- Remaining deferred items, not blockers for moving on:
+  - Live staging trace for login-risk and email-change endpoints
+  - Race-condition hardening (TOCTOU on signup/username-change → clean 409s)
+  - Pre-existing unrelated connection unit-test fixture failures
+    (`FakeSession.execute`) — flagged for follow-up, not caused by this work
+
+Phase 3 (security events): gate passed on staging and production,
+2026-09-05.
+
+Decision: auth/session work is paused here to prioritize product development;
+account lifecycle is next. The deferred items above are tracked, not abandoned,
+and should be revisited before production launch.
+
+Explicitly out of scope until reopened: Phase 7 (failed-login notification).
+Account lifecycle is a separate upcoming specification and is now active.
+
+## Account lifecycle — implementation evidence (2026-09-06)
+
+The first runtime slice is implemented and verified against staging:
+
+- `active`, `deactivated`, `pending_deletion`, and `deleted` state columns;
+- password-only deactivation, immediate session/refresh/device revocation,
+  and access-token rejection;
+- password + OTP deletion confirmation with stored 32-day default deadline;
+- OTP-gated deactivation/pending-deletion reactivation with one new session;
+- retained-chat identity handling and public-content deletion worker;
+- retry failure timestamps/reasons and an internal token-protected staff
+  completion endpoint;
+- settings controls, logged-out confirmation pages, and lifecycle-aware login
+  copy.
+
+Database evidence:
+
+```text
+staging: alembic upgrade head -> 20260906_0034 (head)
+staging: alembic check -> No new upgrade operations detected.
+production: alembic upgrade head -> 20260906_0034 (head)
+production: alembic check -> No new upgrade operations detected.
+```
+
+Verification evidence:
+
+```text
+staging: python -m pytest tests/test_account_lifecycle.py -q -> 2 passed
+web: npm run build -> passed
+api: python -m compileall -q app alembic -> passed
+```
+
+The account-lifecycle green flag remains open for the contract items not yet
+integrated in this slice: single-use deletion-warning links and provider retry
+semantics, billing cancellation/resubscription integration, full transition
+concurrency/idempotency coverage, lifecycle abuse limits, and a complete
+audited staff override/event trail. No deployment go-ahead should imply those
+items are complete.
+
+## Auth/session hardening — staging push evidence (2026-09-06)
+
+The deactivation/lockout boundary, refresh-reuse signal, and fail-closed device
+cookie guards are committed as `84127a8` (`AUth work`). The supporting
+documentation is committed as `4c6b629`, and `staging` matches
+`origin/staging` at the documentation commit.
+
+Named verification coverage:
+
+- `test_deactivation_rejects_existing_access_token_but_lock_does_not`
+- `test_risk_login_challenges_new_changed_and_recognized_devices`
+- `test_refresh_rotation_reuse_logout_legacy`
+
+The three-test staging run passed: `3 passed`. The broader auth-boundary and
+refresh-reuse run passed: `8 passed`. No schema migration was required for
+refresh-reuse signaling, and no account-lifecycle contract was changed.

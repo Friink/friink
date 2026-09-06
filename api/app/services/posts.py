@@ -339,6 +339,8 @@ def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:
     author = post.user or session.get(User, post.user_id)
     if not author:
         return False
+    if author.lifecycle_status != "active":
+        return False
     if not author.is_private:
         return True
     if viewer and viewer.id == post.user_id:
@@ -356,6 +358,9 @@ def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:
 
 
 def serialize_post(post: Post, viewer: User | None = None, session: Session | None = None) -> PostResponse:
+    author = post.user or (session.get(User, post.user_id) if session else None)
+    if not author:
+        raise ValueError("Post author was not found.")
     liked = False
     saved = False
     like_count = post.like_count or 0
@@ -374,7 +379,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         id=post.id,
         public_id=post.public_id or generate_public_id(),
         slug=generate_post_slug(post.content),
-        user_id=post.user_id,
+        user_id=author.public_id,
         kind=PostKindSchema(post.kind.value),
         author_username=post.user.username,
         author_display_name=post.user.display_name,

@@ -1,5 +1,80 @@
 # Changelog
 
+## 2026-09-07
+
+- [docs] Synchronized auth/session closeout references: code hardening is in
+  `84127a8`, supporting progress documentation is in `4c6b629`, and
+  `staging` matches `origin/staging`.
+- [docs] Recorded that no runtime, migration, or account-lifecycle contract
+  changes were made in this documentation-only follow-up.
+
+## 2026-09-06
+
+- [verification] Confirmed auth/session hardening commit `84127a8` is pushed to
+  `origin/staging`; the staging branch and remote match.
+- [verification] Reran the three named regression tests for lifecycle-vs-lock,
+  fail-closed device cookies, and refresh-reuse signaling: `3 passed`.
+
+## 2026-09-06
+
+- [auth/security] Added regression guards proving lifecycle deactivation rejects
+  pre-issued access tokens while ordinary account locks do not; added explicit
+  documentation at the lifecycle enforcement boundary.
+- [auth/security] Confirmed rotated/revoked refresh-token reuse records the
+  durable `refresh_reuse_detected` event while preserving the generic client
+  401; no schema change was required.
+- [auth/security] Added explicit missing-device-cookie coverage. The existing
+  device-recognition path is already fail-closed and forces OTP.
+- [verification] Staging auth-boundary and refresh-reuse suite passed (`8
+  passed`); API compilation passed.
+
+## 2026-09-06
+
+- [email] Replaced the repeated full sender-address setting with one verified
+  `RESEND_FROM_DOMAIN`; the API now generates purpose-specific aliases through
+  one centralized mapping (`noreply`, `hello`, and `security`).
+
+## 2026-09-06
+
+- [config] Synchronized `api/.env.example` with the current JWT key-rotation,
+  login-risk OTP, and account-lifecycle environment settings.
+
+## 2026-09-06
+
+- [account-lifecycle] Added lifecycle state storage and migrations through
+  `20260906_0034`, including server-configurable `ACCOUNT_DELETION_GRACE_DAYS`
+  (32) and `ACCOUNT_DELETION_WARNING_DAYS` (4), deletion failure flags, and a
+  token-protected internal worker/recovery endpoint.
+- [account-lifecycle] Added password-confirmed deactivation, password+OTP
+  deletion confirmation, OTP-gated reactivation, session/device revocation,
+  retained-chat anonymization, public-content deletion, and settings/login UX.
+- [verification] Staging and production both report no Alembic drift; staging
+  lifecycle tests pass (`2 passed`) and the web production build passes.
+- [note] Warning-link delivery, billing-provider cancellation, full abuse and
+  transition-concurrency controls remain open contract gates.
+
+## 2026-09-06
+
+- [auth/privacy] Replaced non-auth user-identity UUIDs with `public_id` in notifications, connections, blocking, posts, and like-actor responses; object UUIDs remain object identifiers.
+- [chat] Replaced participant, sender, and requester UUIDs with public handles, fixing frontend identity comparisons and adding regression assertions.
+- [verification] Chat staging regression passed (`1 passed`); reaction/notification and blocking API-backed regressions passed (`3 passed`). Existing connection unit failures are fixture failures unrelated to response serialization.
+
+## 2026-09-06
+
+- [deployment] Added the API Vercel build gate: `alembic upgrade head` runs before the API build and `alembic check` must pass afterward; either failure blocks deployment. This replaces the unsafe manual-only ordering that previously allowed code to ship before its migration.
+- [security-audit] Audited non-auth API response schemas for internal user UUID exposure. Task B implementation is intentionally deferred pending review of the public-handle replacement pattern.
+
+## 2026-09-05T22:32:26Z
+
+- [docs/account-lifecycle] Promoted the lifecycle draft to an approved business contract and recorded the refined deactivation, reactivation, pending-deletion, permanent-deletion, billing, chat, tombstone, staff-override, concurrency, and cautious failed-login security requirements.
+- [docs/auth] Synchronized the lifecycle decision boundary: Phase 7 remains active-account-only, deactivation immediately invalidates access, and lifecycle runtime work remains gated on reset-link, deletion-job, abuse-control, concurrency, staff, and UX verification.
+
+## 2026-09-05T22:02:50Z
+
+- [auth/security] Completed Phase 3a/3b/3c with durable security events, fresh-login in-app notifications, a unique retryable notification outbox, stale-job recovery, and a provider-neutral future email adapter hook.
+- [database] Applied Alembic migration `20260906_0032` to both supplied staging and production Neon databases; both advanced from `20260906_0031` and pass `alembic check`.
+- [verification] Phase 3 acceptance passed against staging and production; API compilation, web TypeScript, and Next production build passed. The email channel remains unconfigured by design and is not claimed as live email delivery.
+
 ## 2026-09-06
 
 - [reactions] Renamed the persisted Star reaction vocabulary to Save: `star_count`/`post_stars` become `saved_count`/`post_saves`, API state and routes use `saved`/`save`, and the frontend uses the `/saved` surface with a legacy `/starred` redirect. Alembic migration `20260906_0031` is data-preserving; staging is migrated and production remains pending.
@@ -1669,3 +1744,12 @@ _Last updated: 2026-09-01_
 
 ### Docs
 - [docs] Synchronized the auth/session architecture, active rules, and login/signup design contract with username login behavior.
+
+## 2026-09-05
+
+### Fixed
+- [production/api] Upgraded the production database from Alembic revision `20260904_0024` to `20260906_0031 (head)`, including the email-first signup OTP reservation migration `20260905_0025` and all subsequent additive migrations.
+- [production/web] Verified that signup email submission no longer fails as a browser-level `Failed to fetch`; it now reaches the API and surfaces the safe email-delivery `503` response.
+
+### Pending
+- [production/email] Resend delivery is still failing after the schema upgrade. Verify the API project's Production-scope `RESEND_API_KEY` and a Resend-verified `RESEND_FROM_EMAIL`, then redeploy the API if either value changed.

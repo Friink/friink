@@ -8,8 +8,8 @@ from app.models.notification import NotificationType
 
 class NotificationResponse(BaseModel):
     id: uuid.UUID
-    recipient_user_id: uuid.UUID
-    actor_user_id: uuid.UUID | None
+    recipient_user_id: str
+    actor_user_id: str | None
     type: NotificationType
     payload: dict
     read: bool
