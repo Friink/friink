@@ -2,6 +2,9 @@
 
 ## 2026-09-07
 
+- [auth/accounts] Made account switching durable across browser restarts by
+  issuing the target account's slot refresh cookie during switch and repairing
+  missing slot cookies during refresh.
 - [auth/accounts] Reconciled the active account with the authenticated access
   token instead of trusting a stale local slot pointer. Refresh responses now
   replace the stored slot, and account discovery repairs existing browsers by

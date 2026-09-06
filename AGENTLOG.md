@@ -7095,6 +7095,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Fixed refresh and token mapping to accept the server-issued account slot and clear stale local slot state when the response has no slot.
 - Added client-side account-list reconciliation so an already-open browser repairs its slot pointer by matching the authenticated username.
 - Validation: API compile, web TypeScript check, and `git diff --check` passed; focused auth tests passed (`10 passed`), while two database-backed account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T22:30:00Z — Make account switching survive restart
+- Found that `/auth/accounts/switch` returned only an access token and did not issue the target slot's refresh cookie, so a browser restart could refresh with a selected slot that had no usable cookie and be redirected to login.
+- Switch now issues the target slot refresh cookie; refresh also self-heals a valid device slot when its slot cookie is missing.
+- Added a regression assertion that switching sets the target slot cookie.
+- Validation: API compile, web TypeScript check, and `git diff --check` passed; database-backed account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
 ## 2026-09-06T21:45:00Z — Redirect authenticated users away from public routes
 - Added a refresh-aware public route guard for `/` and `/subscriptions` and extended `/login` to verify persisted sessions before rendering auth UI.
 - Public content remains available only after a confirmed terminal unauthenticated result; transient refresh failures do not expose the public site.

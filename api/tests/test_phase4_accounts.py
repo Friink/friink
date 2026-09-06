@@ -56,6 +56,7 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         switched = client.post("/auth/accounts/switch", json={"account_slot": first_slot}, headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert switched.status_code == 200, switched.text
         assert switched.json()["user"]["email"] == seeded[0].email
+        assert f"friink_refresh_{first_slot}=" in switched.headers.get("set-cookie", "")
         refreshed = client.post("/auth/refresh", headers={"X-Friink-Account-Slot": first_slot})
         assert refreshed.status_code == 200, refreshed.text
         removed = client.delete(f"/auth/accounts/{second_slot}", headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_slot})

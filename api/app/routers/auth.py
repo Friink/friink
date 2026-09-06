@@ -449,6 +449,16 @@ async def refresh(
         slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
         if not slot:
             raise HTTPException(status_code=401, detail=auth_error_detail("Invalid account session.", AuthErrorCode.SESSION_NOT_FOUND))
+        if not refresh_token:
+            slot_auth_session = session.get(AuthSession, slot.auth_session_id)
+            slot_user = session.get(User, slot.user_id)
+            if not slot_auth_session or slot_auth_session.revoked_at is not None or not slot_user or slot_user.account_locked or slot_user.lifecycle_status != "active":
+                raise HTTPException(status_code=401, detail=auth_error_detail("Invalid account session.", AuthErrorCode.SESSION_NOT_FOUND))
+            issued_refresh = issue_refresh_token(session, slot_user.id, settings, session_id=slot_auth_session.id)
+            slot.last_used_at = datetime.now(UTC)
+            await commit(session)
+            set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
+            return RefreshResponse(access_token=create_access_token(slot_user.id), account_slot=account_slot)
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -1005,7 +1015,9 @@ async def switch_account(
     if not target or target.lifecycle_status != "active" or not auth_session or auth_session.revoked_at is not None:
         raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer available.", AuthErrorCode.SESSION_NOT_FOUND))
     slot.last_used_at = datetime.now(UTC)
+    issued_refresh = issue_refresh_token(session, target.id, settings, session_id=auth_session.id)
     await commit(session)
+    set_account_refresh_cookie(response, payload.account_slot, issued_refresh.raw_token, settings)
     return TokenResponse(access_token=create_access_token(target.id), user=user_response(target, settings), account_slot=payload.account_slot)
 
 
