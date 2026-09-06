@@ -78,7 +78,7 @@ from app.services.session_service import (
 from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
-from app.services.account_slots import create_or_replace_slot, get_slot, list_slots, revoke_slot
+from app.services.account_slots import create_or_replace_slot, find_slot_for_user, get_slot, list_slots, revoke_slot
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -937,11 +937,28 @@ async def accounts(
 @router.get("/accounts/add-availability", response_model=AccountAddAvailabilityResponse)
 async def account_add_availability(
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> AccountAddAvailabilityResponse:
-    return AccountAddAvailabilityResponse(allowed=len(list_slots(session, request.cookies.get(DEVICE_COOKIE_NAME))) < settings.max_remembered_accounts_per_device)
+    raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
+    current_slot = find_slot_for_user(session, current_user.id, raw_device)
+    if not current_slot and raw_device:
+        raw_refresh = request.cookies.get(REFRESH_COOKIE_NAME)
+        refresh_record = get_refresh_token(session, raw_refresh) if raw_refresh else None
+        current_auth_session = session.get(AuthSession, refresh_record.session_id) if refresh_record and refresh_record.session_id else None
+        if refresh_record and refresh_record.user_id == current_user.id and current_auth_session and current_auth_session.revoked_at is None:
+            try:
+                slot = create_or_replace_slot(session, current_user, raw_device, current_auth_session, settings)
+                if slot:
+                    await commit(session)
+                    set_account_refresh_cookie(response, slot, raw_refresh, settings)
+            except ValueError as exc:
+                if str(exc) != "ACCOUNT_LIMIT_REACHED":
+                    raise
+
+    return AccountAddAvailabilityResponse(allowed=len(list_slots(session, raw_device)) < settings.max_remembered_accounts_per_device)
 
 
 @router.post("/accounts/switch", response_model=TokenResponse)

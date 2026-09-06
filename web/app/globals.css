@@ -593,6 +593,89 @@ textarea {
   font-weight: 600;
 }
 
+.login-screen-account-modal {
+  min-height: auto;
+  display: block;
+  color: var(--color-ink);
+  background: transparent;
+}
+
+.login-form-account-modal {
+  max-width: none;
+  min-height: auto;
+  padding: 0.25rem 0 0.5rem;
+  text-align: left;
+}
+
+.login-form-account-modal .login-error {
+  margin-bottom: 0.25rem;
+}
+
+.account-auth-actions {
+  justify-content: stretch;
+}
+
+.account-auth-actions .login-submit,
+.account-auth-actions .pill-button-quiet {
+  flex: 1 1 0;
+}
+
+.account-auth-modal {
+  border-color: var(--color-line);
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.account-auth-modal .modal-body {
+  background: var(--color-paper);
+}
+
+body:has(.app-shell[data-theme='dark']) .account-auth-modal {
+  border-color: #555555;
+  background: #161616;
+  color: #f5f5f5;
+}
+
+body:has(.app-shell[data-theme='dark']) .account-auth-modal .modal-body,
+body:has(.app-shell[data-theme='dark']) .account-auth-modal .pill-field input {
+  background: #161616;
+}
+
+body:has(.app-shell[data-theme='dark']) .account-auth-modal .pill-field input {
+  border-color: #555555;
+  color: #f5f5f5;
+}
+
+body:has(.app-shell[data-theme='dark']) .account-auth-modal .pill-field input::placeholder,
+body:has(.app-shell[data-theme='dark']) .account-auth-modal .password-toggle,
+body:has(.app-shell[data-theme='dark']) .account-auth-modal .login-switch {
+  color: #c4c4c4;
+}
+
+body:has(.app-shell[data-theme='system']) .account-auth-modal {
+  border-color: #555555;
+  background: #161616;
+  color: #f5f5f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:has(.app-shell[data-theme='system']) .account-auth-modal .modal-body,
+  body:has(.app-shell[data-theme='system']) .account-auth-modal .pill-field input {
+    background: #161616;
+  }
+
+  body:has(.app-shell[data-theme='system']) .account-auth-modal .pill-field input {
+    border-color: #555555;
+    color: #f5f5f5;
+  }
+
+  body:has(.app-shell[data-theme='system']) .account-auth-modal .pill-field input::placeholder,
+  body:has(.app-shell[data-theme='system']) .account-auth-modal .password-toggle,
+  body:has(.app-shell[data-theme='system']) .account-auth-modal .login-switch {
+    color: #c4c4c4;
+  }
+}
+
 @media (max-width: 480px) {
   .login-form {
     align-content: center;

@@ -12,11 +12,12 @@ const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
+  mode?: 'page' | 'account-modal';
 };
 
 type AuthStep = 'login' | 'login-otp' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
 
-export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
+export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -223,12 +224,12 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   }
 
   return (
-    <div className="login-screen">
-      <a className="auth-home-link" href="/" aria-label="Back to Friink home">
+    <div className={`login-screen${mode === 'account-modal' ? ' login-screen-account-modal' : ''}`}>
+      {mode === 'page' ? <a className="auth-home-link" href="/" aria-label="Back to Friink home">
         <img src="/brand/logoBrand.svg" alt="" />
-      </a>
-      <form className="login-form" onSubmit={handleSubmit}>
-        <BrandLockup size="lg" />
+      </a> : null}
+      <form className={`login-form${mode === 'account-modal' ? ' login-form-account-modal' : ''}`} onSubmit={handleSubmit}>
+        {mode === 'page' ? <BrandLockup size="lg" /> : null}
         {errorMessage && <p className="login-error" role="alert">{errorMessage}</p>}
 
         {isLoginStep && (
@@ -271,21 +272,15 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
               Forgot password?
             </button>
 
-            <div className="signup-actions signup-actions-single">
-              <a className="signup-back-button login-back-button" href="/">
-                Back
-              </a>
+            <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
+              {mode === 'page' ? <a className="signup-back-button login-back-button" href="/">Back</a> : null}
               <Button className="login-submit" type="submit">
                 {isSubmitting ? 'Please wait...' : 'Login'}
               </Button>
+              {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
             </div>
 
-            <p className="login-switch">
-              Don't have an account?{' '}
-              <button type="button" onClick={handleStartSignup}>
-                Sign up
-              </button>
-            </p>
+            {mode === 'page' ? <p className="login-switch">Don't have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
           </>
         )}
 

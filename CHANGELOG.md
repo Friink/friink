@@ -2,6 +2,14 @@
 
 ## 2026-09-07
 
+- [auth/accounts] Fixed `@username` login normalization and preserved legacy
+  active sessions by migrating the current account into a device slot before
+  another account is added. This keeps the previous account available in the
+  switcher instead of silently losing its route.
+- [ux/accounts] Added a dedicated in-app account-auth modal presentation. It
+  removes the standalone auth logo/home layout, starts with Email or username
+  and Password, exposes Login and Sign up actions, and follows the active app
+  light/dark theme while preserving the existing login/signup flow.
 - [routing/auth] Made `/login` signed-out-only. Persisted sessions now redirect
   to `/home` before the standalone form renders, including demo sessions;
   authenticated account addition continues through the SideDrawer modal.

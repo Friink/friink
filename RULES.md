@@ -140,7 +140,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/app/login/login-client.tsx`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`
-- **Since:** 2026-09-06T20:15:00Z
+- **Since:** 2026-09-06T20:02:37Z
 
 ### Rule: New-Device Verification Uses One Approval Path
 - **What:** A new-device login submits credentials once, then completes exactly one verification path: the emailed four-minute OTP or approval from an existing signed-in session.
@@ -152,7 +152,7 @@ the entry, so history isn't lost.
 
 ### Rule: Account Switcher UX
 - **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, Manage accounts, and active-account logout. Manage Accounts uses ProfileCard rows with the active account first; other rows offer logout.
-- **Edge cases:** Logout/removal is confirmed, then immediate. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Reaching the server limit sends the user to Manage accounts first.
+- **Edge cases:** Logout/removal is confirmed, then immediate. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit sends the user to Manage accounts first.
 - **Status:** Active for the Phase 4e web slice; mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
 - **Platform:** Web
 - **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`
@@ -221,7 +221,7 @@ the entry, so history isn't lost.
 
 ### Rule: Login With Email Or Username
 - **What:** The login identifier accepts either the account email or username. Email and username matching are case-insensitive; username lookup uses the authoritative `username_key`. The web field is labeled `Email or username`, while signup remains email-only.
-- **Edge cases:** Unknown identifiers and wrong passwords return the same generic invalid-credentials result. Username login follows the same lockout, rate-limit, device-recognition, and future risk-based OTP decisions as email login. The API may accept the legacy `email` request key during client migration, but new clients send `identifier`.
+- **Edge cases:** Unknown identifiers and wrong passwords return the same generic invalid-credentials result. Username login follows the same lockout, rate-limit, device-recognition, and future risk-based OTP decisions as email login. A leading `@` is accepted and stripped for username lookup. The API may accept the legacy `email` request key during client migration, but new clients send `identifier`.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_auth_updates.py`

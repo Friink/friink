@@ -35,13 +35,26 @@ def create_or_replace_slot(session: Session, user: User, raw_device: str | None,
         slot.last_used_at = datetime.now(UTC)
         raw_slot = str(slot.id)
         return raw_slot
-    if len(existing) >= settings.max_remembered_accounts_per_device:
+    device_slots = session.execute(select(AccountSessionSlot).where(AccountSessionSlot.device_hash == current_device_hash, AccountSessionSlot.revoked_at.is_(None))).scalars().all()
+    if len(device_slots) >= settings.max_remembered_accounts_per_device:
         raise ValueError("ACCOUNT_LIMIT_REACHED")
     raw_slot = secrets.token_urlsafe(32)
     slot = AccountSessionSlot(user_id=user.id, device_hash=current_device_hash, slot_token_hash=hash_slot(raw_slot), auth_session_id=auth_session.id)
     session.add(slot)
     session.flush()
     return str(slot.id)
+
+
+def find_slot_for_user(session: Session, user_id: uuid.UUID, raw_device: str | None) -> AccountSessionSlot | None:
+    if not raw_device:
+        return None
+    return session.execute(
+        select(AccountSessionSlot).where(
+            AccountSessionSlot.user_id == user_id,
+            AccountSessionSlot.device_hash == hash_slot(raw_device),
+            AccountSessionSlot.revoked_at.is_(None),
+        )
+    ).scalars().first()
 
 
 def get_slot(session: Session, raw_slot: str, raw_device: str | None) -> AccountSessionSlot | None:

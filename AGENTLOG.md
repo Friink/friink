@@ -1,13 +1,31 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
-## 2026-09-06T20:15:00Z — Make login route signed-out only
+## 2026-09-06T20:18:01Z — Fix username login and preserve account switch slots
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the missing account-switch option and username-login failure observed in the open staging browser.
+- Changes Made: The browser showed the account caret correctly, but only one remembered account (`@muflah`) was returned. Added support for `@username` login, corrected device-slot capacity counting across all accounts, and migrated a legacy current session into a device slot before Add account checks so the previous account remains switchable.
+- Files: `api/app/services/auth.py`, `api/app/services/account_slots.py`, `api/app/routers/auth.py`, `api/tests/test_auth_updates.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `10 passed` in `api/tests/test_auth_updates.py`; modified API files compile; `git diff --check` passed. Combined account tests were not run because the test environment lacks `JWT_SECRET_KEY` during collection.
+
+## 2026-09-06T20:09:22Z — Restyle Add account auth modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the SideDrawer Add account flow use the in-app design instead of rendering the standalone login page.
+- Changes Made: Added an account-modal presentation mode to `LoginScreen`, removed the page-level logo/home treatment in that mode, added Login and Sign up actions beside the requested Email or username and Password fields, and added light/dark modal theme selectors for the portaled dialog.
+- Files: `web/components/login-screen.tsx`, `web/components/side-drawer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
+## 2026-09-06T20:02:37Z — Make login route signed-out only
 
 - Agent: Codex
 - Model: GPT-5
 - Prompt Summary: Prevent authenticated users from opening the standalone `/login` route while preserving in-app account addition.
 - Changes Made: Removed the demo-session exception from the login route guard, added a session-check gate so the standalone form is not rendered during redirect, and documented that authenticated login/signup for another account remains inside the SideDrawer Add account modal.
 - Files: `web/app/login/login-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
-- Verification Status: Targeted TypeScript check and `git diff --check` pending.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
 
 ## 2026-09-06T19:57:29Z — Move account controls into drawer profile menu
 
