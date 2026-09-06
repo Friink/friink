@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getReadReceiptPreference, listAuthSessions, listBlockedUsers, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getReadReceiptPreference, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -147,6 +147,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState('');
   const [sessionsBusyId, setSessionsBusyId] = useState<string | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingLoginApproval[]>([]);
   const [lifecyclePassword, setLifecyclePassword] = useState('');
   const [deletionToken, setDeletionToken] = useState('');
   const [deletionOtp, setDeletionOtp] = useState('');
@@ -192,6 +193,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       .then((items) => { if (!cancelled) setAuthSessions(items); })
       .catch((error) => { if (!cancelled) setSessionsError(error instanceof Error ? error.message : 'Could not load sessions.'); })
       .finally(() => { if (!cancelled) setSessionsLoading(false); });
+    listPendingLoginApprovals(session.accessToken).then((items) => { if (!cancelled) setPendingApprovals(items); }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [activeTab]);
 
@@ -430,6 +432,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       onToast?.(error instanceof Error ? error.message : 'Could not log out other sessions.');
     } finally {
       setSessionsBusyId(null);
+    }
+  }
+
+  async function handleLoginApproval(challengeId: string, decision: 'approve' | 'deny') {
+    const session = loadAuthSession();
+    if (!session) return;
+    try {
+      await respondToLoginApproval(session.accessToken, challengeId, decision);
+      setPendingApprovals((items) => items.filter((item) => item.challengeId !== challengeId));
+    } catch (error) {
+      onToast?.(error instanceof Error ? error.message : 'Could not respond to the login request.');
     }
   }
 
@@ -867,6 +880,18 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                 </div>
               ) : null}
             </SettingsRow>
+
+            {pendingApprovals.length > 0 ? <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-shield-halved" aria-hidden="true" /></span>}
+              title="Login requests"
+              subtitle="Approve or deny a new-device login."
+              className="settings-row settings-row-expanded"
+            >
+              {pendingApprovals.map((item) => <div className="settings-session-item" key={item.challengeId}>
+                <div className="settings-session-copy"><strong>{item.deviceLabel}</strong><span>{item.browser || 'Browser unavailable'}</span><small>Expires {formatSessionDate(item.expiresAt)}</small></div>
+                <div className="settings-session-actions"><button className="settings-secondary-button" type="button" onClick={() => void handleLoginApproval(item.challengeId, 'deny')}>Deny</button><button className="settings-update-button" type="button" onClick={() => void handleLoginApproval(item.challengeId, 'approve')}>Approve</button></div>
+              </div>)}
+            </SettingsRow> : null}
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-pause" aria-hidden="true" /></span>}

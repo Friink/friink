@@ -6,12 +6,15 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models.user import User
 from app.models.auth_session import AuthSession
+from app.models.auth_challenge import LoginChallenge
+from app.models.recognized_device import RecognizedDevice
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
@@ -30,6 +33,8 @@ from app.schemas.auth import (
     PublicUserResponse,
     RefreshResponse,
     AuthSessionResponse,
+    AccountSummaryResponse, AccountSwitchRequest, AccountAddAvailabilityResponse,
+    LoginApprovalResponse, LoginApprovalStatusResponse, LoginApprovalActionRequest,
     SignupRequest,
     SignupCompleteRequest,
     SignupEmailStartRequest,
@@ -51,6 +56,8 @@ from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
 from app.services.security_events import process_notification_outbox, record_security_event
+from app.services.notifications import create_notification
+from app.models.notification import NotificationType
 from app.models.security_event import SecurityEventType
 from app.services.login_challenges import create_login_challenge, derive_pending_device_identifier, get_login_challenge, verify_login_challenge
 from app.services.session_service import (
@@ -71,12 +78,14 @@ from app.services.session_service import (
 from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
+from app.services.account_slots import create_or_replace_slot, get_slot, list_slots, revoke_slot
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 REFRESH_COOKIE_NAME = "friink_refresh_token"
+ACCOUNT_SLOT_HEADER = "X-Friink-Account-Slot"
 
 
 def require_allowed_origin(request: Request, settings: Settings) -> None:
@@ -135,6 +144,14 @@ async def signup_start(
         reservation_token=token,
         message="If the signup details can be accepted, verification instructions will be sent.",
     )
+
+
+def set_account_refresh_cookie(response: Response, slot: str, token: str, settings: Settings) -> None:
+    response.set_cookie(key=f"friink_refresh_{slot}", value=token, httponly=True, secure=settings.is_production, samesite="none" if settings.is_production else "lax", max_age=int(timedelta(days=settings.refresh_token_expire_days).total_seconds()), path="/")
+
+
+def delete_account_refresh_cookie(response: Response, slot: str, settings: Settings) -> None:
+    response.delete_cookie(key=f"friink_refresh_{slot}", httponly=True, secure=settings.is_production, samesite="none" if settings.is_production else "lax", path="/")
 
 
 @router.post("/signup/email/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -271,6 +288,13 @@ async def _issue_login_session(
         payload={"kind": "login", "message": "A new login to your Friink account was successful.", "action": "review_sessions", "action_href": "/settings"},
         notify_in_app=True,
     )
+    try:
+        slot = create_or_replace_slot(session, user, device_identifier, auth_session, settings)
+    except ValueError as exc:
+        if str(exc) == "ACCOUNT_LIMIT_REACHED":
+            session.rollback()
+            raise HTTPException(status_code=409, detail="Remove an account before adding another.") from exc
+        raise
     await commit(session)
     # Delivery is best-effort after authentication is committed. A failed drain leaves
     # the durable job available for a later worker/request and never logs the user out.
@@ -289,8 +313,10 @@ async def _issue_login_session(
         user_id=str(user.id),
     )
     set_refresh_cookie(response, issued_refresh.raw_token, settings)
+    if slot:
+        set_account_refresh_cookie(response, slot, issued_refresh.raw_token, settings)
     set_device_cookie(response, device_identifier, settings)
-    return TokenResponse(access_token=access_token, user=user_response(user, settings))
+    return TokenResponse(access_token=access_token, user=user_response(user, settings), account_slot=slot)
 
 
 @router.post("/login", response_model=LifecycleChallengeResponse | TokenResponse | LoginChallengeResponse)
@@ -334,6 +360,19 @@ async def login(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Verification email could not be sent. Please try again later.",
             ) from exc
+        create_notification(
+            session,
+            recipient_user_id=user.id,
+            notification_type=NotificationType.login_security,
+            payload={
+                "kind": "login_approval",
+                "challenge_id": str(challenge.id),
+                "device_label": "New device",
+                "browser": request.headers.get("user-agent", "")[:120] or None,
+                "expires_at": challenge.expires_at.isoformat(),
+                "action_href": "/settings?tab=account",
+            },
+        )
         await commit(session)
         return LoginChallengeResponse(
             challenge_token=challenge_token,
@@ -385,6 +424,12 @@ async def refresh(
     settings: Settings = Depends(get_settings),
 ) -> RefreshResponse:
     require_allowed_origin(request, settings)
+    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    if account_slot:
+        refresh_token = request.cookies.get(f"friink_refresh_{account_slot}")
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if not slot:
+            raise HTTPException(status_code=401, detail=auth_error_detail("Invalid account session.", AuthErrorCode.SESSION_NOT_FOUND))
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -453,8 +498,11 @@ async def refresh(
                 user_id=str(user.id),
                 reason="immediately_previous_token",
             )
-            set_refresh_cookie(response, issued_refresh.raw_token, settings)
-            return RefreshResponse(access_token=access_token)
+            if account_slot:
+                set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
+            else:
+                set_refresh_cookie(response, issued_refresh.raw_token, settings)
+            return RefreshResponse(access_token=access_token, account_slot=account_slot)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
         record_security_event(
             session,
@@ -537,8 +585,15 @@ async def refresh(
         family_id=str(issued_refresh.record.family_id),
         user_id=str(user.id),
     )
-    set_refresh_cookie(response, issued_refresh.raw_token, settings)
-    return RefreshResponse(access_token=access_token)
+    if account_slot:
+        set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
+    else:
+        set_refresh_cookie(response, issued_refresh.raw_token, settings)
+    if account_slot:
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if slot:
+            slot.last_used_at = now
+    return RefreshResponse(access_token=access_token, account_slot=account_slot)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -649,6 +704,85 @@ async def get_current_user(
 async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme), session: Session = Depends(get_session)) -> User | None:
     if not token:
         return None
+
+
+@router.get("/login/pending", response_model=list[LoginApprovalResponse])
+async def pending_login_approvals(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> list[LoginApprovalResponse]:
+    now = datetime.now(UTC)
+    challenges = session.execute(select(LoginChallenge).where(LoginChallenge.user_id == current_user.id, LoginChallenge.kind == "login", LoginChallenge.consumed_at.is_(None), LoginChallenge.approved_at.is_(None), LoginChallenge.denied_at.is_(None), LoginChallenge.expires_at > now).order_by(LoginChallenge.created_at.desc())).scalars().all()
+    result: list[LoginApprovalResponse] = []
+    for challenge in challenges:
+        device_label = "New device"
+        browser = None
+        if challenge.device_id:
+            recognized = session.get(RecognizedDevice, challenge.device_id)
+            if recognized:
+                browser = recognized.browser
+                device_label = "Recognized device"
+        result.append(LoginApprovalResponse(challenge_id=challenge.id, device_label=device_label, browser=browser, created_at=challenge.created_at, expires_at=challenge.expires_at))
+    return result
+
+
+@router.post("/login/approve", status_code=status.HTTP_204_NO_CONTENT)
+async def approve_login(
+    payload: LoginApprovalActionRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    challenge = session.get(LoginChallenge, payload.challenge_id)
+    if not challenge or challenge.user_id != current_user.id or challenge.kind != "login" or challenge.consumed_at is not None or challenge.denied_at is not None or challenge.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=404, detail="Login request not found.")
+    challenge.approved_at = datetime.now(UTC)
+    await commit(session)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/login/deny", status_code=status.HTTP_204_NO_CONTENT)
+async def deny_login(
+    payload: LoginApprovalActionRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    challenge = session.get(LoginChallenge, payload.challenge_id)
+    if not challenge or challenge.user_id != current_user.id or challenge.consumed_at is not None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    challenge.denied_at = datetime.now(UTC)
+    await commit(session)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/login/status/{challenge_token}", response_model=LoginApprovalStatusResponse)
+async def login_approval_status(challenge_token: str, session: Session = Depends(get_session)) -> LoginApprovalStatusResponse:
+    challenge = get_login_challenge(session, challenge_token)
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Login request not found.")
+    if challenge.denied_at is not None:
+        return LoginApprovalStatusResponse(status="denied")
+    if challenge.approved_at is not None:
+        return LoginApprovalStatusResponse(status="approved")
+    if challenge.consumed_at is not None or challenge.expires_at <= datetime.now(UTC):
+        return LoginApprovalStatusResponse(status="expired")
+    return LoginApprovalStatusResponse(status="pending")
+
+
+@router.post("/login/complete-approved", response_model=TokenResponse)
+async def complete_approved_login(
+    payload: LoginVerifyRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> TokenResponse:
+    challenge = get_login_challenge(session, payload.challenge_token)
+    user = session.get(User, challenge.user_id) if challenge else None
+    if not challenge or not user or user.account_locked or user.lifecycle_status != "active" or challenge.approved_at is None or challenge.consumed_at is not None or challenge.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=400, detail="The login approval is invalid or expired.")
+    challenge.consumed_at = datetime.now(UTC)
+    raw_device_identifier = derive_pending_device_identifier(payload.challenge_token, settings)
+    return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
     try:
         payload = decode_token(token, "access")
         user = session.get(User, user_id_from_subject(str(payload.get("sub", ""))))
@@ -771,6 +905,75 @@ async def revoke_other_sessions(
             revoke_auth_session(session, auth_session, "logout_others")
     await commit(session)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/accounts", response_model=list[AccountSummaryResponse])
+async def accounts(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> list[AccountSummaryResponse]:
+    active_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    result: list[AccountSummaryResponse] = []
+    for slot, user in list_slots(session, request.cookies.get(DEVICE_COOKIE_NAME)):
+        current = get_slot(session, active_slot, request.cookies.get(DEVICE_COOKIE_NAME)) if active_slot else None
+        result.append(AccountSummaryResponse(account_slot=str(slot.id), username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user, settings), active=bool(current and slot.id == current.id), last_used_at=slot.last_used_at))
+    return result
+
+
+@router.get("/accounts/add-availability", response_model=AccountAddAvailabilityResponse)
+async def account_add_availability(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> AccountAddAvailabilityResponse:
+    return AccountAddAvailabilityResponse(allowed=len(list_slots(session, request.cookies.get(DEVICE_COOKIE_NAME))) < settings.max_remembered_accounts_per_device)
+
+
+@router.post("/accounts/switch", response_model=TokenResponse)
+async def switch_account(
+    payload: AccountSwitchRequest,
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> TokenResponse:
+    slot = get_slot(session, payload.account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+    if not slot or slot.user_id == current_user.id:
+        if slot and slot.user_id == current_user.id:
+            slot.last_used_at = datetime.now(UTC)
+            await commit(session)
+            return TokenResponse(access_token=create_access_token(current_user.id), user=user_response(current_user, settings), account_slot=payload.account_slot)
+        raise HTTPException(status_code=404, detail="Account session not found.")
+    target = session.get(User, slot.user_id)
+    auth_session = session.get(AuthSession, slot.auth_session_id)
+    if not target or target.lifecycle_status != "active" or not auth_session or auth_session.revoked_at is not None:
+        raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer available.", AuthErrorCode.SESSION_NOT_FOUND))
+    slot.last_used_at = datetime.now(UTC)
+    await commit(session)
+    return TokenResponse(access_token=create_access_token(target.id), user=user_response(target, settings), account_slot=payload.account_slot)
+
+
+@router.delete("/accounts/{account_slot}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_account(
+    account_slot: str,
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+    if not slot:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    revoke_slot(session, slot)
+    await commit(session)
+    delete_account_refresh_cookie(response, account_slot, settings)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 @router.get("/users/{username}", response_model=PublicUserResponse)

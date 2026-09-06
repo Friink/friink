@@ -1,7 +1,10 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
 import { ProfileCard } from '@/components/profile-card';
+import { Modal } from '@/components/modal';
+import { LoginScreen } from '@/components/login-screen';
 import type { AuthUser } from '@/lib/auth';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
 
 type SideDrawerProps = {
   user: AuthUser;
@@ -10,6 +13,7 @@ type SideDrawerProps = {
   onNavigate: (screen: Screen) => void;
   onToggleCollapsed: () => void;
   onLogout: () => void;
+  onAccountChange?: (user: AuthUser) => void;
 };
 
 function getInitials(value: string) {
@@ -25,8 +29,13 @@ function getInitials(value: string) {
   );
 }
 
-export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
+export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout, onAccountChange }: SideDrawerProps) {
   const ref = useRef<HTMLElement | null>(null);
+  const [accounts, setAccounts] = useState<AccountSummary[]>([]);
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [accountModal, setAccountModal] = useState<'add' | 'manage' | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<AccountSummary | null>(null);
+  const [accountNotice, setAccountNotice] = useState('');
 
   useEffect(() => {
     function handleOutside(e: Event) {
@@ -50,6 +59,71 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       document.removeEventListener('focusin', handleOutside);
     };
   }, [collapsed, onToggleCollapsed]);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (session) listAccounts(session.accessToken).then(setAccounts).catch(() => undefined);
+  }, [user.id]);
+
+  async function handleAccountSwitch(account: AccountSummary) {
+    const session = loadAuthSession();
+    if (!session || account.active) return;
+    setAccountBusy(true);
+    try {
+      const next = await switchAccount(session.accessToken, account.accountSlot);
+      saveAuthSession(next);
+      onAccountChange?.(next.user);
+      window.location.reload();
+    } finally {
+      setAccountBusy(false);
+    }
+  }
+
+  async function confirmRemoveAccount() {
+    const session = loadAuthSession();
+    if (!session || !removeTarget) return;
+    setAccountBusy(true);
+    try {
+      await removeAccount(session.accessToken, removeTarget.accountSlot);
+      if (removeTarget.active) {
+        const remaining = accounts.filter((item) => item.accountSlot !== removeTarget.accountSlot).sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+        if (remaining[0]) {
+          const next = await switchAccount(session.accessToken, remaining[0].accountSlot);
+          saveAuthSession(next);
+          onAccountChange?.(next.user);
+          window.location.reload();
+          return;
+        }
+        onLogout();
+        return;
+      }
+      setAccounts((items) => items.filter((item) => item.accountSlot !== removeTarget.accountSlot));
+      setRemoveTarget(null);
+    } catch {
+      // Keep the current account usable on recoverable failures.
+    } finally {
+      setAccountBusy(false);
+    }
+  }
+
+  async function handleAddAccount() {
+    const session = loadAuthSession();
+    if (!session) return;
+    setAccountBusy(true);
+    try {
+      if (!(await canAddAccount(session.accessToken))) {
+        setAccountNotice('Remove an account before adding another.');
+        setAccountModal('manage');
+        return;
+      }
+      setAccountNotice('');
+      setAccountModal('add');
+    } catch {
+      setAccountNotice('We could not check account availability. Please try again.');
+    } finally {
+      setAccountBusy(false);
+    }
+  }
 
   function handleNavigate(screen: Screen) {
     onNavigate(screen);
@@ -108,6 +182,21 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       </nav>
 
       <div className="sidebar-footer">
+        <button className="sidebar-action" type="button" disabled={accountBusy} onClick={() => void handleAddAccount()}>
+          <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-user-plus" /></span>
+          <span>Add account</span>
+        </button>
+        {accounts.length > 1 ? <div className="sidebar-account-switcher" aria-label="Change account">
+          <span className="sidebar-account-label">Change account</span>
+          {accounts.map((account) => <button className="sidebar-action" type="button" key={account.accountSlot} disabled={accountBusy || account.active} onClick={() => void handleAccountSwitch(account)}>
+            <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-circle-user" /></span>
+            <span>@{account.username}{account.active ? ' (current)' : ''}</span>
+          </button>)}
+        </div> : null}
+        <button className="sidebar-action" type="button" onClick={() => setAccountModal('manage')}>
+          <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-users-gear" /></span>
+          <span>Manage accounts</span>
+        </button>
         <a
           className="sidebar-action"
           href={getNavigationHref('settings')}
@@ -121,13 +210,16 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           </span>
           <span>Settings</span>
         </a>
-        <button className="sidebar-action" type="button" onClick={onLogout}>
+        <button className="sidebar-action" type="button" onClick={() => { const active = accounts.find((item) => item.active); if (active) setRemoveTarget(active); else onLogout(); }}>
           <span className="nav-item-icon" aria-hidden="true">
             <i className="fa-solid fa-right-from-bracket" />
           </span>
           <span>Log out</span>
         </button>
       </div>
+      {accountModal === 'add' ? <Modal title="Add account" onClose={() => setAccountModal(null)}><LoginScreen onAuthenticated={(nextUser) => { setAccountModal(null); onAccountChange?.(nextUser); window.location.reload(); }} /></Modal> : null}
+      {accountModal === 'manage' ? <Modal title="Manage accounts" onClose={() => { setAccountModal(null); setAccountNotice(''); }}>{accountNotice ? <p className="settings-field-message" role="status">{accountNotice}</p> : null}<div className="sidebar-managed-accounts">{accounts.map((account) => <div className="sidebar-managed-account" key={account.accountSlot}><ProfileCard name={account.displayName || account.username} handle={`@${account.username}`} tone="mint" initials={getInitials(account.displayName || account.username)} imageUrl={account.profilePictureUrl} /><button className="settings-secondary-button" type="button" disabled={account.active || accountBusy} onClick={() => setRemoveTarget(account)}>Log out</button></div>)}</div></Modal> : null}
+      {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
     </aside>
   );
 }

@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-09-06
+
+- [docs/auth] Added a Phase 4 handoff checkpoint documenting the verified
+  web/API state and the remaining mobile and full browser/device staging gates.
+
+- [auth/accounts] Implemented the Phase 4e server/web slice: device-scoped
+  opaque account slots, server-enforced limits, safe listing, switching,
+  removal, and slot-specific HttpOnly refresh cookies.
+- [database] Applied migration `20260906_0035` to staging; Alembic reports no
+  drift.
+- [verification] Dedicated staging account-flow acceptance passed (`1 passed`);
+  web TypeScript and production build checks passed. The web/API Phase 4 slice
+  is implemented; mobile and the full browser/device release matrix remain.
+
+- [ux/auth] Recorded the agreed Instagram/X-style account UX: Add-account
+  modal, drawer switching, ProfileCard-based Manage Accounts, confirmation
+  removal, most-recent-account fallback, duplicate activation, and lifecycle
+  account removal behavior.
+
+- [docs/auth] Closed the Phase 4d requirements decision: new-device login uses
+  credentials once, then either emailed OTP or existing-session approval, with
+  no sequential second verification.
+- [auth/device] Implemented existing-session new-device approval, OTP-or-
+  approval completion, web approval polling, and Settings Approve/Deny controls.
+- [database] Applied migration `20260906_0036` to staging; Phase 4 acceptance
+  passed (`2 passed` across account-slot and approval flows).
+- [auth/security] Login approval requests now create account-wide security
+  notifications, and the first completed path (Approve, Deny, or OTP) closes
+  the alternatives. Web approval notifications can surface a toast and link
+  to Settings; account switching synchronizes across open tabs.
+- [verification] Re-ran staging-backed Phase 4 acceptance (`2 passed`), API
+  compile, web TypeScript, production build, and `git diff --check`.
+
 ## 2026-09-07
 
 - [docs] Synchronized auth/session closeout references: code hardening is in

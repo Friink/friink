@@ -13,6 +13,7 @@ from app.models.reserved_username import ReservedUsername
 from app.models.signup_reservation import SignupReservation
 from app.models.recognized_device import RecognizedDevice
 from app.models.security_event import SecurityEvent, SecurityEventType
+from app.models.account_session_slot import AccountSessionSlot
 from app.models.notification_outbox import NotificationChannel, NotificationOutbox, OutboxStatus
 
-__all__ = ["AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "Message", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "Post", "PostLike", "PostMedia", "PostSave", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
+__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "Message", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "Post", "PostLike", "PostMedia", "PostSave", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]

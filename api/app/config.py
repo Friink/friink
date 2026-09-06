@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     account_deletion_grace_days: int = Field(default=32, alias="ACCOUNT_DELETION_GRACE_DAYS")
     account_deletion_warning_days: int = Field(default=4, alias="ACCOUNT_DELETION_WARNING_DAYS")
     account_lifecycle_internal_token: str = Field(default="", alias="ACCOUNT_LIFECYCLE_INTERNAL_TOKEN")
+    max_remembered_accounts_per_device: int = Field(default=5, alias="MAX_REMEMBERED_ACCOUNTS_PER_DEVICE")
 
     @model_validator(mode="after")
     def validate_lifecycle_timing(self) -> "Settings":
@@ -39,6 +40,8 @@ class Settings(BaseSettings):
             raise ValueError("ACCOUNT_DELETION_GRACE_DAYS must be positive.")
         if self.account_deletion_warning_days <= 0 or self.account_deletion_warning_days >= self.account_deletion_grace_days:
             raise ValueError("ACCOUNT_DELETION_WARNING_DAYS must be positive and shorter than the grace period.")
+        if not 1 <= self.max_remembered_accounts_per_device <= 16:
+            raise ValueError("MAX_REMEMBERED_ACCOUNTS_PER_DEVICE must be between 1 and 16.")
         return self
 
     @property

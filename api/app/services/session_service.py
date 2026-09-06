@@ -110,7 +110,10 @@ def get_or_create_recognized_device(
             recognized.last_seen_at = datetime.now(UTC)
             return recognized, raw_identifier, True
 
-    raw_identifier = secrets.token_urlsafe(32)
+    # The opaque browser identifier is device-scoped, while recognition rows
+    # remain account-scoped. Reuse the browser value when this account has not
+    # seen it yet so multiple independent accounts can share one device slot.
+    raw_identifier = raw_identifier or secrets.token_urlsafe(32)
     recognized = RecognizedDevice(
         user_id=user_id,
         token_hash=hash_device_identifier(raw_identifier),

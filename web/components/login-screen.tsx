@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
-import { checkUsernameAvailability, completeSignup, isLoginChallenge, login, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
+import { checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
@@ -42,6 +42,23 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const isSignupProfileStep = step === 'signup-profile';
   const isSignupOtpStep = step === 'signup-otp';
   const signupProgressLabel = isSignupProfileStep ? 'Step 4 of 4' : isSignupPasswordStep ? 'Step 3 of 4' : isSignupOtpStep ? 'Step 2 of 4' : 'Step 1 of 4';
+
+  useEffect(() => {
+    if (!loginChallengeToken || !isLoginOtpStep) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const status = await getLoginApprovalStatus(loginChallengeToken);
+        if (stopped || status === 'pending') return;
+        if (status === 'approved') finishAuthentication(await completeApprovedLogin(loginChallengeToken));
+        else if (status === 'denied') setErrorMessage('This login request was denied.');
+        else setErrorMessage('This login request expired. Please try again.');
+      } catch { /* The OTP path remains available if polling is unavailable. */ }
+    };
+    const interval = window.setInterval(() => void poll(), 2000);
+    void poll();
+    return () => { stopped = true; window.clearInterval(interval); };
+  }, [loginChallengeToken, isLoginOtpStep]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

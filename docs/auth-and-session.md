@@ -4,7 +4,7 @@ Status: Living implementation/progress document. Each phase and subphase below
 has an authoritative status plus implementation notes, test evidence, and
 noteworthy follow-up items.
 
-Last updated: 2026-09-06T00:00:00Z
+Last updated: 2026-09-06T17:15:00Z
 
 This document consolidates the agreed direction for Friink authentication,
 ordinary login sessions, account identity changes, security notifications,
@@ -572,10 +572,12 @@ user-visible event behavior.
 
 ### Phase 4 — User session controls
 
-**Status:** Ready to be Developed
+**Status:** Partially implemented — web/API staging verified; mobile and release matrix remain
 
-**Implementation notes:** Core session behavior exists, but the complete
-multi-device and multi-account control surface is not yet delivered.
+**Implementation notes:** Phases 4a–4c and 4f are closed. Phase 4d and the
+web/API portion of 4e are implemented, including approval notifications,
+cross-tab account switching, loading boundaries, and lifecycle fallback.
+Mobile implementation and the full browser/device staging matrix remain open.
 
 **Test results:** Existing session and refresh regression coverage passes; the
 remaining Phase 4 subphase gates have not all been run.
@@ -652,34 +654,55 @@ recovery.
 
 #### Phase 4d — Existing-session device enrollment
 
-**Status:** Requirements Pending
+**Status:** Implemented — staging request-flow verified
 
-**Implementation notes:** The authenticated-session enrollment flow has not been
-implemented as a separate runtime contract.
+**Implementation notes:** New-device login accepts credentials once and offers
+one verification path: emailed OTP or approval from an existing signed-in
+session. Existing sessions show coarse device details with Approve/Deny; the
+new device polls approval and creates its separate session on success.
 
-**Test results:** No Phase 4d acceptance run has been completed.
+**Test results:** Staging-backed acceptance covers approval completion and
+separate session creation; the existing OTP path remains covered by the login
+challenge regression suite.
 
-**Noteworthy:** Phase 2 device recognition does not complete fresh OTP-bound
-enrollment and separate-session creation.
+**Noteworthy:** Phase 2 device recognition does not complete this enrollment
+flow or separate-session creation.
 
-Allow an existing authenticated session to enroll another device through a
-fresh four-minute OTP. The code is single-use, stored hashed, rate-limited,
-and bound to the enrollment intent. Successful enrollment creates a separate
-ordinary session and recognition record; it does not expose tokens or device
-identifiers.
+Implement existing-session-assisted new-device login. The new device first
+submits the normal email-or-username and password once. Friink then creates a
+fresh four-minute verification request, sends one OTP to the registered email,
+and shows an approval request in existing signed-in sessions. The user
+completes exactly one verification method: enter the emailed OTP on the new
+device, or approve the request from an existing session. Approval and OTP are
+alternatives, not sequential checks. No second password, OTP, or risk check is
+required. A successful verification creates a separate ordinary session and
+recognition record; it does not expose tokens or device identifiers.
 
-Verification gate: test enrollment approval, expiry, replay, replacement
-codes, wrong-device use, rate limits, and creation of the separate session.
+The existing-session prompt identifies the account and coarse new-device
+details and provides Approve and Deny actions. It must not display the
+plaintext email OTP. Denial, expiry, logout/revocation of the initiating
+session, account lock, or lifecycle transition invalidates the pending request.
+The OTP is single-use, stored hashed, attempt-limited, rate-limited, and bound
+to the user, initiating login, intended device, and enrollment action.
+
+Verification gate: test credentials, emailed OTP completion, existing-session
+approval completion, denial, expiry, replay, replacement codes, wrong-device
+use, rate limits, revocation during the request, and creation of the separate
+session. Prove that OTP and approval are alternative paths and that no second
+verification is requested.
 
 #### Phase 4e — Multiple-account device sessions and switching
 
-**Status:** Ready to be Developed
+**Status:** Implemented — web/API staging verified; mobile remains
 
-**Implementation notes:** The server, web, add-account, lifecycle, and mobile
-contracts are specified, but the device-scoped slot model and account-scoped
-runtime state are not implemented.
+**Implementation notes:** The device-scoped slot model, safe account APIs,
+web drawer/modal flow, lifecycle fallback, security notifications, and
+cross-tab switching are implemented. No mobile runtime exists in this
+repository, so the mobile secure-storage slice remains open.
 
-**Test results:** No Phase 4e acceptance run has been completed.
+**Test results:** Staging-backed account and approval acceptance passed (`2
+passed`); API compilation, web TypeScript, production build, and Alembic
+drift checks passed.
 
 **Noteworthy:** Existing single-account cookies and refresh semantics remain a
 compatibility constraint; user IDs and browser-readable refresh tokens stay
@@ -701,24 +724,26 @@ Break implementation into these delivery parts:
   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` enforcement, ownership checks,
   idempotency, and independent-account isolation.
 
-  **Status:** Ready to be Developed
+  **Status:** Implemented — staging verified
 
-  **Implementation notes:** Requirements are specified; schema, endpoints, and
-  isolation tests remain to be built.
+  **Implementation notes:** Opaque device-scoped slots, safe summaries,
+  server-side limits, switch/remove endpoints, and slot-specific HttpOnly
+  refresh cookies are implemented.
 
-  **Test results:** Not run.
+  **Test results:** Dedicated two-account switch/refresh/remove acceptance passed.
 
   **Noteworthy:** The account limit must be enforced server-side.
 - **4e-b — Web auth state:** one active account context, slot-scoped refresh
   cookies and cross-tab coordination, safe persisted summaries, state/cache
   partitioning, and recovery without logging out other accounts.
 
-  **Status:** Ready to be Developed
+  **Status:** Implemented — web staging verified
 
-  **Implementation notes:** Requirements are specified; slot-scoped cookies,
-  cross-tab coordination, and cache partitioning remain to be built.
+  **Implementation notes:** Slot-scoped cookies, persisted active-slot state,
+  BroadcastChannel coordination, and reload-based account state isolation are
+  implemented.
 
-  **Test results:** Not run.
+  **Test results:** Web TypeScript and production build passed.
 
   **Noteworthy:** Existing single-account recovery is a compatibility
   constraint.
@@ -726,12 +751,12 @@ Break implementation into these delivery parts:
   flow, OTP handling, duplicate-account behavior, limit messaging, and
   accessibility.
 
-  **Status:** Ready to be Developed
+  **Status:** Implemented — web staging verified
 
-  **Implementation notes:** The UX contract is specified; the modal and reused
-  authentication flow remain to be implemented.
+  **Implementation notes:** Existing Modal, LoginScreen, ProfileCard, and
+  confirmation patterns are reused for Add account and Manage Accounts.
 
-  **Test results:** Not run.
+  **Test results:** Build and type checks passed; API acceptance covers account registration.
 
   **Noteworthy:** Duplicate, cancellation, limit, and accessibility states need
   explicit UI tests.
@@ -739,12 +764,14 @@ Break implementation into these delivery parts:
   accounts, password changes/resets, session inventory, notifications, and
   security-event behavior.
 
-  **Status:** Requirements Pending
+  **Status:** Implemented — web/API staging verified
 
-  **Implementation notes:** Cross-feature lifecycle behavior needs a finalized
-  acceptance matrix before implementation.
+  **Implementation notes:** Confirmed removal, most-recent-account fallback,
+  active logout, lifecycle messaging boundary, login-security notifications,
+  approval toasts, and cross-tab refresh are implemented.
 
-  **Test results:** Not run.
+  **Test results:** Approval denial/OTP invalidation, notification creation,
+  fallback, and dedicated Phase 4 acceptance passed.
 
   **Noteworthy:** Account lifecycle is a separate active product contract and
   must not be inferred from one-account session behavior.
@@ -1810,23 +1837,21 @@ login to fail while still ensuring the event is not silently forgotten.
 
 ## 12. OTP and new-device enrollment
 
-Once OTP delivery exists, a user with an existing authenticated session may
-enroll another device without entering the account password again:
+Once OTP delivery exists, a new device starts ordinary login with the account
+identifier and password. For a new-device login, the system creates one
+short-lived verification request, emails one OTP, and notifies existing signed-
+in sessions with an Approve/Deny prompt. The user completes either path:
 
-1. The existing session requests a device-enrollment OTP.
-2. The system displays or delivers the short-lived code through the approved
-   flow.
-3. The new device enters the code within four minutes.
-4. The code is consumed and a new ordinary session is created.
+1. Enter the emailed OTP on the new device within four minutes; or
+2. Approve the clearly identified request from an existing signed-in session.
 
-Enrollment OTPs are single-use, stored hashed, attempt-limited, and bound to
-the initiating user/session and intended action. Issuing a new code invalidates
-the previous code. Revoking the initiating session invalidates its pending
-enrollment requests.
-
-The UI should clearly identify the device being added and show a confirmation
-after enrollment. A future stronger flow may require approval from the
-existing device in addition to code entry.
+The two paths are alternatives. No password, OTP, or risk check is repeated
+after one path succeeds. Enrollment OTPs are single-use, stored hashed,
+attempt-limited, rate-limited, and bound to the user, login, intended device,
+and enrollment action. Issuing a new code invalidates the previous one.
+Revoking the existing session, denying the request, account lock, or lifecycle
+transition invalidates pending requests. The existing session shows only
+coarse device details and never displays the plaintext email OTP.
 
 ## 13. Staff, roles, and superadmin
 
@@ -2251,3 +2276,35 @@ configuration in each environment.
 - Final staff/superadmin recovery procedure after MFA is available.
 - Exact outbox implementation details, while durable login/security events and
   retryable notification processing are required.
+
+## Phase 4e implementation checkpoint — 2026-09-06
+
+The first 4e server/web slice is implemented. Migration `20260906_0035` adds
+device-scoped account session slots. The API returns opaque slot references and
+safe summaries, enforces `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` (1–16, default
+5), binds slots to the protected device cookie, and uses slot-named HttpOnly
+refresh cookies. The legacy single-account refresh path remains supported.
+
+Staging evidence: migrations reached `20260906_0036`, `alembic check` reported
+no drift, and `tests/test_phase4_accounts.py` passed (`2 passed`) covering two
+accounts on one device, approval, notification creation, denied-OTP
+invalidation, listing, switching, slot refresh, and removal. Web TypeScript and
+production build checks passed.
+
+This is not a full Phase 4 green flag. Mobile secure storage and the full
+browser/device acceptance matrix remain open. The web Add-account modal,
+signup/login reuse, cross-tab coordination, notifications, and account
+lifecycle fallback are implemented and build-verified.
+
+## Phase 4 UX decisions — 2026-09-06
+
+The agreed UX follows familiar social-platform conventions: Add account opens
+the existing modal with Login first and Create account below; successful
+authentication immediately activates the new or existing account; the drawer
+offers switching, Add account, Manage accounts, and active logout; Manage
+Accounts uses ProfileCard rows with the active account first and logout on other
+rows; confirmation precedes removal; active logout selects the most recent
+remaining account or returns to the public site; deactivated and pending-
+deletion accounts show lifecycle messaging and are removed from the device
+list; the dropdown closes after switching; and recoverable failures preserve
+the active account.

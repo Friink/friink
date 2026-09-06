@@ -461,3 +461,27 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - Profile overflow uses the shared `ActionMenu` and `Modal` for block confirmation.
 - Privacy > Blocked people uses the shared `Modal`, `ListRow`, and `ProfileCard`; search is API-backed and loading uses an opaque cursor.
 - A blocked profile, including a direct URL, renders the neutral `Profile unavailable.` state. Existing chats remain visible but read-only.
+
+### Account switcher slice
+
+The agreed interaction uses the existing Modal, LoginScreen, ProfileCard, and
+row patterns: Login is the first Add-account view, Create account is below it,
+and Manage Accounts places the active ProfileCard first with logout actions on
+other rows only.
+
+New-device approval uses the existing Settings row treatment: coarse device
+details, an explicit Approve action, and a Deny action. The approval surface
+never displays the email OTP.
+
+The implemented web slice also publishes login-approval requests through the
+existing Notifications surface, shows a security toast when a new request is
+detected, and reloads account-scoped state when another open tab switches the
+active account. Mobile secure-storage behavior remains a platform contract.
+
+### Account switcher slice
+
+The authenticated drawer may show `Add account` and, once two safe
+server-provided account summaries exist, `Change account` entries. Entries use
+the existing drawer action treatment and show username only. The existing
+Add-account modal is implemented for the web slice; mobile remains a platform
+contract.

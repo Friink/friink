@@ -618,3 +618,57 @@ Named verification coverage:
 The three-test staging run passed: `3 passed`. The broader auth-boundary and
 refresh-reuse run passed: `8 passed`. No schema migration was required for
 refresh-reuse signaling, and no account-lifecycle contract was changed.
+
+## Phase 4d requirements decision — 2026-09-06
+
+Phase 4d requirements are now closed. The agreed flow is credentials once on
+the new device, followed by one verification choice: the emailed four-minute
+OTP or approval from an existing signed-in session. These are alternatives,
+not sequential checks. Existing sessions show only coarse device details with
+Approve and Deny actions; they never display the plaintext OTP. Runtime
+implementation and its acceptance gate are now verified for the API approval
+path; full browser/device matrix coverage remains a release gate.
+
+Evidence: migration `20260906_0036` is at staging head; Phase 4d acceptance
+covers new-device credentials, existing-session pending approval, Approve,
+new-device completion, and separate session creation.
+
+## Phase 4e implementation checkpoint — 2026-09-06
+
+Implemented and staging-verified the first 4e server/web slice: migration
+`20260906_0035`, opaque device-scoped slots, safe account summaries,
+server-side limits, switch/remove operations, and slot-specific HttpOnly
+refresh cookies. Existing single-account refresh remains compatible.
+
+The dedicated two-account registration/list/switch/refresh/remove acceptance
+passed (`1 passed`), and Alembic reported no drift. Web TypeScript and the Next
+production build passed. The Add-account modal/OTP UX, complete isolation,
+mobile recovery and the full browser/device release gate remain open; Phase
+4d runtime implementation is verified for the approval path.
+
+## Phase 4 UX decision record — 2026-09-06
+
+Add account uses the existing modal with Login first and Create account below;
+success activates the new or already-remembered account. The drawer offers
+switching, Add account, Manage accounts, and active logout. Manage Accounts
+uses ProfileCard rows with the active account first and logout on other rows.
+Removal is confirmed, then immediate. Active logout selects the most recent
+remaining account or returns to the public site. Deactivated/pending-deletion
+accounts are removed after lifecycle messaging. The dropdown closes after
+switching and recoverable failures preserve the active account.
+
+## Phase 4 handoff checkpoint — 2026-09-06
+
+Work is paused with the web/API implementation documented and verified. The
+next resume point is platform/mobile secure-storage work and the full
+browser/device staging matrix. No runtime changes are implied by this
+checkpoint.
+
+## Phase 4 coordination verification — 2026-09-06
+
+The web/API account slice now synchronizes active-slot state across open tabs,
+reloads account-scoped UI state after a switch, and applies the agreed
+most-recent-account fallback after active logout/removal. The dedicated
+staging-backed suite passed (`2 passed`), including notification creation and
+denied-OTP invalidation. Mobile secure storage and full browser/device staging
+coverage remain the only material Phase 4 release gates not exercised here.

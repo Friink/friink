@@ -369,6 +369,15 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
     return transport.subscribe((count) => {
       setUnreadNotificationCount(count);
+      if (count > unreadNotificationCount && activeScreen !== 'notifications') {
+        listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
+          .then((page) => {
+            if (page.items.some((item) => item.type === 'login_security' && item.payload.kind === 'login_approval' && !item.read)) {
+              addToast({ title: 'Login request', message: 'Review the new login request in Settings.', tone: 'success' });
+            }
+          })
+          .catch(() => undefined);
+      }
       if (activeScreen === 'notifications') {
         listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
           .then((page) => setNotifications(page.items.map(mapApiNotification).map((notification) => ({ ...notification, tone: 'sage', unread: false }))))
@@ -646,7 +655,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       kind: notification.type === 'login_security' ? 'login' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
       name: notification.type === 'login_security' ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
       handle: `@${notification.type === 'login_security' ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
-      text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle),
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
       initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
       tone: notification.read ? 'sage' : 'mint',
@@ -655,10 +664,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     };
   }
 
-  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string) {
+  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string, payload: Record<string, unknown>) {
     switch (type) {
       case 'login_security':
-        return 'A new login to your Friink account was successful. Review sessions if this was not you.';
+        return 'kind' in payload && payload.kind === 'login_approval'
+          ? 'A new device is asking to sign in. Approve or deny it in Settings.'
+          : 'A new login to your Friink account was successful. Review sessions if this was not you.';
       case 'mention':
         return `${actorName} (@${actorHandle}) mentioned you.`;
       case 'like':
@@ -863,6 +874,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           onNavigate={navigateTo}
           onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
+          onAccountChange={onUserChange}
         />
 
         <Header

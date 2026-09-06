@@ -1,5 +1,53 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T17:30:00Z — Phase 4 handoff checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Synchronize all relevant audit documentation before pausing work.
+- Changes Made: Confirmed the current web/API implementation, staging verification evidence, documentation state, and remaining release gates across the auth/session, progress, rules, design, changelog, and agent-log records.
+- Verification Status: No runtime changes in this checkpoint. The latest recorded checks remain: staging-backed Phase 4 suite `2 passed`, Alembic no-drift, API compilation, web TypeScript, Next production build, and `git diff --check`. Resume with mobile/platform work and full browser/device staging coverage.
+
+## 2026-09-06T17:15:00Z — Complete Phase 4 approval and coordination slice
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed standard Instagram/X-inspired Phase 4 behavior and verify it end to end.
+- Changes Made: Invalidated alternate OTPs after approval or denial; created account-wide login-approval notifications; corrected pending approval device lookup; added approval notification copy/toast behavior; synchronized account-slot state across tabs and reload boundaries; expanded the Phase 4 acceptance test for notifications and denied OTPs; synchronized Phase 4 audit documentation.
+- Verification Status: Staging-backed dedicated Phase 4 suite passed (`2 passed`, one existing httpx deprecation warning); API compile, web TypeScript, Next production build, and diff checks passed. Mobile implementation and full browser/device staging coverage remain open because this repository has no mobile runtime.
+
+## 2026-09-06T16:52:53Z — Implement Phase 4e account slots
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and test Phase 4 user session controls, then update audit documentation.
+- Changes Made: Added device-scoped account session slots and migration `20260906_0035`; added safe account list, switch, remove, server-side limit validation, slot-specific HttpOnly refresh handling, and web drawer account switching/state. Preserved the legacy single-account path.
+- Verification Status: Staging migration reached `20260906_0035`; `alembic check` passed; dedicated two-account switch/refresh/remove acceptance passed (`1 passed`); web TypeScript and production build passed. Full Phase 4 remains open because 4d, modal/OTP UX, mobile, and full isolation gates remain open.
+
+## 2026-09-06T16:52:53Z — Record agreed Phase 4 account UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Capture the architect-approved account-switching UX and implement the agreed web interactions.
+- Changes Made: Added the existing Modal/LoginScreen Add-account flow, drawer account management, ProfileCard account rows, confirmation-based logout/removal, most-recent-account fallback, duplicate activation, and lifecycle-aware account removal behavior; synchronized supporting documents.
+- Verification Status: Dedicated staging account-flow acceptance passed (`1 passed`) after the UI completion; web TypeScript passed and the final production build is being rerun.
+
+## 2026-09-06T16:52:53Z — Close Phase 4d UX requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the ambiguity in existing-session new-device enrollment.
+- Changes Made: Documented credentials-once plus one-of-two verification: emailed OTP or existing-session Approve/Deny. Clarified that these are alternatives and existing sessions never display the plaintext OTP. Synchronized auth/session progress, rules, changelog, and this log.
+- Verification Status: Documentation-only contract update; Phase 4d runtime implementation remains open.
+
+## 2026-09-06T16:52:53Z — Implement Phase 4d approval flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the finalized new-device login flow with emailed OTP or existing-session approval.
+- Changes Made: Added approval state migration `20260906_0036`, pending/approve/deny/status/complete-approved API routes, web login approval polling, and Settings approval controls. Synchronized Phase 4d status and audit docs.
+- Verification Status: Staging migration reached `20260906_0036`; Phase 4 acceptance passed (`2 passed`); API compilation, web TypeScript, and production build passed. Full browser/device release coverage remains to be recorded.
+
 ## 2026-09-07T00:00:00Z — Synchronize auth/session closeout references
 
 - Agent: Codex

@@ -22,7 +22,11 @@ export type AuthSession = {
   accessToken: string;
   tokenType: 'Bearer';
   user: AuthUser;
+  accountSlot?: string;
 };
+
+export type AccountSummary = { accountSlot: string; username: string; displayName: string | null; profilePictureUrl: string | null; active: boolean; available: boolean; lastUsedAt: string };
+export type PendingLoginApproval = { challengeId: string; deviceLabel: string; browser: string | null; createdAt: string; expiresAt: string };
 
 export type LoginChallenge = {
   challengeRequired: true;
@@ -42,6 +46,7 @@ export type ManagedAuthSession = {
 };
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
+const ACCOUNT_SLOT_KEY = 'friink-active-account-slot';
 const REFRESH_COORDINATION_KEY = 'friink-auth-refresh-coordination';
 const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
@@ -90,6 +95,7 @@ type ApiTokenResponse = {
   access_token: string;
   token_type: string;
   user?: ApiUser;
+  account_slot?: string | null;
 };
 
 type ApiLoginChallengeResponse = {
@@ -324,9 +330,14 @@ export async function confirmAccountDeletion(accessToken: string, challengeToken
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
+  const previousAccountSlot = inMemoryAuthSession?.accountSlot;
   inMemoryAuthSession = session;
   window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user: session.user }));
+  if (session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, session.accountSlot);
   authBroadcastChannel?.postMessage({ type: 'session-updated', session });
+  if (previousAccountSlot && session.accountSlot && previousAccountSlot !== session.accountSlot) {
+    window.dispatchEvent(new CustomEvent('friink-account-switched'));
+  }
 }
 
 export function loadAuthSession(): AuthSession | null {
@@ -347,6 +358,7 @@ export function clearAuthSession() {
   authSessionGeneration += 1;
   inMemoryAuthSession = null;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
+  window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
@@ -410,7 +422,12 @@ function installAuthCoordinationListener() {
         authSessionGeneration += 1;
         inMemoryAuthSession = null;
       } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
+        const previousAccountSlot = inMemoryAuthSession?.accountSlot;
         inMemoryAuthSession = message.session;
+        if (message.session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, message.session.accountSlot);
+        if (previousAccountSlot && message.session.accountSlot && previousAccountSlot !== message.session.accountSlot) {
+          window.dispatchEvent(new CustomEvent('friink-account-switched'));
+        }
       }
     });
   }
@@ -508,8 +525,10 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
 
 async function performRefresh(generation: number, operationId: string): Promise<AuthSession> {
   const currentSession = loadPersistedAuthSession();
-  const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
+  const slot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  const response = await requestApi<{ access_token: string; token_type: string; account_slot?: string }>('/auth/refresh', {
     method: 'POST',
+    headers: slot ? { 'X-Friink-Account-Slot': slot } : undefined,
     authContext: 'refresh_exchange',
     skipAuthRefresh: true,
   });
@@ -543,9 +562,10 @@ async function performRefresh(generation: number, operationId: string): Promise<
     throw new AuthApiError('The session changed while it was refreshing.', 0);
   }
   const restoredSession: AuthSession = {
-    accessToken: response.access_token,
-    tokenType: 'Bearer',
-    user: mapApiUser(restoredUser),
+      accessToken: response.access_token,
+      tokenType: 'Bearer',
+      accountSlot: response.account_slot ?? slot ?? undefined,
+      user: mapApiUser(restoredUser),
   };
   saveAuthSession(restoredSession);
   authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
@@ -638,6 +658,45 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
   });
+}
+
+export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
+  const activeSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
+  return response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at }));
+}
+
+export async function canAddAccount(accessToken: string): Promise<boolean> {
+  const response = await requestApi<{ allowed: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  return response.allowed;
+}
+
+export async function switchAccount(accessToken: string, accountSlot: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'X-Friink-Account-Slot': accountSlot }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
+  return mapTokenResponse(response);
+}
+
+export async function removeAccount(accessToken: string, accountSlot: string): Promise<void> {
+  await requestApi<void>(`/auth/accounts/${encodeURIComponent(accountSlot)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}`, 'X-Friink-Account-Slot': accountSlot }, authContext: 'authenticated_request' });
+}
+
+export async function listPendingLoginApprovals(accessToken: string): Promise<PendingLoginApproval[]> {
+  const response = await requestApi<Array<{ challenge_id: string; device_label: string; browser: string | null; created_at: string; expires_at: string }>>('/auth/login/pending', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  return response.map((item) => ({ challengeId: item.challenge_id, deviceLabel: item.device_label, browser: item.browser, createdAt: item.created_at, expiresAt: item.expires_at }));
+}
+
+export async function respondToLoginApproval(accessToken: string, challengeId: string, decision: 'approve' | 'deny'): Promise<void> {
+  await requestApi<void>(`/auth/login/${decision}`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request', body: JSON.stringify({ challenge_id: challengeId }) });
+}
+
+export async function getLoginApprovalStatus(challengeToken: string): Promise<'pending' | 'approved' | 'denied' | 'expired'> {
+  const response = await requestApi<{ status: 'pending' | 'approved' | 'denied' | 'expired' }>(`/auth/login/status/${encodeURIComponent(challengeToken)}`, { method: 'GET', skipAuthRefresh: true });
+  return response.status;
+}
+
+export async function completeApprovedLogin(challengeToken: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/complete-approved', { method: 'POST', body: JSON.stringify({ challenge_token: challengeToken, otp: '000000' }), skipAuthRefresh: true });
+  return mapTokenResponse(response);
 }
 
 export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
@@ -1585,6 +1644,7 @@ async function mapTokenResponse(response: ApiTokenResponse): Promise<AuthSession
     accessToken: response.access_token,
     tokenType: 'Bearer',
     user: mapApiUser(user),
+    accountSlot: response.account_slot ?? (typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) ?? undefined : undefined),
   };
 }
 
