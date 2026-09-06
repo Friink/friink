@@ -638,6 +638,9 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
+    # Lifecycle deactivation is intentionally stricter than ordinary lockout:
+    # RULES.md requires inactive accounts to reject already-issued access JWTs,
+    # while an ordinary account lock leaves those JWTs valid until expiry.
     if user.lifecycle_status != "active":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
     return user

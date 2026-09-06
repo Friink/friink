@@ -2,6 +2,19 @@
 
 ## 2026-09-06
 
+- [auth/security] Added regression guards proving lifecycle deactivation rejects
+  pre-issued access tokens while ordinary account locks do not; added explicit
+  documentation at the lifecycle enforcement boundary.
+- [auth/security] Confirmed rotated/revoked refresh-token reuse records the
+  durable `refresh_reuse_detected` event while preserving the generic client
+  401; no schema change was required.
+- [auth/security] Added explicit missing-device-cookie coverage. The existing
+  device-recognition path is already fail-closed and forces OTP.
+- [verification] Staging auth-boundary and refresh-reuse suite passed (`8
+  passed`); API compilation passed.
+
+## 2026-09-06
+
 - [email] Replaced the repeated full sender-address setting with one verified
   `RESEND_FROM_DOMAIN`; the API now generates purpose-specific aliases through
   one centralized mapping (`noreply`, `hello`, and `security`).

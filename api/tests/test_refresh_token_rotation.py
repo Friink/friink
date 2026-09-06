@@ -11,6 +11,7 @@ from app.db import get_session_factory
 from app.models.refresh_token import RefreshToken
 from app.models.auth_session import AuthSession
 from app.models.user import User
+from app.models.security_event import SecurityEvent, SecurityEventType
 from app.routers.auth import REFRESH_COOKIE_NAME
 
 
@@ -82,6 +83,10 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
         repeated_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
         repeated_reuse = repeated_client.post("/auth/refresh")
         assert repeated_reuse.status_code == 401, repeated_reuse.text
+        with get_session_factory()() as session:
+            reuse_events = session.execute(select(SecurityEvent).where(SecurityEvent.user_id == user_id, SecurityEvent.event_type == SecurityEventType.refresh_reuse_detected)).scalars().all()
+            assert len(reuse_events) == 1
+            assert reuse_events[0].event_key == f"refresh-reuse:{old_row.id}"
         family_rows = [row for row in _rows(user_id) if row.family_id == first_family]
         assert family_rows and all(row.revoked_at is not None for row in family_rows)
 

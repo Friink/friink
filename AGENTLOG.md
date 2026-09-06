@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T23:45:00Z — Harden auth lifecycle boundary and refresh-reuse signaling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add regression guards for lifecycle-vs-lockout access tokens, refresh-token reuse signaling, and fail-closed device recognition.
+- Changes Made: Confirmed lifecycle access-token rejection remains structurally separate from ordinary account locking; added an enforcement comment; verified existing durable `refresh_reuse_detected` signaling without schema changes; added paired lock/deactivation, missing-device-cookie, and reuse-event assertions; synchronized the three targeted RULES.md addenda.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase2_auth_flows.py`, `api/tests/test_refresh_token_rotation.py`, `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Against staging/current working tree, auth-boundary and refresh-reuse suite passed `8 passed`; API compilation passed; item 3 required no runtime fix because the existing path was already fail-closed.
+
 ## 2026-09-06T23:30:00Z — Centralize Resend sender domain and aliases
 
 - Agent: Codex

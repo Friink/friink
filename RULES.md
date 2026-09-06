@@ -196,7 +196,7 @@ the entry, so history isn't lost.
 
 ### Rule: Risk-Based Login And Device Recognition
 - **What:** Email and username password logins use the same server-authoritative risk decision. Recognized normal devices proceed without OTP; new or suspicious devices receive a fresh four-minute email OTP when delivery is configured. The device identifier is opaque, hashed at rest, HttpOnly on web, and separate from refresh tokens and sessions.
-- **Edge cases:** Missing or changed device signals trigger the challenge; successful approval records the current coarse signals. Refresh never requires OTP, and no client claim, IP address alone, or browser fingerprint alone establishes trust.
+- **Edge cases:** Missing or changed device signals trigger the challenge; successful approval records the current coarse signals. Refresh never requires OTP, and no client claim, IP address alone, or browser fingerprint alone establishes trust. Missing or unreadable device cookies are fail-closed and force the OTP path, covered by `test_risk_login_challenges_new_changed_and_recognized_devices` in `api/tests/test_phase2_auth_flows.py`.
 - **Status:** Active; implementation and database-backed request tests pass. Live staging browser/provider verification remains a deployment acceptance step.
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/login_challenges.py`, `api/app/services/session_service.py`, `api/app/services/email.py`, `api/app/config.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`
@@ -204,6 +204,7 @@ the entry, so history isn't lost.
 
 ### Rule: Account Lock And Access-Token Boundary
 - **What:** Account locking blocks password login and refresh only. Already-issued short-lived access JWTs are not force-invalidated and remain valid until normal expiry; no lock-state revocation/version check is added to authenticated access-token validation.
+- **Edge cases:** Lifecycle deactivation/pending deletion is intentionally a separate, stricter boundary: `get_current_user` rejects already-issued access JWTs for inactive lifecycle states while ordinary account locks do not. The paired regression is `test_deactivation_rejects_existing_access_token_but_lock_does_not` in `api/tests/test_phase2_auth_flows.py`.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/user.py`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`
@@ -218,7 +219,7 @@ the entry, so history isn't lost.
 
 ### Rule: JWT Sessions
 - **What:** Login returns a bearer access token and sets an HTTP-only opaque refresh-token cookie. Access tokens default to 30 minutes; refresh tokens default to 14 days. Access JWT payloads are minimal and stable: `sub`, `typ`, `iat`, and `exp`, with a `kid` header identifying the signing key. Refresh tokens are stored server-side by SHA-256 hash only.
-- **Edge cases:** Each login/device receives a refresh-token family. Every refresh rotates the presented token; presenting a rotated or revoked token revokes that family and returns a generic `401`. Logout revokes only the presented family and deletes the refresh cookie with `204`. Expired refresh rows are rejected and retained for bounded reuse-detection cleanup. Token failures are classified server-side as expired, malformed, signature mismatch, schema invalid, refresh-token invalid, or session/user not found; client responses keep details generic but include a machine-readable code.
+- **Edge cases:** Each login/device receives a refresh-token family. Every refresh rotates the presented token; presenting a rotated or revoked token revokes that family, records one durable `refresh_reuse_detected` security event, and returns the same generic `401`. Logout revokes only the presented family and deletes the refresh cookie with `204`. Expired refresh rows are rejected and retained for bounded reuse-detection cleanup. Token failures are classified server-side as expired, malformed, signature mismatch, schema invalid, refresh-token invalid, or session/user not found; client responses keep details generic but include a machine-readable code. Event and generic-response behavior are covered by `test_refresh_rotation_reuse_logout_legacy` in `api/tests/test_refresh_token_rotation.py`.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/refresh_token.py`, `api/app/routers/auth.py`, `api/app/services/session_service.py`, `api/app/services/security.py`, `api/app/services/auth_errors.py`, `api/app/config.py`, `web/lib/auth.ts`, `api/tests/test_token_resilience.py`
@@ -708,14 +709,22 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27T00:00:00Z
 
 ### Rule: Account Lifecycle Uses Owner-Verified State Transitions
-- **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation and deletion require current-password confirmation plus OTP. Reactivation requires valid credentials plus fresh OTP and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain audited backend override capability.
+- **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation requires current-password confirmation only; deletion requires current-password confirmation plus OTP. Reactivation requires valid credentials plus fresh OTP and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain protected backend recovery capability.
 - **Edge cases:** Deactivation revokes all sessions and refresh families and immediately rejects access for the inactive account. It preserves readable, read-only chats and renders retained identity as `Friink User` with the real username and default avatar. Deletion is cancellable for 32 days, including the final hour before the deletion transaction, then removes public/user-generated content while retaining restricted UUID tombstones, identity history, required billing/security records, and chats as `Account Deleted`.
-- **Billing:** Deactivation does not pause or cancel subscriptions; deletion cancels billing immediately and reactivation does not resume it. Lifecycle cycling has a 24-hour post-reactivation deactivation cooldown.
+- **Billing:** The contract requires deactivation not to pause/cancel subscriptions and deletion to cancel billing immediately; the billing-provider adapter is not yet wired, so this behavior must not be represented as verified until that integration is delivered. Reactivation must not resume a cancelled subscription. Lifecycle cycling has a 24-hour post-reactivation deactivation cooldown.
 - **Security:** Inactive-account failed logins never send email and use only minimal restricted internal events. Unknown identifiers and wrong passwords remain lifecycle-state agnostic.
-- **Status:** Approved business contract; runtime implementation pending lifecycle verification gates.
+- **Status:** Active runtime slice; full contract gates remain open for warning-link delivery, billing-provider integration, exhaustive transition concurrency/idempotency, abuse controls, and fully audited staff overrides.
 - **Platform:** All
 - **File(s):** `docs/account-lifecycle.md`, `docs/auth-and-session.md`
 - **Since:** 2026-09-05T22:32:26Z
+
+### Rule: Resend Uses One Verified Domain With Centralized Sender Aliases
+- **What:** The API configures one verified `RESEND_FROM_DOMAIN` and generates sender addresses centrally by message purpose: `noreply` for OTP, `hello` for welcome messages, and `security` for security messages. `RESEND_API_KEY` remains server-side only.
+- **Edge cases:** The domain must be verified in Resend, sender aliases must not be repeated across environment variables or email methods, and the full sender address must never be supplied by the frontend. Staging and production configure their own provider credentials and verified sender domain.
+- **Status:** Active
+- **Platform:** API
+- **File(s):** `api/app/config.py`, `api/app/services/email.py`, `api/.env.example`
+- **Since:** 2026-09-06T23:30:00Z
 - ### Rule: Blocking Is Bilateral And Irreversible For Relationships
 - **What:** Blocking removes accepted and pending follow relationships in both directions transactionally. Unblocking never restores them. Both users lose profile access and message sending, while existing chats remain readable and read-only.
 - **Status:** Active
