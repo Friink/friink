@@ -52,6 +52,7 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         accounts = client.get("/auth/accounts", headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert accounts.status_code == 200, accounts.text
         assert {item["account_slot"] for item in accounts.json()} == {first_slot, second_slot}
+        assert [item["account_slot"] for item in accounts.json() if item["active"]] == [second_slot]
         switched = client.post("/auth/accounts/switch", json={"account_slot": first_slot}, headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert switched.status_code == 200, switched.text
         assert switched.json()["user"]["email"] == seeded[0].email

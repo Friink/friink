@@ -2,6 +2,10 @@
 
 ## 2026-09-07
 
+- [auth/accounts] Reconciled the active account with the authenticated access
+  token instead of trusting a stale local slot pointer. Refresh responses now
+  replace the stored slot, and account discovery repairs existing browsers by
+  matching the authenticated username to its device slot.
 - [ux/accounts] Removed the redundant active-account header from the account
   switcher and reordered its final actions to Add account, then Manage
   accounts.

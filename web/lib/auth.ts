@@ -318,6 +318,7 @@ export function saveAuthSession(session: AuthSession) {
   inMemoryAuthSession = session;
   window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user: session.user }));
   if (session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, session.accountSlot);
+  else window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
   authBroadcastChannel?.postMessage({ type: 'session-updated', session });
   if (previousAccountSlot && session.accountSlot && previousAccountSlot !== session.accountSlot) {
     window.dispatchEvent(new CustomEvent('friink-account-switched'));
@@ -532,6 +533,7 @@ async function performRefresh(generation: number, operationId: string): Promise<
       ...currentSession,
       accessToken: response.access_token,
       tokenType: 'Bearer',
+      accountSlot: response.account_slot ?? undefined,
     };
     saveAuthSession(nextSession);
     authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
@@ -550,7 +552,7 @@ async function performRefresh(generation: number, operationId: string): Promise<
   const restoredSession: AuthSession = {
       accessToken: response.access_token,
       tokenType: 'Bearer',
-      accountSlot: response.account_slot ?? slot ?? undefined,
+      accountSlot: response.account_slot ?? undefined,
       user: mapApiUser(restoredUser),
   };
   saveAuthSession(restoredSession);
@@ -649,7 +651,16 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
 export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
   const activeSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
   const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
-  return response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at }));
+  const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at }));
+  const currentUser = loadPersistedAuthSession()?.user;
+  const currentAccount = currentUser
+    ? accounts.find((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())
+    : undefined;
+  if (currentAccount && typeof window !== 'undefined') {
+    window.localStorage.setItem(ACCOUNT_SLOT_KEY, currentAccount.accountSlot);
+    return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
+  }
+  return accounts;
 }
 
 export async function canAddAccount(accessToken: string): Promise<boolean> {
@@ -1630,7 +1641,7 @@ async function mapTokenResponse(response: ApiTokenResponse): Promise<AuthSession
     accessToken: response.access_token,
     tokenType: 'Bearer',
     user: mapApiUser(user),
-    accountSlot: response.account_slot ?? (typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) ?? undefined : undefined),
+    accountSlot: response.account_slot ?? undefined,
   };
 }
 

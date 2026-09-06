@@ -7090,6 +7090,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Made the participant ProfileCard link to the participant's posts/profile route.
 - Scrolls the document and message container to the conversation end once messages initially load or the chat is reopened.
 - Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-06T22:15:00Z — Reconcile account identity and active slot
+- Fixed the account list to mark the slot belonging to the authenticated access-token user as active, rather than trusting a stale `X-Friink-Account-Slot` value.
+- Fixed refresh and token mapping to accept the server-issued account slot and clear stale local slot state when the response has no slot.
+- Added client-side account-list reconciliation so an already-open browser repairs its slot pointer by matching the authenticated username.
+- Validation: API compile, web TypeScript check, and `git diff --check` passed; focused auth tests passed (`10 passed`), while two database-backed account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
 ## 2026-09-06T21:45:00Z — Redirect authenticated users away from public routes
 - Added a refresh-aware public route guard for `/` and `/subscriptions` and extended `/login` to verify persisted sessions before rendering auth UI.
 - Public content remains available only after a confirmed terminal unauthenticated result; transient refresh failures do not expose the public site.

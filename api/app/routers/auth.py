@@ -935,11 +935,9 @@ async def accounts(
     settings: Settings = Depends(get_settings),
 ) -> list[AccountSummaryResponse]:
     await _ensure_current_account_slot(request, response, current_user, session, settings)
-    active_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
     result: list[AccountSummaryResponse] = []
     for slot, user in list_slots(session, request.cookies.get(DEVICE_COOKIE_NAME)):
-        current = get_slot(session, active_slot, request.cookies.get(DEVICE_COOKIE_NAME)) if active_slot else None
-        result.append(AccountSummaryResponse(account_slot=str(slot.id), username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user, settings), active=bool(current and slot.id == current.id), last_used_at=slot.last_used_at))
+        result.append(AccountSummaryResponse(account_slot=str(slot.id), username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user, settings), active=slot.user_id == current_user.id, last_used_at=slot.last_used_at))
     return result
 
 
