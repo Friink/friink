@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import styles from '../landing.module.css';
 import { Header } from '@/components/public-header';
+import { PublicRouteGuard } from '@/components/public-route-guard';
 
 export const metadata: Metadata = {
   title: 'Plans',
@@ -17,7 +18,8 @@ const plans = [
 
 export default function SubscriptionsPage() {
   return (
-    <div className={styles.page}>
+    <PublicRouteGuard>
+      <div className={styles.page}>
       <Header page="subscriptions" />
 
       <main className={styles.plansPage}>
@@ -52,6 +54,7 @@ export default function SubscriptionsPage() {
           <p>&copy; 2026 Friink. Built for humans.</p>
         </div>
       </footer>
-    </div>
+      </div>
+    </PublicRouteGuard>
   );
 }

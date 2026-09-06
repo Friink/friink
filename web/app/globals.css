@@ -3490,6 +3490,11 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   min-width: 0;
 }
 
+.chat-header .profile-card-link {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .chat-contact {
   display: grid;
   flex: 1;

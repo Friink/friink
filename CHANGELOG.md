@@ -1829,3 +1829,5 @@ _Last updated: 2026-09-01_
 - Surfaced account-list and account-switch failures in the drawer instead of silently falling back to a single-account view.
 - Isolated Add account authentication from the active account's generic refresh cookie so adding or switching accounts no longer replaces the older account session.
 - Fixed chat scrolling so the participant profile/separator stays pinned below navigation and the final message clears the floating composer.
+- Added a shared public-route session guard so authenticated users are redirected to `/home` from the landing page, subscriptions, and direct `/login` navigation.
+- Made chat participant identity clickable and restored end-of-conversation scroll on reopen; chat retains bottom clearance for the floating composer.

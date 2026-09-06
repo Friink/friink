@@ -7085,3 +7085,12 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verified staging chat behavior at `/:username/chat`: the participant header scrolled away and the final message was obscured by the fixed composer.
 - Updated shared chat CSS to keep the header/separator sticky below navigation and reserve bottom scroll space for the floating composer.
 - Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-06T22:00:00Z — Complete chat scroll and participant affordances
+- Re-verified the live `/:username/chat` layout and confirmed document-level scrolling, sticky participant header behavior, and the fixed composer overlap conditions.
+- Made the participant ProfileCard link to the participant's posts/profile route.
+- Scrolls the document and message container to the conversation end once messages initially load or the chat is reopened.
+- Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-06T21:45:00Z — Redirect authenticated users away from public routes
+- Added a refresh-aware public route guard for `/` and `/subscriptions` and extended `/login` to verify persisted sessions before rendering auth UI.
+- Public content remains available only after a confirmed terminal unauthenticated result; transient refresh failures do not expose the public site.
+- Validation: web TypeScript check and `git diff --check` passed.

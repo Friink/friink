@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/login-screen';
-import { loadAuthSession } from '@/lib/auth';
+import { isTerminalRefreshFailure, loadAuthSession, refreshAuthSession } from '@/lib/auth';
 
 export function LoginClient() {
   const router = useRouter();
@@ -17,7 +17,11 @@ export function LoginClient() {
       return;
     }
 
-    setSessionChecked(true);
+    refreshAuthSession()
+      .then(() => router.replace('/home'))
+      .catch((error) => {
+        if (isTerminalRefreshFailure(error)) setSessionChecked(true);
+      });
   }, [router]);
 
   if (!sessionChecked) return null;
