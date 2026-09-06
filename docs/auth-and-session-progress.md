@@ -532,3 +532,70 @@ fresh-login notification uniqueness, refresh non-duplication, durable event
 coverage, unavailable-email-adapter failure retention, and recovery through a
 successful injected provider adapter. The email channel remains a hook only;
 no production email provider was enabled by Phase 3.
+
+## Auth & Session — Phase 1/2/3 closeout (2026-09-06)
+
+Phase 1 (session reliability): gate passed, staging-verified 2026-09-03.
+
+Phase 2 (account identity): implementation complete (2c/2d/2e). Closeout
+work completed in this pass:
+
+- Migrate-before-deploy safeguard added (commit `5ecf57d`) — Vercel
+  `buildCommand` plus a blocking migration/drift script.
+- Public UUID exposure fixed across chat (`7def988`; this also fixed a live
+  frontend/backend field mismatch, not just a privacy gap), and across
+  notifications, connections, blocking, posts, and like-actors (`771fc91`).
+- Remaining deferred items, not blockers for moving on:
+  - Live staging trace for login-risk and email-change endpoints
+  - Race-condition hardening (TOCTOU on signup/username-change → clean 409s)
+  - Pre-existing unrelated connection unit-test fixture failures
+    (`FakeSession.execute`) — flagged for follow-up, not caused by this work
+
+Phase 3 (security events): gate passed on staging and production,
+2026-09-05.
+
+Decision: auth/session work is paused here to prioritize product development;
+account lifecycle is next. The deferred items above are tracked, not abandoned,
+and should be revisited before production launch.
+
+Explicitly out of scope until reopened: Phase 7 (failed-login notification).
+Account lifecycle is a separate upcoming specification and is now active.
+
+## Account lifecycle — implementation evidence (2026-09-06)
+
+The first runtime slice is implemented and verified against staging:
+
+- `active`, `deactivated`, `pending_deletion`, and `deleted` state columns;
+- password-only deactivation, immediate session/refresh/device revocation,
+  and access-token rejection;
+- password + OTP deletion confirmation with stored 32-day default deadline;
+- OTP-gated deactivation/pending-deletion reactivation with one new session;
+- retained-chat identity handling and public-content deletion worker;
+- retry failure timestamps/reasons and an internal token-protected staff
+  completion endpoint;
+- settings controls, logged-out confirmation pages, and lifecycle-aware login
+  copy.
+
+Database evidence:
+
+```text
+staging: alembic upgrade head -> 20260906_0034 (head)
+staging: alembic check -> No new upgrade operations detected.
+production: alembic upgrade head -> 20260906_0034 (head)
+production: alembic check -> No new upgrade operations detected.
+```
+
+Verification evidence:
+
+```text
+staging: python -m pytest tests/test_account_lifecycle.py -q -> 2 passed
+web: npm run build -> passed
+api: python -m compileall -q app alembic -> passed
+```
+
+The account-lifecycle green flag remains open for the contract items not yet
+integrated in this slice: single-use deletion-warning links and provider retry
+semantics, billing cancellation/resubscription integration, full transition
+concurrency/idempotency coverage, lifecycle abuse limits, and a complete
+audited staff override/event trail. No deployment go-ahead should imply those
+items are complete.

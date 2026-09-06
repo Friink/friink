@@ -31,6 +31,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [signupReservationToken, setSignupReservationToken] = useState('');
   const [loginOtp, setLoginOtp] = useState('');
   const [loginChallengeToken, setLoginChallengeToken] = useState('');
+  const [lifecycleStatus, setLifecycleStatus] = useState<'deactivated' | 'pending_deletion' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -52,6 +53,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         const result = await login(loginIdentifier, password);
         if (isLoginChallenge(result)) {
           setLoginChallengeToken(result.challengeToken);
+          setLifecycleStatus(result.lifecycleStatus ?? null);
           setLoginOtp('');
           setStep('login-otp');
         } else {
@@ -129,6 +131,7 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
           finishAuthentication(session);
         } else {
           setLoginChallengeToken(session.challengeToken);
+          setLifecycleStatus(session.lifecycleStatus ?? null);
           setLoginOtp('');
           setStep('login-otp');
         }
@@ -264,8 +267,8 @@ export function LoginScreen({ onAuthenticated }: LoginScreenProps) {
         {isLoginOtpStep && (
           <>
             <div className="signup-step-copy" aria-label="Login verification">
-              <p>Verify this login</p>
-              <span>We sent a 6-character verification code to your email.</span>
+              <p>{lifecycleStatus === 'pending_deletion' ? 'Cancel account deletion' : lifecycleStatus === 'deactivated' ? 'Reactivate your account' : 'Verify this login'}</p>
+              <span>{lifecycleStatus === 'pending_deletion' ? 'Verify with the code we sent to cancel deletion and restore your account.' : lifecycleStatus === 'deactivated' ? 'Verify with the code we sent to restore your account.' : 'We sent a 6-character verification code to your email.'}</span>
             </div>
 
             <InputField

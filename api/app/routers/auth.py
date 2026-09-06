@@ -16,6 +16,9 @@ from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
     LoginChallengeResponse,
+    LifecycleChallengeResponse,
+    LifecycleActionRequest,
+    LifecycleDeleteConfirmRequest,
     LoginVerifyRequest,
     EmailChangeStartRequest,
     EmailChangeStartResponse,
@@ -67,6 +70,7 @@ from app.services.session_service import (
 )
 from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
+from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -289,16 +293,30 @@ async def _issue_login_session(
     return TokenResponse(access_token=access_token, user=user_response(user, settings))
 
 
-@router.post("/login", response_model=TokenResponse | LoginChallengeResponse)
+@router.post("/login", response_model=LifecycleChallengeResponse | TokenResponse | LoginChallengeResponse)
 async def login(
     payload: LoginRequest,
     request: Request,
     response: Response,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
-) -> TokenResponse | LoginChallengeResponse:
+) -> TokenResponse | LoginChallengeResponse | LifecycleChallengeResponse:
     require_allowed_origin(request, settings)
     user = await authenticate_user(session, payload.identifier, payload.password)
+    if user.lifecycle_status in {"deactivated", "pending_deletion"}:
+        lifecycle_kind = "reactivation_pending_deletion" if user.lifecycle_status == "pending_deletion" else "reactivation"
+        _challenge, challenge_token, otp_code = create_login_challenge(session, user, None, settings, kind=lifecycle_kind)
+        try:
+            await EmailService(settings).send_lifecycle_otp(user.email, otp_code)
+        except EmailDeliveryError as exc:
+            session.rollback()
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
+        await commit(session)
+        return LifecycleChallengeResponse(
+            challenge_token=challenge_token,
+            message="We sent a verification code to your email to restore access to this account.",
+            lifecycle_status=user.lifecycle_status,
+        )
     raw_device_identifier = request.cookies.get(DEVICE_COOKIE_NAME)
     recognized_device = get_recognized_device(session, user.id, raw_device_identifier)
     requires_risk_challenge = bool(settings.login_risk_otp_enabled and settings.resend_api_key.strip()) and (
@@ -343,6 +361,12 @@ async def login_verify(
         await commit(session)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
     challenge.consumed_at = datetime.now(UTC)
+    if challenge.kind in {"reactivation", "reactivation_pending_deletion"}:
+        if user.lifecycle_status not in {"deactivated", "pending_deletion"}:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+        reactivate_account(session, user, challenge)
+        raw_device_identifier = derive_pending_device_identifier(payload.challenge_token, settings)
+        return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
     raw_device_identifier = request.cookies.get(DEVICE_COOKIE_NAME)
     if challenge.device_id:
         if not raw_device_identifier:
@@ -407,7 +431,7 @@ async def refresh(
             token_record.reuse_grace_used_at = now
             user = session.get(User, token_record.user_id)
             auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
-            if not user or user.account_locked or (auth_session and auth_session.revoked_at is not None):
+            if not user or user.account_locked or user.lifecycle_status != "active" or (auth_session and auth_session.revoked_at is not None):
                 if user and user.account_locked:
                     revoke_refresh_family(session, token_record.family_id, "account_locked", now)
                     await commit(session)
@@ -480,7 +504,7 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
-    if user.account_locked:
+    if user.account_locked or user.lifecycle_status != "active":
         revoke_refresh_family(session, token_record.family_id, "account_locked", now)
         await commit(session)
         raise HTTPException(
@@ -614,6 +638,8 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
+    if user.lifecycle_status != "active":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
     return user
 
 
@@ -622,7 +648,8 @@ async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme),
         return None
     try:
         payload = decode_token(token, "access")
-        return session.get(User, user_id_from_subject(str(payload.get("sub", ""))))
+        user = session.get(User, user_id_from_subject(str(payload.get("sub", ""))))
+        return user if user and user.lifecycle_status == "active" else None
     except TokenValidationError:
         return None
 
@@ -633,6 +660,52 @@ async def me(
     settings: Settings = Depends(get_settings),
 ) -> UserResponse:
     return user_response(current_user, settings)
+
+
+@router.post("/me/deactivate", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_me(
+    payload: LifecycleActionRequest,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> Response:
+    await deactivate_account(session, current_user, payload.current_password)
+    response.delete_cookie(key=REFRESH_COOKIE_NAME, path="/")
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
+
+
+@router.post("/me/delete/start", response_model=LoginChallengeResponse, status_code=status.HTTP_202_ACCEPTED)
+async def start_delete_me(
+    payload: LifecycleActionRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> LoginChallengeResponse:
+    require_allowed_origin(request, settings)
+    challenge_token, otp_code = await start_deletion(session, current_user, payload.current_password, settings)
+    try:
+        await EmailService(settings).send_lifecycle_otp(current_user.email, otp_code)
+    except EmailDeliveryError as exc:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
+    await commit(session)
+    return LoginChallengeResponse(challenge_token=challenge_token, message="We sent a verification code to your email to confirm permanent deletion.")
+
+
+@router.post("/me/delete/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def confirm_delete_me(
+    payload: LifecycleDeleteConfirmRequest,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    await confirm_deletion(session, current_user, payload.challenge_token, payload.otp, settings)
+    response.delete_cookie(key=REFRESH_COOKIE_NAME, path="/")
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 @router.get("/sessions", response_model=list[AuthSessionResponse])

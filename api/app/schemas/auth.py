@@ -103,6 +103,19 @@ class LoginChallengeResponse(BaseModel):
     message: str
 
 
+class LifecycleChallengeResponse(LoginChallengeResponse):
+    lifecycle_status: Literal["deactivated", "pending_deletion"]
+
+
+class LifecycleActionRequest(BaseModel):
+    current_password: str = Field(min_length=1)
+
+
+class LifecycleDeleteConfirmRequest(BaseModel):
+    challenge_token: str = Field(min_length=32, max_length=128)
+    otp: str = Field(min_length=6, max_length=6)
+
+
 class LoginVerifyRequest(BaseModel):
     challenge_token: str = Field(min_length=32, max_length=128)
     otp: str = Field(min_length=6, max_length=6)

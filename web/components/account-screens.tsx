@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, getReadReceiptPreference, listAuthSessions, listBlockedUsers, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getReadReceiptPreference, listAuthSessions, listBlockedUsers, loadAuthSession, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -26,6 +26,7 @@ type SettingsScreenProps = {
   onTabChange?: (id: string) => void;
   onUserChange?: (user: AuthUser) => void;
   onToast?: (message: ToastInput, tone?: ToastMessage['tone']) => void;
+  onLogout?: () => void;
 };
 
 type SettingsRowProps = {
@@ -86,7 +87,7 @@ function getProfilePictureErrorDetail(error: AuthApiError) {
   return 'We couldn’t finish updating your profile picture. Please try again.';
 }
 
-export function SettingsScreen({ user, appearance, onAppearanceChange, accentColor, onAccentColorChange, activeTab = 'general', onUserChange, onToast }: SettingsScreenProps) {
+export function SettingsScreen({ user, appearance, onAppearanceChange, accentColor, onAccentColorChange, activeTab = 'general', onUserChange, onToast, onLogout }: SettingsScreenProps) {
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
@@ -146,6 +147,11 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState('');
   const [sessionsBusyId, setSessionsBusyId] = useState<string | null>(null);
+  const [lifecyclePassword, setLifecyclePassword] = useState('');
+  const [deletionToken, setDeletionToken] = useState('');
+  const [deletionOtp, setDeletionOtp] = useState('');
+  const [lifecycleStatus, setLifecycleStatus] = useState('');
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
   useEffect(() => {
     setUsername(user.username);
     setEmail(user.email);
@@ -365,6 +371,34 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     } finally {
       setIsChangingPassword(false);
     }
+  }
+
+  async function handleDeactivate() {
+    const session = loadAuthSession();
+    if (!session || !lifecyclePassword) return setLifecycleStatus('Enter your current password to continue.');
+    if (!window.confirm('Deactivate your account? Your sessions will end, public content will be unavailable, and uncancelled subscriptions may still be charged.')) return;
+    setLifecycleBusy(true); setLifecycleStatus('');
+    try { await deactivateAccount(session.accessToken, lifecyclePassword); clearAuthSession(); window.location.assign('/account-deactivated'); }
+    catch (error) { setLifecycleStatus(error instanceof Error ? error.message : 'Could not deactivate your account.'); }
+    finally { setLifecycleBusy(false); }
+  }
+
+  async function handleDeletionStart() {
+    const session = loadAuthSession();
+    if (!session || !lifecyclePassword) return setLifecycleStatus('Enter your current password to continue.');
+    setLifecycleBusy(true); setLifecycleStatus('');
+    try { const challenge = await startAccountDeletion(session.accessToken, lifecyclePassword); setDeletionToken(challenge.challenge_token); setLifecycleStatus('A verification code was sent to your email.'); }
+    catch (error) { setLifecycleStatus(error instanceof Error ? error.message : 'Could not start deletion.'); }
+    finally { setLifecycleBusy(false); }
+  }
+
+  async function handleDeletionConfirm() {
+    const session = loadAuthSession();
+    if (!session || !deletionToken || !/^[A-Za-z0-9]{6}$/.test(deletionOtp)) return setLifecycleStatus('Enter the 6-character verification code.');
+    setLifecycleBusy(true); setLifecycleStatus('');
+    try { await confirmAccountDeletion(session.accessToken, deletionToken, deletionOtp); clearAuthSession(); window.location.assign('/account-deleted'); }
+    catch (error) { setLifecycleStatus(error instanceof Error ? error.message : 'Could not confirm deletion.'); }
+    finally { setLifecycleBusy(false); }
   }
 
   async function handleSessionRevoke(sessionId: string) {
@@ -832,6 +866,27 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                   ))}
                 </div>
               ) : null}
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-pause" aria-hidden="true" /></span>}
+              title="Deactivate account"
+              subtitle="Temporarily hide your account. You can return and reactivate it with a verified login."
+              className="settings-row settings-row-expanded"
+              trailing={<button className="settings-secondary-button" type="button" disabled={lifecycleBusy || !lifecyclePassword} onClick={handleDeactivate}>Deactivate</button>}
+            >
+              <input type="password" value={lifecyclePassword} onChange={(event) => setLifecyclePassword(event.target.value)} placeholder="Current password" aria-label="Current password for account lifecycle" autoComplete="current-password" />
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-trash" aria-hidden="true" /></span>}
+              title="Delete account"
+              subtitle="Deletion is permanent after the 32-day grace period. Billing is cancelled when deletion begins."
+              className="settings-row settings-row-expanded"
+              trailing={deletionToken ? <button className="settings-secondary-button" type="button" disabled={lifecycleBusy || deletionOtp.length !== 6} onClick={handleDeletionConfirm}>Confirm deletion</button> : <button className="settings-secondary-button" type="button" disabled={lifecycleBusy || !lifecyclePassword} onClick={handleDeletionStart}>Send code</button>}
+            >
+              {deletionToken ? <input type="text" value={deletionOtp} onChange={(event) => setDeletionOtp(event.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase())} placeholder="Email verification code" aria-label="Deletion verification code" autoComplete="one-time-code" /> : <p className="settings-field-message">You will verify this action with a fresh email code.</p>}
+              {lifecycleStatus ? <span className="settings-field-message" role="status">{lifecycleStatus}</span> : null}
             </SettingsRow>
           </div>
         </div>

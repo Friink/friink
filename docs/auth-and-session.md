@@ -562,15 +562,17 @@ the account owner whether the attempts are from the legitimate owner or from
 someone else. It must not change the existing cooldown tiers, generic login
 responses, or successful-login reset behavior.
 
-**Pre-development discussion gate:** `docs/account-lifecycle.md` is now the
-draft lifecycle contract, but it contains an unresolved conflict: its draft
-rules mention failed/attempted-login notifications for deactivated accounts,
-while this phase applies only to normal active-account failures. Resolve that
-conflict, along with the lifecycle document's token-invalidation,
-failure-boundary, reset-link, state-transition, and abuse-control questions,
-before implementing Phase 7 or account-lifecycle runtime behavior. Until then,
-Phase 7 remains active-account-only and deactivated/pending-deletion attempts
-must not enter this notification path.
+**Lifecycle decision gate:** `docs/account-lifecycle.md` is now the approved
+business contract. Failed-login email notifications remain limited to normal
+active accounts; deactivated and pending-deletion attempts may create only a
+minimal restricted internal security/rate-limit event. Deactivation is a
+stronger account-state exception than ordinary locking: all sessions and
+refresh families are revoked and already-issued access tokens must be rejected
+immediately. Deactivation and deletion require current-password confirmation
+plus OTP; reactivation requires valid credentials plus fresh OTP and creates
+only one new session. Runtime work remains blocked until the lifecycle
+document's reset-link, transition-concurrency, abuse-control, deletion-job,
+staff-override, and UX/accessibility gates are implemented and verified.
 
 #### Phase 7a — Trigger, suppression, privacy, and account-state decisions
 

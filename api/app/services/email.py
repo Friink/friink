@@ -23,6 +23,9 @@ class EmailService:
     async def send_email_change_otp(self, email: str, otp_code: str) -> None:
         await self._send_otp(email, otp_code, "confirm your new Friink email address")
 
+    async def send_lifecycle_otp(self, email: str, otp_code: str) -> None:
+        await self._send_otp(email, otp_code, "confirm your Friink account reactivation or deletion request")
+
     async def _send_otp(self, email: str, otp_code: str, action: str) -> None:
         if not self.settings.resend_api_key:
             raise EmailDeliveryError("Email delivery is not configured.")

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-09-06
+
+- [account-lifecycle] Added lifecycle state storage and migrations through
+  `20260906_0034`, including server-configurable `ACCOUNT_DELETION_GRACE_DAYS`
+  (32) and `ACCOUNT_DELETION_WARNING_DAYS` (4), deletion failure flags, and a
+  token-protected internal worker/recovery endpoint.
+- [account-lifecycle] Added password-confirmed deactivation, password+OTP
+  deletion confirmation, OTP-gated reactivation, session/device revocation,
+  retained-chat anonymization, public-content deletion, and settings/login UX.
+- [verification] Staging and production both report no Alembic drift; staging
+  lifecycle tests pass (`2 passed`) and the web production build passes.
+- [note] Warning-link delivery, billing-provider cancellation, full abuse and
+  transition-concurrency controls remain open contract gates.
+
+## 2026-09-06
+
+- [auth/privacy] Replaced non-auth user-identity UUIDs with `public_id` in notifications, connections, blocking, posts, and like-actor responses; object UUIDs remain object identifiers.
+- [chat] Replaced participant, sender, and requester UUIDs with public handles, fixing frontend identity comparisons and adding regression assertions.
+- [verification] Chat staging regression passed (`1 passed`); reaction/notification and blocking API-backed regressions passed (`3 passed`). Existing connection unit failures are fixture failures unrelated to response serialization.
+
+## 2026-09-06
+
+- [deployment] Added the API Vercel build gate: `alembic upgrade head` runs before the API build and `alembic check` must pass afterward; either failure blocks deployment. This replaces the unsafe manual-only ordering that previously allowed code to ship before its migration.
+- [security-audit] Audited non-auth API response schemas for internal user UUID exposure. Task B implementation is intentionally deferred pending review of the public-handle replacement pattern.
+
+## 2026-09-05T22:32:26Z
+
+- [docs/account-lifecycle] Promoted the lifecycle draft to an approved business contract and recorded the refined deactivation, reactivation, pending-deletion, permanent-deletion, billing, chat, tombstone, staff-override, concurrency, and cautious failed-login security requirements.
+- [docs/auth] Synchronized the lifecycle decision boundary: Phase 7 remains active-account-only, deactivation immediately invalidates access, and lifecycle runtime work remains gated on reset-link, deletion-job, abuse-control, concurrency, staff, and UX verification.
+
 ## 2026-09-05T22:02:50Z
 
 - [auth/security] Completed Phase 3a/3b/3c with durable security events, fresh-login in-app notifications, a unique retryable notification outbox, stale-job recovery, and a provider-neutral future email adapter hook.

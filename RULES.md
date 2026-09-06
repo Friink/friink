@@ -706,6 +706,16 @@ the entry, so history isn't lost.
 - **Platform:** All
 - **File(s):** `api/app/main.py`
 - **Since:** 2026-08-27T00:00:00Z
+
+### Rule: Account Lifecycle Uses Owner-Verified State Transitions
+- **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation and deletion require current-password confirmation plus OTP. Reactivation requires valid credentials plus fresh OTP and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain audited backend override capability.
+- **Edge cases:** Deactivation revokes all sessions and refresh families and immediately rejects access for the inactive account. It preserves readable, read-only chats and renders retained identity as `Friink User` with the real username and default avatar. Deletion is cancellable for 32 days, including the final hour before the deletion transaction, then removes public/user-generated content while retaining restricted UUID tombstones, identity history, required billing/security records, and chats as `Account Deleted`.
+- **Billing:** Deactivation does not pause or cancel subscriptions; deletion cancels billing immediately and reactivation does not resume it. Lifecycle cycling has a 24-hour post-reactivation deactivation cooldown.
+- **Security:** Inactive-account failed logins never send email and use only minimal restricted internal events. Unknown identifiers and wrong passwords remain lifecycle-state agnostic.
+- **Status:** Approved business contract; runtime implementation pending lifecycle verification gates.
+- **Platform:** All
+- **File(s):** `docs/account-lifecycle.md`, `docs/auth-and-session.md`
+- **Since:** 2026-09-05T22:32:26Z
 - ### Rule: Blocking Is Bilateral And Irreversible For Relationships
 - **What:** Blocking removes accepted and pending follow relationships in both directions transactionally. Unblocking never restores them. Both users lose profile access and message sending, while existing chats remain readable and read-only.
 - **Status:** Active

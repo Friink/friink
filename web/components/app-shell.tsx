@@ -1004,6 +1004,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
                       onTabChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
                       onUserChange={onUserChange}
                       onToast={addToast}
+                      onLogout={onLogout}
                     />
                   )}
                   {activeScreen === 'messages' && <MessagesScreen activeTab={messagesTab} />}

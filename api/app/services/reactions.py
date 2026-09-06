@@ -155,8 +155,8 @@ async def list_like_actors(session: Session, viewer: User, post_id: uuid.UUID, q
             LikeActorResponse(
                 id=user.public_id,
                 username=user.username,
-                display_name=user.display_name,
-                profile_picture_url=profile_picture_url_for(user),
+                display_name=user.display_name if user.lifecycle_status == "active" else "Friink User",
+                profile_picture_url=profile_picture_url_for(user) if user.lifecycle_status == "active" else None,
             )
             for _, user in rows
         ],

@@ -1,5 +1,94 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T23:00:00Z — Implement account lifecycle runtime slice
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved account-lifecycle contract, migrate
+  staging before production, verify both environments, and document evidence.
+- Changes Made: Added lifecycle state/deadline/failure storage and migrations
+  `20260906_0033` and `20260906_0034`; implemented password-confirmed
+  deactivation, password+OTP deletion, OTP reactivation, immediate session/
+  refresh/device revocation, retained-chat identity handling, public-content
+  deletion, staff-token worker/recovery endpoints, settings controls, login
+  reactivation copy, and logged-out confirmation pages.
+- Database: Staging was upgraded and verified before production. Both are at
+  `20260906_0034 (head)` and both pass `alembic check` with no drift.
+- Verification Status: Staging lifecycle integration tests `2 passed`; API
+  compilation passed; web `npm run build` passed.
+- Notes: The lifecycle green flag remains open for warning-link token delivery,
+  billing-provider integration, exhaustive transition concurrency/idempotency,
+  abuse controls, and a fully audited staff override trail. RULES.md was not
+  changed in this pass; proposed rules text is supplied separately for review.
+
+## Auth & Session — Phase 1/2/3 closeout (2026-09-06)
+
+Phase 1 (session reliability): gate passed, staging-verified 2026-09-03.
+
+Phase 2 (account identity): implementation complete (2c/2d/2e). Closeout
+work completed in this pass:
+
+- Migrate-before-deploy safeguard added (commit 5ecf57d) — Vercel
+  buildCommand + blocking migration/drift script.
+- Public UUID exposure fixed across chat (7def988 — also fixed a live
+  frontend/backend field mismatch, not just a privacy gap), and
+  notifications/connections/blocking/posts/like-actors (771fc91).
+- Remaining deferred items, NOT blockers for moving on:
+  - Live staging trace for login-risk + email-change endpoints
+  - Race-condition hardening (TOCTOU on signup/username-change → clean 409s)
+  - Pre-existing unrelated connection unit test fixture failures
+    (FakeSession.execute) — flagged for follow-up, not caused by this work
+
+Phase 3 (security events): gate passed on staging AND production,
+2026-09-05.
+
+Decision: auth/session work is paused here to prioritize product
+development (account lifecycle next). Deferred items above are tracked,
+not abandoned — revisit before production launch.
+
+Explicitly out of scope until reopened: Phase 7 (failed-login
+notification). Account-lifecycle is a SEPARATE upcoming spec, now active.
+
+## 2026-09-06T04:30:00+05:00 — Replace non-auth user UUIDs with public handles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the approved public-handle response contract to notifications, connections, blocking, posts, and like actors after the independent chat fix.
+- Changes Made: API response schemas now type user-identity fields as strings and serializers emit `User.public_id`; object identifiers such as notification, post, request, message, and session IDs remain unchanged. Frontend audit found no raw-UUID dependency in these surfaces.
+- Files: `api/app/schemas/notifications.py`, `api/app/services/notifications.py`, `api/app/schemas/connections.py`, `api/app/services/connections.py`, `api/app/schemas/blocking.py`, `api/app/services/blocking.py`, `api/app/schemas/posts.py`, `api/app/services/posts.py`, `api/app/services/reactions.py`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Internal user UUIDs must never be serialized as user identifiers outside the auth contract.
+- Verification Status: Python compilation and API-backed reaction/notification and blocking tests passed. Existing connection unit tests still fail in their pre-existing `FakeSession` fixture because it lacks `execute`; no serializer assertion failed.
+
+## 2026-09-06T04:10:00+05:00 — Fix chat public-handle identity comparisons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace raw chat user UUIDs with public handles and add regression coverage for the active frontend comparison bug.
+- Changes Made: `MessageResponse.sender_id`, chat participant IDs, and `ConversationResponse.requester_id` now serialize `User.public_id`; response annotations are strings. Added assertions that each value equals the public handle and differs from the internal UUID.
+- Files: `api/app/schemas/chat.py`, `api/app/services/chat.py`, `api/tests/test_chat_requests.py`.
+- Reason: The frontend compares these fields with `session.user.id`, which is already the public handle.
+- Verification Status: Focused staging chat regression passed: `1 passed`.
+
+## 2026-09-06T03:00:00+05:00 — Add automated migrate-before-deploy gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the manual API migration release step with a Vercel build gate and audit non-auth public UUID exposure.
+- Changes Made: Added `api/vercel.json` with a blocking build command that runs `alembic upgrade head` followed by `alembic check`; added the reusable local `api/scripts/migrate_before_deploy.py` entrypoint and updated `api/README.md` to document the same gate. Task B was audited only; no UUID exposure code was changed.
+- Files: `api/vercel.json`, `api/scripts/migrate_before_deploy.py`, `api/README.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: Prevent the API from being built or deployed against a pre-migration schema, and make schema drift a hard release failure after the prior manual-ordering incident.
+- Verification Status: Python compilation and `api/vercel.json` parsing passed. The local gate correctly exited non-zero before deployment because required `JWT_SECRET_KEY`/database settings are not configured in this checkout; live database execution remains an environment/deploy verification step.
+
+## 2026-09-05T22:32:26Z — Refine and approve account lifecycle contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review the account lifecycle requirements with the user and update the lifecycle documentation with the agreed UX, architecture, security, billing, deletion, and staff-operation decisions.
+- Changes Made: Replaced the draft with a consistent approved business contract covering always-on current-password plus OTP step-up, calm logged-out/reactivation UX, subscription behavior, public-data deletion with retained UUID tombstones/history/billing/security records/chats, 32-day deletion and final-hour reactivation, retryable deletion with staff failure flags, new-session-only reactivation, 24-hour post-reactivation deactivation cooldown, and minimal internal-only failed-login events for inactive accounts. Synchronized the Phase 7/lifecycle boundary in `docs/auth-and-session.md`.
+- Files: `docs/account-lifecycle.md`, `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Resolve the product decisions that gate lifecycle runtime work and prevent later auth/session phases from encoding contradictory state, billing, privacy, or deletion behavior.
+- Verification Status: Documentation-only review completed; no runtime, database, or deployment changes made.
+
 ## 2026-09-05T22:02:50Z — Implement Phase 3 security events and notifications
 
 - Agent: Codex
