@@ -2,6 +2,9 @@
 
 ## 2026-09-07
 
+- [fix/auth/accounts] Refreshed the device account inventory when the
+  switcher opens and after Add account completes, with stale-request guards so
+  newly added accounts remain visible without a page reload.
 - [ux/chat] Fixed chat layout ownership so only the message list scrolls. The
   participant profile card/separator remains stationary, and the final message
   now has an 8px gap after accounting for the floating composer.

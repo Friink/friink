@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T00:00:00Z — Repair stale account switcher inventory
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the web account switcher showing only the current account after adding another account.
+- Changes Made: Added a guarded account-inventory refresh when the switcher opens and after Add account authentication completes. Removed the forced reload from the add-account completion path so the updated account list is applied in place.
+- Files: `web/components/side-drawer.tsx`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: API Phase 4 account tests passed (`2 passed`); web TypeScript check passed; production web build passed; `git diff --check` pending final check.
+
 ## 2026-09-06T20:26:34Z — Simplify account switcher actions
 
 - Agent: Codex

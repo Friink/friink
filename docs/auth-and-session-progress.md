@@ -743,3 +743,11 @@ stays on the email step and offers login with the submitted email or signup
 with a different address. This is the agreed UX exception to the otherwise
 generic signup-response privacy rule. Focused API regression coverage passed
 (`1 passed`); staging deployment and live browser acceptance remain pending.
+
+### Account switcher inventory refresh — 2026-09-07
+
+Fixed the web drawer's stale account-list path. The drawer now refreshes the
+device account inventory when the switcher opens and after Add account
+authentication completes; refresh results are ordered so an older in-flight
+request cannot replace a newer list. API account-slot acceptance tests passed
+(`2 passed`), the web TypeScript check passed, and the production build passed.

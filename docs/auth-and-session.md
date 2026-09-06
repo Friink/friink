@@ -585,6 +585,11 @@ requirements are maintained separately in `docs/auth-and-session-mobile.md`.
 **Test results:** Existing session and refresh regression coverage passes;
 web/API implementation and the current release checks are complete.
 
+The account switcher refreshes its device account inventory when opened and
+after Add account authentication completes. This keeps newly added accounts
+visible without relying on a full-page reload and prevents an older in-flight
+inventory request from overwriting the current list.
+
 **Noteworthy:** Mobile requirements are intentionally outside this current
 web-focused closure and are owned by `auth-and-session-mobile.md`.
 

@@ -4,7 +4,7 @@ import { Modal } from '@/components/modal';
 import { LoginScreen } from '@/components/login-screen';
 import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import type { AuthUser } from '@/lib/auth';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
 
 type SideDrawerProps = {
@@ -39,6 +39,22 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const [accountNotice, setAccountNotice] = useState('');
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const accountRefreshId = useRef(0);
+
+  const refreshAccounts = useCallback(async () => {
+    const session = loadAuthSession();
+    if (!session) return;
+    const refreshId = ++accountRefreshId.current;
+    try {
+      const nextAccounts = await listAccounts(session.accessToken);
+      if (refreshId !== accountRefreshId.current) return;
+      setAccounts(nextAccounts);
+      setAccountNotice('');
+    } catch {
+      if (refreshId !== accountRefreshId.current) return;
+      setAccountNotice('We could not load your saved accounts. Please try again.');
+    }
+  }, []);
 
   useEffect(() => {
     function handleOutside(e: Event) {
@@ -64,12 +80,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   }, [collapsed, onToggleCollapsed]);
 
   useEffect(() => {
-    const session = loadAuthSession();
-    if (!session) return;
-    listAccounts(session.accessToken)
-      .then(setAccounts)
-      .catch(() => setAccountNotice('We could not load your saved accounts. Please try again.'));
-  }, [user.id]);
+    void refreshAccounts();
+  }, [refreshAccounts, user.id]);
 
   async function handleAccountSwitch(account: AccountSummary) {
     const session = loadAuthSession();
@@ -205,7 +217,10 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           type="button"
           aria-label="Switch account"
           aria-expanded={accountMenuOpen}
-          onClick={() => setAccountMenuOpen((open) => !open)}
+          onClick={() => {
+            setAccountMenuOpen((open) => !open);
+            void refreshAccounts();
+          }}
         >
           <i className="fa-solid fa-caret-down" aria-hidden="true" />
         </button>
@@ -260,7 +275,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           <span>Log out</span>
         </button>
       </div>
-      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={(nextUser) => { setAccountModal(null); onAccountChange?.(nextUser); window.location.reload(); }} /></Modal> : null}
+      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={async (nextUser) => { onAccountChange?.(nextUser); await refreshAccounts(); setAccountModal(null); }} /></Modal> : null}
       {accountModal === 'manage' ? <Modal title="Manage accounts" onClose={() => { setAccountModal(null); setAccountNotice(''); }}>{accountNotice ? <p className="settings-field-message" role="status">{accountNotice}</p> : null}<div className="sidebar-managed-accounts">{accounts.map((account) => <div className="sidebar-managed-account" key={account.accountSlot}><ProfileCard name={account.displayName || account.username} handle={`@${account.username}`} tone="mint" initials={getInitials(account.displayName || account.username)} imageUrl={account.profilePictureUrl} /><button className="settings-secondary-button" type="button" disabled={account.active || accountBusy} onClick={() => setRemoveTarget(account)}>Log out</button></div>)}</div></Modal> : null}
       {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
     </aside>
