@@ -65,7 +65,10 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (session) listAccounts(session.accessToken).then(setAccounts).catch(() => undefined);
+    if (!session) return;
+    listAccounts(session.accessToken)
+      .then(setAccounts)
+      .catch(() => setAccountNotice('We could not load your saved accounts. Please try again.'));
   }, [user.id]);
 
   async function handleAccountSwitch(account: AccountSummary) {
@@ -77,6 +80,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       saveAuthSession(next);
       onAccountChange?.(next.user);
       window.location.reload();
+    } catch {
+      setAccountNotice('We could not switch accounts. Please try again.');
     } finally {
       setAccountBusy(false);
     }

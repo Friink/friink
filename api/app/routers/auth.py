@@ -922,16 +922,47 @@ async def revoke_other_sessions(
 @router.get("/accounts", response_model=list[AccountSummaryResponse])
 async def accounts(
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> list[AccountSummaryResponse]:
+    await _ensure_current_account_slot(request, response, current_user, session, settings)
     active_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
     result: list[AccountSummaryResponse] = []
     for slot, user in list_slots(session, request.cookies.get(DEVICE_COOKIE_NAME)):
         current = get_slot(session, active_slot, request.cookies.get(DEVICE_COOKIE_NAME)) if active_slot else None
         result.append(AccountSummaryResponse(account_slot=str(slot.id), username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user, settings), active=bool(current and slot.id == current.id), last_used_at=slot.last_used_at))
     return result
+
+
+async def _ensure_current_account_slot(
+    request: Request,
+    response: Response,
+    current_user: User,
+    session: Session,
+    settings: Settings,
+) -> None:
+    """Backfill a device slot for a pre-slot session before account discovery."""
+    raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
+    if not raw_device or find_slot_for_user(session, current_user.id, raw_device):
+        return
+
+    raw_refresh = request.cookies.get(REFRESH_COOKIE_NAME)
+    refresh_record = get_refresh_token(session, raw_refresh) if raw_refresh else None
+    current_auth_session = session.get(AuthSession, refresh_record.session_id) if refresh_record and refresh_record.session_id else None
+    if not refresh_record or refresh_record.user_id != current_user.id or not current_auth_session or current_auth_session.revoked_at is not None:
+        return
+
+    try:
+        slot = create_or_replace_slot(session, current_user, raw_device, current_auth_session, settings)
+    except ValueError as exc:
+        if str(exc) == "ACCOUNT_LIMIT_REACHED":
+            return
+        raise
+    if slot:
+        await commit(session)
+        set_account_refresh_cookie(response, slot, raw_refresh, settings)
 
 
 @router.get("/accounts/add-availability", response_model=AccountAddAvailabilityResponse)
@@ -942,21 +973,8 @@ async def account_add_availability(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> AccountAddAvailabilityResponse:
+    await _ensure_current_account_slot(request, response, current_user, session, settings)
     raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
-    current_slot = find_slot_for_user(session, current_user.id, raw_device)
-    if not current_slot and raw_device:
-        raw_refresh = request.cookies.get(REFRESH_COOKIE_NAME)
-        refresh_record = get_refresh_token(session, raw_refresh) if raw_refresh else None
-        current_auth_session = session.get(AuthSession, refresh_record.session_id) if refresh_record and refresh_record.session_id else None
-        if refresh_record and refresh_record.user_id == current_user.id and current_auth_session and current_auth_session.revoked_at is None:
-            try:
-                slot = create_or_replace_slot(session, current_user, raw_device, current_auth_session, settings)
-                if slot:
-                    await commit(session)
-                    set_account_refresh_cookie(response, slot, raw_refresh, settings)
-            except ValueError as exc:
-                if str(exc) != "ACCOUNT_LIMIT_REACHED":
-                    raise
 
     return AccountAddAvailabilityResponse(allowed=len(list_slots(session, raw_device)) < settings.max_remembered_accounts_per_device)
 

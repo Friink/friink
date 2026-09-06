@@ -1825,3 +1825,5 @@ _Last updated: 2026-09-01_
 
 ### Pending
 - [production/email] Resend delivery is still failing after the schema upgrade. Verify the API project's Production-scope `RESEND_API_KEY` and a Resend-verified `RESEND_FROM_EMAIL`, then redeploy the API if either value changed.
+- Fixed account discovery to backfill the active account's device slot before listing accounts, preserving the in-app account switcher for legacy sessions.
+- Surfaced account-list and account-switch failures in the drawer instead of silently falling back to a single-account view.

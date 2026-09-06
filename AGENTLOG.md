@@ -7072,3 +7072,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The production email-first signup endpoint requires the email-only reservation schema introduced by `20260905_0025`; the stale schema caused the API-side failure that the browser presented as `Failed to fetch`.
 - Notes: A controlled post-migration browser signup request now reaches the API and returns its safe `503` delivery message rather than `Failed to fetch`. The remaining issue is Resend production delivery configuration or sender verification; no credentials or recipient details were recorded.
 - Verification Status: Alembic `current` verified `20260906_0031 (head)`; live production browser reproduced the pre-migration failure and confirmed the post-migration application-level response.
+## 2026-09-06T21:00:00Z — Repair account discovery and switch feedback
+- Updated `/auth/accounts` and add-account availability to backfill a missing slot for the active legacy session.
+- Added visible frontend feedback when account listing or switching fails.
+- Validation: API compile, targeted auth tests, and web TypeScript check passed; account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
