@@ -164,8 +164,10 @@ The working-tree implementation now enables signup email-ownership OTP through
 the existing reservation and verification endpoints when
 `SIGNUP_OTP_ENABLED=true`. Resend is used as the staging delivery adapter:
 
-- `RESEND_API_KEY` is read only by the API; `RESEND_FROM_EMAIL` and
-  `RESEND_FROM_NAME` configure the sender.
+- `RESEND_API_KEY` is read only by the API; `RESEND_FROM_DOMAIN` and
+  `RESEND_FROM_NAME` configure the sender. Purpose-specific aliases are
+  generated centrally (`noreply` for OTP, `hello` for welcome, and `security`
+  for security mail).
 - The web signup flow submits `/auth/signup/email/start` immediately after the
   email step, collects the six-character verification code, submits
   `/auth/signup/email/verify`, then collects password/profile details and

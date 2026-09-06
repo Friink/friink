@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-06T23:30:00Z — Centralize Resend sender domain and aliases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use one verified Resend domain and generate sender aliases centrally.
+- Changes Made: Replaced `RESEND_FROM_EMAIL` with `RESEND_FROM_DOMAIN`; centralized `noreply` OTP, `hello` welcome, and `security` sender aliases; synchronized staging/example/API README templates and auth progress documentation.
+- Verification Status: Email payload regression expectations updated; API compilation and focused email tests pending final run.
+
+## 2026-09-06T23:15:00Z — Synchronize API environment template
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the example environment file after account-lifecycle configuration was added.
+- Changes Made: Added JWT key-rotation, login-risk OTP, and account-lifecycle timing/internal-token variables to `api/.env.example`, with server-only and stored-deadline guidance.
+- Verification Status: Compared the template against `api/app/config.py`; secret values remain blank.
+
 ## 2026-09-06T23:00:00Z — Implement account lifecycle runtime slice
 
 - Agent: Codex

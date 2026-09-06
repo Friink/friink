@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     signup_otp_enabled: bool = Field(default=False, alias="SIGNUP_OTP_ENABLED")
     login_risk_otp_enabled: bool = Field(default=True, alias="LOGIN_RISK_OTP_ENABLED")
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
-    resend_from_email: str = Field(default="onboarding@resend.dev", alias="RESEND_FROM_EMAIL")
+    resend_from_domain: str = Field(default="", alias="RESEND_FROM_DOMAIN")
     resend_from_name: str = Field(default="Friink", alias="RESEND_FROM_NAME")
     r2_account_id: str = Field(default="", alias="R2_ACCOUNT_ID")
     r2_access_key_id: str = Field(default="", alias="R2_ACCESS_KEY_ID")

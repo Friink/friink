@@ -2,6 +2,17 @@
 
 ## 2026-09-06
 
+- [email] Replaced the repeated full sender-address setting with one verified
+  `RESEND_FROM_DOMAIN`; the API now generates purpose-specific aliases through
+  one centralized mapping (`noreply`, `hello`, and `security`).
+
+## 2026-09-06
+
+- [config] Synchronized `api/.env.example` with the current JWT key-rotation,
+  login-risk OTP, and account-lifecycle environment settings.
+
+## 2026-09-06
+
 - [account-lifecycle] Added lifecycle state storage and migrations through
   `20260906_0034`, including server-configurable `ACCOUNT_DELETION_GRACE_DAYS`
   (32) and `ACCOUNT_DELETION_WARNING_DAYS` (4), deletion failure flags, and a
