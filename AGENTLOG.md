@@ -7081,3 +7081,7 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Propagated the flow through password login, signup, login OTP, and approved-login completion.
 - Added a regression assertion that Add account does not overwrite `friink_refresh_token`.
 - Validation: API compile, auth tests (`10 passed`), web TypeScript check, and diff check passed; account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T21:30:00Z — Fix chat scroll affordances
+- Verified staging chat behavior at `/:username/chat`: the participant header scrolled away and the final message was obscured by the fixed composer.
+- Updated shared chat CSS to keep the header/separator sticky below navigation and reserve bottom scroll space for the floating composer.
+- Validation: web TypeScript check and `git diff --check` passed.

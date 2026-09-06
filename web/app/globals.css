@@ -3470,12 +3470,16 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 }
 
 .chat-header {
+  position: sticky;
+  top: calc(var(--space-topbar-height) + var(--space-navigationbar-height));
+  z-index: 2;
   min-height: var(--space-topbar-height);
   margin: 0;
   padding: 0 var(--space-content-inset-inline);
   border-bottom: 1px solid var(--color-line);
   box-sizing: border-box;
   width: 100%;
+  background: var(--color-paper);
 }
 
 .chat-contact-link {
@@ -3506,7 +3510,8 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   flex: 1 1 auto;
   overflow: auto;
   gap: 0.75rem;
-  padding: 1rem 0 1.25rem;
+  padding: 1rem 0 calc(var(--space-floating-bar-height) + 2rem);
+  scroll-padding-bottom: calc(var(--space-floating-bar-height) + 2rem);
 }
 
 .chat-date {

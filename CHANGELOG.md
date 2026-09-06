@@ -1828,3 +1828,4 @@ _Last updated: 2026-09-01_
 - Fixed account discovery to backfill the active account's device slot before listing accounts, preserving the in-app account switcher for legacy sessions.
 - Surfaced account-list and account-switch failures in the drawer instead of silently falling back to a single-account view.
 - Isolated Add account authentication from the active account's generic refresh cookie so adding or switching accounts no longer replaces the older account session.
+- Fixed chat scrolling so the participant profile/separator stays pinned below navigation and the final message clears the floating composer.
