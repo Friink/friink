@@ -7100,6 +7100,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Switch now issues the target slot refresh cookie; refresh also self-heals a valid device slot when its slot cookie is missing.
 - Added a regression assertion that switching sets the target slot cookie.
 - Validation: API compile, web TypeScript check, and `git diff --check` passed; database-backed account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T22:45:00Z — Correct chat scroll ownership and bottom clearance
+- Verified the live chat structure and found the page remained the scroll container, so the participant card moved with the conversation.
+- Bounded the chat viewport, moved scrolling exclusively to `.chat-messages`, and removed the oversized bottom padding in favor of the floating composer clearance plus 8px.
+- Validation: web TypeScript check, production web build, and `git diff --check` passed.
 ## 2026-09-06T21:45:00Z — Redirect authenticated users away from public routes
 - Added a refresh-aware public route guard for `/` and `/subscriptions` and extended `/login` to verify persisted sessions before rendering auth UI.
 - Public content remains available only after a confirmed terminal unauthenticated result; transient refresh failures do not expose the public site.

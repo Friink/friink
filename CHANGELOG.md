@@ -2,6 +2,9 @@
 
 ## 2026-09-07
 
+- [ux/chat] Fixed chat layout ownership so only the message list scrolls. The
+  participant profile card/separator remains stationary, and the final message
+  now has an 8px gap after accounting for the floating composer.
 - [auth/accounts] Made account switching durable across browser restarts by
   issuing the target account's slot refresh cookie during switch and repairing
   missing slot cookies during refresh.
