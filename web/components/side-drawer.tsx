@@ -1,5 +1,5 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
-import { ProfileCard } from '@/components/profile-card';
+import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
 import { Modal } from '@/components/modal';
 import { LoginScreen } from '@/components/login-screen';
 import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
@@ -189,7 +189,9 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const accountMenuItems: ActionMenuItem[] = [
     ...menuAccounts.map((account) => ({
       label: `@${account.username}${account.active ? ' (current)' : ''}`,
-      icon: account.active ? 'fa-check' : 'fa-circle-user',
+      icon: 'fa-circle-user',
+      imageUrl: account.profilePictureUrl || DEFAULT_PROFILE_IMAGE,
+      trailingIcon: account.active ? 'fa-check' : undefined,
       disabled: account.active || accountBusy,
       onClick: () => void handleAccountSwitch(account),
     })),

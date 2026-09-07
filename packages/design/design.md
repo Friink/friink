@@ -496,8 +496,11 @@ must remain skippable and preserve the existing saved-progress behavior.
 ### Account switcher slice
 
 The authenticated drawer may show `Add account` and, once two safe
-server-provided account summaries exist, `Change account` entries. Entries use
-the existing drawer action treatment and show username only. The existing
+server-provided account summaries exist, `Change account` entries. Each
+remembered-account entry uses the account's server-provided profile picture as
+its leading circular avatar, falling back to the shared default profile image;
+the active entry retains a trailing checkmark. Entries continue to show
+username only as their text identity. The existing
 Add-account modal is implemented for the web slice; mobile remains a platform
 contract.
 

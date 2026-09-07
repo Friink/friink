@@ -7287,3 +7287,23 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Prompt Summary: Remove Edge from the account-switcher release scope because it uses the same Chromium browser engine.
 - Changes Made: Updated the account-switcher resolution plan and release records to require one clean Chromium/Chrome browser profile rather than separate Edge acceptance. Kept intermittent latency and feed/API stability as a distinct open follow-up.
 - Verification Status: Existing clean Chrome E2E and complete local validation remain the evidence for the scoped browser gate; no phase is marked closed solely from a happy path.
+
+## 2026-09-08T00:30:00Z — Align account-deactivated screen with lifecycle design
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix `/account-deactivated` so it follows the lifecycle presentation rules in `packages/design/design.md`.
+- Changes Made: Replaced the login-form presentation with a shared branded lifecycle surface, added the Friink home mark, clarified all-session logout, read-only chat, billing, and reactivation messaging, and retained the device-account fallback action and loading/error behavior.
+- Files: `web/app/account-deactivated/page.tsx`, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The previous screen reused the standalone login layout and omitted required lifecycle context.
+- Verification Status: Web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08T00:00:00Z — Add profile pictures to account switcher
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the account-switcher dropdown to show profile pictures for remembered accounts.
+- Changes Made: Extended the shared `ActionMenu` item contract with optional leading images and trailing icons; account rows now use each account's server-provided profile picture with the shared default fallback, while the active account shows a trailing checkmark. Updated the design contract and changelog.
+- Files: `web/components/action-menu.tsx`, `web/components/profile-card.tsx`, `web/components/side-drawer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Make remembered accounts visually distinguishable in the account-switcher dropdown.
+- Verification Status: Web TypeScript validation and `git diff --check` passed.

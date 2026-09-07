@@ -2,6 +2,21 @@
 
 ## 2026-09-08
 
+- [web/ui] Updated the account-switcher dropdown to show each remembered
+  account's profile picture as the leading avatar, with the shared default
+  image fallback and a trailing checkmark for the active account.
+- [verification] Web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08
+
+- [web/ui] Restyled `/account-deactivated` to follow the lifecycle design
+  contract with shared Friink branding, responsive centered presentation,
+  explicit all-session logout/read-only chat/billing copy, and fallback-aware
+  action treatment.
+- [verification] Web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08
+
 ### Added
 - [config/auth] Added the API-owned `OTP_ENABLED` master switch, defaulting to
   `true`; `OTP_ENABLED=false` is available for local, test, and staging

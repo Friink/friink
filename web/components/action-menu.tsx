@@ -7,6 +7,8 @@ import { type ReactNode, type RefObject, useLayoutEffect, useRef, useState } fro
 export type ActionMenuItem = {
   label: string;
   icon: string;
+  imageUrl?: string | null;
+  trailingIcon?: string;
   href?: string;
   onClick?: () => void;
   disabled?: boolean;
@@ -124,8 +126,9 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
               onClose?.();
             }}
           >
-            <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+            {item.imageUrl ? <img className="action-menu-item-avatar" src={item.imageUrl} alt="" aria-hidden="true" /> : <i className={`fa-solid ${item.icon}`} aria-hidden="true" />}
             <span>{item.label}</span>
+            {item.trailingIcon ? <i className={`fa-solid ${item.trailingIcon} action-menu-item-trailing-icon`} aria-hidden="true" /> : null}
           </Link>
         ) : (
           <button
@@ -140,8 +143,9 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
               onClose?.();
             }}
           >
-            <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+            {item.imageUrl ? <img className="action-menu-item-avatar" src={item.imageUrl} alt="" aria-hidden="true" /> : <i className={`fa-solid ${item.icon}`} aria-hidden="true" />}
             <span>{item.label}</span>
+            {item.trailingIcon ? <i className={`fa-solid ${item.trailingIcon} action-menu-item-trailing-icon`} aria-hidden="true" /> : null}
           </button>
         )
       ))}

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { clearDeactivationFallbackSlot, getDeactivationFallbackSlot, restoreAccountSession } from '@/lib/auth';
+import { BrandLockup } from '@/components/design/brand-lockup';
+import { FriinkLogo } from '@/components/friink-logo';
 
 export default function AccountDeactivatedPage() {
   const [fallbackSlot] = useState(() => getDeactivationFallbackSlot());
@@ -29,14 +31,20 @@ export default function AccountDeactivatedPage() {
   }
 
   return (
-    <main className="login-screen">
-      <section className="login-form" aria-labelledby="account-deactivated-title">
+    <main className="lifecycle-screen">
+      <a className="lifecycle-home-link" href="/" aria-label="Back to Friink home">
+        <FriinkLogo />
+      </a>
+      <section className="lifecycle-card" aria-labelledby="account-deactivated-title">
+        <BrandLockup size="md" />
         <h1 id="account-deactivated-title">Your account is deactivated</h1>
-        <p>This account is deactivated. Its profile and public content are unavailable for now.</p>
+        <p>All sessions have been logged out. Your profile and public content are unavailable to others.</p>
+        <p>Existing chats remain readable but are now read-only, and new messages cannot be sent.</p>
         {fallbackSlot ? <p>Your most recent other account is still available on this device.</p> : null}
-        <p>If you have an uncancelled subscription, billing may continue. You can come back anytime and reactivate your account with a verified login.</p>
-        {restoreError ? <p className="login-error" role="alert">{restoreError}</p> : null}
-        <button className="login-submit" type="button" onClick={() => void handleReturn()} disabled={isRestoring}>
+        <p>If you have an uncancelled subscription, billing may continue. Deactivation does not pause or cancel it.</p>
+        <p>You can return anytime by signing in and completing account reactivation.</p>
+        {restoreError ? <p className="lifecycle-error" role="alert">{restoreError}</p> : null}
+        <button className="pill-button pill-button-brand lifecycle-action" type="button" onClick={() => void handleReturn()} disabled={isRestoring}>
           {isRestoring ? 'Please wait...' : fallbackSlot ? 'Go Back' : 'Go to public site'}
         </button>
       </section>
