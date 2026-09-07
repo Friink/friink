@@ -259,6 +259,12 @@ def test_deactivating_one_account_preserves_the_other_device_slot() -> None:
         )
         assert deactivated.status_code == 204, deactivated.text
 
+        surviving_refresh = client.post(
+            "/auth/refresh",
+            headers={"X-Friink-Account-Slot": second_json["account_slot"]},
+        )
+        assert surviving_refresh.status_code == 200, surviving_refresh.text
+
         remaining = client.get(
             "/auth/accounts",
             headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_json["account_slot"]},

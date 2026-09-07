@@ -17,6 +17,15 @@
 
 ## 2026-09-08
 
+- [auth/accounts] Fixed deactivation fallback recovery by excluding revoked
+  session slots from account discovery, preserving multiple fallback candidates,
+  trying them in recency order, and keeping retry available after a restore
+  failure.
+- [tests] Added coverage proving a surviving account slot can refresh after a
+  different account is deactivated.
+
+## 2026-09-08
+
 ### Added
 - [config/auth] Added the API-owned `OTP_ENABLED` master switch, defaulting to
   `true`; `OTP_ENABLED=false` is available for local, test, and staging

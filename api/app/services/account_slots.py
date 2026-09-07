@@ -70,7 +70,18 @@ def get_slot(session: Session, raw_slot: str, raw_device: str | None) -> Account
 def list_slots(session: Session, raw_device: str | None) -> list[tuple[AccountSessionSlot, User]]:
     if not raw_device:
         return []
-    rows = session.execute(select(AccountSessionSlot, User).join(User, User.id == AccountSessionSlot.user_id).where(AccountSessionSlot.device_hash == hash_slot(raw_device), AccountSessionSlot.revoked_at.is_(None), User.lifecycle_status == "active").order_by(AccountSessionSlot.last_used_at.desc())).all()
+    rows = session.execute(
+        select(AccountSessionSlot, User)
+        .join(User, User.id == AccountSessionSlot.user_id)
+        .join(AuthSession, AuthSession.id == AccountSessionSlot.auth_session_id)
+        .where(
+            AccountSessionSlot.device_hash == hash_slot(raw_device),
+            AccountSessionSlot.revoked_at.is_(None),
+            AuthSession.revoked_at.is_(None),
+            User.lifecycle_status == "active",
+        )
+        .order_by(AccountSessionSlot.last_used_at.desc())
+    ).all()
     return list(rows)
 
 

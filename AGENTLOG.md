@@ -7298,6 +7298,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The previous screen reused the standalone login layout and omitted required lifecycle context.
 - Verification Status: Web TypeScript validation and `git diff --check` passed.
 
+## 2026-09-08T01:00:00Z — Repair deactivation fallback account recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and fix the deactivation flow so only the deactivated account's sessions end and another remembered account remains usable.
+- Changes Made: Account discovery now excludes revoked linked auth sessions; deactivation stores all eligible fallback slots in recency order; the confirmation screen tries each candidate, saves the restored session, and retains retryable fallback state when restoration fails. Added a regression assertion for refreshing the surviving account after deactivation.
+- Files: `api/app/services/account_slots.py`, `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Live staging showed the deactivation fallback could not restore the surviving remembered account.
+- Verification Status: Focused API account tests passed (`9 passed`); web TypeScript validation and `git diff --check` passed.
+
 ## 2026-09-08T00:00:00Z — Add profile pictures to account switcher
 
 - Agent: Codex

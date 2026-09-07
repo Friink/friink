@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlot, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -391,16 +391,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     if (!window.confirm('Deactivate your account? Your sessions will end, public content will be unavailable, and uncancelled subscriptions may still be charged.')) return;
     setLifecycleBusy(true); setLifecycleStatus('');
     try {
-      let fallbackSlot: string | null = null;
+      let fallbackSlots: string[] = [];
       try {
         const accounts = await listAccounts(session.accessToken);
-        fallbackSlot = accounts.find((account) => !account.active)?.accountSlot ?? null;
+        fallbackSlots = accounts.filter((account) => !account.active && account.available).map((account) => account.accountSlot);
       } catch {
         // Deactivation still succeeds; the confirmation page will offer the
         // public site when no recoverable account slot was captured.
       }
       await deactivateAccount(session.accessToken, lifecyclePassword);
-      setDeactivationFallbackSlot(fallbackSlot);
+      setDeactivationFallbackSlots(fallbackSlots);
       clearAuthSession();
       window.location.assign('/account-deactivated');
     }

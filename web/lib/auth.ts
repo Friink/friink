@@ -349,9 +349,13 @@ export function clearAuthSession() {
 }
 
 export function setDeactivationFallbackSlot(accountSlot: string | null) {
+  setDeactivationFallbackSlots(accountSlot ? [accountSlot] : []);
+}
+
+export function setDeactivationFallbackSlots(accountSlots: string[]) {
   if (typeof window === 'undefined') return;
   try {
-    if (accountSlot) window.sessionStorage.setItem(DEACTIVATION_FALLBACK_SLOT_KEY, accountSlot);
+    if (accountSlots.length > 0) window.sessionStorage.setItem(DEACTIVATION_FALLBACK_SLOT_KEY, JSON.stringify(accountSlots));
     else window.sessionStorage.removeItem(DEACTIVATION_FALLBACK_SLOT_KEY);
   } catch {
     // Storage may be unavailable; the deactivation flow still falls back to
@@ -360,11 +364,23 @@ export function setDeactivationFallbackSlot(accountSlot: string | null) {
 }
 
 export function getDeactivationFallbackSlot(): string | null {
-  if (typeof window === 'undefined') return null;
+  return getDeactivationFallbackSlots()[0] ?? null;
+}
+
+export function getDeactivationFallbackSlots(): string[] {
+  if (typeof window === 'undefined') return [];
   try {
-    return window.sessionStorage.getItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+    const value = window.sessionStorage.getItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+    if (!value) return [];
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === 'string' && item.length > 0);
+    } catch {
+      return [value];
+    }
+    return [];
   } catch {
-    return null;
+    return [];
   }
 }
 
