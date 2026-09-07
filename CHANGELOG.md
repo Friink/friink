@@ -2,6 +2,15 @@
 
 ## 2026-09-07
 
+- [auth/accounts] Guarded refresh commits against stale cross-tab account
+  slots; a refresh now aborts if the active slot changes in flight or the API
+  returns a different slot. Failed account switches remain visible as a
+  retryable alert after the switcher closes.
+- [auth/accounts] Required slot-aware logout to authenticate the active account
+  as well as the device-bound slot; legacy refresh-cookie logout remains
+  supported. Added cross-account authorization regression coverage.
+- [diagnostics/auth] Removed internal user, token, and refresh-family identifiers
+  from auth debug logs; structured deployment and flow diagnostics remain.
 - [auth/accounts] Preserve the most-recent remembered account after the active
   account is deactivated. The confirmation page now offers `Go Back` to
   restore that slot, or sends users to the public site when no other account

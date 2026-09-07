@@ -234,6 +234,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           className="account-switcher-menu"
           items={accountMenuItems}
         />
+        {accountNotice && accountModal !== 'manage' ? <p className="settings-field-message account-switcher-notice" role="alert">{accountNotice}</p> : null}
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">

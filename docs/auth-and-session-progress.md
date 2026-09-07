@@ -353,7 +353,7 @@ two independent accounts are authenticated. It also defines the required
 device-scoped session slot, opaque account-slot, account-specific session,
 secure-storage, API, isolation, and rollout boundaries. The device session
 registry is operational only and does not link the accounts to each other.
-The architecture currently recommends a default of five remembered accounts
+The architecture currently recommends a default of four remembered accounts
 per browser profile or mobile installation, controlled by the server-only
 `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` setting; this is not a global account-
 creation limit.

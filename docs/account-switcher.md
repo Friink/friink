@@ -1,7 +1,7 @@
 # Friink Account Switcher
 
-Status: Open — happy-path implementation works, but logout/re-add retention,
-staging OTP configuration, and broader regression coverage are not closed.
+Status: Blocked — local implementation and validation are complete; deployment
+and clean-profile Chrome/Edge staging acceptance remain unverified.
 
 This document describes how multiple independent Friink accounts are added,
 remembered, switched, and removed in one browser profile. It complements
@@ -21,7 +21,7 @@ shared authentication and session rules.
 - Switching changes the active account context; it never merges accounts or
   links their identities.
 - The switcher supports up to `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` accounts.
-  The default is five; valid configuration values are 1 through 16.
+  The default is four; valid configuration values are 1 through 16.
 - When the limit is reached, adding another account is blocked until one is
   removed. Existing accounts are never silently replaced.
 - On logout, the active account's device session is removed. If other
@@ -91,6 +91,8 @@ operations:
   ordered by last use, with safe summaries only.
 - Existing login and signup endpoints create or restore only the authenticated
   account's device slot.
+- Slot-aware logout requires the active account's bearer access token to match
+  the requested slot; a device cookie alone cannot revoke another account.
 - `POST /auth/accounts/switch` validates the opaque slot, device, and slot
   state, then issues the selected account's normal access context.
 - `DELETE /auth/accounts/{slot}` revokes and removes only that account's
@@ -153,7 +155,8 @@ tables or UI are deployed.
 
 ## Current implementation status
 
-The web-focused Phase 4 release is marked closed. The implementation includes
+The web-focused Phase 4 implementation is present, but its release gate remains
+open pending deployment and clean-profile browser acceptance. The implementation includes
 the slot migration, opaque slot references, safe summaries, protected device
 binding, slot-named HttpOnly cookies, account listing, switching, removal,
 Add-account modal reuse, cross-tab coordination, notifications, and lifecycle
@@ -192,9 +195,9 @@ switch verification, but deployment stability should be checked separately.
 
 ### Test-pass results — 2026-09-07
 
-- Focused account tests: `test_phase4_accounts.py` 8 passed; diagnostics
-  tests 3 passed.
-- Real API test suite with isolated test configuration: 106 passed, with
+- Focused account tests: `test_phase4_accounts.py` 9 passed; diagnostics
+  tests 4 passed.
+- Real API test suite with isolated test configuration: 107 passed, with
   existing Starlette/JWT warnings.
 - The connection, blocking, device/origin, post serialization, and session
   fixture failures found during the earlier run have been corrected or
@@ -420,17 +423,21 @@ the happy path.
 
 ### Current execution status — 2026-09-07
 
-- Status: In progress.
+- Status: Blocked pending external staging acceptance.
 - Evidence: slot-aware logout, ambiguous-failure preservation with retryable
   feedback, Add-account account-state reset, deactivation fallback to the
   most-recent remaining account, missing-device-cookie protection, safe slot
   diagnostics, and logout/re-add regression coverage are implemented locally.
 - Commit hash: working tree; not deployed to staging.
-- Named tests: full API suite (106 passed), `test_phase4_accounts.py` (9
-  passed), `test_connections.py` (20 passed), web lint (passed with warnings),
-  web production build (passed), and Python compilation (passed).
-- Outstanding gate: deploy, then retest the clean-profile `muflah` → `muf95`
-  flow in Chrome and Edge and confirm the device cookie remains continuous.
+- Named tests: full API suite (107 passed), `test_phase4_accounts.py` (9
+  passed), diagnostics/account/refresh focused suite (15 passed),
+  `test_connections.py` (20 passed), web TypeScript (passed), web lint
+  (passed with warnings), web production build (passed), Python compilation
+  (passed), and `git diff --check` (passed).
+- Outstanding gate: deploy the working tree, then retest the clean-profile
+  `muflah` → `muf95` flow in Chrome and Edge and confirm device-cookie
+  continuity. Connected Chrome currently has multiple existing staging tabs;
+  its active-source switch test failed, and Edge remains unverified.
 
 ### Latest staging account-limit run — 2026-09-07
 
@@ -456,6 +463,23 @@ does not silently remove existing slots. The
 remaining owner-reported failures are OTP flag/deployment drift, the OTP
 timeout-with-success race, and loss of the previously remembered account
 after login.
+
+### Chrome staging switch verification — 2026-09-07
+
+- Connected Chrome profile: `Muflah`; staging page loaded with three visible
+  remembered accounts: `@muflahulfurqan`, `@muflah`, and `@muf95`.
+- Retest began from a confirmed active `@muflahulfurqan` session; the account
+  manager showed all three slots, so the source account was not a deactivated
+  or logged-out slot.
+- Selecting `@muflah` closed the switcher, but the active account remained
+  `@muflahulfurqan`. Reloading the page preserved the original account.
+- Result: the live Chrome switch failure reproduced from a valid active source;
+  the Phase 6 browser gate remains open. No account or credential data was
+  added to the evidence.
+- Code audit also found a multi-tab race: an older refresh could overwrite a
+  newer switch in shared localStorage/BroadcastChannel state. Refresh now
+  aborts when the active slot changes in flight and requires a slot-aware API
+  response to return the same slot.
 
 ### Owner-reported staging mismatch — 2026-09-07
 

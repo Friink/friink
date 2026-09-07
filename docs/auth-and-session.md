@@ -45,7 +45,7 @@ The following points are part of the planned scope:
   only once at least two accounts are authenticated.
 - A browser profile may remember the number of
   independent authenticated accounts configured by
-  `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`. The safe default is `5`; this is a
+  `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`. The safe default is `4`; this is a
   per-device switcher limit, not a limit on how many accounts a person may
   create. To exceed the configured limit, the user must remove one remembered
   account first.
@@ -1498,7 +1498,7 @@ refresh-token rotation semantics.
 6. `Change account` lists only accounts registered on that device and switches
    to the selected account without merging identities.
 7. The switcher supports up to the server-configured
-   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value, defaulting to five. When the
+   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value, defaulting to four. When the
    limit is reached, `Add account` explains that the user must remove one
    account before adding another; it never silently replaces an existing
    account.

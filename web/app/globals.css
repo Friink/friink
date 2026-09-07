@@ -5143,6 +5143,12 @@ input[type="search"]:focus {
     width: min(16rem, calc(100vw - 1rem));
   }
 
+  .account-switcher-notice {
+    max-width: 16rem;
+    margin: 0.5rem 0.75rem 0;
+    color: var(--color-danger, #b42318);
+  }
+
   .sidebar-profile strong,
   .sidebar-profile span {
     display: block;

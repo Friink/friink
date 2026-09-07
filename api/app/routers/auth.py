@@ -641,13 +641,26 @@ async def logout(
     request: Request,
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
+    access_token: str | None = Depends(optional_oauth2_scheme),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> Response:
     require_allowed_origin(request, settings)
     account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
     if account_slot:
+        if not access_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
+        try:
+            access_payload = decode_token(access_token, "access")
+            access_user_id = user_id_from_subject(str(access_payload.get("sub", "")))
+        except TokenValidationError as exc:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", exc.code)) from exc
+        access_user = session.get(User, access_user_id)
+        if not access_user or access_user.lifecycle_status != "active":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
         slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if slot and slot.user_id != access_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="That account session is not active.")
         if slot:
             auth_session = session.get(AuthSession, slot.auth_session_id)
             revoke_slot(session, slot)

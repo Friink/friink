@@ -1,5 +1,35 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T11:00:00Z — Authorize slot-aware logout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue hardening the account-switcher slot lifecycle.
+- Changes Made: Required slot-aware `POST /auth/logout` to validate the bearer access token and match its user to the requested device-bound slot; preserved the legacy refresh-cookie-only logout path; added a cross-account authorization regression assertion.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`, `docs/account-switcher.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: A device cookie and opaque slot identifier must not be sufficient to revoke another account's active slot.
+- Verification Status: Focused account and refresh-token suites passed (`11 passed`, existing Starlette/JWT warnings). Full API and web validation remain required after this change; staging deployment and clean-profile browser acceptance remain open.
+
+## 2026-09-07T11:30:00Z — Remove identifiers from auth diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the account-switcher safe-observability audit.
+- Changes Made: Removed raw internal user, refresh-token, and refresh-family identifiers from auth debug log payloads and added secret-free regression coverage.
+- Files: `api/app/services/auth_debug.py`, `api/tests/test_auth_debug.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Account-switcher diagnostics must not expose internal identifiers while diagnosing deployment and slot continuity.
+- Verification Status: Focused diagnostics, account, and refresh-token validation passed (`15 passed`); full API suite passed (`107 passed`, existing Starlette/JWT warnings). Web TypeScript, production build, and lint remain green with existing warnings. Staging deployment and clean-profile browser acceptance remain open.
+
+## 2026-09-07T12:00:00Z — Chrome staging switch verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Recheck the account-switcher release gate after Chrome became available.
+- Changes Made: Recorded sanitized live evidence from the connected Chrome profile: three remembered accounts were listed, but selecting `@muflah` left `@muflahulfurqan` active and reload preserved the original account.
+- Files: `docs/account-switcher.md`, `AGENTLOG.md`.
+- Reason: Confirm whether the previous browser-control blocker was masking a live switching failure.
+- Verification Status: Chrome staging switch acceptance failed; no credentials or tokens were recorded. Phase 6 remains open pending deployment diagnosis and a passing clean-profile run.
+
 ## 2026-09-07T10:00:00Z — Preserve other account after deactivation
 
 - Agent: Codex
@@ -7208,3 +7238,12 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   responses were observed separately from switcher acceptance.
 - Scope Note: This run used the Codex in-app browser, not clean-profile Chrome
   or Edge; those release-gate checks remain open.
+## 2026-09-07T12:20:00Z — Reproduce Chrome switch failure from active source
+- Verified the Chrome staging source session was active as `@muflahulfurqan`; Manage accounts showed `@muflah` and `@muf95` as remembered slots.
+- Retried switching to `@muflah` without deactivating or logging out the source account. The menu closed, but the active account and post-login route remained `@muflahulfurqan` after reload.
+- Added a persistent account-switcher alert so a failed switch is visible after the menu closes.
+- Validation: web TypeScript check, lint, production build, and `git diff --check` passed; staging switch acceptance remains open.
+## 2026-09-07T12:35:00Z — Guard against stale cross-tab refresh overwrite
+- Code audit found that a refresh started in another tab could commit an older account slot after a switch completed, because refresh validation checked the access token but not the active device slot.
+- Refresh now aborts when the shared active slot changes during the request and rejects a slot-aware response that returns a different slot.
+- Validation pending: web TypeScript, lint, production build, API suite, and clean-profile staging retest.

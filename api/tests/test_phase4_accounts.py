@@ -351,7 +351,16 @@ def test_active_slot_logout_revokes_slot_and_allows_readd() -> None:
         first_slot = first_json["account_slot"]
         second_slot = second_json["account_slot"]
 
-        logged_out = client.post("/auth/logout", headers={"X-Friink-Account-Slot": second_slot})
+        wrong_account_logout = client.post(
+            "/auth/logout",
+            headers={
+                "Authorization": f"Bearer {first_json['access_token']}",
+                "X-Friink-Account-Slot": second_slot,
+            },
+        )
+        assert wrong_account_logout.status_code == 403, wrong_account_logout.text
+
+        logged_out = client.post("/auth/logout", headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert logged_out.status_code == 204, logged_out.text
         remaining = client.get("/auth/accounts", headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_slot})
         assert remaining.status_code == 200, remaining.text
@@ -422,15 +431,15 @@ def test_three_account_logout_and_readd_sequence_preserves_all_slots() -> None:
         assert added_second.status_code == 200, added_second.text
         second_json = added_second.json()
 
-        logged_out_second = client.post("/auth/logout", headers={"X-Friink-Account-Slot": second_json["account_slot"]})
+        logged_out_second = client.post("/auth/logout", headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_json["account_slot"]})
         assert logged_out_second.status_code == 204, logged_out_second.text
-        logged_out_second_again = client.post("/auth/logout", headers={"X-Friink-Account-Slot": second_json["account_slot"]})
+        logged_out_second_again = client.post("/auth/logout", headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_json["account_slot"]})
         assert logged_out_second_again.status_code == 204, logged_out_second_again.text
 
         third = client.post("/auth/login", json={"identifier": accounts[2][0], "password": password})
         assert third.status_code == 200, third.text
         third_json = third.json()
-        logged_out_third = client.post("/auth/logout", headers={"X-Friink-Account-Slot": third_json["account_slot"]})
+        logged_out_third = client.post("/auth/logout", headers={"Authorization": f"Bearer {third_json['access_token']}", "X-Friink-Account-Slot": third_json["account_slot"]})
         assert logged_out_third.status_code == 204, logged_out_third.text
 
         relogged_first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})

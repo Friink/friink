@@ -575,6 +575,17 @@ async function performRefresh(generation: number, operationId: string): Promise<
     throw new AuthApiError('The session was cleared while it was refreshing.', 0);
   }
 
+  // A different tab may have switched accounts while this refresh was in
+  // flight. Do not let the stale tab commit its old slot back into shared
+  // localStorage/BroadcastChannel state.
+  const latestSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  if (latestSlot !== slot) {
+    throw new AuthApiError('The active account changed while the session was refreshing.', 0);
+  }
+  if (slot && response.account_slot !== slot) {
+    throw new AuthApiError('The API returned a different account slot while refreshing.', 0);
+  }
+
   if (currentSession) {
     const latestSession = loadPersistedAuthSession();
     if (latestSession?.accessToken !== currentSession.accessToken) {

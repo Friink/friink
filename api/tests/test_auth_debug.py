@@ -25,6 +25,21 @@ def test_account_diagnostics_are_structured_and_secret_free(monkeypatch, caplog)
         assert "password" not in event
 
 
+def test_token_diagnostics_do_not_emit_internal_identifiers(monkeypatch, caplog) -> None:
+    monkeypatch.setenv("AUTH_DEBUG_LOGGING_ENABLED", "true")
+    caplog.set_level("INFO", logger="friink.auth")
+
+    auth_debug.log_token_issued(flow="fresh_login", token_type="access", token="raw-token", user_id="user-id")
+    auth_debug.log_refresh_token_event(event="refresh", flow="refresh_exchange", token_id="token-id", family_id="family-id", user_id="user-id", reason="test")
+
+    events = [json.loads(record.message) for record in caplog.records if record.name == "friink.auth"]
+    assert events[-2]["event"] == "auth_token_issued"
+    assert events[-1]["event"] == "refresh"
+    for event in events[-2:]:
+        assert not {"user_id", "token_id", "family_id"}.intersection(event)
+        assert "raw-token" not in json.dumps(event)
+
+
 def test_auth_diagnostics_endpoint_requires_token_and_reports_effective_flags() -> None:
     app.dependency_overrides[get_settings] = lambda: Settings(
         _env_file=None,
