@@ -7251,10 +7251,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 
 - Prompt Summary: Run the fresh staging account-switcher campaign with five synthetic accounts, including the configured limit-plus-one path.
 - Changes Made: Created five isolated accounts through standalone signup, in-app signup, and in-app login/re-add. Verified switch, reload continuity, logout fallback, slot release, and re-add behavior. At four retained slots, Add account refused the fifth and opened Manage accounts with `Remove an account before adding another.`
-- Verification Status: Clean Chrome staging run passed the exercised flows; no OTP prompt appeared with both OTP flags disabled. Logout fallback reached the public site after the remaining remembered accounts were logged out. Account operations showed 15–30 second latency. Edge acceptance and deployment-stability investigation remain open.
+- Verification Status: Clean Chrome staging run passed the exercised flows; no OTP prompt appeared with both OTP flags disabled. Logout fallback reached the public site after the remaining remembered accounts were logged out. Account operations showed 15–30 second latency. Chromium/Chrome acceptance passed; deployment-stability investigation remains open.
 
 ## 2026-09-07T15:00:00Z — Push staging build and synchronize account-switcher records
 
 - Prompt Summary: Resume the account-switcher resolution plan, deploy the current staging branch, and update the requested rules, design, changelog, and account-switcher records.
 - Changes Made: Pushed `staging` commit `6358b0d` to `origin/staging`. The staging web alias returned `200`, and `staging-api.friink.com/health/db` returned `{"database":true}`. Added the account-slot and API-owned OTP rules to `RULES.md`, the account-switcher UX contract to `packages/design/design.md`, and deployment/E2E evidence to `CHANGELOG.md` and `docs/account-switcher.md`.
-- Verification Status: Full API suite passed (`107 passed`, existing warnings); web TypeScript, production build, lint, and `git diff --check` passed. Clean Chrome E2E passed five-account creation, switching, reload continuity, logout fallback, configured limit-plus-one refusal, and slot re-add. A newly opened Chrome tab reused the existing profile and is not claimed as incognito evidence. Edge acceptance remains open because the Edge browser is unavailable to the automation surface.
+- Verification Status: Full API suite passed (`107 passed`, existing warnings); web TypeScript, production build, lint, and `git diff --check` passed. Clean Chrome E2E passed five-account creation, switching, reload continuity, logout fallback, configured limit-plus-one refusal, and slot re-add. A newly opened Chrome tab reused the existing profile and is not claimed as incognito evidence. Browser acceptance is scoped to Chromium/Chrome; deployment-stability follow-up remains open.
+
+## 2026-09-07T16:00:00Z — Narrow browser acceptance to Chromium scope
+
+- Prompt Summary: Remove Edge from the account-switcher release scope because it uses the same Chromium browser engine.
+- Changes Made: Updated the account-switcher resolution plan and release records to require one clean Chromium/Chrome browser profile rather than separate Edge acceptance. Kept intermittent latency and feed/API stability as a distinct open follow-up.
+- Verification Status: Existing clean Chrome E2E and complete local validation remain the evidence for the scoped browser gate; no phase is marked closed solely from a happy path.

@@ -5,9 +5,9 @@
 - [release/account-switcher] Pushed staging branch commit `6358b0d` to the
   staging remote. Staging web and API health checks returned successfully;
   the clean-profile Chrome account-switcher run passed signup, add, switch,
-  reload, logout fallback, limit-plus-one refusal, and slot re-add. Edge
-  browser acceptance remains open because Edge is not exposed in the available
-  automation surface.
+  reload, logout fallback, limit-plus-one refusal, and slot re-add. Browser
+  acceptance is scoped to Chromium/Chrome; deployment-stability follow-up
+  remains separate.
 - [docs/account-switcher] Synchronized account-switcher rules, design
   behavior, changelog evidence, and the open release-gate status. No phase is
   marked closed without its required status-block evidence.

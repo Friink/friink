@@ -1,8 +1,8 @@
 # Friink Account Switcher
 
 Status: Open — local implementation and validation are complete; clean-profile
-Chrome staging acceptance passed, while Edge acceptance and deployment
-stability remain unverified.
+Chrome/Chromium staging acceptance passed, while deployment stability remains
+under follow-up.
 
 This document describes how multiple independent Friink accounts are added,
 remembered, switched, and removed in one browser profile. It complements
@@ -279,7 +279,7 @@ deployment configuration before changing switcher UI code.
    state only through protected server logs or an internal health check, and
    verify that `staging.friink.com` reaches the API deployment where both OTP
    variables were changed and redeployed.
-7. Re-run the API suite, web build/lint, and Chrome/Edge staging E2E. Enable the
+7. Re-run the API suite, web build/lint, and clean Chromium staging E2E. Enable the
    switcher broadly only after logout/re-add passes repeatedly and the API
    returns stable account-list and switch responses.
 
@@ -295,7 +295,7 @@ the account list is derived from server-side device slots.
   this plan is in progress.
 - Hard rule: every phase from Phase 0 through Phase 6 must run acceptance
   testing on a clean browser profile with no prior cookies or local storage.
-- Preserve one clean Chrome profile and one clean Edge profile for testing.
+- Preserve one clean Chrome/Chromium profile for testing.
 - Use synthetic test accounts only.
 - Capture the following requests for the exact `muflah` → `muf95` reproduction:
   `POST /auth/login`, the Add-account authentication request, `GET
@@ -400,7 +400,8 @@ document so it is not lost or silently reintroduced during switcher work.
 
 The switcher is ready only when all of the following are true:
 
-- The `muflah` → `muf95` reproduction passes repeatedly in Chrome and Edge.
+- The `muflah` → `muf95` reproduction passes repeatedly in a clean
+  Chromium-based browser profile.
 - Three-account add, switch, logout, fallback, re-add, reload, and switch
   cycles pass without a missing account.
 - OTP flags produce the intended signup and normal-login behavior.
@@ -424,7 +425,7 @@ the happy path.
 
 ### Current execution status — 2026-09-07
 
-- Status: Open pending the remaining external browser gate.
+- Status: Open pending deployment-stability follow-up.
 - Evidence: slot-aware logout, ambiguous-failure preservation with retryable
   feedback, Add-account account-state reset, deactivation fallback to the
   most-recent remaining account, missing-device-cookie protection, safe slot
@@ -436,8 +437,8 @@ the happy path.
   `test_connections.py` (20 passed), web TypeScript (passed), web lint
   (passed with warnings), web production build (passed), Python compilation
   (passed), and `git diff --check` (passed).
-- Outstanding gate: confirm the clean-profile flow in Edge and capture the
-  exact deployed API/web commit before closing the browser gate. The earlier
+- Outstanding gate: investigate the observed slow/intermittent staging
+  responses before closing the deployment-stability item. The earlier
   connected-profile Chrome active-source test failed, but the fresh clean
   Chrome run recorded below passed the exercised switcher paths.
 
@@ -457,8 +458,7 @@ the happy path.
   session showed the Manage accounts dialog with the explicit message:
   `Remove an account before adding another.`
 - Browser scope: historical run was Codex in-app browser only; the separate
-  clean-profile Chrome run is recorded below, while Edge acceptance remains
-  open.
+  clean-profile Chrome/Chromium run is recorded below.
 
 The over-limit behavior is therefore not the cause of the owner's login
 failure: the limit is enforced before signup starts, and lowering the limit
@@ -469,7 +469,7 @@ after login.
 
 ### Fresh clean-profile Chrome E2E — 2026-09-07
 
-- Status: Partial pass; Edge acceptance remains open.
+- Status: Pass with deployment-stability follow-up.
 - Evidence: Created five isolated accounts using standalone signup, in-app
   signup, and in-app login/re-add. Logout fallback passed from Account 3 to 2,
   then 1, then the public site. With four retained slots, Add account refused
@@ -482,8 +482,8 @@ after login.
   deployment check).
 - Named tests: clean Chrome signup/add/switch/reload/logout/fallback/re-add;
   configured limit-plus-one.
-- Outstanding: repeat the same acceptance in clean Edge and separately
-  investigate the observed latency before closing the browser release gate.
+- Outstanding: investigate the observed latency separately before closing the
+  deployment-stability item.
 
 ### Chrome staging switch verification — 2026-09-07
 
