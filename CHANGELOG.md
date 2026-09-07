@@ -2,6 +2,23 @@
 
 ## 2026-09-08
 
+- [web/ui] Routed the deactivation modal’s `Okay` action to `/` after
+  recovery. Users without another account remain on the public site, while
+  the public-route guard sends restored sessions to `/home`.
+
+## 2026-09-08
+
+- [web/ui] Replaced the full account-deactivated page with a shared modal
+  titled `Account Deactivated` and a single `Okay` action. The action restores
+  the most-recent remembered account when available, then routes to `/home`.
+
+## 2026-09-08
+
+- [web/ui] Clarified the deactivated-account fallback action as
+  `Continue with another account` instead of the ambiguous `Try again` label.
+
+## 2026-09-08
+
 - [docs] Synchronized auth/session lifecycle references with the 8-minute
   post-reactivation deactivation cooldown and API-owned OTP override.
 

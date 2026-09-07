@@ -30,6 +30,36 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Reason: Keep the implementation contract consistent across product lifecycle and authentication documentation.
 - Verification Status: Documentation-only update; stale lifecycle cooldown references were scanned with `rg`.
 
+## 2026-09-08T02:30:00Z — Clarify deactivation fallback action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify the ambiguous `Try again` action on the account-deactivated screen.
+- Changes Made: Renamed the fallback action to `Continue with another account` while preserving the existing remembered-account restore behavior.
+- Files: `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The action restores a different remembered account; its label should describe that outcome directly.
+- Verification Status: Copy-only UI update; web TypeScript validation remains the relevant release check.
+
+## 2026-09-08T02:45:00Z — Simplify account-deactivated recovery modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the account-deactivated page action with a single `Okay` modal that returns to `/home`.
+- Changes Made: Converted the route to the shared `Modal`, updated the title and lifecycle copy, retained hidden remembered-account recovery, and changed successful navigation to `/home`.
+- Files: `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The deactivation confirmation should acknowledge the state without exposing account-switching mechanics; app routing receives the handoff after fallback restoration.
+- Verification Status: Web TypeScript validation remains the relevant release check.
+
+## 2026-09-08T03:00:00Z — Route deactivation acknowledgement through public entry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm and align the two post-deactivation modal paths.
+- Changes Made: Changed both the no-fallback and restored-account paths to navigate to `/`; the public-route guard now naturally keeps signed-out users public and redirects active restored sessions to `/home`.
+- Files: `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: One destination produces the expected public-site behavior for both account-count cases without duplicating routing logic.
+- Verification Status: Web TypeScript validation remains the relevant release check.
+
 ## 2026-09-07T11:00:00Z — Authorize slot-aware logout
 
 - Agent: Codex
