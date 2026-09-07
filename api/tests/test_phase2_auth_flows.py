@@ -116,6 +116,53 @@ def test_risk_login_challenges_new_changed_and_recognized_devices(monkeypatch) -
         _delete_user(user_id)
 
 
+def test_otp_login_for_second_account_preserves_existing_device_slots(monkeypatch) -> None:
+    codes: list[str] = []
+
+    async def capture_code(self, email: str, otp_code: str) -> None:
+        codes.append(otp_code)
+
+    monkeypatch.setattr("app.services.email.EmailService.send_login_otp", capture_code)
+    app.dependency_overrides[get_settings] = lambda: _settings(
+        LOGIN_RISK_OTP_ENABLED=True,
+        RESEND_API_KEY="test-resend-key",
+    )
+    password = "Strong1!pass"
+    first_email = f"slot-first-{uuid.uuid4().hex}@example.com"
+    second_email = f"slot-second-{uuid.uuid4().hex}@example.com"
+    first_id = _seed_user(first_email, f"slot_first_{uuid.uuid4().hex[:20]}", password)
+    second_id = _seed_user(second_email, f"slot_second_{uuid.uuid4().hex[:20]}", password)
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": first_email, "password": password})
+        assert first.status_code == 200, first.text
+        first_verified = client.post(
+            "/auth/login/verify",
+            json={"challenge_token": first.json()["challenge_token"], "otp": codes[-1]},
+        )
+        assert first_verified.status_code == 200, first_verified.text
+
+        second = client.post("/auth/login", json={"identifier": second_email, "password": password})
+        assert second.status_code == 200, second.text
+        assert second.json()["challenge_required"] is True
+        second_verified = client.post(
+            "/auth/login/verify",
+            json={"challenge_token": second.json()["challenge_token"], "otp": codes[-1]},
+        )
+        assert second_verified.status_code == 200, second_verified.text
+
+        accounts = client.get("/auth/accounts", headers={"Authorization": f"Bearer {second_verified.json()['access_token']}"})
+        assert accounts.status_code == 200, accounts.text
+        assert {item["username"] for item in accounts.json()} == {
+            first_verified.json()["user"]["username"],
+            second_verified.json()["user"]["username"],
+        }
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+        _delete_user(first_id)
+        _delete_user(second_id)
+
+
 def test_account_lock_blocks_login_and_refresh_but_not_existing_access_token() -> None:
     password = "Strong1!pass"
     email = f"locked-{uuid.uuid4().hex}@example.com"

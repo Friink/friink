@@ -440,7 +440,7 @@ async def login_verify(
     if challenge.device_id:
         if not raw_device_identifier:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
-    else:
+    elif not raw_device_identifier:
         raw_device_identifier = derive_pending_device_identifier(payload.challenge_token, settings)
     return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
 

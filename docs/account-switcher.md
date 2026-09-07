@@ -429,6 +429,47 @@ the happy path.
 - Outstanding gate: deploy, then retest the clean-profile `muflah` → `muf95`
   flow in Chrome and Edge and confirm the device cookie remains continuous.
 
+### Latest staging account-limit run — 2026-09-07
+
+- Limit clarification: the repository default is **5** remembered accounts,
+  configured by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; 4 is not the default
+  limit. A staging override can reduce this value and must be verified from
+  the deployed API configuration before interpreting a max+1 result.
+- Latest deployed build: three-account switching passed across Accounts 1–3.
+- Added Accounts 4 and 5 through the in-app signup flow; the switcher retained
+  all five accounts. Signup requests timed out in the UI, but both accounts
+  were created and activated successfully.
+- Max+1 attempt: with five remembered accounts, `Add account` closed without
+  opening signup; no sixth account was created. The limit is enforced before
+  signup. Recheck in the current staging session showed the Manage accounts
+  dialog with the explicit message: `Remove an account before adding another.`
+- Browser scope: Codex in-app browser only; clean-profile Chrome/Edge
+  acceptance remains open.
+
+The over-limit behavior is therefore not the cause of the owner's login
+failure: the limit is five and is enforced before a sixth signup starts. The
+remaining owner-reported failures are OTP flag/deployment drift, the OTP
+timeout-with-success race, and loss of the previously remembered account
+after login.
+
+### Owner-reported staging mismatch — 2026-09-07
+
+- `staging.friink.com` appears to serve behavior from an older build despite
+  the latest deployment being selected; verify the web alias, deployment SHA,
+  API alias, cache, and environment scope from the deployed runtime.
+- Owner confirms `LOGIN_RISK_OTP_ENABLED=false` in Vercel. This does not yet
+  prove the same value is present in the separate FastAPI/API deployment that
+  serves `/auth/login`; environment changes require an API redeploy.
+- With both OTP flags expected to be `false`, normal login still requests OTP.
+- OTP submission reports a timeout but still completes login. Treat this as a
+  request/response or client timeout race until the final response and session
+  state are correlated server-side.
+- After login, the previously remembered account disappears. This remains an
+  open retention/session-slot failure and is not explained by the account-limit
+  result above.
+- Firefox was installed for cross-browser testing, but was not available to
+  the current browser-control session; Firefox acceptance remains unverified.
+
 Broader browser acceptance remains required after the retention issue is
 resolved and deployment stability is confirmed. It should cover the scenarios
 below.

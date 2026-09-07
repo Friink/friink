@@ -7165,3 +7165,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Added a refresh-aware public route guard for `/` and `/subscriptions` and extended `/login` to verify persisted sessions before rendering auth UI.
 - Public content remains available only after a confirmed terminal unauthenticated result; transient refresh failures do not expose the public site.
 - Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-07 — Live staging three-account and max+1 acceptance
+
+- Prompt Summary: Run the latest staging three-account switch test and attempt
+  one account beyond the remembered-account limit.
+- Changes Made: No application code changed. Created two additional synthetic
+  accounts to fill the five-account device limit and attempted a sixth.
+- Verification Status: Three-account switching passed. Five accounts remained
+  visible in Manage accounts. The sixth Add-account action was blocked before
+  signup opened; no sixth account was created. The in-app browser showed no
+  user-facing blocked-action text. Intermittent home-feed loading and slow API
+  responses were observed separately from switcher acceptance.
+- Scope Note: This run used the Codex in-app browser, not clean-profile Chrome
+  or Edge; those release-gate checks remain open.
