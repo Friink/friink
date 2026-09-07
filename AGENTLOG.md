@@ -1,5 +1,25 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T01:30:00Z — Add live post-reactivation cooldown toast
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change the post-reactivation deactivation cooldown to 8 minutes and show its remaining time in a live toast.
+- Changes Made: Reduced the API cooldown to 8 minutes, returned authoritative remaining seconds in the 429 response, propagated that value through `AuthApiError`, and added a shared live countdown toast. Updated lifecycle and design documentation and added regression coverage.
+- Files: `api/app/services/account_lifecycle.py`, `api/tests/test_account_lifecycle.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/components/toast-stack.tsx`, `docs/account-lifecycle.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Users need immediate, accurate feedback after reactivation without confusing the cooldown with a failed deactivation.
+- Verification Status: `12 passed` for lifecycle/account regression tests, web TypeScript validation passed, and `git diff --check` passed. No database migration or dependency update is required.
+
+## 2026-09-08T02:00:00Z — Recover protected routes from ambiguous refresh failures
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose staging reactivation unexpectedly requesting OTP with `OTP_ENABLED=false` and the subsequent blank authenticated screen.
+- Changes Made: Added a recoverable session-state screen to `AppShellRoute` when refresh fails without proving the session is invalid. The route now offers retry or login instead of rendering a permanent white screen; terminal refresh failures still redirect to login.
+- Files: `web/components/app-shell-route.tsx`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: A stale frontend or transient API failure must not create an unusable blank screen or silently discard a potentially valid session.
+- Verification Status: Web TypeScript validation and `git diff --check` remain required after this change; staging API environment/deployment alignment remains open.
+
 ## 2026-09-07T11:00:00Z — Authorize slot-aware logout
 
 - Agent: Codex

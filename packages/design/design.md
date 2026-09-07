@@ -466,6 +466,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   and deletion screens explain continued billing/deletion grace respectively.
   Login must distinguish reactivation from pending-deletion cancellation and
   require OTP before creating the single new session.
+  The post-reactivation deactivation cooldown is 8 minutes and its remaining
+  time is presented in a live-updating toast.
 
 - ### Blocking surfaces
 - Profile overflow uses the shared `ActionMenu` and `Modal` for block confirmation.

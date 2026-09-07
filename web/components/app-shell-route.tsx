@@ -21,6 +21,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
 
   useEffect(() => {
     const handleAccountSwitch = () => window.location.reload();
@@ -35,8 +36,10 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
         .then((restoredSession) => {
           saveAuthSession(restoredSession);
           setUser(restoredSession.user);
+          setAuthCheckComplete(true);
         })
         .catch((error) => {
+          setAuthCheckComplete(true);
           if (isTerminalRefreshFailure(error)) {
             setUser(null);
             router.replace('/login');
@@ -85,7 +88,21 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
     }
   }
 
-  if (!user) return null;
+  if (!user) {
+    if (!authCheckComplete) return null;
+    return (
+      <main className="lifecycle-screen">
+        <section className="lifecycle-card" aria-labelledby="session-recovery-title">
+          <h1 id="session-recovery-title">We couldn’t restore this session.</h1>
+          <p>Your account may still be active. Check your connection and try again, or return to the login screen.</p>
+          <div className="lifecycle-actions">
+            <button className="lifecycle-primary-button" type="button" onClick={() => window.location.reload()}>Try again</button>
+            <button className="lifecycle-secondary-button" type="button" onClick={() => router.replace('/login')}>Go to login</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return <AppShell user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
 }

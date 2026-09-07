@@ -117,7 +117,7 @@ type AuthErrorCode =
   | 'REFRESH_TOKEN_INVALID';
 
 type ApiErrorBody = {
-  detail?: string | { message?: string; code?: AuthErrorCode } | Array<{ msg?: string }>;
+  detail?: string | { message?: string; code?: AuthErrorCode; cooldown_seconds?: number } | Array<{ msg?: string }>;
 };
 
 type AuthRequestContext = 'fresh_login' | 'refresh_exchange' | 'authenticated_request';
@@ -128,14 +128,16 @@ export class AuthApiError extends Error {
   code?: AuthErrorCode;
   displayCode?: string;
   detail: string;
+  cooldownSeconds?: number;
 
-  constructor(message: string, status: number, code?: AuthErrorCode, options?: { displayCode?: string; detail?: string }) {
+  constructor(message: string, status: number, code?: AuthErrorCode, options?: { displayCode?: string; detail?: string; cooldownSeconds?: number }) {
     super(message);
     this.name = 'AuthApiError';
     this.status = status;
     this.code = code;
     this.displayCode = options?.displayCode ?? code ?? (status > 0 ? `HTTP_${status}` : 'CLIENT_ERROR');
     this.detail = options?.detail ?? message;
+    this.cooldownSeconds = options?.cooldownSeconds;
   }
 }
 
@@ -1669,7 +1671,7 @@ async function requestApi<T>(
         retryingAfterRefresh: true,
       });
     }
-    throw new AuthApiError(apiError.message, response.status, apiError.code);
+    throw new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
   }
 
   if (response.status === 204) {
@@ -1685,7 +1687,7 @@ function ensureTerminalPeriod(message: string): string {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
-async function getApiError(response: Response): Promise<{ message: string; code?: AuthErrorCode }> {
+async function getApiError(response: Response): Promise<{ message: string; code?: AuthErrorCode; cooldownSeconds?: number }> {
   try {
     const body = (await response.json()) as ApiErrorBody;
     if (typeof body.detail === 'string') {
@@ -1695,6 +1697,7 @@ async function getApiError(response: Response): Promise<{ message: string; code?
       return {
         message: body.detail.message || `Friink API request failed with ${response.status}.`,
         code: body.detail.code,
+        cooldownSeconds: body.detail.cooldown_seconds,
       };
     }
     if (Array.isArray(body.detail)) {

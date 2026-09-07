@@ -2,6 +2,23 @@
 
 ## 2026-09-08
 
+- [web/auth] Replaced the permanent blank protected-route state after an
+  ambiguous refresh failure with retry and login recovery actions.
+- [diagnosis] Confirmed the OTP decision is API-owned; an OTP prompt means the
+  serving staging API instance did not have effective `OTP_ENABLED=false` for
+  that request, regardless of when the frontend page loaded.
+
+## 2026-09-08
+
+- [auth/lifecycle] Reduced the post-reactivation deactivation cooldown to 8
+  minutes and return the server-authoritative remaining seconds.
+- [web/ui] Added a live countdown toast for the cooldown, including the
+  singular-minute and cooldown-complete states.
+- [verification] Added API coverage for the cooldown response and passed the
+  lifecycle/account regression suite plus web TypeScript validation.
+
+## 2026-09-08
+
 - [web/ui] Updated the account-switcher dropdown to show each remembered
   account's profile picture as the leading avatar, with the shared default
   image fallback and a trailing checkmark for the active account.

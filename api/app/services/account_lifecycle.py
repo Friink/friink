@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import math
 import uuid
 
 from fastapi import HTTPException, status
@@ -29,7 +30,7 @@ ACTIVE = "active"
 DEACTIVATED = "deactivated"
 PENDING_DELETION = "pending_deletion"
 DELETED = "deleted"
-DEACTIVATION_COOLDOWN = timedelta(hours=24)
+DEACTIVATION_COOLDOWN = timedelta(minutes=8)
 
 
 def ensure_active(user: User) -> None:
@@ -70,7 +71,14 @@ async def deactivate_account(session: Session, user: User, current_password: str
     _verify_current_password(user, current_password)
     now = datetime.now(UTC)
     if user.reactivation_cooldown_until and user.reactivation_cooldown_until > now:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Account deactivation is temporarily unavailable after reactivation.")
+        remaining_seconds = max(1, math.ceil((user.reactivation_cooldown_until - now).total_seconds()))
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "message": "Account deactivation is temporarily unavailable after reactivation.",
+                "cooldown_seconds": remaining_seconds,
+            },
+        )
     user.lifecycle_status = DEACTIVATED
     user.deactivated_at = now
     _revoke_everything(session, user, "account_deactivated")

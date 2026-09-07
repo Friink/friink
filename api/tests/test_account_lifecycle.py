@@ -134,7 +134,13 @@ def test_global_otp_disable_bypasses_reactivation_and_deletion(monkeypatch) -> N
         assert restored.status_code == 200, restored.text
         assert "challenge_token" not in restored.json()
 
-        deletion = client.post("/auth/me/delete/start", headers={"Authorization": f"Bearer {restored.json()['access_token']}"}, json={"current_password": password})
+        restored_headers = {"Authorization": f"Bearer {restored.json()['access_token']}"}
+        cooldown = client.post("/auth/me/deactivate", headers=restored_headers, json={"current_password": password})
+        assert cooldown.status_code == 429, cooldown.text
+        assert cooldown.json()["detail"]["message"] == "Account deactivation is temporarily unavailable after reactivation."
+        assert 0 < cooldown.json()["detail"]["cooldown_seconds"] <= 8 * 60
+
+        deletion = client.post("/auth/me/delete/start", headers=restored_headers, json={"current_password": password})
         assert deletion.status_code == 204, deletion.text
         with get_session_factory()() as session:
             assert session.get(User, user_id).lifecycle_status == "pending_deletion"

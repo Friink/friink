@@ -404,7 +404,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       clearAuthSession();
       window.location.assign('/account-deactivated');
     }
-    catch (error) { setLifecycleStatus(error instanceof Error ? error.message : 'Could not deactivate your account.'); }
+    catch (error) {
+      if (error instanceof AuthApiError && error.status === 429 && error.cooldownSeconds) {
+        onToast?.({
+          message: 'You can deactivate your account again in 8 minutes.',
+          countdownUntil: Date.now() + error.cooldownSeconds * 1000,
+        });
+      } else {
+        setLifecycleStatus(error instanceof Error ? error.message : 'Could not deactivate your account.');
+      }
+    }
     finally { setLifecycleBusy(false); }
   }
 

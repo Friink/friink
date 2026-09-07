@@ -227,9 +227,10 @@ available before reactivation.
   confirmation and can manage the subscription separately.
 - Deletion cancels billing immediately. A later reactivation does not resume the
   subscription; the user must subscribe again.
-- Repeated lifecycle cycling is rate-limited. There is no reactivation delay;
-  after reactivation, another deactivation is allowed only after a 24-hour
-  cooldown. Staff overrides may bypass the product cooldown when audited.
+- Repeated lifecycle cycling is rate-limited. After reactivation, another
+  deactivation is allowed only after an 8-minute cooldown. The remaining
+  cooldown is shown in a live-updating toast. Staff overrides may bypass the
+  product cooldown when audited.
 
 ## 7. Implementation gates and resolved decisions
 
