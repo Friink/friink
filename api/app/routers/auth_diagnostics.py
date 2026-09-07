@@ -22,6 +22,7 @@ def auth_diagnostics(
     _: None = Depends(require_auth_diagnostics_token),
 ) -> dict[str, bool | str]:
     return {
+        "otp_enabled": settings.otp_enabled,
         "signup_otp_enabled": settings.signup_otp_enabled,
         "login_risk_otp_enabled": settings.login_risk_otp_enabled,
         "deployment_sha": get_deployment_sha(),

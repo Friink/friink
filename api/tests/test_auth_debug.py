@@ -57,6 +57,7 @@ def test_auth_diagnostics_endpoint_requires_token_and_reports_effective_flags() 
         assert response.status_code == 200, response.text
         assert response.json()["signup_otp_enabled"] is False
         assert response.json()["login_risk_otp_enabled"] is False
+        assert response.json()["otp_enabled"] is True
         assert "deployment_sha" in response.json()
     finally:
         app.dependency_overrides.clear()
@@ -75,3 +76,17 @@ def test_otp_flags_are_read_from_runtime_environment(monkeypatch) -> None:
         assert settings.login_risk_otp_enabled is False
     finally:
         get_settings.cache_clear()
+
+
+def test_production_rejects_global_otp_disable() -> None:
+    try:
+        Settings(
+            _env_file=None,
+            JWT_SECRET_KEY="production-otp-guard-secret-32-bytes",
+            ENVIRONMENT="production",
+            FRONTEND_URL="https://friink.com",
+            OTP_ENABLED=False,
+        )
+        raise AssertionError("production settings accepted OTP_ENABLED=false")
+    except ValueError as exc:
+        assert "OTP_ENABLED" in str(exc)

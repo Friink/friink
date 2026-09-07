@@ -99,8 +99,8 @@ class LoginRequest(BaseModel):
 
 
 class LoginChallengeResponse(BaseModel):
-    challenge_required: Literal[True] = True
-    challenge_token: str = Field(min_length=32, max_length=128)
+    challenge_required: bool = True
+    challenge_token: str | None = Field(default=None, min_length=32, max_length=128)
     message: str
 
 
@@ -145,8 +145,8 @@ class EmailChangeStartRequest(BaseModel):
 
 class EmailChangeStartResponse(BaseModel):
     accepted: bool = True
-    verification_required: Literal[True] = True
-    challenge_token: str = Field(min_length=32, max_length=128)
+    verification_required: bool = True
+    challenge_token: str | None = Field(default=None, min_length=32, max_length=128)
     message: str
 
 

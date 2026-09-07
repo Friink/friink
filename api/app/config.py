@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_url: str = Field(default="", alias="DATABASE_URL")
     frontend_url: AnyHttpUrl | str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
     environment: str = Field(default="development", alias="ENVIRONMENT")
+    otp_enabled: bool = Field(default=True, alias="OTP_ENABLED")
     jwt_secret_key: str = Field(alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     jwt_active_kid: str = Field(default="default", alias="JWT_ACTIVE_KID")
@@ -37,6 +38,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_lifecycle_timing(self) -> "Settings":
+        if self.is_production and not self.otp_enabled:
+            raise ValueError("OTP_ENABLED must remain true in production.")
         if self.account_deletion_grace_days <= 0:
             raise ValueError("ACCOUNT_DELETION_GRACE_DAYS must be positive.")
         if self.account_deletion_warning_days <= 0 or self.account_deletion_warning_days >= self.account_deletion_grace_days:

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlot, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlot, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -318,7 +318,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     try {
       if (!emailChangeToken) {
         const challenge = await startEmailChange(session.accessToken, email.trim(), currentPassword);
-        setEmailChangeToken(challenge.challenge_token);
+        if (!challenge.verification_required) {
+          const updatedUser = await getCurrentUser(session.accessToken);
+          const updatedSession = { ...session, user: updatedUser };
+          saveAuthSession(updatedSession);
+          onUserChange?.(updatedUser);
+          setEmail(updatedUser.email);
+          setEmailStatus(challenge.message);
+          onToast?.('Email updated.', 'success');
+          return;
+        }
+        setEmailChangeToken(challenge.challenge_token ?? '');
         setEmailChangeOtp('');
         setEmailStatus(challenge.message);
         return;
@@ -402,7 +412,16 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     const session = loadAuthSession();
     if (!session || !lifecyclePassword) return setLifecycleStatus('Enter your current password to continue.');
     setLifecycleBusy(true); setLifecycleStatus('');
-    try { const challenge = await startAccountDeletion(session.accessToken, lifecyclePassword); setDeletionToken(challenge.challenge_token); setLifecycleStatus('A verification code was sent to your email.'); }
+    try {
+      const challenge = await startAccountDeletion(session.accessToken, lifecyclePassword);
+      if (!challenge.challenge_required) {
+        clearAuthSession();
+        window.location.assign('/account-deleted');
+        return;
+      }
+      setDeletionToken(challenge.challenge_token ?? '');
+      setLifecycleStatus('A verification code was sent to your email.');
+    }
     catch (error) { setLifecycleStatus(error instanceof Error ? error.message : 'Could not start deletion.'); }
     finally { setLifecycleBusy(false); }
   }

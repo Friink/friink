@@ -20,8 +20,8 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-07 (UTC)
 
 ### Rule: OTP Flags Are API-Owned Runtime Configuration
-- **What:** `SIGNUP_OTP_ENABLED` controls signup verification and `LOGIN_RISK_OTP_ENABLED` controls risk-based normal-login OTP. These values must be read from the FastAPI deployment environment and verified after redeployment; changing only the web project is insufficient.
-- **Edge cases:** A disabled flag must not produce its corresponding prompt. Diagnostics may report effective flag values and the deployment identifier, but never secrets, tokens, OTPs, cookies, hashes, or internal identifiers.
+- **What:** `OTP_ENABLED` is the API-owned master switch and defaults to `true`. When enabled, `SIGNUP_OTP_ENABLED` controls signup verification and `LOGIN_RISK_OTP_ENABLED` controls risk-based normal-login OTP. When `OTP_ENABLED=false`, all OTP challenges are bypassed, including signup, risk-based login, lifecycle reactivation/deletion, and email-change verification. The master switch must be read from the FastAPI deployment environment and verified after redeployment; changing only the web project is insufficient.
+- **Edge cases:** The master switch is intended for local/test/staging use and must remain enabled in production; production API startup rejects `OTP_ENABLED=false`. An absent variable uses the secure default (`true`); an empty value is not a valid substitute for omission. A disabled flow must not produce its corresponding prompt. Diagnostics may report effective flag values and the deployment identifier, but never secrets, tokens, OTPs, cookies, hashes, or internal identifiers.
 - **Status:** Active
 - **Platform:** API/Web
 - **File(s):** `api/app/config.py`, `api/app/routers/auth.py`, `api/app/services/auth_debug.py`

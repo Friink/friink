@@ -182,8 +182,8 @@ export type SignupStartResponse = {
 
 type ApiEmailChangeStartResponse = {
   accepted: boolean;
-  verification_required: true;
-  challenge_token: string;
+  verification_required: boolean;
+  challenge_token: string | null;
   message: string;
 };
 
@@ -294,8 +294,8 @@ export async function deactivateAccount(accessToken: string, currentPassword: st
   });
 }
 
-export async function startAccountDeletion(accessToken: string, currentPassword: string): Promise<{ challenge_token: string; message: string }> {
-  return requestApi<{ challenge_token: string; message: string }>('/auth/me/delete/start', {
+export async function startAccountDeletion(accessToken: string, currentPassword: string): Promise<{ challenge_required: boolean; challenge_token: string | null; message: string }> {
+  return requestApi<{ challenge_required: boolean; challenge_token: string | null; message: string }>('/auth/me/delete/start', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',

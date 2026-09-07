@@ -273,6 +273,32 @@ def test_email_change_requires_new_email_otp_and_preserves_history(monkeypatch) 
         _delete_user(user_id)
 
 
+def test_global_otp_disable_completes_email_change_without_delivery(monkeypatch) -> None:
+    async def fail_if_called(self, email: str, otp_code: str) -> None:
+        raise AssertionError("OTP delivery should not run when OTP is disabled")
+
+    monkeypatch.setattr("app.services.email.EmailService.send_email_change_otp", fail_if_called)
+    app.dependency_overrides[get_settings] = lambda: _settings(OTP_ENABLED=False)
+    password = "Strong1!pass"
+    email = f"email-change-disabled-{uuid.uuid4().hex}@example.com"
+    new_email = f"new-disabled-{uuid.uuid4().hex}@example.com"
+    user_id = _seed_user(email, f"emaildisabled_{uuid.uuid4().hex[:16]}", password)
+    try:
+        client = TestClient(app)
+        login = client.post("/auth/login", json={"identifier": email, "password": password})
+        assert login.status_code == 200, login.text
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        start = client.post("/auth/me/email/change/start", json={"email": new_email, "current_password": password}, headers=headers)
+        assert start.status_code == 202, start.text
+        assert start.json()["verification_required"] is False
+        assert start.json()["challenge_token"] is None
+        with get_session_factory()() as session:
+            assert session.get(User, user_id).email == new_email
+    finally:
+        app.dependency_overrides.pop(get_settings, None)
+        _delete_user(user_id)
+
+
 def test_expired_signup_reservations_are_cleanup_ready() -> None:
     reservation_id = uuid.uuid4()
     with get_session_factory()() as session:

@@ -7259,6 +7259,29 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Changes Made: Pushed `staging` commit `6358b0d` to `origin/staging`. The staging web alias returned `200`, and `staging-api.friink.com/health/db` returned `{"database":true}`. Added the account-slot and API-owned OTP rules to `RULES.md`, the account-switcher UX contract to `packages/design/design.md`, and deployment/E2E evidence to `CHANGELOG.md` and `docs/account-switcher.md`.
 - Verification Status: Full API suite passed (`107 passed`, existing warnings); web TypeScript, production build, lint, and `git diff --check` passed. Clean Chrome E2E passed five-account creation, switching, reload continuity, logout fallback, configured limit-plus-one refusal, and slot re-add. A newly opened Chrome tab reused the existing profile and is not claimed as incognito evidence. Browser acceptance is scoped to Chromium/Chrome; deployment-stability follow-up remains open.
 
+## 2026-09-08T00:00:00Z — Add global OTP testing switch and production guard
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a global OTP environment switch for testing, keep OTP
+  enabled by default, and prevent accidental production disablement.
+- Changes Made: Added API-owned `OTP_ENABLED=true` by default with a production
+  startup guard; made signup, risk-login, reactivation, deletion, and
+  email-change flows honor the master switch; updated the frontend response
+  handling, diagnostics, environment examples, design contract, active rules,
+  lifecycle/auth documents, changelog, and regression coverage.
+- Files: `api/app/config.py`, `api/app/routers/auth.py`,
+  `api/app/services/account_lifecycle.py`, `api/app/services/email_change.py`,
+  `api/app/schemas/auth.py`, `api/app/routers/auth_diagnostics.py`,
+  `web/lib/auth.ts`, `web/components/account-screens.tsx`,
+  `packages/design/design.md`, `rules.md`, `CHANGELOG.md`, `agentlog.md`,
+  `docs/account-lifecycle.md`, `docs/auth-and-session.md`, and API tests.
+- Reason: Allow cost-free local/test/staging validation without hardcoding OTP
+  behavior, while ensuring production cannot start with the testing override.
+- Verification Status: Full API suite passed (`110 passed`); web TypeScript
+  validation and production build passed; `git diff --check` passed. Existing
+  framework/JWT/lint warnings remain unrelated.
+
 ## 2026-09-07T16:00:00Z — Narrow browser acceptance to Chromium scope
 
 - Prompt Summary: Remove Edge from the account-switcher release scope because it uses the same Chromium browser engine.

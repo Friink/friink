@@ -35,6 +35,11 @@ The following points are part of the planned scope:
   login does not require an OTP when the login is recognized as normal;
   risk-based OTP/MFA is used for a new or suspicious device/login and for
   defined high-risk actions. Access-token refresh never requires an OTP.
+- The API-owned `OTP_ENABLED` master switch defaults to `true`. An explicit
+  `OTP_ENABLED=false` is a local/test/staging testing override that bypasses
+  signup, login-risk, lifecycle, and email-change OTP challenges; production
+  API startup rejects the disabled value. Leaving the variable unset uses the
+  secure default.
 - Failed-login lockout uses a configurable progressive policy: the third
   failure starts a 30-minute cooldown, the fourth starts a one-hour cooldown,
   and the fifth starts a 24-hour cooldown. A successful login resets the
@@ -2273,12 +2278,12 @@ configuration in each environment.
 - Exact outbox implementation details, while durable login/security events and
   retryable notification processing are required.
 
-## Phase 4e implementation checkpoint — 2026-09-06
+## Phase 4e implementation checkpoint — 2026-09-06 (historical)
 
 The first 4e server/web slice is implemented. Migration `20260906_0035` adds
 device-scoped account session slots. The API returns opaque slot references and
 safe summaries, enforces `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` (1–16, default
-5), binds slots to the protected device cookie, and uses slot-named HttpOnly
+4), binds slots to the protected device cookie, and uses slot-named HttpOnly
 refresh cookies. The legacy single-account refresh path remains supported.
 
 Staging evidence: migrations reached `20260906_0036`, `alembic check` reported
@@ -2314,6 +2319,25 @@ recover and the updated signup flow can be exercised.
 Follow-up evidence: the staging API health endpoint actively refused the
 connection during the retry, so the current authenticated-route blank state is
 an API deployment outage. Resume acceptance only after API health is restored.
+
+## Account-switcher release evidence — 2026-09-07
+
+The earlier deployment handoff is superseded for the current web release. The
+runtime fix was pushed to staging as `6358b0d`; staging web returned `200` and
+the API health endpoint returned `{"database":true}`. Acceptance is scoped to
+one clean Chromium/Chrome profile; a separate Edge run is not required.
+
+Clean Chrome E2E created five synthetic accounts through standalone signup,
+in-app signup, and in-app login/re-add. Switching, reload continuity, logout
+fallback to the most-recent account and then the public site, the configured
+four-account limit-plus-one refusal, and slot re-add all passed. No OTP prompt
+appeared with both OTP flags disabled. Account operations took roughly 15–30
+seconds; latency/feed stability remains a separate deployment investigation.
+
+The complete API suite passed (`107 passed`, with existing warnings); web
+TypeScript, lint, production build, and `git diff --check` passed. The
+account-switcher resolution plan and detailed phase evidence remain in
+`docs/account-switcher.md`; mobile account switching remains deferred.
 
 ## Phase 4 UX decisions — 2026-09-06
 

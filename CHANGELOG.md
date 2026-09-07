@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-08
+
+### Added
+- [config/auth] Added the API-owned `OTP_ENABLED` master switch, defaulting to
+  `true`; `OTP_ENABLED=false` is available for local, test, and staging
+  validation and bypasses signup, login-risk, lifecycle, and email-change OTP.
+- [config/auth] Added a production startup guard that rejects
+  `ENVIRONMENT=production` with `OTP_ENABLED=false`.
+- [web] Updated email-change and account-deletion UI flows to follow the API's
+  `verification_required` response instead of assuming an OTP challenge.
+
+### Verified
+- [api] Full test suite passed: `110 passed`.
+- [web] TypeScript validation and production build passed; existing lint
+  warnings remain unrelated to this change.
+- [docs] Synchronized the active rules, lifecycle contract, auth/session
+  contract, and design contract with the master OTP setting.
+
 ## 2026-09-07
 
 - [release/account-switcher] Pushed staging branch commit `6358b0d` to the

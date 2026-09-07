@@ -82,18 +82,22 @@ def start_lifecycle_challenge(session: Session, user: User, settings: Settings, 
     return raw_token, otp_code
 
 
-async def start_deletion(session: Session, user: User, current_password: str, settings: Settings) -> tuple[str, str]:
+async def start_deletion(session: Session, user: User, current_password: str, settings: Settings) -> tuple[str | None, str | None]:
     ensure_active(user)
     _verify_current_password(user, current_password)
+    if not settings.otp_enabled:
+        return None, None
     return start_lifecycle_challenge(session, user, settings, kind="deletion")
 
 
-async def confirm_deletion(session: Session, user: User, token: str, otp: str, settings: Settings) -> None:
+async def confirm_deletion(session: Session, user: User, token: str | None, otp: str | None, settings: Settings) -> None:
     ensure_active(user)
-    challenge = get_login_challenge(session, token)
-    if not challenge or challenge.user_id != user.id or challenge.kind != "deletion" or not verify_login_challenge(session, challenge, user, otp):
-        await commit(session)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+    challenge = None
+    if settings.otp_enabled:
+        challenge = get_login_challenge(session, token or "")
+        if not challenge or challenge.user_id != user.id or challenge.kind != "deletion" or not verify_login_challenge(session, challenge, user, otp or ""):
+            await commit(session)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
     now = datetime.now(UTC)
     user.lifecycle_status = PENDING_DELETION
     user.deactivated_at = now
@@ -101,22 +105,24 @@ async def confirm_deletion(session: Session, user: User, token: str, otp: str, s
     user.deletion_deadline = now + timedelta(days=settings.account_deletion_grace_days)
     user.deletion_request_id = uuid.uuid4()
     user.deletion_warning_sent_at = None
-    challenge.consumed_at = now
+    if challenge:
+        challenge.consumed_at = now
     _revoke_everything(session, user, "account_pending_deletion")
     await commit(session)
 
 
-def reactivate_account(session: Session, user: User, challenge: LoginChallenge) -> None:
+def reactivate_account(session: Session, user: User, challenge: LoginChallenge | None) -> None:
     now = datetime.now(UTC)
     user.lifecycle_status = ACTIVE
     user.deactivated_at = None
     user.reactivation_cooldown_until = now + DEACTIVATION_COOLDOWN
-    if challenge.kind == "reactivation_pending_deletion":
+    if challenge and challenge.kind == "reactivation_pending_deletion":
         user.deletion_requested_at = None
         user.deletion_deadline = None
         user.deletion_request_id = None
         user.deletion_warning_sent_at = None
-    challenge.consumed_at = now
+    if challenge:
+        challenge.consumed_at = now
 
 
 def anonymize_deleted_identity(user: User) -> None:

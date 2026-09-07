@@ -126,7 +126,7 @@ async def signup(
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
     require_allowed_origin(request, settings)
-    if settings.signup_otp_enabled:
+    if settings.otp_enabled and settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
     user = await create_user(session, payload, EmailService(settings))
     return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
@@ -140,11 +140,11 @@ async def signup_start(
     settings: Settings = Depends(get_settings),
 ) -> SignupStartResponse:
     require_allowed_origin(request, settings)
-    if settings.signup_otp_enabled:
+    if settings.otp_enabled and settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
     token = secrets.token_urlsafe(32)
     return SignupStartResponse(
-        verification_required=settings.signup_otp_enabled,
+        verification_required=settings.otp_enabled and settings.signup_otp_enabled,
         reservation_token=token,
         message="If the signup details can be accepted, verification instructions will be sent.",
     )
@@ -166,7 +166,7 @@ async def signup_email_start(
     settings: Settings = Depends(get_settings),
 ) -> SignupStartResponse:
     require_allowed_origin(request, settings)
-    if not settings.signup_otp_enabled:
+    if not (settings.otp_enabled and settings.signup_otp_enabled):
         return SignupStartResponse(
             verification_required=False,
             reservation_token=secrets.token_urlsafe(32),
@@ -199,7 +199,7 @@ async def signup_email_verify(
     settings: Settings = Depends(get_settings),
 ) -> SignupEmailVerifyResponse:
     require_allowed_origin(request, settings)
-    if not settings.signup_otp_enabled:
+    if not (settings.otp_enabled and settings.signup_otp_enabled):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup verification is not available.")
     await verify_signup_email_reservation(session, payload.reservation_token, payload.otp)
     return SignupEmailVerifyResponse()
@@ -214,7 +214,7 @@ async def signup_complete(
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
     require_allowed_origin(request, settings)
-    if not settings.signup_otp_enabled:
+    if not (settings.otp_enabled and settings.signup_otp_enabled):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup completion is not available.")
     data = SignupRequest.model_validate(payload.model_dump(exclude={"reservation_token"}))
     user = await complete_signup_email_reservation(session, payload.reservation_token, data)
@@ -257,7 +257,7 @@ async def signup_verify(
     settings: Settings = Depends(get_settings),
 ) -> UserResponse:
     require_allowed_origin(request, settings)
-    if not settings.signup_otp_enabled:
+    if not (settings.otp_enabled and settings.signup_otp_enabled):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup verification is not available.")
     return user_response(await complete_signup_reservation(session, payload.reservation_token, payload.otp), settings)
 
@@ -360,6 +360,10 @@ async def login(
     require_allowed_origin(request, settings)
     user = await authenticate_user(session, payload.identifier, payload.password)
     if user.lifecycle_status in {"deactivated", "pending_deletion"}:
+        if not settings.otp_enabled:
+            reactivate_account(session, user, None)
+            await commit(session)
+            return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
         lifecycle_kind = "reactivation_pending_deletion" if user.lifecycle_status == "pending_deletion" else "reactivation"
         _challenge, challenge_token, otp_code = create_login_challenge(session, user, None, settings, kind=lifecycle_kind)
         try:
@@ -375,7 +379,7 @@ async def login(
         )
     raw_device_identifier = request.cookies.get(DEVICE_COOKIE_NAME)
     recognized_device = get_recognized_device(session, user.id, raw_device_identifier)
-    requires_risk_challenge = bool(settings.login_risk_otp_enabled and settings.resend_api_key.strip()) and (
+    requires_risk_challenge = bool(settings.otp_enabled and settings.login_risk_otp_enabled and settings.resend_api_key.strip()) and (
         recognized_device is None or device_signals_changed(session, recognized_device, request)
     )
     if requires_risk_challenge:
@@ -910,11 +914,18 @@ async def deactivate_me(
 async def start_delete_me(
     payload: LifecycleActionRequest,
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> LoginChallengeResponse:
     require_allowed_origin(request, settings)
+    if not settings.otp_enabled:
+        await start_deletion(session, current_user, payload.current_password, settings)
+        await confirm_deletion(session, current_user, None, None, settings)
+        response.delete_cookie(key=REFRESH_COOKIE_NAME, path="/")
+        response.status_code = status.HTTP_204_NO_CONTENT
+        return response
     challenge_token, otp_code = await start_deletion(session, current_user, payload.current_password, settings)
     try:
         await EmailService(settings).send_lifecycle_otp(current_user.email, otp_code)
@@ -922,7 +933,7 @@ async def start_delete_me(
         session.rollback()
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
     await commit(session)
-    return LoginChallengeResponse(challenge_token=challenge_token, message="We sent a verification code to your email to confirm permanent deletion.")
+    return LoginChallengeResponse(challenge_required=True, challenge_token=challenge_token, message="We sent a verification code to your email to confirm permanent deletion.")
 
 
 @router.post("/me/delete/confirm", status_code=status.HTTP_204_NO_CONTENT)
@@ -1153,7 +1164,7 @@ async def start_my_email_change(
     require_allowed_origin(request, settings)
     try:
         challenge_token, message = await start_email_change(
-            session, current_user, str(payload.email), payload.current_password, EmailService(settings)
+            session, current_user, str(payload.email), payload.current_password, EmailService(settings), otp_enabled=settings.otp_enabled
         )
     except EmailDeliveryError as exc:
         session.rollback()
@@ -1161,7 +1172,11 @@ async def start_my_email_change(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Verification email could not be sent. Please try again later.",
         ) from exc
-    return EmailChangeStartResponse(challenge_token=challenge_token, message=message)
+    return EmailChangeStartResponse(
+        verification_required=bool(challenge_token),
+        challenge_token=challenge_token or None,
+        message=message,
+    )
 
 
 @router.post("/me/email/change/verify", response_model=UserResponse)
