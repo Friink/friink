@@ -347,6 +347,17 @@ export function clearAuthSession() {
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
+export async function logout(accessToken: string, accountSlot?: string): Promise<void> {
+  await requestApi<void>('/auth/logout', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : {}),
+    },
+    skipAuthRefresh: true,
+  });
+}
+
 export async function login(identifier: string, password: string, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
   const response = await requestApi<ApiTokenResponse | ApiLoginChallengeResponse>('/auth/login', {
     method: 'POST',

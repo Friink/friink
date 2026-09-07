@@ -39,7 +39,7 @@ def test_reserved_username_and_display_casing_contract() -> None:
         assert created.status_code == 201, created.text
         with get_session_factory()() as session:
             user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
-        assert created.json()["username"] == username
+        assert created.json()["user"]["username"] == username
 
         availability = client.get(f"/auth/username-availability?username={username.lower()}")
         assert availability.status_code == 200

@@ -49,7 +49,7 @@ from app.schemas.auth import (
 )
 from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_email, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
 from app.services.email_change import complete_email_change, start_email_change
-from app.services.auth_debug import log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
+from app.services.auth_debug import log_account_list_event, log_account_slot_event, log_account_switch_event, log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailDeliveryError, EmailService
 from app.services.profile_media import profile_picture_url_for
@@ -287,6 +287,11 @@ async def _issue_login_session(
     raw_device_identifier: str | None,
 ) -> TokenResponse:
     is_add_account_flow = request.headers.get(ACCOUNT_FLOW_HEADER) == ADD_ACCOUNT_FLOW
+    if is_add_account_flow and not raw_device_identifier:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This account could not be added to the current browser. Please retry from the active session.",
+        )
     access_token = create_access_token(user.id)
     recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
         session, user.id, request, raw_device_identifier
@@ -310,6 +315,12 @@ async def _issue_login_session(
             session.rollback()
             raise HTTPException(status_code=409, detail="Remove an account before adding another.") from exc
         raise
+    log_account_slot_event(
+        flow="fresh_login",
+        device_cookie_present=raw_device_identifier is not None,
+        slot_created_or_reused=slot is not None,
+        add_account=is_add_account_flow,
+    )
     if is_add_account_flow and not slot:
         session.rollback()
         raise HTTPException(status_code=409, detail="This account could not be added to the current browser. Please try again.")
@@ -634,6 +645,38 @@ async def logout(
     settings: Settings = Depends(get_settings),
 ) -> Response:
     require_allowed_origin(request, settings)
+    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    if account_slot:
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if slot:
+            auth_session = session.get(AuthSession, slot.auth_session_id)
+            revoke_slot(session, slot)
+            if auth_session:
+                record_security_event(
+                    session,
+                    event_type=SecurityEventType.logout,
+                    event_key=f"logout:{auth_session.id}:{uuid.uuid4()}",
+                    user_id=slot.user_id,
+                    session_id=auth_session.id,
+                    payload={"kind": "logout", "account_slot": account_slot},
+                )
+            await commit(session)
+        response.delete_cookie(
+            key=f"friink_refresh_{account_slot}",
+            httponly=True,
+            secure=settings.is_production,
+            samesite="none" if settings.is_production else "lax",
+            path="/",
+        )
+        response.delete_cookie(
+            key=REFRESH_COOKIE_NAME,
+            httponly=True,
+            secure=settings.is_production,
+            samesite="none" if settings.is_production else "lax",
+            path="/",
+        )
+        response.status_code = status.HTTP_204_NO_CONTENT
+        return response
     if refresh_token:
         token_record = get_refresh_token_for_update(session, refresh_token)
         if token_record:
@@ -733,6 +776,15 @@ async def get_current_user(
 async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme), session: Session = Depends(get_session)) -> User | None:
     if not token:
         return None
+    try:
+        payload = decode_token(token, "access")
+    except TokenValidationError:
+        return None
+    user_id = user_id_from_subject(str(payload.get("sub", "")))
+    user = session.get(User, user_id)
+    if not user or user.lifecycle_status != "active":
+        return None
+    return user
 
 
 @router.get("/login/pending", response_model=list[LoginApprovalResponse])
@@ -948,6 +1000,7 @@ async def accounts(
     result: list[AccountSummaryResponse] = []
     for slot, user in list_slots(session, request.cookies.get(DEVICE_COOKIE_NAME)):
         result.append(AccountSummaryResponse(account_slot=str(slot.id), username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user, settings), active=slot.user_id == current_user.id, last_used_at=slot.last_used_at))
+    log_account_list_event(account_count=len(result), device_cookie_present=request.cookies.get(DEVICE_COOKIE_NAME) is not None)
     return result
 
 
@@ -1008,16 +1061,20 @@ async def switch_account(
         if slot and slot.user_id == current_user.id:
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
+            log_account_switch_event(result="success", reason="already_active")
             return TokenResponse(access_token=create_access_token(current_user.id), user=user_response(current_user, settings), account_slot=payload.account_slot)
+        log_account_switch_event(result="failure", reason="slot_not_found")
         raise HTTPException(status_code=404, detail="Account session not found.")
     target = session.get(User, slot.user_id)
     auth_session = session.get(AuthSession, slot.auth_session_id)
     if not target or target.lifecycle_status != "active" or not auth_session or auth_session.revoked_at is not None:
+        log_account_switch_event(result="failure", reason="slot_unavailable")
         raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer available.", AuthErrorCode.SESSION_NOT_FOUND))
     slot.last_used_at = datetime.now(UTC)
     issued_refresh = issue_refresh_token(session, target.id, settings, session_id=auth_session.id)
     await commit(session)
     set_account_refresh_cookie(response, payload.account_slot, issued_refresh.raw_token, settings)
+    log_account_switch_event(result="success", reason="switched")
     return TokenResponse(access_token=create_access_token(target.id), user=user_response(target, settings), account_slot=payload.account_slot)
 
 

@@ -1,5 +1,53 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T07:00:00Z — Add protected auth deployment diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the account-switcher resolution plan with a safe staging configuration check.
+- Changes Made: Added token-protected `GET /internal/auth/diagnostics`, reporting effective signup/login OTP flags and deployment SHA without exposing secrets; added the configuration field, router registration, and authorization/response tests.
+- Files: `api/app/config.py`, `api/app/main.py`, `api/app/routers/auth_diagnostics.py`, `api/tests/test_auth_debug.py`, `AGENTLOG.md`.
+- Reason: Verify staging flag drift and deployment identity independently from browser routing, cookie continuity, and account-slot behavior.
+- Verification Status: Complete API suite passed (`100 passed`, one existing Starlette deprecation warning); diagnostics tests passed (`2 passed`).
+
+## 2026-09-07T06:00:00Z — Extend safe account-switcher diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the account-switcher resolution plan with safe observability.
+- Changes Made: Added structured account-list and account-switch events for count, cookie-presence, result, and failure reason; diagnostic payloads exclude account slots, cookies, tokens, passwords, and other secrets. Added a secret-free diagnostics regression test.
+- Files: `api/app/routers/auth.py`, `api/app/services/auth_debug.py`, `api/tests/test_auth_debug.py`, `AGENTLOG.md`.
+- Reason: Make the staging retention failure distinguishable between missing device continuity, empty account inventory, and failed switch without exposing sensitive state.
+- Verification Status: Complete API suite passed (`99 passed`, one existing Starlette deprecation warning); focused diagnostics and account tests passed (`6 passed`).
+
+## 2026-09-07T05:00:00Z — Add three-account lifecycle regression
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the account-switcher resolution plan and cover the reported three-account failure sequence.
+- Changes Made: Added a database-backed regression covering standalone creation, Add-account, repeated slot logout, third-account creation, re-login, re-add of both existing accounts, final inventory, and switching.
+- Files: `api/tests/test_phase4_accounts.py`, `AGENTLOG.md`.
+- Reason: Match automated acceptance coverage to the owner-reported three-account staging sequence and ensure revoked slots can be re-added without losing remembered accounts.
+- Verification Status: `tests/test_phase4_accounts.py` passed (`5 passed`) and the complete API suite passed (`98 passed`), with one existing Starlette deprecation warning, using the dedicated test database configuration.
+
+## 2026-09-07T04:30:00Z — Complete local account-switcher validation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the account-switcher resolution plan through complete local validation.
+- Changes Made: Completed auth/session test-fixture repairs; implemented optional bearer-user resolution for blocked-profile visibility; corrected transient post visibility/serialization defaults; added compatible ESLint 8 and Next 14 lint tooling; fixed three lint-blocking apostrophe literals; and updated account-switcher evidence.
+- Files: `api/app/routers/auth.py`, `api/app/services/posts.py`, `api/tests/test_phase2_identity.py`, `api/tests/test_phase3_security_events.py`, `api/tests/test_refresh_token_rotation.py`, `web/app/subscribe-form.tsx`, `web/components/home-screen.tsx`, `web/components/login-screen.tsx`, `web/package.json`, `web/package-lock.json`, `AGENTLOG.md`, `docs/account-switcher.md`.
+- Verification Status: Complete API suite passed (`97 passed`, one Starlette deprecation warning); web lint passed with warnings only; production web build passed; account-switcher and connection tests remained green. Clean-profile Chrome/Edge staging verification and deployment confirmation remain open.
+
+## 2026-09-07T03:30:00Z — Harden account-switcher logout and add-account continuity
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Execute the account-switcher resolution plan after the original account disappeared during Add-account.
+- Changes Made: Added slot-aware server logout with exact slot-cookie deletion; added the client logout API call; rejected Add-account when the active device cookie is absent instead of silently creating a separate device identity; added safe account-slot resolution diagnostics; added logout/re-add and missing-device-cookie regression tests; restricted pytest discovery to `api/tests`; and updated the connection test fake for the current blocking query.
+- Files: `api/app/routers/auth.py`, `api/app/services/auth_debug.py`, `api/tests/test_phase4_accounts.py`, `api/tests/test_connections.py`, `api/pytest.ini`, `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, `web/.eslintrc.json`, `docs/account-switcher.md`, `AGENTLOG.md`.
+- Verification Status: Account-switcher tests passed (`4 passed`); connection tests passed (`20 passed`); web production build passed; Python compilation and `git diff --check` passed. Full API validation remains open with unrelated fixture/product failures; staging deployment and clean Chrome/Edge retest are still required. Web lint is blocked until the ESLint package is installed.
+
 ## 2026-09-07T00:00:00Z — Repair stale account switcher inventory
 
 - Agent: Codex

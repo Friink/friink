@@ -26,23 +26,33 @@ def test_fresh_login_is_one_event_and_one_notification_refresh_is_not() -> None:
             json={"email": email, "username": username, "display_name": "Phase 3", "password": password, "date_of_birth": "1990-01-01"},
         )
         assert signup.status_code == 201, signup.text
+        with get_session_factory()() as session:
+            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
+            baseline_events = session.execute(select(SecurityEvent).where(SecurityEvent.user_id == user_id)).scalars().all()
+            baseline_fresh_logins = sum(event.event_type is SecurityEventType.fresh_login for event in baseline_events)
+            baseline_refreshes = sum(event.event_type is SecurityEventType.refresh for event in baseline_events)
+            baseline_notifications = session.execute(
+                select(func.count()).select_from(Notification).where(
+                    Notification.recipient_user_id == user_id,
+                    Notification.type == NotificationType.login_security,
+                )
+            ).scalar_one()
         login = client.post("/auth/login", json={"identifier": email, "password": password})
         assert login.status_code == 200, login.text
         refresh = client.post("/auth/refresh")
         assert refresh.status_code == 200, refresh.text
 
         with get_session_factory()() as session:
-            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
             events = session.execute(select(SecurityEvent).where(SecurityEvent.user_id == user_id)).scalars().all()
-            assert sum(event.event_type is SecurityEventType.fresh_login for event in events) == 1
-            assert sum(event.event_type is SecurityEventType.refresh for event in events) == 1
+            assert sum(event.event_type is SecurityEventType.fresh_login for event in events) == baseline_fresh_logins + 1
+            assert sum(event.event_type is SecurityEventType.refresh for event in events) == baseline_refreshes + 1
             notifications = session.execute(
                 select(func.count()).select_from(Notification).where(
                     Notification.recipient_user_id == user_id,
                     Notification.type == NotificationType.login_security,
                 )
             ).scalar_one()
-            assert notifications == 1
+            assert notifications == baseline_notifications + 1
             delivered = session.execute(
                 select(func.count()).select_from(NotificationOutbox).where(
                     NotificationOutbox.channel == NotificationChannel.in_app,

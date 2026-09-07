@@ -74,6 +74,59 @@ def log_refresh_token_event(*, event: str, flow: str, token_id: str, family_id: 
     )
 
 
+def log_account_slot_event(*, flow: str, device_cookie_present: bool, slot_created_or_reused: bool, add_account: bool) -> None:
+    if not auth_debug_enabled():
+        return
+
+    logger.info(
+        json.dumps(
+            {
+                "event": "auth_account_slot_resolution",
+                "flow": flow,
+                "device_cookie_present": device_cookie_present,
+                "slot_created_or_reused": slot_created_or_reused,
+                "add_account": add_account,
+                "deployment_sha": get_deployment_sha(),
+                "server_time": int(datetime.now(UTC).timestamp()),
+            }
+        )
+    )
+
+
+def log_account_list_event(*, account_count: int, device_cookie_present: bool) -> None:
+    if not auth_debug_enabled():
+        return
+
+    logger.info(
+        json.dumps(
+            {
+                "event": "auth_account_list",
+                "account_count": account_count,
+                "device_cookie_present": device_cookie_present,
+                "deployment_sha": get_deployment_sha(),
+                "server_time": int(datetime.now(UTC).timestamp()),
+            }
+        )
+    )
+
+
+def log_account_switch_event(*, result: str, reason: str | None = None) -> None:
+    if not auth_debug_enabled():
+        return
+
+    logger.info(
+        json.dumps(
+            {
+                "event": "auth_account_switch",
+                "result": result,
+                "reason": reason,
+                "deployment_sha": get_deployment_sha(),
+                "server_time": int(datetime.now(UTC).timestamp()),
+            }
+        )
+    )
+
+
 def log_token_verification_failure(
     *,
     flow: str,

@@ -35,10 +35,10 @@ export function SubscribeForm() {
           disabled={submitted}
         />
         <button type="submit" className={styles.cta} disabled={submitted}>
-          {submitted ? "You're on the list" : 'Subscribe'}
+          {submitted ? "You’re on the list" : 'Subscribe'}
         </button>
       </form>
-      <p className={submitted ? styles.confirmation : styles.hidden}>No spam. It's a promise.</p>
+      <p className={submitted ? styles.confirmation : styles.hidden}>No spam. It’s a promise.</p>
     </>
   );
 }

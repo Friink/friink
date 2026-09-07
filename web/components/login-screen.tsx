@@ -280,7 +280,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
               {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
             </div>
 
-            {mode === 'page' ? <p className="login-switch">Don't have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
+            {mode === 'page' ? <p className="login-switch">Don’t have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
           </>
         )}
 

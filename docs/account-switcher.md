@@ -1,7 +1,7 @@
 # Friink Account Switcher
 
-Status: Implemented for the web-focused release; full staging browser
-acceptance remains pending.
+Status: Open — happy-path implementation works, but logout/re-add retention,
+staging OTP configuration, and broader regression coverage are not closed.
 
 This document describes how multiple independent Friink accounts are added,
 remembered, switched, and removed in one browser profile. It complements
@@ -164,8 +164,274 @@ two accounts on one device, approval, notification creation, denied-OTP
 invalidation, listing, switching, slot refresh, and removal. Web TypeScript
 and production-build checks also passed.
 
-Full browser-based staging acceptance is still required. It must be repeated
-after deployment stability is restored and should cover the scenarios below.
+The first live browser E2E run was completed against commit `56598a6` with
+`SIGNUP_OTP_ENABLED=false` and `LOGIN_RISK_OTP_ENABLED=false`. Signup skipped
+OTP as expected, and the login and account-switcher flows were reachable.
+
+### Live staging E2E results — 2026-09-07
+
+- Created Account 1 through standalone signup and entered the app.
+- Added Account 2 through the in-app Add-account signup flow.
+- Switched between Accounts 1 and 2 successfully.
+- Logged out Accounts 1 and 2 with the expected fallback behavior.
+- Created Account 3 through standalone signup and logged it out.
+- Logged back into Account 1 successfully.
+- Added existing Accounts 2 and 3 from inside the app.
+- Verified the final switcher list contained all three accounts and switched
+  back to Account 1 successfully.
+
+The run found one retention issue: Account 2 disappeared from the remembered
+account list during the first final re-add sequence and had to be added again.
+The second add succeeded, leaving all three accounts visible. This remains an
+open investigation before the account-switcher behavior can be considered
+fully E2E-closed.
+
+The run also observed intermittent home-feed load failures and slow API
+responses. These did not prevent account creation or the final three-account
+switch verification, but deployment stability should be checked separately.
+
+### Test-pass results — 2026-09-07
+
+- Focused account/auth tests: 9 passed.
+- Real API test suite with dedicated test configuration: 100 passed, with one
+  Starlette deprecation warning.
+- The connection, blocking, device/origin, post serialization, and session
+  fixture failures found during the earlier run have been corrected or
+  isolated in the test harness.
+- `api/pytest.ini` now restricts discovery to `api/tests`, excluding the
+  ad-hoc external R2 script under `api/tmp`.
+- Web production build passed.
+- Web lint passed with warnings only after pinning ESLint 8 and
+  `eslint-config-next` 14 for the Next 14.2.5 toolchain.
+
+### Confirmed implementation gap and local resolution
+
+The product contract says active logout revokes the active account's
+device/session slot. The original web handler only cleared in-memory and
+browser-local state; the API route existed but was not invoked. The local fix
+now sends slot-aware `POST /auth/logout`, revokes the server-side slot, and
+deletes the exact slot cookie. The missing-device-cookie guard prevents
+Add-account from silently creating a separate device identity. Staging
+deployment and clean-profile browser verification remain open.
+
+### Deterministic reproduction reported by the owner
+
+1. Log in to staging as `muflah@outlook.com`.
+2. From inside the app, add `muf95@outlook.com`.
+3. Open the account switcher.
+4. The original `muflah@outlook.com` account is missing.
+
+This symptom strongly indicates that the Add-account request is not carrying
+the existing `friink_device_id` cookie. The server then creates the added
+account under a new device hash. Since `GET /auth/accounts` lists slots by
+device hash, it returns only the newly created account and makes the original
+account appear to vanish. This must be confirmed from the browser network
+request and server logs, but it is more specific than a generic UI refresh
+failure.
+
+Diagnostic checks for this reproduction:
+
+- Confirm the initial login response sets `friink_device_id`.
+- Confirm the Add-account login/signup request sends that cookie to the API.
+- Confirm both requests use the same API origin and `credentials: include`.
+- Confirm the API response does not overwrite the device cookie with a new
+  value during Add-account.
+- Compare the device hash/slot count in server logs without logging raw cookie
+  values or tokens.
+- Check CORS allows the exact staging web origin with credentials and that the
+  deployed cookie has `Secure`, `SameSite=None`, `Path=/`, and the intended
+  host/domain scope.
+
+If the cookie is present, the next suspect is a server-side slot query or
+transaction issue. If it is absent, fix the staging API origin/CORS/cookie
+deployment configuration before changing switcher UI code.
+
+## Remediation plan
+
+1. Fix logout lifecycle first. Extend `POST /auth/logout` to accept the active
+   account-slot header/cookie, revoke that slot's refresh family, and delete
+   the exact slot cookie. Add a client `logout()` API function that calls it
+   before clearing local state. Make cleanup idempotent so an ambiguous network
+   failure does not replace a usable remaining account or create duplicate
+   slots.
+2. Make account-slot transitions transactional. On add-account, existing-slot
+   lookup, slot creation/replacement, refresh-token issuance, and the response
+   must complete as one server-side operation. The client must refresh the
+   account list only after the new session is saved and must ignore stale list
+   responses from earlier requests.
+3. Add regression coverage for the exact failure sequence: three accounts,
+   switch, active logout, fallback, logout another account, standalone login,
+   re-add both existing accounts one by one, reload, and switch repeatedly.
+   Include delayed, failed, and duplicated `/auth/accounts` responses.
+4. Correct test configuration. Tests that expect direct signup must explicitly
+   use `SIGNUP_OTP_ENABLED=false`; OTP-enabled tests must use the email
+   verification endpoints. Do not load `.env.staging` as the default unit-test
+   configuration.
+5. Repair the unrelated failing tests: update fake connection sessions to
+   support `execute`, fix device/origin fixture isolation, and correct post
+   serializer fixtures. Keep these failures separate from switcher acceptance.
+6. Add deployment diagnostics without secrets: expose the effective OTP flag
+   state only through protected server logs or an internal health check, and
+   verify that `staging.friink.com` reaches the API deployment where both OTP
+   variables were changed and redeployed.
+7. Re-run the API suite, web build/lint, and Chrome/Edge staging E2E. Enable the
+   switcher broadly only after logout/re-add passes repeatedly and the API
+   returns stable account-list and switch responses.
+
+## Resolution plan
+
+This is the recommended order for resolving the staging failure and preparing
+the feature for release. Do not treat the browser symptom as a UI-only issue;
+the account list is derived from server-side device slots.
+
+### Phase 0 — Freeze and capture evidence
+
+- Keep the switcher disabled for broad users or behind a rollout flag while
+  this plan is in progress.
+- Hard rule: every phase from Phase 0 through Phase 6 must run acceptance
+  testing on a clean browser profile with no prior cookies or local storage.
+- Preserve one clean Chrome profile and one clean Edge profile for testing.
+- Use synthetic test accounts only.
+- Capture the following requests for the exact `muflah` → `muf95` reproduction:
+  `POST /auth/login`, the Add-account authentication request, `GET
+  /auth/accounts`, and `POST /auth/accounts/switch`.
+- Record status codes, response bodies, cookie names, and timing. Never record
+  cookie values, access tokens, refresh tokens, OTPs, or passwords.
+
+### Phase 1 — Prove device-cookie continuity
+
+Acceptance criteria:
+
+- Initial login sets one `friink_device_id` cookie.
+- Add-account sends the same device cookie to the API.
+- Add-account does not replace it with a different device cookie.
+- `GET /auth/accounts` returns both accounts after Add-account.
+- Both accounts have slots with the same server-side device hash.
+
+If the cookie is missing, correct the deployed API origin, CORS, credentials,
+cookie attributes, and environment configuration. The web client already uses
+`credentials: include`; verify the deployed build actually points to the
+intended staging API. If the cookie is present, inspect slot creation and
+transaction boundaries instead of changing browser code.
+
+Before closing this phase, record evidence using the existing status-block
+format: status, evidence, commit hash, and named tests.
+
+### Related open issue — signup OTP redundancy
+
+A redundant login-OTP prompt was observed after signup email verification
+during the 2026-09-07 staging session. This is separate from the
+account-switcher retention bug; a working-tree fix is pending deployment
+confirmation. Track this issue to resolution in this document or a linked
+document so it is not lost or silently reintroduced during switcher work.
+
+### Phase 2 — Correct logout and slot lifecycle
+
+- Extend `POST /auth/logout` to understand the active account slot. It must
+  revoke the active slot's auth session/refresh family and delete the exact
+  `friink_refresh_<slot>` cookie.
+- Add the missing client logout call before clearing local state.
+- Preserve the most-recent remaining active slot after logout; return to the
+  signed-out screen only when no valid slots remain.
+- Make repeated logout, failed logout, expired-slot removal, and already
+  revoked-slot removal idempotent.
+- Ensure adding an existing account reuses its valid slot and never creates a
+  duplicate slot for the same user/device.
+- Before closing this phase, record evidence using the existing status-block
+  format: status, evidence, commit hash, and named tests.
+
+### Phase 3 — Harden Add-account and switch transitions
+
+- Keep the previously active account usable until Add-account authentication,
+  slot creation, cookie issuance, and session persistence all succeed.
+- Make the server-side slot update and refresh-token issuance transactional.
+- In the client, save the new session before refreshing the account list, and
+  discard stale or out-of-order account-list responses.
+- On `/auth/accounts` or switch failure, show a retryable error while keeping
+  the current account active.
+- On reload, derive the active account from the validated session/slot rather
+  than from stale local state.
+- Test slow responses, duplicate clicks, refresh during Add-account, two tabs,
+  expired access tokens, and a failed switch.
+- Before closing this phase, record evidence using the existing status-block
+  format: status, evidence, commit hash, and named tests.
+
+### Phase 4 — Repair and isolate automated tests
+
+- Create a test settings fixture that defaults to `SIGNUP_OTP_ENABLED=false`
+  and `LOGIN_RISK_OTP_ENABLED=false` for direct-auth tests.
+- Keep OTP-enabled tests explicit and use the email-verification endpoints.
+- Prevent pytest from collecting `api/tmp/manual_r2_test.py` or other manual
+  scripts.
+- Update connection-test fake sessions to implement the current `execute`
+  blocking query.
+- Fix independent device/origin, post-serialization, reactions, and session
+  fixtures until the real `api/tests` suite is green.
+- Add backend regression tests for: same-device Add-account, active logout,
+  fallback, re-add after logout, slot reuse, slot revocation, account limit,
+  and concurrent list/switch requests.
+- Before closing this phase, record evidence using the existing status-block
+  format: status, evidence, commit hash, and named tests.
+
+### Phase 5 — Add safe observability
+
+- Log structured events for device-cookie presence, slot creation/reuse,
+  slot revocation, account-list count, and switch failure reason.
+- Redact all raw cookie values, tokens, passwords, OTPs, hashes, and internal
+  account identifiers.
+- Add a protected diagnostic endpoint or deployment check that reports the
+  effective OTP flag values and API build identifier, without exposing secrets.
+- Configure `AUTH_DIAGNOSTICS_INTERNAL_TOKEN` in the staging API environment;
+  the endpoint returns 404 unless the matching header is supplied.
+- Verify the staging web alias, API alias, and Vercel environment scope after
+  every configuration change and redeploy.
+- Intermittent home-feed load failures and slow API responses observed during
+  the 2026-09-07 staging E2E run must be logged in `AGENTLOG.md` as a separate
+  deployment-stability investigation, distinct from switcher acceptance.
+- Before closing this phase, record evidence using the existing status-block
+  format: status, evidence, commit hash, and named tests.
+
+### Phase 6 — Release gate
+
+The switcher is ready only when all of the following are true:
+
+- The `muflah` → `muf95` reproduction passes repeatedly in Chrome and Edge.
+- Three-account add, switch, logout, fallback, re-add, reload, and switch
+  cycles pass without a missing account.
+- OTP flags produce the intended signup and normal-login behavior.
+- The real API test suite is green, excluding only explicitly quarantined
+  external/manual scripts.
+- Web build and lint pass non-interactively.
+- No account, token, cookie, or state isolation failure appears in logs.
+- Slow or failed requests preserve the active account and provide recovery.
+- Before closing this phase, record evidence using the existing status-block
+  format: status, evidence, commit hash, and named tests.
+
+### Phase rollback rule
+
+If any phase's fix attempt fails that phase's own acceptance criteria on
+retest, revert the specific change from that attempt before proceeding. Do not
+carry a failed fix forward into the next phase.
+
+If any release-gate item fails, keep the feature behind the rollout flag and
+continue from the failing phase; do not mark the feature closed based only on
+the happy path.
+
+### Current execution status — 2026-09-07
+
+- Status: In progress.
+- Evidence: slot-aware logout, missing-device-cookie protection, safe slot
+  diagnostics, and logout/re-add regression coverage are implemented locally.
+- Commit hash: working tree; not deployed to staging.
+- Named tests: full API suite (100 passed), `test_phase4_accounts.py` (5
+  passed), `test_connections.py` (20 passed), web lint (passed with warnings),
+  web production build (passed), and Python compilation (passed).
+- Outstanding gate: deploy, then retest the clean-profile `muflah` → `muf95`
+  flow in Chrome and Edge and confirm the device cookie remains continuous.
+
+Broader browser acceptance remains required after the retention issue is
+resolved and deployment stability is confirmed. It should cover the scenarios
+below.
 
 ## Acceptance checklist
 

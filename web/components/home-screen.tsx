@@ -624,7 +624,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
       <div ref={sentinelRef} className="home-feed-sentinel" aria-hidden="true" />
 
       {loadingOlder && <div className="home-feed-message">Loading older posts...</div>}
-      {!hasMore && visiblePosts.length > 0 && <div className="home-feed-message">You're all caught up.</div>}
+      {!hasMore && visiblePosts.length > 0 && <div className="home-feed-message">You’re all caught up.</div>}
       {!loadingOlder && visiblePosts.length === 0 && <div className="home-feed-message">No posts to show yet.</div>}
     </PageSurface>
   );

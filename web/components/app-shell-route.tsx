@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -65,9 +65,14 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
       });
   }, [refreshCurrentUser, router]);
 
-  function handleLogout() {
-    clearAuthSession();
-    router.replace('/');
+  async function handleLogout() {
+    const session = loadAuthSession();
+    try {
+      if (session) await logout(session.accessToken, session.accountSlot);
+    } finally {
+      clearAuthSession();
+      router.replace('/');
+    }
   }
 
   if (!user) return null;

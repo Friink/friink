@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     account_deletion_grace_days: int = Field(default=32, alias="ACCOUNT_DELETION_GRACE_DAYS")
     account_deletion_warning_days: int = Field(default=4, alias="ACCOUNT_DELETION_WARNING_DAYS")
     account_lifecycle_internal_token: str = Field(default="", alias="ACCOUNT_LIFECYCLE_INTERNAL_TOKEN")
+    auth_diagnostics_internal_token: str = Field(default="", alias="AUTH_DIAGNOSTICS_INTERNAL_TOKEN")
     max_remembered_accounts_per_device: int = Field(default=5, alias="MAX_REMEMBERED_ACCOUNTS_PER_DEVICE")
 
     @model_validator(mode="after")
