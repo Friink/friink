@@ -47,6 +47,7 @@ export type ManagedAuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const ACCOUNT_SLOT_KEY = 'friink-active-account-slot';
+const DEACTIVATION_FALLBACK_SLOT_KEY = 'friink-deactivation-fallback-slot';
 const REFRESH_COORDINATION_KEY = 'friink-auth-refresh-coordination';
 const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
@@ -345,6 +346,45 @@ export function clearAuthSession() {
   window.localStorage.removeItem(AUTH_SESSION_KEY);
   window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
+}
+
+export function setDeactivationFallbackSlot(accountSlot: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (accountSlot) window.sessionStorage.setItem(DEACTIVATION_FALLBACK_SLOT_KEY, accountSlot);
+    else window.sessionStorage.removeItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+  } catch {
+    // Storage may be unavailable; the deactivation flow still falls back to
+    // the public site when no recoverable slot can be retained.
+  }
+}
+
+export function getDeactivationFallbackSlot(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.sessionStorage.getItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearDeactivationFallbackSlot() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+  } catch {
+    // Ignore unavailable session storage.
+  }
+}
+
+export async function restoreAccountSession(accountSlot: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/refresh', {
+    method: 'POST',
+    headers: { 'X-Friink-Account-Slot': accountSlot },
+    authContext: 'refresh_exchange',
+    skipAuthRefresh: true,
+  });
+  return mapTokenResponse({ ...response, account_slot: accountSlot });
 }
 
 export async function logout(accessToken: string, accountSlot?: string): Promise<void> {

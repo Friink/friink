@@ -1,5 +1,25 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T10:00:00Z — Preserve other account after deactivation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep another remembered account usable after deactivating the current account.
+- Changes Made: Capture the most-recent remaining account slot before deactivation, restore it from its slot cookie on the confirmation page, show `Go Back` when a fallback exists, and otherwise send the user to the public site. Added backend coverage proving deactivation revokes only the selected account slot while preserving the other account.
+- Files: `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/app/account-deactivated/page.tsx`, `api/tests/test_phase4_accounts.py`, `AGENTLOG.md`.
+- Reason: Avoid clearing the browser's local active-slot pointer for every remembered account when only one account is deactivated.
+- Verification Status: Complete API suite passed (`106 passed`, existing Starlette/JWT warnings); focused account suite passed (`9 passed`). Web TypeScript, production build, and lint passed with existing warnings. Staging deployment and browser acceptance remain open.
+
+## 2026-09-07T09:00:00Z — Make remembered-account default explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the remembered-account default with the staging configuration.
+- Changes Made: Set `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` to `4` in API config and environment templates; retained the validated `1–16` range; clarified that lowering the limit does not remove existing slots.
+- Files: `api/app/config.py`, `api/.env.example`, `api/.env.staging`, `docs/account-switcher.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep absent-variable fallback, staging configuration, and documented account-limit behavior consistent.
+- Verification Status: Targeted and full API validation remain covered by the existing suite; staging redeployment and deployed configuration verification remain open.
+
 ## 2026-09-07T08:00:00Z — Complete local account-switcher validation
 
 - Agent: Codex

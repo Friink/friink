@@ -2,6 +2,14 @@
 
 ## 2026-09-07
 
+- [auth/accounts] Preserve the most-recent remembered account after the active
+  account is deactivated. The confirmation page now offers `Go Back` to
+  restore that slot, or sends users to the public site when no other account
+  is available.
+- [config/auth] Set `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` to an explicit default
+  of 4 in API config and environment templates; retain the validated 1–16
+  range. Existing remembered slots are not removed when the configured limit
+  is lowered.
 - [auth/accounts] Preserved the active local session when logout fails with an
   ambiguous network/API error, surfaced a retryable error, and reload
   account-scoped UI after successful Add-account authentication so the new

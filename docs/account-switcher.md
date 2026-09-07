@@ -194,7 +194,7 @@ switch verification, but deployment stability should be checked separately.
 
 - Focused account tests: `test_phase4_accounts.py` 8 passed; diagnostics
   tests 3 passed.
-- Real API test suite with isolated test configuration: 105 passed, with
+- Real API test suite with isolated test configuration: 106 passed, with
   existing Starlette/JWT warnings.
 - The connection, blocking, device/origin, post serialization, and session
   fixture failures found during the earlier run have been corrected or
@@ -422,11 +422,11 @@ the happy path.
 
 - Status: In progress.
 - Evidence: slot-aware logout, ambiguous-failure preservation with retryable
-  feedback, Add-account account-state reset, missing-device-cookie protection,
-  safe slot diagnostics, and logout/re-add regression coverage are implemented
-  locally.
+  feedback, Add-account account-state reset, deactivation fallback to the
+  most-recent remaining account, missing-device-cookie protection, safe slot
+  diagnostics, and logout/re-add regression coverage are implemented locally.
 - Commit hash: working tree; not deployed to staging.
-- Named tests: full API suite (105 passed), `test_phase4_accounts.py` (8
+- Named tests: full API suite (106 passed), `test_phase4_accounts.py` (9
   passed), `test_connections.py` (20 passed), web lint (passed with warnings),
   web production build (passed), and Python compilation (passed).
 - Outstanding gate: deploy, then retest the clean-profile `muflah` → `muf95`
@@ -434,23 +434,25 @@ the happy path.
 
 ### Latest staging account-limit run — 2026-09-07
 
-- Limit clarification: the repository default is **5** remembered accounts,
-  configured by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; 4 is not the default
-  limit. A staging override can reduce this value and must be verified from
-  the deployed API configuration before interpreting a max+1 result.
+- Limit clarification: the repository and staging-file default is **4**
+  remembered accounts, configured by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`.
+  The validated range is 1–16. A deployed API override must be verified from
+  the deployed configuration before interpreting a max+1 result.
 - Latest deployed build: three-account switching passed across Accounts 1–3.
 - Added Accounts 4 and 5 through the in-app signup flow; the switcher retained
   all five accounts. Signup requests timed out in the UI, but both accounts
   were created and activated successfully.
-- Max+1 attempt: with five remembered accounts, `Add account` closed without
-  opening signup; no sixth account was created. The limit is enforced before
-  signup. Recheck in the current staging session showed the Manage accounts
-  dialog with the explicit message: `Remove an account before adding another.`
+- Historical max+1 attempt: with five remembered accounts under the prior
+  staging value, `Add account` closed without opening signup; no sixth account
+  was created. The limit is enforced before signup. Recheck in that staging
+  session showed the Manage accounts dialog with the explicit message:
+  `Remove an account before adding another.`
 - Browser scope: Codex in-app browser only; clean-profile Chrome/Edge
   acceptance remains open.
 
 The over-limit behavior is therefore not the cause of the owner's login
-failure: the limit is five and is enforced before a sixth signup starts. The
+failure: the limit is enforced before signup starts, and lowering the limit
+does not silently remove existing slots. The
 remaining owner-reported failures are OTP flag/deployment drift, the OTP
 timeout-with-success race, and loss of the previously remembered account
 after login.

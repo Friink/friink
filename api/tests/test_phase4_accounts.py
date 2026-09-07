@@ -223,6 +223,61 @@ def test_inactive_account_slot_is_hidden_and_cannot_be_switched_to() -> None:
         app.dependency_overrides.clear()
 
 
+def test_deactivating_one_account_preserves_the_other_device_slot() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("first", "second"):
+        user_id = uuid.uuid4()
+        email = f"phase4-deactivate-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_deactivate_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        second = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+        first_json = first.json()
+        second_json = second.json()
+
+        switched = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": first_json["account_slot"]},
+            headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_json["account_slot"]},
+        )
+        assert switched.status_code == 200, switched.text
+        deactivated = client.post(
+            "/auth/me/deactivate",
+            json={"current_password": password},
+            headers={"Authorization": f"Bearer {switched.json()['access_token']}"},
+        )
+        assert deactivated.status_code == 204, deactivated.text
+
+        remaining = client.get(
+            "/auth/accounts",
+            headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_json["account_slot"]},
+        )
+        assert remaining.status_code == 200, remaining.text
+        assert [item["username"] for item in remaining.json()] == [accounts[1][1]]
+        cannot_switch_back = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": first_json["account_slot"]},
+            headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_json["account_slot"]},
+        )
+        assert cannot_switch_back.status_code == 401, cannot_switch_back.text
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
 def test_new_device_login_can_be_approved_from_existing_session(monkeypatch) -> None:
     app.dependency_overrides[get_settings] = lambda: _settings(LOGIN_RISK_OTP_ENABLED=False)
     password = "Strong1!pass"
