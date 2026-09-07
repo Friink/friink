@@ -500,3 +500,8 @@ still shows the older plain wizard presentation.
 The current account-switcher and setup-wizard contracts are web-only for this
 release. Native mobile visual and interaction requirements are maintained in
 `docs/auth-and-session-mobile.md` and are deferred until a mobile client exists.
+
+Account authentication must preserve the existing device session when OTP is
+completed for another account in the same browser. A new device identifier is
+created only when no device cookie exists; OTP must not make remembered
+accounts disappear by replacing an existing device identity.

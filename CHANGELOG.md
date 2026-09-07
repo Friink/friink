@@ -2,6 +2,17 @@
 
 ## 2026-09-07
 
+- [follow-up/auth] Production note: the web API timeout is temporarily 30
+  seconds to allow serverless startup and synchronous OTP email delivery. Move
+  OTP delivery to a durable, retryable email outbox before production so
+  provider latency cannot block or invalidate the login challenge response.
+- [auth/accounts] Fixed OTP completion for a second account to preserve an
+  existing `friink_device_id` instead of replacing the browser device identity
+  and hiding previously remembered account slots. Added regression coverage for
+  OTP login across two accounts on one browser.
+- [deployment/auth] Confirmed `LOGIN_RISK_OTP_ENABLED` is read by the API from
+  its own runtime environment; staging must set it on the FastAPI Vercel
+  project and redeploy that project, not only the web project.
 - [fix/auth/accounts] Refreshed the device account inventory when the
   switcher opens and after Add account completes, with stale-request guards so
   newly added accounts remain visible without a page reload.
