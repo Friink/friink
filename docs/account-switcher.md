@@ -156,8 +156,8 @@ tables or UI are deployed.
 
 ## Current implementation status
 
-The web-focused Phase 4 implementation is present, but its release gate remains
-open pending deployment and clean-profile browser acceptance. The implementation includes
+The web-focused Phase 4 implementation is present, and its Chromium release
+gate is ready after deployment and clean-profile acceptance. The implementation includes
 the slot migration, opaque slot references, safe summaries, protected device
 binding, slot-named HttpOnly cookies, account listing, switching, removal,
 Add-account modal reuse, cross-tab coordination, notifications, and lifecycle
@@ -216,8 +216,9 @@ device/session slot. The original web handler only cleared in-memory and
 browser-local state; the API route existed but was not invoked. The local fix
 now sends slot-aware `POST /auth/logout`, revokes the server-side slot, and
 deletes the exact slot cookie. The missing-device-cookie guard prevents
-Add-account from silently creating a separate device identity. Staging
-deployment and clean-profile browser verification remain open.
+Add-account from silently creating a separate device identity. The pushed
+staging build and clean Chromium browser verification are recorded below;
+latency/feed stability remains a separate deployment investigation.
 
 ### Deterministic reproduction reported by the owner
 
@@ -438,9 +439,9 @@ the happy path.
   (passed with warnings), web production build (passed), Python compilation
   (passed), and `git diff --check` (passed).
 - Outstanding gate: investigate the observed slow/intermittent staging
-  responses before closing the deployment-stability item. The earlier
+  responses as a separate deployment-stability investigation. The earlier
   connected-profile Chrome active-source test failed, but the fresh clean
-  Chrome run recorded below passed the exercised switcher paths.
+  Chrome run recorded below passed the in-scope switcher paths.
 
 ### Latest staging account-limit run — 2026-09-07
 
@@ -469,7 +470,7 @@ after login.
 
 ### Fresh clean-profile Chrome E2E — 2026-09-07
 
-- Status: Pass with deployment-stability follow-up.
+- Status: Ready for release; deployment-stability follow-up is separate.
 - Evidence: Created five isolated accounts using standalone signup, in-app
   signup, and in-app login/re-add. Logout fallback passed from Account 3 to 2,
   then 1, then the public site. With four retained slots, Add account refused
@@ -482,8 +483,8 @@ after login.
   deployment check).
 - Named tests: clean Chrome signup/add/switch/reload/logout/fallback/re-add;
   configured limit-plus-one.
-- Outstanding: investigate the observed latency separately before closing the
-  deployment-stability item.
+- Follow-up: investigate the observed latency in the separate deployment-
+  stability track; it did not invalidate the exercised switcher acceptance.
 
 ### Chrome staging switch verification — 2026-09-07
 
