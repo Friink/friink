@@ -20,6 +20,16 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Reason: A stale frontend or transient API failure must not create an unusable blank screen or silently discard a potentially valid session.
 - Verification Status: Web TypeScript validation and `git diff --check` remain required after this change; staging API environment/deployment alignment remains open.
 
+## 2026-09-08T02:15:00Z — Synchronize lifecycle cooldown documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the relevant documentation for the post-reactivation cooldown time.
+- Changes Made: Updated account lifecycle, auth/session, progress, rules, design, changelog, and agent log references to describe the 8-minute cooldown, live countdown toast, and API-owned conditional OTP behavior.
+- Files: `docs/account-lifecycle.md`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep the implementation contract consistent across product lifecycle and authentication documentation.
+- Verification Status: Documentation-only update; stale lifecycle cooldown references were scanned with `rg`.
+
 ## 2026-09-07T11:00:00Z — Authorize slot-aware logout
 
 - Agent: Codex

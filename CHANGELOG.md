@@ -2,6 +2,11 @@
 
 ## 2026-09-08
 
+- [docs] Synchronized auth/session lifecycle references with the 8-minute
+  post-reactivation deactivation cooldown and API-owned OTP override.
+
+## 2026-09-08
+
 - [web/auth] Replaced the permanent blank protected-route state after an
   ambiguous refresh failure with retry and login recovery actions.
 - [diagnosis] Confirmed the OTP decision is API-owned; an OTP prompt means the

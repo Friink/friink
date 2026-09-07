@@ -1053,8 +1053,11 @@ minimal restricted internal security/rate-limit event. Deactivation is a
 stronger account-state exception than ordinary locking: all sessions and
 refresh families are revoked and already-issued access tokens must be rejected
 immediately. Deactivation and deletion require current-password confirmation
-plus OTP; reactivation requires valid credentials plus fresh OTP and creates
-only one new session. Runtime work remains blocked until the lifecycle
+plus OTP when the API-owned `OTP_ENABLED` switch is enabled; reactivation
+likewise requires fresh OTP only when that switch is enabled. Reactivation
+creates only one new session and starts an 8-minute deactivation cooldown,
+whose remaining time is shown in a live-updating toast. Runtime work remains
+blocked until the lifecycle
 document's reset-link, transition-concurrency, abuse-control, deletion-job,
 staff-override, and UX/accessibility gates are implemented and verified.
 

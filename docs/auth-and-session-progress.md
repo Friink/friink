@@ -571,7 +571,8 @@ The first runtime slice is implemented and verified against staging:
 - password-only deactivation, immediate session/refresh/device revocation,
   and access-token rejection;
 - password + OTP deletion confirmation with stored 32-day default deadline;
-- OTP-gated deactivation/pending-deletion reactivation with one new session;
+- API-flagged OTP deactivation/pending-deletion reactivation with one new
+  session and an 8-minute post-reactivation deactivation cooldown;
 - retained-chat identity handling and public-content deletion worker;
 - retry failure timestamps/reasons and an internal token-protected staff
   completion endpoint;
