@@ -120,7 +120,9 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       setAccounts((items) => items.filter((item) => item.accountSlot !== removeTarget.accountSlot));
       setRemoveTarget(null);
     } catch {
-      // Keep the current account usable on recoverable failures.
+      // Keep the current account usable on recoverable failures and expose a
+      // retryable notice instead of silently losing the user's action.
+      setAccountNotice('We could not log out that account. Please try again.');
     } finally {
       setAccountBusy(false);
     }
@@ -275,7 +277,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           <span>Log out</span>
         </button>
       </div>
-      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={async (nextUser) => { onAccountChange?.(nextUser); await refreshAccounts(); setAccountModal(null); }} /></Modal> : null}
+      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); window.location.reload(); }} /></Modal> : null}
       {accountModal === 'manage' ? <Modal title="Manage accounts" onClose={() => { setAccountModal(null); setAccountNotice(''); }}>{accountNotice ? <p className="settings-field-message" role="status">{accountNotice}</p> : null}<div className="sidebar-managed-accounts">{accounts.map((account) => <div className="sidebar-managed-account" key={account.accountSlot}><ProfileCard name={account.displayName || account.username} handle={`@${account.username}`} tone="mint" initials={getInitials(account.displayName || account.username)} imageUrl={account.profilePictureUrl} /><button className="settings-secondary-button" type="button" disabled={account.active || accountBusy} onClick={() => setRemoveTarget(account)}>Log out</button></div>)}</div></Modal> : null}
       {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
     </aside>

@@ -192,9 +192,10 @@ switch verification, but deployment stability should be checked separately.
 
 ### Test-pass results — 2026-09-07
 
-- Focused account/auth tests: 9 passed.
-- Real API test suite with dedicated test configuration: 100 passed, with one
-  Starlette deprecation warning.
+- Focused account tests: `test_phase4_accounts.py` 8 passed; diagnostics
+  tests 3 passed.
+- Real API test suite with isolated test configuration: 105 passed, with
+  existing Starlette/JWT warnings.
 - The connection, blocking, device/origin, post serialization, and session
   fixture failures found during the earlier run have been corrected or
   isolated in the test harness.
@@ -420,10 +421,12 @@ the happy path.
 ### Current execution status — 2026-09-07
 
 - Status: In progress.
-- Evidence: slot-aware logout, missing-device-cookie protection, safe slot
-  diagnostics, and logout/re-add regression coverage are implemented locally.
+- Evidence: slot-aware logout, ambiguous-failure preservation with retryable
+  feedback, Add-account account-state reset, missing-device-cookie protection,
+  safe slot diagnostics, and logout/re-add regression coverage are implemented
+  locally.
 - Commit hash: working tree; not deployed to staging.
-- Named tests: full API suite (100 passed), `test_phase4_accounts.py` (5
+- Named tests: full API suite (105 passed), `test_phase4_accounts.py` (8
   passed), `test_connections.py` (20 passed), web lint (passed with warnings),
   web production build (passed), and Python compilation (passed).
 - Outstanding gate: deploy, then retest the clean-profile `muflah` → `muf95`

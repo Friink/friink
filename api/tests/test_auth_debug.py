@@ -45,3 +45,18 @@ def test_auth_diagnostics_endpoint_requires_token_and_reports_effective_flags() 
         assert "deployment_sha" in response.json()
     finally:
         app.dependency_overrides.clear()
+
+
+def test_otp_flags_are_read_from_runtime_environment(monkeypatch) -> None:
+    monkeypatch.setenv("JWT_SECRET_KEY", "runtime-env-diagnostics-secret")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.setenv("FRONTEND_URL", "http://localhost:3000")
+    monkeypatch.setenv("SIGNUP_OTP_ENABLED", "false")
+    monkeypatch.setenv("LOGIN_RISK_OTP_ENABLED", "false")
+    get_settings.cache_clear()
+    try:
+        settings = get_settings()
+        assert settings.signup_otp_enabled is False
+        assert settings.login_risk_otp_enabled is False
+    finally:
+        get_settings.cache_clear()

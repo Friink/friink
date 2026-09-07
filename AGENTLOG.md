@@ -1,5 +1,15 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-07T08:00:00Z — Complete local account-switcher validation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the account-switcher resolution plan through logout/add-account hardening, test-harness repair, and complete local validation.
+- Changes Made: Preserved the active local session when logout fails ambiguously and surfaced a retryable toast; surfaced recoverable account-removal failures in the account manager; reload account-scoped UI after successful Add-account authentication; added duplicate-add, failed-switch, account-limit, concurrent list/switch, and inactive-slot boundary coverage; and added an isolated SQLite fallback test bootstrap with foreign-key enforcement, UTC datetime normalization, schema creation, and the migration-seeded `admin` reserved username.
+- Files: `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `api/tests/conftest.py`, `api/tests/test_phase4_accounts.py`, `api/tests/test_auth_debug.py`, `AGENTLOG.md`.
+- Reason: Prevent recoverable logout failures from signing the user out locally, prevent stale account-scoped screens after Add-account, and make a fresh checkout run the maintained integration suite without staging credentials.
+- Verification Status: Complete API suite passed (`105 passed`, existing Starlette/JWT warnings); focused account and diagnostics suites passed (`8` and `3` respectively). Web TypeScript, production build, and lint passed with existing warnings; Python compilation and `git diff --check` passed. Clean-profile Chrome/Edge staging acceptance and deployment confirmation remain open.
+
 ## 2026-09-07T07:00:00Z — Add protected auth deployment diagnostics
 
 - Agent: Codex

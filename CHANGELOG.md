@@ -2,6 +2,18 @@
 
 ## 2026-09-07
 
+- [auth/accounts] Preserved the active local session when logout fails with an
+  ambiguous network/API error, surfaced a retryable error, and reload
+  account-scoped UI after successful Add-account authentication so the new
+  account cannot inherit stale content. Recoverable account-removal failures
+  now show a retryable notice while preserving the active account.
+- [tests] Added an isolated SQLite fallback bootstrap for fresh checkouts,
+  including schema setup, foreign-key enforcement, UTC timestamp normalization,
+  and migration-seeded reserved usernames; the maintained API suite now passes
+  105 tests without staging credentials. Added boundary coverage for duplicate
+  Add-account reuse, failed-switch preservation, limit enforcement, concurrent
+  account-list/switch requests, inactive-slot isolation, plus direct
+  runtime-environment coverage for both OTP flags.
 - [follow-up/auth] Production note: the web API timeout is temporarily 30
   seconds to allow serverless startup and synchronous OTP email delivery. Move
   OTP delivery to a durable, retryable email outbox before production so

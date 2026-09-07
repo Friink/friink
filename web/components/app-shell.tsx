@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -52,6 +52,7 @@ import {
 type AppShellProps = {
   user: AuthUser;
   onLogout: () => void;
+  logoutError?: string | null;
   initialScreen?: Screen;
   profileUser?: AuthUser;
   children?: React.ReactNode;
@@ -93,7 +94,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -322,7 +323,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     router.push(`/settings/${tab}`, { scroll: false });
   }
 
-  function addToast(input: ToastInput, tone: ToastMessage['tone'] = 'error') {
+  const addToast = useCallback((input: ToastInput, tone: ToastMessage['tone'] = 'error') => {
     const now = new Date();
     const toast = typeof input === 'string' ? { message: input, tone } : input;
     setToasts((current) => {
@@ -338,7 +339,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         },
       ];
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    if (logoutError) addToast(logoutError);
+  }, [logoutError, addToast]);
 
   function handlePostUpdated(updatedPost: Post) {
     setPosts((current) => current.map((post) => post.id === updatedPost.id ? updatedPost : post));
@@ -384,7 +389,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           .catch(() => undefined);
       }
     });
-  }, [activeScreen]);
+  }, [activeScreen, addToast]);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -481,7 +486,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       .catch(() => {
         setFollowing([]);
       });
-  }, [activeScreen, connectionsUsername, viewingOtherConnections]);
+  }, [activeScreen, addToast, connectionsUsername, viewingOtherConnections]);
 
   useEffect(() => {
     const viewedUser = profileUser ?? user;
@@ -511,7 +516,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         setProfileConnectionRequestId(null);
         addToast(error instanceof Error ? error.message : 'Could not load connection state.');
       });
-  }, [profileUser, user]);
+  }, [addToast, profileUser, user]);
 
   useEffect(() => {
     if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;

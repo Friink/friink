@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import uuid
 from datetime import date
 
@@ -64,6 +65,157 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         assert removed.status_code == 204, removed.text
         remaining = client.get("/auth/accounts", headers={"Authorization": f"Bearer {switched.json()['access_token']}", "X-Friink-Account-Slot": first_slot})
         assert [item["account_slot"] for item in remaining.json()] == [first_slot]
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_duplicate_add_failed_switch_and_limit_preserve_slots() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings(MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=2)
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("one", "two", "three"):
+        user_id = uuid.uuid4()
+        email = f"phase4-boundary-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_boundary_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        second = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+        first_json = first.json()
+        second_json = second.json()
+
+        duplicate = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert duplicate.status_code == 200, duplicate.text
+        assert duplicate.json()["account_slot"] == second_json["account_slot"]
+
+        failed_switch = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": str(uuid.uuid4())},
+            headers={"Authorization": f"Bearer {duplicate.json()['access_token']}", "X-Friink-Account-Slot": duplicate.json()["account_slot"]},
+        )
+        assert failed_switch.status_code == 404, failed_switch.text
+        still_authenticated = client.get("/auth/me", headers={"Authorization": f"Bearer {duplicate.json()['access_token']}"})
+        assert still_authenticated.status_code == 200, still_authenticated.text
+
+        over_limit = client.post("/auth/login", json={"identifier": accounts[2][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert over_limit.status_code == 409, over_limit.text
+        listed = client.get("/auth/accounts", headers={"Authorization": f"Bearer {duplicate.json()['access_token']}", "X-Friink-Account-Slot": duplicate.json()["account_slot"]})
+        assert listed.status_code == 200, listed.text
+        assert {item["account_slot"] for item in listed.json()} == {first_json["account_slot"], second_json["account_slot"]}
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_concurrent_account_list_and_switch_requests_preserve_slot_isolation() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("one", "two", "three"):
+        user_id = uuid.uuid4()
+        email = f"phase4-concurrent-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_concurrent_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        assert first.status_code == 200, first.text
+        second = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert second.status_code == 200, second.text
+        third = client.post("/auth/login", json={"identifier": accounts[2][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert third.status_code == 200, third.text
+        third_json = third.json()
+        expected_usernames = {username for _, username in accounts}
+
+        def list_accounts() -> set[str]:
+            response = client.get(
+                "/auth/accounts",
+                headers={
+                    "Authorization": f"Bearer {third_json['access_token']}",
+                    "X-Friink-Account-Slot": third_json["account_slot"],
+                },
+            )
+            assert response.status_code == 200, response.text
+            return {item["username"] for item in response.json()}
+
+        def switch_account(slot: str) -> str:
+            response = client.post(
+                "/auth/accounts/switch",
+                json={"account_slot": slot},
+                headers={
+                    "Authorization": f"Bearer {third_json['access_token']}",
+                    "X-Friink-Account-Slot": third_json["account_slot"],
+                },
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["user"]["email"]
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            listed = list(executor.map(lambda _: list_accounts(), range(2)))
+            switched = list(executor.map(switch_account, [first.json()["account_slot"], second.json()["account_slot"]]))
+        assert listed == [expected_usernames, expected_usernames]
+        assert set(switched) == {accounts[0][0], accounts[1][0]}
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_inactive_account_slot_is_hidden_and_cannot_be_switched_to() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("active", "deactivated"):
+        user_id = uuid.uuid4()
+        email = f"phase4-lifecycle-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_lifecycle_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        second = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+        first_json = first.json()
+        second_json = second.json()
+
+        with get_session_factory()() as session:
+            session.get(User, users[1]).lifecycle_status = "deactivated"
+            session.commit()
+
+        listed = client.get("/auth/accounts", headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_json["account_slot"]})
+        assert listed.status_code == 200, listed.text
+        assert [item["username"] for item in listed.json()] == [accounts[0][1]]
+        switched = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": second_json["account_slot"]},
+            headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_json["account_slot"]},
+        )
+        assert switched.status_code == 401, switched.text
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(users)))
