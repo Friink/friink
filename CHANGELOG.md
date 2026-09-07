@@ -2,6 +2,16 @@
 
 ## 2026-09-07
 
+- [release/account-switcher] Pushed staging branch commit `6358b0d` to the
+  staging remote. Staging web and API health checks returned successfully;
+  the clean-profile Chrome account-switcher run passed signup, add, switch,
+  reload, logout fallback, limit-plus-one refusal, and slot re-add. Edge
+  browser acceptance remains open because Edge is not exposed in the available
+  automation surface.
+- [docs/account-switcher] Synchronized account-switcher rules, design
+  behavior, changelog evidence, and the open release-gate status. No phase is
+  marked closed without its required status-block evidence.
+
 - [auth/accounts] Guarded refresh commits against stale cross-tab account
   slots; a refresh now aborts if the active slot changes in flight or the API
   returns a different slot. Failed account switches remain visible as a

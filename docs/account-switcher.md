@@ -1,7 +1,8 @@
 # Friink Account Switcher
 
-Status: Blocked — local implementation and validation are complete; deployment
-and clean-profile Chrome/Edge staging acceptance remain unverified.
+Status: Open — local implementation and validation are complete; clean-profile
+Chrome staging acceptance passed, while Edge acceptance and deployment
+stability remain unverified.
 
 This document describes how multiple independent Friink accounts are added,
 remembered, switched, and removed in one browser profile. It complements
@@ -423,21 +424,22 @@ the happy path.
 
 ### Current execution status — 2026-09-07
 
-- Status: Blocked pending external staging acceptance.
+- Status: Open pending the remaining external browser gate.
 - Evidence: slot-aware logout, ambiguous-failure preservation with retryable
   feedback, Add-account account-state reset, deactivation fallback to the
   most-recent remaining account, missing-device-cookie protection, safe slot
   diagnostics, and logout/re-add regression coverage are implemented locally.
-- Commit hash: working tree; not deployed to staging.
+- Commit hash: `6358b0d` pushed to `origin/staging`; the API health endpoint
+  returned `{"database":true}` after the push.
 - Named tests: full API suite (107 passed), `test_phase4_accounts.py` (9
   passed), diagnostics/account/refresh focused suite (15 passed),
   `test_connections.py` (20 passed), web TypeScript (passed), web lint
   (passed with warnings), web production build (passed), Python compilation
   (passed), and `git diff --check` (passed).
-- Outstanding gate: deploy the working tree, then retest the clean-profile
-  `muflah` → `muf95` flow in Chrome and Edge and confirm device-cookie
-  continuity. Connected Chrome currently has multiple existing staging tabs;
-  its active-source switch test failed, and Edge remains unverified.
+- Outstanding gate: confirm the clean-profile flow in Edge and capture the
+  exact deployed API/web commit before closing the browser gate. The earlier
+  connected-profile Chrome active-source test failed, but the fresh clean
+  Chrome run recorded below passed the exercised switcher paths.
 
 ### Latest staging account-limit run — 2026-09-07
 
@@ -454,8 +456,9 @@ the happy path.
   was created. The limit is enforced before signup. Recheck in that staging
   session showed the Manage accounts dialog with the explicit message:
   `Remove an account before adding another.`
-- Browser scope: Codex in-app browser only; clean-profile Chrome/Edge
-  acceptance remains open.
+- Browser scope: historical run was Codex in-app browser only; the separate
+  clean-profile Chrome run is recorded below, while Edge acceptance remains
+  open.
 
 The over-limit behavior is therefore not the cause of the owner's login
 failure: the limit is enforced before signup starts, and lowering the limit
@@ -463,6 +466,24 @@ does not silently remove existing slots. The
 remaining owner-reported failures are OTP flag/deployment drift, the OTP
 timeout-with-success race, and loss of the previously remembered account
 after login.
+
+### Fresh clean-profile Chrome E2E — 2026-09-07
+
+- Status: Partial pass; Edge acceptance remains open.
+- Evidence: Created five isolated accounts using standalone signup, in-app
+  signup, and in-app login/re-add. Logout fallback passed from Account 3 to 2,
+  then 1, then the public site. With four retained slots, Add account refused
+  the fifth and opened Manage accounts with `Remove an account before adding
+  another.` After logging out Account 5, Account 3 was re-added successfully.
+- Evidence: Reload preserved Account 5 and the remembered list; no account
+  disappeared during this clean-profile run. No OTP prompt appeared with both
+  OTP flags disabled. Account operations commonly took 15–30 seconds.
+- Commit hash: `6358b0d` (the pushed staging commit used for the follow-up
+  deployment check).
+- Named tests: clean Chrome signup/add/switch/reload/logout/fallback/re-add;
+  configured limit-plus-one.
+- Outstanding: repeat the same acceptance in clean Edge and separately
+  investigate the observed latency before closing the browser release gate.
 
 ### Chrome staging switch verification — 2026-09-07
 

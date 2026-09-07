@@ -11,6 +11,22 @@ the entry, so history isn't lost.
 
 ## Web Architecture
 
+### Rule: Account Switcher Uses Device-Scoped Slots
+- **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
+- **Since:** 2026-09-07 (UTC)
+
+### Rule: OTP Flags Are API-Owned Runtime Configuration
+- **What:** `SIGNUP_OTP_ENABLED` controls signup verification and `LOGIN_RISK_OTP_ENABLED` controls risk-based normal-login OTP. These values must be read from the FastAPI deployment environment and verified after redeployment; changing only the web project is insufficient.
+- **Edge cases:** A disabled flag must not produce its corresponding prompt. Diagnostics may report effective flag values and the deployment identifier, but never secrets, tokens, OTPs, cookies, hashes, or internal identifiers.
+- **Status:** Active
+- **Platform:** API/Web
+- **File(s):** `api/app/config.py`, `api/app/routers/auth.py`, `api/app/services/auth_debug.py`
+- **Since:** 2026-09-07 (UTC)
+
 ### Rule: Post Media Uploads Are Submit-Time And Image-Only
 - **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits, allows the user to reorder the selected attachments before submission, and submits files in the visible order. Clicking a thumbnail opens the 3:5 crop tool directly; Reset restores the crop view, Apply saves the crop, and previous/next arrows switch among attached images. The API then validates ownership, type, and size before associating them with the authenticated user's new post.
 - **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. While the post/media request is running, the Post button is disabled and shows the posting spinner; failed submissions preserve the draft and attachments for retry, while successful submissions clear them. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Successfully associated media is returned as URL items and rendered through the shared gallery: multiple images remain available in the horizontal slider with a common nominal height (`24rem` desktop, `15rem` compact screens), a default 3:4 frame, an 8px gap, and 8px rounded image frames; a single image preserves its natural aspect ratio within the available content width and responsive maximum height without a trailing gallery background. The crop tool remains 3:5. Final crop width, height, and aspect ratio are not persisted in media rows. Freeform crop bounds and first-image carousel-ratio locking are not implemented. The shared modal backdrop is above application overlays so crop controls remain interactive.

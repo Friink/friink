@@ -32,6 +32,13 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Authentication Copy Surfaces**: The login identifier field is labeled `Email or username`; signup remains email-first and shows the verification-code screen before password/profile fields. If the submitted signup email is already registered, the flow stays on the email step, sends no OTP, and offers calm login-or-different-email recovery copy. Email changes first confirm the current password, then verify ownership of the new address with an OTP. A full account lock shows exactly `Your account is locked. Contact support.` with no reason or duration. Progressive failed-login cooldowns use distinct tier-specific copy with an approximate retry time and must never be presented as a full account lock.
 - **About Empty State**: A profile with no About text renders no visitor-facing About copy. The signed-in owner sees `Add about in settings.` as the only placeholder.
 
+## Account Switcher
+
+- **Remembered Accounts**: The account caret lists server-provided device slots in recency order, followed by `Add account` and `Manage accounts`. The active account remains usable until a new account session and slot are fully established.
+- **Limit State**: When the configured device-slot limit is reached, `Add account` does not start authentication; it opens account management with a clear remove-before-adding message.
+- **Fallback**: Active logout returns to the most-recent remaining account. Deactivation uses `Go Back` for the same fallback and returns to the public site only when no remembered account remains.
+- **Failure State**: Failed list, switch, logout, or add-account requests preserve the active account and expose a retryable message. Reload derives the active identity from the validated session rather than stale local account state.
+
 ## Navigation
 
 > Updated to match shipped behavior as of 2026-08-27 — see CHANGELOG.md entries 2026-08-26, 2026-08-27
