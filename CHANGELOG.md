@@ -2,6 +2,10 @@
 
 ## 2026-09-09
 
+- [development] Created the local `api/.env.development` from the staging
+  configuration and applied the current Alembic head to the newly supplied
+  development database; `alembic check` reports no drift.
+
 - [auth/phase6] Added deliberate session invalidation with per-user security
   epochs, protected per-user/all-account operator revocation paths, recognized
   device invalidation, auditable scopes/reasons/counts, and the approved

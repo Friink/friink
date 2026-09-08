@@ -7774,3 +7774,19 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   failure injection and recovery as the final open rehearsal.
 - Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Documentation reviewed; no runtime behavior changed.
+
+## 2026-09-08T22:26:28Z — Initialize development database from local configuration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the database connector placed in `api/.env.development`
+  to initialize the fresh development database.
+- Changes Made: Loaded the local development environment only for the
+  migration process, applied all existing Alembic migrations, and verified the
+  database is at the current head with no schema drift. No staging or
+  production database was changed.
+- Files: `api/.env.development`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Provide an isolated database for local development and destructive
+  authentication/session rehearsals.
+- Verification Status: `alembic current` reports the current head and
+  `alembic check` reports no new upgrade operations.
