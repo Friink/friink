@@ -50,12 +50,21 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
 
     setUser(session.user);
 
+    if (initialScreen === 'control-panel' && !session.user.isStaff) {
+      router.replace('/home');
+      return;
+    }
+
     if (!refreshCurrentUser) {
       return;
     }
 
     getCurrentUser(session.accessToken)
       .then((currentUser) => {
+        if (initialScreen === 'control-panel' && !currentUser.isStaff) {
+          router.replace('/home');
+          return;
+        }
         saveAuthSession({ ...session, user: currentUser });
         setUser(currentUser);
       })

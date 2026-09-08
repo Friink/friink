@@ -1,5 +1,41 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T19:30:00Z — Add Phase 5 control-panel tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the initial control-panel tab UI for the staging-only Phase 5 rollout.
+- Changes Made: Added the authenticated `/cp` route and reusable app-shell control-panel screen with Overview, Users & Accounts, Roles & Permissions, Security & Sessions, and Audit Log tabs. Added a client-side staff guard and responsive design-system styling; backend actions remain intentionally unimplemented.
+- Files: `web/app/cp/page.tsx`, `web/components/control-panel-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`, `web/lib/data.ts`, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed. `npm run build` passed; existing repository ESLint warnings remain. No API, migration, production, or database changes were made.
+
+## 2026-09-08T19:00:00Z — Add per-user permission grants to Phase 5 contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add individual extra permissions to the Phase 5 role/permission scope.
+- Changes Made: Updated the contract to support additive per-user permission grants alongside role permissions, with superadmin-only management, deduplication, revocation, audit context, UI distinction between inherited and direct permissions, and no per-user deny semantics in the initial release.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only; `git diff --check` pending. No runtime, migration, or database changes were made.
+
+## 2026-09-08T18:30:00Z — Complete the remaining Phase 5 contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fill Phase 5b–5d product, UX, security, and engineering contract gaps before implementation; staging is the only target environment.
+- Changes Made: Defined the initial roles and permission keys/matrix, stable role keys with editable names, role-management and last-superadmin safeguards, privileged-session step-up/expiry/revocation behavior, account-lock and target-session-revocation semantics, control-panel UX boundaries, and the complete staging acceptance gate. Clarified that direct per-user permission overrides and production rollout are out of scope for the initial release.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only; `git diff --check` pending. No runtime, migration, or database changes were made.
+
+## 2026-09-08T18:00:00Z — Synchronize auth/session documentation with Phase 5a
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/auth-and-session.md` so it accurately reflects the current Phase 5a implementation and remaining gaps.
+- Changes Made: Updated Phase 5/5a status and test evidence, documented `DATABASE_TARGET`, marked environment/uniqueness/password/audit findings as addressed, clarified application-level reserved-email enforcement versus database uniqueness, corrected the account-switcher default to four, fixed a wording typo, refreshed the document date, and separated the outstanding reset-specific security-event gap.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation diff checked with `git diff --check`; no runtime, migration, or database changes were made.
+
 ## 2026-09-08T10:30:00Z — Implement Phase 5a reserved superadmin bootstrap
 
 - Agent: Codex

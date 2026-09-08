@@ -30,6 +30,38 @@
   --color-accent-hover: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
+.control-panel {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+  padding: 2.5rem 2rem 5rem;
+}
+
+.control-panel-header,
+.control-panel-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.control-panel-header h1,
+.control-panel-section-heading h2,
+.control-panel-card h3 { margin: 0; color: var(--color-ink); }
+.control-panel-header p:not(.control-panel-eyebrow),
+.control-panel-card p { color: var(--color-muted); margin: .5rem 0 0; }
+.control-panel-eyebrow { color: var(--color-primary); font-size: .72rem; font-weight: 700; letter-spacing: .12em; margin: 0 0 .4rem; text-transform: uppercase; }
+.control-panel-status,
+.control-panel-placeholder { color: var(--color-muted); font-size: .78rem; white-space: nowrap; }
+.control-panel-tabs { display: flex; gap: .5rem; overflow-x: auto; margin: 2rem 0 1.25rem; border-bottom: 1px solid var(--color-border); }
+.control-panel-tab { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--color-muted); cursor: pointer; display: inline-flex; gap: .55rem; align-items: center; padding: .85rem .75rem; white-space: nowrap; font: inherit; }
+.control-panel-tab:hover, .control-panel-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.control-panel-content { border: 1px solid var(--color-border); border-radius: 1rem; padding: 1.5rem; background: var(--color-surface); }
+.control-panel-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.control-panel-card { border: 1px solid var(--color-border); border-radius: .8rem; padding: 1.1rem; display: flex; gap: .8rem; min-height: 8rem; background: var(--color-background); }
+.control-panel-card-icon { color: var(--color-primary); }
+.control-panel-card p { font-size: .84rem; line-height: 1.45; }
+@media (max-width: 760px) { .control-panel { padding: 1.5rem 1rem 4rem; } .control-panel-header, .control-panel-section-heading { flex-direction: column; } .control-panel-cards { grid-template-columns: 1fr; } }
+
 @media (max-width: 767px) {
   :root {
     --space-content-inset-inline: 0.5rem;
@@ -377,6 +409,7 @@ textarea {
   .login-screen {
     color: #f5f5f5;
     background: #161616;
+    --color-ink: #f5f5f5;
   }
 
   .login-screen .pill-field input {

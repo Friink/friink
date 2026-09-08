@@ -2,6 +2,34 @@
 
 ## 2026-09-08
 
+- [web/control-panel] Added the authenticated `/cp` control-panel shell for
+  staff users with Overview, Users & Accounts, Roles & Permissions, Security &
+  Sessions, and Audit Log tabs. The tab content is presentational until the
+  Phase 5 server-authorized actions are implemented.
+
+## 2026-09-08
+
+- [docs/auth] Added additive per-user permission grants to the Phase 5
+  contract. Roles remain the baseline; superadmins may grant or revoke one
+  extra permission for an individual user without changing their role.
+
+## 2026-09-08
+
+- [docs/auth] Filled the remaining Phase 5 contract gaps: initial role and
+  permission matrix, editable role-name rules, superadmin safeguards,
+  privileged-session step-up and timeout behavior, administrative lock/session
+  revocation semantics, control-panel UX boundaries, and staging-only
+  acceptance requirements.
+
+## 2026-09-08
+
+- [docs/auth] Synchronized the auth/session document with the implemented
+  Phase 5a bootstrap, corrected the account-switcher default to four, clarified
+  reserved admin identity enforcement, recorded current test/rollout status,
+  and separated the outstanding password-reset security-event gap.
+
+## 2026-09-08
+
 - [auth/bootstrap] Hardened the reserved superadmin bootstrap command with
   explicit environment/database targeting, PostgreSQL transaction
   serialization, conflict/refusal handling, normal signup validation,

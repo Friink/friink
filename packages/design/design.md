@@ -384,6 +384,9 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Signup Email Verification Rule**: When signup OTP is enabled, signup shows a verification-code step immediately after the email step, before password and profile details. The six-character code field uses the shared input treatment, `autocomplete="one-time-code"`, uppercase alphanumeric normalization, and a clear `Verify email` action. Expiry, attempt limits, replacement, single use, and account creation timing remain server-controlled.
 - **Add-account Modal Rule**: The authenticated side-drawer `Add account` action opens an in-app themed modal variant of this flow, not the standalone full-page auth surface. The modal starts with `Email or username`, then reveals `Password`, exposes Login and Sign up actions, and reuses the signup/login fields, validation, OTP flow, loading states, errors, and accessibility treatment from this screen. A successful login or signup adds the independently authenticated account to the device session list and may activate it; an add-account failure must not log out or replace the currently active account. No account relationship is created.
 
+### Password Reset Screen (`web/app/reset-password/page.tsx`)
+- Uses the shared password field treatment: visible placeholders, visibility toggles, the shared `PasswordCriteria` checklist, and readable dark-mode text tokens.
+
 ### 11. ToastStack (`web/components/toast-stack.tsx`)
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.
 - **Desktop Placement**: Fixed lower-right, above the floating bar, stacking vertically with newest toast appended at the bottom.

@@ -17,6 +17,7 @@ import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
+import { ControlPanelScreen } from '@/components/control-panel-screen';
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
@@ -262,6 +263,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return 'Notifications';
       case 'settings':
         return 'Settings';
+      case 'control-panel':
+        return 'Control panel';
       default:
         return 'Friink';
     }
@@ -294,6 +297,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         break;
       case 'search':
         router.push('/search');
+        break;
+      case 'control-panel':
+        router.push('/cp');
         break;
       default:
         break;
@@ -1024,6 +1030,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onLogout={onLogout}
                     />
                   )}
+                  {activeScreen === 'control-panel' && <ControlPanelScreen />}
                   {activeScreen === 'messages' && <MessagesScreen activeTab={messagesTab} />}
                 </>
               )}
