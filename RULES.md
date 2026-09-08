@@ -133,6 +133,30 @@ the entry, so history isn't lost.
 
 ## Authentication & Accounts
 
+### Rule: Staff Discovery Is Separate From Ordinary User Features
+- **What:** `users.is_staff` defaults to false. Authenticated user responses may expose it so the web shell can show the Control panel entry only to staff users. It does not authorize sensitive control-panel actions.
+- **Edge cases:** Ordinary users have no staff access. The initial `admin@friink.com` / `@admin` account is created through controlled password-safe tooling, never a migration or committed secret.
+- **Status:** Active for staff discovery and the staging-verified Control panel.
+- **Platform:** Web/API
+- **File(s):** `api/app/models/user.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `api/scripts/bootstrap_admin.py`
+- **Since:** 2026-09-08 (UTC)
+
+### Rule: Staff Access Uses Roles And Additive Direct Grants
+- **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
+- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. Tabs and actions are shown only when the current effective permission allows them. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
+- **Status:** Active; implementation and staging browser verification are complete.
+- **Platform:** Web/API
+- **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`
+- **Since:** 2026-09-08 (UTC)
+
+### Rule: Password Recovery Uses Email Reset Links
+- **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
+- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `docs/forget-password.md`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `web/app/reset-password/page.tsx`
+- **Since:** 2026-09-08 (UTC)
+
 ### Rule: Authoritative Web Session And Refresh Model
 - **What:** This is the single authoritative model for all future web authentication/session work. Authenticated requests send the current access token and refresh only after a `401 TOKEN_EXPIRED`; they retry the original request exactly once with the refreshed token. No request proactively refreshes before receiving a 401. Only an explicit 401 returned by the refresh exchange clears local session state and redirects to `/login`.
 - **Edge cases:** Network, timeout, CORS, 403, 5xx, malformed-response, and other original-request failures never refresh or clear the session and remain retryable errors. Refresh network/timeout/CORS/5xx/malformed failures also preserve the session. Refreshes are coordinated across tabs with the browser Web Locks API when available and a shared browser-storage lease/result fallback, so followers wait for and reuse the leader's result. The backend's generic `REFRESH_TOKEN_INVALID` response remains unable to distinguish theft from a bypassed legitimate race; coordination prevents the normal browser race before it reaches the server. Each environment uses only its configured API origin; no cross-environment fallback is allowed for any request. Auth/session logic must not be changed without explicit human approval; future auth prompts must reference this rule and obtain sign-off before implementation.
@@ -755,6 +779,26 @@ the entry, so history isn't lost.
 - **Platform:** All
 - **File(s):** `api/app/main.py`, `api/app/config.py`
 - **Since:** 2026-08-27T00:00:00Z
+
+### Rule: Development Uses An Isolated Database And Branch Flow
+- **What:** The `development` branch is the local implementation and rehearsal
+  branch below `staging`; `staging` is the deployed acceptance environment and
+  `main` is the production release branch. A local `api/.env.development` may
+  reuse the variable names from `api/.env.staging`, but its `DATABASE_URL` must
+  point to an isolated development database.
+- **Do not:** Commit `.env.development`, `.env.staging`, or secrets. Do not use
+  a development rehearsal to edit staging or production authentication rows,
+  and do not fetch or force-rewrite a branch when that would discard local
+  progress.
+- **Migration:** Bring a fresh development database to the Alembic head and
+  run `alembic check` before auth/session rehearsals. The committed
+  `api/.env.example` remains the non-secret variable template; environment
+  files provide deployment-specific values and are not interchangeable with
+  the template.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `README.md`, `api/.env.example`, `api/alembic/`
+- **Since:** 2026-09-08T22:33:11Z
 
 ### Rule: Database Health Endpoint Checks Connectivity Only
 - **What:** `GET /health/db` opens a psycopg connection and runs `SELECT 1`, returning `{"database": true}` on success.

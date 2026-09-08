@@ -39,6 +39,16 @@ def record_security_event(
     return event
 
 
+def record_bootstrap_refusal(session: Session, *, reason: str, environment: str) -> SecurityEvent:
+    """Record only a categorized, secret-free bootstrap refusal."""
+    return record_security_event(
+        session,
+        event_type=SecurityEventType.bootstrap_refused,
+        event_key=f"bootstrap-refused:{uuid.uuid4()}",
+        payload={"operation": "reserved_superadmin_bootstrap", "reason": reason, "environment": environment},
+    )
+
+
 def enqueue_email_hook(session: Session, event_id: uuid.UUID) -> NotificationOutbox:
     """Provider-neutral hook for a future email delivery adapter."""
     job = NotificationOutbox(event_id=event_id, channel=NotificationChannel.email)

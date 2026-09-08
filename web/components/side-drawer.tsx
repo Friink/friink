@@ -260,6 +260,10 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       </nav>
 
       <div className="sidebar-footer">
+        {user.isStaff ? <a className="sidebar-action" href="/cp">
+          <span className="nav-item-icon" aria-hidden="true"><i className="fa-solid fa-shield-halved" /></span>
+          <span>Control panel</span>
+        </a> : null}
         <a
           className="sidebar-action"
           href={getNavigationHref('settings')}

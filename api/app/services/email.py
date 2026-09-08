@@ -72,3 +72,51 @@ class EmailService:
 
     async def send_registration_successful(self, user: User) -> None:
         return None
+
+    async def send_password_reset(self, email: str, reset_url: str) -> None:
+        if not self.settings.resend_api_key:
+            raise EmailDeliveryError("Email delivery is not configured.")
+        from_address = self._from_address("security")
+        if self.settings.resend_from_name.strip():
+            from_address = f"{self.settings.resend_from_name.strip()} <{from_address}>"
+        payload = {
+            "from": from_address,
+            "to": [email],
+            "subject": "Reset your Friink password",
+            "html": f"<p>We received a request to reset your Friink password.</p><p><a href=\"{escape(reset_url)}\">Reset your password</a></p><p>This link expires in 30 minutes and can only be used once. If you did not request this, you can ignore this email.</p>",
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {self.settings.resend_api_key}"}, json=payload)
+                response.raise_for_status()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise EmailDeliveryError("Email delivery failed.") from exc
+
+    async def send_failed_login_alert(self, email: str, reset_url: str) -> None:
+        if not self.settings.resend_api_key:
+            raise EmailDeliveryError("Email delivery is not configured.")
+        from_address = self._from_address("security")
+        if self.settings.resend_from_name.strip():
+            from_address = f"{self.settings.resend_from_name.strip()} <{from_address}>"
+        payload = {
+            "from": from_address,
+            "to": [email],
+            "subject": "Security alert for your Friink account",
+            "html": (
+                "<p>We detected several unsuccessful sign-in attempts to your Friink account.</p>"
+                "<p>If you made these attempts, you can ignore this message. "
+                "If you don\u2019t recognize them, reset your password now.</p>"
+                f"<p><a href=\"{escape(reset_url)}\">Reset password</a></p>"
+                "<p>For your security, this link expires in 30 minutes and can only be used once.</p>"
+            ),
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {self.settings.resend_api_key}"},
+                    json=payload,
+                )
+                response.raise_for_status()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise EmailDeliveryError("Email delivery failed.") from exc

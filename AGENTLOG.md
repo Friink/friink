@@ -1,5 +1,288 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T22:33:11Z — Synchronize development/auth-session artifacts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update all requested project artifacts after verifying that
+  the development branch contains the current auth/session progress.
+- Changes Made: Documented the development → staging → main branch flow,
+  isolated development database requirement, non-secret environment-template
+  boundary, current Phase 6 status, deliberate-revocation copy, rollback
+  evidence boundary, and the remaining deployment/partial-failure rehearsals.
+  Updated only documentation; no runtime behavior or database state changed.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`,
+  `docs/auth-and-session.md`, `docs/auth-incident-response.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep the project artifacts consistent with the verified
+  `development` branch and prevent future agents from treating local
+  development configuration as staging or production configuration.
+- Verification Status: Branch and migration state were reviewed before the
+  edit; `git diff --check` passed after the documentation patch. No fetch,
+  deployment, or runtime test was performed in this documentation-only task.
+
+## 2026-09-08T22:36:00Z — Reconcile all auth/session documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the previous documentation-only update so all
+  artifacts reflect the complete work completed so far and agree on status.
+- Changes Made: Updated the auth/session progress audit with the current
+  development branch, migration, Phase 6 evidence and remaining gates, Phase 7
+  staging trigger/delivery evidence, cooldown-limited duplicate-suppression
+  gap, accepted login copy, and suspicious-login password-reuse rule. Corrected
+  the Phase 7b status in the main contract and aligned README/design cross-
+  references. Historical checkpoints remain labeled by their original date.
+- Files: `README.md`, `packages/design/design.md`,
+  `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Cross-document stale-status scan and `git diff --check`
+  passed after this reconciliation; no runtime behavior changed.
+
+## 2026-09-09T02:00:00Z — Build Phase 6 deliberate session invalidation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin implementing Phase 6 operations and incident response.
+- Changes Made: Added per-user security epochs to invalidate issued access tokens, protected per-user/all-account auth-operations endpoints with explicit confirmation, refresh-session and recognized-device revocation, an independent compromised-admin containment operation, deliberate-revocation UX signaling, and the initial incident-response runbook. Added migration `20260909_0041_user_security_epoch`.
+- Files: `api/app/models/user.py`, `api/app/services/security.py`, `api/app/services/session_service.py`, `api/app/routers/auth.py`, `api/app/routers/staff.py`, `api/app/routers/auth_operations.py`, `api/app/schemas/auth_operations.py`, `api/app/config.py`, `api/app/main.py`, `api/.env.example`, `api/alembic/versions/20260909_0041_user_security_epoch.py`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/components/app-shell-route.tsx`, `docs/auth-incident-response.md`, `docs/auth-and-session.md`, `README.md`.
+- Verification Status: Full API suite passes (`126 passed`), Phase 6 operation tests pass (`2 passed`), rotation and clock-skew tests pass (`9 passed`), and the web production build passes; migration `20260909_0041` applied to staging and `alembic check` reports no drift. A disposable plus-address account completed the staging signup OTP flow, reached the authenticated home page, then was contained through the protected operation; the existing browser session redirected to `/login?reason=security-revocation` with the approved deliberate-revocation message. A scoped staging revoke-all retry returned 200 twice with identical results. The authorized platform-wide staging rehearsal completed with returned counts of 40 users, 19 sessions, 52 refresh tokens, and 22 recognized devices; retrying the same key after a network timeout did not duplicate it. Localhost evidence also covers 201 signup, 200 containment, idempotent replay, and 401 responses for both pre-existing access and refresh credentials. Operator retries use hashed idempotency keys. Deployment-level rollback and injected partial-failure rehearsal remain operational follow-ups.
+
+## 2026-09-09T01:00:00Z — Record deliberate session-revocation UX contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Synchronize the auth/session contract with the approved Phase 6 session-ending UX.
+- Changes Made: Documented generic handling for ordinary terminal expiry, session preservation for ambiguous failures, and the distinct deliberate-revocation result with `For your security, your session ended. Please sign in again.` for mass revocation and incident lockdown.
+- Files: `docs/auth-and-session.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+
+## 2026-09-09T00:30:00Z — Require a changed password for suspicious-login resets
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved password-reuse rule for Phase 7 recovery.
+- Changes Made: Added a durable reset-token purpose, marked Phase 7 links as `suspicious_login`, and reject the current password for those links server-side. Authenticated password changes now enforce the same rule. Ordinary password recovery continues to allow reuse. Added the schema migration and preserved the existing reset UX.
+- Files: `api/app/models/password_reset.py`, `api/app/services/password_reset.py`, `api/app/services/failed_login_notifications.py`, `api/alembic/versions/20260909_0040_password_reset_purpose.py`.
+- Verification Status: Focused Phase 7, lockout, and auth-flow suite passes (`12 passed`); staging deployment and reset-link verification remain pending.
+
+## 2026-09-09T00:10:00Z — Fix shared password-recovery auth layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct misalignment across the forget/reset password surfaces.
+- Changes Made: Moved the reset-password brand lockup inside the shared auth form structure used by login and forgot-password. This removes the unintended two-column flex layout and keeps all auth pages aligned through the existing shared design contract.
+- Files: `web/app/reset-password/page.tsx`, `AGENTLOG.md`.
+- Verification Status: Web production build passed; existing lint warnings remain unchanged. Redeployment is required for staging visual verification.
+
+## 2026-09-08T19:00:00Z — Clarify Phase 7 security-alert email copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace unclear and repetitive Phase 7 email wording.
+- Changes Made: Updated the suspicious-login email to explain the detected activity calmly, make clear when no action is needed, provide one `Reset password` action, and retain the 30-minute single-use security note. Synchronized the approved copy in `docs/forget-password.md`.
+- Files: `api/app/services/email.py`, `docs/forget-password.md`, `AGENTLOG.md`.
+- Verification Status: Source update complete; redeployment is required before live inbox verification.
+
+## 2026-09-08T18:50:00Z — Verify Phase 7 staging trigger and delivery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the newly deployed Phase 7 implementation in Chrome.
+- Changes Made: No runtime changes. Verified three controlled failed logins on staging, the expected 30-minute cooldown response, one received Friink security alert in the authorized Gmail inbox, and the alert's working password-reset link/page.
+- Files: None.
+- Verification Status: Trigger, provider delivery, inbox receipt, and reset-link presence passed. Fourth/fifth duplicate suppression could not be exercised because the account is correctly locked for 30 minutes. The first two live failures displayed `Invalid credentials.`, which conflicts with the agreed neutral UI copy and remains open.
+
+## 2026-09-08T18:20:00Z — Implement Phase 7 failed-login notification path
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Develop Phase 7 before staging deployment and browser verification.
+- Changes Made: Added active-account failed-login alert creation at the third consecutive failure, rolling 24-hour suppression, durable security-event/email-outbox records, asynchronous reset-link email delivery, and response-safe background-task handling. Added focused Phase 7 tests and updated the Phase 7 status documents.
+- Files: `api/app/services/auth.py`, `api/app/services/email.py`, `api/app/services/failed_login_notifications.py`, `api/app/routers/auth.py`, `api/tests/test_phase7_failed_login.py`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`.
+- Verification Status: `13 passed` across Phase 7, lockout, auth-flow, and Phase 5 focused suites; staging send/receive verification remains open.
+
+## 2026-09-08T17:47:04Z — Consolidate password-recovery and Phase 7 UX contracts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve fragmented password-recovery UX and security requirements across the documentation set.
+- Changes Made: Made `docs/forget-password.md` the source of truth for ordinary reset UX, email copy, reset-link states, and recovery boundaries. Added explicit references from the auth/session architecture, synchronized the design authentication-copy rule and active password-recovery rule, and separated ordinary reset, lifecycle warning, and Phase 7 suspicious-login emails.
+- Files: `docs/forget-password.md`, `docs/auth-and-session.md`, `packages/design/design.md`, `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation cross-reference scan and `git diff --check` passed; no runtime behavior changed.
+
+## 2026-09-08T17:35:00Z — Synchronize Phase 5 artifacts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the project artifacts after Phase 5 staging closure.
+- Changes Made: Synchronized README, active rules, design guidance, auth/session architecture, and auth/session progress with the completed staging migration, bootstrap, admin step-up, and Control Panel verification. Recorded the deployed `staff_mutation` fix and retained production rollout as a separate gate.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Cross-document Phase 5 status scan and `git diff --check` passed.
+
+## 2026-09-08T17:27:00Z — Verify deployed Phase 5 control panel
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Retest staging after deployment and determine whether Phase 5 can close.
+- Findings: Vercel runtime logs showed `/staff/step-up` returning HTTP 500 because the deployed `SecurityEventType` enum lacked `staff_mutation`.
+- Changes Made: Added the missing application enum member; no environment or database changes were made.
+- Verification Status: Focused Phase 5/bootstrap tests passed (`10 passed`). After redeployment, staging admin step-up succeeded in Chrome; live Overview, Users & Accounts, Roles & Permissions, Security & Sessions, and Audit Log sections rendered successfully.
+
+## 2026-09-08T16:45:00Z — Fix themed session recovery and local staging check
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the unthemed recurring session-recovery page and test Phase 5 locally using `.env.staging` with OTP disabled.
+- Changes Made: Updated `AppShellRoute` to use shared Friink branding and distinguish transient reconnect failures from expired/revoked sessions; added shared lifecycle action styles in `web/app/globals.css`. Ran the API locally with staging environment values, verified database health, OpenAPI staff routes, OTP-disabled signup, and normal-user staff denial; removed the temporary test account afterward.
+- Files: `web/components/app-shell-route.tsx`, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local staging-config API checks passed (`health=200`, 14 staff routes, signup `201`, `/staff/me` and step-up denied `401`); browser AX/style verification passed; final Next production build passed with existing repository ESLint warnings. Live deployed staging endpoints were not available during this check.
+
+## 2026-09-08T15:31:00Z — Apply Phase 5 migrations to staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the Phase 5 database migration and prepare staging verification with OTP disabled.
+- Changes Made: Validated staging environment/frontend/Neon target without printing secrets; applied `20260908_0038` and follow-up index migration `20260908_0039`; confirmed Alembic has no drift. Attempted the reserved bootstrap, which correctly refused because staging already contains the reserved admin superadmin; no existing identity was overwritten.
+- Verification Status: Staging migration head is `20260908_0039`; `alembic check` passed. The deployed staging API at `https://staging-api.friink.com` currently refuses connections, so live request/response, browser verification, and a normal-flow test account could not yet be completed.
+
+## 2026-09-08T15:24:19Z — Implement Phase 5b–5d security boundaries
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and close Phase 5 authentication/session security from the repository contract.
+- Changes Made: Added staff permission/role/grant/privileged-session models and migration `20260908_0038`; server-side permission unions and opaque 16-minute idle/eight-hour privileged sessions; step-up/logout/me, role, grant, staff-status, lock/unlock, revoke-all, and audit routes; password-reset and staff-removal privileged-session invalidation; functional Control Panel loading, step-up, no-access, retry, and role/user data states.
+- Files: `api/app/models/staff.py`, `api/app/services/staff.py`, `api/app/schemas/staff.py`, `api/app/routers/staff.py`, `api/alembic/versions/20260908_0038_staff_security.py`, `api/app/services/password_reset.py`, `web/lib/auth.ts`, `web/components/control-panel-screen.tsx`, `web/components/app-shell.tsx`, auth docs and status logs.
+- Verification Status: Bootstrap regression `8 passed`; full API run emitted passing test dots; Python compile, web TypeScript, `git diff --check`, and Alembic head `20260908_0038` passed. Staging migration, real endpoint checks, browser verification, and production release verification were not performed.
+
+## 2026-09-08T19:30:00Z — Add Phase 5 control-panel tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the initial control-panel tab UI for the staging-only Phase 5 rollout.
+- Changes Made: Added the authenticated `/cp` route and reusable app-shell control-panel screen with Overview, Users & Accounts, Roles & Permissions, Security & Sessions, and Audit Log tabs. Added a client-side staff guard and responsive design-system styling; backend actions remain intentionally unimplemented.
+- Files: `web/app/cp/page.tsx`, `web/components/control-panel-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`, `web/lib/data.ts`, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed. `npm run build` passed; existing repository ESLint warnings remain. No API, migration, production, or database changes were made.
+
+## 2026-09-08T19:00:00Z — Add per-user permission grants to Phase 5 contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add individual extra permissions to the Phase 5 role/permission scope.
+- Changes Made: Updated the contract to support additive per-user permission grants alongside role permissions, with superadmin-only management, deduplication, revocation, audit context, UI distinction between inherited and direct permissions, and no per-user deny semantics in the initial release.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only; `git diff --check` pending. No runtime, migration, or database changes were made.
+
+## 2026-09-08T18:30:00Z — Complete the remaining Phase 5 contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fill Phase 5b–5d product, UX, security, and engineering contract gaps before implementation; staging is the only target environment.
+- Changes Made: Defined the initial roles and permission keys/matrix, stable role keys with editable names, role-management and last-superadmin safeguards, privileged-session step-up/expiry/revocation behavior, account-lock and target-session-revocation semantics, control-panel UX boundaries, and the complete staging acceptance gate. Clarified that direct per-user permission overrides and production rollout are out of scope for the initial release.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only; `git diff --check` pending. No runtime, migration, or database changes were made.
+
+## 2026-09-08T18:00:00Z — Synchronize auth/session documentation with Phase 5a
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/auth-and-session.md` so it accurately reflects the current Phase 5a implementation and remaining gaps.
+- Changes Made: Updated Phase 5/5a status and test evidence, documented `DATABASE_TARGET`, marked environment/uniqueness/password/audit findings as addressed, clarified application-level reserved-email enforcement versus database uniqueness, corrected the account-switcher default to four, fixed a wording typo, refreshed the document date, and separated the outstanding reset-specific security-event gap.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation diff checked with `git diff --check`; no runtime, migration, or database changes were made.
+
+## 2026-09-08T10:30:00Z — Implement Phase 5a reserved superadmin bootstrap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Harden the existing `api/scripts/bootstrap_admin.py` draft into a one-time, environment-safe, serialized reserved superadmin bootstrap command.
+- Changes Made: Added explicit `--environment` and `DATABASE_TARGET` validation; rejected development/local targets for staging/production; added PostgreSQL advisory transaction locking with `SERIALIZABLE` isolation and SQLite test serialization; added refusal handling for repeat, email, username, and configuration conflicts; reused `SignupRequest`, `validate_password_rules`, and the normal user builder; added confirmation/policy checks before hashing; extended `security_events` with redacted bootstrap success/refusal events; blocked the reserved admin email through signup reservation paths; added migration `20260908_0037` and focused acceptance tests.
+- Files: `api/scripts/bootstrap_admin.py`, `api/app/config.py`, `api/app/services/auth.py`, `api/app/services/security_events.py`, `api/app/models/security_event.py`, `api/alembic/versions/20260908_0037_bootstrap_security_events.py`, `api/tests/test_bootstrap_admin.py`, `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m pytest` passed: 118 passed, 86 warnings. Focused command suite passed: 14 passed. `python -m compileall -q app scripts tests/test_bootstrap_admin.py` passed. `python -m alembic heads` reports `20260908_0037 (head)`. No staging/production migration or live login was executed in this task. Implementation commit hash: `6267b45` (the commit before this log-only amendment).
+- Phase 5a Status: Implementation complete pending deployment migration and live staging verification; no staff dashboard, roles, permissions, or other Phase 5 subphases were implemented.
+
+## 2026-09-08T09:00:00Z — Phase 5a pre-implementation audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit Phase 5a prerequisites before writing bootstrap code; no runtime implementation requested.
+- Changes Made: Added this evidence-only audit entry. No code, migration, configuration, or database changes were made.
+
+### 1. Environment separation mechanism — Drift Detected
+
+- **Found:** The API has an explicit `ENVIRONMENT` setting. `api/app/config.py:10-16` loads `.env` by default and defines `ENVIRONMENT` with default value `development`; `api/app/config.py:51-53` treats only `production`/`prod` as production. The checked local files contain `ENVIRONMENT=staging` in `api/.env.staging:4` with `FRONTEND_URL=https://staging.friink.com` at `api/.env.staging:3`, and `ENVIRONMENT=production` in `api/.env:3` with `FRONTEND_URL=https://friink.com` at `api/.env:2`. Deployment documentation says the two Vercel projects are separately configured at `README.md:50-60`.
+- **Found:** There is no code path found that automatically loads `.env.staging`, and no code path found that falls back from staging to production or production to staging. `api/app/config.py:10` loads only `.env`; deployment values are supplied by the deployment environment. `api/app/main.py:30-41` uses the configured frontend URL and explicitly always adds the staging CORS origin.
+- **Drift:** The application does not validate that the database target, frontend URL, and environment name belong to the same environment. The staging file is not automatically selected by `Settings`; an operator who invokes a command without explicitly loading `.env.staging` can use the default `.env` target. Missing configuration can also fall back to `ENVIRONMENT=development` and `FRONTEND_URL=http://localhost:3000` via `api/app/config.py:12-16`. This is not a staging-to-production fallback branch, but it is insufficient target-environment enforcement for Phase 5a.
+
+### 2. Existing migration/startup conventions — Found
+
+- **Migrations that create or seed data:** `api/alembic/versions/20260903_0019_identity_foundation.py:16-20` backfills `username_key`; `:22-54` creates identity/history/reserved-username tables; `:56-66` seeds reserved usernames including `admin`, `staff`, `media`, `support`, and `security`. `api/alembic/versions/20260831_0011_add_profile_setup_state.py:21` backfills `users.setup_completed`. `api/alembic/versions/20260905_0030_user_public_handles.py:17` backfills public IDs. `api/alembic/versions/20260903_0020_harden_otp_storage.py:15-20` adds OTP enum values and hardens existing OTP rows. Other migrations create tables or alter enum/schema state; none inspected creates the superadmin account.
+- **Startup:** `api/app/main.py:19-28` constructs the FastAPI app and logs a redacted JWT fingerprint; `api/app/main.py:29-57` configures CORS and includes routers; `api/app/main.py:60-70` defines root/database-health routes. No `startup`, `lifespan`, `on_event`, `create_all`, or user-seeding hook was found in production app startup. `api/alembic/env.py:16-24` imports metadata and resolves the configured database URL for Alembic; it does not seed users.
+- **Conclusion:** Existing migrations and startup conventions must not be reused for Phase 5a bootstrap. The superadmin must remain a standalone operator-invoked command.
+
+### 3. Reserved-identity uniqueness enforcement — Drift Detected
+
+- **Found:** Email uniqueness is enforced at the database level by the unique `users.email` column in `api/app/models/user.py:21` and by the case-insensitive unique index `uq_users_email_casefold` in `api/app/models/user.py:16`, created by `api/alembic/versions/20260905_0029_casefold_email_uniqueness.py:15`. Username uniqueness is enforced by the unique `username_key` index in `api/app/models/user.py:15` and `api/alembic/versions/20260903_0019_identity_foundation.py:20`; the reserved-name registry also has a unique `username_key` constraint at `api/alembic/versions/20260903_0019_identity_foundation.py:46-54`.
+- **Found:** Ordinary signup performs application-level prechecks in `api/app/services/auth.py:59-63`, but the database constraints remain the authoritative concurrent-write boundary.
+- **Drift:** There is no database-level superadmin uniqueness invariant because no role/superadmin assignment table exists yet. `is_staff` is a non-unique boolean at `api/app/models/user.py:36`, intentionally allowing multiple staff users. The current bootstrap command at `api/scripts/bootstrap_admin.py:19-44` checks only the target email and does not acquire a database lock, check an existing superadmin invariant, explicitly check the username conflict, or provide conflict/rollback audit behavior. Email/username uniqueness prevents duplicate rows for the same identity, but additional transaction serialization and explicit conflict handling are still needed to prevent concurrent or partial bootstrap outcomes.
+
+### 4. Audit event infrastructure — Found
+
+- **Found:** The durable `security_events` table is defined by `api/app/models/security_event.py:21-35`. Its schema includes UUID `id`, unique `event_key`, nullable `user_id`, `session_id`, and `device_id`, enum `event_type`, JSON `payload`, and `created_at`; indexes cover user/time and event-type/time at `api/app/models/security_event.py:23-25`.
+- **Found:** The table and enum are created by `api/alembic/versions/20260906_0032_security_events_outbox.py:17-40`. Events are written through `record_security_event` in `api/app/services/security_events.py:13-39`, and current uses include login, refresh, logout, and refresh-reuse paths in `api/app/routers/auth.py:303-306`, `:553-556`, `:617-620`, and `:674-713`, plus failed login in `api/app/services/auth.py:355-357`.
+- **Gap:** No bootstrap, superadmin, role-assignment, or operator-recovery event type/use was found. The existing mechanism is a reusable security-event primitive, but it does not yet provide Phase 5a-specific audit behavior or append-only enforcement. Phase 5a should extend/use this existing primitive rather than design an audit table from scratch.
+
+### 5. Password service reuse — Drift Detected
+
+- **Found:** Password hashing and verification are in `api/app/services/security.py:19-24`: `hash_password(password: str) -> str` uses bcrypt and `verify_password(password, password_hash) -> bool` verifies it.
+- **Found:** The exact 8–16 character policy is `validate_password_rules` in `api/app/schemas/auth.py:11-26`, requiring uppercase, lowercase, digit, special character, and no whitespace. Signup invokes it through `api/app/schemas/auth.py:47-54`; password reset invokes it through `api/app/schemas/auth.py:200-207`.
+- **Drift:** The current bootstrap command calls `hash_password` at `api/scripts/bootstrap_admin.py:12` and `:31`, but it does not call `validate_password_rules`. Bootstrap therefore does not yet enforce the documented 8–16 character policy before hashing. The future command must reuse both the policy validator and `hash_password` without accepting a password as a command-line argument or persisting it in configuration.
+
+### 6. Reset-link flow confirmation — Drift Detected
+
+- **Found:** `docs/forget-password.md:3-13` accurately describes email-only recovery, generic responses, hashed single-use tokens, 30-minute expiry, refresh-session revocation, and independence from `OTP_ENABLED`. The implementation creates and hashes a 48-byte URL-safe token in `api/app/services/password_reset.py:25-34`, consumes it and checks expiry in `:37-46`, revokes refresh families and account slots in `:47-50`, and sends the link through `api/app/routers/auth.py:738-755`. The confirmation endpoint is `api/app/routers/auth.py:758-767`.
+- **Found:** The reset UI calls the implemented API through `web/lib/auth.ts:93-98` and uses the reset page at `web/app/reset-password/page.tsx:1-33`. It accepts email only in the login recovery step at `web/components/login-screen.tsx:75-92`.
+- **Drift:** The documentation correctly notes at `docs/forget-password.md:27-28` that rate limiting is required, but no password-reset-specific rate limiting implementation was found in `api/app/routers/auth.py:738-767` or `api/app/services/password_reset.py:25-50`. The auth contract also requires invalidating older reset requests, which the implementation does at `api/app/services/password_reset.py:29-32`. No reset-specific security event is created after successful recovery; the current docs do not claim one, but Phase 5a’s broader audit requirement should not be assumed to be met by the reset flow.
+
+- Verification Status: Audit-only; no runtime files, migrations, configuration, or database rows changed. No new files were created.
+
+## 2026-09-08T08:30:00Z — Complete Phase 5a architecture contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fill the remaining Phase 5a requirements in `docs/auth-and-session.md` before implementation.
+- Changes Made: Defined reserved identity, execution/configuration boundaries, one-time/concurrency behavior, password handling, account initialization, recovery, audit, UI boundary, rollout sequence, and expanded verification gate. No runtime code or database changes were made.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; checked against the existing password-recovery and staff-discovery contracts.
+
+## 2026-09-08T08:00:00Z — Fix password-reset return-to-login flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the broken success-state Return to login action on the password-reset page.
+- Changes Made: Clear the browser’s local Friink session before navigating to `/login`, ensuring the fresh-login requirement is honored after server-side session revocation; applied shared back-link styling.
+- Files: `web/app/reset-password/page.tsx`, `AGENTLOG.md`.
+- Verification Status: Standalone TypeScript validation pending.
+
+## 2026-09-08T07:30:00Z — Fix password-reset form usability
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and correct the password-reset page shown in the attached screenshot.
+- Changes Made: Added visible placeholders, password visibility toggles, shared password criteria, and a dark-mode `--color-ink` override.
+- Files: `web/app/reset-password/page.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Standalone TypeScript validation pending.
+
+## 2026-09-08T07:00:00Z — Add password recovery and initial staff discovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement email-link password recovery, the initial staff flag and Control panel drawer entry, and the first admin bootstrap account contract.
+- Changes Made: Added hashed single-use reset tokens and API start/confirm endpoints, email delivery, reset page, `users.is_staff`, authenticated response propagation, conditional drawer navigation, the password-safe `bootstrap_admin.py` command for `admin@friink.com` / `@admin`, migration, and synchronized documentation.
+- Files: `api/app/models/password_reset.py`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/models/user.py`, `api/alembic/versions/20260908_0036_staff_and_password_reset.py`, `api/scripts/bootstrap_admin.py`, `web/app/reset-password/page.tsx`, `web/components/login-screen.tsx`, `web/components/side-drawer.tsx`, `web/lib/auth.ts`, `docs/forget-password.md`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Establish the agreed recovery and staff-discovery foundation without implementing privileged control-panel actions yet.
+- Verification Status: Python compile and targeted API auth tests passed (`2 passed`); standalone web TypeScript validation passed; web source compilation/type checking passed, but final Next.js generation is blocked by a OneDrive `.next` `EINVAL` readlink cleanup error. No new dependencies were required.
+
 ## 2026-09-08T01:30:00Z — Add live post-reactivation cooldown toast
 
 - Agent: Codex
@@ -7397,3 +7680,152 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `web/components/action-menu.tsx`, `web/components/profile-card.tsx`, `web/components/side-drawer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason: Make remembered accounts visually distinguishable in the account-switcher dropdown.
 - Verification Status: Web TypeScript validation and `git diff --check` passed.
+## 2026-09-08T13:58:43Z — Rebuild control-panel UI on shared design primitives
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Discard the initial `/cp` page mock and rebuild its tabs and
+  structure according to `README.md`, `AGENTLOG.md`, and `packages/design/design.md`.
+- Changes Made: Removed bespoke control-panel layout/card/tab styling. Moved
+  control-panel tab navigation into the shared app-shell `Tabs` surface and
+  rebuilt the content with `PageSurface`, existing settings/list-row treatment,
+  and shared icon conventions. Kept `/cp` routing and staff gating unchanged.
+- Files: `web/components/control-panel-screen.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The previous CP UI introduced a competing 72rem layout, custom cards,
+  duplicated gutters, and a bespoke tab system that violated the shared
+  `ContentBox`/`PageSurface`/`Tabs` contracts.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
+  production build or browser deployment verification was run.
+## 2026-09-08T14:00:00Z — Refine control-panel shell against Phase 5 boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Redo `/cp` using the design guide and existing components;
+  do not create a new component without approval.
+- Changes Made: Kept the existing shared `Tabs`, `ContentBox`, `PageSurface`,
+  and `ListRow` primitives. Removed misleading chevrons/click affordances from
+  the not-yet-wired CP rows and added honest Phase 5/planned status metadata.
+  No new component was introduced and no backend behavior changed.
+- Files: `web/components/control-panel-screen.tsx`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Reason: Phase 5a makes CP discoverability-only; the UI must not imply that
+  role, account, session, or audit actions are already server-authorized.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
+  deployment or browser verification was run.
+## 2026-09-08T14:03:00Z — Align control-panel structure with Settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove redundant CP elements and make `/cp` feel consistent
+  with the rest of the app.
+- Changes Made: Removed the duplicate in-content page heading and description.
+  Wrapped the CP content in the same `simple-screen settings-screen`,
+  `settings-panel`, and `settings-section` structure used by Settings. Kept
+  the shared app-shell `NavigationBar` as the single page-title owner.
+- Files: `web/components/control-panel-screen.tsx`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Reason: `design.md` assigns page-title ownership to `NavigationBar` and
+  requires logged-in screens to use shared `PageSurface`/`ContentBox` layout
+  primitives without duplicate page-level structure.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
+  deployment or browser verification was run.
+## 2026-09-08T14:10:00Z — Reduce initial staff role seed
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the auth/session contract so only the superadmin role
+  is seeded initially; additional staff roles are created on demand.
+- Changes Made: Updated both Phase 5b and the broader staff/roles section in
+  `docs/auth-and-session.md`. The contract now seeds only `superadmin`, keeps
+  role creation and renaming available to superadmin, and treats admin,
+  moderator, support, marketer, and similar roles as future on-demand roles.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Avoid prebuilding unused staff roles while retaining the flexible
+  database-backed role and permission model.
+- Verification Status: Documentation consistency review completed; no stale
+  initial-role-set wording remains in the contract, and `git diff --check`
+  passed.
+## 2026-09-08T14:20:00Z — Complete Control Panel UX contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the agreed Control Panel UX in the appropriate
+  auth/session phases.
+- Changes Made: Added Phase 5a no-role empty-state behavior; Phase 5b
+  permission-based tab/action visibility, combined multi-role presentation,
+  separate Additional access display, and marketer/Public site scoping; Phase
+  5c access-lost and loading/denied/expired/retry states; and Phase 5d
+  intentional administrative loading/empty/error states.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Make the permission model understandable in the product while
+  preserving the distinction between staff discoverability and authorized
+  actions.
+- Verification Status: Documentation review completed; the new UX requirements
+  are present in Phases 5a, 5b, 5c, and 5d. `git diff --check` passed.
+## 2026-09-08T14:35:00Z — Documentation consistency audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify that the long auth/staff discussion is reflected in
+  AGENTLOG, CHANGELOG, RULES, design, README, and `/docs`.
+- Findings: `docs/auth-and-session.md` already contained the detailed Phase 5a–5d
+  logic and Control Panel UX contract. `docs/forget-password.md` and
+  `docs/login.md` were also present. `README.md` had a stale Phase 4-only auth
+  summary; `RULES.md` lacked the role/direct-grant staff rule; and
+  `packages/design/design.md` only described Control Panel discoverability.
+- Changes Made: Updated the README auth status, added the staff roles/multiple
+  roles/direct-grants/is_staff-off rule, and added the shared Control Panel UX
+  contract to the design guide. No runtime behavior changed.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`,
+  `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Cross-document stale-summary scan and `git diff --check`
+  passed; runtime tests were not applicable.
+
+## 2026-09-09T02:56:00Z — Rehearse coordinated staging rollback and restoration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Roll back the GitHub staging branch so both Vercel projects
+  redeploy for a Phase 6 rehearsal, then restore the current head.
+- Changes Made: Created an isolated temporary clone, pushed a revert of the
+  staging head, verified Ready deployments for `friink-api` and `friink`, and
+  verified that the staging login page rendered. Pushed a second revert to
+  restore the original Phase 6 head. Production and the database migration were
+  not changed.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Exercise the deployment rollback path without disturbing the local
+  uncommitted worktree or production.
+- Verification Status: Rollback and restoration commits reached staging;
+  both Vercel projects reached Ready for each observed deployment, and the web
+  login smoke check rendered. Chrome blocked the direct staging API health
+  hostname, so mixed-runtime API response compatibility remains unverified.
+
+## 2026-09-09T03:02:00Z — Refresh Phase 6 remaining-test contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Report the final remaining Phase 6 test and update the
+  authentication/session contract with completed progress.
+- Changes Made: Updated the Phase 6d status and verification gate to reflect
+  completed local/staging containment, platform-wide revocation, idempotent
+  retry, rollback, and restoration evidence. Documented deliberate partial
+  failure injection and recovery as the final open rehearsal.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation reviewed; no runtime behavior changed.
+
+## 2026-09-08T22:26:28Z — Initialize development database from local configuration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the database connector placed in `api/.env.development`
+  to initialize the fresh development database.
+- Changes Made: Loaded the local development environment only for the
+  migration process, applied all existing Alembic migrations, and verified the
+  database is at the current head with no schema drift. No staging or
+  production database was changed.
+- Files: `api/.env.development`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Provide an isolated database for local development and destructive
+  authentication/session rehearsals.
+- Verification Status: `alembic current` reports the current head and
+  `alembic check` reports no new upgrade operations.

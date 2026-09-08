@@ -4,7 +4,8 @@ from datetime import timedelta
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -46,6 +47,7 @@ from app.schemas.auth import (
     UpdateCurrentUserRequest,
     UsernameAvailabilityResponse,
     UserResponse,
+    PasswordResetStartRequest, PasswordResetConfirmRequest,
 )
 from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_email, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
 from app.services.email_change import complete_email_change, start_email_change
@@ -79,6 +81,7 @@ from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
 from app.services.account_slots import create_or_replace_slot, find_slot_for_user, get_slot, list_slots, revoke_slot
+from app.services.password_reset import complete_password_reset, start_password_reset
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -292,7 +295,7 @@ async def _issue_login_session(
             status_code=status.HTTP_409_CONFLICT,
             detail="This account could not be added to the current browser. Please retry from the active session.",
         )
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, user.security_epoch)
     recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
         session, user.id, request, raw_device_identifier
     )
@@ -354,11 +357,17 @@ async def login(
     payload: LoginRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse | LoginChallengeResponse | LifecycleChallengeResponse:
     require_allowed_origin(request, settings)
-    user = await authenticate_user(session, payload.identifier, payload.password)
+    try:
+        user = await authenticate_user(session, payload.identifier, payload.password, background_tasks=background_tasks, settings=settings)
+    except HTTPException as exc:
+        if background_tasks.tasks:
+            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=exc.headers or {}, background=background_tasks)
+        raise
     if user.lifecycle_status in {"deactivated", "pending_deletion"}:
         if not settings.otp_enabled:
             reactivate_account(session, user, None)
@@ -473,7 +482,7 @@ async def refresh(
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
             set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
-            return RefreshResponse(access_token=create_access_token(slot_user.id), account_slot=account_slot)
+            return RefreshResponse(access_token=create_access_token(slot_user.id, slot_user.security_epoch), account_slot=account_slot)
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -506,6 +515,11 @@ async def refresh(
 
     now = datetime.now(UTC)
     if token_record.rotated_at is not None or token_record.revoked_at is not None:
+        if token_record.revocation_reason == "security_incident":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
+            )
         replacement = session.get(type(token_record), token_record.replaced_by_id) if token_record.replaced_by_id else None
         grace_is_valid = (
             token_record.rotated_at is not None
@@ -532,7 +546,7 @@ async def refresh(
             if auth_session:
                 auth_session.last_active_at = now
             issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
-            access_token = create_access_token(user.id)
+            access_token = create_access_token(user.id, user.security_epoch)
             await commit(session)
             log_refresh_token_event(
                 event="auth_refresh_token_grace_replayed",
@@ -611,7 +625,7 @@ async def refresh(
     issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, user.security_epoch)
     record_security_event(
         session,
         event_type=SecurityEventType.refresh,
@@ -733,6 +747,38 @@ async def logout(
     return response
 
 
+@router.post("/password-reset/start", status_code=status.HTTP_202_ACCEPTED)
+async def password_reset_start(
+    payload: PasswordResetStartRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str]:
+    require_allowed_origin(request, settings)
+    user, raw_token = await start_password_reset(session, str(payload.email))
+    if user and raw_token:
+        reset_url = f"{str(settings.frontend_url).rstrip('/')}/reset-password?token={raw_token}"
+        try:
+            await EmailService(settings).send_password_reset(user.email, reset_url)
+        except EmailDeliveryError:
+            # Keep the unauthenticated response neutral so delivery behavior
+            # cannot disclose whether the email belongs to a Friink account.
+            pass
+    return {"message": "If an account exists for that email, password-reset instructions have been sent."}
+
+
+@router.post("/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset_confirm(
+    payload: PasswordResetConfirmRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    require_allowed_origin(request, settings)
+    await complete_password_reset(session, payload.token, payload.new_password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 async def get_current_user(
     request: Request,
     token: str = Depends(oauth2_scheme),
@@ -782,6 +828,11 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
+    if int(payload.get("security_epoch", 0)) != user.security_epoch:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
+        )
     # Lifecycle deactivation is intentionally stricter than ordinary lockout:
     # RULES.md requires inactive accounts to reject already-issued access JWTs,
     # while an ordinary account lock leaves those JWTs valid until expiry.
@@ -799,7 +850,7 @@ async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme),
         return None
     user_id = user_id_from_subject(str(payload.get("sub", "")))
     user = session.get(User, user_id)
-    if not user or user.lifecycle_status != "active":
+    if not user or user.lifecycle_status != "active" or int(payload.get("security_epoch", 0)) != user.security_epoch:
         return None
     return user
 
@@ -1086,7 +1137,7 @@ async def switch_account(
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
             log_account_switch_event(result="success", reason="already_active")
-            return TokenResponse(access_token=create_access_token(current_user.id), user=user_response(current_user, settings), account_slot=payload.account_slot)
+            return TokenResponse(access_token=create_access_token(current_user.id, current_user.security_epoch), user=user_response(current_user, settings), account_slot=payload.account_slot)
         log_account_switch_event(result="failure", reason="slot_not_found")
         raise HTTPException(status_code=404, detail="Account session not found.")
     target = session.get(User, slot.user_id)
@@ -1099,7 +1150,7 @@ async def switch_account(
     await commit(session)
     set_account_refresh_cookie(response, payload.account_slot, issued_refresh.raw_token, settings)
     log_account_switch_event(result="success", reason="switched")
-    return TokenResponse(access_token=create_access_token(target.id), user=user_response(target, settings), account_slot=payload.account_slot)
+    return TokenResponse(access_token=create_access_token(target.id, target.security_epoch), user=user_response(target, settings), account_slot=payload.account_slot)
 
 
 @router.delete("/accounts/{account_slot}", status_code=status.HTTP_204_NO_CONTENT)

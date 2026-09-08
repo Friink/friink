@@ -1,5 +1,245 @@
 # Changelog
 
+## 2026-09-09
+
+- [documentation] Synchronized the README, rules, design contract, and auth
+  incident documentation with the `development` branch workflow and isolated
+  development database verification. Clarified that Phase 6 implementation is
+  present while deployment-level rotation compatibility and partial-failure
+  recovery rehearsals remain open; no runtime behavior changed.
+- Reconciled the historical auth/session progress audit with the current
+  `development` branch: Phase 7 staging trigger/delivery evidence is recorded,
+  the cooldown-limited duplicate-suppression gap is explicit, and stale
+  “out of scope”/“staging pending” wording is retained only as history.
+
+- [development] Created the local `api/.env.development` from the staging
+  configuration and applied the current Alembic head to the newly supplied
+  development database; `alembic check` reports no drift.
+
+- [auth/phase6] Added deliberate session invalidation with per-user security
+  epochs, protected per-user/all-account operator revocation paths, recognized
+  device invalidation, auditable scopes/reasons/counts, and the approved
+  security re-login response. Added independent compromised-admin containment
+  and the initial incident-response runbook.
+- Applied the security-epoch migration to staging and verified the staging
+  configuration’s local API health and operator-route protection.
+- Operator actions now require a bounded idempotency key and replay the
+  original completed result on retry.
+- Added focused Phase 6 tests for revocation accounting, idempotent replay,
+  and compromised-admin containment.
+- Rotation coverage now verifies both mixed-key overlap and rejection after old
+  key retirement.
+- Added bounded `JWT_CLOCK_SKEW_SECONDS` leeway with boundary coverage for
+  rotation-safe expiry handling.
+- Completed a controlled local containment rehearsal against the staging
+  database using a disposable plus-address account: signup 201, containment
+  200, idempotent replay 200, and both pre-existing access and refresh
+  credentials rejected with 401 afterward.
+- Staging E2E verified signup OTP delivery/verification, authenticated session
+  containment, deliberate security re-login routing, and identical results on
+  a repeated scoped revoke-all request.
+- Completed the authorized staging platform-wide revocation rehearsal; the
+  operation covered 40 users, 19 sessions, 52 refresh tokens, and 22 devices,
+  and the same-key retry did not duplicate the operation.
+- Rehearsed a coordinated staging rollback and restoration through the GitHub
+  staging branch; both Vercel projects reached Ready and the staging login page
+  rendered during rollback. Direct API browser verification was blocked by
+  Chrome, so mixed-runtime response compatibility remains unclaimed.
+- Updated the Phase 6 auth/session contract to mark implementation complete
+  for the exercised operations and to identify the deliberately injected
+  partial-failure recovery rehearsal as the final remaining gate.
+
+## 2026-09-09
+
+- [docs/auth-session] Added the deliberate-session-revocation UX contract:
+  generic expiry remains generic, ambiguous failures preserve auth, and
+  intentional mass revocation/incident lockdown uses a distinct security
+  re-login message.
+
+## 2026-09-09
+
+- [auth/recovery] Suspicious-login reset links now require a password different
+  from the current password. Ordinary password recovery may still reuse the
+  current password; the distinction is stored on the reset token purpose.
+
+## 2026-09-09
+
+- [web/auth] Fixed password-reset page alignment by using the same shared
+  centered auth-form structure as login and forgot-password. The production
+  web build passes.
+
+## 2026-09-08
+
+- [auth/email] Clarified Phase 7 suspicious-login email copy: explain the
+  detected attempts, distinguish recognized activity from unrecognized
+  activity, provide one `Reset password` action, and retain the 30-minute
+  single-use note.
+
+## 2026-09-08
+
+- [verification/phase7] Staging trigger and delivery passed: the third failed
+  login began the expected 30-minute cooldown, one alert arrived in the
+  authorized inbox, and its reset link opened the themed reset page. Duplicate
+  suppression remains untested in staging because the account is locked during
+  the cooldown. Live wrong-password copy still needs correction from
+  `Invalid credentials.` to the agreed neutral Friink wording.
+
+## 2026-09-08
+
+- [auth/phase7] Implemented the active-account failed-login security alert at
+  the third consecutive failure, with rolling 24-hour suppression, durable
+  event/outbox records, asynchronous reset-link delivery, and no change to
+  generic login responses or existing cooldown tiers. Local focused tests pass;
+  staging provider and inbox verification remains pending.
+
+## 2026-09-08
+
+- [docs/auth] Consolidated password-recovery UX, reset-link states, security
+  email copy, and Phase 7 recovery boundaries in `docs/forget-password.md`.
+  Related auth, design, and rules documents now reference that source of truth.
+
+## 2026-09-08
+
+- [docs/auth] Synchronized the Phase 5a–5d status, staging evidence, Control
+  Panel design contract, rules, README, and progress record after live staging
+  verification. Production rollout remains a separate gate.
+
+## 2026-09-08
+
+- [staging/auth] Fixed the missing `staff_mutation` security-event enum member
+  that caused privileged staff step-up to return HTTP 500 in the deployed API.
+- [staging/auth] Verified admin step-up and all five Control Panel sections live
+  after redeployment; Phase 5 staging verification is complete.
+
+## 2026-09-08
+
+- [web/auth] Fixed the shared session-recovery fallback so it follows the
+  Friink lifecycle/error design contract with the wordmark, home mark, themed
+  actions, and responsive spacing. Transient reconnect failures now explain
+  that the account has not been signed out, while terminal session failures
+  retain the login path.
+
+## 2026-09-08
+
+- [staging/auth] Applied migrations `20260908_0038` and `20260908_0039` to the
+  staging Neon database. Alembic reports no drift. The reserved staging
+  superadmin already existed, so the one-time bootstrap correctly refused to
+  overwrite it. Live API verification is pending because the deployed staging
+  API currently refuses connections.
+
+## 2026-09-08
+
+- [auth/phase-5] Implemented local Phase 5b–5d server boundaries: seeded
+  permission catalog and superadmin role migration, multi-role/direct-grant
+  evaluation, opaque privileged step-up sessions, staff status invalidation,
+  administrative lock/unlock, session revocation, audit events, and a
+  functional Control Panel loading/step-up/empty/error/data surface. Existing
+  API tests, Python compilation, web TypeScript, and Alembic head checks pass;
+  staging migration/request/browser verification remains open.
+
+## 2026-09-08
+
+- [docs] Synchronized `README.md`, `RULES.md`, and `packages/design/design.md`
+  with the current Phase 5a status and the agreed staff-role, permission, and
+  Control Panel UX contracts. Detailed auth/reset/login contracts remain in
+  `/docs`.
+
+## 2026-09-08
+
+- [docs/auth] Added the missing Control Panel UX contract: no-role empty
+  state, permission-based tab visibility, combined multi-role access,
+  separate direct-grant display, marketer/Public Site access boundaries, and
+  explicit loading/denied/expired/retry/access-lost states.
+
+## 2026-09-08
+
+- [docs/auth] Reduced the initial Phase 5 role seed to `superadmin` only.
+  Additional roles such as admin, moderator, support, or marketer are created
+  later by the superadmin when needed.
+
+## 2026-09-08
+
+- [web/control-panel] Removed the duplicate in-content CP heading and aligned
+  the page structure with Settings by using the shared `simple-screen`,
+  `settings-panel`, and `settings-section` composition.
+
+## 2026-09-08
+
+- [web/control-panel] Refined `/cp` to use the shared tab and settings-row
+  patterns as a navigation shell only. Removed implied clickable actions and
+  labeled sections by their planned Phase 5 delivery boundary.
+
+## 2026-09-08
+
+- [web/control-panel] Replaced the first CP mock layout with a design-contract
+  implementation using the shared `Tabs`, `ContentBox`, `PageSurface`, and
+  `ListRow` primitives. Removed bespoke CP sizing, cards, spacing, and tab CSS.
+
+## 2026-09-08
+
+- [web/control-panel] Added the authenticated `/cp` control-panel shell for
+  staff users with Overview, Users & Accounts, Roles & Permissions, Security &
+  Sessions, and Audit Log tabs. The tab content is presentational until the
+  Phase 5 server-authorized actions are implemented.
+
+## 2026-09-08
+
+- [docs/auth] Added additive per-user permission grants to the Phase 5
+  contract. Roles remain the baseline; superadmins may grant or revoke one
+  extra permission for an individual user without changing their role.
+
+## 2026-09-08
+
+- [docs/auth] Filled the remaining Phase 5 contract gaps: initial role and
+  permission matrix, editable role-name rules, superadmin safeguards,
+  privileged-session step-up and timeout behavior, administrative lock/session
+  revocation semantics, control-panel UX boundaries, and staging-only
+  acceptance requirements.
+
+## 2026-09-08
+
+- [docs/auth] Synchronized the auth/session document with the implemented
+  Phase 5a bootstrap, corrected the account-switcher default to four, clarified
+  reserved admin identity enforcement, recorded current test/rollout status,
+  and separated the outstanding password-reset security-event gap.
+
+## 2026-09-08
+
+- [auth/bootstrap] Hardened the reserved superadmin bootstrap command with
+  explicit environment/database targeting, PostgreSQL transaction
+  serialization, conflict/refusal handling, normal signup validation,
+  redacted bootstrap security events, and rollback-safe account creation.
+- [db] Added bootstrap security-event enum values and documented the required
+  `DATABASE_TARGET` deployment setting.
+- [tests] Added bootstrap acceptance coverage for first run, rerun and identity
+  conflicts, password failures, concurrent execution, environment ambiguity,
+  confirmation mismatch, and secret-free event payloads.
+
+## 2026-09-08
+
+- [docs/auth] Expanded Phase 5a into an implementation-ready contract covering
+  reserved identity, execution/configuration boundaries, concurrency, password
+  handling, recovery, audit, UI scope, rollout, and acceptance evidence.
+
+## 2026-09-08
+
+- [web/auth] Fixed password-reset success navigation by clearing stale local
+  auth state before returning to login.
+
+## 2026-09-08
+
+- [web/auth] Fixed password-reset dark-mode contrast and blank fields, and
+  added visibility toggles plus the shared password requirements checklist.
+
+## 2026-09-08
+
+- [auth/staff] Added email-only password reset links with single-use hashed
+  tokens, 30-minute expiry, refresh-session revocation, and a reset page.
+- [staff] Added the authenticated `is_staff` flag, conditional Control panel
+  drawer entry, and password-safe `admin@friink.com` / `@admin` bootstrap.
+- [docs] Added `docs/forget-password.md` and synchronized auth, rules, and
+  design contracts.
+
 ## 2026-09-08
 
 - [web/auth] Split login into progressive two-step identifier and password

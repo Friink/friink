@@ -5,12 +5,19 @@ import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/login-screen';
 import { loadAuthSession, refreshAuthSession } from '@/lib/auth';
 
+const SECURITY_REVOCATION_MESSAGE = 'For your security, your session ended. Please sign in again.';
+
 export function LoginClient() {
   const router = useRouter();
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [initialMessage, setInitialMessage] = useState<string | undefined>();
 
   useEffect(() => {
     const session = loadAuthSession();
+
+    if (window.location.search.includes('reason=security-revocation')) {
+      setInitialMessage(SECURITY_REVOCATION_MESSAGE);
+    }
 
     if (session) {
       router.replace('/home');
@@ -30,5 +37,5 @@ export function LoginClient() {
 
   if (!sessionChecked) return null;
 
-  return <LoginScreen onAuthenticated={() => router.replace('/home')} />;
+  return <LoginScreen onAuthenticated={() => router.replace('/home')} initialMessage={initialMessage} />;
 }

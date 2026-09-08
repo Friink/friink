@@ -193,6 +193,20 @@ class UsernameAvailabilityResponse(BaseModel):
     available: bool
 
 
+class PasswordResetStartRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, password: str) -> str:
+        return validate_password_rules(password)
+
+
 class UpdateSetupRequest(BaseModel):
     step: int = Field(ge=1, le=2)
     completed: bool = False
@@ -211,6 +225,7 @@ class UserResponse(BaseModel):
     is_private: bool
     likes_visible: bool
     is_verified: bool
+    is_staff: bool
     created_at: datetime
     updated_at: datetime
 

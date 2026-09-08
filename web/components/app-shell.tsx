@@ -17,6 +17,7 @@ import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
 import { MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
+import { ControlPanelScreen, type ControlPanelTab } from '@/components/control-panel-screen';
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
@@ -124,6 +125,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
   const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests' | 'archived'>(initialMessagesTab);
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'subscription' | 'privacy'>(initialSettingsTab);
+  const [controlPanelTab, setControlPanelTab] = useState<ControlPanelTab>('overview');
   const [canGoBack, setCanGoBack] = useState(false);
   useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
   useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
@@ -262,6 +264,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return 'Notifications';
       case 'settings':
         return 'Settings';
+      case 'control-panel':
+        return 'Control panel';
       default:
         return 'Friink';
     }
@@ -294,6 +298,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         break;
       case 'search':
         router.push('/search');
+        break;
+      case 'control-panel':
+        router.push('/cp');
         break;
       default:
         break;
@@ -947,6 +954,20 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 ariaLabel="Settings sections"
               />
             )}
+            {showTabs !== false && activeScreen === 'control-panel' && (
+              <Tabs
+                tabs={[
+                  { id: 'overview', label: 'Overview' },
+                  { id: 'users', label: 'Users & Accounts' },
+                  { id: 'roles', label: 'Roles & Permissions' },
+                  { id: 'security', label: 'Security & Sessions' },
+                  { id: 'audit', label: 'Audit Log' },
+                ]}
+                activeId={controlPanelTab}
+                onChange={(id) => setControlPanelTab(id as ControlPanelTab)}
+                ariaLabel="Control panel sections"
+              />
+            )}
             <ContentBox>
               {children ? (
                 children
@@ -1024,6 +1045,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onLogout={onLogout}
                     />
                   )}
+                  {activeScreen === 'control-panel' && <ControlPanelScreen activeTab={controlPanelTab} session={loadAuthSession()} />}
                   {activeScreen === 'messages' && <MessagesScreen activeTab={messagesTab} />}
                 </>
               )}

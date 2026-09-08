@@ -24,7 +24,7 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
-def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta) -> str:
+def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta, security_epoch: int = 0) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
@@ -32,6 +32,7 @@ def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta) 
         "typ": token_type,
         "iat": int(now.timestamp()),
         "exp": int((now + expires_delta).timestamp()),
+        "security_epoch": security_epoch,
     }
     return jwt.encode(
         payload,
@@ -41,9 +42,9 @@ def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta) 
     )
 
 
-def create_access_token(user_id: uuid.UUID) -> str:
+def create_access_token(user_id: uuid.UUID, security_epoch: int = 0) -> str:
     settings = get_settings()
-    return create_token(user_id, "access", timedelta(minutes=settings.access_token_expire_minutes))
+    return create_token(user_id, "access", timedelta(minutes=settings.access_token_expire_minutes), security_epoch)
 
 
 def classify_jwt_error(error: jwt.PyJWTError) -> AuthErrorCode:
@@ -67,7 +68,7 @@ def decode_token(token: str, expected_type: str) -> dict[str, Any]:
             verification_key = settings.jwt_verification_keys.get(kid)
             if not verification_key:
                 raise TokenValidationError(AuthErrorCode.TOKEN_SIGNATURE_MISMATCH, "Token key id is not configured.")
-        payload = jwt.decode(token, verification_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(token, verification_key, algorithms=[settings.jwt_algorithm], leeway=settings.jwt_clock_skew_seconds)
     except TokenValidationError:
         raise
     except jwt.PyJWTError as exc:

@@ -25,10 +25,14 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Local development:** `localhost/localhost.ps1`, Next.js on port 3000, FastAPI on port 8000
 - **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
 
-Current auth/session scope: Phases 1–3 are closed, and Phase 4 is closed for
-the current web/API-focused release. Mobile authentication and session
-requirements are preserved separately in `docs/auth-and-session-mobile.md` and
-are deferred until a mobile client exists.
+Current auth/session scope: Phases 1–3 are closed, Phase 4 is closed for the
+current web/API-focused release, Phase 5a–5d staff discovery, bootstrap, roles,
+privileged sessions, and administrative security are implemented and verified
+on staging, and Phase 6 operations are implemented with final operational
+rehearsals still open. Production rollout remains a separate release gate.
+Mobile authentication and
+session requirements are preserved separately in `docs/auth-and-session-mobile.md`
+and are deferred until a mobile client exists.
 
 ## Local Development
 
@@ -41,6 +45,13 @@ npm --prefix web run dev
 ```
 
 `localhost/localhost.ps1` is available for local environment setup.
+
+The `development` branch is the local-work branch below `staging`. Its ignored
+`api/.env.development` file may copy the staging variable names, but must point
+to an isolated development database and must never contain production
+credentials. The development database is migrated to the current Alembic head
+before local auth/session rehearsals; the current verified head is
+`20260909_0041` with no reported schema drift.
 
 ## Deployment
 
@@ -58,6 +69,10 @@ dashboard.
 - Staging: `staging.friink.com` / `staging-api.friink.com`
 - Production: `friink.com`
 - **Database isolation:** `api-staging` continues using the existing staging Neon connection; `api-production` uses its separate production Neon connection. The web projects do not receive `DATABASE_URL`; each web deployment only receives its API origin.
+- **Branch flow:** Use `development` for local implementation and destructive
+  rehearsals, `staging` for deployed acceptance testing, and `main` for
+  production release. Do not fetch or rewrite another branch as a substitute
+  for preserving unpushed local progress.
 
 ## Current Web-App Architecture
 
@@ -94,6 +109,12 @@ these files, and the live implementation, are:**
   files touched, reasoning). Updated alongside every `CHANGELOG.md` entry.
 - **`docs/auth-and-session.md`** — shared backend and web authentication/session
   contract and implementation status.
+- **`docs/auth-and-session-progress.md`** — dated verification evidence and the
+  current staging/development reconciliation for auth/session work.
+- **`docs/auth-incident-response.md`** — operator runbook for signing-key,
+  refresh-token, account, and platform-wide session incidents.
+- **`docs/forget-password.md`** — email reset-link contract and implementation
+  details.
 - **`docs/auth-and-session-mobile.md`** — mobile-only authentication/session
   requirements, intentionally deferred until a mobile client exists.
 - **`docs/chat-behavior.md`** — the implementation contract for chat requests, composer states, notifications, mute/archive behavior, blocking infrastructure, and subscription boundaries.

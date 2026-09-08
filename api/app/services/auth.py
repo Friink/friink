@@ -4,6 +4,7 @@ import secrets
 import uuid
 
 from fastapi import HTTPException, status
+from fastapi.background import BackgroundTasks
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
@@ -20,14 +21,44 @@ from app.services.notifications import create_notification
 from app.services.otp import issue_signup_otp, verify_signup_otp
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
-from app.models.security_event import SecurityEventType
-from app.services.security_events import record_security_event
+from app.models.security_event import SecurityEvent, SecurityEventType
+from app.services.security_events import enqueue_email_hook, record_security_event
 
 LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, timedelta(hours=24)))
 LOCKOUT_ATTEMPTS = 5
 LOCKOUT_DURATION = timedelta(hours=24)
 SIGNUP_MESSAGE = "If the signup details can be accepted, verification instructions will be sent."
 SIGNUP_RESERVATION_TTL = timedelta(minutes=30)
+RESERVED_SUPERADMIN_EMAIL = "admin@friink.com"
+RESERVED_SUPERADMIN_USERNAME_KEY = "admin"
+
+
+def is_reserved_superadmin_email(email: str) -> bool:
+    return email.strip().casefold() == RESERVED_SUPERADMIN_EMAIL
+
+
+def build_user_from_signup(
+    data: SignupRequest,
+    *,
+    is_staff: bool = False,
+    setup_step: int = 1,
+    setup_completed: bool = False,
+) -> User:
+    """Build a user using the same validated signup schema and invariants."""
+    return User(
+        email=str(data.email).strip().casefold(),
+        username=data.username,
+        username_key=data.username.casefold(),
+        display_name=data.display_name or data.username,
+        is_private=False,
+        password_hash=hash_password(data.password),
+        date_of_birth=data.date_of_birth,
+        location=data.location,
+        is_verified=True,
+        is_staff=is_staff,
+        setup_step=setup_step,
+        setup_completed=setup_completed,
+    )
 
 
 async def get_user_by_email(session: Session, email: str) -> User | None:
@@ -57,22 +88,14 @@ async def is_username_available(session: Session, username: str, exclude_user_id
 
 
 async def create_user(session: Session, data: SignupRequest, email_service: EmailService | None = None) -> User:
+    if is_reserved_superadmin_email(str(data.email)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
     if await get_user_by_email(session, data.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
     if not await is_username_available(session, data.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
 
-    user = User(
-        email=str(data.email).strip().casefold(),
-        username=data.username,
-        username_key=data.username.casefold(),
-        display_name=data.display_name or data.username,
-        is_private=False,
-        password_hash=hash_password(data.password),
-        date_of_birth=data.date_of_birth,
-        location=data.location,
-        is_verified=True,
-    )
+    user = build_user_from_signup(data)
     session.add(user)
     await commit(session)
     await refresh(session, user)
@@ -91,6 +114,8 @@ def _reservation_token_hash(token: str) -> bytes:
 
 async def start_signup_reservation(session: Session, data: SignupRequest, email_service: EmailService) -> str:
     normalized_email = str(data.email).strip().casefold()
+    if is_reserved_superadmin_email(normalized_email):
+        return secrets.token_urlsafe(32)
     # Check email first so an existing address never reveals whether its
     # submitted username is available or reserved.
     if await get_user_by_email(session, normalized_email):
@@ -122,6 +147,8 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
 
 async def start_signup_email_reservation(session: Session, email: str, email_service: EmailService) -> str:
     normalized_email = email.strip().casefold()
+    if is_reserved_superadmin_email(normalized_email):
+        return secrets.token_urlsafe(32)
     session.execute(delete(SignupReservation).where(SignupReservation.email == normalized_email))
     token = secrets.token_urlsafe(32)
     now = datetime.now(UTC)
@@ -154,6 +181,8 @@ async def complete_signup_email_reservation(session: Session, token: str, data: 
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
     ).scalar_one_or_none()
     normalized_email = str(data.email).strip().casefold()
+    if is_reserved_superadmin_email(normalized_email):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The signup details could not be accepted.")
     if not reservation or reservation.expires_at <= datetime.now(UTC) or reservation.email_verified_at is None or normalized_email != reservation.email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email verification is required before signup.")
     if await get_user_by_email(session, reservation.email) or not await is_username_available(session, data.username):
@@ -185,6 +214,10 @@ async def complete_signup_reservation(session: Session, token: str, otp: str) ->
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
     ).scalar_one_or_none()
     if not reservation or reservation.expires_at <= datetime.now(UTC) or not verify_signup_otp(session, reservation, otp):
+        await commit(session)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
+
+    if is_reserved_superadmin_email(reservation.email):
         await commit(session)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The verification code is invalid or expired.")
 
@@ -302,12 +335,21 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
 async def change_password(session: Session, user: User, data: ChangePasswordRequest) -> None:
     if not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")
+    if verify_password(data.new_password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a password different from your current password.")
 
     user.password_hash = hash_password(data.new_password)
     await commit(session)
 
 
-async def authenticate_user(session: Session, identifier: str, password: str) -> User:
+async def authenticate_user(
+    session: Session,
+    identifier: str,
+    password: str,
+    *,
+    background_tasks: BackgroundTasks | None = None,
+    settings=None,
+) -> User:
     user = await get_user_by_login_identifier(session, identifier)
     now = datetime.now(UTC)
 
@@ -336,7 +378,7 @@ async def authenticate_user(session: Session, identifier: str, password: str) ->
 
     if not user or not verify_password(password, user.password_hash):
         if user:
-            await register_failed_login(session, user)
+            await register_failed_login(session, user, background_tasks=background_tasks, settings=settings)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
     user.failed_login_attempts = 0
@@ -346,7 +388,13 @@ async def authenticate_user(session: Session, identifier: str, password: str) ->
     return user
 
 
-async def register_failed_login(session: Session, user: User) -> None:
+async def register_failed_login(
+    session: Session,
+    user: User,
+    *,
+    background_tasks: BackgroundTasks | None = None,
+    settings=None,
+) -> None:
     user.failed_login_attempts += 1
     for threshold, duration in reversed(LOCKOUT_SCHEDULE):
         if user.failed_login_attempts >= threshold:
@@ -359,6 +407,29 @@ async def register_failed_login(session: Session, user: User) -> None:
         user_id=user.id,
         payload={"kind": "failed_login"},
     )
+    if user.lifecycle_status == "active" and user.failed_login_attempts >= 3:
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        recent = session.execute(
+            select(SecurityEvent).where(
+                SecurityEvent.user_id == user.id,
+                SecurityEvent.event_type == SecurityEventType.failed_login,
+                SecurityEvent.created_at >= cutoff,
+                SecurityEvent.payload["kind"].as_string() == "failed_login_notification",
+            )
+        ).scalar_one_or_none()
+        if recent is None:
+            event = record_security_event(
+                session,
+                event_type=SecurityEventType.failed_login,
+                event_key=f"failed-login-notification:{user.id}:{uuid.uuid4()}",
+                user_id=user.id,
+                payload={"kind": "failed_login_notification"},
+            )
+            enqueue_email_hook(session, event.id)
+            if background_tasks is not None and settings is not None:
+                from app.services.failed_login_notifications import deliver_failed_login_alert
+
+                background_tasks.add_task(deliver_failed_login_alert, event.id, settings)
     await commit(session)
 
 

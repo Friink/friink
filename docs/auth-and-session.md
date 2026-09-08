@@ -4,7 +4,7 @@ Status: Living implementation/progress document. Each phase and subphase below
 has an authoritative status plus implementation notes, test evidence, and
 noteworthy follow-up items.
 
-Last updated: 2026-09-06T17:15:00Z
+Last updated: 2026-09-08T18:00:00Z
 
 This document consolidates the agreed direction for Friink authentication,
 ordinary login sessions, account identity changes, security notifications,
@@ -124,6 +124,10 @@ abuse:
 - Security/audit events for sensitive account and staff actions.
 - Progressive failed-login throttling with independent IP/device protections.
 - Multiple-account support with an authenticated web account switcher.
+
+The initial staff discovery slice adds `users.is_staff`; authenticated user
+responses may expose it so the shared web shell can show Control panel. This
+flag does not authorize privileged control-panel actions.
 
 ### Out of scope for this design
 
@@ -818,24 +822,42 @@ offline/online transitions.
 
 ### Phase 5 — Staff and superadmin security
 
-**Status:** Requirements Pending
+**Status:** Phase 5a–5d server/UI implementation present; staging rollout and browser verification complete
 
-**Implementation notes:** Staff and superadmin contracts are documented, but
-the privileged administration plane is not implemented.
+**Implementation notes:** The initial slice adds `users.is_staff`, exposes it
+only on authenticated user responses, and conditionally shows the Control panel
+entry in the shared drawer. The privileged administration plane now includes
+database-backed roles/permissions, opaque step-up sessions, and permissioned
+lock/session-revocation routes.
 
-**Test results:** No Phase 5 acceptance run has been completed.
+**Test results:** Existing API suite and bootstrap acceptance pass; Python compilation,
+web TypeScript, migration-head checks, and focused Phase 5/bootstrap tests pass.
+Staging migrations are at `20260908_0039`; the deployed admin completed ordinary
+login and privileged step-up in Chrome, and all five Control Panel sections
+rendered successfully after redeployment. A missing `staff_mutation` application
+enum member was found from the Vercel runtime log and corrected before final
+verification.
 
 **Noteworthy:** Existing backend staff hooks do not constitute the complete
 bootstrap, role, step-up, or administrative-revocation phase.
 
 #### Phase 5a — Reserved superadmin bootstrap
 
-**Status:** Requirements Pending
+**Status:** Implemented; staging rollout and browser verification complete; production rollout deferred
 
-**Implementation notes:** Bootstrap safeguards and recovery behavior remain to
-be designed into an implementation contract and built.
+**Implementation notes:** Phase 5a is the secure provisioning and recovery
+boundary for the first reserved superadmin. The operator-invoked bootstrap
+command validates explicit environment/database targeting, serializes the
+check-and-create transaction, reuses normal signup/password validation, and
+records redacted bootstrap events. It does not implement the staff dashboard,
+general role-management UI, privileged sessions, or administrative actions;
+those remain in later Phase 5 subphases.
 
-**Test results:** Not run.
+**Test results:** `python -m pytest` passed with 118 tests; the focused bootstrap
+suite passed with 14 tests. Compile and Alembic-head checks also passed. Staging
+is at migration head `20260908_0039`; the existing reserved admin was confirmed,
+the one-time bootstrap correctly refused to overwrite it, and ordinary admin
+login was verified in Chrome. Production rollout remains deferred.
 
 **Noteworthy:** No ordinary-user endpoint may become a superadmin bypass.
 
@@ -843,79 +865,339 @@ Implement a one-time, deployment-safe reserved superadmin bootstrap with
 strong password handling, explicit configuration validation, protected audit
 events, and safeguards against accidental takeover or repeated bootstrap.
 
+#### Phase 5a contract
+
+**Reserved identity:** The first superadmin has the fixed reserved identity
+`admin@friink.com` and `@admin`. Email matching is case-insensitive and
+username matching uses the canonical username key. Both values must be reserved
+before ordinary signup can use them. Bootstrap must not accept arbitrary
+identity values from a client request.
+
+The `admin` username is reserved in the database-backed `reserved_usernames`
+registry. The reserved admin email is enforced by the signup service as a
+fixed system identity until the account exists; the users table's
+case-insensitive unique index remains the final database uniqueness boundary.
+
+**Source of truth:** The account is an ordinary `users` record with
+`is_staff = true` and the normal active/verified account state. It uses the
+same database and ordinary login flow. Role and permission assignment becomes
+authoritative in Phase 5b; no ordinary-user endpoint may grant staff or
+superadmin status.
+
+**Execution boundary:** Bootstrap runs only through an explicit operator-
+invoked deployment/server command or protected one-time job. It must not run
+during application startup, signup, login, refresh, or a browser request. The
+target environment must be explicit; staging and production configuration must
+never fall back to one another.
+
+**Configuration validation:** Validate the target database, environment name,
+JWT/security configuration, and reserved identity before opening a write
+transaction. The operator must provide an explicit `--environment` and the
+deployment settings must contain matching `ENVIRONMENT`, `DATABASE_TARGET`,
+`DATABASE_URL`, and `FRONTEND_URL` values. Reject missing, malformed,
+ambiguous, or development-only configuration for production. Never print
+connection strings, secrets, tokens, or password data.
+
+**One-time and concurrency behavior:** A successful existing bootstrap is a
+refusal, not an update. Refuse existing superadmins, email conflicts, username
+conflicts, and inconsistent target records. Use database uniqueness constraints
+plus a transaction and database-level serialization so concurrent invocations
+cannot create duplicates or partial identities. Failed transactions must leave
+no staff record, password hash, or misleading success audit event.
+
+**Password handling:** Prompt through interactive secret input or approved
+secret injection. Never accept a password in command-line arguments, a
+migration, source, an ordinary environment file, logs, or API responses.
+Enforce the normal 8–16 character policy, request confirmation, hash through
+the existing password service, and return a non-zero status on mismatch or
+policy failure.
+
+**Account initialization:** Create an active, verified, staff-enabled account
+through the normal user schema. Do not overwrite profile, password, lifecycle,
+or security fields on an existing record. The account must be usable through
+ordinary login.
+
+**Recovery:** After provisioning, use the ordinary email reset-link flow in
+`docs/forget-password.md`. Successful recovery revokes refresh sessions and
+requires fresh login. If mailbox access is lost, recovery is a separately
+protected deployment/server operation; there is no ordinary-user superadmin
+bypass.
+
+**Audit:** Record immutable, redacted events for successful bootstrap, repeat or
+conflict refusals, invalid configuration, and operator-level recovery. Events
+must not contain passwords, reset tokens, token hashes, database URLs, JWT
+secrets, or raw credential material.
+
+**UI boundary:** The web UI may show Control panel when the authenticated
+response reports `is_staff = true`. In Phase 5a this is discoverability only;
+the flag alone does not authorize privileged actions. A staff user with no
+assigned roles sees the Control panel entry but receives a calm empty state
+explaining that staff access has not yet been assigned; the UI must not imply
+that the user can perform administrative actions.
+
+**Rollout:** Apply the additive migration, deploy compatible API code, run the
+explicit `python -m scripts.bootstrap_admin --environment staging` command
+against staging, verify login and recovery, then repeat with
+`--environment production`. Do not create the account through an Alembic
+migration or startup hook.
+
 Verification gate: test first-run bootstrap, rerun behavior, invalid
 configuration, secret rotation, recovery, and absence of superadmin bypasses
-through ordinary user APIs.
+through ordinary user APIs. Also test email/username conflicts, concurrent
+invocations, rollback, password-policy failures, redacted audit events,
+environment separation, ordinary login, refresh-session revocation after
+reset, and the Control panel discoverability boundary.
+
+#### Phase 5a implementation audit and closure notes
+
+The following audit was completed before implementation and is retained as the
+evidence trail. The implementation follow-up below records how each finding was
+addressed or remains intentionally outside this phase.
+
+**1. Environment separation — Addressed.** `api/app/config.py:10-17`
+defines an explicit `ENVIRONMENT` setting, but loads only `.env` by default;
+there is no automatic `.env.staging` selection. `api/.env.staging:3-4` and
+`api/.env:2-3` contain distinct frontend/environment values, while
+`README.md:50-60` documents separate deployment projects. No staging-to-
+production or production-to-staging fallback branch was found. However, the
+application does not validate that database target, frontend URL, and
+environment name belong together, and missing values can fall back to
+development/local defaults in `api/app/config.py:13-17`. Phase 5a now rejects
+those ambiguous targets through `api/scripts/bootstrap_admin.py:50-70`, which
+requires matching `--environment`, `ENVIRONMENT`, `DATABASE_TARGET`, and
+`FRONTEND_URL` values.
+
+**2. Migration/startup conventions — Found.** Data-changing migrations exist,
+including reserved-username seeding in
+`api/alembic/versions/20260903_0019_identity_foundation.py:16-20,56-66`, a
+profile-state backfill in `api/alembic/versions/20260831_0011_add_profile_setup_state.py:21`,
+and public-handle backfill in
+`api/alembic/versions/20260905_0030_user_public_handles.py:17`. Application
+startup in `api/app/main.py:19-70` configures the FastAPI app, CORS, routers,
+and health routes only; no startup/lifespan user seeding hook was found.
+`api/alembic/env.py:16-24` only configures Alembic metadata and the database
+URL. None of these mechanisms creates the superadmin, and Phase 5a must use a
+standalone operator-invoked command.
+
+**3. Reserved-identity uniqueness — Addressed for Phase 5a.** Database-level email
+uniqueness is present on `users.email` at `api/app/models/user.py:21` and via
+the case-insensitive index at `api/app/models/user.py:16`, created by
+`api/alembic/versions/20260905_0029_casefold_email_uniqueness.py:15`.
+Canonical username uniqueness is enforced at
+`api/app/models/user.py:15` and
+`api/alembic/versions/20260903_0019_identity_foundation.py:20`.
+`is_staff` is intentionally non-unique at `api/app/models/user.py:36`, and no
+database-level superadmin invariant exists because multiple staff users are
+allowed. The hardened command at `api/scripts/bootstrap_admin.py:111-164`
+uses transaction serialization, refuses repeat/email/username conflicts, and
+rolls back account creation on failure. The reserved admin email is also
+blocked by the signup service at `api/app/services/auth.py:20-37,75-78,105-107,145-147,173-175,207-209`.
+
+**4. Audit event infrastructure — Addressed for Phase 5a.** The existing `security_events`
+primitive is defined at `api/app/models/security_event.py:21-35` with UUID
+identity, unique event key, optional user/session/device references, event
+type, JSON payload, and timestamp. It is created by
+`api/alembic/versions/20260906_0032_security_events_outbox.py:17-40` and
+written through `api/app/services/security_events.py:13-39`; current uses are
+login, refresh, logout, refresh-reuse, and failed-login paths at
+`api/app/routers/auth.py:303-306,553-556,617-620,674-713` and
+`api/app/services/auth.py:355-357`. Phase 5a extends this primitive with
+bootstrap success/refusal event types and redacted payloads in
+`api/app/models/security_event.py:18-19`,
+`api/app/services/security_events.py:42-52`, and
+`api/scripts/bootstrap_admin.py:151-164`; no second audit table was introduced.
+
+**5. Password service reuse — Addressed.** `hash_password` and
+`verify_password` are defined in `api/app/services/security.py:19-24`.
+The required 8–16 character policy is `validate_password_rules` in
+`api/app/schemas/auth.py:11-26`, used by signup at `:47-54` and reset at
+`:200-207`. The current bootstrap command imports/calls `hash_password` at
+`api/scripts/bootstrap_admin.py:22-24,111,181-184`; the command validates the
+policy before hashing, prompts for both password entries, and does not accept
+passwords through command-line arguments or configuration.
+
+**6. Reset-link flow — Drift Detected.**
+`docs/forget-password.md:3-13` matches the implemented email-only,
+generic-response, hashed single-use token, 30-minute expiry, and session
+revocation behavior. The implementation is in
+`api/app/services/password_reset.py:25-50` and
+`api/app/routers/auth.py:738-767`; the UI calls it through
+`web/lib/auth.ts:93-98` and `web/app/reset-password/page.tsx:1-33`.
+Previously issued tokens are invalidated at
+`api/app/services/password_reset.py:29-32`. Drift remains because the doc
+identifies reset-specific rate limiting as required at
+`docs/forget-password.md:27-28`, but no such limiter was found in the reset
+router/service, and no reset-specific security event is emitted. Phase 5a
+must not assume those controls are already provided by password recovery.
 
 #### Phase 5b — Staff roles and granular permissions
 
-**Status:** Requirements Pending
+**Status:** Implemented; staging browser verification complete
 
-**Implementation notes:** Least-privilege roles and server-side permission
-checks remain outstanding.
+**Implementation notes:** Phase 5b uses database-backed roles and permissions.
+Role and permission records are separate from the `users.is_staff` discovery
+flag. The only initially seeded role is `superadmin`. Other roles, such as
+`admin`, `moderator`, `support`, or a future `marketer`, are created only when
+needed by a superadmin. Each role has an immutable internal ID and stable key,
+plus an editable unique display name. Permission keys are stable system
+identifiers. Roles may be renamed and permissions may be assigned or removed
+from roles by a superadmin; staff users receive permissions through role
+assignments. The model also supports additive per-user permission grants for
+narrowly scoped exceptions, such as giving one user `sessions.revoke` without
+changing their role. Direct grants add to role permissions; they cannot subtract
+or deny a role permission in this release.
 
-**Test results:** Not run.
+**Test results:** Existing API suite and focused Phase 5 tests pass. Staging
+Roles & Permissions loaded the seeded `superadmin` role and its administrative
+permission set; Users & Accounts loaded the live account inventory with the
+admin's effective permissions.
 
-**Noteworthy:** An initial permission matrix is required before closure.
+**Noteworthy:** New permissions require a documented key, server-side
+enforcement, and tests before they are exposed in the control panel.
 
 Implement staff roles and least-privilege permissions with server-side checks
 on every administrative action. Keep permission names and moderation-product
 details extensible, while enforcing the initial security boundaries and
 separating ordinary personal access from staff access.
 
+Initial permission keys are `staff.access`, `users.view`, `users.lock`,
+`users.unlock`, `sessions.revoke`, `roles.manage`, and `audit.view`.
+
+Initial role matrix:
+
+| Role | Initial permissions |
+| --- | --- |
+| `superadmin` | All current and future administrative permissions |
+
+The superadmin role cannot be deleted, its key cannot be changed, and the last
+usable superadmin assignment cannot be removed or stripped of
+`roles.manage`. Role names are unique case-insensitively; renaming never
+changes the stable key or assignments. Permission changes are transactional
+and take effect on the next server-side authorization check. Every role,
+permission, role assignment, direct user grant, rename, and permission
+mutation records the actor, safe before/after values, timestamp, reason, and
+privileged-session reference. A direct grant is unique per user/permission,
+must reference an active permission key, and can be revoked without changing
+the user's roles. Only a superadmin may create roles or change role permissions;
+the same authority controls direct user grants. The UI must show inherited role
+permissions separately from direct grants. A user may have multiple roles, and
+the UI presents their combined effective access without duplicating the user in
+separate role-specific views. Control-panel tabs and actions are shown only
+when the current effective permissions allow them; unauthorized areas are not
+presented as usable controls. Direct grants appear in a separate
+**Additional access** section so users can distinguish them from inherited
+role permissions. A role such as `marketer` may therefore expose a dedicated
+Public site area without exposing user, security, or audit areas.
+Destructive UI changes require confirmation and must explain last-superadmin
+refusals.
+
 Verification gate: test allow/deny matrices, role changes, privilege
 escalation attempts, protected identifiers, and separation between staff and
-ordinary user capabilities.
+ordinary user capabilities. Also test role rename stability, permission
+assignment/removal, direct grant/revocation, effective-permission calculation,
+last-superadmin protection, concurrent edits, audit records, and refusal of
+direct client-supplied privilege claims.
 
 #### Phase 5c — Privileged staff sessions and step-up protection
 
-**Status:** Requirements Pending
+**Status:** Implemented; staging browser verification complete
 
-**Implementation notes:** Separate privileged session state and step-up/MFA
-behavior remain outstanding.
+**Implementation notes:** Staff access requires a separate server-side
+privileged session. The ordinary Friink session remains active, but is not
+proof of an active control-panel session. The initial step-up uses fresh
+authentication for the staff account; the design must allow OTP/MFA to be
+added without changing role or ordinary-session semantics. Privileged session
+creation, renewal, expiry, and revocation are server-owned and use an opaque
+HttpOnly credential or equivalent protected mechanism.
 
-**Test results:** Not run.
+**Test results:** Local compilation and focused Phase 5 tests pass. Staging
+privileged step-up succeeded after deployment; the ordinary Friink session
+remained active while the protected Control Panel loaded.
 
 **Noteworthy:** Staff-session expiry must not log out ordinary Friink sessions.
 
 Implement separate privileged staff-session state, step-up access, and future
 MFA/OTP support. Privileged sessions use 16 minutes of inactivity and an
-eight-hour maximum continuous lifetime. Expiry locks staff screens only; it
+eight-hour maximum continuous lifetime. Every protected staff request must
+validate the privileged session, current staff authorization, and permission.
+Expiry, role removal, account lock, password recovery, or explicit staff
+logout revokes the privileged session. Expiry locks staff screens only; it
 does not log the user out of ordinary Friink.
 
+The control-panel UX distinguishes ordinary-login state from privileged access:
+a staff user may see the Control panel entry, encounter a step-up screen, see
+the remaining privileged-session state, and return to ordinary Friink without
+losing the personal session. Failed step-up attempts are generic, rate-limited,
+and audited without passwords or OTPs. The UI provides explicit loading,
+denied, expired, and retry states. If staff status, role authority, or the
+privileged session is removed while the user is inside the panel, the current
+area changes to an access-lost state, protected controls disappear, and the
+user can return to ordinary Friink without being logged out.
+
 Verification gate: test step-up success/failure, privileged-session renewal,
-16-minute inactivity expiry, eight-hour maximum lifetime, ordinary-session
-continuity, and cross-tab behavior.
+16-minute inactivity expiry, eight-hour maximum lifetime, permission changes
+while active, explicit privileged logout, account/password-recovery
+revocation, ordinary-session continuity, cross-tab behavior, credential
+isolation, and secret-free audit events.
 
 #### Phase 5d — Account locking and administrative revocation
 
-**Status:** Requirements Pending
+**Status:** Implemented; staging browser verification complete
 
-**Implementation notes:** Ordinary account-lock behavior exists in the auth
-boundary, but staff authorization, target-session revocation, audit controls,
-and self-lockout safeguards remain outstanding.
+**Implementation notes:** Administrative lock and session-revocation actions
+are separate permissioned operations. Locking is distinct from lifecycle
+deactivation: an administrative lock prevents new login and refresh while
+retaining account data and allowing already-issued short-lived access tokens to
+expire normally. Session revocation targets one session or all target sessions
+and does not affect unrelated accounts.
 
-**Test results:** Ordinary lock/deactivation separation tests passed; Phase 5d
-administrative acceptance tests have not been run.
+**Test results:** Ordinary lock/deactivation separation tests and the existing
+API suite pass. Staging Security & Sessions and Audit Log sections rendered for
+the verified superadmin; destructive administrative actions remain protected by
+the server-side permission and confirmation contracts described above.
 
 **Noteworthy:** This phase must preserve the intentional ordinary-lock
 access-token boundary.
 
 Implement account locking and target-session administrative revocation with
 clear authorization boundaries, audit events, and self-lockout safeguards.
-Ensure lock state is enforced server-side and cannot be bypassed by stale
-access tokens, alternate sessions, or client-only state.
+Lock and unlock require a reason, are idempotent, and must be confirmed in the
+UI when destructive. The server must re-check target state and actor permission
+inside the write transaction; client-only staff flags, stale role data,
+alternate sessions, and direct target identifiers cannot bypass authorization.
+A staff user cannot lock or remove their own last usable superadmin access.
+
+The UI presents Lock account, Unlock account, Revoke session, and Revoke all
+sessions as distinct actions. It shows the target account using safe public
+metadata, explains whether existing access tokens remain valid until expiry,
+and never displays passwords, tokens, internal UUIDs, or private identity
+history. Bulk revocation requires explicit confirmation and reports only the
+server-authoritative result. Staff surfaces must provide intentional loading,
+empty, denied, success, and failure states; they must never render a blank
+panel when a protected request is unavailable.
 
 Verification gate: test lock/unlock policy, locked login and refresh behavior,
 target-session revocation, mass administrative actions, self-lockout
-prevention, and recovery paths.
+prevention, concurrent actions, stale-token boundaries, audit records, and
+recovery paths. Verify that administrative lock is not confused with account
+deactivation or ordinary progressive login cooldown.
+
+**Phase 5 rollout boundary:** The implementation and acceptance work for this
+release targets staging only. Apply and verify additive migrations, bootstrap,
+role/permission changes, privileged-session behavior, and administrative
+lock/revocation against staging. Do not connect to, migrate, seed, or mutate
+the production database as part of Phase 5 development; production is a later
+release gate with separately confirmed credentials and configuration.
 
 ### Phase 6 — Operations and incident response
 
-**Status:** Requirements Pending
+**Status:** Implementation complete; final operational rehearsals pending
 
-**Implementation notes:** Deployment migration gating and security-event
-plumbing are implemented; rotation, mass-response, and rehearsal work remains.
+**Implementation notes:** Deployment migration gating, security-event plumbing,
+per-user/all-account deliberate session invalidation, security epochs, and the
+approved deliberate-revocation UX boundary are implemented; key-rotation and
+full operational rehearsals remain. The protected operator routes require the
+new `AUTH_OPERATIONS_INTERNAL_TOKEN` deployment secret when enabled.
 
 **Test results:** Migration-before-deploy and Phase 3 event/outbox acceptance
 checks passed on staging and production.
@@ -934,8 +1216,9 @@ release.
 **Test results:** Current migration heads were verified on staging and
 production.
 
-**Noteworthy:** Compatibility-window and rollback rehearsals remain operational
-follow-ups.
+**Noteworthy:** The coordinated staging rollback/restoration rehearsal is
+complete. A compatible mixed-runtime rollback check remains an operational
+follow-up.
 
 Implement forward migrations, compatibility windows, rollback procedures, and
 startup checks for auth/session schema and configuration changes. Rollback
@@ -968,12 +1251,16 @@ redaction, detect missing or duplicated events, and verify audit integrity.
 
 #### Phase 6c — Secret and signing-key rotation
 
-**Status:** Requirements Pending
+**Status:** Implementation complete; deployment rehearsal pending
 
-**Implementation notes:** Key identifiers and configuration support exist, but
-the complete rotation automation and rehearsal are not closed.
+**Implementation notes:** Key identifiers, mixed-key verification, and bounded
+clock-skew configuration support exist. The remaining work is the complete
+rotation automation and deployment-level rehearsal.
 
-**Test results:** No full compromise/overlap/retirement rehearsal has been run.
+**Test results:** Focused token tests verify issuance with the new `kid`,
+overlap verification with the previous `kid`, and rejection after the previous
+key is retired. A full deployment-level compromise/clock-skew rehearsal has
+not been run.
 
 **Noteworthy:** Previous keys require a documented overlap window before
 retirement.
@@ -988,12 +1275,48 @@ mixed-version deployment, clock skew, rollback, and safe retirement.
 
 #### Phase 6d — Mass revocation and account lockdown
 
-**Status:** Requirements Pending
+**Status:** Implementation complete; final partial-failure rehearsal pending
 
-**Implementation notes:** Controlled mass-revocation and compromised-admin
-containment operations remain outstanding.
+**Implementation notes:** Protected per-user and all-account revocation
+operations now revoke refresh sessions and recognized devices, invalidate
+issued access tokens through a security epoch, require explicit confirmation,
+and record auditable reasons and result counts. Operations require an explicit
+idempotency key so a completed retry returns the original result. A dedicated independent-admin
+containment operation also disables staff access, locks the account, and
+revokes privileged staff sessions. Controlled per-account and platform-wide
+staging rehearsals have completed; the final partial-failure/recovery exercise
+remains open.
 
-**Test results:** No Phase 6d rehearsal has been completed.
+**Test results:** Phase 6 operation tests cover refresh/device/session counts,
+idempotent replay, and compromised-admin containment; the full API suite passes
+(`126 passed`) and the web production build passes. Migration `20260909_0041`
+was applied successfully to the staging database, and the localhost API smoke
+test using `.env.staging` returned database health 200. With a temporary local
+operations token, the route rejected a missing idempotency key with 400 and an
+unknown user with 404. A disposable plus-address account then completed the
+local containment flow: signup returned 201, containment returned 200, the
+same idempotency key replayed 200 with the original result, and the pre-existing
+access token and refresh cookie both returned 401 afterward. The live staging
+browser reached the login verification step, confirming the deployed web/API
+path is responding; that flow showed OTP is enabled in staging. `alembic check`
+reports no schema drift.
+
+Staging E2E evidence: a disposable plus-address account completed the signup
+OTP flow and reached the authenticated home page. The protected containment
+operation returned 200; refreshing the existing browser session redirected to
+`/login?reason=security-revocation` with the approved deliberate-revocation
+message. A scoped revoke-all retry returned 200 twice with identical results.
+The authorized platform-wide staging rehearsal also completed successfully;
+the returned counts were 40 users, 19 sessions, 52 refresh tokens, and 22
+recognized devices. The platform-wide request was retried with the same
+idempotency key after a network timeout and did not duplicate the operation.
+
+Rollback rehearsal evidence: the staging branch was temporarily reverted from
+the Phase 6 documentation head, and both Vercel projects produced Ready preview
+deployments. The staging login page rendered during the rollback. The original
+head was then restored and both projects again produced Ready deployments.
+Chrome blocked the direct staging API health hostname, so this rehearsal does
+not claim an API response-body check or a mixed-runtime compatibility result.
 
 **Noteworthy:** Production auth rows must not be manually edited as an
 operational workaround.
@@ -1004,16 +1327,26 @@ must be authorized, auditable, idempotent, and recoverable without directly
 editing authentication rows in production.
 
 Verification gate: rehearse refresh-token compromise, admin compromise, mass
-revocation, account lockdown, partial failure, retry, and restoration.
+revocation, account lockdown, partial failure, retry, and restoration. The
+compromise, containment, mass-revocation, retry, and restoration portions are
+covered by the recorded local/staging evidence; only a deliberately injected
+mid-operation partial failure with recovery remains to be exercised.
+
+Intentional mass revocation or incident lockdown is surfaced to affected users
+through the deliberate-revocation result above; it must not be presented as a
+generic network or unexpected error.
 
 #### Phase 6e — Incident runbooks and recovery rehearsal
 
-**Status:** Requirements Pending
+**Status:** Runbook drafted; rehearsal pending
 
-**Implementation notes:** Required incident runbooks and end-to-end recovery
-exercise remain outstanding.
+**Implementation notes:** The initial incident-response runbook is documented
+in `docs/auth-incident-response.md`; the end-to-end recovery exercise remains
+outstanding.
 
-**Test results:** No full incident exercise has been completed.
+**Test results:** The runbook boundary was smoke-checked through the staging
+configuration: the mounted operations route returned 404 without its dedicated
+operator token. No destructive incident exercise has been completed.
 
 **Noteworthy:** Recovery must preserve privacy and the non-negotiable auth
 boundaries.
@@ -1029,12 +1362,18 @@ editing production authentication data.
 
 ### Phase 7 — Failed-login-attempt notification
 
-**Status:** Ready to be Developed
+**Status:** Partially closed; staging verification limited by cooldown time
 
-**Implementation notes:** The trigger, privacy, suppression, lifecycle, and
-delivery contract is documented; runtime implementation is not complete.
+**Implementation notes:** The active-account trigger, privacy boundary,
+24-hour suppression, durable event/outbox record, and asynchronous delivery
+path are implemented. The login response does not wait for the email provider.
 
-**Test results:** No Phase 7 staging send/receive acceptance trace exists.
+**Test results:** Staging verification passed for the third-failure trigger,
+30-minute cooldown, provider acceptance, inbox receipt, and reset-link opening.
+The `Invalid credentials.` login copy is accepted product behavior. The phase
+is only partially closed because the account's 30-minute cooldown prevented
+same-window staging verification of fourth/fifth-attempt duplicate suppression.
+Local tests cover that suppression behavior.
 
 **Noteworthy:** This phase remains explicitly separate from ordinary lockout
 and from account-lifecycle reactivation behavior.
@@ -1063,13 +1402,16 @@ staff-override, and UX/accessibility gates are implemented and verified.
 
 #### Phase 7a — Trigger, suppression, privacy, and account-state decisions
 
-**Status:** Ready to be Developed
+**Status:** Partially closed; duplicate-suppression staging check remains
+limited by cooldown time
 
 **Implementation notes:** Trigger at the third consecutive failure, one email
 per account per rolling 24 hours, safe reset-link content, and active-account
-only handling are specified.
+only handling are implemented. Focused tests cover event/outbox creation and
+duplicate suppression.
 
-**Test results:** Not run; no Phase 7 runtime implementation is closed.
+**Test results:** Focused local Phase 7, lockout, auth-flow, and staff tests
+pass (13 tests). Staging verification is still required.
 
 **Noteworthy:** Unknown identifiers and deactivated/pending-deletion accounts
 must not create the active-account notification.
@@ -1107,13 +1449,21 @@ email, or interfere with reactivation behavior.
 
 #### Phase 7b — Delivery and staging evidence gate
 
-**Status:** Ready to be Developed
+**Status:** Implemented; staging trigger and delivery verified; duplicate-
+suppression staging check limited by cooldown time
 
 **Implementation notes:** Durable event/outbox delivery, provider failure
-handling, idempotency, and the required staging trace are specified.
+handling, idempotent 24-hour suppression, and asynchronous provider delivery
+are implemented. The staging trigger, provider acceptance, inbox receipt, and
+reset-link opening are verified; only same-window fourth/fifth suppression
+remains unexercised in staging because the account enters cooldown.
 
-**Test results:** Not run; provider acceptance and inbox-arrival evidence is
-still required.
+**Test results:** Local focused suite passes. Staging trigger, provider
+acceptance, inbox arrival, and reset-link opening passed on 2026-09-08.
+Fourth/fifth duplicate suppression was not tested in staging because the
+authorized account was correctly locked during the 30-minute cooldown. This
+is a time-limited verification gap, not a known implementation failure; local
+tests confirm the suppression logic.
 
 **Noteworthy:** A queued outbox row or source inspection alone cannot close the
 gate.
@@ -1127,13 +1477,14 @@ Verification gate: staging evidence must show, for a dedicated active test
 account, two failed attempts with no notification, the third consecutive
 failure starting the 30-minute cooldown, the provider accepting the message,
 and the message actually arriving at the account's authorized test inbox with
-the password-reset link present. The trace must also show that fourth and fifth
-failures do not send duplicate emails within the rolling 24-hour window, that
-a successful login resets the progressive counter, and that unknown/malformed
-identifiers plus deactivated/pending-deletion attempts follow their existing
-privacy/reactivation paths without this notification. Source inspection or a
-queued outbox row alone is not sufficient; no Phase 7 green flag may be raised
-until the staging send/receive trace is recorded.
+the password-reset link present. That trigger/delivery trace is recorded.
+Fourth and fifth failures must not send duplicate emails within the rolling
+24-hour window; this is locally tested but remains unexercised in staging due
+to the cooldown. A successful login must reset the progressive counter, and
+unknown/malformed identifiers plus deactivated/pending-deletion attempts must
+follow their existing privacy/reactivation paths without this notification.
+The Phase 7 green flag remains limited only by the cooldown-bound staging
+duplicate-suppression check and any separately listed lifecycle gates.
 
 ## 3. Non-negotiable rules
 
@@ -1433,8 +1784,8 @@ One refresh-token family represents one account-specific user-visible session:
   slot, not a client-supplied user ID or username.
 
 The server determines the current account/session from the presented
-account-specific refresh credential and its device-scoped session slot. The browser
-The web client never supplies a session ID or user ID to claim that it is
+account-specific refresh credential and its device-scoped session slot. The web
+client never supplies a session ID or user ID to claim that it is
 current.
 
 ### 8.3 Current implementation to preserve
@@ -1468,6 +1819,19 @@ outcomes into:
   configuration failure, malformed unexpected response, or another condition
   that does not prove the session is invalid. Local auth remains stored and the
   user remains in the app where possible.
+
+Deliberate security actions are a separate terminal outcome. When an operator
+or incident-response operation intentionally revokes the user's sessions, the
+API must return a machine-readable deliberate-revocation result that the web
+client can distinguish from ordinary expiry. The client then clears the
+affected local session and routes to the normal login screen with:
+
+> For your security, your session ended. Please sign in again.
+
+The normal confirmed-expiry or invalid-session path continues to use the
+generic session-expired/login experience. Ambiguous failures continue to
+preserve local auth and remain retryable. Neither path exposes internal
+incident details, revocation scope, account identifiers, or operator actions.
 
 The API should use appropriate status/code combinations so a deployment or
 configuration problem is not mislabeled as an invalid refresh session. The web
@@ -1607,7 +1971,7 @@ expired slot is shown as unavailable with clear re-authenticate/remove actions
 and must not affect other accounts.
 
 `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is server-only configuration. It defaults
-to `5` and must be validated at startup as an integer between `1` and `16`.
+to `4` and must be validated at startup as an integer between `1` and `16`.
 The browser client must not provide or override it. If an operator
 lowers the value below the number of existing slots, existing sessions remain
 usable and no account is silently removed; new additions are blocked until the
@@ -1773,22 +2137,33 @@ remembered account session slots or incorrectly log out the previously active ac
 ### 10.2 Password recovery
 
 Password recovery is part of the account lifecycle and uses the same privacy
-and OTP protections as signup:
+protections as signup, but uses an email reset link rather than an OTP:
+
+The complete password-recovery UX, email copy, reset-page states, and reset-link
+contract live in [`docs/forget-password.md`](forget-password.md). This section
+defines only the auth/session boundary and must not diverge from that document.
 
 1. An unauthenticated request accepts an email and always returns the same
    neutral response, whether or not an account exists.
-2. If appropriate, the account receives a six-character alphanumeric,
-   single-use password-reset OTP. Store only its hash, expire it after four
-   minutes, allow five attempts, invalidate older reset requests when a newer
-   one is issued, and rate-limit by IP, email, and device.
+2. If appropriate, the account receives a cryptographically random,
+   single-use password-reset link by email. Store only its hash, expire it
+   after 30 minutes, invalidate older reset requests when a newer one is
+   issued, and rate-limit by IP, email, and device.
 3. The user sets a new password using the standard 8–16 character policy.
 4. Successful recovery revokes every existing refresh-token family for that
-   account, invalidates remembered device session slots, creates a security
-   event, and requires a fresh login. Already-issued access tokens may remain
-   valid only until their documented short expiry.
+   account, invalidates remembered device session slots, and requires a fresh
+   login. A reset-specific security event remains a separate tracked recovery
+   hardening item; the current flow's session revocation is implemented.
+   Already-issued access tokens may remain valid only until their documented
+   short expiry.
 
-Recovery must not reveal whether an email exists, and reset OTPs must not
-appear in URLs, analytics payloads, browser history, or support screenshots.
+Recovery must not reveal whether an email exists. Reset tokens must not appear
+in logs, analytics payloads, or support screenshots; the reset URL is the
+intended one-time browser delivery mechanism.
+
+The shared reset-link and reset-page UX contract is defined in
+[`docs/forget-password.md`](forget-password.md); Phase 7 reuses that service
+without changing the ordinary user-requested reset flow.
 
 ### 10.3 CSRF protection
 
@@ -1880,11 +2255,20 @@ The initial permission model should support at least:
 - manage roles and permissions
 - view security/audit events
 
-Exact role names and additional permissions remain to be defined.
+The only seeded role is `superadmin`; additional roles are created as the
+product needs them. Permission keys are `staff.access`, `users.view`,
+`users.lock`, `users.unlock`, `sessions.revoke`, `roles.manage`, and `audit.view`.
+Role display names may be changed by a superadmin, but stable role keys and
+permission keys do not change.
+The initial release also supports additive direct user grants through a
+deduplicated `user_permission_grants` table. Grants never bypass server-side
+authorization, cannot create new permission keys, and are visible in the staff
+access review UI.
 
 ### 13.3 Privileged staff sessions
 
-Entering staff screens requires an OTP/MFA step once that capability exists.
+Entering staff screens requires a fresh staff step-up. OTP/MFA is the future
+stronger step-up mechanism once delivery or an authenticator is available.
 The privileged session should have:
 
 - 16 minutes of inactivity before re-authentication.
@@ -1981,6 +2365,7 @@ Likely additive schema areas:
 - device-scoped account session slots with opaque identifiers and
   account-specific session references
 - staff roles, permissions, and user-role assignments
+- additive per-user permission grants
 - account lock state and administrative audit fields
 - optional MFA/privileged-session records
 
