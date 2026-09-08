@@ -15,7 +15,7 @@ type LoginScreenProps = {
   mode?: 'page' | 'account-modal';
 };
 
-type AuthStep = 'login' | 'login-otp' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
+type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
 
 export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps) {
   const [email, setEmail] = useState('');
@@ -25,7 +25,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
-  const [step, setStep] = useState<AuthStep>('login');
+  const [step, setStep] = useState<AuthStep>('login-email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupOtp, setSignupOtp] = useState('');
@@ -37,7 +37,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
   const [errorMessage, setErrorMessage] = useState('');
   const [signupEmailAlreadyRegistered, setSignupEmailAlreadyRegistered] = useState(false);
 
-  const isLoginStep = step === 'login';
+  const isLoginEmailStep = step === 'login-email';
+  const isLoginPasswordStep = step === 'login-password';
   const isLoginOtpStep = step === 'login-otp';
   const isSignupEmailStep = step === 'signup-email';
   const isSignupPasswordStep = step === 'signup-password';
@@ -66,7 +67,16 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
     event.preventDefault();
     setErrorMessage('');
 
-    if (isLoginStep) {
+    if (isLoginEmailStep) {
+      if (!loginIdentifier.trim()) {
+        setErrorMessage('Please enter your email or username.');
+        return;
+      }
+      setStep('login-password');
+      return;
+    }
+
+    if (isLoginPasswordStep) {
       setIsSubmitting(true);
       try {
         const result = await login(loginIdentifier, password, { addAccount: mode === 'account-modal' });
@@ -211,7 +221,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
 
   function handleBackToLogin() {
     setErrorMessage('');
-    setStep('login');
+    setStep('login-email');
   }
 
   function finishAuthentication(session: AuthSession) {
@@ -232,8 +242,13 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
         {mode === 'page' ? <BrandLockup size="lg" /> : null}
         {errorMessage && <p className="login-error" role="alert">{errorMessage}</p>}
 
-        {isLoginStep && (
+        {isLoginEmailStep && (
           <>
+            <div className="login-step-copy" aria-label="Login step 1 of 2">
+              <p>Welcome back</p>
+              <span>Enter your email or username to continue.</span>
+            </div>
+
             <InputField
               label="Email or username"
               type="text"
@@ -243,6 +258,28 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
               autoComplete="username"
               required
             />
+
+            <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
+              {mode === 'page' ? <a className="signup-back-button login-back-button" href="/">Back</a> : null}
+              <Button className="login-submit" type="submit">
+                Continue
+              </Button>
+              {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
+            </div>
+
+            {mode === 'page' ? <p className="login-switch">Don’t have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
+          </>
+        )}
+
+        {isLoginPasswordStep && (
+          <>
+            <div className="login-step-copy" aria-label="Login step 2 of 2">
+              <p>Enter your password</p>
+              <button className="login-identifier-summary" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
+                {loginIdentifier}
+                <span>Change</span>
+              </button>
+            </div>
 
             <InputField
               label="Password"
@@ -266,21 +303,18 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
               }
             />
 
-            
-
             <button className="forgot-password" type="button">
               Forgot password?
             </button>
 
             <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
-              {mode === 'page' ? <a className="signup-back-button login-back-button" href="/">Back</a> : null}
+              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
+                Back
+              </button>
               <Button className="login-submit" type="submit">
                 {isSubmitting ? 'Please wait...' : 'Login'}
               </Button>
-              {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
             </div>
-
-            {mode === 'page' ? <p className="login-switch">Don’t have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
           </>
         )}
 
@@ -306,7 +340,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
             />
 
             <div className="signup-actions signup-actions-single">
-              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login'); }}>
+              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-password'); }}>
                 Back
               </button>
               <Button className="login-submit" type="submit">
@@ -343,7 +377,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
                   setLoginIdentifier(email);
                   setSignupEmailAlreadyRegistered(false);
                   setErrorMessage('');
-                  setStep('login');
+                  setStep('login-email');
                 }}
               >
                 Log in with this email
@@ -356,7 +390,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
                 type="button"
                 onClick={() => {
                   setErrorMessage('');
-                  setStep('login');
+                  setStep('login-email');
                 }}
               >
                 Back

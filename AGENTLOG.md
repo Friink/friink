@@ -7368,6 +7368,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: Staging runtime logs showed a PostgreSQL `UniqueViolation` on `uq_recognized_devices_user_token` for the deactivated account's retained device cookie.
 - Verification Status: Account lifecycle tests passed (`3 passed`); adjacent auth/account tests passed (`17 passed`); `git diff --check` passed.
 
+## 2026-09-08T05:30:00Z — Split login into two progressive steps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make login ask for the identifier first and the password second.
+- Changes Made: Added separate identifier and password steps with preserved identifier, Change/Back controls, password visibility toggle, existing forgot-password action, and unchanged OTP/lifecycle handling. Applied the same flow to the add-account modal and updated the design contract.
+- Files: `web/components/login-screen.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Reduce initial cognitive load and follow the standard progressive-disclosure login pattern without changing authentication semantics.
+- Verification Status: `npm run build` passed, including TypeScript validation and static generation; existing lint warnings remain unrelated.
+
 ## 2026-09-08T01:00:00Z — Repair deactivation fallback account recovery
 
 - Agent: Codex

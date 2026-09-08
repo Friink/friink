@@ -2,6 +2,11 @@
 
 ## 2026-09-08
 
+- [web/auth] Split login into progressive two-step identifier and password
+  screens, preserving the identifier with a clear change action.
+
+## 2026-09-08
+
 - [auth] Fixed reactivation for a recently deactivated account on the same
   browser. The existing revoked device record is restored instead of causing a
   duplicate-key database error that appeared in the UI as `Failed to fetch`.
