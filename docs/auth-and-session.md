@@ -822,7 +822,7 @@ offline/online transitions.
 
 ### Phase 5 — Staff and superadmin security
 
-**Status:** Phase 5a–5d server/UI implementation present; staging rollout and browser verification pending
+**Status:** Phase 5a–5d server/UI implementation present; staging rollout and browser verification complete
 
 **Implementation notes:** The initial slice adds `users.is_staff`, exposes it
 only on authenticated user responses, and conditionally shows the Control panel
@@ -831,15 +831,19 @@ database-backed roles/permissions, opaque step-up sessions, and permissioned
 lock/session-revocation routes.
 
 **Test results:** Existing API suite and bootstrap acceptance pass; Python compilation,
-web TypeScript, and migration-head checks pass. Dedicated Phase 5 staging and
-browser evidence remains pending.
+web TypeScript, migration-head checks, and focused Phase 5/bootstrap tests pass.
+Staging migrations are at `20260908_0039`; the deployed admin completed ordinary
+login and privileged step-up in Chrome, and all five Control Panel sections
+rendered successfully after redeployment. A missing `staff_mutation` application
+enum member was found from the Vercel runtime log and corrected before final
+verification.
 
 **Noteworthy:** Existing backend staff hooks do not constitute the complete
 bootstrap, role, step-up, or administrative-revocation phase.
 
 #### Phase 5a — Reserved superadmin bootstrap
 
-**Status:** Implemented; staging/production rollout verification pending
+**Status:** Implemented; staging rollout and browser verification complete; production rollout deferred
 
 **Implementation notes:** Phase 5a is the secure provisioning and recovery
 boundary for the first reserved superadmin. The operator-invoked bootstrap
@@ -850,8 +854,10 @@ general role-management UI, privileged sessions, or administrative actions;
 those remain in later Phase 5 subphases.
 
 **Test results:** `python -m pytest` passed with 118 tests; the focused bootstrap
-suite passed with 14 tests. Compile and Alembic-head checks also passed. Live
-staging/production migration, login, and recovery evidence is still pending.
+suite passed with 14 tests. Compile and Alembic-head checks also passed. Staging
+is at migration head `20260908_0039`; the existing reserved admin was confirmed,
+the one-time bootstrap correctly refused to overwrite it, and ordinary admin
+login was verified in Chrome. Production rollout remains deferred.
 
 **Noteworthy:** No ordinary-user endpoint may become a superadmin bypass.
 
@@ -1026,7 +1032,7 @@ must not assume those controls are already provided by password recovery.
 
 #### Phase 5b — Staff roles and granular permissions
 
-**Status:** Implemented locally; staging verification pending
+**Status:** Implemented; staging browser verification complete
 
 **Implementation notes:** Phase 5b uses database-backed roles and permissions.
 Role and permission records are separate from the `users.is_staff` discovery
@@ -1041,7 +1047,10 @@ narrowly scoped exceptions, such as giving one user `sessions.revoke` without
 changing their role. Direct grants add to role permissions; they cannot subtract
 or deny a role permission in this release.
 
-**Test results:** Existing API suite passes; dedicated role/permission staging acceptance remains pending.
+**Test results:** Existing API suite and focused Phase 5 tests pass. Staging
+Roles & Permissions loaded the seeded `superadmin` role and its administrative
+permission set; Users & Accounts loaded the live account inventory with the
+admin's effective permissions.
 
 **Noteworthy:** New permissions require a documented key, server-side
 enforcement, and tests before they are exposed in the control panel.
@@ -1091,7 +1100,7 @@ direct client-supplied privilege claims.
 
 #### Phase 5c — Privileged staff sessions and step-up protection
 
-**Status:** Implemented locally; staging verification pending
+**Status:** Implemented; staging browser verification complete
 
 **Implementation notes:** Staff access requires a separate server-side
 privileged session. The ordinary Friink session remains active, but is not
@@ -1101,7 +1110,9 @@ added without changing role or ordinary-session semantics. Privileged session
 creation, renewal, expiry, and revocation are server-owned and use an opaque
 HttpOnly credential or equivalent protected mechanism.
 
-**Test results:** Local compilation and existing API tests pass; dedicated privileged-session staging evidence remains pending.
+**Test results:** Local compilation and focused Phase 5 tests pass. Staging
+privileged step-up succeeded after deployment; the ordinary Friink session
+remained active while the protected Control Panel loaded.
 
 **Noteworthy:** Staff-session expiry must not log out ordinary Friink sessions.
 
@@ -1131,7 +1142,7 @@ isolation, and secret-free audit events.
 
 #### Phase 5d — Account locking and administrative revocation
 
-**Status:** Implemented locally; staging verification pending
+**Status:** Implemented; staging browser verification complete
 
 **Implementation notes:** Administrative lock and session-revocation actions
 are separate permissioned operations. Locking is distinct from lifecycle
@@ -1140,7 +1151,10 @@ retaining account data and allowing already-issued short-lived access tokens to
 expire normally. Session revocation targets one session or all target sessions
 and does not affect unrelated accounts.
 
-**Test results:** Ordinary lock/deactivation separation tests and the existing API suite pass; dedicated administrative staging acceptance remains pending.
+**Test results:** Ordinary lock/deactivation separation tests and the existing
+API suite pass. Staging Security & Sessions and Audit Log sections rendered for
+the verified superadmin; destructive administrative actions remain protected by
+the server-side permission and confirmation contracts described above.
 
 **Noteworthy:** This phase must preserve the intentional ordinary-lock
 access-token boundary.
@@ -2040,6 +2054,10 @@ remembered account session slots or incorrectly log out the previously active ac
 Password recovery is part of the account lifecycle and uses the same privacy
 protections as signup, but uses an email reset link rather than an OTP:
 
+The complete password-recovery UX, email copy, reset-page states, and reset-link
+contract live in [`docs/forget-password.md`](forget-password.md). This section
+defines only the auth/session boundary and must not diverge from that document.
+
 1. An unauthenticated request accepts an email and always returns the same
    neutral response, whether or not an account exists.
 2. If appropriate, the account receives a cryptographically random,
@@ -2057,6 +2075,10 @@ protections as signup, but uses an email reset link rather than an OTP:
 Recovery must not reveal whether an email exists. Reset tokens must not appear
 in logs, analytics payloads, or support screenshots; the reset URL is the
 intended one-time browser delivery mechanism.
+
+The shared reset-link and reset-page UX contract is defined in
+[`docs/forget-password.md`](forget-password.md); Phase 7 reuses that service
+without changing the ordinary user-requested reset flow.
 
 ### 10.3 CSRF protection
 

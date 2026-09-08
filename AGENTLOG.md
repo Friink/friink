@@ -1,5 +1,32 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T17:47:04Z — Consolidate password-recovery and Phase 7 UX contracts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve fragmented password-recovery UX and security requirements across the documentation set.
+- Changes Made: Made `docs/forget-password.md` the source of truth for ordinary reset UX, email copy, reset-link states, and recovery boundaries. Added explicit references from the auth/session architecture, synchronized the design authentication-copy rule and active password-recovery rule, and separated ordinary reset, lifecycle warning, and Phase 7 suspicious-login emails.
+- Files: `docs/forget-password.md`, `docs/auth-and-session.md`, `packages/design/design.md`, `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation cross-reference scan and `git diff --check` passed; no runtime behavior changed.
+
+## 2026-09-08T17:35:00Z — Synchronize Phase 5 artifacts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the project artifacts after Phase 5 staging closure.
+- Changes Made: Synchronized README, active rules, design guidance, auth/session architecture, and auth/session progress with the completed staging migration, bootstrap, admin step-up, and Control Panel verification. Recorded the deployed `staff_mutation` fix and retained production rollout as a separate gate.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Cross-document Phase 5 status scan and `git diff --check` passed.
+
+## 2026-09-08T17:27:00Z — Verify deployed Phase 5 control panel
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Retest staging after deployment and determine whether Phase 5 can close.
+- Findings: Vercel runtime logs showed `/staff/step-up` returning HTTP 500 because the deployed `SecurityEventType` enum lacked `staff_mutation`.
+- Changes Made: Added the missing application enum member; no environment or database changes were made.
+- Verification Status: Focused Phase 5/bootstrap tests passed (`10 passed`). After redeployment, staging admin step-up succeeded in Chrome; live Overview, Users & Accounts, Roles & Permissions, Security & Sessions, and Audit Log sections rendered successfully.
+
 ## 2026-09-08T16:45:00Z — Fix themed session recovery and local staging check
 
 - Agent: Codex

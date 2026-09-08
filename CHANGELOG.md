@@ -2,6 +2,25 @@
 
 ## 2026-09-08
 
+- [docs/auth] Consolidated password-recovery UX, reset-link states, security
+  email copy, and Phase 7 recovery boundaries in `docs/forget-password.md`.
+  Related auth, design, and rules documents now reference that source of truth.
+
+## 2026-09-08
+
+- [docs/auth] Synchronized the Phase 5a–5d status, staging evidence, Control
+  Panel design contract, rules, README, and progress record after live staging
+  verification. Production rollout remains a separate gate.
+
+## 2026-09-08
+
+- [staging/auth] Fixed the missing `staff_mutation` security-event enum member
+  that caused privileged staff step-up to return HTTP 500 in the deployed API.
+- [staging/auth] Verified admin step-up and all five Control Panel sections live
+  after redeployment; Phase 5 staging verification is complete.
+
+## 2026-09-08
+
 - [web/auth] Fixed the shared session-recovery fallback so it follows the
   Friink lifecycle/error design contract with the wordmark, home mark, themed
   actions, and responsive spacing. Transient reconnect failures now explain

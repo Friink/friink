@@ -762,3 +762,13 @@ The additive migration is `20260908_0038`. Bootstrap, focused Phase 5 tests,
 Python compilation, web TypeScript, and Alembic head checks pass. Staging
 migration/request checks and browser verification are still required; no
 production database was connected or mutated.
+
+## Phase 5 staging closure — 2026-09-08
+
+The staging database is at Alembic head `20260908_0039`, with no migration
+drift. The reserved staging admin already existed, so bootstrap correctly
+refused to overwrite it. After the deployed API enum fix for `staff_mutation`,
+Chrome verification confirmed ordinary admin login, privileged step-up, and
+successful rendering of Overview, Users & Accounts, Roles & Permissions,
+Security & Sessions, and Audit Log. The Phase 5a–5d staging gate is closed;
+production rollout remains a separate release gate.

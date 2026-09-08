@@ -26,8 +26,9 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
 
 Current auth/session scope: Phases 1–3 are closed, Phase 4 is closed for the
-current web/API-focused release, and Phase 5a staff discovery/bootstrap is
-implementation is present with staging rollout and browser verification pending.
+current web/API-focused release, and Phase 5a–5d staff discovery, bootstrap,
+roles, privileged sessions, and administrative security are implemented and
+verified on staging. Production rollout remains a separate release gate.
 Mobile authentication and
 session requirements are preserved separately in `docs/auth-and-session-mobile.md`
 and are deferred until a mobile client exists.
