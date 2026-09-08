@@ -2,6 +2,12 @@
 
 ## 2026-09-08
 
+- [web/control-panel] Refined `/cp` to use the shared tab and settings-row
+  patterns as a navigation shell only. Removed implied clickable actions and
+  labeled sections by their planned Phase 5 delivery boundary.
+
+## 2026-09-08
+
 - [web/control-panel] Replaced the first CP mock layout with a design-contract
   implementation using the shared `Tabs`, `ContentBox`, `PageSurface`, and
   `ListRow` primitives. Removed bespoke CP sizing, cards, spacing, and tab CSS.

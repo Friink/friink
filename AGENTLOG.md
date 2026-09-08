@@ -7542,3 +7542,19 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `ContentBox`/`PageSurface`/`Tabs` contracts.
 - Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
   production build or browser deployment verification was run.
+## 2026-09-08T14:00:00Z — Refine control-panel shell against Phase 5 boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Redo `/cp` using the design guide and existing components;
+  do not create a new component without approval.
+- Changes Made: Kept the existing shared `Tabs`, `ContentBox`, `PageSurface`,
+  and `ListRow` primitives. Removed misleading chevrons/click affordances from
+  the not-yet-wired CP rows and added honest Phase 5/planned status metadata.
+  No new component was introduced and no backend behavior changed.
+- Files: `web/components/control-panel-screen.tsx`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Reason: Phase 5a makes CP discoverability-only; the UI must not imply that
+  role, account, session, or audit actions are already server-authorized.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
+  deployment or browser verification was run.
