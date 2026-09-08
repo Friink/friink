@@ -1282,7 +1282,8 @@ issued access tokens through a security epoch, require explicit confirmation,
 and record auditable reasons and result counts. Operations require an explicit
 idempotency key so a completed retry returns the original result. A dedicated independent-admin
 containment operation also disables staff access, locks the account, and
-revokes privileged staff sessions. Rehearsal remains open.
+revokes privileged staff sessions. A controlled per-account rehearsal has
+completed locally; the platform-wide destructive rehearsal remains open.
 
 **Test results:** Phase 6 operation tests cover refresh/device/session counts,
 idempotent replay, and compromised-admin containment; the full API suite passes
@@ -1290,9 +1291,14 @@ idempotent replay, and compromised-admin containment; the full API suite passes
 was applied successfully to the staging database, and the localhost API smoke
 test using `.env.staging` returned database health 200. With a temporary local
 operations token, the route rejected a missing idempotency key with 400 and an
-unknown user with 404; no real account was changed. The destructive revocation
-rehearsal has not been run because the dedicated operations token is not
-configured in that environment. `alembic check` reports no schema drift.
+unknown user with 404. A disposable plus-address account then completed the
+local containment flow: signup returned 201, containment returned 200, the
+same idempotency key replayed 200 with the original result, and the pre-existing
+access token and refresh cookie both returned 401 afterward. No real account or
+platform-wide revoke-all operation was used. The live staging browser reached
+the login verification step, confirming the deployed web/API path is
+responding; that flow showed OTP is enabled in staging. `alembic check` reports
+no schema drift.
 
 **Noteworthy:** Production auth rows must not be manually edited as an
 operational workaround.

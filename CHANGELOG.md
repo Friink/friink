@@ -17,6 +17,10 @@
   key retirement.
 - Added bounded `JWT_CLOCK_SKEW_SECONDS` leeway with boundary coverage for
   rotation-safe expiry handling.
+- Completed a controlled local containment rehearsal against the staging
+  database using a disposable plus-address account: signup 201, containment
+  200, idempotent replay 200, and both pre-existing access and refresh
+  credentials rejected with 401 afterward.
 
 ## 2026-09-09
 
