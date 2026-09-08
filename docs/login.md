@@ -59,3 +59,6 @@ response-path defect and leave login dependent on notification delivery.
 This document records the behavior and proposed fix only. No runtime code,
 database schema, deployment configuration, or notification worker was changed
 for this investigation.
+Control Panel access is a separate staff step-up after ordinary login. The
+ordinary login session remains active when privileged staff access expires or
+is explicitly logged out.

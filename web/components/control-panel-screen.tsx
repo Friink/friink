@@ -1,5 +1,7 @@
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
+import { useEffect, useState } from 'react';
+import { listStaffRoles, listStaffUsers, staffMe, staffStepUp, staffLogout, type AuthSession, type StaffRole, type StaffUser } from '@/lib/auth';
 
 export type ControlPanelTab = 'overview' | 'users' | 'roles' | 'security' | 'audit';
 
@@ -46,14 +48,25 @@ const tabContent: Record<ControlPanelTab, { title: string; items: Array<{ icon: 
   },
 };
 
-export function ControlPanelScreen({ activeTab = 'overview' }: { activeTab?: ControlPanelTab }) {
+export function ControlPanelScreen({ activeTab = 'overview', session }: { activeTab?: ControlPanelTab; session?: AuthSession | null }) {
   const content = tabContent[activeTab];
+  const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [permissions, setPermissions] = useState<string[]>([]); const [users, setUsers] = useState<StaffUser[]>([]); const [roles, setRoles] = useState<StaffRole[]>([]); const [password, setPassword] = useState(''); const [needsStepUp, setNeedsStepUp] = useState(false);
+  useEffect(() => { if (!session) return; staffMe(session.accessToken).then((value) => { setPermissions(value.permissions); setNeedsStepUp(false); }).catch((err) => { setNeedsStepUp(err?.status === 401); setError(err?.message ?? 'Could not load staff access.'); }).finally(() => setLoading(false)); }, [session]);
+  useEffect(() => { if (!session || needsStepUp) return; if (activeTab === 'users') listStaffUsers(session.accessToken).then(setUsers).catch((err) => setError(err.message)); if (activeTab === 'roles') listStaffRoles(session.accessToken).then(setRoles).catch((err) => setError(err.message)); }, [activeTab, needsStepUp, session]);
+  async function verify() { if (!session) return; setLoading(true); setError(null); try { const value = await staffStepUp(session.accessToken, password); setPermissions(value.permissions); setNeedsStepUp(false); setPassword(''); } catch (err: any) { setError(err.message); } finally { setLoading(false); } }
+  if (loading) return <PageSurface className="simple-screen settings-screen" aria-label="Control panel loading"><div className="settings-panel"><p className="settings-field-message" role="status">Loading Control panel…</p></div></PageSurface>;
+  if (needsStepUp) return <PageSurface className="simple-screen settings-screen" aria-label="Staff verification"><div className="settings-panel"><div className="settings-section"><h2>Verify staff access</h2><p className="settings-field-message">Your ordinary Friink session stays active. Verify again to open protected staff tools.</p><input className="settings-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" /><button className="settings-primary-button" type="button" onClick={verify}>Verify</button>{error ? <p className="settings-field-message" role="alert">{error}</p> : null}</div></div></PageSurface>;
+  if (error && !permissions.length) return <PageSurface className="simple-screen settings-screen" aria-label="Control panel unavailable"><div className="settings-panel"><p className="settings-field-message" role="alert">{error}</p><button className="settings-secondary-button" type="button" onClick={() => window.location.reload()}>Retry</button></div></PageSurface>;
+  const allowed = (permission: string) => permissions.includes(permission);
+  if (!permissions.length) return <PageSurface className="simple-screen settings-screen" aria-label="No staff access"><div className="settings-panel"><p className="settings-field-message">Staff access has not yet been assigned to this account.</p></div></PageSurface>;
 
   return (
     <PageSurface className="simple-screen settings-screen" aria-label="Control panel content">
       <div className="settings-panel">
         <div className="settings-section" role="tabpanel" id={`control-panel-${activeTab}`} aria-label={content.title}>
-          {content.items.map((item) => (
+          {activeTab === 'users' && allowed('users.view') ? users.map((user) => <ListRow key={user.id} title={`@${user.username}`} subtitle={user.email} meta={user.account_locked ? 'Locked' : user.permissions.join(', ') || 'No permissions'} className="settings-row settings-row-expanded" />) : null}
+          {activeTab === 'roles' && allowed('roles.manage') ? roles.map((role) => <ListRow key={role.key} title={role.display_name} subtitle={`Stable key: ${role.key}`} meta={role.permissions.join(', ') || 'No permissions'} className="settings-row settings-row-expanded" />) : null}
+          {(activeTab === 'overview' || activeTab === 'security' || activeTab === 'audit') ? content.items.map((item) => (
             <ListRow
               key={item.title}
               avatar={<span className="settings-icon"><i className={item.icon} aria-hidden="true" /></span>}
@@ -62,7 +75,8 @@ export function ControlPanelScreen({ activeTab = 'overview' }: { activeTab?: Con
               meta={item.meta}
               className="settings-row settings-row-expanded"
             />
-          ))}
+          )) : null}
+          {error ? <p className="settings-field-message" role="alert">{error}</p> : null}
         </div>
       </div>
     </PageSurface>

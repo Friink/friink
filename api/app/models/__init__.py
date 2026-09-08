@@ -16,5 +16,6 @@ from app.models.security_event import SecurityEvent, SecurityEventType
 from app.models.account_session_slot import AccountSessionSlot
 from app.models.notification_outbox import NotificationChannel, NotificationOutbox, OutboxStatus
 from app.models.password_reset import PasswordResetToken
+from app.models.staff import StaffPermission, StaffRole, UserPermissionGrant, PrivilegedStaffSession
 
 __all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "Message", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]

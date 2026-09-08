@@ -822,14 +822,17 @@ offline/online transitions.
 
 ### Phase 5 — Staff and superadmin security
 
-**Status:** Bootstrap and staff discovery implemented; privileged administration pending
+**Status:** Phase 5a–5d server/UI implementation present; staging rollout and browser verification pending
 
 **Implementation notes:** The initial slice adds `users.is_staff`, exposes it
 only on authenticated user responses, and conditionally shows the Control panel
-entry in the shared drawer. The privileged administration plane is not
-implemented.
+entry in the shared drawer. The privileged administration plane now includes
+database-backed roles/permissions, opaque step-up sessions, and permissioned
+lock/session-revocation routes.
 
-**Test results:** Phase 5a local acceptance passed; staging/production rollout evidence remains pending.
+**Test results:** Existing API suite and bootstrap acceptance pass; Python compilation,
+web TypeScript, and migration-head checks pass. Dedicated Phase 5 staging and
+browser evidence remains pending.
 
 **Noteworthy:** Existing backend staff hooks do not constitute the complete
 bootstrap, role, step-up, or administrative-revocation phase.
@@ -921,7 +924,10 @@ secrets, or raw credential material.
 
 **UI boundary:** The web UI may show Control panel when the authenticated
 response reports `is_staff = true`. In Phase 5a this is discoverability only;
-the flag alone does not authorize privileged actions.
+the flag alone does not authorize privileged actions. A staff user with no
+assigned roles sees the Control panel entry but receives a calm empty state
+explaining that staff access has not yet been assigned; the UI must not imply
+that the user can perform administrative actions.
 
 **Rollout:** Apply the additive migration, deploy compatible API code, run the
 explicit `python -m scripts.bootstrap_admin --environment staging` command
@@ -1020,21 +1026,22 @@ must not assume those controls are already provided by password recovery.
 
 #### Phase 5b — Staff roles and granular permissions
 
-**Status:** Requirements Pending
+**Status:** Implemented locally; staging verification pending
 
 **Implementation notes:** Phase 5b uses database-backed roles and permissions.
 Role and permission records are separate from the `users.is_staff` discovery
-flag. The initial roles are `superadmin`, `admin`, `moderator`, and `support`.
-Each role has an immutable internal ID and stable key, plus an editable unique
-display name. Permission keys are stable system identifiers. Roles may be
-renamed and permissions may be assigned or removed from roles by a superadmin;
-staff users receive permissions through role assignments. The initial model also
-supports additive per-user permission grants for narrowly scoped exceptions,
-such as giving one support user `sessions.revoke` without changing the support
-role. Direct grants add to role permissions; they cannot subtract or deny a
-role permission in this release.
+flag. The only initially seeded role is `superadmin`. Other roles, such as
+`admin`, `moderator`, `support`, or a future `marketer`, are created only when
+needed by a superadmin. Each role has an immutable internal ID and stable key,
+plus an editable unique display name. Permission keys are stable system
+identifiers. Roles may be renamed and permissions may be assigned or removed
+from roles by a superadmin; staff users receive permissions through role
+assignments. The model also supports additive per-user permission grants for
+narrowly scoped exceptions, such as giving one user `sessions.revoke` without
+changing their role. Direct grants add to role permissions; they cannot subtract
+or deny a role permission in this release.
 
-**Test results:** Not run; this is the approved pre-implementation contract.
+**Test results:** Existing API suite passes; dedicated role/permission staging acceptance remains pending.
 
 **Noteworthy:** New permissions require a documented key, server-side
 enforcement, and tests before they are exposed in the control panel.
@@ -1052,9 +1059,6 @@ Initial role matrix:
 | Role | Initial permissions |
 | --- | --- |
 | `superadmin` | All current and future administrative permissions |
-| `admin` | `staff.access`, `users.view`, `users.lock`, `users.unlock`, `sessions.revoke`, `audit.view` |
-| `moderator` | `staff.access`, `users.view` |
-| `support` | `staff.access`, `users.view`, `sessions.revoke` |
 
 The superadmin role cannot be deleted, its key cannot be changed, and the last
 usable superadmin assignment cannot be removed or stripped of
@@ -1067,7 +1071,14 @@ privileged-session reference. A direct grant is unique per user/permission,
 must reference an active permission key, and can be revoked without changing
 the user's roles. Only a superadmin may create roles or change role permissions;
 the same authority controls direct user grants. The UI must show inherited role
-permissions separately from direct grants.
+permissions separately from direct grants. A user may have multiple roles, and
+the UI presents their combined effective access without duplicating the user in
+separate role-specific views. Control-panel tabs and actions are shown only
+when the current effective permissions allow them; unauthorized areas are not
+presented as usable controls. Direct grants appear in a separate
+**Additional access** section so users can distinguish them from inherited
+role permissions. A role such as `marketer` may therefore expose a dedicated
+Public site area without exposing user, security, or audit areas.
 Destructive UI changes require confirmation and must explain last-superadmin
 refusals.
 
@@ -1080,7 +1091,7 @@ direct client-supplied privilege claims.
 
 #### Phase 5c — Privileged staff sessions and step-up protection
 
-**Status:** Requirements Pending
+**Status:** Implemented locally; staging verification pending
 
 **Implementation notes:** Staff access requires a separate server-side
 privileged session. The ordinary Friink session remains active, but is not
@@ -1090,7 +1101,7 @@ added without changing role or ordinary-session semantics. Privileged session
 creation, renewal, expiry, and revocation are server-owned and use an opaque
 HttpOnly credential or equivalent protected mechanism.
 
-**Test results:** Not run; this is the approved pre-implementation contract.
+**Test results:** Local compilation and existing API tests pass; dedicated privileged-session staging evidence remains pending.
 
 **Noteworthy:** Staff-session expiry must not log out ordinary Friink sessions.
 
@@ -1106,7 +1117,11 @@ The control-panel UX distinguishes ordinary-login state from privileged access:
 a staff user may see the Control panel entry, encounter a step-up screen, see
 the remaining privileged-session state, and return to ordinary Friink without
 losing the personal session. Failed step-up attempts are generic, rate-limited,
-and audited without passwords or OTPs.
+and audited without passwords or OTPs. The UI provides explicit loading,
+denied, expired, and retry states. If staff status, role authority, or the
+privileged session is removed while the user is inside the panel, the current
+area changes to an access-lost state, protected controls disappear, and the
+user can return to ordinary Friink without being logged out.
 
 Verification gate: test step-up success/failure, privileged-session renewal,
 16-minute inactivity expiry, eight-hour maximum lifetime, permission changes
@@ -1116,7 +1131,7 @@ isolation, and secret-free audit events.
 
 #### Phase 5d — Account locking and administrative revocation
 
-**Status:** Requirements Pending
+**Status:** Implemented locally; staging verification pending
 
 **Implementation notes:** Administrative lock and session-revocation actions
 are separate permissioned operations. Locking is distinct from lifecycle
@@ -1125,8 +1140,7 @@ retaining account data and allowing already-issued short-lived access tokens to
 expire normally. Session revocation targets one session or all target sessions
 and does not affect unrelated accounts.
 
-**Test results:** Ordinary lock/deactivation separation tests passed; Phase 5d
-administrative acceptance tests have not been run.
+**Test results:** Ordinary lock/deactivation separation tests and the existing API suite pass; dedicated administrative staging acceptance remains pending.
 
 **Noteworthy:** This phase must preserve the intentional ordinary-lock
 access-token boundary.
@@ -1144,7 +1158,9 @@ sessions as distinct actions. It shows the target account using safe public
 metadata, explains whether existing access tokens remain valid until expiry,
 and never displays passwords, tokens, internal UUIDs, or private identity
 history. Bulk revocation requires explicit confirmation and reports only the
-server-authoritative result.
+server-authoritative result. Staff surfaces must provide intentional loading,
+empty, denied, success, and failure states; they must never render a blank
+panel when a protected request is unavailable.
 
 Verification gate: test lock/unlock policy, locked login and refresh behavior,
 target-session revocation, mass administrative actions, self-lockout
@@ -2132,10 +2148,11 @@ The initial permission model should support at least:
 - manage roles and permissions
 - view security/audit events
 
-The initial role set is `superadmin`, `admin`, `moderator`, and `support`.
-Permission keys are `staff.access`, `users.view`, `users.lock`, `users.unlock`,
-`sessions.revoke`, `roles.manage`, and `audit.view`. Role display names may be
-changed by a superadmin, but stable role keys and permission keys do not change.
+The only seeded role is `superadmin`; additional roles are created as the
+product needs them. Permission keys are `staff.access`, `users.view`,
+`users.lock`, `users.unlock`, `sessions.revoke`, `roles.manage`, and `audit.view`.
+Role display names may be changed by a superadmin, but stable role keys and
+permission keys do not change.
 The initial release also supports additive direct user grants through a
 deduplicated `user_permission_grants` table. Grants never bypass server-side
 authorization, cannot create new permission keys, and are visible in the staff

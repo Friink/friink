@@ -26,3 +26,6 @@ deployment-level recovery procedure.
 
 Reset tokens are not logged. Email delivery must be configured, and request
 rate limiting remains required before broad production rollout.
+Password recovery also revokes any active privileged Control Panel sessions
+for the account. The ordinary Friink session boundary remains governed by the
+existing refresh-family revocation contract.

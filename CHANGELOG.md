@@ -2,6 +2,44 @@
 
 ## 2026-09-08
 
+- [staging/auth] Applied migrations `20260908_0038` and `20260908_0039` to the
+  staging Neon database. Alembic reports no drift. The reserved staging
+  superadmin already existed, so the one-time bootstrap correctly refused to
+  overwrite it. Live API verification is pending because the deployed staging
+  API currently refuses connections.
+
+## 2026-09-08
+
+- [auth/phase-5] Implemented local Phase 5b–5d server boundaries: seeded
+  permission catalog and superadmin role migration, multi-role/direct-grant
+  evaluation, opaque privileged step-up sessions, staff status invalidation,
+  administrative lock/unlock, session revocation, audit events, and a
+  functional Control Panel loading/step-up/empty/error/data surface. Existing
+  API tests, Python compilation, web TypeScript, and Alembic head checks pass;
+  staging migration/request/browser verification remains open.
+
+## 2026-09-08
+
+- [docs] Synchronized `README.md`, `RULES.md`, and `packages/design/design.md`
+  with the current Phase 5a status and the agreed staff-role, permission, and
+  Control Panel UX contracts. Detailed auth/reset/login contracts remain in
+  `/docs`.
+
+## 2026-09-08
+
+- [docs/auth] Added the missing Control Panel UX contract: no-role empty
+  state, permission-based tab visibility, combined multi-role access,
+  separate direct-grant display, marketer/Public Site access boundaries, and
+  explicit loading/denied/expired/retry/access-lost states.
+
+## 2026-09-08
+
+- [docs/auth] Reduced the initial Phase 5 role seed to `superadmin` only.
+  Additional roles such as admin, moderator, support, or marketer are created
+  later by the superadmin when needed.
+
+## 2026-09-08
+
 - [web/control-panel] Removed the duplicate in-content CP heading and aligned
   the page structure with Settings by using the shared `simple-screen`,
   `settings-panel`, and `settings-section` composition.

@@ -14,6 +14,7 @@ from app.services.auth import get_user_by_email
 from app.services.security import hash_password
 from app.services.session_service import revoke_refresh_family
 from app.services.session_ops import commit
+from app.services.staff import revoke_staff_sessions
 
 RESET_TTL = timedelta(minutes=30)
 
@@ -46,5 +47,6 @@ async def complete_password_reset(session: Session, token: str, new_password: st
     user.password_hash = hash_password(new_password)
     for family in session.execute(select(RefreshToken.family_id).where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))).scalars().all():
         revoke_refresh_family(session, family, "password_reset", now)
+    revoke_staff_sessions(session, user.id, "password_reset")
     session.execute(update(AccountSessionSlot).where(AccountSessionSlot.user_id == user.id, AccountSessionSlot.revoked_at.is_(None)).values(revoked_at=now))
     await commit(session)

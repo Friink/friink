@@ -98,6 +98,24 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
   await requestApi<void>('/auth/password-reset/confirm', { method: 'POST', body: JSON.stringify({ token, new_password: newPassword }) });
 }
 
+export type StaffRole = { key: string; display_name: string; system: boolean; permissions: string[] };
+export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; permissions: string[] };
+export async function staffStepUp(accessToken: string, password: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
+  return requestApi('/staff/step-up', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ password }), skipAuthRefresh: true });
+}
+export async function staffMe(accessToken: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
+  return requestApi('/staff/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listStaffUsers(accessToken: string): Promise<StaffUser[]> {
+  return requestApi('/staff/users', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listStaffRoles(accessToken: string): Promise<StaffRole[]> {
+  return requestApi('/staff/roles', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function staffLogout(accessToken: string): Promise<void> {
+  await requestApi('/staff/logout', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+
 export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string };
 export type BlockedUserPage = { items: BlockedUser[]; next_cursor: string | null };
 type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null; blocked_at: string }>; next_cursor: string | null };

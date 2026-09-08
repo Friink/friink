@@ -25,10 +25,12 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Local development:** `localhost/localhost.ps1`, Next.js on port 3000, FastAPI on port 8000
 - **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
 
-Current auth/session scope: Phases 1–3 are closed, and Phase 4 is closed for
-the current web/API-focused release. Mobile authentication and session
-requirements are preserved separately in `docs/auth-and-session-mobile.md` and
-are deferred until a mobile client exists.
+Current auth/session scope: Phases 1–3 are closed, Phase 4 is closed for the
+current web/API-focused release, and Phase 5a staff discovery/bootstrap is
+implementation is present with staging rollout and browser verification pending.
+Mobile authentication and
+session requirements are preserved separately in `docs/auth-and-session-mobile.md`
+and are deferred until a mobile client exists.
 
 ## Local Development
 

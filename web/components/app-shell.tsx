@@ -1045,7 +1045,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onLogout={onLogout}
                     />
                   )}
-                  {activeScreen === 'control-panel' && <ControlPanelScreen activeTab={controlPanelTab} />}
+                  {activeScreen === 'control-panel' && <ControlPanelScreen activeTab={controlPanelTab} session={loadAuthSession()} />}
                   {activeScreen === 'messages' && <MessagesScreen activeTab={messagesTab} />}
                 </>
               )}

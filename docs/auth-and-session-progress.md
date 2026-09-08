@@ -752,3 +752,13 @@ device account inventory when the switcher opens and after Add account
 authentication completes; refresh results are ordered so an older in-flight
 request cannot replace a newer list. API account-slot acceptance tests passed
 (`2 passed`), the web TypeScript check passed, and the production build passed.
+## Phase 5b–5d local implementation checkpoint — 2026-09-08
+
+Database-backed staff roles, stable permission keys, additive direct grants,
+opaque privileged step-up sessions, server-side Control Panel authorization,
+staff-status invalidation, administrative lock/unlock, target-account session
+revocation, and shared security-event auditing are implemented locally.
+The additive migration is `20260908_0038`. Bootstrap, focused Phase 5 tests,
+Python compilation, web TypeScript, and Alembic head checks pass. Staging
+migration/request checks and browser verification are still required; no
+production database was connected or mutated.

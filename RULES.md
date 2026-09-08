@@ -141,6 +141,14 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/models/user.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `api/scripts/bootstrap_admin.py`
 - **Since:** 2026-09-08 (UTC)
 
+### Rule: Staff Access Uses Roles And Additive Direct Grants
+- **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
+- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. Tabs and actions are shown only when the current effective permission allows them. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
+- **Status:** Active; local implementation is present and staging verification remains pending.
+- **Platform:** Web/API
+- **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`
+- **Since:** 2026-09-08 (UTC)
+
 ### Rule: Password Recovery Uses Email Reset Links
 - **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
 - **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. `OTP_ENABLED=false` does not disable this separate email-token flow.

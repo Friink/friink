@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T15:31:00Z — Apply Phase 5 migrations to staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the Phase 5 database migration and prepare staging verification with OTP disabled.
+- Changes Made: Validated staging environment/frontend/Neon target without printing secrets; applied `20260908_0038` and follow-up index migration `20260908_0039`; confirmed Alembic has no drift. Attempted the reserved bootstrap, which correctly refused because staging already contains the reserved admin superadmin; no existing identity was overwritten.
+- Verification Status: Staging migration head is `20260908_0039`; `alembic check` passed. The deployed staging API at `https://staging-api.friink.com` currently refuses connections, so live request/response, browser verification, and a normal-flow test account could not yet be completed.
+
+## 2026-09-08T15:24:19Z — Implement Phase 5b–5d security boundaries
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and close Phase 5 authentication/session security from the repository contract.
+- Changes Made: Added staff permission/role/grant/privileged-session models and migration `20260908_0038`; server-side permission unions and opaque 16-minute idle/eight-hour privileged sessions; step-up/logout/me, role, grant, staff-status, lock/unlock, revoke-all, and audit routes; password-reset and staff-removal privileged-session invalidation; functional Control Panel loading, step-up, no-access, retry, and role/user data states.
+- Files: `api/app/models/staff.py`, `api/app/services/staff.py`, `api/app/schemas/staff.py`, `api/app/routers/staff.py`, `api/alembic/versions/20260908_0038_staff_security.py`, `api/app/services/password_reset.py`, `web/lib/auth.ts`, `web/components/control-panel-screen.tsx`, `web/components/app-shell.tsx`, auth docs and status logs.
+- Verification Status: Bootstrap regression `8 passed`; full API run emitted passing test dots; Python compile, web TypeScript, `git diff --check`, and Alembic head `20260908_0038` passed. Staging migration, real endpoint checks, browser verification, and production release verification were not performed.
+
 ## 2026-09-08T19:30:00Z — Add Phase 5 control-panel tabs
 
 - Agent: Codex
@@ -7575,3 +7592,54 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   primitives without duplicate page-level structure.
 - Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
   deployment or browser verification was run.
+## 2026-09-08T14:10:00Z — Reduce initial staff role seed
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the auth/session contract so only the superadmin role
+  is seeded initially; additional staff roles are created on demand.
+- Changes Made: Updated both Phase 5b and the broader staff/roles section in
+  `docs/auth-and-session.md`. The contract now seeds only `superadmin`, keeps
+  role creation and renaming available to superadmin, and treats admin,
+  moderator, support, marketer, and similar roles as future on-demand roles.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Avoid prebuilding unused staff roles while retaining the flexible
+  database-backed role and permission model.
+- Verification Status: Documentation consistency review completed; no stale
+  initial-role-set wording remains in the contract, and `git diff --check`
+  passed.
+## 2026-09-08T14:20:00Z — Complete Control Panel UX contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the agreed Control Panel UX in the appropriate
+  auth/session phases.
+- Changes Made: Added Phase 5a no-role empty-state behavior; Phase 5b
+  permission-based tab/action visibility, combined multi-role presentation,
+  separate Additional access display, and marketer/Public site scoping; Phase
+  5c access-lost and loading/denied/expired/retry states; and Phase 5d
+  intentional administrative loading/empty/error states.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Make the permission model understandable in the product while
+  preserving the distinction between staff discoverability and authorized
+  actions.
+- Verification Status: Documentation review completed; the new UX requirements
+  are present in Phases 5a, 5b, 5c, and 5d. `git diff --check` passed.
+## 2026-09-08T14:35:00Z — Documentation consistency audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify that the long auth/staff discussion is reflected in
+  AGENTLOG, CHANGELOG, RULES, design, README, and `/docs`.
+- Findings: `docs/auth-and-session.md` already contained the detailed Phase 5a–5d
+  logic and Control Panel UX contract. `docs/forget-password.md` and
+  `docs/login.md` were also present. `README.md` had a stale Phase 4-only auth
+  summary; `RULES.md` lacked the role/direct-grant staff rule; and
+  `packages/design/design.md` only described Control Panel discoverability.
+- Changes Made: Updated the README auth status, added the staff roles/multiple
+  roles/direct-grants/is_staff-off rule, and added the shared Control Panel UX
+  contract to the design guide. No runtime behavior changed.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`,
+  `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Cross-document stale-summary scan and `git diff --check`
+  passed; runtime tests were not applicable.
