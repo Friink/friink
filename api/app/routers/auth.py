@@ -4,7 +4,8 @@ from datetime import timedelta
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -356,11 +357,17 @@ async def login(
     payload: LoginRequest,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse | LoginChallengeResponse | LifecycleChallengeResponse:
     require_allowed_origin(request, settings)
-    user = await authenticate_user(session, payload.identifier, payload.password)
+    try:
+        user = await authenticate_user(session, payload.identifier, payload.password, background_tasks=background_tasks, settings=settings)
+    except HTTPException as exc:
+        if background_tasks.tasks:
+            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=exc.headers or {}, background=background_tasks)
+        raise
     if user.lifecycle_status in {"deactivated", "pending_deletion"}:
         if not settings.otp_enabled:
             reactivate_account(session, user, None)

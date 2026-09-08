@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T18:20:00Z — Implement Phase 7 failed-login notification path
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Develop Phase 7 before staging deployment and browser verification.
+- Changes Made: Added active-account failed-login alert creation at the third consecutive failure, rolling 24-hour suppression, durable security-event/email-outbox records, asynchronous reset-link email delivery, and response-safe background-task handling. Added focused Phase 7 tests and updated the Phase 7 status documents.
+- Files: `api/app/services/auth.py`, `api/app/services/email.py`, `api/app/services/failed_login_notifications.py`, `api/app/routers/auth.py`, `api/tests/test_phase7_failed_login.py`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`.
+- Verification Status: `13 passed` across Phase 7, lockout, auth-flow, and Phase 5 focused suites; staging send/receive verification remains open.
+
 ## 2026-09-08T17:47:04Z — Consolidate password-recovery and Phase 7 UX contracts
 
 - Agent: Codex

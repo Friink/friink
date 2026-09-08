@@ -2,6 +2,14 @@
 
 ## 2026-09-08
 
+- [auth/phase7] Implemented the active-account failed-login security alert at
+  the third consecutive failure, with rolling 24-hour suppression, durable
+  event/outbox records, asynchronous reset-link delivery, and no change to
+  generic login responses or existing cooldown tiers. Local focused tests pass;
+  staging provider and inbox verification remains pending.
+
+## 2026-09-08
+
 - [docs/auth] Consolidated password-recovery UX, reset-link states, security
   email copy, and Phase 7 recovery boundaries in `docs/forget-password.md`.
   Related auth, design, and rules documents now reference that source of truth.

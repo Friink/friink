@@ -91,3 +91,32 @@ class EmailService:
                 response.raise_for_status()
         except (httpx.HTTPError, ValueError) as exc:
             raise EmailDeliveryError("Email delivery failed.") from exc
+
+    async def send_failed_login_alert(self, email: str, reset_url: str) -> None:
+        if not self.settings.resend_api_key:
+            raise EmailDeliveryError("Email delivery is not configured.")
+        from_address = self._from_address("security")
+        if self.settings.resend_from_name.strip():
+            from_address = f"{self.settings.resend_from_name.strip()} <{from_address}>"
+        payload = {
+            "from": from_address,
+            "to": [email],
+            "subject": "Security alert for your Friink account",
+            "html": (
+                "<p>We noticed several unsuccessful sign-in attempts to your Friink account.</p>"
+                f"<p><a href=\"{escape(reset_url)}\">Reset your password</a></p>"
+                "<p>If this was you, reset your password to secure your account. "
+                "If it was not you, reset your password and review your account.</p>"
+                "<p>This link expires in 30 minutes and can only be used once.</p>"
+            ),
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {self.settings.resend_api_key}"},
+                    json=payload,
+                )
+                response.raise_for_status()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise EmailDeliveryError("Email delivery failed.") from exc

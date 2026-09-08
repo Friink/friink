@@ -4,6 +4,7 @@ import secrets
 import uuid
 
 from fastapi import HTTPException, status
+from fastapi.background import BackgroundTasks
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
@@ -20,8 +21,8 @@ from app.services.notifications import create_notification
 from app.services.otp import issue_signup_otp, verify_signup_otp
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
-from app.models.security_event import SecurityEventType
-from app.services.security_events import record_security_event
+from app.models.security_event import SecurityEvent, SecurityEventType
+from app.services.security_events import enqueue_email_hook, record_security_event
 
 LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, timedelta(hours=24)))
 LOCKOUT_ATTEMPTS = 5
@@ -339,7 +340,14 @@ async def change_password(session: Session, user: User, data: ChangePasswordRequ
     await commit(session)
 
 
-async def authenticate_user(session: Session, identifier: str, password: str) -> User:
+async def authenticate_user(
+    session: Session,
+    identifier: str,
+    password: str,
+    *,
+    background_tasks: BackgroundTasks | None = None,
+    settings=None,
+) -> User:
     user = await get_user_by_login_identifier(session, identifier)
     now = datetime.now(UTC)
 
@@ -368,7 +376,7 @@ async def authenticate_user(session: Session, identifier: str, password: str) ->
 
     if not user or not verify_password(password, user.password_hash):
         if user:
-            await register_failed_login(session, user)
+            await register_failed_login(session, user, background_tasks=background_tasks, settings=settings)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
     user.failed_login_attempts = 0
@@ -378,7 +386,13 @@ async def authenticate_user(session: Session, identifier: str, password: str) ->
     return user
 
 
-async def register_failed_login(session: Session, user: User) -> None:
+async def register_failed_login(
+    session: Session,
+    user: User,
+    *,
+    background_tasks: BackgroundTasks | None = None,
+    settings=None,
+) -> None:
     user.failed_login_attempts += 1
     for threshold, duration in reversed(LOCKOUT_SCHEDULE):
         if user.failed_login_attempts >= threshold:
@@ -391,6 +405,29 @@ async def register_failed_login(session: Session, user: User) -> None:
         user_id=user.id,
         payload={"kind": "failed_login"},
     )
+    if user.lifecycle_status == "active" and user.failed_login_attempts >= 3:
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
+        recent = session.execute(
+            select(SecurityEvent).where(
+                SecurityEvent.user_id == user.id,
+                SecurityEvent.event_type == SecurityEventType.failed_login,
+                SecurityEvent.created_at >= cutoff,
+                SecurityEvent.payload["kind"].as_string() == "failed_login_notification",
+            )
+        ).scalar_one_or_none()
+        if recent is None:
+            event = record_security_event(
+                session,
+                event_type=SecurityEventType.failed_login,
+                event_key=f"failed-login-notification:{user.id}:{uuid.uuid4()}",
+                user_id=user.id,
+                payload={"kind": "failed_login_notification"},
+            )
+            enqueue_email_hook(session, event.id)
+            if background_tasks is not None and settings is not None:
+                from app.services.failed_login_notifications import deliver_failed_login_alert
+
+                background_tasks.add_task(deliver_failed_login_alert, event.id, settings)
     await commit(session)
 
 

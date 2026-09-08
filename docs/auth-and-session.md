@@ -1308,10 +1308,11 @@ editing production authentication data.
 
 ### Phase 7 — Failed-login-attempt notification
 
-**Status:** Ready to be Developed
+**Status:** Implemented locally; staging verification pending
 
-**Implementation notes:** The trigger, privacy, suppression, lifecycle, and
-delivery contract is documented; runtime implementation is not complete.
+**Implementation notes:** The active-account trigger, privacy boundary,
+24-hour suppression, durable event/outbox record, and asynchronous delivery
+path are implemented. The login response does not wait for the email provider.
 
 **Test results:** No Phase 7 staging send/receive acceptance trace exists.
 
@@ -1342,13 +1343,15 @@ staff-override, and UX/accessibility gates are implemented and verified.
 
 #### Phase 7a — Trigger, suppression, privacy, and account-state decisions
 
-**Status:** Ready to be Developed
+**Status:** Implemented locally; staging verification pending
 
 **Implementation notes:** Trigger at the third consecutive failure, one email
 per account per rolling 24 hours, safe reset-link content, and active-account
-only handling are specified.
+only handling are implemented. Focused tests cover event/outbox creation and
+duplicate suppression.
 
-**Test results:** Not run; no Phase 7 runtime implementation is closed.
+**Test results:** Focused local Phase 7, lockout, auth-flow, and staff tests
+pass (13 tests). Staging verification is still required.
 
 **Noteworthy:** Unknown identifiers and deactivated/pending-deletion accounts
 must not create the active-account notification.
@@ -1386,13 +1389,14 @@ email, or interfere with reactivation behavior.
 
 #### Phase 7b — Delivery and staging evidence gate
 
-**Status:** Ready to be Developed
+**Status:** Implemented locally; staging verification pending
 
 **Implementation notes:** Durable event/outbox delivery, provider failure
-handling, idempotency, and the required staging trace are specified.
+handling, idempotent 24-hour suppression, and asynchronous provider delivery
+are implemented. The required staging trace remains open.
 
-**Test results:** Not run; provider acceptance and inbox-arrival evidence is
-still required.
+**Test results:** Local focused suite passes; provider acceptance and
+inbox-arrival evidence is still required.
 
 **Noteworthy:** A queued outbox row or source inspection alone cannot close the
 gate.

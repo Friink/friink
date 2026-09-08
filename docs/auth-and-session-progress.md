@@ -457,8 +457,8 @@ for this client-only fix.
 
 ### Decision record
 
-Phase 7 is planned but its verification gate is not passed. The notification
-will trigger on the third consecutive failed login for a normal active account,
+Phase 7 runtime work is implemented locally, but its verification gate is not
+passed. The notification triggers on the third consecutive failed login for a normal active account,
 when the existing 30-minute cooldown begins. This is the earliest existing
 lockout tier that avoids notifying on every ordinary typo or retry.
 
@@ -480,9 +480,10 @@ pending-deletion accounts remain on the separate `account-lifecycle.md`
 reactivation-modal flow and do not enter this active-account notification
 path.
 
-### Verification status — not a green flag
+### Verification status — staging gate open
 
-No staging send/receive evidence for Phase 7 is recorded in this checkout.
+Local API tests cover the trigger and 24-hour suppression, but no staging
+send/receive evidence for Phase 7 is recorded in this checkout.
 The required gate remains open until staging proves the third-failure trigger,
 provider acceptance, actual receipt in the authorized test inbox, the reset
 link, suppression of duplicate fourth/fifth-tier emails within 24 hours, and
