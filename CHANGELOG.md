@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-09
+
+- [web/auth] Fixed password-reset page alignment by using the same shared
+  centered auth-form structure as login and forgot-password. The production
+  web build passes.
+
+## 2026-09-08
+
+- [auth/email] Clarified Phase 7 suspicious-login email copy: explain the
+  detected attempts, distinguish recognized activity from unrecognized
+  activity, provide one `Reset password` action, and retain the 30-minute
+  single-use note.
+
+## 2026-09-08
+
+- [verification/phase7] Staging trigger and delivery passed: the third failed
+  login began the expected 30-minute cooldown, one alert arrived in the
+  authorized inbox, and its reset link opened the themed reset page. Duplicate
+  suppression remains untested in staging because the account is locked during
+  the cooldown. Live wrong-password copy still needs correction from
+  `Invalid credentials.` to the agreed neutral Friink wording.
+
 ## 2026-09-08
 
 - [auth/phase7] Implemented the active-account failed-login security alert at

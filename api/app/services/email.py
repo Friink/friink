@@ -103,11 +103,11 @@ class EmailService:
             "to": [email],
             "subject": "Security alert for your Friink account",
             "html": (
-                "<p>We noticed several unsuccessful sign-in attempts to your Friink account.</p>"
-                f"<p><a href=\"{escape(reset_url)}\">Reset your password</a></p>"
-                "<p>If this was you, reset your password to secure your account. "
-                "If it was not you, reset your password and review your account.</p>"
-                "<p>This link expires in 30 minutes and can only be used once.</p>"
+                "<p>We detected several unsuccessful sign-in attempts to your Friink account.</p>"
+                "<p>If you made these attempts, you can ignore this message. "
+                "If you don\u2019t recognize them, reset your password now.</p>"
+                f"<p><a href=\"{escape(reset_url)}\">Reset password</a></p>"
+                "<p>For your security, this link expires in 30 minutes and can only be used once.</p>"
             ),
         }
         try:

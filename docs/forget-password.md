@@ -52,7 +52,10 @@ The reset email is a mandatory security email, separate from marketing or
 notification preferences. It should use the subject `Security alert for your
 Friink account` when sent as part of a suspicious-login response, explain that
 unsuccessful sign-in attempts were detected, and provide one primary `Reset
-password` action. It must not include the submitted identifier, password, raw
+password` action. The preferred copy is: `We detected several unsuccessful
+sign-in attempts to your Friink account. If you made these attempts, you can
+ignore this message. If you don’t recognize them, reset your password now.`
+It must not include the submitted identifier, password, raw
 IP address, precise location, internal IDs, or raw token. Provider failure is
 an internal redacted delivery outcome and must not create an account-existence
 signal.

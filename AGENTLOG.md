@@ -1,5 +1,32 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09T00:10:00Z — Fix shared password-recovery auth layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct misalignment across the forget/reset password surfaces.
+- Changes Made: Moved the reset-password brand lockup inside the shared auth form structure used by login and forgot-password. This removes the unintended two-column flex layout and keeps all auth pages aligned through the existing shared design contract.
+- Files: `web/app/reset-password/page.tsx`, `AGENTLOG.md`.
+- Verification Status: Web production build passed; existing lint warnings remain unchanged. Redeployment is required for staging visual verification.
+
+## 2026-09-08T19:00:00Z — Clarify Phase 7 security-alert email copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace unclear and repetitive Phase 7 email wording.
+- Changes Made: Updated the suspicious-login email to explain the detected activity calmly, make clear when no action is needed, provide one `Reset password` action, and retain the 30-minute single-use security note. Synchronized the approved copy in `docs/forget-password.md`.
+- Files: `api/app/services/email.py`, `docs/forget-password.md`, `AGENTLOG.md`.
+- Verification Status: Source update complete; redeployment is required before live inbox verification.
+
+## 2026-09-08T18:50:00Z — Verify Phase 7 staging trigger and delivery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the newly deployed Phase 7 implementation in Chrome.
+- Changes Made: No runtime changes. Verified three controlled failed logins on staging, the expected 30-minute cooldown response, one received Friink security alert in the authorized Gmail inbox, and the alert's working password-reset link/page.
+- Files: None.
+- Verification Status: Trigger, provider delivery, inbox receipt, and reset-link presence passed. Fourth/fifth duplicate suppression could not be exercised because the account is correctly locked for 30 minutes. The first two live failures displayed `Invalid credentials.`, which conflicts with the agreed neutral UI copy and remains open.
+
 ## 2026-09-08T18:20:00Z — Implement Phase 7 failed-login notification path
 
 - Agent: Codex

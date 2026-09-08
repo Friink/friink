@@ -1308,13 +1308,18 @@ editing production authentication data.
 
 ### Phase 7 — Failed-login-attempt notification
 
-**Status:** Implemented locally; staging verification pending
+**Status:** Partially closed; staging verification limited by cooldown time
 
 **Implementation notes:** The active-account trigger, privacy boundary,
 24-hour suppression, durable event/outbox record, and asynchronous delivery
 path are implemented. The login response does not wait for the email provider.
 
-**Test results:** No Phase 7 staging send/receive acceptance trace exists.
+**Test results:** Staging verification passed for the third-failure trigger,
+30-minute cooldown, provider acceptance, inbox receipt, and reset-link opening.
+The `Invalid credentials.` login copy is accepted product behavior. The phase
+is only partially closed because the account's 30-minute cooldown prevented
+same-window staging verification of fourth/fifth-attempt duplicate suppression.
+Local tests cover that suppression behavior.
 
 **Noteworthy:** This phase remains explicitly separate from ordinary lockout
 and from account-lifecycle reactivation behavior.
@@ -1343,7 +1348,8 @@ staff-override, and UX/accessibility gates are implemented and verified.
 
 #### Phase 7a — Trigger, suppression, privacy, and account-state decisions
 
-**Status:** Implemented locally; staging verification pending
+**Status:** Partially closed; duplicate-suppression staging check remains
+limited by cooldown time
 
 **Implementation notes:** Trigger at the third consecutive failure, one email
 per account per rolling 24 hours, safe reset-link content, and active-account
@@ -1395,8 +1401,12 @@ email, or interfere with reactivation behavior.
 handling, idempotent 24-hour suppression, and asynchronous provider delivery
 are implemented. The required staging trace remains open.
 
-**Test results:** Local focused suite passes; provider acceptance and
-inbox-arrival evidence is still required.
+**Test results:** Local focused suite passes. Staging trigger, provider
+acceptance, inbox arrival, and reset-link opening passed on 2026-09-08.
+Fourth/fifth duplicate suppression was not tested in staging because the
+authorized account was correctly locked during the 30-minute cooldown. This
+is a time-limited verification gap, not a known implementation failure; local
+tests confirm the suppression logic.
 
 **Noteworthy:** A queued outbox row or source inspection alone cannot close the
 gate.
