@@ -1,5 +1,87 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T10:30:00Z — Implement Phase 5a reserved superadmin bootstrap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Harden the existing `api/scripts/bootstrap_admin.py` draft into a one-time, environment-safe, serialized reserved superadmin bootstrap command.
+- Changes Made: Added explicit `--environment` and `DATABASE_TARGET` validation; rejected development/local targets for staging/production; added PostgreSQL advisory transaction locking with `SERIALIZABLE` isolation and SQLite test serialization; added refusal handling for repeat, email, username, and configuration conflicts; reused `SignupRequest`, `validate_password_rules`, and the normal user builder; added confirmation/policy checks before hashing; extended `security_events` with redacted bootstrap success/refusal events; blocked the reserved admin email through signup reservation paths; added migration `20260908_0037` and focused acceptance tests.
+- Files: `api/scripts/bootstrap_admin.py`, `api/app/config.py`, `api/app/services/auth.py`, `api/app/services/security_events.py`, `api/app/models/security_event.py`, `api/alembic/versions/20260908_0037_bootstrap_security_events.py`, `api/tests/test_bootstrap_admin.py`, `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m pytest` passed: 118 passed, 86 warnings. Focused command suite passed: 14 passed. `python -m compileall -q app scripts tests/test_bootstrap_admin.py` passed. `python -m alembic heads` reports `20260908_0037 (head)`. No staging/production migration or live login was executed in this task. Implementation commit hash: `6267b45` (the commit before this log-only amendment).
+- Phase 5a Status: Implementation complete pending deployment migration and live staging verification; no staff dashboard, roles, permissions, or other Phase 5 subphases were implemented.
+
+## 2026-09-08T09:00:00Z — Phase 5a pre-implementation audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit Phase 5a prerequisites before writing bootstrap code; no runtime implementation requested.
+- Changes Made: Added this evidence-only audit entry. No code, migration, configuration, or database changes were made.
+
+### 1. Environment separation mechanism — Drift Detected
+
+- **Found:** The API has an explicit `ENVIRONMENT` setting. `api/app/config.py:10-16` loads `.env` by default and defines `ENVIRONMENT` with default value `development`; `api/app/config.py:51-53` treats only `production`/`prod` as production. The checked local files contain `ENVIRONMENT=staging` in `api/.env.staging:4` with `FRONTEND_URL=https://staging.friink.com` at `api/.env.staging:3`, and `ENVIRONMENT=production` in `api/.env:3` with `FRONTEND_URL=https://friink.com` at `api/.env:2`. Deployment documentation says the two Vercel projects are separately configured at `README.md:50-60`.
+- **Found:** There is no code path found that automatically loads `.env.staging`, and no code path found that falls back from staging to production or production to staging. `api/app/config.py:10` loads only `.env`; deployment values are supplied by the deployment environment. `api/app/main.py:30-41` uses the configured frontend URL and explicitly always adds the staging CORS origin.
+- **Drift:** The application does not validate that the database target, frontend URL, and environment name belong to the same environment. The staging file is not automatically selected by `Settings`; an operator who invokes a command without explicitly loading `.env.staging` can use the default `.env` target. Missing configuration can also fall back to `ENVIRONMENT=development` and `FRONTEND_URL=http://localhost:3000` via `api/app/config.py:12-16`. This is not a staging-to-production fallback branch, but it is insufficient target-environment enforcement for Phase 5a.
+
+### 2. Existing migration/startup conventions — Found
+
+- **Migrations that create or seed data:** `api/alembic/versions/20260903_0019_identity_foundation.py:16-20` backfills `username_key`; `:22-54` creates identity/history/reserved-username tables; `:56-66` seeds reserved usernames including `admin`, `staff`, `media`, `support`, and `security`. `api/alembic/versions/20260831_0011_add_profile_setup_state.py:21` backfills `users.setup_completed`. `api/alembic/versions/20260905_0030_user_public_handles.py:17` backfills public IDs. `api/alembic/versions/20260903_0020_harden_otp_storage.py:15-20` adds OTP enum values and hardens existing OTP rows. Other migrations create tables or alter enum/schema state; none inspected creates the superadmin account.
+- **Startup:** `api/app/main.py:19-28` constructs the FastAPI app and logs a redacted JWT fingerprint; `api/app/main.py:29-57` configures CORS and includes routers; `api/app/main.py:60-70` defines root/database-health routes. No `startup`, `lifespan`, `on_event`, `create_all`, or user-seeding hook was found in production app startup. `api/alembic/env.py:16-24` imports metadata and resolves the configured database URL for Alembic; it does not seed users.
+- **Conclusion:** Existing migrations and startup conventions must not be reused for Phase 5a bootstrap. The superadmin must remain a standalone operator-invoked command.
+
+### 3. Reserved-identity uniqueness enforcement — Drift Detected
+
+- **Found:** Email uniqueness is enforced at the database level by the unique `users.email` column in `api/app/models/user.py:21` and by the case-insensitive unique index `uq_users_email_casefold` in `api/app/models/user.py:16`, created by `api/alembic/versions/20260905_0029_casefold_email_uniqueness.py:15`. Username uniqueness is enforced by the unique `username_key` index in `api/app/models/user.py:15` and `api/alembic/versions/20260903_0019_identity_foundation.py:20`; the reserved-name registry also has a unique `username_key` constraint at `api/alembic/versions/20260903_0019_identity_foundation.py:46-54`.
+- **Found:** Ordinary signup performs application-level prechecks in `api/app/services/auth.py:59-63`, but the database constraints remain the authoritative concurrent-write boundary.
+- **Drift:** There is no database-level superadmin uniqueness invariant because no role/superadmin assignment table exists yet. `is_staff` is a non-unique boolean at `api/app/models/user.py:36`, intentionally allowing multiple staff users. The current bootstrap command at `api/scripts/bootstrap_admin.py:19-44` checks only the target email and does not acquire a database lock, check an existing superadmin invariant, explicitly check the username conflict, or provide conflict/rollback audit behavior. Email/username uniqueness prevents duplicate rows for the same identity, but additional transaction serialization and explicit conflict handling are still needed to prevent concurrent or partial bootstrap outcomes.
+
+### 4. Audit event infrastructure — Found
+
+- **Found:** The durable `security_events` table is defined by `api/app/models/security_event.py:21-35`. Its schema includes UUID `id`, unique `event_key`, nullable `user_id`, `session_id`, and `device_id`, enum `event_type`, JSON `payload`, and `created_at`; indexes cover user/time and event-type/time at `api/app/models/security_event.py:23-25`.
+- **Found:** The table and enum are created by `api/alembic/versions/20260906_0032_security_events_outbox.py:17-40`. Events are written through `record_security_event` in `api/app/services/security_events.py:13-39`, and current uses include login, refresh, logout, and refresh-reuse paths in `api/app/routers/auth.py:303-306`, `:553-556`, `:617-620`, and `:674-713`, plus failed login in `api/app/services/auth.py:355-357`.
+- **Gap:** No bootstrap, superadmin, role-assignment, or operator-recovery event type/use was found. The existing mechanism is a reusable security-event primitive, but it does not yet provide Phase 5a-specific audit behavior or append-only enforcement. Phase 5a should extend/use this existing primitive rather than design an audit table from scratch.
+
+### 5. Password service reuse — Drift Detected
+
+- **Found:** Password hashing and verification are in `api/app/services/security.py:19-24`: `hash_password(password: str) -> str` uses bcrypt and `verify_password(password, password_hash) -> bool` verifies it.
+- **Found:** The exact 8–16 character policy is `validate_password_rules` in `api/app/schemas/auth.py:11-26`, requiring uppercase, lowercase, digit, special character, and no whitespace. Signup invokes it through `api/app/schemas/auth.py:47-54`; password reset invokes it through `api/app/schemas/auth.py:200-207`.
+- **Drift:** The current bootstrap command calls `hash_password` at `api/scripts/bootstrap_admin.py:12` and `:31`, but it does not call `validate_password_rules`. Bootstrap therefore does not yet enforce the documented 8–16 character policy before hashing. The future command must reuse both the policy validator and `hash_password` without accepting a password as a command-line argument or persisting it in configuration.
+
+### 6. Reset-link flow confirmation — Drift Detected
+
+- **Found:** `docs/forget-password.md:3-13` accurately describes email-only recovery, generic responses, hashed single-use tokens, 30-minute expiry, refresh-session revocation, and independence from `OTP_ENABLED`. The implementation creates and hashes a 48-byte URL-safe token in `api/app/services/password_reset.py:25-34`, consumes it and checks expiry in `:37-46`, revokes refresh families and account slots in `:47-50`, and sends the link through `api/app/routers/auth.py:738-755`. The confirmation endpoint is `api/app/routers/auth.py:758-767`.
+- **Found:** The reset UI calls the implemented API through `web/lib/auth.ts:93-98` and uses the reset page at `web/app/reset-password/page.tsx:1-33`. It accepts email only in the login recovery step at `web/components/login-screen.tsx:75-92`.
+- **Drift:** The documentation correctly notes at `docs/forget-password.md:27-28` that rate limiting is required, but no password-reset-specific rate limiting implementation was found in `api/app/routers/auth.py:738-767` or `api/app/services/password_reset.py:25-50`. The auth contract also requires invalidating older reset requests, which the implementation does at `api/app/services/password_reset.py:29-32`. No reset-specific security event is created after successful recovery; the current docs do not claim one, but Phase 5a’s broader audit requirement should not be assumed to be met by the reset flow.
+
+- Verification Status: Audit-only; no runtime files, migrations, configuration, or database rows changed. No new files were created.
+
+## 2026-09-08T08:30:00Z — Complete Phase 5a architecture contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fill the remaining Phase 5a requirements in `docs/auth-and-session.md` before implementation.
+- Changes Made: Defined reserved identity, execution/configuration boundaries, one-time/concurrency behavior, password handling, account initialization, recovery, audit, UI boundary, rollout sequence, and expanded verification gate. No runtime code or database changes were made.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; checked against the existing password-recovery and staff-discovery contracts.
+
+## 2026-09-08T08:00:00Z — Fix password-reset return-to-login flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the broken success-state Return to login action on the password-reset page.
+- Changes Made: Clear the browser’s local Friink session before navigating to `/login`, ensuring the fresh-login requirement is honored after server-side session revocation; applied shared back-link styling.
+- Files: `web/app/reset-password/page.tsx`, `AGENTLOG.md`.
+- Verification Status: Standalone TypeScript validation pending.
+
+## 2026-09-08T07:30:00Z — Fix password-reset form usability
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and correct the password-reset page shown in the attached screenshot.
+- Changes Made: Added visible placeholders, password visibility toggles, shared password criteria, and a dark-mode `--color-ink` override.
+- Files: `web/app/reset-password/page.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Standalone TypeScript validation pending.
+
 ## 2026-09-08T07:00:00Z — Add password recovery and initial staff discovery
 
 - Agent: Codex

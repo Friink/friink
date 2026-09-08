@@ -16,6 +16,8 @@ class SecurityEventType(str, enum.Enum):
     refresh = "refresh"
     logout = "logout"
     refresh_reuse_detected = "refresh_reuse_detected"
+    bootstrap_succeeded = "bootstrap_succeeded"
+    bootstrap_refused = "bootstrap_refused"
 
 
 class SecurityEvent(Base):

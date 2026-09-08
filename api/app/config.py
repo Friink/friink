@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     database_url: str = Field(default="", alias="DATABASE_URL")
+    database_target: str = Field(default="", alias="DATABASE_TARGET")
     frontend_url: AnyHttpUrl | str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
     environment: str = Field(default="development", alias="ENVIRONMENT")
     otp_enabled: bool = Field(default=True, alias="OTP_ENABLED")

@@ -838,10 +838,11 @@ bootstrap, role, step-up, or administrative-revocation phase.
 
 **Status:** Requirements Pending
 
-**Implementation notes:** The controlled bootstrap command is implemented for
-the reserved `admin@friink.com` / `@admin` account. It prompts for the password,
-refuses to overwrite an existing account, and marks the account as staff. The
-full superadmin security boundary remains pending.
+**Implementation notes:** Phase 5a is the secure provisioning and recovery
+boundary for the first reserved superadmin. It does not implement the staff
+dashboard, general role-management UI, privileged sessions, or administrative
+actions; those remain in later Phase 5 subphases. The current bootstrap command
+is only the initial implementation slice.
 
 **Test results:** Not run.
 
@@ -851,9 +852,159 @@ Implement a one-time, deployment-safe reserved superadmin bootstrap with
 strong password handling, explicit configuration validation, protected audit
 events, and safeguards against accidental takeover or repeated bootstrap.
 
+#### Phase 5a contract
+
+**Reserved identity:** The first superadmin has the fixed reserved identity
+`admin@friink.com` and `@admin`. Email matching is case-insensitive and
+username matching uses the canonical username key. Both values must be reserved
+before ordinary signup can use them. Bootstrap must not accept arbitrary
+identity values from a client request.
+
+**Source of truth:** The account is an ordinary `users` record with
+`is_staff = true` and the normal active/verified account state. It uses the
+same database and ordinary login flow. Role and permission assignment becomes
+authoritative in Phase 5b; no ordinary-user endpoint may grant staff or
+superadmin status.
+
+**Execution boundary:** Bootstrap runs only through an explicit operator-
+invoked deployment/server command or protected one-time job. It must not run
+during application startup, signup, login, refresh, or a browser request. The
+target environment must be explicit; staging and production configuration must
+never fall back to one another.
+
+**Configuration validation:** Validate the target database, environment name,
+JWT/security configuration, and reserved identity before opening a write
+transaction. The operator must provide an explicit `--environment` and the
+deployment settings must contain matching `ENVIRONMENT`, `DATABASE_TARGET`,
+`DATABASE_URL`, and `FRONTEND_URL` values. Reject missing, malformed,
+ambiguous, or development-only configuration for production. Never print
+connection strings, secrets, tokens, or password data.
+
+**One-time and concurrency behavior:** A successful existing bootstrap is a
+refusal, not an update. Refuse existing superadmins, email conflicts, username
+conflicts, and inconsistent target records. Use database uniqueness constraints
+plus a transaction and database-level serialization so concurrent invocations
+cannot create duplicates or partial identities. Failed transactions must leave
+no staff record, password hash, or misleading success audit event.
+
+**Password handling:** Prompt through interactive secret input or approved
+secret injection. Never accept a password in command-line arguments, a
+migration, source, an ordinary environment file, logs, or API responses.
+Enforce the normal 8–16 character policy, request confirmation, hash through
+the existing password service, and return a non-zero status on mismatch or
+policy failure.
+
+**Account initialization:** Create an active, verified, staff-enabled account
+through the normal user schema. Do not overwrite profile, password, lifecycle,
+or security fields on an existing record. The account must be usable through
+ordinary login.
+
+**Recovery:** After provisioning, use the ordinary email reset-link flow in
+`docs/forget-password.md`. Successful recovery revokes refresh sessions and
+requires fresh login. If mailbox access is lost, recovery is a separately
+protected deployment/server operation; there is no ordinary-user superadmin
+bypass.
+
+**Audit:** Record immutable, redacted events for successful bootstrap, repeat or
+conflict refusals, invalid configuration, and operator-level recovery. Events
+must not contain passwords, reset tokens, token hashes, database URLs, JWT
+secrets, or raw credential material.
+
+**UI boundary:** The web UI may show Control panel when the authenticated
+response reports `is_staff = true`. In Phase 5a this is discoverability only;
+the flag alone does not authorize privileged actions.
+
+**Rollout:** Apply the additive migration, deploy compatible API code, run the
+explicit `python -m scripts.bootstrap_admin --environment staging` command
+against staging, verify login and recovery, then repeat with
+`--environment production`. Do not create the account through an Alembic
+migration or startup hook.
+
 Verification gate: test first-run bootstrap, rerun behavior, invalid
 configuration, secret rotation, recovery, and absence of superadmin bypasses
-through ordinary user APIs.
+through ordinary user APIs. Also test email/username conflicts, concurrent
+invocations, rollback, password-policy failures, redacted audit events,
+environment separation, ordinary login, refresh-session revocation after
+reset, and the Control panel discoverability boundary.
+
+#### Phase 5a pre-implementation audit
+
+The following audit was completed before further Phase 5a implementation. The
+findings are evidence-based and identify prerequisites or implementation drift;
+they do not change the Phase 5a status above.
+
+**1. Environment separation — Drift Detected.** `api/app/config.py:10-16`
+defines an explicit `ENVIRONMENT` setting, but loads only `.env` by default;
+there is no automatic `.env.staging` selection. `api/.env.staging:3-4` and
+`api/.env:2-3` contain distinct frontend/environment values, while
+`README.md:50-60` documents separate deployment projects. No staging-to-
+production or production-to-staging fallback branch was found. However, the
+application does not validate that database target, frontend URL, and
+environment name belong together, and missing values can fall back to
+development/local defaults in `api/app/config.py:12-16`. Phase 5a therefore
+needs explicit target-environment validation.
+
+**2. Migration/startup conventions — Found.** Data-changing migrations exist,
+including reserved-username seeding in
+`api/alembic/versions/20260903_0019_identity_foundation.py:16-20,56-66`, a
+profile-state backfill in `api/alembic/versions/20260831_0011_add_profile_setup_state.py:21`,
+and public-handle backfill in
+`api/alembic/versions/20260905_0030_user_public_handles.py:17`. Application
+startup in `api/app/main.py:19-70` configures the FastAPI app, CORS, routers,
+and health routes only; no startup/lifespan user seeding hook was found.
+`api/alembic/env.py:16-24` only configures Alembic metadata and the database
+URL. None of these mechanisms creates the superadmin, and Phase 5a must use a
+standalone operator-invoked command.
+
+**3. Reserved-identity uniqueness — Drift Detected.** Database-level email
+uniqueness is present on `users.email` at `api/app/models/user.py:21` and via
+the case-insensitive index at `api/app/models/user.py:16`, created by
+`api/alembic/versions/20260905_0029_casefold_email_uniqueness.py:15`.
+Canonical username uniqueness is enforced at
+`api/app/models/user.py:15` and
+`api/alembic/versions/20260903_0019_identity_foundation.py:20`.
+`is_staff` is intentionally non-unique at `api/app/models/user.py:36`, and no
+database-level superadmin invariant exists. The current command at
+`api/scripts/bootstrap_admin.py:19-44` checks only the reserved email and does
+not yet serialize concurrent invocations or explicitly handle all identity
+conflicts. Existing identity constraints prevent duplicate email/username
+rows, but Phase 5a still needs transaction serialization and explicit
+conflict/rollback behavior.
+
+**4. Audit event infrastructure — Found.** The existing `security_events`
+primitive is defined at `api/app/models/security_event.py:21-35` with UUID
+identity, unique event key, optional user/session/device references, event
+type, JSON payload, and timestamp. It is created by
+`api/alembic/versions/20260906_0032_security_events_outbox.py:17-40` and
+written through `api/app/services/security_events.py:13-39`; current uses are
+login, refresh, logout, refresh-reuse, and failed-login paths at
+`api/app/routers/auth.py:303-306,553-556,617-620,674-713` and
+`api/app/services/auth.py:355-357`. No bootstrap, superadmin, or operator-
+recovery event use was found. Phase 5a should extend this primitive rather
+than introduce a second audit table.
+
+**5. Password service reuse — Drift Detected.** `hash_password` and
+`verify_password` are defined in `api/app/services/security.py:19-24`.
+The required 8–16 character policy is `validate_password_rules` in
+`api/app/schemas/auth.py:11-26`, used by signup at `:47-54` and reset at
+`:200-207`. The current bootstrap command imports/calls `hash_password` at
+`api/scripts/bootstrap_admin.py:12,31` but does not call
+`validate_password_rules`; the command must reuse both services and keep
+plaintext credentials out of arguments, configuration, and logs.
+
+**6. Reset-link flow — Drift Detected.**
+`docs/forget-password.md:3-13` matches the implemented email-only,
+generic-response, hashed single-use token, 30-minute expiry, and session
+revocation behavior. The implementation is in
+`api/app/services/password_reset.py:25-50` and
+`api/app/routers/auth.py:738-767`; the UI calls it through
+`web/lib/auth.ts:93-98` and `web/app/reset-password/page.tsx:1-33`.
+Previously issued tokens are invalidated at
+`api/app/services/password_reset.py:29-32`. Drift remains because the doc
+identifies reset-specific rate limiting as required at
+`docs/forget-password.md:27-28`, but no such limiter was found in the reset
+router/service, and no reset-specific security event is emitted. Phase 5a
+must not assume those controls are already provided by password recovery.
 
 #### Phase 5b — Staff roles and granular permissions
 

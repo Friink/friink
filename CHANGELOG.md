@@ -2,6 +2,34 @@
 
 ## 2026-09-08
 
+- [auth/bootstrap] Hardened the reserved superadmin bootstrap command with
+  explicit environment/database targeting, PostgreSQL transaction
+  serialization, conflict/refusal handling, normal signup validation,
+  redacted bootstrap security events, and rollback-safe account creation.
+- [db] Added bootstrap security-event enum values and documented the required
+  `DATABASE_TARGET` deployment setting.
+- [tests] Added bootstrap acceptance coverage for first run, rerun and identity
+  conflicts, password failures, concurrent execution, environment ambiguity,
+  confirmation mismatch, and secret-free event payloads.
+
+## 2026-09-08
+
+- [docs/auth] Expanded Phase 5a into an implementation-ready contract covering
+  reserved identity, execution/configuration boundaries, concurrency, password
+  handling, recovery, audit, UI scope, rollout, and acceptance evidence.
+
+## 2026-09-08
+
+- [web/auth] Fixed password-reset success navigation by clearing stale local
+  auth state before returning to login.
+
+## 2026-09-08
+
+- [web/auth] Fixed password-reset dark-mode contrast and blank fields, and
+  added visibility toggles plus the shared password requirements checklist.
+
+## 2026-09-08
+
 - [auth/staff] Added email-only password reset links with single-use hashed
   tokens, 30-minute expiry, refresh-session revocation, and a reset page.
 - [staff] Added the authenticated `is_staff` flag, conditional Control panel
