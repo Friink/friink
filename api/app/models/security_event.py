@@ -20,6 +20,7 @@ class SecurityEventType(str, enum.Enum):
     bootstrap_refused = "bootstrap_refused"
     staff_access = "staff_access"
     staff_session = "staff_session"
+    staff_mutation = "staff_mutation"
 
 
 class SecurityEvent(Base):
