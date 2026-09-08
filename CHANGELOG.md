@@ -2,6 +2,12 @@
 
 ## 2026-09-09
 
+- [documentation] Synchronized the README, rules, design contract, and auth
+  incident documentation with the `development` branch workflow and isolated
+  development database verification. Clarified that Phase 6 implementation is
+  present while deployment-level rotation compatibility and partial-failure
+  recovery rehearsals remain open; no runtime behavior changed.
+
 - [development] Created the local `api/.env.development` from the staging
   configuration and applied the current Alembic head to the newly supplied
   development database; `alembic check` reports no drift.

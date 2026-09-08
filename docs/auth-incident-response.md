@@ -60,6 +60,12 @@ that already-revoked records remain revoked. A deployment rollback must keep
 the old and new token-verification keys compatible until all tokens issued by
 the newer deployment have passed their safety window.
 
+Local development rehearsals should use the isolated development database and
+the same non-secret variable contract as staging. They can validate migration,
+idempotency, partial-failure recovery, and redaction behavior, but they do not
+replace a deployed mixed-version or Vercel rollback rehearsal. Never point a
+development rehearsal at staging or production merely to obtain test data.
+
 ## User communication
 
 Users receive the normal login route after deliberate session invalidation. The

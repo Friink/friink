@@ -1191,7 +1191,7 @@ release gate with separately confirmed credentials and configuration.
 
 ### Phase 6 — Operations and incident response
 
-**Status:** Implementation complete; final partial-failure rehearsal pending
+**Status:** Implementation complete; final operational rehearsals pending
 
 **Implementation notes:** Deployment migration gating, security-event plumbing,
 per-user/all-account deliberate session invalidation, security epochs, and the
@@ -1216,8 +1216,9 @@ release.
 **Test results:** Current migration heads were verified on staging and
 production.
 
-**Noteworthy:** Compatibility-window and rollback rehearsals remain operational
-follow-ups.
+**Noteworthy:** The coordinated staging rollback/restoration rehearsal is
+complete. A compatible mixed-runtime rollback check remains an operational
+follow-up.
 
 Implement forward migrations, compatibility windows, rollback procedures, and
 startup checks for auth/session schema and configuration changes. Rollback
@@ -1250,11 +1251,11 @@ redaction, detect missing or duplicated events, and verify audit integrity.
 
 #### Phase 6c — Secret and signing-key rotation
 
-**Status:** Implementation in progress
+**Status:** Implementation complete; deployment rehearsal pending
 
 **Implementation notes:** Key identifiers, mixed-key verification, and bounded
-clock-skew configuration support exist, but the complete rotation automation
-and deployment rehearsal are not closed.
+clock-skew configuration support exist. The remaining work is the complete
+rotation automation and deployment-level rehearsal.
 
 **Test results:** Focused token tests verify issuance with the new `kid`,
 overlap verification with the previous `kid`, and rejection after the previous
@@ -1274,7 +1275,7 @@ mixed-version deployment, clock skew, rollback, and safe retirement.
 
 #### Phase 6d — Mass revocation and account lockdown
 
-**Status:** Implementation in progress
+**Status:** Implementation complete; final partial-failure rehearsal pending
 
 **Implementation notes:** Protected per-user and all-account revocation
 operations now revoke refresh sessions and recognized devices, invalidate

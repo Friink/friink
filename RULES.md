@@ -780,6 +780,26 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/main.py`, `api/app/config.py`
 - **Since:** 2026-08-27T00:00:00Z
 
+### Rule: Development Uses An Isolated Database And Branch Flow
+- **What:** The `development` branch is the local implementation and rehearsal
+  branch below `staging`; `staging` is the deployed acceptance environment and
+  `main` is the production release branch. A local `api/.env.development` may
+  reuse the variable names from `api/.env.staging`, but its `DATABASE_URL` must
+  point to an isolated development database.
+- **Do not:** Commit `.env.development`, `.env.staging`, or secrets. Do not use
+  a development rehearsal to edit staging or production authentication rows,
+  and do not fetch or force-rewrite a branch when that would discard local
+  progress.
+- **Migration:** Bring a fresh development database to the Alembic head and
+  run `alembic check` before auth/session rehearsals. The committed
+  `api/.env.example` remains the non-secret variable template; environment
+  files provide deployment-specific values and are not interchangeable with
+  the template.
+- **Status:** Active
+- **Platform:** All
+- **File(s):** `README.md`, `api/.env.example`, `api/alembic/`
+- **Since:** 2026-09-08T22:33:11Z
+
 ### Rule: Database Health Endpoint Checks Connectivity Only
 - **What:** `GET /health/db` opens a psycopg connection and runs `SELECT 1`, returning `{"database": true}` on success.
 - **Edge cases:** This endpoint does not verify ORM schema compatibility; ORM-backed endpoint checks are still needed after migrations.

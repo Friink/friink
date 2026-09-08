@@ -26,9 +26,10 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
 
 Current auth/session scope: Phases 1–3 are closed, Phase 4 is closed for the
-current web/API-focused release, and Phase 5a–5d staff discovery, bootstrap,
-roles, privileged sessions, and administrative security are implemented and
-verified on staging. Production rollout remains a separate release gate.
+current web/API-focused release, Phase 5a–5d staff discovery, bootstrap, roles,
+privileged sessions, and administrative security are implemented and verified
+on staging, and Phase 6 operations are implemented with final operational
+rehearsals still open. Production rollout remains a separate release gate.
 Mobile authentication and
 session requirements are preserved separately in `docs/auth-and-session-mobile.md`
 and are deferred until a mobile client exists.
@@ -44,6 +45,13 @@ npm --prefix web run dev
 ```
 
 `localhost/localhost.ps1` is available for local environment setup.
+
+The `development` branch is the local-work branch below `staging`. Its ignored
+`api/.env.development` file may copy the staging variable names, but must point
+to an isolated development database and must never contain production
+credentials. The development database is migrated to the current Alembic head
+before local auth/session rehearsals; the current verified head is
+`20260909_0041` with no reported schema drift.
 
 ## Deployment
 
@@ -61,6 +69,10 @@ dashboard.
 - Staging: `staging.friink.com` / `staging-api.friink.com`
 - Production: `friink.com`
 - **Database isolation:** `api-staging` continues using the existing staging Neon connection; `api-production` uses its separate production Neon connection. The web projects do not receive `DATABASE_URL`; each web deployment only receives its API origin.
+- **Branch flow:** Use `development` for local implementation and destructive
+  rehearsals, `staging` for deployed acceptance testing, and `main` for
+  production release. Do not fetch or rewrite another branch as a substitute
+  for preserving unpushed local progress.
 
 ## Current Web-App Architecture
 

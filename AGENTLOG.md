@@ -1,5 +1,26 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T22:33:11Z — Synchronize development/auth-session artifacts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update all requested project artifacts after verifying that
+  the development branch contains the current auth/session progress.
+- Changes Made: Documented the development → staging → main branch flow,
+  isolated development database requirement, non-secret environment-template
+  boundary, current Phase 6 status, deliberate-revocation copy, rollback
+  evidence boundary, and the remaining deployment/partial-failure rehearsals.
+  Updated only documentation; no runtime behavior or database state changed.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`,
+  `docs/auth-and-session.md`, `docs/auth-incident-response.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep the project artifacts consistent with the verified
+  `development` branch and prevent future agents from treating local
+  development configuration as staging or production configuration.
+- Verification Status: Branch and migration state were reviewed before the
+  edit; `git diff --check` passed after the documentation patch. No fetch,
+  deployment, or runtime test was performed in this documentation-only task.
+
 ## 2026-09-09T02:00:00Z — Build Phase 6 deliberate session invalidation
 
 - Agent: Codex
