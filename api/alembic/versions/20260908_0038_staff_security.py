@@ -21,9 +21,6 @@ def upgrade() -> None:
     op.create_table("user_roles", sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True), sa.Column("role_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("staff_roles.id", ondelete="CASCADE"), primary_key=True))
     op.create_table("user_permission_grants", sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True), sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False), sa.Column("permission_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("staff_permissions.id", ondelete="CASCADE"), nullable=False), sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False), sa.UniqueConstraint("user_id", "permission_id", name="uq_user_permission_grant"))
     op.create_table("privileged_staff_sessions", sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True), sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False), sa.Column("token_hash", sa.String(64), nullable=False, unique=True), sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False), sa.Column("last_active_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False), sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False), sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True), sa.Column("revoke_reason", sa.String(64), nullable=True))
-    op.create_index("ix_privileged_staff_sessions_user_active", "privileged_staff_sessions", ["user_id", "revoked_at"])
-    op.create_index("ix_privileged_staff_sessions_user_id", "privileged_staff_sessions", ["user_id"])
-    op.create_index("ix_user_permission_grants_user_id", "user_permission_grants", ["user_id"])
     bind = op.get_bind()
     for key, name in PERMISSIONS:
         bind.execute(sa.text("INSERT INTO staff_permissions (id, key, display_name) VALUES (:id, :key, :name)"), {"id": uuid.uuid4(), "key": key, "name": name})
@@ -33,8 +30,5 @@ def upgrade() -> None:
     bind.execute(sa.text("INSERT INTO user_roles (user_id, role_id) SELECT id, :role_id FROM users WHERE is_staff = true AND lower(email) = 'admin@friink.com'"), {"role_id": role_id})
 
 def downgrade() -> None:
-    op.drop_index("ix_user_permission_grants_user_id", table_name="user_permission_grants")
-    op.drop_index("ix_privileged_staff_sessions_user_id", table_name="privileged_staff_sessions")
-    op.drop_index("ix_privileged_staff_sessions_user_active", table_name="privileged_staff_sessions")
     for table in ("privileged_staff_sessions", "user_permission_grants", "user_roles", "role_permissions", "staff_roles", "staff_permissions"):
         op.drop_table(table)

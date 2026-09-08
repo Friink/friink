@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T16:45:00Z — Fix themed session recovery and local staging check
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the unthemed recurring session-recovery page and test Phase 5 locally using `.env.staging` with OTP disabled.
+- Changes Made: Updated `AppShellRoute` to use shared Friink branding and distinguish transient reconnect failures from expired/revoked sessions; added shared lifecycle action styles in `web/app/globals.css`. Ran the API locally with staging environment values, verified database health, OpenAPI staff routes, OTP-disabled signup, and normal-user staff denial; removed the temporary test account afterward.
+- Files: `web/components/app-shell-route.tsx`, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local staging-config API checks passed (`health=200`, 14 staff routes, signup `201`, `/staff/me` and step-up denied `401`); browser AX/style verification passed; final Next production build passed with existing repository ESLint warnings. Live deployed staging endpoints were not available during this check.
+
 ## 2026-09-08T15:31:00Z — Apply Phase 5 migrations to staging
 
 - Agent: Codex

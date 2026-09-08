@@ -2,6 +2,14 @@
 
 ## 2026-09-08
 
+- [web/auth] Fixed the shared session-recovery fallback so it follows the
+  Friink lifecycle/error design contract with the wordmark, home mark, themed
+  actions, and responsive spacing. Transient reconnect failures now explain
+  that the account has not been signed out, while terminal session failures
+  retain the login path.
+
+## 2026-09-08
+
 - [staging/auth] Applied migrations `20260908_0038` and `20260908_0039` to the
   staging Neon database. Alembic reports no drift. The reserved staging
   superadmin already existed, so the one-time bootstrap correctly refused to
