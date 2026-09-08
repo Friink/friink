@@ -1300,6 +1300,23 @@ the login verification step, confirming the deployed web/API path is
 responding; that flow showed OTP is enabled in staging. `alembic check` reports
 no schema drift.
 
+Staging E2E evidence: a disposable plus-address account completed the signup
+OTP flow and reached the authenticated home page. The protected containment
+operation returned 200; refreshing the existing browser session redirected to
+`/login?reason=security-revocation` with the approved deliberate-revocation
+message. A scoped revoke-all retry returned 200 twice with identical results.
+The authorized platform-wide staging rehearsal also completed successfully;
+the returned counts were 40 users, 19 sessions, 52 refresh tokens, and 22
+recognized devices. The platform-wide request was retried with the same
+idempotency key after a network timeout and did not duplicate the operation.
+
+Rollback rehearsal evidence: the staging branch was temporarily reverted from
+the Phase 6 documentation head, and both Vercel projects produced Ready preview
+deployments. The staging login page rendered during the rollback. The original
+head was then restored and both projects again produced Ready deployments.
+Chrome blocked the direct staging API health hostname, so this rehearsal does
+not claim an API response-body check or a mixed-runtime compatibility result.
+
 **Noteworthy:** Production auth rows must not be manually edited as an
 operational workaround.
 

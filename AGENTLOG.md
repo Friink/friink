@@ -7,7 +7,7 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Prompt Summary: Begin implementing Phase 6 operations and incident response.
 - Changes Made: Added per-user security epochs to invalidate issued access tokens, protected per-user/all-account auth-operations endpoints with explicit confirmation, refresh-session and recognized-device revocation, an independent compromised-admin containment operation, deliberate-revocation UX signaling, and the initial incident-response runbook. Added migration `20260909_0041_user_security_epoch`.
 - Files: `api/app/models/user.py`, `api/app/services/security.py`, `api/app/services/session_service.py`, `api/app/routers/auth.py`, `api/app/routers/staff.py`, `api/app/routers/auth_operations.py`, `api/app/schemas/auth_operations.py`, `api/app/config.py`, `api/app/main.py`, `api/.env.example`, `api/alembic/versions/20260909_0041_user_security_epoch.py`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/components/app-shell-route.tsx`, `docs/auth-incident-response.md`, `docs/auth-and-session.md`, `README.md`.
-- Verification Status: Full API suite passes (`126 passed`), Phase 6 operation tests pass (`2 passed`), rotation and clock-skew tests pass (`9 passed` combined rotation/operation run), and the web production build passes; migration `20260909_0041` applied to staging and `alembic check` reports no drift; the live staging browser reached login verification, confirming the deployed web/API path responds and showing OTP is enabled in staging. Localhost API with `.env.staging` denied the operations route without its dedicated token, and with a temporary local token returned 400 for a missing idempotency key and 404 for an unknown user. A disposable plus-address account completed local containment with signup 201, containment 200, idempotent replay 200, and 401 responses for both pre-existing access and refresh credentials. Operator retries use hashed idempotency keys. Platform-wide revoke-all, mixed-version deployment, and restoration/partial-failure rehearsal remain open.
+- Verification Status: Full API suite passes (`126 passed`), Phase 6 operation tests pass (`2 passed`), rotation and clock-skew tests pass (`9 passed`), and the web production build passes; migration `20260909_0041` applied to staging and `alembic check` reports no drift. A disposable plus-address account completed the staging signup OTP flow, reached the authenticated home page, then was contained through the protected operation; the existing browser session redirected to `/login?reason=security-revocation` with the approved deliberate-revocation message. A scoped staging revoke-all retry returned 200 twice with identical results. The authorized platform-wide staging rehearsal completed with returned counts of 40 users, 19 sessions, 52 refresh tokens, and 22 recognized devices; retrying the same key after a network timeout did not duplicate it. Localhost evidence also covers 201 signup, 200 containment, idempotent replay, and 401 responses for both pre-existing access and refresh credentials. Operator retries use hashed idempotency keys. Deployment-level rollback and injected partial-failure rehearsal remain operational follow-ups.
 
 ## 2026-09-09T01:00:00Z — Record deliberate session-revocation UX contract
 
@@ -7742,3 +7742,22 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `AGENTLOG.md`, `CHANGELOG.md`.
 - Verification Status: Cross-document stale-summary scan and `git diff --check`
   passed; runtime tests were not applicable.
+
+## 2026-09-09T02:56:00Z — Rehearse coordinated staging rollback and restoration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Roll back the GitHub staging branch so both Vercel projects
+  redeploy for a Phase 6 rehearsal, then restore the current head.
+- Changes Made: Created an isolated temporary clone, pushed a revert of the
+  staging head, verified Ready deployments for `friink-api` and `friink`, and
+  verified that the staging login page rendered. Pushed a second revert to
+  restore the original Phase 6 head. Production and the database migration were
+  not changed.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Exercise the deployment rollback path without disturbing the local
+  uncommitted worktree or production.
+- Verification Status: Rollback and restoration commits reached staging;
+  both Vercel projects reached Ready for each observed deployment, and the web
+  login smoke check rendered. Chrome blocked the direct staging API health
+  hostname, so mixed-runtime API response compatibility remains unverified.

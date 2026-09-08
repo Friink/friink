@@ -21,6 +21,16 @@
   database using a disposable plus-address account: signup 201, containment
   200, idempotent replay 200, and both pre-existing access and refresh
   credentials rejected with 401 afterward.
+- Staging E2E verified signup OTP delivery/verification, authenticated session
+  containment, deliberate security re-login routing, and identical results on
+  a repeated scoped revoke-all request.
+- Completed the authorized staging platform-wide revocation rehearsal; the
+  operation covered 40 users, 19 sessions, 52 refresh tokens, and 22 devices,
+  and the same-key retry did not duplicate the operation.
+- Rehearsed a coordinated staging rollback and restoration through the GitHub
+  staging branch; both Vercel projects reached Ready and the staging login page
+  rendered during rollback. Direct API browser verification was blocked by
+  Chrome, so mixed-runtime response compatibility remains unclaimed.
 
 ## 2026-09-09
 
