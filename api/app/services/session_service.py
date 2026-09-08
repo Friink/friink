@@ -174,6 +174,26 @@ def revoke_auth_session(session: Session, auth_session: AuthSession, reason: str
     revoke_refresh_family_for_session(session, auth_session.id, reason, now)
 
 
+def revoke_all_user_sessions(session: Session, user_id: uuid.UUID, reason: str = "security_incident") -> dict[str, int]:
+    """Revoke every session and recognition for one user as one operation."""
+    now = datetime.now(UTC)
+    sessions = session.execute(select(AuthSession).where(AuthSession.user_id == user_id, AuthSession.revoked_at.is_(None))).scalars().all()
+    for auth_session in sessions:
+        auth_session.revoked_at = now
+        auth_session.revoke_reason = reason
+    refresh_result = session.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=now, revocation_reason=reason)
+    )
+    device_result = session.execute(
+        update(RecognizedDevice)
+        .where(RecognizedDevice.user_id == user_id, RecognizedDevice.revoked_at.is_(None))
+        .values(revoked_at=now)
+    )
+    return {"sessions": len(sessions), "refresh_tokens": refresh_result.rowcount or 0, "devices": device_result.rowcount or 0}
+
+
 def revoke_refresh_family_for_session(session: Session, session_id: uuid.UUID, reason: str, now: datetime | None = None) -> int:
     now = now or datetime.now(UTC)
     result = session.execute(update(RefreshToken).where(RefreshToken.session_id == session_id, RefreshToken.revoked_at.is_(None)).values(revoked_at=now, revocation_reason=reason))

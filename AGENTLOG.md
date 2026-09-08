@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09T02:00:00Z — Build Phase 6 deliberate session invalidation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin implementing Phase 6 operations and incident response.
+- Changes Made: Added per-user security epochs to invalidate issued access tokens, protected per-user/all-account auth-operations endpoints with explicit confirmation, refresh-session and recognized-device revocation, an independent compromised-admin containment operation, deliberate-revocation UX signaling, and the initial incident-response runbook. Added migration `20260909_0041_user_security_epoch`.
+- Files: `api/app/models/user.py`, `api/app/services/security.py`, `api/app/services/session_service.py`, `api/app/routers/auth.py`, `api/app/routers/staff.py`, `api/app/routers/auth_operations.py`, `api/app/schemas/auth_operations.py`, `api/app/config.py`, `api/app/main.py`, `api/.env.example`, `api/alembic/versions/20260909_0041_user_security_epoch.py`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/components/app-shell-route.tsx`, `docs/auth-incident-response.md`, `docs/auth-and-session.md`, `README.md`.
+- Verification Status: Full API suite passes (`126 passed`), Phase 6 operation tests pass (`2 passed`), rotation and clock-skew tests pass (`9 passed` combined rotation/operation run), and the web production build passes; migration `20260909_0041` applied to staging and `alembic check` reports no drift; localhost API with `.env.staging` returned root/database health 200, denied the operations route without its dedicated token, and with a temporary local token returned 400 for a missing idempotency key and 404 for an unknown user. Operator retries now use hashed idempotency keys. Destructive Phase 6 rehearsal and mixed-version deployment verification remain open.
+
+## 2026-09-09T01:00:00Z — Record deliberate session-revocation UX contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Synchronize the auth/session contract with the approved Phase 6 session-ending UX.
+- Changes Made: Documented generic handling for ordinary terminal expiry, session preservation for ambiguous failures, and the distinct deliberate-revocation result with `For your security, your session ended. Please sign in again.` for mass revocation and incident lockdown.
+- Files: `docs/auth-and-session.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+
 ## 2026-09-09T00:30:00Z — Require a changed password for suspicious-login resets
 
 - Agent: Codex

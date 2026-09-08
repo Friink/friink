@@ -40,6 +40,7 @@ class User(Base):
     failed_login_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     account_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    security_epoch: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     lifecycle_status: Mapped[str] = mapped_column(String(24), nullable=False, default="active", server_default="active", index=True)
     deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

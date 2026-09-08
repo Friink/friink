@@ -91,6 +91,8 @@ Current defaults remain backward-compatible:
 - `JWT_SECRET_KEY` — current/default secret and fallback for no-`kid` legacy access JWTs.
 - `JWT_ACTIVE_KID` — defaults to `default`.
 - `JWT_KEYS` — optional JSON object mapping key ids to secrets, for example `{ "access-v1": "old-secret", "access-v2": "new-secret" }`.
+- `JWT_CLOCK_SKEW_SECONDS` — bounded JWT expiry leeway for small deployment
+  clock differences; defaults to 30 seconds and cannot exceed 300 seconds.
 
 Safe future rotation:
 

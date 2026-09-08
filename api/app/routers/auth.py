@@ -295,7 +295,7 @@ async def _issue_login_session(
             status_code=status.HTTP_409_CONFLICT,
             detail="This account could not be added to the current browser. Please retry from the active session.",
         )
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, user.security_epoch)
     recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
         session, user.id, request, raw_device_identifier
     )
@@ -482,7 +482,7 @@ async def refresh(
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
             set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
-            return RefreshResponse(access_token=create_access_token(slot_user.id), account_slot=account_slot)
+            return RefreshResponse(access_token=create_access_token(slot_user.id, slot_user.security_epoch), account_slot=account_slot)
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -515,6 +515,11 @@ async def refresh(
 
     now = datetime.now(UTC)
     if token_record.rotated_at is not None or token_record.revoked_at is not None:
+        if token_record.revocation_reason == "security_incident":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
+            )
         replacement = session.get(type(token_record), token_record.replaced_by_id) if token_record.replaced_by_id else None
         grace_is_valid = (
             token_record.rotated_at is not None
@@ -541,7 +546,7 @@ async def refresh(
             if auth_session:
                 auth_session.last_active_at = now
             issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
-            access_token = create_access_token(user.id)
+            access_token = create_access_token(user.id, user.security_epoch)
             await commit(session)
             log_refresh_token_event(
                 event="auth_refresh_token_grace_replayed",
@@ -620,7 +625,7 @@ async def refresh(
     issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, user.security_epoch)
     record_security_event(
         session,
         event_type=SecurityEventType.refresh,
@@ -823,6 +828,11 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
+    if int(payload.get("security_epoch", 0)) != user.security_epoch:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
+        )
     # Lifecycle deactivation is intentionally stricter than ordinary lockout:
     # RULES.md requires inactive accounts to reject already-issued access JWTs,
     # while an ordinary account lock leaves those JWTs valid until expiry.
@@ -840,7 +850,7 @@ async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme),
         return None
     user_id = user_id_from_subject(str(payload.get("sub", "")))
     user = session.get(User, user_id)
-    if not user or user.lifecycle_status != "active":
+    if not user or user.lifecycle_status != "active" or int(payload.get("security_epoch", 0)) != user.security_epoch:
         return None
     return user
 
@@ -1127,7 +1137,7 @@ async def switch_account(
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
             log_account_switch_event(result="success", reason="already_active")
-            return TokenResponse(access_token=create_access_token(current_user.id), user=user_response(current_user, settings), account_slot=payload.account_slot)
+            return TokenResponse(access_token=create_access_token(current_user.id, current_user.security_epoch), user=user_response(current_user, settings), account_slot=payload.account_slot)
         log_account_switch_event(result="failure", reason="slot_not_found")
         raise HTTPException(status_code=404, detail="Account session not found.")
     target = session.get(User, slot.user_id)
@@ -1140,7 +1150,7 @@ async def switch_account(
     await commit(session)
     set_account_refresh_cookie(response, payload.account_slot, issued_refresh.raw_token, settings)
     log_account_switch_event(result="success", reason="switched")
-    return TokenResponse(access_token=create_access_token(target.id), user=user_response(target, settings), account_slot=payload.account_slot)
+    return TokenResponse(access_token=create_access_token(target.id, target.security_epoch), user=user_response(target, settings), account_slot=payload.account_slot)
 
 
 @router.delete("/accounts/{account_slot}", status_code=status.HTTP_204_NO_CONTENT)

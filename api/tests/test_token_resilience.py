@@ -48,6 +48,19 @@ def test_expired_token_is_classified(monkeypatch: pytest.MonkeyPatch) -> None:
     assert error.value.code == AuthErrorCode.TOKEN_EXPIRED
 
 
+def test_jwt_clock_skew_accepts_small_boundary_and_rejects_large_offset(monkeypatch: pytest.MonkeyPatch) -> None:
+    secret = "test-secret-at-least-32-bytes-long"
+    configure_jwt_secret(monkeypatch, secret)
+    now = datetime.now(UTC)
+    within_skew = make_token(secret, {"sub": str(uuid.uuid4()), "typ": "access", "iat": int(now.timestamp()), "exp": int((now - timedelta(seconds=10)).timestamp())})
+    assert decode_token(within_skew, "access")["typ"] == "access"
+
+    outside_skew = make_token(secret, {"sub": str(uuid.uuid4()), "typ": "access", "iat": int(now.timestamp()), "exp": int((now - timedelta(seconds=45)).timestamp())})
+    with pytest.raises(TokenValidationError) as error:
+        decode_token(outside_skew, "access")
+    assert error.value.code == AuthErrorCode.TOKEN_EXPIRED
+
+
 def test_malformed_token_is_classified(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_jwt_secret(monkeypatch)
 
@@ -84,7 +97,7 @@ def test_valid_token_survives_unrelated_schema_changes(monkeypatch: pytest.Monke
     payload = decode_token(token, "access")
 
     assert payload["sub"] == str(user_id)
-    assert set(payload) == {"sub", "typ", "iat", "exp"}
+    assert set(payload) == {"sub", "typ", "iat", "exp", "security_epoch"}
 
 
 def test_access_tokens_support_key_ids_and_overlapping_keys(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -113,3 +126,15 @@ def test_access_tokens_support_key_ids_and_overlapping_keys(monkeypatch: pytest.
         headers={"kid": "access-v1"},
     )
     assert decode_token(old_token, "access")["sub"] == str(user_id)
+
+    monkeypatch.setenv("JWT_KEYS", json.dumps({"access-v2": new_secret}))
+    get_settings.cache_clear()
+    with pytest.raises(TokenValidationError) as error:
+        decode_token(old_token, "access")
+    assert error.value.code == AuthErrorCode.TOKEN_SIGNATURE_MISMATCH
+
+    monkeypatch.setenv("JWT_KEYS", json.dumps({"access-v2": new_secret}))
+    get_settings.cache_clear()
+    with pytest.raises(TokenValidationError) as error:
+        decode_token(old_token, "access")
+    assert error.value.code == AuthErrorCode.TOKEN_SIGNATURE_MISMATCH

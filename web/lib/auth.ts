@@ -142,7 +142,8 @@ type AuthErrorCode =
   | 'TOKEN_SCHEMA_INVALID'
   | 'SESSION_NOT_FOUND'
   | 'REFRESH_TOKEN_MISSING'
-  | 'REFRESH_TOKEN_INVALID';
+  | 'REFRESH_TOKEN_INVALID'
+  | 'SESSION_REVOKED_SECURITY';
 
 type ApiErrorBody = {
   detail?: string | { message?: string; code?: AuthErrorCode; cooldown_seconds?: number } | Array<{ msg?: string }>;
@@ -1791,6 +1792,7 @@ export function isTerminalRefreshFailure(error: unknown): error is AuthApiError 
     error.code === 'SESSION_NOT_FOUND' ||
     error.code === 'REFRESH_TOKEN_MISSING' ||
     error.code === 'REFRESH_TOKEN_INVALID'
+    || error.code === 'SESSION_REVOKED_SECURITY'
   );
 }
 

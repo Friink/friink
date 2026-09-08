@@ -13,11 +13,12 @@ const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
   mode?: 'page' | 'account-modal';
+  initialMessage?: string;
 };
 
 type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'forgot-password' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
 
-export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps) {
+export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +35,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
   const [loginChallengeToken, setLoginChallengeToken] = useState('');
   const [lifecycleStatus, setLifecycleStatus] = useState<'deactivated' | 'pending_deletion' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState(initialMessage ?? '');
   const [signupEmailAlreadyRegistered, setSignupEmailAlreadyRegistered] = useState(false);
 
   const isLoginEmailStep = step === 'login-email';

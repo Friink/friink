@@ -2,6 +2,31 @@
 
 ## 2026-09-09
 
+- [auth/phase6] Added deliberate session invalidation with per-user security
+  epochs, protected per-user/all-account operator revocation paths, recognized
+  device invalidation, auditable scopes/reasons/counts, and the approved
+  security re-login response. Added independent compromised-admin containment
+  and the initial incident-response runbook.
+- Applied the security-epoch migration to staging and verified the staging
+  configuration’s local API health and operator-route protection.
+- Operator actions now require a bounded idempotency key and replay the
+  original completed result on retry.
+- Added focused Phase 6 tests for revocation accounting, idempotent replay,
+  and compromised-admin containment.
+- Rotation coverage now verifies both mixed-key overlap and rejection after old
+  key retirement.
+- Added bounded `JWT_CLOCK_SKEW_SECONDS` leeway with boundary coverage for
+  rotation-safe expiry handling.
+
+## 2026-09-09
+
+- [docs/auth-session] Added the deliberate-session-revocation UX contract:
+  generic expiry remains generic, ambiguous failures preserve auth, and
+  intentional mass revocation/incident lockdown uses a distinct security
+  re-login message.
+
+## 2026-09-09
+
 - [auth/recovery] Suspicious-login reset links now require a password different
   from the current password. Ordinary password recovery may still reuse the
   current password; the distinction is stored on the reset token purpose.

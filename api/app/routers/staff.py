@@ -10,6 +10,7 @@ from app.models.security_event import SecurityEvent
 from app.routers.auth import get_current_user
 from app.schemas.staff import StepUpRequest, RoleCreate, RoleUpdate, AssignmentRequest, ReasonRequest, GrantRequest, StaffStatusRequest, StaffMe, RoleResponse, StaffUserResponse, AuditResponse
 from app.services.staff import permissions_for, require_privileged, audit, start_privileged, revoke_staff_sessions, effective_role_payload, PERMISSIONS
+from app.services.session_service import revoke_all_user_sessions
 
 router = APIRouter(prefix="/staff", tags=["staff"]); STAFF_COOKIE = "friink_staff_session"
 def target(session, public_id):
@@ -97,8 +98,10 @@ async def unlock(public_id: str,payload: ReasonRequest,current_user: User=Depend
 @router.post("/users/{public_id}/sessions/revoke-all",status_code=204)
 async def revoke_all(public_id: str,current_user: User=Depends(get_current_user),token: str|None=Cookie(default=None,alias=STAFF_COOKIE),session: Session=Depends(get_session)):
     privileged=require_privileged(session,current_user,token,"sessions.revoke"); user=target(session,public_id)
-    for row in session.execute(select(AuthSession).where(AuthSession.user_id==user.id,AuthSession.revoked_at.is_(None))).scalars(): row.revoked_at=datetime.now(UTC); row.revoke_reason="admin"
-    revoke_staff_sessions(session,user.id,"admin"); audit(session,current_user,"sessions_revoked",{"target":user.public_id},privileged); session.commit(); return Response(status_code=204)
+    user.security_epoch += 1
+    counts = revoke_all_user_sessions(session, user.id, "security_incident")
+    revoke_staff_sessions(session,user.id,"security_incident")
+    audit(session,current_user,"sessions_revoked",{"target":user.public_id, "scope":"all", "counts":counts},privileged); session.commit(); return Response(status_code=204)
 
 @router.post("/users/{public_id}/sessions/{session_id}/revoke", status_code=204)
 async def revoke_one(public_id: str, session_id: str, current_user: User=Depends(get_current_user), token: str|None=Cookie(default=None,alias=STAFF_COOKIE), session: Session=Depends(get_session)):

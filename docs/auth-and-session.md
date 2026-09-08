@@ -1191,10 +1191,13 @@ release gate with separately confirmed credentials and configuration.
 
 ### Phase 6 — Operations and incident response
 
-**Status:** Requirements Pending
+**Status:** Implementation in progress
 
-**Implementation notes:** Deployment migration gating and security-event
-plumbing are implemented; rotation, mass-response, and rehearsal work remains.
+**Implementation notes:** Deployment migration gating, security-event plumbing,
+per-user/all-account deliberate session invalidation, security epochs, and the
+approved deliberate-revocation UX boundary are implemented; key-rotation and
+full operational rehearsals remain. The protected operator routes require the
+new `AUTH_OPERATIONS_INTERNAL_TOKEN` deployment secret when enabled.
 
 **Test results:** Migration-before-deploy and Phase 3 event/outbox acceptance
 checks passed on staging and production.
@@ -1247,12 +1250,16 @@ redaction, detect missing or duplicated events, and verify audit integrity.
 
 #### Phase 6c — Secret and signing-key rotation
 
-**Status:** Requirements Pending
+**Status:** Implementation in progress
 
-**Implementation notes:** Key identifiers and configuration support exist, but
-the complete rotation automation and rehearsal are not closed.
+**Implementation notes:** Key identifiers, mixed-key verification, and bounded
+clock-skew configuration support exist, but the complete rotation automation
+and deployment rehearsal are not closed.
 
-**Test results:** No full compromise/overlap/retirement rehearsal has been run.
+**Test results:** Focused token tests verify issuance with the new `kid`,
+overlap verification with the previous `kid`, and rejection after the previous
+key is retired. A full deployment-level compromise/clock-skew rehearsal has
+not been run.
 
 **Noteworthy:** Previous keys require a documented overlap window before
 retirement.
@@ -1267,12 +1274,25 @@ mixed-version deployment, clock skew, rollback, and safe retirement.
 
 #### Phase 6d — Mass revocation and account lockdown
 
-**Status:** Requirements Pending
+**Status:** Implementation in progress
 
-**Implementation notes:** Controlled mass-revocation and compromised-admin
-containment operations remain outstanding.
+**Implementation notes:** Protected per-user and all-account revocation
+operations now revoke refresh sessions and recognized devices, invalidate
+issued access tokens through a security epoch, require explicit confirmation,
+and record auditable reasons and result counts. Operations require an explicit
+idempotency key so a completed retry returns the original result. A dedicated independent-admin
+containment operation also disables staff access, locks the account, and
+revokes privileged staff sessions. Rehearsal remains open.
 
-**Test results:** No Phase 6d rehearsal has been completed.
+**Test results:** Phase 6 operation tests cover refresh/device/session counts,
+idempotent replay, and compromised-admin containment; the full API suite passes
+(`126 passed`) and the web production build passes. Migration `20260909_0041`
+was applied successfully to the staging database, and the localhost API smoke
+test using `.env.staging` returned database health 200. With a temporary local
+operations token, the route rejected a missing idempotency key with 400 and an
+unknown user with 404; no real account was changed. The destructive revocation
+rehearsal has not been run because the dedicated operations token is not
+configured in that environment. `alembic check` reports no schema drift.
 
 **Noteworthy:** Production auth rows must not be manually edited as an
 operational workaround.
@@ -1285,14 +1305,21 @@ editing authentication rows in production.
 Verification gate: rehearse refresh-token compromise, admin compromise, mass
 revocation, account lockdown, partial failure, retry, and restoration.
 
+Intentional mass revocation or incident lockdown is surfaced to affected users
+through the deliberate-revocation result above; it must not be presented as a
+generic network or unexpected error.
+
 #### Phase 6e — Incident runbooks and recovery rehearsal
 
-**Status:** Requirements Pending
+**Status:** Runbook drafted; rehearsal pending
 
-**Implementation notes:** Required incident runbooks and end-to-end recovery
-exercise remain outstanding.
+**Implementation notes:** The initial incident-response runbook is documented
+in `docs/auth-incident-response.md`; the end-to-end recovery exercise remains
+outstanding.
 
-**Test results:** No full incident exercise has been completed.
+**Test results:** The runbook boundary was smoke-checked through the staging
+configuration: the mounted operations route returned 404 without its dedicated
+operator token. No destructive incident exercise has been completed.
 
 **Noteworthy:** Recovery must preserve privacy and the non-negotiable auth
 boundaries.
@@ -1761,6 +1788,19 @@ outcomes into:
   configuration failure, malformed unexpected response, or another condition
   that does not prove the session is invalid. Local auth remains stored and the
   user remains in the app where possible.
+
+Deliberate security actions are a separate terminal outcome. When an operator
+or incident-response operation intentionally revokes the user's sessions, the
+API must return a machine-readable deliberate-revocation result that the web
+client can distinguish from ordinary expiry. The client then clears the
+affected local session and routes to the normal login screen with:
+
+> For your security, your session ended. Please sign in again.
+
+The normal confirmed-expiry or invalid-session path continues to use the
+generic session-expired/login experience. Ambiguous failures continue to
+preserve local auth and remain retryable. Neither path exposes internal
+incident details, revocation scope, account identifiers, or operator actions.
 
 The API should use appropriate status/code combinations so a deployment or
 configuration problem is not mislabeled as an invalid refresh session. The web
