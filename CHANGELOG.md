@@ -2,6 +2,12 @@
 
 ## 2026-09-08
 
+- [web/control-panel] Removed the duplicate in-content CP heading and aligned
+  the page structure with Settings by using the shared `simple-screen`,
+  `settings-panel`, and `settings-section` composition.
+
+## 2026-09-08
+
 - [web/control-panel] Refined `/cp` to use the shared tab and settings-row
   patterns as a navigation shell only. Removed implied clickable actions and
   labeled sections by their planned Phase 5 delivery boundary.

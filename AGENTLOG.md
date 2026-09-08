@@ -7558,3 +7558,20 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   role, account, session, or audit actions are already server-authorized.
 - Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
   deployment or browser verification was run.
+## 2026-09-08T14:03:00Z — Align control-panel structure with Settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove redundant CP elements and make `/cp` feel consistent
+  with the rest of the app.
+- Changes Made: Removed the duplicate in-content page heading and description.
+  Wrapped the CP content in the same `simple-screen settings-screen`,
+  `settings-panel`, and `settings-section` structure used by Settings. Kept
+  the shared app-shell `NavigationBar` as the single page-title owner.
+- Files: `web/components/control-panel-screen.tsx`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Reason: `design.md` assigns page-title ownership to `NavigationBar` and
+  requires logged-in screens to use shared `PageSurface`/`ContentBox` layout
+  primitives without duplicate page-level structure.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
+  deployment or browser verification was run.

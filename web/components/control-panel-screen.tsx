@@ -3,10 +3,9 @@ import { PageSurface } from '@/components/page-surface';
 
 export type ControlPanelTab = 'overview' | 'users' | 'roles' | 'security' | 'audit';
 
-const tabContent: Record<ControlPanelTab, { title: string; description: string; items: Array<{ icon: string; title: string; description: string; meta: string }> }> = {
+const tabContent: Record<ControlPanelTab, { title: string; items: Array<{ icon: string; title: string; description: string; meta: string }> }> = {
   overview: {
     title: 'Overview',
-    description: 'A calm starting point for staff-only administration.',
     items: [
       { icon: 'fa-solid fa-users', title: 'Users & accounts', description: 'Review account status, staff access, roles, and direct permissions.', meta: 'Phase 5b' },
       { icon: 'fa-solid fa-user-shield', title: 'Roles & permissions', description: 'Manage role capabilities and narrowly scoped individual grants.', meta: 'Phase 5b' },
@@ -15,7 +14,6 @@ const tabContent: Record<ControlPanelTab, { title: string; description: string; 
   },
   users: {
     title: 'Users & accounts',
-    description: 'Search and review accounts without exposing private credentials.',
     items: [
       { icon: 'fa-solid fa-magnifying-glass', title: 'Search users', description: 'Find an account by email, username, or display name.', meta: 'Planned' },
       { icon: 'fa-solid fa-user-check', title: 'Account status', description: 'Review lifecycle, verification, and staff status.', meta: 'Planned' },
@@ -24,7 +22,6 @@ const tabContent: Record<ControlPanelTab, { title: string; description: string; 
   },
   roles: {
     title: 'Roles & permissions',
-    description: 'Define reusable access while retaining precise user-level control.',
     items: [
       { icon: 'fa-solid fa-layer-group', title: 'Roles', description: 'Create and edit role names and their permission sets.', meta: 'Planned' },
       { icon: 'fa-solid fa-list-check', title: 'Permission catalog', description: 'Review the permissions available to staff roles.', meta: 'Planned' },
@@ -33,7 +30,6 @@ const tabContent: Record<ControlPanelTab, { title: string; description: string; 
   },
   security: {
     title: 'Security & sessions',
-    description: 'Keep privileged access reviewable and reversible.',
     items: [
       { icon: 'fa-solid fa-laptop', title: 'Privileged sessions', description: 'Review and revoke active staff sessions.', meta: 'Phase 5c' },
       { icon: 'fa-solid fa-lock', title: 'Account locks', description: 'Review lock state and apply authorized account actions.', meta: 'Phase 5d' },
@@ -42,7 +38,6 @@ const tabContent: Record<ControlPanelTab, { title: string; description: string; 
   },
   audit: {
     title: 'Audit log',
-    description: 'Review redacted, server-recorded staff and security activity.',
     items: [
       { icon: 'fa-solid fa-user-gear', title: 'Access changes', description: 'Role and individual permission changes.', meta: 'Phase 5b' },
       { icon: 'fa-solid fa-user-lock', title: 'Account actions', description: 'Staff account, lock, and session actions.', meta: 'Phase 5d' },
@@ -55,22 +50,20 @@ export function ControlPanelScreen({ activeTab = 'overview' }: { activeTab?: Con
   const content = tabContent[activeTab];
 
   return (
-    <PageSurface variant="stack" aria-labelledby="control-panel-title">
-      <div>
-        <h1 id="control-panel-title">{content.title}</h1>
-        <p>{content.description}</p>
-      </div>
-      <div className="settings-section" role="tabpanel" id={`control-panel-${activeTab}`} aria-label={content.title}>
-        {content.items.map((item) => (
-          <ListRow
-            key={item.title}
-            avatar={<span className="settings-icon"><i className={item.icon} aria-hidden="true" /></span>}
-            title={item.title}
-            subtitle={item.description}
-            meta={item.meta}
-            className="settings-row settings-row-expanded"
-          />
-        ))}
+    <PageSurface className="simple-screen settings-screen" aria-label="Control panel content">
+      <div className="settings-panel">
+        <div className="settings-section" role="tabpanel" id={`control-panel-${activeTab}`} aria-label={content.title}>
+          {content.items.map((item) => (
+            <ListRow
+              key={item.title}
+              avatar={<span className="settings-icon"><i className={item.icon} aria-hidden="true" /></span>}
+              title={item.title}
+              subtitle={item.description}
+              meta={item.meta}
+              className="settings-row settings-row-expanded"
+            />
+          ))}
+        </div>
       </div>
     </PageSurface>
   );
