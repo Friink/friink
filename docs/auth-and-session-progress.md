@@ -4,13 +4,40 @@ This file records verification evidence for `docs/auth-and-session.md`. Refresh-
 
 ## Verification scope
 
-All implementation verification in this audit is performed against the temporary staging environment only:
+Historical live verification entries in this audit were performed against the temporary staging environment:
 
 - Frontend: `https://staging.friink.com`
 - API: `https://staging-api.friink.com`
-- Branch/deployment: `staging`, latest Phase 2 deployment commit `a234b35` (Phase 1 evidence references the earlier `0c754ad` deployment)
+- Historical branch/deployment: `staging`, with each dated section retaining
+  the deployment commit used for that evidence. The current source branch is
+  `development`, which contains the current staging implementation.
 
 Production verification is intentionally deferred until the permanent production infrastructure is deployed to the Droplet/EC2 environment. The production smoke test will then verify the same cookie, CORS, refresh, rotation, and deployment behavior against that final infrastructure. The temporary production environment is not a release target and is not used as evidence in this audit.
+
+## Current reconciliation — 2026-09-09
+
+This audit contains historical checkpoints below, but the current branch and
+status are represented here. The active implementation branch is `development`;
+`staging` remains the deployed acceptance environment. The development database
+is isolated, migrated through Alembic revision `20260909_0041`, and passes
+`alembic check` with no schema drift. No development environment file or secret
+is committed.
+
+Phase 5a–5d staff discovery, bootstrap, roles, privileged sessions, and
+administrative security are implemented and staging-verified. Phase 6
+operations are implemented: local and staging containment, idempotent retries,
+platform-wide revocation, rollback/restoration, and deliberate-revocation UX
+were exercised. Remaining Phase 6 gates are deployment-level mixed-version
+rotation/rollback compatibility, injected partial-failure recovery, and the
+end-to-end incident runbook exercise.
+
+Phase 7 is implemented and partially staging-verified. The third-failure
+trigger, 30-minute cooldown, provider acceptance, authorized inbox delivery,
+and reset-link opening passed. Local tests cover 24-hour duplicate suppression;
+staging could not repeat the fourth/fifth failures during the account cooldown.
+The `Invalid credentials.` login copy is accepted product behavior. Suspicious-
+login reset links require a password different from the current password;
+ordinary user-requested recovery may reuse it.
 
 ## Phase 1 — Session reliability (staging evidence)
 
@@ -457,8 +484,8 @@ for this client-only fix.
 
 ### Decision record
 
-Phase 7 runtime work is implemented locally, but its verification gate is not
-passed. The notification triggers on the third consecutive failed login for a normal active account,
+Phase 7 runtime work is implemented and its trigger/delivery staging evidence
+is recorded below. The notification triggers on the third consecutive failed login for a normal active account,
 when the existing 30-minute cooldown begins. This is the earliest existing
 lockout tier that avoids notifying on every ordinary typo or retry.
 
@@ -480,16 +507,15 @@ pending-deletion accounts remain on the separate `account-lifecycle.md`
 reactivation-modal flow and do not enter this active-account notification
 path.
 
-### Verification status — staging gate open
+### Verification status — partially verified in staging
 
-Local API tests cover the trigger and 24-hour suppression, but no staging
-send/receive evidence for Phase 7 is recorded in this checkout.
-The required gate remains open until staging proves the third-failure trigger,
-provider acceptance, actual receipt in the authorized test inbox, the reset
-link, suppression of duplicate fourth/fifth-tier emails within 24 hours, and
-the unchanged privacy/reactivation behavior for non-active-account paths.
-Source inspection or an outbox record alone will not close the gate. No Phase 7
-green flag is raised by this documentation update.
+Local API tests cover the trigger and 24-hour suppression. Staging proved the
+third-failure trigger, provider acceptance, actual receipt in the authorized
+test inbox, and reset-link opening. Fourth/fifth duplicate suppression remains
+unexercised in staging because the authorized account correctly entered the
+30-minute cooldown; this is a time-limited verification gap, not a known
+implementation failure. Unknown/malformed and non-active-account privacy
+paths remain covered by the implementation and focused tests.
 
 ## Phase 3 — Security events and notifications
 
@@ -561,8 +587,10 @@ Decision: auth/session work is paused here to prioritize product development;
 account lifecycle is next. The deferred items above are tracked, not abandoned,
 and should be revisited before production launch.
 
-Explicitly out of scope until reopened: Phase 7 (failed-login notification).
-Account lifecycle is a separate upcoming specification and is now active.
+Phase 7 was historically out of scope at this checkpoint; it is now reopened,
+implemented, and tracked in the current reconciliation above. Account
+lifecycle remains a separate contract and its full implementation gates remain
+open.
 
 ## Account lifecycle — implementation evidence (2026-09-06)
 

@@ -386,7 +386,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Add-account Modal Rule**: The authenticated side-drawer `Add account` action opens an in-app themed modal variant of this flow, not the standalone full-page auth surface. The modal starts with `Email or username`, then reveals `Password`, exposes Login and Sign up actions, and reuses the signup/login fields, validation, OTP flow, loading states, errors, and accessibility treatment from this screen. A successful login or signup adds the independently authenticated account to the device session list and may activate it; an add-account failure must not log out or replace the currently active account. No account relationship is created.
 
 ### Password Reset Screen (`web/app/reset-password/page.tsx`)
-- Uses the shared password field treatment: visible placeholders, visibility toggles, the shared `PasswordCriteria` checklist, and readable dark-mode text tokens.
+- Uses the shared password field treatment: visible placeholders, visibility toggles, the shared `PasswordCriteria` checklist, and readable dark-mode text tokens. The shared centered auth-form structure keeps forgot-password, reset-password, and reset-success states aligned across viewport sizes. Suspicious-login reset links require a different password; ordinary recovery may reuse the current password.
 
 ### 11. ToastStack (`web/components/toast-stack.tsx`)
 - **Purpose**: App-level notification stack for logged-in errors that should not appear inline in page content.

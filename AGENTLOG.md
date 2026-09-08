@@ -21,6 +21,24 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   edit; `git diff --check` passed after the documentation patch. No fetch,
   deployment, or runtime test was performed in this documentation-only task.
 
+## 2026-09-08T22:36:00Z — Reconcile all auth/session documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the previous documentation-only update so all
+  artifacts reflect the complete work completed so far and agree on status.
+- Changes Made: Updated the auth/session progress audit with the current
+  development branch, migration, Phase 6 evidence and remaining gates, Phase 7
+  staging trigger/delivery evidence, cooldown-limited duplicate-suppression
+  gap, accepted login copy, and suspicious-login password-reuse rule. Corrected
+  the Phase 7b status in the main contract and aligned README/design cross-
+  references. Historical checkpoints remain labeled by their original date.
+- Files: `README.md`, `packages/design/design.md`,
+  `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Cross-document stale-status scan and `git diff --check`
+  passed after this reconciliation; no runtime behavior changed.
+
 ## 2026-09-09T02:00:00Z — Build Phase 6 deliberate session invalidation
 
 - Agent: Codex

@@ -109,6 +109,8 @@ these files, and the live implementation, are:**
   files touched, reasoning). Updated alongside every `CHANGELOG.md` entry.
 - **`docs/auth-and-session.md`** — shared backend and web authentication/session
   contract and implementation status.
+- **`docs/auth-and-session-progress.md`** — dated verification evidence and the
+  current staging/development reconciliation for auth/session work.
 - **`docs/auth-incident-response.md`** — operator runbook for signing-key,
   refresh-token, account, and platform-wide session incidents.
 - **`docs/forget-password.md`** — email reset-link contract and implementation

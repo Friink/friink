@@ -7,6 +7,10 @@
   development database verification. Clarified that Phase 6 implementation is
   present while deployment-level rotation compatibility and partial-failure
   recovery rehearsals remain open; no runtime behavior changed.
+- Reconciled the historical auth/session progress audit with the current
+  `development` branch: Phase 7 staging trigger/delivery evidence is recorded,
+  the cooldown-limited duplicate-suppression gap is explicit, and stale
+  “out of scope”/“staging pending” wording is retained only as history.
 
 - [development] Created the local `api/.env.development` from the staging
   configuration and applied the current Alembic head to the newly supplied

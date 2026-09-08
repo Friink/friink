@@ -1449,11 +1449,14 @@ email, or interfere with reactivation behavior.
 
 #### Phase 7b — Delivery and staging evidence gate
 
-**Status:** Implemented locally; staging verification pending
+**Status:** Implemented; staging trigger and delivery verified; duplicate-
+suppression staging check limited by cooldown time
 
 **Implementation notes:** Durable event/outbox delivery, provider failure
 handling, idempotent 24-hour suppression, and asynchronous provider delivery
-are implemented. The required staging trace remains open.
+are implemented. The staging trigger, provider acceptance, inbox receipt, and
+reset-link opening are verified; only same-window fourth/fifth suppression
+remains unexercised in staging because the account enters cooldown.
 
 **Test results:** Local focused suite passes. Staging trigger, provider
 acceptance, inbox arrival, and reset-link opening passed on 2026-09-08.
@@ -1474,13 +1477,14 @@ Verification gate: staging evidence must show, for a dedicated active test
 account, two failed attempts with no notification, the third consecutive
 failure starting the 30-minute cooldown, the provider accepting the message,
 and the message actually arriving at the account's authorized test inbox with
-the password-reset link present. The trace must also show that fourth and fifth
-failures do not send duplicate emails within the rolling 24-hour window, that
-a successful login resets the progressive counter, and that unknown/malformed
-identifiers plus deactivated/pending-deletion attempts follow their existing
-privacy/reactivation paths without this notification. Source inspection or a
-queued outbox row alone is not sufficient; no Phase 7 green flag may be raised
-until the staging send/receive trace is recorded.
+the password-reset link present. That trigger/delivery trace is recorded.
+Fourth and fifth failures must not send duplicate emails within the rolling
+24-hour window; this is locally tested but remains unexercised in staging due
+to the cooldown. A successful login must reset the progressive counter, and
+unknown/malformed identifiers plus deactivated/pending-deletion attempts must
+follow their existing privacy/reactivation paths without this notification.
+The Phase 7 green flag remains limited only by the cooldown-bound staging
+duplicate-suppression check and any separately listed lifecycle gates.
 
 ## 3. Non-negotiable rules
 
