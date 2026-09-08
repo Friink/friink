@@ -55,6 +55,10 @@ Deactivation requires fresh current-password confirmation, including on a
 recognized device. OTP is not required for deactivation. A failed password
 confirmation does not change lifecycle state.
 
+The API-owned `OTP_ENABLED` setting defaults to `true`. In local, test, or
+staging environments where it is explicitly set to `false`, lifecycle OTP
+checks are bypassed to support testing; production startup rejects that value.
+
 On confirmation:
 
 - all active sessions and refresh-token families are revoked immediately;
@@ -84,7 +88,8 @@ in. A deactivated account must reactivate before it can request deletion; there
 is no direct deactivated-to-deleted request path.
 
 Deletion requires fresh current-password confirmation and OTP identity
-verification. Before confirmation, the modal must state plainly that:
+verification when `OTP_ENABLED=true`. Before confirmation, the modal must state
+plainly that:
 
 - deletion is permanent after completion and cannot be undone;
 - the account first enters the configured deactivated period (32 days by
@@ -123,7 +128,8 @@ During the configured grace period:
 - valid login shows a distinct pending-deletion reactivation screen;
 - the screen explains that confirmation cancels pending deletion and restores
   the account;
-- reactivation requires valid credentials plus a fresh OTP;
+- reactivation requires valid credentials plus a fresh OTP when
+  `OTP_ENABLED=true`;
 - successful reactivation restores normal visibility and use, cancels the
   deletion request, and creates only one new session; other devices authenticate
   again;
@@ -197,11 +203,13 @@ The login flow preserves privacy and uses this order:
 3. For an active account, continue through ordinary risk, lockout, and session
    creation rules.
 4. For a deactivated account with valid credentials, show the calm reactivation
-   screen and do not create a normal session until confirmation and fresh OTP
-   verification succeed.
+  screen and do not create a normal session until confirmation and fresh OTP
+  verification succeed when `OTP_ENABLED=true`; with the test override off,
+  valid credentials complete reactivation directly.
 5. For a pending-deletion account with valid credentials, show the distinct
    cancellation-of-deletion screen and do not create a normal session until
-   confirmation and fresh OTP verification succeed.
+   confirmation and fresh OTP verification succeed when `OTP_ENABLED=true`;
+   with the test override off, valid credentials complete reactivation directly.
 6. For a deleted account, never offer reactivation.
 
 Wrong passwords, malformed identifiers, and unknown identifiers must not reveal
@@ -219,9 +227,10 @@ available before reactivation.
   confirmation and can manage the subscription separately.
 - Deletion cancels billing immediately. A later reactivation does not resume the
   subscription; the user must subscribe again.
-- Repeated lifecycle cycling is rate-limited. There is no reactivation delay;
-  after reactivation, another deactivation is allowed only after a 24-hour
-  cooldown. Staff overrides may bypass the product cooldown when audited.
+- Repeated lifecycle cycling is rate-limited. After reactivation, another
+  deactivation is allowed only after an 8-minute cooldown. The remaining
+  cooldown is shown in a live-updating toast. Staff overrides may bypass the
+  product cooldown when audited.
 
 ## 7. Implementation gates and resolved decisions
 
@@ -236,8 +245,8 @@ The following policy decisions are resolved:
   OTP/MFA, cooldown rejections, administrative locks, and lifecycle-state
   attempts use separate counters/events.
 - Deactivation requires fresh current-password confirmation. Deletion requires
-  current-password confirmation plus OTP; reactivation requires valid
-  credentials plus a fresh OTP.
+  current-password confirmation plus OTP and reactivation requires valid
+  credentials plus a fresh OTP when the master OTP switch is enabled.
 - Reactivation creates only a new session and never restores prior sessions.
 - Staff retain backend override functionality, protected by role checks and
   immutable audit events.

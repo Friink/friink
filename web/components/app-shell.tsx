@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -52,6 +52,7 @@ import {
 type AppShellProps = {
   user: AuthUser;
   onLogout: () => void;
+  logoutError?: string | null;
   initialScreen?: Screen;
   profileUser?: AuthUser;
   children?: React.ReactNode;
@@ -93,7 +94,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -322,7 +323,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     router.push(`/settings/${tab}`, { scroll: false });
   }
 
-  function addToast(input: ToastInput, tone: ToastMessage['tone'] = 'error') {
+  const addToast = useCallback((input: ToastInput, tone: ToastMessage['tone'] = 'error') => {
     const now = new Date();
     const toast = typeof input === 'string' ? { message: input, tone } : input;
     setToasts((current) => {
@@ -338,7 +339,11 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         },
       ];
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    if (logoutError) addToast(logoutError);
+  }, [logoutError, addToast]);
 
   function handlePostUpdated(updatedPost: Post) {
     setPosts((current) => current.map((post) => post.id === updatedPost.id ? updatedPost : post));
@@ -369,13 +374,22 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
     return transport.subscribe((count) => {
       setUnreadNotificationCount(count);
+      if (count > unreadNotificationCount && activeScreen !== 'notifications') {
+        listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
+          .then((page) => {
+            if (page.items.some((item) => item.type === 'login_security' && item.payload.kind === 'login_approval' && !item.read)) {
+              addToast({ title: 'Login request', message: 'Review the new login request in Settings.', tone: 'success' });
+            }
+          })
+          .catch(() => undefined);
+      }
       if (activeScreen === 'notifications') {
         listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
           .then((page) => setNotifications(page.items.map(mapApiNotification).map((notification) => ({ ...notification, tone: 'sage', unread: false }))))
           .catch(() => undefined);
       }
     });
-  }, [activeScreen]);
+  }, [activeScreen, addToast]);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -472,7 +486,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       .catch(() => {
         setFollowing([]);
       });
-  }, [activeScreen, connectionsUsername, viewingOtherConnections]);
+  }, [activeScreen, addToast, connectionsUsername, viewingOtherConnections]);
 
   useEffect(() => {
     const viewedUser = profileUser ?? user;
@@ -502,7 +516,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
         setProfileConnectionRequestId(null);
         addToast(error instanceof Error ? error.message : 'Could not load connection state.');
       });
-  }, [profileUser, user]);
+  }, [addToast, profileUser, user]);
 
   useEffect(() => {
     if (activeScreen !== 'profile' || composeContext.kind !== 'post') return;
@@ -646,7 +660,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
       kind: notification.type === 'login_security' ? 'login' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
       name: notification.type === 'login_security' ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
       handle: `@${notification.type === 'login_security' ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
-      text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle),
+      text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
       initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
       tone: notification.read ? 'sage' : 'mint',
@@ -655,10 +669,12 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
     };
   }
 
-  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string) {
+  function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string, payload: Record<string, unknown>) {
     switch (type) {
       case 'login_security':
-        return 'A new login to your Friink account was successful. Review sessions if this was not you.';
+        return 'kind' in payload && payload.kind === 'login_approval'
+          ? 'A new device is asking to sign in. Approve or deny it in Settings.'
+          : 'A new login to your Friink account was successful. Review sessions if this was not you.';
       case 'mention':
         return `${actorName} (@${actorHandle}) mentioned you.`;
       case 'like':
@@ -863,6 +879,7 @@ export function AppShell({ user, onLogout, initialScreen = 'home', profileUser, 
           onNavigate={navigateTo}
           onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
+          onAccountChange={onUserChange}
         />
 
         <Header

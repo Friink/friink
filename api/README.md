@@ -25,6 +25,7 @@ Required environment variables:
 DATABASE_URL=
 FRONTEND_URL=http://localhost:3000
 ENVIRONMENT=development
+OTP_ENABLED=true
 JWT_SECRET_KEY=
 JWT_ALGORITHM=HS256
 JWT_ACTIVE_KID=default

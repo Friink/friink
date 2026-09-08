@@ -22,7 +22,11 @@ export type AuthSession = {
   accessToken: string;
   tokenType: 'Bearer';
   user: AuthUser;
+  accountSlot?: string;
 };
+
+export type AccountSummary = { accountSlot: string; username: string; displayName: string | null; profilePictureUrl: string | null; active: boolean; available: boolean; lastUsedAt: string };
+export type PendingLoginApproval = { challengeId: string; deviceLabel: string; browser: string | null; createdAt: string; expiresAt: string };
 
 export type LoginChallenge = {
   challengeRequired: true;
@@ -42,6 +46,8 @@ export type ManagedAuthSession = {
 };
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
+const ACCOUNT_SLOT_KEY = 'friink-active-account-slot';
+const DEACTIVATION_FALLBACK_SLOT_KEY = 'friink-deactivation-fallback-slot';
 const REFRESH_COORDINATION_KEY = 'friink-auth-refresh-coordination';
 const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
@@ -90,6 +96,7 @@ type ApiTokenResponse = {
   access_token: string;
   token_type: string;
   user?: ApiUser;
+  account_slot?: string | null;
 };
 
 type ApiLoginChallengeResponse = {
@@ -110,24 +117,27 @@ type AuthErrorCode =
   | 'REFRESH_TOKEN_INVALID';
 
 type ApiErrorBody = {
-  detail?: string | { message?: string; code?: AuthErrorCode } | Array<{ msg?: string }>;
+  detail?: string | { message?: string; code?: AuthErrorCode; cooldown_seconds?: number } | Array<{ msg?: string }>;
 };
 
 type AuthRequestContext = 'fresh_login' | 'refresh_exchange' | 'authenticated_request';
+type AuthFlowOptions = { addAccount?: boolean };
 
 export class AuthApiError extends Error {
   status: number;
   code?: AuthErrorCode;
   displayCode?: string;
   detail: string;
+  cooldownSeconds?: number;
 
-  constructor(message: string, status: number, code?: AuthErrorCode, options?: { displayCode?: string; detail?: string }) {
+  constructor(message: string, status: number, code?: AuthErrorCode, options?: { displayCode?: string; detail?: string; cooldownSeconds?: number }) {
     super(message);
     this.name = 'AuthApiError';
     this.status = status;
     this.code = code;
     this.displayCode = options?.displayCode ?? code ?? (status > 0 ? `HTTP_${status}` : 'CLIENT_ERROR');
     this.detail = options?.detail ?? message;
+    this.cooldownSeconds = options?.cooldownSeconds;
   }
 }
 
@@ -169,12 +179,13 @@ export type SignupStartResponse = {
   verification_required: boolean;
   reservation_token: string;
   message: string;
+  existing_account: boolean;
 };
 
 type ApiEmailChangeStartResponse = {
   accepted: boolean;
-  verification_required: true;
-  challenge_token: string;
+  verification_required: boolean;
+  challenge_token: string | null;
   message: string;
 };
 
@@ -194,9 +205,10 @@ export async function verifySignupEmail(reservationToken: string, otp: string): 
   });
 }
 
-export async function completeSignup(reservationToken: string, input: SignupInput): Promise<AuthSession | LoginChallenge> {
-  await requestApi<ApiUser>('/auth/signup/complete', {
+export async function completeSignup(reservationToken: string, input: SignupInput, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
+  const response = await requestApi<ApiTokenResponse>('/auth/signup/complete', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({
       reservation_token: reservationToken,
       email: input.email,
@@ -208,17 +220,7 @@ export async function completeSignup(reservationToken: string, input: SignupInpu
     skipAuthRefresh: true,
   });
 
-  const session = await login(input.email, input.password);
-  if (isLoginChallenge(session)) return session;
-  return {
-    ...session,
-    user: {
-      ...session.user,
-      name: input.name || session.user.name,
-      setupStep: 1,
-      setupCompleted: false,
-    },
-  };
+  return mapTokenResponse(response);
 }
 
 export async function startSignup(input: SignupInput): Promise<SignupStartResponse> {
@@ -243,9 +245,10 @@ export async function verifySignup(reservationToken: string, otp: string): Promi
   });
 }
 
-export async function signUp(input: SignupInput): Promise<AuthSession | LoginChallenge> {
-  await requestApi<ApiUser>('/auth/signup', {
+export async function signUp(input: SignupInput, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
+  const response = await requestApi<ApiTokenResponse>('/auth/signup', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({
       email: input.email,
       username: input.username,
@@ -255,17 +258,7 @@ export async function signUp(input: SignupInput): Promise<AuthSession | LoginCha
     }),
   });
 
-  const session = await login(input.email, input.password);
-  if (isLoginChallenge(session)) return session;
-  return {
-    ...session,
-    user: {
-      ...session.user,
-      name: input.name || session.user.name,
-      setupStep: 1,
-      setupCompleted: false,
-    },
-  };
+  return mapTokenResponse(response);
 }
 
 export async function checkUsernameAvailability(username: string): Promise<{ username: string; available: boolean }> {
@@ -303,8 +296,8 @@ export async function deactivateAccount(accessToken: string, currentPassword: st
   });
 }
 
-export async function startAccountDeletion(accessToken: string, currentPassword: string): Promise<{ challenge_token: string; message: string }> {
-  return requestApi<{ challenge_token: string; message: string }>('/auth/me/delete/start', {
+export async function startAccountDeletion(accessToken: string, currentPassword: string): Promise<{ challenge_required: boolean; challenge_token: string | null; message: string }> {
+  return requestApi<{ challenge_required: boolean; challenge_token: string | null; message: string }>('/auth/me/delete/start', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
@@ -324,9 +317,15 @@ export async function confirmAccountDeletion(accessToken: string, challengeToken
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
+  const previousAccountSlot = inMemoryAuthSession?.accountSlot;
   inMemoryAuthSession = session;
   window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user: session.user }));
+  if (session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, session.accountSlot);
+  else window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
   authBroadcastChannel?.postMessage({ type: 'session-updated', session });
+  if (previousAccountSlot && session.accountSlot && previousAccountSlot !== session.accountSlot) {
+    window.dispatchEvent(new CustomEvent('friink-account-switched'));
+  }
 }
 
 export function loadAuthSession(): AuthSession | null {
@@ -347,12 +346,80 @@ export function clearAuthSession() {
   authSessionGeneration += 1;
   inMemoryAuthSession = null;
   window.localStorage.removeItem(AUTH_SESSION_KEY);
+  window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
   authBroadcastChannel?.postMessage({ type: 'session-cleared' });
 }
 
-export async function login(identifier: string, password: string): Promise<AuthSession | LoginChallenge> {
+export function setDeactivationFallbackSlot(accountSlot: string | null) {
+  setDeactivationFallbackSlots(accountSlot ? [accountSlot] : []);
+}
+
+export function setDeactivationFallbackSlots(accountSlots: string[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (accountSlots.length > 0) window.sessionStorage.setItem(DEACTIVATION_FALLBACK_SLOT_KEY, JSON.stringify(accountSlots));
+    else window.sessionStorage.removeItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+  } catch {
+    // Storage may be unavailable; the deactivation flow still falls back to
+    // the public site when no recoverable slot can be retained.
+  }
+}
+
+export function getDeactivationFallbackSlot(): string | null {
+  return getDeactivationFallbackSlots()[0] ?? null;
+}
+
+export function getDeactivationFallbackSlots(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const value = window.sessionStorage.getItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+    if (!value) return [];
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === 'string' && item.length > 0);
+    } catch {
+      return [value];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearDeactivationFallbackSlot() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(DEACTIVATION_FALLBACK_SLOT_KEY);
+  } catch {
+    // Ignore unavailable session storage.
+  }
+}
+
+export async function restoreAccountSession(accountSlot: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/refresh', {
+    method: 'POST',
+    headers: { 'X-Friink-Account-Slot': accountSlot },
+    authContext: 'refresh_exchange',
+    skipAuthRefresh: true,
+  });
+  return mapTokenResponse({ ...response, account_slot: accountSlot });
+}
+
+export async function logout(accessToken: string, accountSlot?: string): Promise<void> {
+  await requestApi<void>('/auth/logout', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : {}),
+    },
+    skipAuthRefresh: true,
+  });
+}
+
+export async function login(identifier: string, password: string, options: AuthFlowOptions = {}): Promise<AuthSession | LoginChallenge> {
   const response = await requestApi<ApiTokenResponse | ApiLoginChallengeResponse>('/auth/login', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({ identifier, password }),
   });
 
@@ -367,9 +434,10 @@ export async function login(identifier: string, password: string): Promise<AuthS
   return mapTokenResponse(response as ApiTokenResponse);
 }
 
-export async function verifyLoginChallenge(challengeToken: string, otp: string): Promise<AuthSession> {
+export async function verifyLoginChallenge(challengeToken: string, otp: string, options: AuthFlowOptions = {}): Promise<AuthSession> {
   const response = await requestApi<ApiTokenResponse>('/auth/login/verify', {
     method: 'POST',
+    headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined,
     body: JSON.stringify({ challenge_token: challengeToken, otp }),
     skipAuthRefresh: true,
   });
@@ -410,7 +478,12 @@ function installAuthCoordinationListener() {
         authSessionGeneration += 1;
         inMemoryAuthSession = null;
       } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
+        const previousAccountSlot = inMemoryAuthSession?.accountSlot;
         inMemoryAuthSession = message.session;
+        if (message.session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, message.session.accountSlot);
+        if (previousAccountSlot && message.session.accountSlot && previousAccountSlot !== message.session.accountSlot) {
+          window.dispatchEvent(new CustomEvent('friink-account-switched'));
+        }
       }
     });
   }
@@ -508,14 +581,27 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
 
 async function performRefresh(generation: number, operationId: string): Promise<AuthSession> {
   const currentSession = loadPersistedAuthSession();
-  const response = await requestApi<{ access_token: string; token_type: string }>('/auth/refresh', {
+  const slot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  const response = await requestApi<{ access_token: string; token_type: string; account_slot?: string }>('/auth/refresh', {
     method: 'POST',
+    headers: slot ? { 'X-Friink-Account-Slot': slot } : undefined,
     authContext: 'refresh_exchange',
     skipAuthRefresh: true,
   });
 
   if (generation !== authSessionGeneration) {
     throw new AuthApiError('The session was cleared while it was refreshing.', 0);
+  }
+
+  // A different tab may have switched accounts while this refresh was in
+  // flight. Do not let the stale tab commit its old slot back into shared
+  // localStorage/BroadcastChannel state.
+  const latestSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  if (latestSlot !== slot) {
+    throw new AuthApiError('The active account changed while the session was refreshing.', 0);
+  }
+  if (slot && response.account_slot !== slot) {
+    throw new AuthApiError('The API returned a different account slot while refreshing.', 0);
   }
 
   if (currentSession) {
@@ -527,6 +613,7 @@ async function performRefresh(generation: number, operationId: string): Promise<
       ...currentSession,
       accessToken: response.access_token,
       tokenType: 'Bearer',
+      accountSlot: response.account_slot ?? undefined,
     };
     saveAuthSession(nextSession);
     authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
@@ -543,9 +630,10 @@ async function performRefresh(generation: number, operationId: string): Promise<
     throw new AuthApiError('The session changed while it was refreshing.', 0);
   }
   const restoredSession: AuthSession = {
-    accessToken: response.access_token,
-    tokenType: 'Bearer',
-    user: mapApiUser(restoredUser),
+      accessToken: response.access_token,
+      tokenType: 'Bearer',
+      accountSlot: response.account_slot ?? undefined,
+      user: mapApiUser(restoredUser),
   };
   saveAuthSession(restoredSession);
   authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
@@ -638,6 +726,54 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
   });
+}
+
+export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
+  const activeSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
+  const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at }));
+  const currentUser = loadPersistedAuthSession()?.user;
+  const currentAccount = currentUser
+    ? accounts.find((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())
+    : undefined;
+  if (currentAccount && typeof window !== 'undefined') {
+    window.localStorage.setItem(ACCOUNT_SLOT_KEY, currentAccount.accountSlot);
+    return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
+  }
+  return accounts;
+}
+
+export async function canAddAccount(accessToken: string): Promise<boolean> {
+  const response = await requestApi<{ allowed: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  return response.allowed;
+}
+
+export async function switchAccount(accessToken: string, accountSlot: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'X-Friink-Account-Slot': accountSlot }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
+  return mapTokenResponse(response);
+}
+
+export async function removeAccount(accessToken: string, accountSlot: string): Promise<void> {
+  await requestApi<void>(`/auth/accounts/${encodeURIComponent(accountSlot)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}`, 'X-Friink-Account-Slot': accountSlot }, authContext: 'authenticated_request' });
+}
+
+export async function listPendingLoginApprovals(accessToken: string): Promise<PendingLoginApproval[]> {
+  const response = await requestApi<Array<{ challenge_id: string; device_label: string; browser: string | null; created_at: string; expires_at: string }>>('/auth/login/pending', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  return response.map((item) => ({ challengeId: item.challenge_id, deviceLabel: item.device_label, browser: item.browser, createdAt: item.created_at, expiresAt: item.expires_at }));
+}
+
+export async function respondToLoginApproval(accessToken: string, challengeId: string, decision: 'approve' | 'deny'): Promise<void> {
+  await requestApi<void>(`/auth/login/${decision}`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request', body: JSON.stringify({ challenge_id: challengeId }) });
+}
+
+export async function getLoginApprovalStatus(challengeToken: string): Promise<'pending' | 'approved' | 'denied' | 'expired'> {
+  const response = await requestApi<{ status: 'pending' | 'approved' | 'denied' | 'expired' }>(`/auth/login/status/${encodeURIComponent(challengeToken)}`, { method: 'GET', skipAuthRefresh: true });
+  return response.status;
+}
+
+export async function completeApprovedLogin(challengeToken: string, options: AuthFlowOptions = {}): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/complete-approved', { method: 'POST', headers: options.addAccount ? { 'X-Friink-Account-Flow': 'add-account' } : undefined, body: JSON.stringify({ challenge_token: challengeToken, otp: '000000' }), skipAuthRefresh: true });
+  return mapTokenResponse(response);
 }
 
 export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
@@ -1535,7 +1671,7 @@ async function requestApi<T>(
         retryingAfterRefresh: true,
       });
     }
-    throw new AuthApiError(apiError.message, response.status, apiError.code);
+    throw new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
   }
 
   if (response.status === 204) {
@@ -1551,7 +1687,7 @@ function ensureTerminalPeriod(message: string): string {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
-async function getApiError(response: Response): Promise<{ message: string; code?: AuthErrorCode }> {
+async function getApiError(response: Response): Promise<{ message: string; code?: AuthErrorCode; cooldownSeconds?: number }> {
   try {
     const body = (await response.json()) as ApiErrorBody;
     if (typeof body.detail === 'string') {
@@ -1561,6 +1697,7 @@ async function getApiError(response: Response): Promise<{ message: string; code?
       return {
         message: body.detail.message || `Friink API request failed with ${response.status}.`,
         code: body.detail.code,
+        cooldownSeconds: body.detail.cooldown_seconds,
       };
     }
     if (Array.isArray(body.detail)) {
@@ -1585,6 +1722,7 @@ async function mapTokenResponse(response: ApiTokenResponse): Promise<AuthSession
     accessToken: response.access_token,
     tokenType: 'Bearer',
     user: mapApiUser(user),
+    accountSlot: response.account_slot ?? undefined,
   };
 }
 

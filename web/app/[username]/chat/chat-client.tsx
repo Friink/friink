@@ -37,6 +37,7 @@ export function ChatClient({ username }: ChatClientProps) {
   const [chatAccessDenied, setChatAccessDenied] = useState(false);
   const [receiptState, setReceiptState] = useState<ReceiptState>({ unreadCount: 0, firstUnreadMessageId: null, lastReadMessageId: null, peerDeliveredMessageId: null, peerReadMessageId: null });
   const lastReadMessageRef = useRef<string | null>(null);
+  const initiallyScrolledConversationRef = useRef<string | null>(null);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -78,9 +79,15 @@ export function ChatClient({ username }: ChatClientProps) {
   }, [router, username]);
 
   useEffect(() => {
-    const element = document.querySelector('.chat-messages');
-    if (element) element.scrollTop = element.scrollHeight;
-  }, [messages.length]);
+    if (!conversation?.id || !messages.length || initiallyScrolledConversationRef.current === conversation.id) return;
+    initiallyScrolledConversationRef.current = conversation.id;
+    const frame = window.requestAnimationFrame(() => {
+      const element = document.querySelector<HTMLElement>('.chat-messages');
+      if (element) element.scrollTop = element.scrollHeight;
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [conversation?.id, messages.length]);
 
   useEffect(() => {
     const container = document.querySelector('.chat-messages');
@@ -180,7 +187,7 @@ export function ChatClient({ username }: ChatClientProps) {
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <ProfileCard name={displayName} handle={handle} imageUrl={participant?.profile_picture_url} />
+          <ProfileCard href={`/${encodeURIComponent(participant?.username || username)}/posts`} name={displayName} handle={handle} imageUrl={participant?.profile_picture_url} />
           {context?.status === 'pending' && conversation && conversation.requester_id !== user.id ? <button className="primary-button chat-accept-button" type="button" onClick={handleAcceptRequest}>Accept request</button> : null}
         </div>
 

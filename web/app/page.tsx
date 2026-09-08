@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import styles from './landing.module.css';
 import { Header } from '@/components/public-header';
+import { PublicRouteGuard } from '@/components/public-route-guard';
 import { SubscribeForm } from './subscribe-form';
 
 export const metadata: Metadata = {
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className={styles.page}>
+    <PublicRouteGuard>
+      <div className={styles.page}>
       <Header />
 
       <main className={styles.hero}>
@@ -142,6 +144,7 @@ export default function HomePage() {
           <p>&copy; 2026 Friink. Built for humans.</p>
         </div>
       </footer>
-    </div>
+      </div>
+    </PublicRouteGuard>
   );
 }

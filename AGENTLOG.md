@@ -1,5 +1,409 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T01:30:00Z — Add live post-reactivation cooldown toast
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change the post-reactivation deactivation cooldown to 8 minutes and show its remaining time in a live toast.
+- Changes Made: Reduced the API cooldown to 8 minutes, returned authoritative remaining seconds in the 429 response, propagated that value through `AuthApiError`, and added a shared live countdown toast. Updated lifecycle and design documentation and added regression coverage.
+- Files: `api/app/services/account_lifecycle.py`, `api/tests/test_account_lifecycle.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/components/toast-stack.tsx`, `docs/account-lifecycle.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Users need immediate, accurate feedback after reactivation without confusing the cooldown with a failed deactivation.
+- Verification Status: `12 passed` for lifecycle/account regression tests, web TypeScript validation passed, and `git diff --check` passed. No database migration or dependency update is required.
+
+## 2026-09-08T02:00:00Z — Recover protected routes from ambiguous refresh failures
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose staging reactivation unexpectedly requesting OTP with `OTP_ENABLED=false` and the subsequent blank authenticated screen.
+- Changes Made: Added a recoverable session-state screen to `AppShellRoute` when refresh fails without proving the session is invalid. The route now offers retry or login instead of rendering a permanent white screen; terminal refresh failures still redirect to login.
+- Files: `web/components/app-shell-route.tsx`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Reason: A stale frontend or transient API failure must not create an unusable blank screen or silently discard a potentially valid session.
+- Verification Status: Web TypeScript validation and `git diff --check` remain required after this change; staging API environment/deployment alignment remains open.
+
+## 2026-09-08T02:15:00Z — Synchronize lifecycle cooldown documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the relevant documentation for the post-reactivation cooldown time.
+- Changes Made: Updated account lifecycle, auth/session, progress, rules, design, changelog, and agent log references to describe the 8-minute cooldown, live countdown toast, and API-owned conditional OTP behavior.
+- Files: `docs/account-lifecycle.md`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep the implementation contract consistent across product lifecycle and authentication documentation.
+- Verification Status: Documentation-only update; stale lifecycle cooldown references were scanned with `rg`.
+
+## 2026-09-08T02:30:00Z — Clarify deactivation fallback action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify the ambiguous `Try again` action on the account-deactivated screen.
+- Changes Made: Renamed the fallback action to `Continue with another account` while preserving the existing remembered-account restore behavior.
+- Files: `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The action restores a different remembered account; its label should describe that outcome directly.
+- Verification Status: Copy-only UI update; web TypeScript validation remains the relevant release check.
+
+## 2026-09-08T02:45:00Z — Simplify account-deactivated recovery modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the account-deactivated page action with a single `Okay` modal that returns to `/home`.
+- Changes Made: Converted the route to the shared `Modal`, updated the title and lifecycle copy, retained hidden remembered-account recovery, and changed successful navigation to `/home`.
+- Files: `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The deactivation confirmation should acknowledge the state without exposing account-switching mechanics; app routing receives the handoff after fallback restoration.
+- Verification Status: Web TypeScript validation remains the relevant release check.
+
+## 2026-09-08T03:00:00Z — Route deactivation acknowledgement through public entry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm and align the two post-deactivation modal paths.
+- Changes Made: Changed both the no-fallback and restored-account paths to navigate to `/`; the public-route guard now naturally keeps signed-out users public and redirects active restored sessions to `/home`.
+- Files: `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: One destination produces the expected public-site behavior for both account-count cases without duplicating routing logic.
+- Verification Status: Web TypeScript validation remains the relevant release check.
+
+## 2026-09-07T11:00:00Z — Authorize slot-aware logout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue hardening the account-switcher slot lifecycle.
+- Changes Made: Required slot-aware `POST /auth/logout` to validate the bearer access token and match its user to the requested device-bound slot; preserved the legacy refresh-cookie-only logout path; added a cross-account authorization regression assertion.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`, `docs/account-switcher.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: A device cookie and opaque slot identifier must not be sufficient to revoke another account's active slot.
+- Verification Status: Focused account and refresh-token suites passed (`11 passed`, existing Starlette/JWT warnings). Full API and web validation remain required after this change; staging deployment and clean-profile browser acceptance remain open.
+
+## 2026-09-07T11:30:00Z — Remove identifiers from auth diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the account-switcher safe-observability audit.
+- Changes Made: Removed raw internal user, refresh-token, and refresh-family identifiers from auth debug log payloads and added secret-free regression coverage.
+- Files: `api/app/services/auth_debug.py`, `api/tests/test_auth_debug.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Account-switcher diagnostics must not expose internal identifiers while diagnosing deployment and slot continuity.
+- Verification Status: Focused diagnostics, account, and refresh-token validation passed (`15 passed`); full API suite passed (`107 passed`, existing Starlette/JWT warnings). Web TypeScript, production build, and lint remain green with existing warnings. Staging deployment and clean-profile browser acceptance remain open.
+
+## 2026-09-07T12:00:00Z — Chrome staging switch verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Recheck the account-switcher release gate after Chrome became available.
+- Changes Made: Recorded sanitized live evidence from the connected Chrome profile: three remembered accounts were listed, but selecting `@muflah` left `@muflahulfurqan` active and reload preserved the original account.
+- Files: `docs/account-switcher.md`, `AGENTLOG.md`.
+- Reason: Confirm whether the previous browser-control blocker was masking a live switching failure.
+- Verification Status: Chrome staging switch acceptance failed; no credentials or tokens were recorded. Phase 6 remains open pending deployment diagnosis and a passing clean-profile run.
+
+## 2026-09-07T10:00:00Z — Preserve other account after deactivation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep another remembered account usable after deactivating the current account.
+- Changes Made: Capture the most-recent remaining account slot before deactivation, restore it from its slot cookie on the confirmation page, show `Go Back` when a fallback exists, and otherwise send the user to the public site. Added backend coverage proving deactivation revokes only the selected account slot while preserving the other account.
+- Files: `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/app/account-deactivated/page.tsx`, `api/tests/test_phase4_accounts.py`, `AGENTLOG.md`.
+- Reason: Avoid clearing the browser's local active-slot pointer for every remembered account when only one account is deactivated.
+- Verification Status: Complete API suite passed (`106 passed`, existing Starlette/JWT warnings); focused account suite passed (`9 passed`). Web TypeScript, production build, and lint passed with existing warnings. Staging deployment and browser acceptance remain open.
+
+## 2026-09-07T09:00:00Z — Make remembered-account default explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the remembered-account default with the staging configuration.
+- Changes Made: Set `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` to `4` in API config and environment templates; retained the validated `1–16` range; clarified that lowering the limit does not remove existing slots.
+- Files: `api/app/config.py`, `api/.env.example`, `api/.env.staging`, `docs/account-switcher.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Keep absent-variable fallback, staging configuration, and documented account-limit behavior consistent.
+- Verification Status: Targeted and full API validation remain covered by the existing suite; staging redeployment and deployed configuration verification remain open.
+
+## 2026-09-07T08:00:00Z — Complete local account-switcher validation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the account-switcher resolution plan through logout/add-account hardening, test-harness repair, and complete local validation.
+- Changes Made: Preserved the active local session when logout fails ambiguously and surfaced a retryable toast; surfaced recoverable account-removal failures in the account manager; reload account-scoped UI after successful Add-account authentication; added duplicate-add, failed-switch, account-limit, concurrent list/switch, and inactive-slot boundary coverage; and added an isolated SQLite fallback test bootstrap with foreign-key enforcement, UTC datetime normalization, schema creation, and the migration-seeded `admin` reserved username.
+- Files: `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `api/tests/conftest.py`, `api/tests/test_phase4_accounts.py`, `api/tests/test_auth_debug.py`, `AGENTLOG.md`.
+- Reason: Prevent recoverable logout failures from signing the user out locally, prevent stale account-scoped screens after Add-account, and make a fresh checkout run the maintained integration suite without staging credentials.
+- Verification Status: Complete API suite passed (`105 passed`, existing Starlette/JWT warnings); focused account and diagnostics suites passed (`8` and `3` respectively). Web TypeScript, production build, and lint passed with existing warnings; Python compilation and `git diff --check` passed. Clean-profile Chrome/Edge staging acceptance and deployment confirmation remain open.
+
+## 2026-09-07T07:00:00Z — Add protected auth deployment diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the account-switcher resolution plan with a safe staging configuration check.
+- Changes Made: Added token-protected `GET /internal/auth/diagnostics`, reporting effective signup/login OTP flags and deployment SHA without exposing secrets; added the configuration field, router registration, and authorization/response tests.
+- Files: `api/app/config.py`, `api/app/main.py`, `api/app/routers/auth_diagnostics.py`, `api/tests/test_auth_debug.py`, `AGENTLOG.md`.
+- Reason: Verify staging flag drift and deployment identity independently from browser routing, cookie continuity, and account-slot behavior.
+- Verification Status: Complete API suite passed (`100 passed`, one existing Starlette deprecation warning); diagnostics tests passed (`2 passed`).
+
+## 2026-09-07T06:00:00Z — Extend safe account-switcher diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the account-switcher resolution plan with safe observability.
+- Changes Made: Added structured account-list and account-switch events for count, cookie-presence, result, and failure reason; diagnostic payloads exclude account slots, cookies, tokens, passwords, and other secrets. Added a secret-free diagnostics regression test.
+- Files: `api/app/routers/auth.py`, `api/app/services/auth_debug.py`, `api/tests/test_auth_debug.py`, `AGENTLOG.md`.
+- Reason: Make the staging retention failure distinguishable between missing device continuity, empty account inventory, and failed switch without exposing sensitive state.
+- Verification Status: Complete API suite passed (`99 passed`, one existing Starlette deprecation warning); focused diagnostics and account tests passed (`6 passed`).
+
+## 2026-09-07T05:00:00Z — Add three-account lifecycle regression
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the account-switcher resolution plan and cover the reported three-account failure sequence.
+- Changes Made: Added a database-backed regression covering standalone creation, Add-account, repeated slot logout, third-account creation, re-login, re-add of both existing accounts, final inventory, and switching.
+- Files: `api/tests/test_phase4_accounts.py`, `AGENTLOG.md`.
+- Reason: Match automated acceptance coverage to the owner-reported three-account staging sequence and ensure revoked slots can be re-added without losing remembered accounts.
+- Verification Status: `tests/test_phase4_accounts.py` passed (`5 passed`) and the complete API suite passed (`98 passed`), with one existing Starlette deprecation warning, using the dedicated test database configuration.
+
+## 2026-09-07T04:30:00Z — Complete local account-switcher validation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the account-switcher resolution plan through complete local validation.
+- Changes Made: Completed auth/session test-fixture repairs; implemented optional bearer-user resolution for blocked-profile visibility; corrected transient post visibility/serialization defaults; added compatible ESLint 8 and Next 14 lint tooling; fixed three lint-blocking apostrophe literals; and updated account-switcher evidence.
+- Files: `api/app/routers/auth.py`, `api/app/services/posts.py`, `api/tests/test_phase2_identity.py`, `api/tests/test_phase3_security_events.py`, `api/tests/test_refresh_token_rotation.py`, `web/app/subscribe-form.tsx`, `web/components/home-screen.tsx`, `web/components/login-screen.tsx`, `web/package.json`, `web/package-lock.json`, `AGENTLOG.md`, `docs/account-switcher.md`.
+- Verification Status: Complete API suite passed (`97 passed`, one Starlette deprecation warning); web lint passed with warnings only; production web build passed; account-switcher and connection tests remained green. Clean-profile Chrome/Edge staging verification and deployment confirmation remain open.
+
+## 2026-09-07T03:30:00Z — Harden account-switcher logout and add-account continuity
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Execute the account-switcher resolution plan after the original account disappeared during Add-account.
+- Changes Made: Added slot-aware server logout with exact slot-cookie deletion; added the client logout API call; rejected Add-account when the active device cookie is absent instead of silently creating a separate device identity; added safe account-slot resolution diagnostics; added logout/re-add and missing-device-cookie regression tests; restricted pytest discovery to `api/tests`; and updated the connection test fake for the current blocking query.
+- Files: `api/app/routers/auth.py`, `api/app/services/auth_debug.py`, `api/tests/test_phase4_accounts.py`, `api/tests/test_connections.py`, `api/pytest.ini`, `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, `web/.eslintrc.json`, `docs/account-switcher.md`, `AGENTLOG.md`.
+- Verification Status: Account-switcher tests passed (`4 passed`); connection tests passed (`20 passed`); web production build passed; Python compilation and `git diff --check` passed. Full API validation remains open with unrelated fixture/product failures; staging deployment and clean Chrome/Edge retest are still required. Web lint is blocked until the ESLint package is installed.
+
+## 2026-09-07T00:00:00Z — Repair stale account switcher inventory
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the web account switcher showing only the current account after adding another account.
+- Changes Made: Added a guarded account-inventory refresh when the switcher opens and after Add account authentication completes. Removed the forced reload from the add-account completion path so the updated account list is applied in place.
+- Files: `web/components/side-drawer.tsx`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: API Phase 4 account tests passed (`2 passed`); web TypeScript check passed; production web build passed; `git diff --check` pending final check.
+
+## 2026-09-06T20:26:34Z — Simplify account switcher actions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the unnecessary active-account header and put Add account before Manage accounts.
+- Changes Made: Removed the account-menu header, reordered the final actions, and kept the divider immediately before Manage accounts so Add account remains grouped with account selection.
+- Files: `web/components/side-drawer.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
+## 2026-09-06T20:25:02Z — Simplify account switcher header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove redundant active-account display text from the account switcher and clarify the management divider contract.
+- Changes Made: Removed the repeated display-name line below `Using as @username`. Kept the separator above Manage accounts and documented it as the shared thin-line grouping treatment between account selection and management actions.
+- Files: `web/components/side-drawer.tsx`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
+## 2026-09-06T20:18:01Z — Fix username login and preserve account switch slots
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the missing account-switch option and username-login failure observed in the open staging browser.
+- Changes Made: The browser showed the account caret correctly, but only one remembered account (`@muflah`) was returned. Added support for `@username` login, corrected device-slot capacity counting across all accounts, and migrated a legacy current session into a device slot before Add account checks so the previous account remains switchable.
+- Files: `api/app/services/auth.py`, `api/app/services/account_slots.py`, `api/app/routers/auth.py`, `api/tests/test_auth_updates.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `10 passed` in `api/tests/test_auth_updates.py`; modified API files compile; `git diff --check` passed. Combined account tests were not run because the test environment lacks `JWT_SECRET_KEY` during collection.
+
+## 2026-09-06T20:09:22Z — Restyle Add account auth modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the SideDrawer Add account flow use the in-app design instead of rendering the standalone login page.
+- Changes Made: Added an account-modal presentation mode to `LoginScreen`, removed the page-level logo/home treatment in that mode, added Login and Sign up actions beside the requested Email or username and Password fields, and added light/dark modal theme selectors for the portaled dialog.
+- Files: `web/components/login-screen.tsx`, `web/components/side-drawer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
+## 2026-09-06T20:02:37Z — Make login route signed-out only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent authenticated users from opening the standalone `/login` route while preserving in-app account addition.
+- Changes Made: Removed the demo-session exception from the login route guard, added a session-check gate so the standalone form is not rendered during redirect, and documented that authenticated login/signup for another account remains inside the SideDrawer Add account modal.
+- Files: `web/app/login/login-client.tsx`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` from `web/` passed; `git diff --check` passed.
+
+## 2026-09-06T19:57:29Z — Move account controls into drawer profile menu
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rework the SideDrawer account UX without changing backend behavior.
+- Changes Made: Added a caret trigger to the drawer profile card for both expanded and collapsed desktop states. Reused `ActionMenu` for the active-account header, remembered-account list, Manage accounts, and Add account actions. Removed the former account-control group from the drawer footer and added disabled/divider support to the shared menu item contract.
+- Files: `web/components/side-drawer.tsx`, `web/components/action-menu.tsx`, `web/app/globals.css`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` from `web/` passed; `git diff --check` passed. Backend was not changed.
+
+## 2026-09-07T02:00:00Z — Split mobile auth/session requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Separate shared backend/web authentication requirements from mobile-specific requirements without duplication.
+- Changes Made: Created `docs/auth-and-session-mobile.md` for mobile-only credential storage, app lifecycle, native account switching, notification/deep-link, and mobile accessibility/acceptance requirements. Removed mobile implementation detail from the general auth/session document and replaced it with focused cross-references. Kept Phase 4 closed for the current web release and mobile explicitly deferred.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-mobile.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; split-document consistency review and `git diff --check` passed.
+
+## 2026-09-07T01:30:00Z — Close web-focused Phase 4 scope
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Treat Phase 4 as complete for the current web-focused release while retaining mobile requirements as deferred.
+- Changes Made: Marked Phase 4 closed for web/API scope, explicitly retained the mobile requirements as a deferred 4e-e gate, and noted that mobile does not block the current phase closure.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; `git diff --check` passed.
+
+## 2026-09-07T01:15:00Z — Defer Phase 4 mobile gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: No mobile client exists; preserve the mobile requirements but defer them for now.
+- Changes Made: Updated Phase 4 status and verification language to distinguish completed web/API work from the deferred mobile implementation and acceptance gate. Mobile requirements remain intact and mandatory before mobile release.
+- Files: `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; `git diff --check` passed.
+
+## 2026-09-07T01:00:00Z — Prevent misleading OTP on duplicate signup
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: When signup uses an existing email, avoid sending an OTP and provide a login-or-different-email recovery path.
+- Changes Made: Added an explicit existing-account result to email signup start, checked the normalized email before reservation/OTP creation, kept the web flow on the email step, and added a login action using the submitted email. Updated auth requirements, progress evidence, and changelog documentation.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/tests/test_phase2_signup.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused API regression passed (`1 passed`); frontend production build, TypeScript check, and `git diff --check` passed. Staging deployment and live browser acceptance remain pending.
+
+## 2026-09-07T00:30:00Z — Restyle account setup wizard
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the account setup wizard so it follows the application theme and no longer looks like a plain mockup.
+- Changes Made: Reworked the wizard hierarchy with an accent progress bar, themed intro, icon-led step headings, ProfileCard preview, stronger profile-picture treatment, themed upload action, improved About copy, and responsive modal action spacing. Reused the existing design tokens and components.
+- Verification Status: Sequential web TypeScript validation and Next production build passed; `git diff --check` passed. Staging visual verification remains dependent on the staging API/deployment recovering.
+
+Follow-up evidence: the live staging wizard still renders the pre-fix plain
+presentation (`Let's update your settings`, unstyled Step 1 copy, plain
+Upload action). The updated visual implementation is therefore ready in the
+working tree but requires the web deployment before visual acceptance can be
+closed.
+
+## 2026-09-06T17:45:00Z — Begin Phase 1–4 staging E2E campaign
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the live staging implementation across Phases 1–4 and preserve resumable audit evidence.
+- Changes Made: Confirmed the staging database is at Alembic head `20260906_0036` with no drift; opened the live staging login page and verified the login form is available. No runtime changes were made.
+- Verification Status: E2E campaign is started but awaiting the staging password for the user-provided test email. OTPs will be requested from the user when the live email flows are reached. Test data will be isolated and deleted only after confirmation of the newly created staging test account.
+
+## 2026-09-06T17:55:00Z — Phase 1–4 E2E signup checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the live staging campaign with a newly created test account.
+- Changes Made: Opened `https://staging.friink.com/login`, selected Sign up, submitted `muflahulfurqan@gmail.com`, and reached the live email-verification screen.
+- Verification Status: Staging returned the expected Step 2 of 4 state and confirmed that a six-character verification code was sent. Awaiting the user-provided OTP; no account has been created yet.
+
+## 2026-09-06T18:05:00Z — Phase 1–4 E2E signup retry checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resume the staging campaign after the temporary browser tab expired.
+- Changes Made: Reopened staging, repeated the signup email step, and requested a fresh verification code. The prior code was not submitted and is superseded by the new request.
+- Verification Status: Live staging is again at signup Step 2 of 4 with the expected six-character OTP prompt. Awaiting the newest user-provided OTP; no account has been created.
+
+## 2026-09-06T18:15:00Z — Phase 1–4 E2E signup OTP passed
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the live staging campaign from the user-completed OTP step.
+- Changes Made: Reattached to the preserved staging tab and verified that the signup flow advanced to Step 3 of 4 after OTP verification.
+- Verification Status: Email ownership verification passed in the live staging UI. The campaign is awaiting a staging-only password before profile completion; no account has been created yet.
+
+## 2026-09-06T18:25:00Z — Phase 1–4 E2E pre-creation checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the live staging signup profile before beginning authenticated phase tests.
+- Changes Made: Entered the temporary staging password and filled synthetic profile data: `Friink Phase 4 Test`, username `phase4test20260906`, date of birth `1990-01-01`.
+- Verification Status: Staging is at the final Step 4 of 4 with the `Create account` action ready. Account creation is intentionally paused for user confirmation; no account has been created.
+
+## 2026-09-06T18:35:00Z — Phase 1–4 E2E test account created
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue the staging campaign after the user submitted the final signup action.
+- Changes Made: Verified the staging UI advanced from profile creation to the login-verification screen for the new test account.
+- Verification Status: The isolated staging account creation action completed and staging issued a six-character login OTP. Awaiting that OTP before verifying the first authenticated session; cleanup remains pending until testing finishes.
+
+## 2026-09-06T18:45:00Z — Find and fix redundant post-signup OTP
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the staging E2E failure where a newly created account requested a second OTP.
+- Finding: The signup client created the account and then called the ordinary `/auth/login` endpoint, which correctly applied the new-device risk gate but incorrectly duplicated signup email verification.
+- Changes Made: `/auth/signup` and `/auth/signup/complete` now issue the authenticated session directly; web `signUp` and `completeSignup` consume that session instead of calling `/auth/login`. Updated the signup regression expectation to assert the returned token.
+- Verification Status: Affected signup and Phase 4 suites passed (`3 passed`); API compilation, web TypeScript, and diff checks passed. The fix is not live on staging until the updated API/web code is deployed.
+
+## 2026-09-06T19:00:00Z — E2E deployment gate for signup fix
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resume Phase 1–4 staging E2E testing after fixing the redundant signup OTP.
+- Changes Made: Opened the live staging login flow and submitted the isolated test account credentials. Staging reached login verification in the new browser session.
+- Verification Status: This confirms the current account/login path is reachable, but does not verify the signup fix because a new-browser login OTP is expected. The signup acceptance must be repeated after the updated API and web builds are deployed to staging.
+
+## 2026-09-06T19:20:00Z — Staging deployment transient failure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Continue Phase 1–4 E2E testing while the updated build deploys.
+- Finding: During deployment, the public staging login page remained available, but authenticated `/home/explore` and `/settings/account` rendered blank after navigation/reload.
+- Verification Status: E2E testing is paused at the deployment boundary. This is not recorded as an application failure until the deployment settles, but no further acceptance evidence will be collected while authenticated routes are blank.
+
+Follow-up evidence: after an additional wait, `https://staging-api.friink.com/health/db` actively refused the connection. The staging API deployment is therefore unavailable; authenticated web-route blank states are consistent with that outage. Testing remains paused until API health returns.
+
+## 2026-09-06T17:30:00Z — Phase 4 handoff checkpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Synchronize all relevant audit documentation before pausing work.
+- Changes Made: Confirmed the current web/API implementation, staging verification evidence, documentation state, and remaining release gates across the auth/session, progress, rules, design, changelog, and agent-log records.
+- Verification Status: No runtime changes in this checkpoint. The latest recorded checks remain: staging-backed Phase 4 suite `2 passed`, Alembic no-drift, API compilation, web TypeScript, Next production build, and `git diff --check`. Resume with mobile/platform work and full browser/device staging coverage.
+
+## 2026-09-06T17:15:00Z — Complete Phase 4 approval and coordination slice
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed standard Instagram/X-inspired Phase 4 behavior and verify it end to end.
+- Changes Made: Invalidated alternate OTPs after approval or denial; created account-wide login-approval notifications; corrected pending approval device lookup; added approval notification copy/toast behavior; synchronized account-slot state across tabs and reload boundaries; expanded the Phase 4 acceptance test for notifications and denied OTPs; synchronized Phase 4 audit documentation.
+- Verification Status: Staging-backed dedicated Phase 4 suite passed (`2 passed`, one existing httpx deprecation warning); API compile, web TypeScript, Next production build, and diff checks passed. Mobile implementation and full browser/device staging coverage remain open because this repository has no mobile runtime.
+
+## 2026-09-06T16:52:53Z — Implement Phase 4e account slots
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and test Phase 4 user session controls, then update audit documentation.
+- Changes Made: Added device-scoped account session slots and migration `20260906_0035`; added safe account list, switch, remove, server-side limit validation, slot-specific HttpOnly refresh handling, and web drawer account switching/state. Preserved the legacy single-account path.
+- Verification Status: Staging migration reached `20260906_0035`; `alembic check` passed; dedicated two-account switch/refresh/remove acceptance passed (`1 passed`); web TypeScript and production build passed. Full Phase 4 remains open because 4d, modal/OTP UX, mobile, and full isolation gates remain open.
+
+## 2026-09-06T16:52:53Z — Record agreed Phase 4 account UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Capture the architect-approved account-switching UX and implement the agreed web interactions.
+- Changes Made: Added the existing Modal/LoginScreen Add-account flow, drawer account management, ProfileCard account rows, confirmation-based logout/removal, most-recent-account fallback, duplicate activation, and lifecycle-aware account removal behavior; synchronized supporting documents.
+- Verification Status: Dedicated staging account-flow acceptance passed (`1 passed`) after the UI completion; web TypeScript passed and the final production build is being rerun.
+
+## 2026-09-06T16:52:53Z — Close Phase 4d UX requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the ambiguity in existing-session new-device enrollment.
+- Changes Made: Documented credentials-once plus one-of-two verification: emailed OTP or existing-session Approve/Deny. Clarified that these are alternatives and existing sessions never display the plaintext OTP. Synchronized auth/session progress, rules, changelog, and this log.
+- Verification Status: Documentation-only contract update; Phase 4d runtime implementation remains open.
+
+## 2026-09-06T16:52:53Z — Implement Phase 4d approval flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the finalized new-device login flow with emailed OTP or existing-session approval.
+- Changes Made: Added approval state migration `20260906_0036`, pending/approve/deny/status/complete-approved API routes, web login approval polling, and Settings approval controls. Synchronized Phase 4d status and audit docs.
+- Verification Status: Staging migration reached `20260906_0036`; Phase 4 acceptance passed (`2 passed`); API compilation, web TypeScript, and production build passed. Full browser/device release coverage remains to be recorded.
+
 ## 2026-09-07T00:00:00Z — Synchronize auth/session closeout references
 
 - Agent: Codex
@@ -6845,3 +7249,151 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The production email-first signup endpoint requires the email-only reservation schema introduced by `20260905_0025`; the stale schema caused the API-side failure that the browser presented as `Failed to fetch`.
 - Notes: A controlled post-migration browser signup request now reaches the API and returns its safe `503` delivery message rather than `Failed to fetch`. The remaining issue is Resend production delivery configuration or sender verification; no credentials or recipient details were recorded.
 - Verification Status: Alembic `current` verified `20260906_0031 (head)`; live production browser reproduced the pre-migration failure and confirmed the post-migration application-level response.
+## 2026-09-06T21:00:00Z — Repair account discovery and switch feedback
+- Updated `/auth/accounts` and add-account availability to backfill a missing slot for the active legacy session.
+- Added visible frontend feedback when account listing or switching fails.
+- Validation: API compile, targeted auth tests, and web TypeScript check passed; account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T21:15:00Z — Isolate Add account authentication
+- Added an explicit Add account auth flow that preserves the active account's generic refresh cookie and stores the new account in its own slot-specific cookie.
+- Propagated the flow through password login, signup, login OTP, and approved-login completion.
+- Added a regression assertion that Add account does not overwrite `friink_refresh_token`.
+- Validation: API compile, auth tests (`10 passed`), web TypeScript check, and diff check passed; account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T21:30:00Z — Fix chat scroll affordances
+- Verified staging chat behavior at `/:username/chat`: the participant header scrolled away and the final message was obscured by the fixed composer.
+- Updated shared chat CSS to keep the header/separator sticky below navigation and reserve bottom scroll space for the floating composer.
+- Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-06T22:00:00Z — Complete chat scroll and participant affordances
+- Re-verified the live `/:username/chat` layout and confirmed document-level scrolling, sticky participant header behavior, and the fixed composer overlap conditions.
+- Made the participant ProfileCard link to the participant's posts/profile route.
+- Scrolls the document and message container to the conversation end once messages initially load or the chat is reopened.
+- Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-06T22:15:00Z — Reconcile account identity and active slot
+- Fixed the account list to mark the slot belonging to the authenticated access-token user as active, rather than trusting a stale `X-Friink-Account-Slot` value.
+- Fixed refresh and token mapping to accept the server-issued account slot and clear stale local slot state when the response has no slot.
+- Added client-side account-list reconciliation so an already-open browser repairs its slot pointer by matching the authenticated username.
+- Validation: API compile, web TypeScript check, and `git diff --check` passed; focused auth tests passed (`10 passed`), while two database-backed account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T22:30:00Z — Make account switching survive restart
+- Found that `/auth/accounts/switch` returned only an access token and did not issue the target slot's refresh cookie, so a browser restart could refresh with a selected slot that had no usable cookie and be redirected to login.
+- Switch now issues the target slot refresh cookie; refresh also self-heals a valid device slot when its slot cookie is missing.
+- Added a regression assertion that switching sets the target slot cookie.
+- Validation: API compile, web TypeScript check, and `git diff --check` passed; database-backed account integration tests remain blocked because `DATABASE_URL` is not configured in this checkout.
+## 2026-09-06T22:45:00Z — Correct chat scroll ownership and bottom clearance
+- Verified the live chat structure and found the page remained the scroll container, so the participant card moved with the conversation.
+- Bounded the chat viewport, moved scrolling exclusively to `.chat-messages`, and removed the oversized bottom padding in favor of the floating composer clearance plus 8px.
+- Validation: web TypeScript check, production web build, and `git diff --check` passed.
+## 2026-09-06T21:45:00Z — Redirect authenticated users away from public routes
+- Added a refresh-aware public route guard for `/` and `/subscriptions` and extended `/login` to verify persisted sessions before rendering auth UI.
+- Public content remains available only after a confirmed terminal unauthenticated result; transient refresh failures do not expose the public site.
+- Validation: web TypeScript check and `git diff --check` passed.
+## 2026-09-07 — Live staging three-account and max+1 acceptance
+
+- Prompt Summary: Run the latest staging three-account switch test and attempt
+  one account beyond the remembered-account limit.
+- Changes Made: No application code changed. Created two additional synthetic
+  accounts to fill the five-account device limit and attempted a sixth.
+- Verification Status: Three-account switching passed. Five accounts remained
+  visible in Manage accounts. The sixth Add-account action was blocked before
+  signup opened; no sixth account was created. The in-app browser showed no
+  user-facing blocked-action text. Intermittent home-feed loading and slow API
+  responses were observed separately from switcher acceptance.
+- Scope Note: This run used the Codex in-app browser, not clean-profile Chrome
+  or Edge; those release-gate checks remain open.
+## 2026-09-07T12:20:00Z — Reproduce Chrome switch failure from active source
+- Verified the Chrome staging source session was active as `@muflahulfurqan`; Manage accounts showed `@muflah` and `@muf95` as remembered slots.
+- Retried switching to `@muflah` without deactivating or logging out the source account. The menu closed, but the active account and post-login route remained `@muflahulfurqan` after reload.
+- Added a persistent account-switcher alert so a failed switch is visible after the menu closes.
+- Validation: web TypeScript check, lint, production build, and `git diff --check` passed; staging switch acceptance remains open.
+## 2026-09-07T12:35:00Z — Guard against stale cross-tab refresh overwrite
+- Code audit found that a refresh started in another tab could commit an older account slot after a switch completed, because refresh validation checked the access token but not the active device slot.
+- Refresh now aborts when the shared active slot changes during the request and rejects a slot-aware response that returns a different slot.
+- Validation pending: web TypeScript, lint, production build, API suite, and clean-profile staging retest.
+## 2026-09-07T14:00:00Z — Fresh clean-profile Chrome account-switcher E2E
+
+- Prompt Summary: Run the fresh staging account-switcher campaign with five synthetic accounts, including the configured limit-plus-one path.
+- Changes Made: Created five isolated accounts through standalone signup, in-app signup, and in-app login/re-add. Verified switch, reload continuity, logout fallback, slot release, and re-add behavior. At four retained slots, Add account refused the fifth and opened Manage accounts with `Remove an account before adding another.`
+- Verification Status: Clean Chrome staging run passed the exercised flows; no OTP prompt appeared with both OTP flags disabled. Logout fallback reached the public site after the remaining remembered accounts were logged out. Account operations showed 15–30 second latency. Chromium/Chrome acceptance passed; deployment-stability investigation remains open.
+
+## 2026-09-07T15:00:00Z — Push staging build and synchronize account-switcher records
+
+- Prompt Summary: Resume the account-switcher resolution plan, deploy the current staging branch, and update the requested rules, design, changelog, and account-switcher records.
+- Changes Made: Pushed `staging` commit `6358b0d` to `origin/staging`. The staging web alias returned `200`, and `staging-api.friink.com/health/db` returned `{"database":true}`. Added the account-slot and API-owned OTP rules to `RULES.md`, the account-switcher UX contract to `packages/design/design.md`, and deployment/E2E evidence to `CHANGELOG.md` and `docs/account-switcher.md`.
+- Verification Status: Full API suite passed (`107 passed`, existing warnings); web TypeScript, production build, lint, and `git diff --check` passed. Clean Chrome E2E passed five-account creation, switching, reload continuity, logout fallback, configured limit-plus-one refusal, and slot re-add. A newly opened Chrome tab reused the existing profile and is not claimed as incognito evidence. Browser acceptance is scoped to Chromium/Chrome; deployment-stability follow-up remains open.
+
+## 2026-09-08T00:00:00Z — Add global OTP testing switch and production guard
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a global OTP environment switch for testing, keep OTP
+  enabled by default, and prevent accidental production disablement.
+- Changes Made: Added API-owned `OTP_ENABLED=true` by default with a production
+  startup guard; made signup, risk-login, reactivation, deletion, and
+  email-change flows honor the master switch; updated the frontend response
+  handling, diagnostics, environment examples, design contract, active rules,
+  lifecycle/auth documents, changelog, and regression coverage.
+- Files: `api/app/config.py`, `api/app/routers/auth.py`,
+  `api/app/services/account_lifecycle.py`, `api/app/services/email_change.py`,
+  `api/app/schemas/auth.py`, `api/app/routers/auth_diagnostics.py`,
+  `web/lib/auth.ts`, `web/components/account-screens.tsx`,
+  `packages/design/design.md`, `rules.md`, `CHANGELOG.md`, `agentlog.md`,
+  `docs/account-lifecycle.md`, `docs/auth-and-session.md`, and API tests.
+- Reason: Allow cost-free local/test/staging validation without hardcoding OTP
+  behavior, while ensuring production cannot start with the testing override.
+- Verification Status: Full API suite passed (`110 passed`); web TypeScript
+  validation and production build passed; `git diff --check` passed. Existing
+  framework/JWT/lint warnings remain unrelated.
+
+## 2026-09-07T16:00:00Z — Narrow browser acceptance to Chromium scope
+
+- Prompt Summary: Remove Edge from the account-switcher release scope because it uses the same Chromium browser engine.
+- Changes Made: Updated the account-switcher resolution plan and release records to require one clean Chromium/Chrome browser profile rather than separate Edge acceptance. Kept intermittent latency and feed/API stability as a distinct open follow-up.
+- Verification Status: Existing clean Chrome E2E and complete local validation remain the evidence for the scoped browser gate; no phase is marked closed solely from a happy path.
+
+## 2026-09-08T00:30:00Z — Align account-deactivated screen with lifecycle design
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix `/account-deactivated` so it follows the lifecycle presentation rules in `packages/design/design.md`.
+- Changes Made: Replaced the login-form presentation with a shared branded lifecycle surface, added the Friink home mark, clarified all-session logout, read-only chat, billing, and reactivation messaging, and retained the device-account fallback action and loading/error behavior.
+- Files: `web/app/account-deactivated/page.tsx`, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The previous screen reused the standalone login layout and omitted required lifecycle context.
+- Verification Status: Web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08T05:10:00Z — Restore revoked device records during reactivation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the account-specific `Failed to fetch` error when logging into a recently deactivated account.
+- Changes Made: Re-login now restores the existing account/device recognition row after deactivation instead of inserting a duplicate row. The lifecycle regression test keeps the same browser client through deactivation and reactivation.
+- Files: `api/app/services/session_service.py`, `api/tests/test_account_lifecycle.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Staging runtime logs showed a PostgreSQL `UniqueViolation` on `uq_recognized_devices_user_token` for the deactivated account's retained device cookie.
+- Verification Status: Account lifecycle tests passed (`3 passed`); adjacent auth/account tests passed (`17 passed`); `git diff --check` passed.
+
+## 2026-09-08T05:30:00Z — Split login into two progressive steps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make login ask for the identifier first and the password second.
+- Changes Made: Added separate identifier and password steps with preserved identifier, Change/Back controls, password visibility toggle, existing forgot-password action, and unchanged OTP/lifecycle handling. Applied the same flow to the add-account modal and updated the design contract.
+- Files: `web/components/login-screen.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Reduce initial cognitive load and follow the standard progressive-disclosure login pattern without changing authentication semantics.
+- Verification Status: `npm run build` passed, including TypeScript validation and static generation; existing lint warnings remain unrelated.
+
+## 2026-09-08T01:00:00Z — Repair deactivation fallback account recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and fix the deactivation flow so only the deactivated account's sessions end and another remembered account remains usable.
+- Changes Made: Account discovery now excludes revoked linked auth sessions; deactivation stores all eligible fallback slots in recency order; the confirmation screen tries each candidate, saves the restored session, and retains retryable fallback state when restoration fails. Added a regression assertion for refreshing the surviving account after deactivation.
+- Files: `api/app/services/account_slots.py`, `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/app/account-deactivated/page.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Live staging showed the deactivation fallback could not restore the surviving remembered account.
+- Verification Status: Focused API account tests passed (`9 passed`); web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08T00:00:00Z — Add profile pictures to account switcher
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the account-switcher dropdown to show profile pictures for remembered accounts.
+- Changes Made: Extended the shared `ActionMenu` item contract with optional leading images and trailing icons; account rows now use each account's server-provided profile picture with the shared default fallback, while the active account shows a trailing checkmark. Updated the design contract and changelog.
+- Files: `web/components/action-menu.tsx`, `web/components/profile-card.tsx`, `web/components/side-drawer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Make remembered accounts visually distinguishable in the account-switcher dropdown.
+- Verification Status: Web TypeScript validation and `git diff --check` passed.

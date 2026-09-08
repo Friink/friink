@@ -23,8 +23,8 @@ def _hash_token(token: str) -> bytes:
 
 
 async def start_email_change(
-    session: Session, user: User, new_email: str, current_password: str, email_service: EmailService
-) -> tuple[str, str]:
+    session: Session, user: User, new_email: str, current_password: str, email_service: EmailService, *, otp_enabled: bool = True
+) -> tuple[str | None, str]:
     if not verify_password(current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")
     normalized_email = new_email.strip().casefold()
@@ -33,6 +33,15 @@ async def start_email_change(
     existing = await get_user_by_email(session, normalized_email)
     if existing and existing.id != user.id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
+
+    if not otp_enabled:
+        old_email = user.email
+        user.email = normalized_email
+        session.add(UserEmailHistory(user_id=user.id, email_value=old_email, event_type="replaced"))
+        session.add(UserEmailHistory(user_id=user.id, email_value=user.email, event_type="changed"))
+        await commit(session)
+        await refresh(session, user)
+        return None, "Email updated without OTP verification because OTP is disabled in this environment."
 
     now = datetime.now(UTC)
     session.execute(

@@ -11,6 +11,22 @@ the entry, so history isn't lost.
 
 ## Web Architecture
 
+### Rule: Account Switcher Uses Device-Scoped Slots
+- **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
+- **Since:** 2026-09-07 (UTC)
+
+### Rule: OTP Flags Are API-Owned Runtime Configuration
+- **What:** `OTP_ENABLED` is the API-owned master switch and defaults to `true`. When enabled, `SIGNUP_OTP_ENABLED` controls signup verification and `LOGIN_RISK_OTP_ENABLED` controls risk-based normal-login OTP. When `OTP_ENABLED=false`, all OTP challenges are bypassed, including signup, risk-based login, lifecycle reactivation/deletion, and email-change verification. The master switch must be read from the FastAPI deployment environment and verified after redeployment; changing only the web project is insufficient.
+- **Edge cases:** The master switch is intended for local/test/staging use and must remain enabled in production; production API startup rejects `OTP_ENABLED=false`. An absent variable uses the secure default (`true`); an empty value is not a valid substitute for omission. A disabled flow must not produce its corresponding prompt. Diagnostics may report effective flag values and the deployment identifier, but never secrets, tokens, OTPs, cookies, hashes, or internal identifiers.
+- **Status:** Active
+- **Platform:** API/Web
+- **File(s):** `api/app/config.py`, `api/app/routers/auth.py`, `api/app/services/auth_debug.py`
+- **Since:** 2026-09-07 (UTC)
+
 ### Rule: Post Media Uploads Are Submit-Time And Image-Only
 - **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits, allows the user to reorder the selected attachments before submission, and submits files in the visible order. Clicking a thumbnail opens the 3:5 crop tool directly; Reset restores the crop view, Apply saves the crop, and previous/next arrows switch among attached images. The API then validates ownership, type, and size before associating them with the authenticated user's new post.
 - **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. While the post/media request is running, the Post button is disabled and shows the posting spinner; failed submissions preserve the draft and attachments for retry, while successful submissions clear them. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Successfully associated media is returned as URL items and rendered through the shared gallery: multiple images remain available in the horizontal slider with a common nominal height (`24rem` desktop, `15rem` compact screens), a default 3:4 frame, an 8px gap, and 8px rounded image frames; a single image preserves its natural aspect ratio within the available content width and responsive maximum height without a trailing gallery background. The crop tool remains 3:5. Final crop width, height, and aspect ratio are not persisted in media rows. Freeform crop bounds and first-image carousel-ratio locking are not implemented. The shared modal backdrop is above application overlays so crop controls remain interactive.
@@ -125,14 +141,46 @@ the entry, so history isn't lost.
 - **File(s):** `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell-route.tsx`
 - **Since:** 2026-09-01 (UTC)
 
-### Rule: Multiple Account Switching (Planned)
-- **What:** After authentication, the side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile or mobile installation. `Change account` remains hidden until at least two accounts are authenticated, then switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to five; this does not limit account creation.
-- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only, and all account-scoped data, notifications, caches, and session controls remain isolated.
-- **Compatibility:** This is a planned additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Runtime implementation requires explicit auth/session approval and the verification gate in `docs/auth-and-session.md` Phase 4e.
-- **Status:** Planned; not implemented or staging-verified
-- **Platform:** Web and mobile
+### Rule: Multiple Account Switching
+- **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile. `Change account` remains hidden until at least two accounts are authenticated, then switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
+- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only, and all account-scoped data, notifications, caches, and session controls remain isolated. OTP completion for another account must preserve an existing `friink_device_id`; it must not silently replace the browser device identity and hide prior slots.
+- **Compatibility:** This is an additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
+- **Status:** Active for the web/API slice; mobile requirements deferred
+- **Platform:** Web/API
 - **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`
 - **Since:** 2026-09-04T23:28:41Z
+
+### Rule: Login Route Is Signed-Out Only
+- **What:** `/login` is a signed-out entry point. If a persisted authenticated session exists, including a demo session, the route redirects to `/home` and does not render the standalone login form. Authenticated users add another account through the in-app SideDrawer account menu, whose existing modal supports both login and signup.
+- **Edge cases:** The route check runs before the standalone form is rendered to avoid an authenticated-user login flash. Account addition does not navigate through `/login`.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/app/login/login-client.tsx`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`
+- **Since:** 2026-09-06T20:02:37Z
+
+### Rule: New-Device Verification Uses One Approval Path
+- **What:** A new-device login submits credentials once, then completes exactly one verification path: the emailed four-minute OTP or approval from an existing signed-in session.
+- **Security boundary:** Approval requests show only coarse device details and Approve/Deny actions; existing sessions never display the plaintext email OTP. The OTP is single-use, hashed, attempt-limited, rate-limited, and bound to the intended login/device.
+- **Status:** Active; API approval flow and web approval controls implemented. Mobile-specific implementation is deferred.
+- **Platform:** Web/API
+- **File(s):** `docs/auth-and-session.md`, `api/app/routers/auth.py`, `web/lib/auth.ts`
+- **Since:** 2026-09-06T16:52:53Z
+
+### Rule: Account Switcher UX
+- **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, Manage accounts, and active-account logout. Manage Accounts uses ProfileCard rows with the active account first; other rows offer logout.
+- **Edge cases:** Logout/removal is confirmed, then immediate. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit sends the user to Manage accounts first.
+- **Status:** Active for the Phase 4e web slice; mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
+- **Platform:** Web
+- **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`
+- **Since:** 2026-09-06T16:52:53Z
+
+### Rule: Drawer Account Controls Use Profile Menu
+- **What:** The signed-in SideDrawer profile card has a separate caret account-menu trigger. The expanded drawer places it beside the profile card; the collapsed desktop drawer places it over the avatar's bottom-right corner. The menu shows `Using as @username`, all remembered accounts in the existing server-provided order, then Manage accounts and Add account.
+- **Edge cases:** The ProfileCard remains separate from the account-menu trigger, and the existing Profile navigation item remains the drawer's profile destination. The menu only reorganizes existing web account actions; it creates no backend relationship and changes no account/session rules.
+- **Status:** Active
+- **Platform:** Web only
+- **File(s):** `web/components/side-drawer.tsx`, `web/components/action-menu.tsx`, `web/app/globals.css`
+- **Since:** 2026-09-06T19:57:29Z
 
 ### Rule: Signup Creates Active Public Accounts
 - **What:** A completed signup creates a user with a normalized unique email, a case-insensitive unique username key with preserved display casing, display name defaulting to username when omitted, `is_private = false`, a hashed password, and `is_verified = true`. When signup OTP is enabled, completion occurs only through successful email verification.
@@ -142,9 +190,17 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `api/app/models/user.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`
 - **Since:** 2026-09-04T22:06:53Z
 
+### Rule: Existing Email Signup Recovery
+- **What:** When email-first signup receives an email already registered to Friink, the API creates no reservation and sends no OTP. The web flow stays on the email step and offers login with that email or signup with a different address.
+- **Security boundary:** This is an explicit UX exception to generic signup enumeration responses. The response exposes no user record, identifier, lifecycle state, or security detail; it only prevents a misleading OTP flow.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/auth-and-session.md`
+- **Since:** 2026-09-07T01:00:00Z
+
 ### Rule: Signup Email Ownership OTP
 - **What:** With `SIGNUP_OTP_ENABLED=true`, signup uses `/auth/signup/email/start` immediately after email, followed by `/auth/signup/email/verify`, then `/auth/signup/complete`; no user row is created before successful verification. Codes are six uppercase alphanumeric characters, expire after four minutes, are single-use, and a newer code invalidates the previous code.
-- **Edge cases:** Verification is limited to five attempts. The pre-verification record contains only the normalized email and hashed OTP; password/profile data is submitted after verification. The API returns neutral signup-start responses and generic delivery failures. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
+- **Edge cases:** Verification is limited to five attempts. The pre-verification record contains only the normalized email and hashed OTP; password/profile data is submitted after verification. New signup emails receive the OTP flow; existing emails follow the separate login-or-different-email recovery rule. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
 - **Status:** Active; implementation and database-backed request tests pass. Live staging browser/provider verification remains a deployment acceptance step.
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/services/otp.py`, `api/app/config.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_email.py`
@@ -181,7 +237,7 @@ the entry, so history isn't lost.
 
 ### Rule: Login With Email Or Username
 - **What:** The login identifier accepts either the account email or username. Email and username matching are case-insensitive; username lookup uses the authoritative `username_key`. The web field is labeled `Email or username`, while signup remains email-only.
-- **Edge cases:** Unknown identifiers and wrong passwords return the same generic invalid-credentials result. Username login follows the same lockout, rate-limit, device-recognition, and future risk-based OTP decisions as email login. The API may accept the legacy `email` request key during client migration, but new clients send `identifier`.
+- **Edge cases:** Unknown identifiers and wrong passwords return the same generic invalid-credentials result. Username login follows the same lockout, rate-limit, device-recognition, and future risk-based OTP decisions as email login. A leading `@` is accepted and stripped for username lookup. The API may accept the legacy `email` request key during client migration, but new clients send `identifier`.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_auth_updates.py`
@@ -196,10 +252,10 @@ the entry, so history isn't lost.
 
 ### Rule: Risk-Based Login And Device Recognition
 - **What:** Email and username password logins use the same server-authoritative risk decision. Recognized normal devices proceed without OTP; new or suspicious devices receive a fresh four-minute email OTP when delivery is configured. The device identifier is opaque, hashed at rest, HttpOnly on web, and separate from refresh tokens and sessions.
-- **Edge cases:** Missing or changed device signals trigger the challenge; successful approval records the current coarse signals. Refresh never requires OTP, and no client claim, IP address alone, or browser fingerprint alone establishes trust. Missing or unreadable device cookies are fail-closed and force the OTP path, covered by `test_risk_login_challenges_new_changed_and_recognized_devices` in `api/tests/test_phase2_auth_flows.py`.
+- **Edge cases:** Missing or changed device signals trigger the challenge; successful approval records the current coarse signals. Refresh never requires OTP, and no client claim, IP address alone, or browser fingerprint alone establishes trust. Missing or unreadable device cookies are fail-closed and force the OTP path, covered by `test_risk_login_challenges_new_changed_and_recognized_devices` in `api/tests/test_phase2_auth_flows.py`. When OTP is completed for an account not yet recognized on a browser that already has a device cookie, the existing cookie is retained so device account slots survive.
 - **Status:** Active; implementation and database-backed request tests pass. Live staging browser/provider verification remains a deployment acceptance step.
 - **Platform:** Web/API
-- **File(s):** `api/app/routers/auth.py`, `api/app/services/login_challenges.py`, `api/app/services/session_service.py`, `api/app/services/email.py`, `api/app/config.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`
+- **File(s):** `api/app/routers/auth.py`, `api/app/services/login_challenges.py`, `api/app/services/session_service.py`, `api/app/services/email.py`, `api/app/config.py`, `api/alembic/versions/20260905_0026_login_risk_challenges.py`, `api/tests/test_phase2_auth_flows.py`
 - **Since:** 2026-09-05T00:00:00Z
 
 ### Rule: Account Lock And Access-Token Boundary
@@ -711,7 +767,8 @@ the entry, so history isn't lost.
 ### Rule: Account Lifecycle Uses Owner-Verified State Transitions
 - **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation requires current-password confirmation only; deletion requires current-password confirmation plus OTP. Reactivation requires valid credentials plus fresh OTP and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain protected backend recovery capability.
 - **Edge cases:** Deactivation revokes all sessions and refresh families and immediately rejects access for the inactive account. It preserves readable, read-only chats and renders retained identity as `Friink User` with the real username and default avatar. Deletion is cancellable for 32 days, including the final hour before the deletion transaction, then removes public/user-generated content while retaining restricted UUID tombstones, identity history, required billing/security records, and chats as `Account Deleted`.
-- **Billing:** The contract requires deactivation not to pause/cancel subscriptions and deletion to cancel billing immediately; the billing-provider adapter is not yet wired, so this behavior must not be represented as verified until that integration is delivered. Reactivation must not resume a cancelled subscription. Lifecycle cycling has a 24-hour post-reactivation deactivation cooldown.
+- **Billing:** The contract requires deactivation not to pause/cancel subscriptions and deletion to cancel billing immediately; the billing-provider adapter is not yet wired, so this behavior must not be represented as verified until that integration is delivered. Reactivation must not resume a cancelled subscription.
+- **Cooldown:** After reactivation, the same account cannot be deactivated again for 8 minutes (480 seconds). A blocked attempt returns `429`, and the web UI surfaces the server-provided remaining time in a live countdown toast.
 - **Security:** Inactive-account failed logins never send email and use only minimal restricted internal events. Unknown identifiers and wrong passwords remain lifecycle-state agnostic.
 - **Status:** Active runtime slice; full contract gates remain open for warning-link delivery, billing-provider integration, exhaustive transition concurrency/idempotency, abuse controls, and fully audited staff overrides.
 - **Platform:** All

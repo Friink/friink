@@ -14,6 +14,7 @@ from app.routers.notifications import router as notifications_router
 from app.routers.posts import router as posts_router
 from app.routers.users import router as users_router
 from app.routers.account_lifecycle import router as account_lifecycle_router
+from app.routers.auth_diagnostics import router as auth_diagnostics_router
 
 settings = get_settings()
 logger = logging.getLogger("friink.auth")
@@ -53,6 +54,7 @@ app.include_router(notifications_router)
 app.include_router(posts_router)
 app.include_router(users_router)
 app.include_router(account_lifecycle_router)
+app.include_router(auth_diagnostics_router)
 
 
 @app.get("/", response_class=PlainTextResponse)

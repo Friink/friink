@@ -27,6 +27,13 @@ class FakeSession:
     async def commit(self) -> None:
         self.commits += 1
 
+    def execute(self, statement):
+        class Result:
+            def scalar_one_or_none(self):
+                return None
+
+        return Result()
+
 
 def make_user(username: str) -> User:
     return User(

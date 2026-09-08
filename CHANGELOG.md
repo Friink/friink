@@ -1,5 +1,232 @@
 # Changelog
 
+## 2026-09-08
+
+- [web/auth] Split login into progressive two-step identifier and password
+  screens, preserving the identifier with a clear change action.
+
+## 2026-09-08
+
+- [auth] Fixed reactivation for a recently deactivated account on the same
+  browser. The existing revoked device record is restored instead of causing a
+  duplicate-key database error that appeared in the UI as `Failed to fetch`.
+
+## 2026-09-08
+
+- [web/ui] Routed the deactivation modal’s `Okay` action to `/` after
+  recovery. Users without another account remain on the public site, while
+  the public-route guard sends restored sessions to `/home`.
+
+## 2026-09-08
+
+- [web/ui] Replaced the full account-deactivated page with a shared modal
+  titled `Account Deactivated` and a single `Okay` action. The action restores
+  the most-recent remembered account when available, then routes to `/home`.
+
+## 2026-09-08
+
+- [web/ui] Clarified the deactivated-account fallback action as
+  `Continue with another account` instead of the ambiguous `Try again` label.
+
+## 2026-09-08
+
+- [docs] Synchronized auth/session lifecycle references with the 8-minute
+  post-reactivation deactivation cooldown and API-owned OTP override.
+
+## 2026-09-08
+
+- [web/auth] Replaced the permanent blank protected-route state after an
+  ambiguous refresh failure with retry and login recovery actions.
+- [diagnosis] Confirmed the OTP decision is API-owned; an OTP prompt means the
+  serving staging API instance did not have effective `OTP_ENABLED=false` for
+  that request, regardless of when the frontend page loaded.
+
+## 2026-09-08
+
+- [auth/lifecycle] Reduced the post-reactivation deactivation cooldown to 8
+  minutes and return the server-authoritative remaining seconds.
+- [web/ui] Added a live countdown toast for the cooldown, including the
+  singular-minute and cooldown-complete states.
+- [verification] Added API coverage for the cooldown response and passed the
+  lifecycle/account regression suite plus web TypeScript validation.
+
+## 2026-09-08
+
+- [web/ui] Updated the account-switcher dropdown to show each remembered
+  account's profile picture as the leading avatar, with the shared default
+  image fallback and a trailing checkmark for the active account.
+- [verification] Web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08
+
+- [web/ui] Restyled `/account-deactivated` to follow the lifecycle design
+  contract with shared Friink branding, responsive centered presentation,
+  explicit all-session logout/read-only chat/billing copy, and fallback-aware
+  action treatment.
+- [verification] Web TypeScript validation and `git diff --check` passed.
+
+## 2026-09-08
+
+- [auth/accounts] Fixed deactivation fallback recovery by excluding revoked
+  session slots from account discovery, preserving multiple fallback candidates,
+  trying them in recency order, and keeping retry available after a restore
+  failure.
+- [tests] Added coverage proving a surviving account slot can refresh after a
+  different account is deactivated.
+
+## 2026-09-08
+
+### Added
+- [config/auth] Added the API-owned `OTP_ENABLED` master switch, defaulting to
+  `true`; `OTP_ENABLED=false` is available for local, test, and staging
+  validation and bypasses signup, login-risk, lifecycle, and email-change OTP.
+- [config/auth] Added a production startup guard that rejects
+  `ENVIRONMENT=production` with `OTP_ENABLED=false`.
+- [web] Updated email-change and account-deletion UI flows to follow the API's
+  `verification_required` response instead of assuming an OTP challenge.
+
+### Verified
+- [api] Full test suite passed: `110 passed`.
+- [web] TypeScript validation and production build passed; existing lint
+  warnings remain unrelated to this change.
+- [docs] Synchronized the active rules, lifecycle contract, auth/session
+  contract, and design contract with the master OTP setting.
+
+## 2026-09-07
+
+- [release/account-switcher] Pushed staging branch commit `6358b0d` to the
+  staging remote. Staging web and API health checks returned successfully;
+  the clean-profile Chrome account-switcher run passed signup, add, switch,
+  reload, logout fallback, limit-plus-one refusal, and slot re-add. Browser
+  acceptance is scoped to Chromium/Chrome; deployment-stability follow-up
+  remains separate.
+- [docs/account-switcher] Synchronized account-switcher rules, design
+  behavior, changelog evidence, and the open release-gate status. No phase is
+  marked closed without its required status-block evidence.
+
+- [auth/accounts] Guarded refresh commits against stale cross-tab account
+  slots; a refresh now aborts if the active slot changes in flight or the API
+  returns a different slot. Failed account switches remain visible as a
+  retryable alert after the switcher closes.
+- [auth/accounts] Required slot-aware logout to authenticate the active account
+  as well as the device-bound slot; legacy refresh-cookie logout remains
+  supported. Added cross-account authorization regression coverage.
+- [diagnostics/auth] Removed internal user, token, and refresh-family identifiers
+  from auth debug logs; structured deployment and flow diagnostics remain.
+- [auth/accounts] Preserve the most-recent remembered account after the active
+  account is deactivated. The confirmation page now offers `Go Back` to
+  restore that slot, or sends users to the public site when no other account
+  is available.
+- [config/auth] Set `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` to an explicit default
+  of 4 in API config and environment templates; retain the validated 1–16
+  range. Existing remembered slots are not removed when the configured limit
+  is lowered.
+- [auth/accounts] Preserved the active local session when logout fails with an
+  ambiguous network/API error, surfaced a retryable error, and reload
+  account-scoped UI after successful Add-account authentication so the new
+  account cannot inherit stale content. Recoverable account-removal failures
+  now show a retryable notice while preserving the active account.
+- [tests] Added an isolated SQLite fallback bootstrap for fresh checkouts,
+  including schema setup, foreign-key enforcement, UTC timestamp normalization,
+  and migration-seeded reserved usernames; the maintained API suite now passes
+  105 tests without staging credentials. Added boundary coverage for duplicate
+  Add-account reuse, failed-switch preservation, limit enforcement, concurrent
+  account-list/switch requests, inactive-slot isolation, plus direct
+  runtime-environment coverage for both OTP flags.
+- [follow-up/auth] Production note: the web API timeout is temporarily 30
+  seconds to allow serverless startup and synchronous OTP email delivery. Move
+  OTP delivery to a durable, retryable email outbox before production so
+  provider latency cannot block or invalidate the login challenge response.
+- [auth/accounts] Fixed OTP completion for a second account to preserve an
+  existing `friink_device_id` instead of replacing the browser device identity
+  and hiding previously remembered account slots. Added regression coverage for
+  OTP login across two accounts on one browser.
+- [deployment/auth] Confirmed `LOGIN_RISK_OTP_ENABLED` is read by the API from
+  its own runtime environment; staging must set it on the FastAPI Vercel
+  project and redeploy that project, not only the web project.
+- [fix/auth/accounts] Refreshed the device account inventory when the
+  switcher opens and after Add account completes, with stale-request guards so
+  newly added accounts remain visible without a page reload.
+- [ux/chat] Fixed chat layout ownership so only the message list scrolls. The
+  participant profile card/separator remains stationary, and the final message
+  now has an 8px gap after accounting for the floating composer.
+- [auth/accounts] Made account switching durable across browser restarts by
+  issuing the target account's slot refresh cookie during switch and repairing
+  missing slot cookies during refresh.
+- [auth/accounts] Reconciled the active account with the authenticated access
+  token instead of trusting a stale local slot pointer. Refresh responses now
+  replace the stored slot, and account discovery repairs existing browsers by
+  matching the authenticated username to its device slot.
+- [ux/accounts] Removed the redundant active-account header from the account
+  switcher and reordered its final actions to Add account, then Manage
+  accounts.
+- [ux/accounts] Simplified the account switcher header to show only `Using as
+  @username`; documented the management-action divider as a shared thin-line
+  grouping treatment.
+- [auth/accounts] Fixed `@username` login normalization and preserved legacy
+  active sessions by migrating the current account into a device slot before
+  another account is added. This keeps the previous account available in the
+  switcher instead of silently losing its route.
+- [ux/accounts] Added a dedicated in-app account-auth modal presentation. It
+  removes the standalone auth logo/home layout, starts with Email or username
+  and Password, exposes Login and Sign up actions, and follows the active app
+  light/dark theme while preserving the existing login/signup flow.
+- [routing/auth] Made `/login` signed-out-only. Persisted sessions now redirect
+  to `/home` before the standalone form renders, including demo sessions;
+  authenticated account addition continues through the SideDrawer modal.
+- [ux/accounts] Moved account switching, account management, and add-account
+  controls out of the SideDrawer footer into an account caret attached to the
+  drawer profile card. The menu shows the active account, all remembered
+  accounts, Manage accounts, and Add account; no backend behavior changed.
+- [docs/auth] Split mobile-specific authentication and session requirements into `docs/auth-and-session-mobile.md`; the general document now owns shared backend and web scope without duplicating mobile implementation details.
+- [phase4] Closed the current web/API-focused Phase 4 release scope. Mobile account-session requirements remain preserved and deferred until a mobile client exists.
+- [phase4] Deferred mobile account-session implementation and acceptance until a mobile client exists; requirements remain preserved as a future gate.
+- [auth/signup] Repeated signup with an existing email no longer creates a reservation or sends an OTP. The flow stays on the email step with a clear login-or-different-email recovery action.
+- [auth] Recorded the deliberate signup UX exception to generic account-enumeration responses: no account details or identifiers are exposed, but the submitted address is confirmed as already in use to prevent a misleading OTP flow.
+
+## 2026-09-06
+
+- [ui/setup] Restyled the account setup wizard to use the existing Friink
+  theme, progress treatment, ProfileCard preview, iconography, upload action,
+  and responsive modal spacing instead of the former plain presentation.
+- [verification] Live staging still shows the pre-fix wizard until the updated
+  web build is deployed; local TypeScript and production build checks pass.
+
+- [docs/auth] Added a Phase 4 handoff checkpoint documenting the verified
+  web/API state and the remaining mobile and full browser/device staging gates.
+
+- [auth/accounts] Implemented the Phase 4e server/web slice: device-scoped
+  opaque account slots, server-enforced limits, safe listing, switching,
+  removal, and slot-specific HttpOnly refresh cookies.
+- [database] Applied migration `20260906_0035` to staging; Alembic reports no
+  drift.
+- [verification] Dedicated staging account-flow acceptance passed (`1 passed`);
+  web TypeScript and production build checks passed. The web/API Phase 4 slice
+  is implemented; mobile and the full browser/device release matrix remain.
+
+- [ux/auth] Recorded the agreed Instagram/X-style account UX: Add-account
+  modal, drawer switching, ProfileCard-based Manage Accounts, confirmation
+  removal, most-recent-account fallback, duplicate activation, and lifecycle
+  account removal behavior.
+
+- [docs/auth] Closed the Phase 4d requirements decision: new-device login uses
+  credentials once, then either emailed OTP or existing-session approval, with
+  no sequential second verification.
+- [auth/device] Implemented existing-session new-device approval, OTP-or-
+  approval completion, web approval polling, and Settings Approve/Deny controls.
+- [database] Applied migration `20260906_0036` to staging; Phase 4 acceptance
+  passed (`2 passed` across account-slot and approval flows).
+- [auth/security] Login approval requests now create account-wide security
+  notifications, and the first completed path (Approve, Deny, or OTP) closes
+  the alternatives. Web approval notifications can surface a toast and link
+  to Settings; account switching synchronizes across open tabs.
+- [verification] Re-ran staging-backed Phase 4 acceptance (`2 passed`), API
+  compile, web TypeScript, production build, and `git diff --check`.
+- [auth/signup] Fixed a staging-discovered defect where signup completed
+  email verification, then unnecessarily called login and triggered a second
+  risk OTP. Signup now returns the authenticated session directly; deployment
+  and live re-verification remain required.
+
 ## 2026-09-07
 
 - [docs] Synchronized auth/session closeout references: code hardening is in
@@ -1753,3 +1980,9 @@ _Last updated: 2026-09-01_
 
 ### Pending
 - [production/email] Resend delivery is still failing after the schema upgrade. Verify the API project's Production-scope `RESEND_API_KEY` and a Resend-verified `RESEND_FROM_EMAIL`, then redeploy the API if either value changed.
+- Fixed account discovery to backfill the active account's device slot before listing accounts, preserving the in-app account switcher for legacy sessions.
+- Surfaced account-list and account-switch failures in the drawer instead of silently falling back to a single-account view.
+- Isolated Add account authentication from the active account's generic refresh cookie so adding or switching accounts no longer replaces the older account session.
+- Fixed chat scrolling so the participant profile/separator stays pinned below navigation and the final message clears the floating composer.
+- Added a shared public-route session guard so authenticated users are redirected to `/home` from the landing page, subscriptions, and direct `/login` navigation.
+- Made chat participant identity clickable and restored end-of-conversation scroll on reopen; chat retains bottom clearance for the floating composer.

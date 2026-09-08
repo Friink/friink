@@ -339,7 +339,7 @@ def can_view_post(session: Session, viewer: User | None, post: Post) -> bool:
     author = post.user or session.get(User, post.user_id)
     if not author:
         return False
-    if author.lifecycle_status != "active":
+    if author.lifecycle_status not in {None, "active"}:
         return False
     if not author.is_private:
         return True
@@ -379,7 +379,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         id=post.id,
         public_id=post.public_id or generate_public_id(),
         slug=generate_post_slug(post.content),
-        user_id=author.public_id,
+        user_id=author.public_id or generate_public_id(),
         kind=PostKindSchema(post.kind.value),
         author_username=post.user.username,
         author_display_name=post.user.display_name,

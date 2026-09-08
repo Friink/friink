@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-const DEFAULT_PROFILE_IMAGE = '/media/profile.jpg';
+export const DEFAULT_PROFILE_IMAGE = '/media/profile.jpg';
 
 function getInitials(value: string) {
   return (

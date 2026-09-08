@@ -44,7 +44,14 @@ def get_login_challenge(session: Session, raw_token: str) -> LoginChallenge | No
 
 
 def verify_login_challenge(session: Session, challenge: LoginChallenge, user: User, code: str) -> bool:
-    if challenge.consumed_at is not None or challenge.expires_at <= datetime.now(UTC):
+    # The first completed path wins: approving or denying from an existing
+    # session also invalidates the emailed OTP for this same request.
+    if (
+        challenge.consumed_at is not None
+        or challenge.approved_at is not None
+        or challenge.denied_at is not None
+        or challenge.expires_at <= datetime.now(UTC)
+    ):
         return False
     return verify_login_otp(session, user, challenge.id, code)
 

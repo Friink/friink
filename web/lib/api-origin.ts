@@ -1,5 +1,8 @@
 const LOCAL_API_ORIGIN = 'http://localhost:8000';
-const API_REQUEST_TIMEOUT_MS = 15000;
+// Login challenge creation includes the server-side email-provider round trip.
+// Keep enough room for a serverless cold start plus that delivery request so a
+// delivered OTP is not presented alongside a client-side timeout.
+const API_REQUEST_TIMEOUT_MS = 30000;
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, '');

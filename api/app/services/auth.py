@@ -42,6 +42,8 @@ async def get_user_by_username(session: Session, username: str) -> User | None:
 
 async def get_user_by_login_identifier(session: Session, identifier: str) -> User | None:
     normalized_identifier = identifier.strip()
+    if normalized_identifier.startswith('@'):
+        return await get_user_by_username(session, normalized_identifier[1:])
     if "@" in normalized_identifier:
         return await get_user_by_email(session, normalized_identifier)
     return await get_user_by_username(session, normalized_identifier)

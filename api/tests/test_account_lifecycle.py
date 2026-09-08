@@ -112,3 +112,37 @@ def test_deletion_requires_otp_and_worker_retains_tombstone(monkeypatch) -> None
     finally:
         _delete_user(user_id)
         app.dependency_overrides.clear()
+
+
+def test_global_otp_disable_bypasses_reactivation_and_deletion(monkeypatch) -> None:
+    async def fail_if_called(self, email: str, otp_code: str) -> None:
+        raise AssertionError("OTP delivery should not run when OTP is disabled")
+
+    monkeypatch.setattr("app.services.email.EmailService.send_lifecycle_otp", fail_if_called)
+    app.dependency_overrides[get_settings] = lambda: _settings(OTP_ENABLED=False)
+    user_id, email, _username, password = _seed_user("otp-disabled")
+    client = TestClient(app)
+    try:
+        login = client.post("/auth/login", json={"identifier": email, "password": password})
+        assert login.status_code == 200, login.text
+        access_token = login.json()["access_token"]
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        assert client.post("/auth/me/deactivate", headers=headers, json={"current_password": password}).status_code == 204
+        restored = client.post("/auth/login", json={"identifier": email, "password": password})
+        assert restored.status_code == 200, restored.text
+        assert "challenge_token" not in restored.json()
+
+        restored_headers = {"Authorization": f"Bearer {restored.json()['access_token']}"}
+        cooldown = client.post("/auth/me/deactivate", headers=restored_headers, json={"current_password": password})
+        assert cooldown.status_code == 429, cooldown.text
+        assert cooldown.json()["detail"]["message"] == "Account deactivation is temporarily unavailable after reactivation."
+        assert 0 < cooldown.json()["detail"]["cooldown_seconds"] <= 8 * 60
+
+        deletion = client.post("/auth/me/delete/start", headers=restored_headers, json={"current_password": password})
+        assert deletion.status_code == 204, deletion.text
+        with get_session_factory()() as session:
+            assert session.get(User, user_id).lifecycle_status == "pending_deletion"
+    finally:
+        _delete_user(user_id)
+        app.dependency_overrides.clear()

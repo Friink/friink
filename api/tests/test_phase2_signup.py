@@ -67,12 +67,18 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
         assert existing.status_code == fresh.status_code == 202
         assert existing.json()["accepted"] is True
         assert fresh.json()["accepted"] is True
-        assert existing.json()["verification_required"] is fresh.json()["verification_required"] is True
-        assert existing.json()["message"] == fresh.json()["message"]
+        assert existing.json()["verification_required"] is False
+        assert existing.json()["existing_account"] is True
+        assert existing.json()["reservation_token"] == ""
+        assert fresh.json()["verification_required"] is True
+        assert fresh.json()["existing_account"] is False
         assert re.fullmatch(r"[A-Za-z0-9_-]{32,128}", fresh.json()["reservation_token"])
 
         with get_session_factory()() as session:
             assert session.execute(select(User).where(User.email == payload["email"])).scalar_one_or_none() is None
+            assert session.execute(
+                select(SignupReservation).where(SignupReservation.email == existing_email)
+            ).scalar_one_or_none() is None
             reservation = session.execute(
                 select(SignupReservation).where(SignupReservation.email == payload["email"])
             ).scalar_one()
@@ -80,7 +86,7 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
             assert otp.otp_hash and len(otp.otp_hash) == 32
             assert otp.user_id is None
 
-        assert len(sent_codes) == 2
+        assert len(sent_codes) == 1
         assert all(re.fullmatch(r"[A-Z0-9]{6}", code) for code in sent_codes)
         invalid = client.post(
             "/auth/signup/email/verify",
@@ -100,7 +106,8 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
         assert verified.status_code == 201, verified.text
         with get_session_factory()() as session:
             new_user_id = session.execute(select(User.id).where(User.email == payload["email"])).scalar_one()
-        assert verified.json()["email"] == payload["email"].lower()
+        assert verified.json()["user"]["email"] == payload["email"].lower()
+        assert verified.json()["access_token"]
 
         replay = client.post(
             "/auth/signup/email/verify",

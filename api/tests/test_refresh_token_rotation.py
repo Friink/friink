@@ -57,7 +57,8 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
         with get_session_factory()() as session:
             user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
 
-        old_token = _login(client, email, password)
+        old_token = client.cookies.get(REFRESH_COOKIE_NAME)
+        assert old_token
         rows = _rows(user_id)
         assert len(rows) == 1
         old_row = rows[0]
@@ -144,11 +145,12 @@ def test_session_management_lists_current_and_revokes_independently() -> None:
         with get_session_factory()() as session:
             user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
 
-        first_client = TestClient(app)
-        first_login = first_client.post("/auth/login", json={"email": email, "password": password})
+        first_client = signup_client
+        first_login = signup
         second_client = TestClient(app)
         second_login = second_client.post("/auth/login", json={"email": email, "password": password})
-        assert first_login.status_code == second_login.status_code == 200
+        assert first_login.status_code == 201
+        assert second_login.status_code == 200
         first_access = first_login.json()["access_token"]
         second_access = second_login.json()["access_token"]
 

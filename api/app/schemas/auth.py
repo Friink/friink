@@ -67,8 +67,9 @@ class SignupRequest(BaseModel):
 class SignupStartResponse(BaseModel):
     accepted: bool = True
     verification_required: bool
-    reservation_token: str
+    reservation_token: str = ""
     message: str
+    existing_account: bool = False
 
 
 class SignupEmailStartRequest(BaseModel):
@@ -98,8 +99,8 @@ class LoginRequest(BaseModel):
 
 
 class LoginChallengeResponse(BaseModel):
-    challenge_required: Literal[True] = True
-    challenge_token: str = Field(min_length=32, max_length=128)
+    challenge_required: bool = True
+    challenge_token: str | None = Field(default=None, min_length=32, max_length=128)
     message: str
 
 
@@ -121,6 +122,22 @@ class LoginVerifyRequest(BaseModel):
     otp: str = Field(min_length=6, max_length=6)
 
 
+class LoginApprovalResponse(BaseModel):
+    challenge_id: uuid.UUID
+    device_label: str
+    browser: str | None
+    created_at: datetime
+    expires_at: datetime
+
+
+class LoginApprovalStatusResponse(BaseModel):
+    status: Literal["pending", "approved", "denied", "expired"]
+
+
+class LoginApprovalActionRequest(BaseModel):
+    challenge_id: uuid.UUID
+
+
 class EmailChangeStartRequest(BaseModel):
     email: EmailStr
     current_password: str = Field(min_length=1)
@@ -128,8 +145,8 @@ class EmailChangeStartRequest(BaseModel):
 
 class EmailChangeStartResponse(BaseModel):
     accepted: bool = True
-    verification_required: Literal[True] = True
-    challenge_token: str = Field(min_length=32, max_length=128)
+    verification_required: bool = True
+    challenge_token: str | None = Field(default=None, min_length=32, max_length=128)
     message: str
 
 
@@ -217,11 +234,31 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+    account_slot: str | None = None
 
 
 class RefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    account_slot: str | None = None
+
+
+class AccountSummaryResponse(BaseModel):
+    account_slot: str
+    username: str
+    display_name: str | None
+    profile_picture_url: str | None
+    active: bool
+    available: bool = True
+    last_used_at: datetime
+
+
+class AccountSwitchRequest(BaseModel):
+    account_slot: str = Field(min_length=32, max_length=128)
+
+
+class AccountAddAvailabilityResponse(BaseModel):
+    allowed: bool
 
 
 class AuthSessionResponse(BaseModel):

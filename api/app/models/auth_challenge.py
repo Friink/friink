@@ -21,5 +21,7 @@ class LoginChallenge(Base):
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    denied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     kind: Mapped[str] = mapped_column(String(32), nullable=False, default="login", server_default="login")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

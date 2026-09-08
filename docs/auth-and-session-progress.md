@@ -353,7 +353,7 @@ two independent accounts are authenticated. It also defines the required
 device-scoped session slot, opaque account-slot, account-specific session,
 secure-storage, API, isolation, and rollout boundaries. The device session
 registry is operational only and does not link the accounts to each other.
-The architecture currently recommends a default of five remembered accounts
+The architecture currently recommends a default of four remembered accounts
 per browser profile or mobile installation, controlled by the server-only
 `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` setting; this is not a global account-
 creation limit.
@@ -571,7 +571,8 @@ The first runtime slice is implemented and verified against staging:
 - password-only deactivation, immediate session/refresh/device revocation,
   and access-token rejection;
 - password + OTP deletion confirmation with stored 32-day default deadline;
-- OTP-gated deactivation/pending-deletion reactivation with one new session;
+- API-flagged OTP deactivation/pending-deletion reactivation with one new
+  session and an 8-minute post-reactivation deactivation cooldown;
 - retained-chat identity handling and public-content deletion worker;
 - retry failure timestamps/reasons and an internal token-protected staff
   completion endpoint;
@@ -618,3 +619,136 @@ Named verification coverage:
 The three-test staging run passed: `3 passed`. The broader auth-boundary and
 refresh-reuse run passed: `8 passed`. No schema migration was required for
 refresh-reuse signaling, and no account-lifecycle contract was changed.
+
+## Phase 4d requirements decision — 2026-09-06
+
+Phase 4d requirements are now closed. The agreed flow is credentials once on
+the new device, followed by one verification choice: the emailed four-minute
+OTP or approval from an existing signed-in session. These are alternatives,
+not sequential checks. Existing sessions show only coarse device details with
+Approve and Deny actions; they never display the plaintext OTP. Runtime
+implementation and its acceptance gate are now verified for the API approval
+path; full browser/device matrix coverage remains a release gate.
+
+Evidence: migration `20260906_0036` is at staging head; Phase 4d acceptance
+covers new-device credentials, existing-session pending approval, Approve,
+new-device completion, and separate session creation.
+
+## Phase 4e implementation checkpoint — 2026-09-06
+
+Implemented and staging-verified the first 4e server/web slice: migration
+`20260906_0035`, opaque device-scoped slots, safe account summaries,
+server-side limits, switch/remove operations, and slot-specific HttpOnly
+refresh cookies. Existing single-account refresh remains compatible.
+
+The dedicated two-account registration/list/switch/refresh/remove acceptance
+passed (`1 passed`), and Alembic reported no drift. Web TypeScript and the Next
+production build passed. The Add-account modal/OTP UX, complete isolation,
+mobile recovery and the full browser/device release gate remain open; Phase
+4d runtime implementation is verified for the approval path.
+
+This historical checkpoint is superseded by the current web-focused Phase 4
+closure recorded below; mobile recovery is now maintained in
+`auth-and-session-mobile.md` rather than tracked as an open web release gate.
+
+## Phase 4 UX decision record — 2026-09-06
+
+Add account uses the existing modal with Login first and Create account below;
+success activates the new or already-remembered account. The drawer offers
+switching, Add account, Manage accounts, and active logout. Manage Accounts
+uses ProfileCard rows with the active account first and logout on other rows.
+Removal is confirmed, then immediate. Active logout selects the most recent
+remaining account or returns to the public site. Deactivated/pending-deletion
+accounts are removed after lifecycle messaging. The dropdown closes after
+switching and recoverable failures preserve the active account.
+
+## Phase 4 handoff checkpoint — 2026-09-06
+
+Work is paused with the web/API implementation documented and verified. The
+next resume point is platform/mobile secure-storage work and the full
+browser/device staging matrix. No runtime changes are implied by this
+checkpoint.
+
+## Phase 1–4 staging E2E campaign — started 2026-09-06
+
+The live staging login page is reachable and the database is at migration head
+`20260906_0036` with no Alembic drift. The campaign is awaiting the password
+for the user-provided staging test email before the first authenticated step.
+No runtime changes or test-account deletion have occurred yet.
+
+Live checkpoint: signup for `muflahulfurqan@gmail.com` reached Step 2 of 4
+and staging confirmed that a six-character email verification code was sent.
+The campaign is waiting for that OTP before continuing; no account exists yet.
+
+After the browser tab expired between turns, signup was safely restarted and a
+fresh OTP was requested. Staging is again at Step 2 of 4; the earlier OTP is
+superseded and no account has been created.
+
+The user completed the fresh OTP successfully. The live UI is now at signup
+Step 3 of 4 (Password), awaiting a staging-only password before profile
+completion; no account has been created yet.
+
+The temporary password and synthetic profile are now filled. Staging is at
+the final Step 4 of 4 with `Create account` ready. Account creation is paused
+for confirmation; no test account exists yet.
+
+The user submitted `Create account`; staging advanced to the login-verification
+screen and issued a fresh six-character OTP for the new test account. The
+first authenticated session is not yet verified; cleanup remains pending.
+
+This exposed a defect: the deployed signup client created the account and then
+called ordinary login, causing a redundant second OTP. The working-tree fix
+now returns the authenticated signup session directly from both signup
+completion endpoints and consumes it in the web client. Staging must be
+redeployed before the E2E campaign continues.
+
+The next live check reached the expected login-verification screen for the
+test account in a new browser session. This is not evidence that the signup
+fix is deployed; staging must run the updated API/web build before signup can
+be repeated and the redundant-OTP acceptance can be closed.
+
+During the subsequent deployment, the public login page remained reachable but
+authenticated home and settings routes rendered blank after reload. This is a
+staging deployment-stability gate; E2E testing is paused until authenticated
+routes render normally again.
+
+Follow-up evidence: `https://staging-api.friink.com/health/db` actively
+refused the connection during the retry. The current blocker is the staging
+API deployment being unavailable, not an E2E assertion against application
+behavior.
+
+## Phase 4 coordination verification — 2026-09-06
+
+The web/API account slice now synchronizes active-slot state across open tabs,
+reloads account-scoped UI state after a switch, and applies the agreed
+most-recent-account fallback after active logout/removal. The dedicated
+staging-backed suite passed (`2 passed`), including notification creation and
+denied-OTP invalidation. Mobile secure storage and full browser/device staging
+coverage were not exercised here; they are now tracked separately in
+[`auth-and-session-mobile.md`](auth-and-session-mobile.md).
+
+Mobile Phase 4 requirements remain intentionally retained but deferred because
+no mobile client exists yet. They are not treated as a current web/API blocker
+and must be resumed when mobile implementation begins.
+
+Phase 4 is therefore considered closed for the current web-focused release.
+The deferred mobile gate remains mandatory before mobile support is released;
+its requirements and acceptance evidence live in
+[`auth-and-session-mobile.md`](auth-and-session-mobile.md).
+
+### Duplicate signup email handling — 2026-09-07
+
+The signup email-start flow now detects an existing account before creating a
+reservation or issuing an OTP. It returns a non-OTP response; the web client
+stays on the email step and offers login with the submitted email or signup
+with a different address. This is the agreed UX exception to the otherwise
+generic signup-response privacy rule. Focused API regression coverage passed
+(`1 passed`); staging deployment and live browser acceptance remain pending.
+
+### Account switcher inventory refresh — 2026-09-07
+
+Fixed the web drawer's stale account-list path. The drawer now refreshes the
+device account inventory when the switcher opens and after Add account
+authentication completes; refresh results are ordered so an older in-flight
+request cannot replace a newer list. API account-slot acceptance tests passed
+(`2 passed`), the web TypeScript check passed, and the production build passed.

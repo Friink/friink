@@ -98,6 +98,23 @@ async def test_authenticate_user_accepts_username(monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.mark.asyncio
+async def test_login_identifier_accepts_at_prefixed_username(monkeypatch: pytest.MonkeyPatch) -> None:
+    user = make_user("Alex", "alex@example.com")
+    looked_up: list[str] = []
+
+    async def fake_get_user_by_username(session, username):
+        looked_up.append(username)
+        return user
+
+    monkeypatch.setattr(service, "get_user_by_username", fake_get_user_by_username)
+
+    result = await service.get_user_by_login_identifier(FakeSession(), " @ALEX ")
+
+    assert result is user
+    assert looked_up == ["ALEX"]
+
+
+@pytest.mark.asyncio
 async def test_update_current_user_rejects_duplicate_email(monkeypatch: pytest.MonkeyPatch) -> None:
     user = make_user("alex", "alex@example.com")
     other = make_user("sam", "sam@example.com")
