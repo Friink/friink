@@ -7358,6 +7358,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Reason: The previous screen reused the standalone login layout and omitted required lifecycle context.
 - Verification Status: Web TypeScript validation and `git diff --check` passed.
 
+## 2026-09-08T05:10:00Z — Restore revoked device records during reactivation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the account-specific `Failed to fetch` error when logging into a recently deactivated account.
+- Changes Made: Re-login now restores the existing account/device recognition row after deactivation instead of inserting a duplicate row. The lifecycle regression test keeps the same browser client through deactivation and reactivation.
+- Files: `api/app/services/session_service.py`, `api/tests/test_account_lifecycle.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Staging runtime logs showed a PostgreSQL `UniqueViolation` on `uq_recognized_devices_user_token` for the deactivated account's retained device cookie.
+- Verification Status: Account lifecycle tests passed (`3 passed`); adjacent auth/account tests passed (`17 passed`); `git diff --check` passed.
+
 ## 2026-09-08T01:00:00Z — Repair deactivation fallback account recovery
 
 - Agent: Codex

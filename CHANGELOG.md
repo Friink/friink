@@ -2,6 +2,12 @@
 
 ## 2026-09-08
 
+- [auth] Fixed reactivation for a recently deactivated account on the same
+  browser. The existing revoked device record is restored instead of causing a
+  duplicate-key database error that appeared in the UI as `Failed to fetch`.
+
+## 2026-09-08
+
 - [web/ui] Routed the deactivation modal’s `Okay` action to `/` after
   recovery. Users without another account remain on the public site, while
   the public-route guard sends restored sessions to `/home`.

@@ -97,14 +97,18 @@ def get_or_create_recognized_device(
     """Resolve a server-issued device token without trusting client device claims."""
     _device, browser, operating_system, _ = _user_agent_details(request)
     if raw_identifier:
+        # Deactivation revokes the account's recognized device, but the browser
+        # cookie is intentionally retained so the same device can reactivate it.
+        # Resolve the row without filtering on revoked_at and restore it in place;
+        # inserting a new row would violate the account/device uniqueness key.
         recognized = session.execute(
             select(RecognizedDevice).where(
                 RecognizedDevice.user_id == user_id,
                 RecognizedDevice.token_hash == hash_device_identifier(raw_identifier),
-                RecognizedDevice.revoked_at.is_(None),
             )
         ).scalar_one_or_none()
         if recognized:
+            recognized.revoked_at = None
             recognized.browser = browser
             recognized.operating_system = operating_system
             recognized.last_seen_at = datetime.now(UTC)

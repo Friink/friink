@@ -129,7 +129,6 @@ def test_global_otp_disable_bypasses_reactivation_and_deletion(monkeypatch) -> N
         headers = {"Authorization": f"Bearer {access_token}"}
 
         assert client.post("/auth/me/deactivate", headers=headers, json={"current_password": password}).status_code == 204
-        client = TestClient(app)
         restored = client.post("/auth/login", json={"identifier": email, "password": password})
         assert restored.status_code == 200, restored.text
         assert "challenge_token" not in restored.json()
