@@ -2,7 +2,8 @@ import asyncio
 import uuid
 from datetime import date
 
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
+import pytest
 from sqlalchemy import delete, select
 
 from app.config import Settings
@@ -11,6 +12,7 @@ from app.models.notification_outbox import NotificationChannel, NotificationOutb
 from app.models.security_event import SecurityEvent, SecurityEventType
 from app.models.user import User
 from app.services.auth import register_failed_login
+from app.services.password_reset import complete_password_reset, start_password_reset
 from app.services.security import hash_password
 
 
@@ -94,5 +96,24 @@ def test_failed_login_alert_is_suppressed_for_24_hours() -> None:
                 )
             ).scalars().all()
             assert sum(event.payload.get("kind") == "failed_login_notification" for event in events) == 1
+    finally:
+        _delete_user(user_id)
+
+
+def test_suspicious_login_reset_requires_a_different_password() -> None:
+    user_id = _seed_user()
+    try:
+        with get_session_factory()() as session:
+            user = session.get(User, user_id)
+            ordinary_user, ordinary_token = asyncio.run(start_password_reset(session, user.email))
+            assert ordinary_user is not None and ordinary_token is not None
+            asyncio.run(complete_password_reset(session, ordinary_token, "Strong1!pass"))
+
+        with get_session_factory()() as session:
+            user = session.get(User, user_id)
+            _user, suspicious_token = asyncio.run(start_password_reset(session, user.email, purpose="suspicious_login"))
+            assert suspicious_token is not None
+            with pytest.raises(HTTPException, match="different from your current password"):
+                asyncio.run(complete_password_reset(session, suspicious_token, "Strong1!pass"))
     finally:
         _delete_user(user_id)

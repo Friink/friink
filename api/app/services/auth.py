@@ -335,6 +335,8 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
 async def change_password(session: Session, user: User, data: ChangePasswordRequest) -> None:
     if not verify_password(data.current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")
+    if verify_password(data.new_password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a password different from your current password.")
 
     user.password_hash = hash_password(data.new_password)
     await commit(session)

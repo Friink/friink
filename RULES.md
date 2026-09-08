@@ -151,7 +151,7 @@ the entry, so history isn't lost.
 
 ### Rule: Password Recovery Uses Email Reset Links
 - **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
-- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.
+- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `docs/forget-password.md`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `web/app/reset-password/page.tsx`

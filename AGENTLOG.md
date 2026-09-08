@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09T00:30:00Z — Require a changed password for suspicious-login resets
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved password-reuse rule for Phase 7 recovery.
+- Changes Made: Added a durable reset-token purpose, marked Phase 7 links as `suspicious_login`, and reject the current password for those links server-side. Authenticated password changes now enforce the same rule. Ordinary password recovery continues to allow reuse. Added the schema migration and preserved the existing reset UX.
+- Files: `api/app/models/password_reset.py`, `api/app/services/password_reset.py`, `api/app/services/failed_login_notifications.py`, `api/alembic/versions/20260909_0040_password_reset_purpose.py`.
+- Verification Status: Focused Phase 7, lockout, and auth-flow suite passes (`12 passed`); staging deployment and reset-link verification remain pending.
+
 ## 2026-09-09T00:10:00Z — Fix shared password-recovery auth layout
 
 - Agent: Codex

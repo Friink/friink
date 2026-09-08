@@ -34,7 +34,7 @@ async def deliver_failed_login_alert(event_id: uuid.UUID, settings: Settings) ->
             session.commit()
             return
         try:
-            _user, raw_token = await start_password_reset(session, user.email)
+            _user, raw_token = await start_password_reset(session, user.email, purpose="suspicious_login")
             reset_url = f"{str(settings.frontend_url).rstrip('/')}/reset-password?token={raw_token}"
             await EmailService(settings).send_failed_login_alert(user.email, reset_url)
             job.status = OutboxStatus.delivered

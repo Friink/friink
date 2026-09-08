@@ -2,6 +2,12 @@
 
 ## 2026-09-09
 
+- [auth/recovery] Suspicious-login reset links now require a password different
+  from the current password. Ordinary password recovery may still reuse the
+  current password; the distinction is stored on the reset token purpose.
+
+## 2026-09-09
+
 - [web/auth] Fixed password-reset page alignment by using the same shared
   centered auth-form structure as login and forgot-password. The production
   web build passes.

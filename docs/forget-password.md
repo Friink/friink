@@ -86,7 +86,9 @@ pending-deletion accounts do not enter this active-account notification path.
 The Phase 7 notification is a separate event from a user-requested password
 reset. Both may use the same reset-token service, but each request must retain
 its own purpose, expiry, single-use behavior, deduplication, and audit/outbox
-record. A newer reset request invalidates older reset links.
+record. A newer reset request invalidates older reset links. Ordinary recovery
+may reuse the current password; suspicious-login reset links must use a
+different password, and the API enforces that rule from the token purpose.
 
 ## Open implementation gates
 
