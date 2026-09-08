@@ -33,6 +33,7 @@ class User(Base):
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    is_staff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false", index=True)
     subscription_tier: Mapped[str] = mapped_column(String(32), nullable=False, default="free", server_default="free", index=True)
     read_receipts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     likes_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")

@@ -12,6 +12,7 @@ export type AuthUser = {
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
   likesVisible: boolean;
+  isStaff: boolean;
   setupStep: 1 | 2;
   setupCompleted: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
@@ -71,6 +72,7 @@ type ApiUser = {
   setup_step: 1 | 2;
   setup_completed: boolean;
   is_verified: boolean;
+  is_staff: boolean;
   created_at: string;
   updated_at: string;
   profile_picture_url: string | null;
@@ -87,6 +89,14 @@ type ApiPublicUser = {
   is_private: boolean;
   likes_visible: boolean;
 };
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await requestApi<{ message: string }>('/auth/password-reset/start', { method: 'POST', body: JSON.stringify({ email }) });
+}
+
+export async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  await requestApi<void>('/auth/password-reset/confirm', { method: 'POST', body: JSON.stringify({ token, new_password: newPassword }) });
+}
 
 export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string };
 export type BlockedUserPage = { items: BlockedUser[]; next_cursor: string | null };
@@ -152,6 +162,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     profilePictureUpdatedAt: null,
     isPrivate: false,
     likesVisible: true,
+    isStaff: false,
     setupStep: 1,
     setupCompleted: true,
     status: 'active',
@@ -1737,6 +1748,7 @@ function mapApiUser(user: ApiUser): AuthUser {
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,
     likesVisible: user.likes_visible ?? true,
+    isStaff: user.is_staff ?? false,
     setupStep: user.setup_step,
     setupCompleted: user.setup_completed,
     status: user.is_verified ? 'active' : 'pending_email_verification',

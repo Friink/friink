@@ -5,7 +5,7 @@ import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
-import { checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
+import { checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, requestPasswordReset, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
@@ -15,7 +15,7 @@ type LoginScreenProps = {
   mode?: 'page' | 'account-modal';
 };
 
-type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
+type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'forgot-password' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
 
 export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps) {
   const [email, setEmail] = useState('');
@@ -40,6 +40,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
   const isLoginEmailStep = step === 'login-email';
   const isLoginPasswordStep = step === 'login-password';
   const isLoginOtpStep = step === 'login-otp';
+  const isForgotPasswordStep = step === 'forgot-password';
   const isSignupEmailStep = step === 'signup-email';
   const isSignupPasswordStep = step === 'signup-password';
   const isSignupProfileStep = step === 'signup-profile';
@@ -73,6 +74,23 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
         return;
       }
       setStep('login-password');
+      return;
+    }
+
+    if (isForgotPasswordStep) {
+      if (!validateEmail(email)) {
+        setErrorMessage('Enter the email address associated with your Friink account.');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        await requestPasswordReset(email);
+        setErrorMessage('If an account exists for that email, password-reset instructions have been sent.');
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -303,7 +321,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
               }
             />
 
-            <button className="forgot-password" type="button">
+            <button className="forgot-password" type="button" onClick={() => { setEmail(validateEmail(loginIdentifier) ? loginIdentifier : ''); setErrorMessage(''); setStep('forgot-password'); }}>
               Forgot password?
             </button>
 
@@ -314,6 +332,17 @@ export function LoginScreen({ onAuthenticated, mode = 'page' }: LoginScreenProps
               <Button className="login-submit" type="submit">
                 {isSubmitting ? 'Please wait...' : 'Login'}
               </Button>
+            </div>
+          </>
+        )}
+
+        {isForgotPasswordStep && (
+          <>
+            <div className="login-step-copy"><p>Reset your password</p><span>Enter your account email and we’ll send a single-use reset link.</span></div>
+            <InputField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" autoComplete="email" required />
+            <div className="signup-actions signup-actions-single">
+              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-password'); }}>Back</button>
+              <Button className="login-submit" type="submit">{isSubmitting ? 'Please wait...' : 'Send reset link'}</Button>
             </div>
           </>
         )}

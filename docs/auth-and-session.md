@@ -125,6 +125,10 @@ abuse:
 - Progressive failed-login throttling with independent IP/device protections.
 - Multiple-account support with an authenticated web account switcher.
 
+The initial staff discovery slice adds `users.is_staff`; authenticated user
+responses may expose it so the shared web shell can show Control panel. This
+flag does not authorize privileged control-panel actions.
+
 ### Out of scope for this design
 
 - Final production email-provider selection, email-template wording, and
@@ -818,10 +822,12 @@ offline/online transitions.
 
 ### Phase 5 — Staff and superadmin security
 
-**Status:** Requirements Pending
+**Status:** Requirements Pending; staff discovery slice implemented
 
-**Implementation notes:** Staff and superadmin contracts are documented, but
-the privileged administration plane is not implemented.
+**Implementation notes:** The initial slice adds `users.is_staff`, exposes it
+only on authenticated user responses, and conditionally shows the Control panel
+entry in the shared drawer. The privileged administration plane is not
+implemented.
 
 **Test results:** No Phase 5 acceptance run has been completed.
 
@@ -832,8 +838,10 @@ bootstrap, role, step-up, or administrative-revocation phase.
 
 **Status:** Requirements Pending
 
-**Implementation notes:** Bootstrap safeguards and recovery behavior remain to
-be designed into an implementation contract and built.
+**Implementation notes:** The controlled bootstrap command is implemented for
+the reserved `admin@friink.com` / `@admin` account. It prompts for the password,
+refuses to overwrite an existing account, and marks the account as staff. The
+full superadmin security boundary remains pending.
 
 **Test results:** Not run.
 
@@ -1773,22 +1781,23 @@ remembered account session slots or incorrectly log out the previously active ac
 ### 10.2 Password recovery
 
 Password recovery is part of the account lifecycle and uses the same privacy
-and OTP protections as signup:
+protections as signup, but uses an email reset link rather than an OTP:
 
 1. An unauthenticated request accepts an email and always returns the same
    neutral response, whether or not an account exists.
-2. If appropriate, the account receives a six-character alphanumeric,
-   single-use password-reset OTP. Store only its hash, expire it after four
-   minutes, allow five attempts, invalidate older reset requests when a newer
-   one is issued, and rate-limit by IP, email, and device.
+2. If appropriate, the account receives a cryptographically random,
+   single-use password-reset link by email. Store only its hash, expire it
+   after 30 minutes, invalidate older reset requests when a newer one is
+   issued, and rate-limit by IP, email, and device.
 3. The user sets a new password using the standard 8–16 character policy.
 4. Successful recovery revokes every existing refresh-token family for that
    account, invalidates remembered device session slots, creates a security
    event, and requires a fresh login. Already-issued access tokens may remain
    valid only until their documented short expiry.
 
-Recovery must not reveal whether an email exists, and reset OTPs must not
-appear in URLs, analytics payloads, browser history, or support screenshots.
+Recovery must not reveal whether an email exists. Reset tokens must not appear
+in logs, analytics payloads, or support screenshots; the reset URL is the
+intended one-time browser delivery mechanism.
 
 ### 10.3 CSRF protection
 

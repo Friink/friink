@@ -94,6 +94,8 @@ these files, and the live implementation, are:**
   files touched, reasoning). Updated alongside every `CHANGELOG.md` entry.
 - **`docs/auth-and-session.md`** — shared backend and web authentication/session
   contract and implementation status.
+- **`docs/forget-password.md`** — email reset-link contract and implementation
+  details.
 - **`docs/auth-and-session-mobile.md`** — mobile-only authentication/session
   requirements, intentionally deferred until a mobile client exists.
 - **`docs/chat-behavior.md`** — the implementation contract for chat requests, composer states, notifications, mute/archive behavior, blocking infrastructure, and subscription boundaries.

@@ -471,7 +471,7 @@ security-event/outbox boundary.
 
 The message will go only to the account record's registered email address and
 will contain suspicious-activity guidance plus an opaque, single-use,
-expiring password-reset link. Unknown or malformed identifiers never trigger
+expiring email password-reset link. Unknown or malformed identifiers never trigger
 delivery. A bounce or other delivery failure remains an internal redacted
 outcome and must not alter the unauthenticated response, timing, UI, logs, or
 telemetry in a way that reveals account existence; the submitted login

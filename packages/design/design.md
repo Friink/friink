@@ -333,7 +333,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`) with a separate caret trigger (`.sidebar-account-menu-button`) for account actions. The ProfileCard itself is not the account-menu trigger; the drawer's Profile navigation item remains the profile destination.
   2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
-  3. Footer actions (`.sidebar-footer`): Settings (`fa-gear`) and Log out (`fa-right-from-bracket`). Account switching, Add account, and Manage accounts live in the profile-card account menu. The switcher remains a device-session convenience, not an account-linking surface.
+  3. Staff action, when `AuthUser.isStaff` is true: Control panel (`fa-shield-halved`) linking to `/cp`. This is a discoverability control only; server-side authorization remains authoritative.
+  4. Footer actions (`.sidebar-footer`): Settings (`fa-gear`) and Log out (`fa-right-from-bracket`). Account switching, Add account, and Manage accounts live in the profile-card account menu. The switcher remains a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
   - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.

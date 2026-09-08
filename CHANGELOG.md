@@ -2,6 +2,15 @@
 
 ## 2026-09-08
 
+- [auth/staff] Added email-only password reset links with single-use hashed
+  tokens, 30-minute expiry, refresh-session revocation, and a reset page.
+- [staff] Added the authenticated `is_staff` flag, conditional Control panel
+  drawer entry, and password-safe `admin@friink.com` / `@admin` bootstrap.
+- [docs] Added `docs/forget-password.md` and synchronized auth, rules, and
+  design contracts.
+
+## 2026-09-08
+
 - [web/auth] Split login into progressive two-step identifier and password
   screens, preserving the identifier with a clear change action.
 

@@ -1,5 +1,15 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-08T07:00:00Z — Add password recovery and initial staff discovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement email-link password recovery, the initial staff flag and Control panel drawer entry, and the first admin bootstrap account contract.
+- Changes Made: Added hashed single-use reset tokens and API start/confirm endpoints, email delivery, reset page, `users.is_staff`, authenticated response propagation, conditional drawer navigation, the password-safe `bootstrap_admin.py` command for `admin@friink.com` / `@admin`, migration, and synchronized documentation.
+- Files: `api/app/models/password_reset.py`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/models/user.py`, `api/alembic/versions/20260908_0036_staff_and_password_reset.py`, `api/scripts/bootstrap_admin.py`, `web/app/reset-password/page.tsx`, `web/components/login-screen.tsx`, `web/components/side-drawer.tsx`, `web/lib/auth.ts`, `docs/forget-password.md`, `docs/auth-and-session.md`, `docs/auth-and-session-progress.md`, `RULES.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: Establish the agreed recovery and staff-discovery foundation without implementing privileged control-panel actions yet.
+- Verification Status: Python compile and targeted API auth tests passed (`2 passed`); standalone web TypeScript validation passed; web source compilation/type checking passed, but final Next.js generation is blocked by a OneDrive `.next` `EINVAL` readlink cleanup error. No new dependencies were required.
+
 ## 2026-09-08T01:30:00Z — Add live post-reactivation cooldown toast
 
 - Agent: Codex

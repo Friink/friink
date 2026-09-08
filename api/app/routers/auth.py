@@ -46,6 +46,7 @@ from app.schemas.auth import (
     UpdateCurrentUserRequest,
     UsernameAvailabilityResponse,
     UserResponse,
+    PasswordResetStartRequest, PasswordResetConfirmRequest,
 )
 from app.services.auth import authenticate_user, change_password, complete_signup_email_reservation, complete_signup_reservation, create_user, get_user_by_email, get_user_by_username, is_username_available, start_signup_email_reservation, start_signup_reservation, update_current_user, user_id_from_subject, verify_signup_email_reservation
 from app.services.email_change import complete_email_change, start_email_change
@@ -79,6 +80,7 @@ from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
 from app.services.account_slots import create_or_replace_slot, find_slot_for_user, get_slot, list_slots, revoke_slot
+from app.services.password_reset import complete_password_reset, start_password_reset
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -731,6 +733,38 @@ async def logout(
     )
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
+
+
+@router.post("/password-reset/start", status_code=status.HTTP_202_ACCEPTED)
+async def password_reset_start(
+    payload: PasswordResetStartRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str]:
+    require_allowed_origin(request, settings)
+    user, raw_token = await start_password_reset(session, str(payload.email))
+    if user and raw_token:
+        reset_url = f"{str(settings.frontend_url).rstrip('/')}/reset-password?token={raw_token}"
+        try:
+            await EmailService(settings).send_password_reset(user.email, reset_url)
+        except EmailDeliveryError:
+            # Keep the unauthenticated response neutral so delivery behavior
+            # cannot disclose whether the email belongs to a Friink account.
+            pass
+    return {"message": "If an account exists for that email, password-reset instructions have been sent."}
+
+
+@router.post("/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset_confirm(
+    payload: PasswordResetConfirmRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    require_allowed_origin(request, settings)
+    await complete_password_reset(session, payload.token, payload.new_password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 async def get_current_user(
