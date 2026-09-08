@@ -2,6 +2,12 @@
 
 ## 2026-09-08
 
+- [web/control-panel] Replaced the first CP mock layout with a design-contract
+  implementation using the shared `Tabs`, `ContentBox`, `PageSurface`, and
+  `ListRow` primitives. Removed bespoke CP sizing, cards, spacing, and tab CSS.
+
+## 2026-09-08
+
 - [web/control-panel] Added the authenticated `/cp` control-panel shell for
   staff users with Overview, Users & Accounts, Roles & Permissions, Security &
   Sessions, and Audit Log tabs. The tab content is presentational until the

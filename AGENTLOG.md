@@ -7525,3 +7525,20 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `web/components/action-menu.tsx`, `web/components/profile-card.tsx`, `web/components/side-drawer.tsx`, `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Reason: Make remembered accounts visually distinguishable in the account-switcher dropdown.
 - Verification Status: Web TypeScript validation and `git diff --check` passed.
+## 2026-09-08T13:58:43Z — Rebuild control-panel UI on shared design primitives
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Discard the initial `/cp` page mock and rebuild its tabs and
+  structure according to `README.md`, `AGENTLOG.md`, and `packages/design/design.md`.
+- Changes Made: Removed bespoke control-panel layout/card/tab styling. Moved
+  control-panel tab navigation into the shared app-shell `Tabs` surface and
+  rebuilt the content with `PageSurface`, existing settings/list-row treatment,
+  and shared icon conventions. Kept `/cp` routing and staff gating unchanged.
+- Files: `web/components/control-panel-screen.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Reason: The previous CP UI introduced a competing 72rem layout, custom cards,
+  duplicated gutters, and a bespoke tab system that violated the shared
+  `ContentBox`/`PageSurface`/`Tabs` contracts.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. No
+  production build or browser deployment verification was run.

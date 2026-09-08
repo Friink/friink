@@ -1,64 +1,77 @@
-'use client';
+import { ListRow } from '@/components/list-row';
+import { PageSurface } from '@/components/page-surface';
 
-import { useState } from 'react';
+export type ControlPanelTab = 'overview' | 'users' | 'roles' | 'security' | 'audit';
 
-const tabs = [
-  { id: 'overview', label: 'Overview', icon: 'fa-solid fa-chart-line' },
-  { id: 'users', label: 'Users & Accounts', icon: 'fa-solid fa-users' },
-  { id: 'roles', label: 'Roles & Permissions', icon: 'fa-solid fa-user-shield' },
-  { id: 'security', label: 'Security & Sessions', icon: 'fa-solid fa-shield-halved' },
-  { id: 'audit', label: 'Audit Log', icon: 'fa-solid fa-list-check' },
-] as const;
-
-const tabCopy: Record<(typeof tabs)[number]['id'], { title: string; description: string; cards: string[] }> = {
-  overview: { title: 'Staff overview', description: 'A quick view of the platform areas you can administer.', cards: ['Active staff sessions', 'Locked accounts', 'Recent security events'] },
-  users: { title: 'Users & accounts', description: 'Search users and review account access without exposing private credentials.', cards: ['Search users', 'Account status', 'Roles and direct permissions'] },
-  roles: { title: 'Roles & permissions', description: 'Manage role capabilities and narrowly scoped direct grants.', cards: ['Predefined roles', 'Permission catalog', 'Individual grants'] },
-  security: { title: 'Security & sessions', description: 'Review privileged access and account-session security actions.', cards: ['Privileged sessions', 'Account locks', 'Session revocation'] },
-  audit: { title: 'Audit log', description: 'Review redacted, server-recorded staff and security activity.', cards: ['Role changes', 'Account actions', 'Privileged-session events'] },
+const tabContent: Record<ControlPanelTab, { title: string; description: string; items: Array<{ icon: string; title: string; description: string }> }> = {
+  overview: {
+    title: 'Overview',
+    description: 'A calm starting point for staff-only administration.',
+    items: [
+      { icon: 'fa-solid fa-users', title: 'Users & accounts', description: 'Review account status, staff access, roles, and direct permissions.' },
+      { icon: 'fa-solid fa-user-shield', title: 'Roles & permissions', description: 'Manage role capabilities and narrowly scoped individual grants.' },
+      { icon: 'fa-solid fa-shield-halved', title: 'Security & sessions', description: 'Review privileged sessions, locks, and session revocation.' },
+    ],
+  },
+  users: {
+    title: 'Users & accounts',
+    description: 'Search and review accounts without exposing private credentials.',
+    items: [
+      { icon: 'fa-solid fa-magnifying-glass', title: 'Search users', description: 'Find an account by email, username, or display name.' },
+      { icon: 'fa-solid fa-user-check', title: 'Account status', description: 'Review lifecycle, verification, and staff status.' },
+      { icon: 'fa-solid fa-key', title: 'Access assignments', description: 'Review each user’s role and direct permission grants.' },
+    ],
+  },
+  roles: {
+    title: 'Roles & permissions',
+    description: 'Define reusable access while retaining precise user-level control.',
+    items: [
+      { icon: 'fa-solid fa-layer-group', title: 'Roles', description: 'Create and edit role names and their permission sets.' },
+      { icon: 'fa-solid fa-list-check', title: 'Permission catalog', description: 'Review the permissions available to staff roles.' },
+      { icon: 'fa-solid fa-user-plus', title: 'Individual grants', description: 'Add or revoke one permission for a single user.' },
+    ],
+  },
+  security: {
+    title: 'Security & sessions',
+    description: 'Keep privileged access reviewable and reversible.',
+    items: [
+      { icon: 'fa-solid fa-laptop', title: 'Privileged sessions', description: 'Review and revoke active staff sessions.' },
+      { icon: 'fa-solid fa-lock', title: 'Account locks', description: 'Review lock state and apply authorized account actions.' },
+      { icon: 'fa-solid fa-right-from-bracket', title: 'Session revocation', description: 'End sessions without changing account credentials.' },
+    ],
+  },
+  audit: {
+    title: 'Audit log',
+    description: 'Review redacted, server-recorded staff and security activity.',
+    items: [
+      { icon: 'fa-solid fa-user-gear', title: 'Access changes', description: 'Role and individual permission changes.' },
+      { icon: 'fa-solid fa-user-lock', title: 'Account actions', description: 'Staff account, lock, and session actions.' },
+      { icon: 'fa-solid fa-clock-rotate-left', title: 'Recent activity', description: 'Immutable events with sensitive values redacted.' },
+    ],
+  },
 };
 
-export function ControlPanelScreen() {
-  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]['id']>('overview');
-  const content = tabCopy[activeTab];
+export function ControlPanelScreen({ activeTab = 'overview' }: { activeTab?: ControlPanelTab }) {
+  const content = tabContent[activeTab];
 
   return (
-    <section className="control-panel" aria-labelledby="control-panel-title">
-      <div className="control-panel-header">
-        <div>
-          <p className="control-panel-eyebrow">Staff workspace</p>
-          <h1 id="control-panel-title">Control panel</h1>
-          <p>{content.description}</p>
-        </div>
-        <span className="control-panel-status"><i className="fa-solid fa-lock" aria-hidden="true" /> Privileged workspace</span>
+    <PageSurface variant="stack" aria-labelledby="control-panel-title">
+      <div>
+        <h1 id="control-panel-title">{content.title}</h1>
+        <p>{content.description}</p>
       </div>
-
-      <div className="control-panel-tabs" role="tablist" aria-label="Control panel sections">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`control-panel-tab${activeTab === tab.id ? ' active' : ''}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            aria-controls={`control-panel-${tab.id}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <i className={tab.icon} aria-hidden="true" />
-            <span>{tab.label}</span>
-          </button>
+      <div className="settings-section" role="tabpanel" id={`control-panel-${activeTab}`} aria-label={content.title}>
+        {content.items.map((item) => (
+          <ListRow
+            key={item.title}
+            avatar={<span className="settings-icon"><i className={item.icon} aria-hidden="true" /></span>}
+            title={item.title}
+            subtitle={item.description}
+            className="settings-row settings-row-expanded"
+            trailing={<span className="list-row-chevron" aria-hidden="true"><i className="fa-solid fa-chevron-right" /></span>}
+          />
         ))}
       </div>
-
-      <div className="control-panel-content" id={`control-panel-${activeTab}`} role="tabpanel">
-        <div className="control-panel-section-heading">
-          <div><p className="control-panel-eyebrow">Current section</p><h2>{content.title}</h2></div>
-          <span className="control-panel-placeholder">Backend actions coming next</span>
-        </div>
-        <div className="control-panel-cards">
-          {content.cards.map((card) => <article className="control-panel-card" key={card}><span className="control-panel-card-icon"><i className="fa-regular fa-circle" aria-hidden="true" /></span><div><h3>{card}</h3><p>This area will be connected to the server-authorized Phase 5 workflow.</p></div></article>)}
-        </div>
-      </div>
-    </section>
+    </PageSurface>
   );
 }
