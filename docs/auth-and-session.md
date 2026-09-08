@@ -1191,7 +1191,7 @@ release gate with separately confirmed credentials and configuration.
 
 ### Phase 6 — Operations and incident response
 
-**Status:** Implementation in progress
+**Status:** Implementation complete; final partial-failure rehearsal pending
 
 **Implementation notes:** Deployment migration gating, security-event plumbing,
 per-user/all-account deliberate session invalidation, security epochs, and the
@@ -1282,8 +1282,9 @@ issued access tokens through a security epoch, require explicit confirmation,
 and record auditable reasons and result counts. Operations require an explicit
 idempotency key so a completed retry returns the original result. A dedicated independent-admin
 containment operation also disables staff access, locks the account, and
-revokes privileged staff sessions. A controlled per-account rehearsal has
-completed locally; the platform-wide destructive rehearsal remains open.
+revokes privileged staff sessions. Controlled per-account and platform-wide
+staging rehearsals have completed; the final partial-failure/recovery exercise
+remains open.
 
 **Test results:** Phase 6 operation tests cover refresh/device/session counts,
 idempotent replay, and compromised-admin containment; the full API suite passes
@@ -1294,11 +1295,10 @@ operations token, the route rejected a missing idempotency key with 400 and an
 unknown user with 404. A disposable plus-address account then completed the
 local containment flow: signup returned 201, containment returned 200, the
 same idempotency key replayed 200 with the original result, and the pre-existing
-access token and refresh cookie both returned 401 afterward. No real account or
-platform-wide revoke-all operation was used. The live staging browser reached
-the login verification step, confirming the deployed web/API path is
-responding; that flow showed OTP is enabled in staging. `alembic check` reports
-no schema drift.
+access token and refresh cookie both returned 401 afterward. The live staging
+browser reached the login verification step, confirming the deployed web/API
+path is responding; that flow showed OTP is enabled in staging. `alembic check`
+reports no schema drift.
 
 Staging E2E evidence: a disposable plus-address account completed the signup
 OTP flow and reached the authenticated home page. The protected containment
@@ -1326,7 +1326,10 @@ must be authorized, auditable, idempotent, and recoverable without directly
 editing authentication rows in production.
 
 Verification gate: rehearse refresh-token compromise, admin compromise, mass
-revocation, account lockdown, partial failure, retry, and restoration.
+revocation, account lockdown, partial failure, retry, and restoration. The
+compromise, containment, mass-revocation, retry, and restoration portions are
+covered by the recorded local/staging evidence; only a deliberately injected
+mid-operation partial failure with recovery remains to be exercised.
 
 Intentional mass revocation or incident lockdown is surfaced to affected users
 through the deliberate-revocation result above; it must not be presented as a

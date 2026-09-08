@@ -31,6 +31,9 @@
   staging branch; both Vercel projects reached Ready and the staging login page
   rendered during rollback. Direct API browser verification was blocked by
   Chrome, so mixed-runtime response compatibility remains unclaimed.
+- Updated the Phase 6 auth/session contract to mark implementation complete
+  for the exercised operations and to identify the deliberately injected
+  partial-failure recovery rehearsal as the final remaining gate.
 
 ## 2026-09-09
 

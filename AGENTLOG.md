@@ -7761,3 +7761,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   both Vercel projects reached Ready for each observed deployment, and the web
   login smoke check rendered. Chrome blocked the direct staging API health
   hostname, so mixed-runtime API response compatibility remains unverified.
+
+## 2026-09-09T03:02:00Z — Refresh Phase 6 remaining-test contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Report the final remaining Phase 6 test and update the
+  authentication/session contract with completed progress.
+- Changes Made: Updated the Phase 6d status and verification gate to reflect
+  completed local/staging containment, platform-wide revocation, idempotent
+  retry, rollback, and restoration evidence. Documented deliberate partial
+  failure injection and recovery as the final open rehearsal.
+- Files: `docs/auth-and-session.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation reviewed; no runtime behavior changed.
