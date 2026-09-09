@@ -339,8 +339,8 @@ export function Composer({
       {cropIndex !== null && media[cropIndex] ? (
         <Modal title="Crop image" onClose={() => setCropIndex(null)} closeLabel="Cancel crop" actions={
           <>
-            <button className="settings-secondary-button" type="button" disabled={cropBusy} onClick={resetCrop}>Reset</button>
-            <button className="settings-update-button" type="button" disabled={cropBusy || !croppedAreaPixels} onClick={confirmCrop}><i className={`fa-solid ${cropBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" /><span>{cropBusy ? 'Cropping…' : 'Apply crop'}</span></button>
+            <button className="button-secondary" type="button" disabled={cropBusy} onClick={resetCrop}>Reset</button>
+            <button className="button-primary" type="button" disabled={cropBusy || !croppedAreaPixels} onClick={confirmCrop}><i className={`fa-solid ${cropBusy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" /><span>{cropBusy ? 'Cropping…' : 'Apply crop'}</span></button>
           </>
         }>
           <div className="composer-media-crop-stage">

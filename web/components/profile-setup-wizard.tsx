@@ -166,8 +166,8 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
         className="profile-setup-dialog"
         actions={
           <>
-            <button className="settings-secondary-button" type="button" disabled={busy} onClick={handleSkip}>{step === 1 ? 'Skip' : 'Skip and finish'}</button>
-            {step === 2 ? <button className="pill-button pill-button-brand" type="button" disabled={busy} onClick={handleAboutNext}>{busy ? 'Saving...' : 'Finish'}</button> : <button className="pill-button pill-button-brand" type="button" disabled={busy} onClick={handlePictureNext}>{busy ? 'Saving...' : 'Continue'}</button>}
+            <button className="button-secondary" type="button" disabled={busy} onClick={handleSkip}>{step === 1 ? 'Skip' : 'Skip and finish'}</button>
+            {step === 2 ? <button className="button-primary" type="button" disabled={busy} onClick={handleAboutNext}>{busy ? 'Saving...' : 'Finish'}</button> : <button className="button-primary" type="button" disabled={busy} onClick={handlePictureNext}>{busy ? 'Saving...' : 'Continue'}</button>}
           </>
         }
       >

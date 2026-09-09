@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09 — Align modal buttons with the shared design primitive
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix modal button padding and ensure global button design matches `design.md`.
+- Changes Made: Added global semantic `.button-primary` and `.button-secondary` styles matching the documented 3rem Button primitive. Converted modal text actions in profile setup, image crop, and composer crop flows away from fixed-size icon-only settings controls. Added responsive footer action sizing.
+- Verification Status: Web production build passed after the edit; existing unrelated lint warnings remain.
+
+## 2026-09-09 — Standardize modal chrome and responsiveness
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make all modal header, body, footer, theme, and responsive shell styling consistent while preserving contextual body content.
+- Changes Made: Replaced the header spacer with an explicit grid placeholder so titles remain centered with or without back navigation. Centralized modal shell colors, spacing, border, footer, and responsive sizing in `globals.css`; removed per-variant shell overrides while retaining contextual body layouts.
+- Verification Status: Web build to run after the edit.
+
 ## 2026-09-09 — Diagnose local verification-email delivery
 
 - Agent: Codex

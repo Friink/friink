@@ -2,6 +2,18 @@
 
 ## 2026-09-09
 
+- [web] Aligned modal text actions with the shared Button primitive: semantic
+  primary/secondary buttons now use the documented 3rem height and padding,
+  while icon-only settings controls are no longer used for modal text actions.
+
+## 2026-09-09
+
+- [web] Unified modal chrome across all usages: centered titles now align with
+  or without a back button, header/body/footer theme and spacing come from the
+  shared modal rules, and desktop/tablet/mobile sizing is responsive.
+
+## 2026-09-09
+
 - [api] Added redacted Resend rejection/request diagnostics so local email
   delivery failures expose the provider status and response without logging
   API keys, OTPs, or message recipients.
