@@ -4,19 +4,20 @@ import { getDisplayNameForUsername, isReservedProfileRoute } from '@/lib/profile
 
 type ChatLayoutProps = {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 };
 
-export function generateMetadata({ params }: ChatLayoutProps): Metadata {
-  if (isReservedProfileRoute(params.username)) {
+export async function generateMetadata({ params }: ChatLayoutProps): Promise<Metadata> {
+  const { username } = await params;
+  if (isReservedProfileRoute(username)) {
     notFound();
   }
 
   return {
     title: {
-      absolute: `Friink | ${getDisplayNameForUsername(params.username)} Chat`,
+      absolute: `Friink | ${getDisplayNameForUsername(username)} Chat`,
     },
   };
 }

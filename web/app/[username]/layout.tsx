@@ -4,19 +4,20 @@ import { getDisplayNameForUsername, isReservedProfileRoute } from '@/lib/profile
 
 type ProfileLayoutProps = {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 };
 
-export function generateMetadata({ params }: ProfileLayoutProps): Metadata {
-  if (isReservedProfileRoute(params.username)) {
+export async function generateMetadata({ params }: ProfileLayoutProps): Promise<Metadata> {
+  const { username } = await params;
+  if (isReservedProfileRoute(username)) {
     notFound();
   }
 
   return {
     title: {
-      absolute: `Friink | ${getDisplayNameForUsername(params.username)}`,
+      absolute: `Friink | ${getDisplayNameForUsername(username)}`,
     },
   };
 }

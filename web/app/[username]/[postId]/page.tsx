@@ -4,12 +4,13 @@ import { getPostPath, getPublicIdFromPostSegment } from '@/lib/post-path';
 import { PostClient } from './post-client';
 
 type PostPageProps = {
-  params: {
+  params: Promise<{
     username: string;
     postId: string;
-  };
-  searchParams?: Record<string, string | string[] | undefined>;
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+type PostSearchParams = Record<string, string | string[] | undefined>;
 
 type RoutePostResponse = {
   id: string;
@@ -22,7 +23,7 @@ function normalizeUsername(value: string) {
   return decodeURIComponent(value).replace(/^@/, '').trim().toLowerCase();
 }
 
-function buildQueryString(searchParams: PostPageProps['searchParams']) {
+function buildQueryString(searchParams: PostSearchParams | undefined) {
   if (!searchParams) return '';
 
   const params = new URLSearchParams();
@@ -44,7 +45,11 @@ function buildQueryString(searchParams: PostPageProps['searchParams']) {
 }
 
 export default async function PostPage({ params, searchParams }: PostPageProps) {
-  const publicId = getPublicIdFromPostSegment(params.postId);
+  const [{ username, postId }, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve(undefined),
+  ]);
+  const publicId = getPublicIdFromPostSegment(postId);
   if (!publicId) notFound();
 
   let post: RoutePostResponse;
@@ -63,9 +68,9 @@ export default async function PostPage({ params, searchParams }: PostPageProps) 
   }
 
   const canonicalPath = getPostPath(post.author_username, post.slug, post.public_id);
-  const requestedPath = `/${encodeURIComponent(params.username)}/${encodeURIComponent(params.postId)}`;
+  const requestedPath = `/${encodeURIComponent(username)}/${encodeURIComponent(postId)}`;
   if (requestedPath.toLowerCase() !== canonicalPath.toLowerCase()) {
-    permanentRedirect(`${canonicalPath}${buildQueryString(searchParams)}`);
+    permanentRedirect(`${canonicalPath}${buildQueryString(resolvedSearchParams)}`);
   }
 
   return <PostClient postId={post.id} />;

@@ -3,9 +3,9 @@ import { fetchApi } from '@/lib/api-origin';
 import { getPostPath } from '@/lib/post-path';
 
 type PostPageProps = {
-  params: {
+  params: Promise<{
     postId: string;
-  };
+  }>;
 };
 
 type RedirectPostResponse = {
@@ -15,8 +15,9 @@ type RedirectPostResponse = {
 };
 
 export default async function PostPage({ params }: PostPageProps) {
+  const { postId } = await params;
   try {
-    const response = await fetchApi(`/posts/${encodeURIComponent(params.postId)}`, {
+    const response = await fetchApi(`/posts/${encodeURIComponent(postId)}`, {
       cache: 'no-store',
     });
 

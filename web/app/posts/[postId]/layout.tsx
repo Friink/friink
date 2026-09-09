@@ -3,9 +3,9 @@ import { fetchApi } from '@/lib/api-origin';
 
 type PostLayoutProps = {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     postId: string;
-  };
+  }>;
 };
 
 type MetadataPostResponse = {
@@ -15,7 +15,8 @@ type MetadataPostResponse = {
 
 export async function generateMetadata({ params }: PostLayoutProps): Promise<Metadata> {
   try {
-    const response = await fetchApi(`/posts/${encodeURIComponent(params.postId)}`, {
+    const { postId } = await params;
+    const response = await fetchApi(`/posts/${encodeURIComponent(postId)}`, {
       cache: 'no-store',
     });
 

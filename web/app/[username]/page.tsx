@@ -3,15 +3,16 @@ import { permanentRedirect } from 'next/navigation';
 import { isReservedProfileRoute } from '@/lib/profile-display';
 
 type ProfilePageProps = {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 };
 
-export default function UserProfilePage({ params }: ProfilePageProps) {
-  if (isReservedProfileRoute(params.username)) {
+export default async function UserProfilePage({ params }: ProfilePageProps) {
+  const { username } = await params;
+  if (isReservedProfileRoute(username)) {
     notFound();
   }
 
-  permanentRedirect(`/${encodeURIComponent(params.username)}/posts`);
+  permanentRedirect(`/${encodeURIComponent(username)}/posts`);
 }

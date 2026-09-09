@@ -4,10 +4,10 @@ import { getPublicIdFromPostSegment } from '@/lib/post-path';
 
 type PostLayoutProps = {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     username: string;
     postId: string;
-  };
+  }>;
 };
 
 type MetadataPostResponse = {
@@ -17,7 +17,8 @@ type MetadataPostResponse = {
 
 export async function generateMetadata({ params }: PostLayoutProps): Promise<Metadata> {
   try {
-    const publicId = getPublicIdFromPostSegment(params.postId);
+    const { postId } = await params;
+    const publicId = getPublicIdFromPostSegment(postId);
     if (!publicId) throw new Error('Invalid post id');
     const response = await fetchApi(`/posts/public/${encodeURIComponent(publicId)}`, {
       cache: 'no-store',

@@ -20,7 +20,7 @@ type ActionMenuProps = {
   items?: ActionMenuItem[];
   header?: ReactNode;
   ariaLabel?: string;
-  anchorRef: RefObject<HTMLElement>;
+  anchorRef: RefObject<HTMLElement | null>;
   align?: 'start' | 'end';
   anchorGap?: number;
   offsetX?: number;

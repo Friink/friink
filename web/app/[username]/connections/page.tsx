@@ -1,22 +1,23 @@
 import { AppShellRoute } from '@/components/app-shell-route';
 
 type UserConnectionsPageProps = {
-  params: {
+  params: Promise<{
     username: string;
-  };
-  searchParams?: { tab?: string };
+  }>;
+  searchParams?: Promise<{ tab?: string }>;
 };
 
 function getInitialFilter(tab?: string): 'all' | 'followers' | 'following' {
   return tab === 'followers' || tab === 'following' ? tab : 'all';
 }
 
-export default function UserConnectionsPage({ params, searchParams }: UserConnectionsPageProps) {
+export default async function UserConnectionsPage({ params, searchParams }: UserConnectionsPageProps) {
+  const [{ username }, resolvedSearchParams] = await Promise.all([params, searchParams ?? Promise.resolve(undefined)]);
   return (
     <AppShellRoute
       initialScreen="connections"
-      connectionsUsername={params.username}
-      initialConnectionsFilter={getInitialFilter(searchParams?.tab)}
+      connectionsUsername={username}
+      initialConnectionsFilter={getInitialFilter(resolvedSearchParams?.tab)}
     />
   );
 }

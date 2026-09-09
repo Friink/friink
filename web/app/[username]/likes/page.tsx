@@ -1,5 +1,6 @@
 import { ProfileClient } from '../profile-client';
 
-export default function UserLikesPage({ params }: { params: { username: string } }) {
-  return <ProfileClient username={params.username} initialTab="likes" />;
+export default async function UserLikesPage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  return <ProfileClient username={username} initialTab="likes" />;
 }

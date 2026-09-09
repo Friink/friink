@@ -1,5 +1,6 @@
 import { ProfileClient } from '../profile-client';
 
-export default function UserPostsPage({ params }: { params: { username: string } }) {
-  return <ProfileClient username={params.username} initialTab="posts" />;
+export default async function UserPostsPage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  return <ProfileClient username={username} initialTab="posts" />;
 }

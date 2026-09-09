@@ -3,7 +3,8 @@ import { AppShellRoute } from '@/components/app-shell-route';
 
 const tabs = new Set(['all', 'followers', 'following', 'requests']);
 
-export default function UserConnectionsTabPage({ params }: { params: { username: string; tab: string } }) {
-  if (!tabs.has(params.tab)) notFound();
-  return <AppShellRoute initialScreen="connections" connectionsUsername={params.username} initialConnectionsFilter={params.tab as 'all' | 'followers' | 'following' | 'requests'} />;
+export default async function UserConnectionsTabPage({ params }: { params: Promise<{ username: string; tab: string }> }) {
+  const { username, tab } = await params;
+  if (!tabs.has(tab)) notFound();
+  return <AppShellRoute initialScreen="connections" connectionsUsername={username} initialConnectionsFilter={tab as 'all' | 'followers' | 'following' | 'requests'} />;
 }

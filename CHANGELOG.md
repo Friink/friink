@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-09T20:18:47Z
+
+- [web] Upgraded Next.js to 16.3.4 and React to 19.3.0. Migrated App Router
+  `params` and `searchParams` to async APIs, added the ESLint flat config, and
+  updated the web and root dependency manifests. TypeScript and the Webpack
+  production build pass locally; ESLint still reports existing effect-pattern
+  and anchor-rule violations.
+
 ## 2026-09-09
 
 - [docs] Updated `packages/design/design.md` to document the centered modal

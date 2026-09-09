@@ -3,15 +3,16 @@ import { ChatClient } from './chat-client';
 import { isReservedProfileRoute } from '@/lib/profile-display';
 
 type ChatPageProps = {
-  params: {
+  params: Promise<{
     username: string;
-  };
+  }>;
 };
 
-export default function ChatPage({ params }: ChatPageProps) {
-  if (isReservedProfileRoute(params.username)) {
+export default async function ChatPage({ params }: ChatPageProps) {
+  const { username } = await params;
+  if (isReservedProfileRoute(username)) {
     notFound();
   }
 
-  return <ChatClient username={params.username} />;
+  return <ChatClient username={username} />;
 }

@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09T20:18:47Z — Upgrade web app to Next.js 16
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Upgrade the Next.js web app directly on `development` and
+  verify it locally.
+- Changes Made: Updated Next.js to 16.3.4, React/React DOM to 19.3.0, and
+  related type/tooling dependencies; migrated dynamic route and metadata
+  `params` plus page `searchParams` to async APIs; replaced `next lint` with
+  ESLint flat configuration; widened the shared action-menu ref type for React
+  19; updated TypeScript/Next generated configuration.
+- Verification Status: TypeScript passed. Next.js 16.3.4 production build
+  passed with `next build --webpack`. Default Turbopack is blocked locally by
+  an invalid Windows SWC native binding. ESLint runs but reports existing
+  React effect-pattern and legacy anchor violations that remain for separate
+  cleanup. Staging and main were not changed.
+
 ## 2026-09-09 — Finalize modal design documentation
 
 - Agent: Codex
