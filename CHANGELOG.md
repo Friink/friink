@@ -2,6 +2,12 @@
 
 ## 2026-09-09
 
+- [docs] Updated `packages/design/design.md` to document the centered modal
+  header grid, global themed modal chrome, responsive shell, and shared
+  primary/secondary action-button sizing now implemented in `globals.css`.
+
+## 2026-09-09
+
 - [web] Aligned modal text actions with the shared Button primitive: semantic
   primary/secondary buttons now use the documented 3rem height and padding,
   while icon-only settings controls are no longer used for modal text actions.

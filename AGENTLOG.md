@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09 — Finalize modal design documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure `AGENTLOG.md`, `CHANGELOG.md`, and `design.md` reflect the completed modal/button work.
+- Changes Made: Documented the centered three-column modal header, global themed responsive shell, contextual body boundary, and shared semantic modal button sizing in `packages/design/design.md`; recorded the documentation update here and in `CHANGELOG.md`.
+- Verification Status: Documentation changes match the shipped implementation; web production build passed.
+
 ## 2026-09-09 — Align modal buttons with the shared design primitive
 
 - Agent: Codex
