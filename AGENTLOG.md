@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-10T03:00:00Z — Recover successful OTP logins after ambiguous timeout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the staging symptom where OTP login reports a timeout
+  immediately before redirecting to Home.
+- Changes Made: When `/auth/login/verify` or its response path fails with a
+  client/network error, the web login flow now attempts one refresh-cookie
+  recovery before displaying an error. A committed login therefore completes
+  normally, while invalid or expired OTP responses retain their existing
+  error behavior.
+- Files: `web/components/login-screen.tsx`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `npx tsc --noEmit` passed. Staging reproduction was
+  diagnosed as an ambiguous server-commit/client-response timeout; deployment
+  verification remains to be run.
+
 ## 2026-09-10T02:00:00Z — Record post-pooling local latency and environment rollout
 
 - Agent: Codex

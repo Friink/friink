@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-10T03:00:00Z
+
+- [web] OTP login now attempts refresh-cookie recovery after a client/network
+  timeout, preventing a successfully committed login from being shown as a
+  failure before redirecting to Home.
+
 ## 2026-09-10T02:00:00Z
 
 - [verification] Recorded post-pooling local account-switch timings of

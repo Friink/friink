@@ -5,7 +5,7 @@ import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
 import { PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
-import { checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, requestPasswordReset, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
+import { AuthApiError, checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, refreshAuthSession, requestPasswordReset, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
@@ -207,6 +207,19 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
       try {
         finishAuthentication(await verifyLoginChallenge(loginChallengeToken, loginOtp, { addAccount: mode === 'account-modal' }));
       } catch (error) {
+        // OTP verification commits the login server-side before the response
+        // reaches the browser. If that response times out, recover through
+        // the newly issued refresh cookie before telling the user that login
+        // failed; otherwise a successful login can be reported as an error.
+        if (error instanceof AuthApiError && error.status === 0) {
+          try {
+            finishAuthentication(await refreshAuthSession());
+            return;
+          } catch {
+            // Keep the original timeout/network message when recovery also
+            // fails; invalid and expired OTP responses never enter this path.
+          }
+        }
         setErrorMessage(getAuthErrorMessage(error));
       } finally {
         setIsSubmitting(false);
