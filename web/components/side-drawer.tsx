@@ -34,26 +34,54 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const ref = useRef<HTMLElement | null>(null);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [accountBusy, setAccountBusy] = useState(false);
-  const [accountModal, setAccountModal] = useState<'add' | 'manage' | null>(null);
+  const [accountSwitchingUsername, setAccountSwitchingUsername] = useState<string | null>(null);
+  const [accountModal, setAccountModal] = useState<'add' | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AccountSummary | null>(null);
   const [accountNotice, setAccountNotice] = useState('');
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountLoadError, setAccountLoadError] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const accountRefreshId = useRef(0);
+  const accountRefreshPromise = useRef<Promise<void> | null>(null);
 
-  const refreshAccounts = useCallback(async () => {
-    const session = loadAuthSession();
-    if (!session) return;
-    const refreshId = ++accountRefreshId.current;
-    try {
-      const nextAccounts = await listAccounts(session.accessToken);
-      if (refreshId !== accountRefreshId.current) return;
-      setAccounts(nextAccounts);
-      setAccountNotice('');
-    } catch {
-      if (refreshId !== accountRefreshId.current) return;
-      setAccountNotice('We could not load your saved accounts. Please try again.');
-    }
+  const refreshAccounts = useCallback(() => {
+    if (accountRefreshPromise.current) return accountRefreshPromise.current;
+
+    const request = (async () => {
+      let session = loadAuthSession();
+      if (!session) return;
+      const refreshId = ++accountRefreshId.current;
+      setAccountLoading(true);
+      setAccountLoadError(false);
+      try {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            const nextAccounts = await listAccounts(session.accessToken);
+            if (refreshId !== accountRefreshId.current) return;
+            setAccounts(nextAccounts);
+            setAccountNotice('');
+            return;
+          } catch {
+            if (attempt === 0) {
+              await new Promise((resolve) => window.setTimeout(resolve, 250));
+              session = loadAuthSession() ?? session;
+              continue;
+            }
+            if (refreshId !== accountRefreshId.current) return;
+            setAccountLoadError(true);
+          }
+        }
+      } finally {
+        setAccountLoading(false);
+      }
+    })();
+
+    const trackedRequest = request.finally(() => {
+      if (accountRefreshPromise.current === trackedRequest) accountRefreshPromise.current = null;
+    });
+    accountRefreshPromise.current = trackedRequest;
+    return trackedRequest;
   }, []);
 
   useEffect(() => {
@@ -87,15 +115,16 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     const session = loadAuthSession();
     if (!session || account.active) return;
     setAccountBusy(true);
+    setAccountSwitchingUsername(account.username);
     try {
       const next = await switchAccount(session.accessToken, account.accountSlot);
       saveAuthSession(next);
       onAccountChange?.(next.user);
-      window.location.reload();
     } catch {
       setAccountNotice('We could not switch accounts. Please try again.');
     } finally {
       setAccountBusy(false);
+      setAccountSwitchingUsername(null);
     }
   }
 
@@ -119,6 +148,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       }
       setAccounts((items) => items.filter((item) => item.accountSlot !== removeTarget.accountSlot));
       setRemoveTarget(null);
+      await refreshAccounts();
     } catch {
       // Keep the current account usable on recoverable failures and expose a
       // retryable notice instead of silently losing the user's action.
@@ -134,14 +164,18 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     setAccountBusy(true);
     try {
       if (!(await canAddAccount(session.accessToken))) {
-        setAccountNotice('Remove an account before adding another.');
-        setAccountModal('manage');
+        setAccountNotice('');
+        setAccountModal('add');
         return;
       }
       setAccountNotice('');
       setAccountModal('add');
     } catch {
-      setAccountNotice('We could not check account availability. Please try again.');
+      // Availability is a best-effort preflight. Keep the add-account flow
+      // usable when the check is unavailable; the API still enforces the
+      // remembered-account limit during the authenticated add-account login.
+      setAccountNotice('');
+      setAccountModal('add');
     } finally {
       setAccountBusy(false);
     }
@@ -191,23 +225,18 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       label: `@${account.username}${account.active ? ' (current)' : ''}`,
       icon: 'fa-circle-user',
       imageUrl: account.profilePictureUrl || DEFAULT_PROFILE_IMAGE,
-      trailingIcon: account.active ? 'fa-check' : undefined,
+      trailingIcon: accountSwitchingUsername === account.username ? 'fa-spinner fa-spin' : account.active ? 'fa-check' : 'fa-right-from-bracket',
+      trailingAction: account.active ? undefined : () => setRemoveTarget(account),
+      trailingAriaLabel: account.active ? undefined : `Log out @${account.username}`,
       disabled: account.active || accountBusy,
+      closeOnClick: !account.active,
       onClick: () => void handleAccountSwitch(account),
     })),
     {
       label: 'Add account',
       icon: 'fa-user-plus',
+      disabled: accountBusy,
       onClick: () => void handleAddAccount(),
-    },
-    {
-      label: 'Manage accounts',
-      icon: 'fa-users-gear',
-      dividerBefore: true,
-      onClick: () => {
-        setAccountMenuOpen(false);
-        setAccountModal('manage');
-      },
     },
   ];
 
@@ -221,8 +250,13 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           type="button"
           aria-label="Switch account"
           aria-expanded={accountMenuOpen}
+          aria-busy={accountLoading}
           onClick={() => {
-            setAccountMenuOpen((open) => !open);
+            if (accountMenuOpen) {
+              setAccountMenuOpen(false);
+              return;
+            }
+            setAccountMenuOpen(true);
             void refreshAccounts();
           }}
         >
@@ -234,9 +268,9 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           onClose={() => setAccountMenuOpen(false)}
           ariaLabel="Account switcher"
           className="account-switcher-menu"
+          header={accountLoading ? <div className="account-switcher-status" role="status"><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /><span>Updating accounts…</span></div> : accountLoadError ? <div className="account-switcher-status account-switcher-status-error" role="status"><span>Couldn’t update accounts.</span><button type="button" onClick={() => void refreshAccounts()}>Retry</button></div> : null}
           items={accountMenuItems}
         />
-        {accountNotice && accountModal !== 'manage' ? <p className="settings-field-message account-switcher-notice" role="alert">{accountNotice}</p> : null}
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
@@ -284,9 +318,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           <span>Log out</span>
         </button>
       </div>
-      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); window.location.reload(); }} /></Modal> : null}
-      {accountModal === 'manage' ? <Modal title="Manage accounts" onClose={() => { setAccountModal(null); setAccountNotice(''); }}>{accountNotice ? <p className="settings-field-message" role="status">{accountNotice}</p> : null}<div className="sidebar-managed-accounts">{accounts.map((account) => <div className="sidebar-managed-account" key={account.accountSlot}><ProfileCard name={account.displayName || account.username} handle={`@${account.username}`} tone="mint" initials={getInitials(account.displayName || account.username)} imageUrl={account.profilePictureUrl} /><button className="settings-secondary-button" type="button" disabled={account.active || accountBusy} onClick={() => setRemoveTarget(account)}>Log out</button></div>)}</div></Modal> : null}
-      {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
+      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); setAccountModal(null); }} /></Modal> : null}
+      {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><div className="logout-confirm-account"><ProfileCard name={removeTarget.displayName || removeTarget.username} handle={`@${removeTarget.username}`} tone="mint" initials={getInitials(removeTarget.displayName || removeTarget.username)} imageUrl={removeTarget.profilePictureUrl || DEFAULT_PROFILE_IMAGE} /></div><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
     </aside>
   );
 }

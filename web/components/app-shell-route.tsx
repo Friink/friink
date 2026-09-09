@@ -27,12 +27,6 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
 
   useEffect(() => {
-    const handleAccountSwitch = () => window.location.reload();
-    window.addEventListener('friink-account-switched', handleAccountSwitch);
-    return () => window.removeEventListener('friink-account-switched', handleAccountSwitch);
-  }, []);
-
-  useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
       refreshAuthSession()
@@ -128,5 +122,5 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
     );
   }
 
-  return <AppShell user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
+  return <AppShell key={user.id} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
 }

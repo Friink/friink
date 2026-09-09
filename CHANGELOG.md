@@ -1,5 +1,94 @@
 # Changelog
 
+## 2026-09-10T00:30:00Z
+
+- [documentation] Recorded the deployment-neutral database pooling direction:
+  conservative Neon Free defaults, Ubuntu tuning by worker count and
+  `max_connections`, and a separate measured rollout before replacing the
+  current `NullPool` baseline.
+
+## 2026-09-10T00:00:00Z
+
+- [web] Added single-flight account switching with an open selector, a spinner
+  on the selected account, and temporary disabling of competing account actions. Successful
+  switches now update and remount the app shell in place instead of forcing a
+  browser-level reload. Documentation synchronized across the account-switcher
+  guide, design contract, and rules.
+
+## 2026-09-09T22:40:00Z
+
+- [documentation] Synchronized `docs/account-switcher.md` with the current
+  cached-first account selector, loading/retry behavior, inline logout actions,
+  and profile-card confirmation dialog.
+
+## 2026-09-09T22:30:00Z
+
+- [web] Added stale-while-revalidate account-selector UX: cached accounts show
+  immediately, refresh uses the shared spinner, overlapping requests are
+  deduplicated, and failures preserve the list with a retry action. Documented
+  the behavior in `design.md` and `RULES.md`.
+
+## 2026-09-09T22:20:00Z
+
+- [web] Restored the right-side logout icon for non-current account rows and
+  prevented duplicate rendering. Account-list refresh behavior is now
+  documented and runs after logout changes.
+
+## 2026-09-09T22:10:00Z
+
+- [web] Made the account selector refresh the device-scoped account list before
+  opening so newly added accounts appear on the first open. Synchronized the
+  behavior in `design.md` and `RULES.md`.
+
+## 2026-09-09T22:00:00Z
+
+- [web] Removed the duplicate decorative logout icon from non-current account
+  rows so only the right-side clickable logout action remains.
+
+## 2026-09-09T21:50:00Z
+
+- [web] Added right-side logout icon actions to non-current account rows and
+  showed the selected account's profile card in the existing logout-confirmation
+  dialog; the current-account checkmark and drawer logout remain unchanged.
+
+## 2026-09-09T21:40:00Z
+
+- [web] Removed the redundant Manage accounts surface and added direct logout
+  rows for non-current accounts in the account selector, reusing the existing
+  confirmation dialog while preserving the current-account checkmark.
+
+## 2026-09-09T21:30:00Z
+
+- [web] Added a single short retry for saved-account loading after transient
+  auth-refresh failures, using the latest session token before showing an
+  account-list error.
+
+## 2026-09-09T21:20:00Z
+
+- [web] Restricted saved-account loading warnings to the Manage accounts
+  modal so transient account-list failures no longer appear as persistent
+  orange text in the main navigation.
+
+## 2026-09-09T21:12:00Z
+
+- [web] Made the Add account availability check non-blocking so temporary
+  staging/auth check failures no longer leave a persistent orange warning;
+  add-account login still receives the API's account-limit enforcement.
+
+## 2026-09-09T21:02:03Z
+
+- [web] Corrected the Add account modal action order so `Sign up` is on the
+  left and `Continue` is on the right, aligned the modal buttons with the
+  shared 3rem / 0.75rem 1.25rem Button contract, and restored white text on
+  brand buttons in the dark modal theme.
+
+## 2026-09-09T20:55:02Z
+
+- [documentation] Synchronized `README.md`, `packages/design/design.md`, and
+  `RULES.md` with the Next.js 16.3.4 / React 19.3.0 web baseline and the
+  installed FastAPI 0.141.1 API baseline, including the local Windows Webpack
+  fallback note.
+
 ## 2026-09-09T20:18:47Z
 
 - [web] Upgraded Next.js to 16.3.4 and React to 19.3.0. Migrated App Router

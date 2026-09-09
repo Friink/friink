@@ -33,6 +33,41 @@ shared authentication and session rules.
 - Deactivated or pending-deletion accounts show lifecycle messaging and are
   removed from the usable device list.
 
+### Selector loading and actions
+
+- The account selector opens immediately with the cached device account list;
+  when no cache exists, it shows the current account as a safe fallback.
+- While `GET /auth/accounts` refreshes the list, the selector shows the shared
+  spinner treatment with `Updating accounts…`.
+- Refresh requests are deduplicated. A completed response replaces the cached
+  list, while a failed response preserves the cached/current account and shows
+  a subtle `Retry` action.
+- The list refreshes after account add, switch, and logout operations. Switching
+  does not remove any remembered account; it only changes the active account.
+- During an account switch, the selected row shows a spinner and all account
+  rows, logout actions, and Add account are temporarily disabled. This prevents
+  competing authentication requests. The selector stays open to make the
+  progress and disabled state visible; actions become available again after
+  the switch succeeds or fails.
+- A successful switch updates the in-memory app shell and remounts it for the
+  new user without a browser-level reload, so the existing page does not briefly
+  disappear while the session is restored.
+- Each non-current account has a right-side logout icon. The current account
+  keeps its checkmark and cannot be logged out through that row. Logout opens a
+  confirmation dialog showing the selected account's profile card.
+
+## Switch latency and database connections
+
+Local browser runs observed roughly 2–4 seconds for successful account-switch
+requests, with no browser errors and a local API origin. The delay is therefore
+more likely in API/database work than in browser network transport.
+
+The approved architecture direction is deployment-neutral connection pooling:
+Neon Free should use a small pool, while the future Ubuntu-hosted PostgreSQL
+deployment may use a larger pool based on API worker count and PostgreSQL
+`max_connections`. The current API still uses `NullPool`; changing it is a
+separate measured rollout and must not be inferred from selector UX evidence.
+
 ## Account independence
 
 Each remembered account is a fully independent Friink identity. There is no
@@ -126,10 +161,10 @@ records remain attached to the correct account and session.
 
 - Login appears first in the Add-account modal, with Create account below it.
 - Successful authentication immediately activates the new account.
-- The drawer exposes switching, Add account, Manage accounts, and active
-  logout.
-- Manage Accounts uses ProfileCard rows, with the active account first and
-  logout controls on other rows.
+- The drawer exposes switching, Add account, inline logout actions for
+  non-current accounts, and active logout.
+- The selector keeps the active account first with its checkmark; other rows
+  include right-side logout icons.
 - Removal requires confirmation.
 - The dropdown closes after switching.
 - Add-account failure, cancellation, or abandonment must not log out or

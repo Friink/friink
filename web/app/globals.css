@@ -641,7 +641,7 @@ textarea {
 }
 
 .pill-button-brand {
-  color: var(--color-paper);
+  color: #fff;
   background: var(--color-accent);
 }
 
@@ -790,6 +790,11 @@ textarea {
 .account-auth-actions .login-submit,
 .account-auth-actions .pill-button-quiet {
   flex: 1 1 0;
+}
+
+.account-auth-actions .login-submit {
+  min-width: 0;
+  padding: 0.75rem 1.25rem;
 }
 
 @media (max-width: 480px) {
@@ -1749,6 +1754,87 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .action-menu-item-trailing-icon {
   margin-left: auto;
+}
+
+.action-menu-item-with-trailing {
+  padding: 0;
+}
+
+.action-menu-item-main {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: 0.65rem;
+  min-width: 0;
+  min-height: 2.35rem;
+  border: 0;
+  padding: 0.45rem 0.65rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  text-align: left;
+}
+
+.action-menu-item-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-menu-item-trailing-action {
+  display: inline-grid;
+  flex: 0 0 2.35rem;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.action-menu-item-trailing-action:hover,
+.action-menu-item-trailing-action:focus-visible {
+  color: var(--color-accent);
+  outline: none;
+}
+
+.action-menu-item-trailing-action:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.logout-confirm-account {
+  margin-bottom: 1rem;
+}
+
+.account-switcher-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.65rem 0.55rem;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.account-switcher-status i {
+  width: 1rem;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+.account-switcher-status-error {
+  justify-content: space-between;
+  color: var(--color-muted);
+}
+
+.account-switcher-status button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  cursor: pointer;
 }
 
 .action-menu-item:hover,

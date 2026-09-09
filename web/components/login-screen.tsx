@@ -280,10 +280,10 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
             <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
               {mode === 'page' ? <a className="signup-back-button login-back-button" href="/">Back</a> : null}
+              {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
               <Button className="login-submit" type="submit">
                 Continue
               </Button>
-              {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
             </div>
 
             {mode === 'page' ? <p className="login-switch">Don’t have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}

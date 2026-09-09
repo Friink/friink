@@ -13,7 +13,7 @@ the entry, so history isn't lost.
 
 ### Rule: Account Switcher Uses Device-Scoped Slots
 - **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
-- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Opening the selector shows the cached device-scoped list immediately while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
@@ -191,8 +191,8 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-06T16:52:53Z
 
 ### Rule: Account Switcher UX
-- **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, Manage accounts, and active-account logout. Manage Accounts uses ProfileCard rows with the active account first; other rows offer logout.
-- **Edge cases:** Logout/removal is confirmed, then immediate. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit sends the user to Manage accounts first.
+- **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
+- **Edge cases:** Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful switch updates the in-memory app shell and remounts it for the new user without a browser-level reload.
 - **Status:** Active for the Phase 4e web slice; mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
 - **Platform:** Web
 - **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`
@@ -757,6 +757,14 @@ the entry, so history isn't lost.
 
 ## Infrastructure & Deployment
 
+### Rule: Current Web And API Runtime Baseline
+- **What:** The web runtime baseline is Next.js 16.3.4 with React 19.3.0 and asynchronous App Router `params`/`searchParams`. The currently installed API baseline is FastAPI 0.141.1 with Uvicorn; `api/requirements.txt` remains intentionally unpinned.
+- **Compatibility:** Local Windows development may use Next's `--webpack` fallback when the native SWC binding is unavailable. This is a tooling accommodation and does not change the production deployment contract.
+- **Status:** Active implementation baseline; staging acceptance remains the release gate.
+- **Platform:** Web/API
+- **File(s):** `package.json`, `web/package.json`, `web/tsconfig.json`, `api/requirements.txt`
+- **Since:** 2026-09-09T20:55:02Z
+
 ### Rule: Staging And Production Use Separate Databases
 - **What:** `api-staging` uses the existing staging Neon database and `api-production` uses its separate production Neon database. The production database is currently hosted temporarily on Neon and is planned to move to the Droplet later. The web projects do not receive `DATABASE_URL`; they receive only their environment-specific `NEXT_PUBLIC_API_BASE_URL`.
 - **Do not:** Treat rows, object keys, sessions, or media URLs from one deployed environment as available in the other environment. Do not add a media bucket/environment identifier column as a workaround for the old shared-database topology.
@@ -772,6 +780,14 @@ the entry, so history isn't lost.
 - **Platform:** All
 - **File(s):** `api/app/db.py`, `api/alembic/env.py`, `api/requirements.txt`, `api/api/index.py`
 - **Since:** 2026-08-27T00:00:00Z
+
+### Rule: Deployment-Neutral Database Connection Management
+- **What:** Database connection management must remain portable across Neon and the planned Ubuntu deployment. Pool behavior is configured by environment, not by platform-specific application branches. The initial target is a small SQLAlchemy pool (3 base connections plus 2 overflow connections, with pre-ping and a bounded checkout timeout), subject to measured validation.
+- **Edge cases:** Neon Free has scale-to-zero and connection limits, so a small pool must not be treated as a promise to keep the database warm. Ubuntu values may be increased only after accounting for API worker count and PostgreSQL `max_connections`; total connections across workers and processes are the controlling limit. The current `NullPool` baseline remains in place until the rollout is measured and explicitly verified.
+- **Status:** Architecture decision recorded; implementation rollout pending database timing evidence.
+- **Platform:** API/infrastructure
+- **File(s):** `api/app/db.py`, `api/app/config.py`, `api/.env.example`, `README.md`, `docs/auth-and-session.md`
+- **Since:** 2026-09-10T00:00:00Z
 
 ### Rule: CORS Allows Configured Frontend And Local Development
 - **What:** The API allows CORS from `FRONTEND_URL`, `http://localhost:3000`, `http://127.0.0.1:3000`, and explicitly `https://staging.friink.com`.

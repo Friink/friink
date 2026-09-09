@@ -1,5 +1,193 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-10T00:30:00Z — Record deployment-neutral pooling architecture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the long-term database connection-pooling direction
+  before implementing it, then publish the synchronized development/staging
+  state.
+- Changes Made: Documented that pooling is a portable infrastructure concern,
+  recorded conservative Neon Free defaults and Ubuntu tuning guidance, and
+  marked the current `NullPool` implementation as unchanged pending measured
+  rollout. Added the account-switch latency evidence and follow-up boundary.
+- Files: `README.md`, `RULES.md`, `packages/design/design.md`,
+  `docs/account-switcher.md`, `docs/auth-and-session.md`, `AGENTLOG.md`,
+  `CHANGELOG.md`.
+- Verification Status: Documentation diff checked; code implementation of
+  pooling intentionally deferred to a separate measured change.
+
+## 2026-09-10T00:00:00Z — Make account switching single-flight and in-place
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the immediate-switch UX and implement it locally.
+- Changes Made: Added a selected-account spinner, kept the selector open,
+  disabled competing account, logout, and Add account actions during an
+  in-flight switch, and removed the browser-level reload after successful
+  account changes. The app shell now remounts for the new authenticated user in
+  place. Synchronized the behavior
+  in `docs/account-switcher.md`, `packages/design/design.md`, and `RULES.md`.
+- Files: `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`,
+  `docs/account-switcher.md`, `packages/design/design.md`, `RULES.md`,
+  `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Local browser smoke test passed; repository-wide lint
+  remains blocked by pre-existing errors outside this change, and the
+  production build is blocked by the known Windows Next SWC spawn error.
+
+## 2026-09-09T22:40:00Z — Synchronize account-switcher documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/account-switcher.md` for the finalized account
+  selector behavior.
+- Changes Made: Documented cached-first asynchronous loading, the shared
+  refresh spinner, deduplicated requests, retry behavior, post-change refreshes,
+  inline non-current logout icons, and the profile-card confirmation dialog.
+  Removed the outdated Manage accounts UX description.
+- Verification Status: Documentation-only update; no runtime behavior changed.
+
+## 2026-09-09T22:30:00Z — Add responsive account-list loading UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed best UX for asynchronous account-list
+  refreshes.
+- Changes Made: The selector now opens immediately with cached/current data,
+  shows the shared spinner while refreshing, deduplicates overlapping requests,
+  preserves cached data on failure, and offers a subtle retry action. Updated
+  the behavior contract in `design.md` and `RULES.md`.
+- Verification Status: TypeScript and browser verification to run after the
+  edit.
+
+## 2026-09-09T22:20:00Z — Restore logout icon and refresh account list
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the right-side logout icon and refresh the selector
+  immediately after account changes.
+- Changes Made: Restored the logout icon as the trailing action while teaching
+  the shared menu not to render it twice, refreshed the account list after
+  logout, and synchronized the add/switch/logout refresh requirements in
+  `design.md` and `RULES.md`.
+- Verification Status: TypeScript and diff checks to run after the edit.
+
+## 2026-09-09T22:10:00Z — Refresh accounts before opening selector
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix newly added accounts not appearing until the account
+  selector is opened again, and keep design/rules documentation synchronized.
+- Changes Made: The selector now waits for the account-list refresh before
+  opening, preventing the current-account fallback from being displayed as the
+  first-open result. Added the first-open loading behavior to `design.md` and
+  the device-slot rule in `RULES.md`.
+- Verification Status: Browser verification and TypeScript check to run after
+  the edit.
+
+## 2026-09-09T22:00:00Z — Remove duplicate selector logout icon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the duplicate logout icon appearing on non-current
+  account rows.
+- Changes Made: Removed the decorative logout icon from the account-row label;
+  the shared trailing action now owns the single clickable logout icon on the
+  far right while the current-account checkmark remains unchanged.
+- Verification Status: TypeScript and browser verification to run after the
+  edit.
+
+## 2026-09-09T21:50:00Z — Add inline account logout controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Put logout icons on the right side of non-current account
+  rows and show the selected profile card in the confirmation dialog.
+- Changes Made: Extended the shared action menu with a trailing action control,
+  kept the current-account checkmark, attached logout actions to non-current
+  account rows, removed the separate logout rows, and added the target account
+  profile card to the existing confirmation modal.
+- Verification Status: TypeScript, diff, and browser verification to run after
+  the edit.
+
+## 2026-09-09T21:40:00Z — Put account logout actions in selector
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant Manage accounts surface and expose
+  logout actions directly in the account selector without removing the current
+  account checkmark.
+- Changes Made: Added accessible logout rows with the existing confirmation
+  dialog for non-current accounts, retained the current-account checkmark and
+  disabled current-account selector action, removed the Manage accounts entry
+  and modal, and updated the account-selector design contract.
+- Verification Status: Browser verification and TypeScript check to run after
+  the edit.
+
+## 2026-09-09T21:30:00Z — Retry account loading after session refresh
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the saved-account request failing during auth refresh.
+- Changes Made: Added one short retry to account-list loading, using the latest
+  in-memory session after a transient failure. The existing request-id guard
+  still prevents stale responses from overwriting newer account data.
+- Verification Status: Browser verification and TypeScript check to run after
+  the edit.
+
+## 2026-09-09T21:20:00Z — Keep account-list warnings out of navigation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the persistent saved-account loading warning from
+  the account switcher/profile area.
+- Changes Made: Restricted account notices to the explicit Manage accounts
+  modal. The switcher continues to retry account loading when opened and uses
+  the current account as a fallback without displaying a persistent orange
+  warning in the navigation.
+- Verification Status: Browser verification and TypeScript check to run after
+  the edit.
+
+## 2026-09-09T21:12:00Z — Make account availability preflight non-blocking
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the persistent orange account-availability error from
+  the account switcher.
+- Changes Made: Made the availability request a best-effort preflight. If it
+  fails, the Add account modal now opens without a drawer warning; the API
+  continues enforcing the remembered-account limit during add-account login.
+- Verification Status: TypeScript and browser verification to run after the
+  edit.
+
+## 2026-09-09T21:02:03Z — Align Add account modal actions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the Add account modal buttons to follow `design.md` and
+  place Sign up on the left.
+- Changes Made: Reordered the account-modal actions in
+  `web/components/login-screen.tsx`, aligned modal button sizing and brand
+  button contrast in `web/app/globals.css`, and clarified the Add-account
+  modal contract in `packages/design/design.md`.
+- Verification Status: Local frontend reloaded with staging variables and the
+  app remains reachable. TypeScript and final browser visual verification are
+  pending; the staging API's account-availability check currently reports a
+  request error in the local side drawer.
+
+## 2026-09-09T20:55:02Z — Synchronize runtime documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the README, design guide, agent log, changelog, and
+  rules to match the current Next.js and FastAPI versions.
+- Changes Made: Updated the stack and verification notes in `README.md`, added
+  the Next.js/React runtime baseline to `packages/design/design.md`, added the
+  runtime baseline rule to `RULES.md`, and recorded this documentation sync in
+  `CHANGELOG.md` and `AGENTLOG.md`.
+- Verification Status: Documentation references now match Next.js 16.3.4,
+  React 19.3.0, and installed FastAPI 0.141.1. No runtime behavior changed.
+
 ## 2026-09-09T20:18:47Z — Upgrade web app to Next.js 16
 
 - Agent: Codex

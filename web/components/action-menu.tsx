@@ -9,8 +9,11 @@ export type ActionMenuItem = {
   icon: string;
   imageUrl?: string | null;
   trailingIcon?: string;
+  trailingAction?: () => void;
+  trailingAriaLabel?: string;
   href?: string;
   onClick?: () => void;
+  closeOnClick?: boolean;
   disabled?: boolean;
   dividerBefore?: boolean;
 };
@@ -115,7 +118,38 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
     >
       {header}
       {items.map((item) => (
-        item.href ? (
+        item.trailingAction && !item.href ? (
+          <div className={`action-menu-item action-menu-item-with-trailing${item.dividerBefore ? ' action-menu-item-divider' : ''}`} key={item.label}>
+            <button
+              className="action-menu-item-main"
+              type="button"
+              role="menuitem"
+              disabled={item.disabled}
+              onClick={() => {
+                if (item.disabled) return;
+                item.onClick?.();
+                if (item.closeOnClick !== false) onClose?.();
+              }}
+            >
+              {item.imageUrl ? <img className="action-menu-item-avatar" src={item.imageUrl} alt="" aria-hidden="true" /> : <i className={`fa-solid ${item.icon}`} aria-hidden="true" />}
+              <span>{item.label}</span>
+              {item.trailingIcon && !item.trailingAction ? <i className={`fa-solid ${item.trailingIcon} action-menu-item-trailing-icon`} aria-hidden="true" /> : null}
+            </button>
+            <button
+              className="action-menu-item-trailing-action"
+              type="button"
+              aria-label={item.trailingAriaLabel || item.label}
+              disabled={item.disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!item.disabled) item.trailingAction?.();
+                onClose?.();
+              }}
+            >
+              <i className={`fa-solid ${item.trailingIcon || 'fa-ellipsis'}`} aria-hidden="true" />
+            </button>
+          </div>
+        ) : item.href ? (
           <Link
             className="action-menu-item"
             role="menuitem"
@@ -140,7 +174,7 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
             onClick={() => {
               if (item.disabled) return;
               item.onClick?.();
-              onClose?.();
+              if (item.closeOnClick !== false) onClose?.();
             }}
           >
             {item.imageUrl ? <img className="action-menu-item-avatar" src={item.imageUrl} alt="" aria-hidden="true" /> : <i className={`fa-solid ${item.icon}`} aria-hidden="true" />}

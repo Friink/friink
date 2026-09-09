@@ -6,6 +6,19 @@ noteworthy follow-up items.
 
 Last updated: 2026-09-08T18:00:00Z
 
+## Database connection management
+
+The API uses synchronous SQLAlchemy sessions over PostgreSQL/psycopg3. Connection
+management is deployment-neutral: the planned rollout uses environment-
+configurable pooling rather than Neon-specific application logic. Neon Free
+will use conservative pool limits, while the planned Ubuntu deployment may use
+a larger pool based on API worker count and PostgreSQL `max_connections`.
+
+The current `NullPool` baseline remains unchanged until the account-switch
+latency investigation measures connection acquisition, query, and commit time.
+The initial target is 3 base connections plus 2 overflow connections, with
+pre-ping and a bounded checkout timeout.
+
 This document consolidates the agreed direction for Friink authentication,
 ordinary login sessions, account identity changes, security notifications,
 device enrollment, staff access, and administrative controls. It is a design

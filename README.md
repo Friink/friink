@@ -9,10 +9,11 @@ calendar, or service marketplace — that is permanently out of scope.
 
 ## Stack
 
-- **Web client:** Next.js 14, React 18, TypeScript, Font Awesome — hosted on Vercel
+- **Web client:** Next.js 16.3.4, React 19.3.0, TypeScript, Font Awesome — hosted on Vercel
 - **Mobile client:** TBD
-- **API:** FastAPI with Uvicorn — hosted on Vercel as a separate project
+- **API:** FastAPI 0.141.1 with Uvicorn — hosted on Vercel as a separate project
 - **Database:** PostgreSQL via Neon, with separate databases for each deployed environment: staging remains on the existing Neon database, while production now uses the separate `ep-restless-paper-b3szoet8` Neon database temporarily (planned future move to the Droplet)
+- **Database connections:** Connection management is deployment-neutral. The API is planned to use configurable SQLAlchemy pooling so Neon Free can use conservative limits while a future Ubuntu-hosted PostgreSQL deployment can use a larger pool without application-code changes. The current `NullPool` baseline remains unchanged until the measured rollout is completed.
 - **ORM / migrations:** SQLAlchemy with synchronous `Session`/psycopg3 connections, Alembic
 - **Object storage:** Cloudflare R2 for profile pictures and submit-time post-image uploads. Post images use the `post-media/{user_id}/{random}.jpg` namespace and the existing `post_media` association table. See `R2.md` for environment setup.
 - **Authentication and session:** FastAPI routes, PyJWT access tokens, HTTP-only refresh-token cookie, bcrypt password hashing
@@ -23,7 +24,7 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Push notifications:** TBD
 - **Hosting:** Two Vercel projects, one deployed from `web/` and one from `api/` (`api/api/index.py`)
 - **Local development:** `localhost/localhost.ps1`, Next.js on port 3000, FastAPI on port 8000
-- **Testing:** pytest and pytest-asyncio for the API; Next.js production build and TypeScript checks for the web client
+- **Testing:** pytest and pytest-asyncio for the API; Next.js 16 production build and TypeScript checks for the web client
 
 Current auth/session scope: Phases 1–3 are closed, Phase 4 is closed for the
 current web/API-focused release, Phase 5a–5d staff discovery, bootstrap, roles,
@@ -69,6 +70,7 @@ dashboard.
 - Staging: `staging.friink.com` / `staging-api.friink.com`
 - Production: `friink.com`
 - **Database isolation:** `api-staging` continues using the existing staging Neon connection; `api-production` uses its separate production Neon connection. The web projects do not receive `DATABASE_URL`; each web deployment only receives its API origin.
+- **Connection-pool rollout:** The first pool profile will target 3 base connections plus 2 overflow connections, with pre-ping and a bounded timeout. Ubuntu deployment values will be tuned against API worker count and PostgreSQL `max_connections`; no platform-specific pooling logic should be introduced.
 - **Branch flow:** Use `development` for local implementation and destructive
   rehearsals, `staging` for deployed acceptance testing, and `main` for
   production release. Do not fetch or rewrite another branch as a substitute
@@ -91,7 +93,7 @@ dashboard.
 - Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. Mutual accepted follows enable chat immediately; a paid-tier user can initiate a non-mutual request with up to eight requester messages, after which the receiver must accept or reply. Pending requests appear in Requests, accepted chats in All, and per-user mute/archive settings control notifications and placement. See `docs/chat-behavior.md` for the complete contract.
 - Notifications use a 4-second adaptive unread-count polling transport with visibility/focus recovery; the full list refreshes while Notifications is open.
 - Usernames are case-insensitive identities: signup and Settings check availability before submission, the API remains authoritative, and accepted values are canonicalized to lowercase.
-- The web production build and TypeScript checks are the current automated web verification. Browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.
+- The web production build and TypeScript checks are the current automated web verification. On the current Windows development machine, the build/dev server use Next's `--webpack` fallback because the local native SWC binding is invalid; Vercel should use its normal native build environment. Browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.
 
 ## Project Documentation
 
