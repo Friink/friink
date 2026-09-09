@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, QueuePool
 
 from app.config import get_settings
 
@@ -21,12 +21,22 @@ def get_engine() -> Engine:
     global engine
     if engine is None:
         settings = get_settings()
-        engine = create_engine(
-            settings.async_database_url,
-            pool_pre_ping=True,
-            poolclass=NullPool,
-            connect_args=settings.async_connect_args,
-        )
+        engine_options = {
+            "pool_pre_ping": settings.database_pool_pre_ping,
+            "connect_args": settings.async_connect_args,
+        }
+        if settings.database_pooling_enabled:
+            engine_options.update({
+                "poolclass": QueuePool,
+                "pool_size": settings.database_pool_size,
+                "max_overflow": settings.database_max_overflow,
+                "pool_timeout": settings.database_pool_timeout_seconds,
+                "pool_recycle": settings.database_pool_recycle_seconds,
+                "pool_use_lifo": True,
+            })
+        else:
+            engine_options["poolclass"] = NullPool
+        engine = create_engine(settings.async_database_url, **engine_options)
     return engine
 
 

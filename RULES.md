@@ -782,12 +782,12 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27T00:00:00Z
 
 ### Rule: Deployment-Neutral Database Connection Management
-- **What:** Database connection management must remain portable across Neon and the planned Ubuntu deployment. Pool behavior is configured by environment, not by platform-specific application branches. The initial target is a small SQLAlchemy pool (3 base connections plus 2 overflow connections, with pre-ping and a bounded checkout timeout), subject to measured validation.
-- **Edge cases:** Neon Free has scale-to-zero and connection limits, so a small pool must not be treated as a promise to keep the database warm. Ubuntu values may be increased only after accounting for API worker count and PostgreSQL `max_connections`; total connections across workers and processes are the controlling limit. The current `NullPool` baseline remains in place until the rollout is measured and explicitly verified.
-- **Status:** Architecture decision recorded; implementation rollout pending database timing evidence.
+- **What:** Database connection management must remain portable across Neon and the planned Ubuntu deployment. Pool behavior is configured by environment, not by platform-specific application branches. The default is a small SQLAlchemy pool (3 base connections plus 2 overflow connections, with pre-ping, LIFO reuse, recycling, and a bounded checkout timeout); pooling can be disabled explicitly when a runtime requires short-lived connections.
+- **Edge cases:** Neon Free has scale-to-zero and connection limits, so a small pool must not be treated as a promise to keep the database warm. Ubuntu values may be increased only after accounting for API worker count and PostgreSQL `max_connections`; total connections across workers and processes are the controlling limit. The local post-pooling sample improved switch completion to approximately 1.0–1.7 seconds, but account-list refresh still reached approximately 12 seconds; continue treating refresh latency as a separate investigation.
+- **Status:** Active; default implementation deployed to development and staging for validation.
 - **Platform:** API/infrastructure
 - **File(s):** `api/app/db.py`, `api/app/config.py`, `api/.env.example`, `README.md`, `docs/auth-and-session.md`
-- **Since:** 2026-09-10T00:00:00Z
+- **Since:** 2026-09-10T01:00:00Z
 
 ### Rule: CORS Allows Configured Frontend And Local Development
 - **What:** The API allows CORS from `FRONTEND_URL`, `http://localhost:3000`, `http://127.0.0.1:3000`, and explicitly `https://staging.friink.com`.

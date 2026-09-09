@@ -13,7 +13,7 @@ calendar, or service marketplace — that is permanently out of scope.
 - **Mobile client:** TBD
 - **API:** FastAPI 0.141.1 with Uvicorn — hosted on Vercel as a separate project
 - **Database:** PostgreSQL via Neon, with separate databases for each deployed environment: staging remains on the existing Neon database, while production now uses the separate `ep-restless-paper-b3szoet8` Neon database temporarily (planned future move to the Droplet)
-- **Database connections:** Connection management is deployment-neutral. The API is planned to use configurable SQLAlchemy pooling so Neon Free can use conservative limits while a future Ubuntu-hosted PostgreSQL deployment can use a larger pool without application-code changes. The current `NullPool` baseline remains unchanged until the measured rollout is completed.
+- **Database connections:** Connection management is deployment-neutral. The API uses configurable SQLAlchemy pooling so Neon Free can use conservative limits while a future Ubuntu-hosted PostgreSQL deployment can use a larger pool without application-code changes. Pooling can be disabled explicitly with `DB_POOLING_ENABLED=false` for a runtime that requires short-lived connections.
 - **ORM / migrations:** SQLAlchemy with synchronous `Session`/psycopg3 connections, Alembic
 - **Object storage:** Cloudflare R2 for profile pictures and submit-time post-image uploads. Post images use the `post-media/{user_id}/{random}.jpg` namespace and the existing `post_media` association table. See `R2.md` for environment setup.
 - **Authentication and session:** FastAPI routes, PyJWT access tokens, HTTP-only refresh-token cookie, bcrypt password hashing
@@ -70,7 +70,7 @@ dashboard.
 - Staging: `staging.friink.com` / `staging-api.friink.com`
 - Production: `friink.com`
 - **Database isolation:** `api-staging` continues using the existing staging Neon connection; `api-production` uses its separate production Neon connection. The web projects do not receive `DATABASE_URL`; each web deployment only receives its API origin.
-- **Connection-pool rollout:** The first pool profile will target 3 base connections plus 2 overflow connections, with pre-ping and a bounded timeout. Ubuntu deployment values will be tuned against API worker count and PostgreSQL `max_connections`; no platform-specific pooling logic should be introduced.
+- **Connection-pool profile:** The default profile uses 3 base connections plus 2 overflow connections, pre-ping, LIFO reuse, a 10-second checkout timeout, and a 5-minute recycle. A local post-pooling sample reduced switch completion to approximately 1.0–1.7 seconds, while the account-list refresh still took approximately 12 seconds; these are diagnostic measurements, not a performance guarantee. Ubuntu deployment values must be tuned against API worker count and PostgreSQL `max_connections`; no platform-specific pooling logic should be introduced.
 - **Branch flow:** Use `development` for local implementation and destructive
   rehearsals, `staging` for deployed acceptance testing, and `main` for
   production release. Do not fetch or rewrite another branch as a substitute

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-10T02:00:00Z
+
+- [verification] Recorded post-pooling local account-switch timings of
+  approximately 1.0 and 1.7 seconds. The selector's full account-list refresh
+  still took approximately 12 seconds, so switch completion and refresh
+  latency remain separate performance signals.
+- [configuration] Added the pooling variables to the local API `.env`,
+  `.env.development`, and `.env.staging` files.
+
+## 2026-09-10T01:15:00Z
+
+- [api] Enabled a conservative, deployment-neutral SQLAlchemy connection pool
+  by default (3 base connections, 2 overflow, pre-ping, LIFO reuse,
+  five-minute recycling, and bounded checkout timeout), with environment
+  controls and an explicit disable switch. Updated the related documentation.
+
 ## 2026-09-10T00:30:00Z
 
 - [documentation] Recorded the deployment-neutral database pooling direction:

@@ -58,15 +58,24 @@ shared authentication and session rules.
 
 ## Switch latency and database connections
 
-Local browser runs observed roughly 2–4 seconds for successful account-switch
-requests, with no browser errors and a local API origin. The delay is therefore
-more likely in API/database work than in browser network transport.
+Before pooling, local browser runs observed roughly 2–4 seconds for successful
+account-switch requests, with no browser errors and a local API origin. After
+enabling the conservative pool locally, two repeat switches completed in
+approximately 1.0 and 1.7 seconds. The switch itself is therefore improved in
+this small sample, but the selector's post-switch account-list refresh still
+took approximately 12 seconds before all three remembered accounts appeared.
+Both API requests returned HTTP 200. Treat the refresh delay as a separate API
+or database-latency investigation, not as proof that pooling alone fixes the
+entire interaction.
 
 The approved architecture direction is deployment-neutral connection pooling:
 Neon Free should use a small pool, while the future Ubuntu-hosted PostgreSQL
 deployment may use a larger pool based on API worker count and PostgreSQL
-`max_connections`. The current API still uses `NullPool`; changing it is a
-separate measured rollout and must not be inferred from selector UX evidence.
+`max_connections`. The API now uses a small configurable pool by default
+(`3 + 2` connections); pooling can be disabled explicitly for a runtime that
+requires short-lived connections. The local post-pooling measurements above
+are diagnostic only; repeat the same timing check after the development and
+staging deployments.
 
 ## Account independence
 

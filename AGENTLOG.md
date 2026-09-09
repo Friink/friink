@@ -1,5 +1,46 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-10T02:00:00Z — Record post-pooling local latency and environment rollout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the pooling environment rollout, retest account
+  switching, and publish development/staging.
+- Changes Made: Added the pooling variables to the ignored local API files
+  `.env`, `.env.development`, and `.env.staging`. Recorded two post-pooling
+  switch completions at approximately 1.0 and 1.7 seconds, plus an account-list
+  refresh of approximately 12 seconds before all three remembered accounts
+  appeared. Updated the account-switcher, auth/session, README, and rules
+  documentation to distinguish switch latency from refresh latency.
+- Files: `README.md`, `RULES.md`, `docs/account-switcher.md`,
+  `docs/auth-and-session.md`, `AGENTLOG.md`, `CHANGELOG.md`, plus the three
+  ignored local API env files.
+- Verification Status: Local API restarted with `.env.staging`; account
+  switch requests and account-list refresh returned HTTP 200. Main was not
+  modified.
+
+## 2026-09-10T01:15:00Z — Enable configurable deployment-neutral database pooling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resume the pooling work after documenting the architecture.
+- Changes Made: Replaced the API's default `NullPool` with a conservative,
+  environment-configurable SQLAlchemy `QueuePool` profile: three base
+  connections, two overflow connections, ten-second checkout timeout,
+  five-minute recycling, pre-ping, and LIFO reuse. Retained an explicit
+  `DB_POOLING_ENABLED=false` escape hatch for runtimes that require it.
+  Updated the environment template and synchronized the deployment, auth,
+  account-switcher, design, and rules documentation.
+- Files: `api/app/config.py`, `api/app/db.py`, `api/.env.example`,
+  `README.md`, `RULES.md`, `packages/design/design.md`,
+  `docs/auth-and-session.md`, `docs/account-switcher.md`, `AGENTLOG.md`,
+  `CHANGELOG.md`.
+- Verification Status: Pool configuration and disabled-mode checks passed;
+  focused account/session assertions passed. Pytest teardown still reports a
+  Windows SQLite temp-file lock after the assertions complete. Local browser
+  smoke confirmed the account selector eventually displays all remembered
+  accounts with pooling enabled.
+
 ## 2026-09-10T00:30:00Z — Record deployment-neutral pooling architecture
 
 - Agent: Codex

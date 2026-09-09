@@ -11,6 +11,12 @@ class Settings(BaseSettings):
 
     database_url: str = Field(default="", alias="DATABASE_URL")
     database_target: str = Field(default="", alias="DATABASE_TARGET")
+    database_pooling_enabled: bool = Field(default=True, alias="DB_POOLING_ENABLED")
+    database_pool_size: int = Field(default=3, alias="DB_POOL_SIZE")
+    database_max_overflow: int = Field(default=2, alias="DB_MAX_OVERFLOW")
+    database_pool_timeout_seconds: int = Field(default=10, alias="DB_POOL_TIMEOUT_SECONDS")
+    database_pool_recycle_seconds: int = Field(default=300, alias="DB_POOL_RECYCLE_SECONDS")
+    database_pool_pre_ping: bool = Field(default=True, alias="DB_POOL_PRE_PING")
     frontend_url: AnyHttpUrl | str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
     environment: str = Field(default="development", alias="ENVIRONMENT")
     otp_enabled: bool = Field(default=True, alias="OTP_ENABLED")
@@ -49,6 +55,14 @@ class Settings(BaseSettings):
             raise ValueError("ACCOUNT_DELETION_WARNING_DAYS must be positive and shorter than the grace period.")
         if not 1 <= self.max_remembered_accounts_per_device <= 16:
             raise ValueError("MAX_REMEMBERED_ACCOUNTS_PER_DEVICE must be between 1 and 16.")
+        if self.database_pool_size < 1:
+            raise ValueError("DB_POOL_SIZE must be at least 1.")
+        if self.database_max_overflow < 0:
+            raise ValueError("DB_MAX_OVERFLOW must not be negative.")
+        if self.database_pool_timeout_seconds <= 0:
+            raise ValueError("DB_POOL_TIMEOUT_SECONDS must be positive.")
+        if self.database_pool_recycle_seconds < 0:
+            raise ValueError("DB_POOL_RECYCLE_SECONDS must not be negative.")
         if not 0 <= self.jwt_clock_skew_seconds <= 300:
             raise ValueError("JWT_CLOCK_SKEW_SECONDS must be between 0 and 300.")
         return self
