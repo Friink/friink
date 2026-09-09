@@ -650,6 +650,38 @@ textarea {
   background: var(--color-accent-soft);
 }
 
+/* Modal and other contextual action surfaces use the same Button primitive
+   sizing as the shared pill-button component, with semantic class names for
+   callers that render native buttons directly. */
+.button-primary,
+.button-secondary {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  max-width: 100%;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.button-primary {
+  border-color: var(--color-accent);
+  color: var(--color-paper);
+  background: var(--color-accent);
+}
+
+.button-secondary {
+  border-color: var(--color-line);
+  color: var(--color-ink);
+  background: var(--color-accent-soft);
+}
+
 .login-submit {
   min-width: 8rem;
   min-height: 3rem;
@@ -758,62 +790,6 @@ textarea {
 .account-auth-actions .login-submit,
 .account-auth-actions .pill-button-quiet {
   flex: 1 1 0;
-}
-
-.account-auth-modal {
-  border-color: var(--color-line);
-  background: var(--color-paper);
-  color: var(--color-ink);
-}
-
-.account-auth-modal .modal-body {
-  background: var(--color-paper);
-}
-
-body:has(.app-shell[data-theme='dark']) .account-auth-modal {
-  border-color: #555555;
-  background: #161616;
-  color: #f5f5f5;
-}
-
-body:has(.app-shell[data-theme='dark']) .account-auth-modal .modal-body,
-body:has(.app-shell[data-theme='dark']) .account-auth-modal .pill-field input {
-  background: #161616;
-}
-
-body:has(.app-shell[data-theme='dark']) .account-auth-modal .pill-field input {
-  border-color: #555555;
-  color: #f5f5f5;
-}
-
-body:has(.app-shell[data-theme='dark']) .account-auth-modal .pill-field input::placeholder,
-body:has(.app-shell[data-theme='dark']) .account-auth-modal .password-toggle,
-body:has(.app-shell[data-theme='dark']) .account-auth-modal .login-switch {
-  color: #c4c4c4;
-}
-
-body:has(.app-shell[data-theme='system']) .account-auth-modal {
-  border-color: #555555;
-  background: #161616;
-  color: #f5f5f5;
-}
-
-@media (prefers-color-scheme: dark) {
-  body:has(.app-shell[data-theme='system']) .account-auth-modal .modal-body,
-  body:has(.app-shell[data-theme='system']) .account-auth-modal .pill-field input {
-    background: #161616;
-  }
-
-  body:has(.app-shell[data-theme='system']) .account-auth-modal .pill-field input {
-    border-color: #555555;
-    color: #f5f5f5;
-  }
-
-  body:has(.app-shell[data-theme='system']) .account-auth-modal .pill-field input::placeholder,
-  body:has(.app-shell[data-theme='system']) .account-auth-modal .password-toggle,
-  body:has(.app-shell[data-theme='system']) .account-auth-modal .login-switch {
-    color: #c4c4c4;
-  }
 }
 
 @media (max-width: 480px) {
@@ -2435,7 +2411,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .modal-dialog {
   display: flex;
   flex-direction: column;
-  width: min(100%, 30rem);
+  width: min(100%, 34rem);
   min-width: 0;
   max-height: min(90vh, 42rem);
   max-height: min(calc(100dvh - 2rem), 42rem);
@@ -2481,23 +2457,26 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 }
 
 .modal-header {
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
   flex: 0 0 auto;
   min-width: 0;
   padding: 1rem 1rem 0;
 }
 
 .modal-header h2 {
-  flex: 1 1 auto;
+  grid-column: 2;
   min-width: 0;
   overflow-wrap: anywhere;
   margin: 0;
   color: var(--color-ink);
   font-size: var(--text-lg);
+  text-align: center;
 }
 
 .modal-back,
-.modal-close {
+.modal-close,
+.modal-back-placeholder {
   display: inline-grid;
   width: 2rem;
   height: 2rem;
@@ -2511,8 +2490,13 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 }
 
 .modal-back {
+  grid-column: 1;
   color: var(--color-ink);
   font-size: var(--text-sm);
+}
+
+.modal-close {
+  grid-column: 3;
 }
 
 .modal-body {
@@ -2522,26 +2506,11 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   overscroll-behavior: contain;
   padding: 0.75rem 1rem;
   -webkit-overflow-scrolling: touch;
+  background: var(--color-paper);
 }
 
 .profile-setup-dialog {
   width: min(100%, 34rem);
-  border-color: color-mix(in srgb, var(--color-accent) 28%, var(--color-line));
-  border-radius: 1rem;
-  box-shadow: 0 1.25rem 3.5rem rgba(17, 17, 17, 0.22);
-}
-
-.profile-setup-dialog .modal-header {
-  padding: 1.25rem 1.25rem 0;
-}
-
-.profile-setup-dialog .modal-header h2 {
-  font-size: clamp(1.05rem, 2vw, 1.25rem);
-  letter-spacing: -0.02em;
-}
-
-.profile-setup-dialog .modal-body {
-  padding: 1.25rem;
 }
 
 .profile-setup-intro {
@@ -2682,46 +2651,59 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   border-top: 1px solid var(--color-line);
 }
 
-.profile-setup-dialog .modal-actions {
-  padding: 1rem 1.25rem 1.25rem;
-  background: var(--color-accent-background);
-}
-
-@media (max-width: 480px) {
-  .profile-setup-dialog .modal-header,
-  .profile-setup-dialog .modal-body,
-  .profile-setup-dialog .modal-actions {
-    padding-inline: 1rem;
-  }
-
-  .profile-setup-dialog .modal-actions {
-    gap: 0.5rem;
-  }
+.modal-actions > .button-primary,
+.modal-actions > .button-secondary,
+.modal-actions > .pill-button {
+  flex: 0 1 auto;
 }
 
 .profile-picture-crop-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
   width: min(100%, 30rem);
-  min-width: 0;
-  max-height: min(90vh, 42rem);
-  max-height: min(calc(100dvh - 2rem), 42rem);
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 1rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  background: var(--color-paper);
-  box-shadow: 0 1rem 3rem rgba(17, 17, 17, 0.28);
 }
 
 .profile-picture-crop-dialog .modal-body {
   padding: 0;
 }
 
-.profile-picture-crop-dialog .modal-actions {
-  margin: 0 -1rem -1rem;
+@media (max-width: 48rem) {
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .modal-dialog {
+    max-height: calc(100dvh - 1.5rem);
+  }
+}
+
+@media (max-width: 30rem) {
+  .modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  .modal-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 1rem);
+    border-radius: var(--radius-xs, 0.5rem);
+  }
+
+  .modal-header {
+    padding: 0.75rem 0.75rem 0;
+  }
+
+  .modal-body {
+    padding: 0.75rem;
+  }
+
+  .modal-actions {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .modal-actions > .button-primary,
+  .modal-actions > .button-secondary,
+  .modal-actions > .pill-button {
+    flex: 1 1 8rem;
+  }
 }
 
 .profile-picture-crop-header,

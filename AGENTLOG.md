@@ -1,5 +1,97 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-09 — Finalize modal design documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure `AGENTLOG.md`, `CHANGELOG.md`, and `design.md` reflect the completed modal/button work.
+- Changes Made: Documented the centered three-column modal header, global themed responsive shell, contextual body boundary, and shared semantic modal button sizing in `packages/design/design.md`; recorded the documentation update here and in `CHANGELOG.md`.
+- Verification Status: Documentation changes match the shipped implementation; web production build passed.
+
+## 2026-09-09 — Align modal buttons with the shared design primitive
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix modal button padding and ensure global button design matches `design.md`.
+- Changes Made: Added global semantic `.button-primary` and `.button-secondary` styles matching the documented 3rem Button primitive. Converted modal text actions in profile setup, image crop, and composer crop flows away from fixed-size icon-only settings controls. Added responsive footer action sizing.
+- Verification Status: Web production build passed after the edit; existing unrelated lint warnings remain.
+
+## 2026-09-09 — Standardize modal chrome and responsiveness
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make all modal header, body, footer, theme, and responsive shell styling consistent while preserving contextual body content.
+- Changes Made: Replaced the header spacer with an explicit grid placeholder so titles remain centered with or without back navigation. Centralized modal shell colors, spacing, border, footer, and responsive sizing in `globals.css`; removed per-variant shell overrides while retaining contextual body layouts.
+- Verification Status: Web build to run after the edit.
+
+## 2026-09-09 — Diagnose local verification-email delivery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate why signup still returned the generic verification-email error after updating `.env.development`.
+- Changes Made: Confirmed the Resend key is accepted and `mail.friink.com` is verified for sending. Restarted the API with the current environment and added redacted logging for Resend HTTP rejection/request failures so the provider’s status and response can be diagnosed without exposing secrets, OTPs, or recipients.
+- Verification Status: API restarted successfully; awaiting one fresh signup retry to capture the provider response.
+
+## 2026-09-08T23:40:00Z — Remove the 16-character password cap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the 16-character password restriction everywhere and update the copy.
+- Changes Made: Removed the frontend max-length attributes, upper-bound regex, checklist item, and client-side checks from signup, password-change, and reset flows. The API now accepts passwords longer than 16 characters while enforcing a 72-byte bcrypt compatibility limit. Updated active password policy documentation and validation coverage.
+- Verification Status: Targeted API validation and web production build run after the edits.
+
+## 2026-09-08T23:28:43Z — Inspect Chrome password generation behavior
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Compare Resend’s signup password behavior with Friink’s
+  signup field and explain missing special characters in Chrome-generated
+  passwords.
+- Changes Made: Added explicit `name="password"` and `id="signup-password"`
+  metadata to the Friink signup password field. The existing `new-password`
+  autocomplete and regex validation remain intact.
+- Verification Status: Next.js production build passed. Resend’s public signup
+  exposes a single password field with a symbol requirement; Chrome does not
+  guarantee that generated password composition follows arbitrary HTML regex
+  patterns, and Friink’s 16-character maximum further constrains generation.
+
+## 2026-09-08T23:19:28Z — Improve password confirmation autofill
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make browser autofill work for signup and password-change
+  confirmation fields during local testing.
+- Changes Made: Added stable semantic `name` and `id` attributes to the web
+  signup and password-change password fields while retaining the existing
+  `new-password` autocomplete contract.
+- Verification Status: Next.js production build passed; existing repository
+  lint warnings remain.
+
+## 2026-09-08T23:13:45Z — Fix and verify localhost launcher
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the legacy localhost launcher to use the development
+  environment and run Friink locally.
+- Changes Made: Added explicit `.env.development` loading for the API, corrected
+  `Start-Process` working-directory usage, disabled the incompatible Windows
+  Uvicorn reload mode, and added a required development-env file check.
+- Verification Status: API `/health/db` returned HTTP 200 with
+  `{"database":true}`; web `/login` returned HTTP 200. Next.js runs with
+  elevated process-spawn permission because sandboxed startup returned EPERM.
+
+## 2026-09-08T23:02:37Z — Align production database with current code
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the pending schema migrations to the production
+  database before the planned code deployment.
+- Changes Made: Verified the configured target was production, applied
+  migrations through `20260909_0041`, and performed post-migration head and
+  drift checks. No application code or secrets were changed.
+- Verification Status: Production reports `20260909_0041 (head)` and
+  `alembic check` reports `No new upgrade operations detected.`
+
 ## 2026-09-08T22:33:11Z — Synchronize development/auth-session artifacts
 
 - Agent: Codex

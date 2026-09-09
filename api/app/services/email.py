@@ -1,9 +1,13 @@
 from html import escape
+import logging
 
 import httpx
 
 from app.config import Settings
 from app.models.user import User
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmailDeliveryError(RuntimeError):
@@ -60,7 +64,15 @@ class EmailService:
                     json=payload,
                 )
                 response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "resend_email_rejected status=%s response=%s",
+                exc.response.status_code,
+                exc.response.text[:500],
+            )
+            raise EmailDeliveryError("Email delivery failed.") from exc
         except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("resend_email_request_failed error=%s", type(exc).__name__)
             raise EmailDeliveryError("Email delivery failed.") from exc
 
     def _from_address(self, purpose: str) -> str:
@@ -89,7 +101,15 @@ class EmailService:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {self.settings.resend_api_key}"}, json=payload)
                 response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "resend_email_rejected status=%s response=%s",
+                exc.response.status_code,
+                exc.response.text[:500],
+            )
+            raise EmailDeliveryError("Email delivery failed.") from exc
         except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("resend_email_request_failed error=%s", type(exc).__name__)
             raise EmailDeliveryError("Email delivery failed.") from exc
 
     async def send_failed_login_alert(self, email: str, reset_url: str) -> None:
@@ -118,5 +138,13 @@ class EmailService:
                     json=payload,
                 )
                 response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            logger.warning(
+                "resend_email_rejected status=%s response=%s",
+                exc.response.status_code,
+                exc.response.text[:500],
+            )
+            raise EmailDeliveryError("Email delivery failed.") from exc
         except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("resend_email_request_failed error=%s", type(exc).__name__)
             raise EmailDeliveryError("Email delivery failed.") from exc

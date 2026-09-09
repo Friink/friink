@@ -62,7 +62,7 @@ signal.
 
 The reset page has explicit, calm states:
 
-- **Valid:** `Create a new password` with the standard 8–16 character policy.
+- **Valid:** `Create a new password` with the standard minimum-8-character policy.
 - **Expired:** `This link has expired. Request a new one.`
 - **Already used:** `This link has already been used. Request a new one.`
 - **Invalid:** `This link is no longer valid.`

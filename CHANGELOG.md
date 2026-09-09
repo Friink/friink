@@ -2,6 +2,64 @@
 
 ## 2026-09-09
 
+- [docs] Updated `packages/design/design.md` to document the centered modal
+  header grid, global themed modal chrome, responsive shell, and shared
+  primary/secondary action-button sizing now implemented in `globals.css`.
+
+## 2026-09-09
+
+- [web] Aligned modal text actions with the shared Button primitive: semantic
+  primary/secondary buttons now use the documented 3rem height and padding,
+  while icon-only settings controls are no longer used for modal text actions.
+
+## 2026-09-09
+
+- [web] Unified modal chrome across all usages: centered titles now align with
+  or without a back button, header/body/footer theme and spacing come from the
+  shared modal rules, and desktop/tablet/mobile sizing is responsive.
+
+## 2026-09-09
+
+- [api] Added redacted Resend rejection/request diagnostics so local email
+  delivery failures expose the provider status and response without logging
+  API keys, OTPs, or message recipients.
+
+## 2026-09-08T23:40:00Z
+
+- [web/api] Removed the 16-character password cap from signup, password
+  change, and password reset flows and updated the password guidance to say
+  "at least 8 characters". The API retains a 72-byte bcrypt compatibility
+  guard so long passwords are never silently truncated.
+
+## 2026-09-08T23:28:43Z
+
+- [web/auth] Aligned the signup password field with browser password-manager
+  heuristics by adding explicit semantic `name` and `id` metadata. Confirmed
+  that Chrome does not guarantee symbol composition from a complex `pattern`
+  regex; server-side password validation remains authoritative.
+
+## 2026-09-08T23:19:28Z
+
+- [web/auth] Added explicit semantic names and IDs to signup and password-change
+  password/confirmation fields so browser password managers can identify and
+  fill the confirmation inputs. The web production build passes.
+
+## 2026-09-08T23:13:45Z
+
+- [local-development] Updated `localhost/localhost.ps1` to require and load
+  `api/.env.development`, use valid `Start-Process` working-directory
+  handling, disable the incompatible Windows Uvicorn reload mode, and start
+  the API/web services with the intended local settings.
+  Verified the API database health endpoint and web login route locally.
+
+## 2026-09-08T23:02:37Z
+
+- [production/database] Applied pending Alembic migrations through
+  `20260909_0041` using the production `api/.env` target. Confirmed the
+  database is at head and `alembic check` reports no schema drift.
+
+## 2026-09-09
+
 - [documentation] Synchronized the README, rules, design contract, and auth
   incident documentation with the `development` branch workflow and isolated
   development database verification. Clarified that Phase 6 implementation is
