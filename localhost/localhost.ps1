@@ -4,6 +4,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $webDir = Join-Path $repoRoot 'web'
 $apiDir = Join-Path $repoRoot 'api'
 $nextDir = Join-Path $webDir '.next'
+$apiEnvFile = Join-Path $apiDir '.env.development'
 $webPort = 3000
 $apiPort = 8000
 $apiPython = Join-Path $apiDir '.venv\Scripts\python.exe'
@@ -33,11 +34,24 @@ if (-not (Test-Path -LiteralPath $apiPython)) {
   throw "FastAPI virtual environment not found at $apiPython. Run the setup steps in api/README.md first."
 }
 
+if (-not (Test-Path -LiteralPath $apiEnvFile)) {
+  throw "Development environment file not found at $apiEnvFile. Create it before starting localhost."
+}
+
 Write-Host 'Starting Friink API...'
-Start-Process powershell -ArgumentList "-NoExit","-WorkingDirectory","$apiDir","-Command",".\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port $apiPort --reload" | Out-Null
+$apiCommand = @"
+`$ErrorActionPreference = 'Stop'
+Get-Content -LiteralPath '.env.development' | ForEach-Object {
+  if (`$_ -match '^\s*([A-Z0-9_]+)\s*=\s*(.*)$') {
+    [Environment]::SetEnvironmentVariable(`$Matches[1], `$Matches[2])
+  }
+}
+& .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port $apiPort
+"@
+Start-Process powershell -WorkingDirectory $apiDir -ArgumentList "-NoExit","-Command",$apiCommand | Out-Null
 
 Write-Host 'Starting Friink web app...'
-Start-Process powershell -ArgumentList "-NoExit","-WorkingDirectory","$webDir","-Command","npm run dev:local" | Out-Null
+Start-Process powershell -WorkingDirectory $webDir -ArgumentList "-NoExit","-Command","npm run dev:local" | Out-Null
 
 Write-Host ''
 Write-Host "Local API service launched at http://localhost:$apiPort"

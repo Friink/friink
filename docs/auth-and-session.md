@@ -908,7 +908,7 @@ no staff record, password hash, or misleading success audit event.
 **Password handling:** Prompt through interactive secret input or approved
 secret injection. Never accept a password in command-line arguments, a
 migration, source, an ordinary environment file, logs, or API responses.
-Enforce the normal 8–16 character policy, request confirmation, hash through
+Enforce the normal minimum-8-character policy, request confirmation, hash through
 the existing password service, and return a non-zero status on mismatch or
 policy failure.
 
@@ -1009,7 +1009,7 @@ bootstrap success/refusal event types and redacted payloads in
 
 **5. Password service reuse — Addressed.** `hash_password` and
 `verify_password` are defined in `api/app/services/security.py:19-24`.
-The required 8–16 character policy is `validate_password_rules` in
+The required minimum-8-character policy is `validate_password_rules` in
 `api/app/schemas/auth.py:11-26`, used by signup at `:47-54` and reset at
 `:200-207`. The current bootstrap command imports/calls `hash_password` at
 `api/scripts/bootstrap_admin.py:22-24,111,181-184`; the command validates the
@@ -2149,7 +2149,7 @@ defines only the auth/session boundary and must not diverge from that document.
    single-use password-reset link by email. Store only its hash, expire it
    after 30 minutes, invalidate older reset requests when a newer one is
    issued, and rate-limit by IP, email, and device.
-3. The user sets a new password using the standard 8–16 character policy.
+3. The user sets a new password using the standard minimum-8-character policy.
 4. Successful recovery revokes every existing refresh-token family for that
    account, invalidates remembered device session slots, and requires a fresh
    login. A reset-specific security event remains a separate tracked recovery

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
+import { PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
 import { checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, requestPasswordReset, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
@@ -152,7 +152,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
         return;
       }
 
-      if (!PASSWORD_PATTERN.test(password) || password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+      if (!PASSWORD_PATTERN.test(password) || password.length < PASSWORD_MIN_LENGTH) {
         setErrorMessage('Password does not meet complexity requirements.');
         return;
       }
@@ -302,6 +302,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
             <InputField
               label="Password"
+              name="password"
+              id="signup-password"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -440,13 +442,14 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
             <InputField
               label="Password"
+              name="password"
+              id="signup-password"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LENGTH}
-              maxLength={PASSWORD_MAX_LENGTH}
               pattern={PASSWORD_PATTERN.source}
               title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
               aria-describedby="signup-password-criteria"
@@ -469,13 +472,14 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
             <InputField
               label="Confirm Password"
+              name="confirm-password"
+              id="signup-confirm-password"
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Confirm Password"
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LENGTH}
-              maxLength={PASSWORD_MAX_LENGTH}
               pattern={PASSWORD_PATTERN.source}
               title="Use at least 8 characters with uppercase, lowercase, number, and special character, with no spaces."
               aria-describedby="signup-password-criteria"
