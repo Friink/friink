@@ -1,5 +1,36 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T00:00:00Z — Restore plain post-card action controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Revert the shared button restyle for post-card Share and
+  overflow controls after comparing production and staging.
+- Changes Made: Restored `.feed-post-more` and `.feed-post-share` to the former
+  compact `1.75rem` plain-icon treatment with transparent backgrounds, no
+  borders, and no hover/focus outline or accent color change.
+- Files: `web/app/globals.css`, `AGENTLOG.md`.
+- Verification Status: Open production and staging home surfaces were compared;
+  production confirmed the plain compact treatment. `npm run build -- --webpack`
+  passed, including TypeScript and all 22 static pages. This fix has not been
+  pushed or deployed.
+
+## 2026-09-11T00:00:00Z — Restore plain composer attachment control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the composer plus control to the production look after
+  the shared button restyle added a border and hover treatment.
+- Changes Made: Scoped the composer attachment button back to the former plain
+  icon behavior: transparent background, no border, no accent hover color, and
+  no hover/focus outline. Shared button styles remain unchanged for other
+  controls.
+- Files: `web/app/globals.css`, `AGENTLOG.md`.
+- Verification Status: Compared the open production and staging home surfaces;
+  production confirmed the intended plain plus control. `npm run build --
+  --webpack` passed, including TypeScript and all 22 static pages. This fix has
+  not been pushed or deployed.
+
 ## 2026-09-11T00:00:00Z — Synchronize platform logo assets and documentation
 
 - Agent: Codex

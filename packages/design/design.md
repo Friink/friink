@@ -316,7 +316,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
      - Right action cluster (`.feed-post-options`) containing Share and More buttons with a visible fixed gap.
-     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
+     - Share (`.feed-post-share`, `fa-share-nodes`) and More (`.feed-post-more`, `fa-ellipsis-vertical`) are compact plain icon controls: `1.75rem` square, transparent, borderless, and without accent hover/focus treatment. They are intentionally exempt from the shared bordered `.icon-button` treatment.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
@@ -362,7 +362,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### 8. Composer (`web/components/composer.tsx`)
 - **`Composer`**:
-  - Default layout: Attachment button (`fa-plus`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Default layout: Plain attachment button (`fa-plus`, transparent and borderless) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right. The composer attachment control is intentionally exempt from the shared bordered `.icon-button` treatment and has no accent hover/focus treatment.
   - Floating post composer enforces a frontend-only `256` character limit and shows a live `x/256` counter.
   - Quote mode may submit without typed text when a quoted post is selected; normal posts and replies still require text.
   - Floating post multiline mode: Starts in the same single-line layout, then moves the text editor to a full-width top row as soon as typing begins. It grows upward with the draft to a maximum of eight lines (`10rem`); additional content scrolls inside the editor while attachment, count, and send/post controls remain bottom-aligned.

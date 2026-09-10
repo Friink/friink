@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-11T00:15:00Z
+
+- [web] Restored post-card Share and More controls to the compact, borderless
+  production treatment and preserved the same plain-icon exception for the
+  composer attachment control.
+- [docs] Updated the design contract to document the compact `1.75rem` post
+  action controls and the composer’s exemption from shared `.icon-button`
+  borders and hover/focus styling.
+
 ## 2026-09-11T00:00:00Z
 
 - [branding] Replaced the padded platform logo SVGs with the new tight-viewbox

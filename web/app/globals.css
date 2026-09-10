@@ -3996,8 +3996,18 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
+  border: 0;
   border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  background: transparent;
   font-size: 1rem;
+}
+
+.floating-bar-composer .icon-button:hover,
+.floating-bar-composer .icon-button:focus-visible {
+  border: 0;
+  color: var(--color-ink);
+  outline: none;
 }
 
 .sidebar-account-menu-button {
@@ -4569,11 +4579,23 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .feed-post-options .feed-post-share {
   display: inline-grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
   padding: 0;
+  color: var(--color-ink);
+  background: transparent;
   font-size: 1.02rem;
   line-height: 1;
+}
+
+.feed-post-options .feed-post-more:hover,
+.feed-post-options .feed-post-more:focus-visible,
+.feed-post-options .feed-post-share:hover,
+.feed-post-options .feed-post-share:focus-visible {
+  border: 0;
+  color: var(--color-ink);
+  outline: none;
 }
 
 .feed-post-options .feed-post-more i,
