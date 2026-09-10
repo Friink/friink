@@ -8955,6 +8955,21 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification Status: Documentation-only update; `RULES.md` remains unchanged
   because progressive login is not yet a live authentication rule.
 
+## 2026-09-11 — Document read-only Joined account field
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the Account-tab `Joined` field requirement before
+  implementation and clarify the proposed accuracy of IP-based location data.
+- Changes Made: Added the design rule for a non-editable `Joined` field backed
+  by the server-side account creation timestamp and formatted for the user’s
+  locale/time zone. No location-logging implementation was authorized or
+  added; IP geolocation remains a future, approximate security signal requiring
+  retention and privacy decisions.
+- Files: `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; no application code or
+  `RULES.md` behavior changed.
+
 ## 2026-09-11 — Remove stale progressive-login decision wording
 
 - Agent: Codex

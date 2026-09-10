@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-11T04:30:00Z
+
+- [docs/design] Documented the planned read-only Account-tab `Joined` field,
+  using the server-side account creation timestamp with locale/time-zone-aware
+  presentation.
+
 ## 2026-09-11T04:00:00Z
 
 - [docs/design] Added the progressive-entry UX contract, including neutral
