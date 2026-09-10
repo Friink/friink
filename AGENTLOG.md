@@ -8523,3 +8523,13 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification Status: Documentation diff reviewed; no staging or production
   changes were made. The implementation remains uncommitted because the
   sandbox denied writes to `.git/index`; commit hash remains pending.
+
+## 2026-09-10T16:20:00Z — Correct implementation commit record
+
+- Agent: Codex
+- Model: GPT-5
+- Correction: The failed-login implementation and documentation were
+  subsequently committed locally as `ec0ed1a` (`Implement and document
+  failed-login throttling policy`). The earlier entries above were written
+  before that commit succeeded and are retained unchanged for append-only
+  history.
