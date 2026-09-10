@@ -40,9 +40,8 @@ def record_security_event(
             session.add(NotificationOutbox(event_id=event.id, channel=NotificationChannel.in_app))
         return event
 
-    event_id = uuid.uuid4()
     values = {
-        "id": event_id,
+        "id": uuid.uuid4(),
         "event_key": event_key,
         "user_id": user_id,
         "session_id": session_id,
@@ -58,14 +57,10 @@ def record_security_event(
     else:
         raise RuntimeError(f"Idempotent security-event inserts are unsupported for database dialect {dialect!r}.")
 
-    result = session.execute(statement)
-    if result.rowcount == 0:
-        event = session.execute(
-            select(SecurityEvent).where(SecurityEvent.event_key == event_key)
-        ).scalar_one()
-    else:
-        event = session.get(SecurityEvent, event_id)
-    assert event is not None
+    session.execute(statement)
+    event = session.execute(
+        select(SecurityEvent).where(SecurityEvent.event_key == event_key)
+    ).scalar_one()
     if notify_in_app:
         session.add(NotificationOutbox(event_id=event.id, channel=NotificationChannel.in_app))
     return event

@@ -41,10 +41,32 @@ def test_duplicate_security_event_returns_existing_event_object() -> None:
             notify_in_app=True,
             idempotent=True,
         )
+        fresh_row = session.execute(
+            select(SecurityEvent).where(SecurityEvent.event_key == event_key)
+        ).scalar_one()
 
-        assert duplicate.id == first.id
+        assert fresh_row.id == first.id
+        assert duplicate.id == fresh_row.id
         assert duplicate.event_key == event_key
-        assert duplicate is session.get(SecurityEvent, first.id)
+
+
+def test_fresh_security_event_returns_independently_queried_row() -> None:
+    from app.db import get_session_factory
+
+    event_key = f"bootstrap-succeeded:{uuid.uuid4()}"
+    with get_session_factory()() as session:
+        returned = record_security_event(
+            session,
+            event_type=SecurityEventType.bootstrap_succeeded,
+            event_key=event_key,
+            idempotent=True,
+        )
+        stored = session.execute(
+            select(SecurityEvent).where(SecurityEvent.event_key == event_key)
+        ).scalar_one()
+
+        assert stored.id == returned.id
+        assert stored.event_key == returned.event_key
 
 
 def test_new_security_event_key_still_inserts_normally() -> None:
