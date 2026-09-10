@@ -4,7 +4,7 @@ Status: Living implementation/progress document. Each phase and subphase below
 has an authoritative status plus implementation notes, test evidence, and
 noteworthy follow-up items.
 
-Last updated: 2026-09-10T05:15:00Z
+Last updated: 2026-09-10T13:30:00Z
 
 ## Database connection management
 
@@ -2202,14 +2202,21 @@ The same login event is designed for future email notification delivery.
 The login path must not depend synchronously on an external email provider. A
 durable security-event/outbox design is required:
 
-1. Commit the login, session, and login-security event together.
-2. Process the in-app notification and future email delivery from that durable
-   event.
-3. Retry temporary notification/delivery failures without logging the user out
-   or losing the security event.
+1. Complete and commit the authentication/session decision independently of
+   the audit side effect.
+2. Attempt the security event and process the in-app notification/future email
+   delivery from the durable event when the audit write succeeds.
+3. Isolate every audit-write failure from the primary authentication response:
+   record the failure loudly in application logs/error tracking, but do not
+   re-raise it, roll back the auth/session decision, or change its response.
+4. Use stable event keys with idempotent insertion so concurrent retries do not
+   create duplicate events. After either an insert or a conflict, retrieve the
+   event by its unique event key rather than relying on a client-generated ID.
 
-This avoids making a non-critical notification provider a reason for a valid
-login to fail while still ensuring the event is not silently forgotten.
+This prevents a non-critical audit or notification failure from turning a valid
+login, refresh, or terminal auth response into a server error. Audit failures
+remain observable and should be investigated or retried through the applicable
+operational path.
 
 ## 12. OTP and new-device enrollment
 
@@ -2339,6 +2346,15 @@ Each event should record the actor/user, event type, timestamp, relevant safe
 session reference, and outcome. Staff actions additionally record target user,
 reason, and the originating privileged session. Never record passwords, raw
 OTP values, raw refresh tokens, or full secret material.
+
+Audit writes are side effects, not part of the auth/session decision boundary.
+The shared security-event recording path uses stable event-key idempotency and
+must be fault-isolated at every auth-critical call site, including login,
+refresh/reuse detection, bootstrap, logout, failed-login tracking, and staff
+actions. Any insert, duplicate-resolution lookup, assertion, connection, or
+other audit exception is logged loudly and swallowed so the endpoint still
+returns its correct authentication response and its token/session transaction
+cannot be rolled back by audit logging.
 
 ## 16. Rate limits
 

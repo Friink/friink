@@ -8429,3 +8429,18 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   or new background-job infrastructure was added, and token validation,
   refresh rotation, reuse detection, and other primary auth decisions were
   not weakened.
+
+## 2026-09-10T13:00:00Z — Record development branch publication
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update repository documentation after publishing the latest
+  security-event isolation fix to development.
+- Changes Made: Recorded that commit `1649feab415deea04b226fd1f9f7e3016eee8a7a`
+  is now present on both `origin/staging` and `origin/development`, and that
+  its staging deployment completed successfully. The earlier entry's
+  historical verification wording was left unchanged to preserve the
+  append-only log.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+  This is not a production-readiness declaration.
