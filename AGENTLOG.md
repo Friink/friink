@@ -8321,3 +8321,24 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Boundary Confirmation: No frontend, refresh decision, session, logout,
   failed-login, staff, subscription, scheduler, worker, or background-job code
   was changed.
+
+## 2026-09-10T10:00:00Z — Fix subscriptions Alembic schema drift
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and fix the Alembic drift blocking deployment of
+  the approved idempotent audit-write commit; do not redeploy.
+- Changes Made: Removed the redundant `uq_plan_entitlement` UniqueConstraint
+  from `PlanEntitlement` and from unapplied migration `20260910_0042`.
+  The composite `(plan_id, entitlement_key)` primary key remains the
+  uniqueness enforcement.
+- Files: `api/app/models/subscription.py`,
+  `api/alembic/versions/20260910_0042_subscriptions.py`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Staging and production migration history are both
+  `20260909_0041`; no persistent database was changed. Subscription tests
+  pass (`4 passed`). Local Alembic execution against a clean PostgreSQL test
+  database is unavailable because the local harness provides SQLite and the
+  migration chain uses PostgreSQL-specific types.
+- Boundary Confirmation: No auth, session, refresh-token, frontend,
+  deployment, or staging database changes were made.

@@ -23,7 +23,6 @@ class Plan(Base):
 
 class PlanEntitlement(Base):
     __tablename__ = "plan_entitlements"
-    __table_args__ = (UniqueConstraint("plan_id", "entitlement_key", name="uq_plan_entitlement"),)
 
     plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("plans.id", ondelete="CASCADE"), primary_key=True)
     entitlement_key: Mapped[str] = mapped_column(String(100), primary_key=True)
