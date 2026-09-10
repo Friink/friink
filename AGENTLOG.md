@@ -8903,6 +8903,26 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   file. The Webpack production build and staging migration/deployment remain
   pending; the public CTA is intentionally not enabled.
 
+## 2026-09-11 — Push progressive-login implementation to development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the progressive-login implementation to development and
+  staging and prepare the staged rollout behind feature flags.
+- Changes Made: Pushed commit `5019945` to `origin/development` and
+  `origin/staging`. Added the progressive flag to the Vercel staging web/API
+  project configuration, scoped to the staging preview branch, and redeployed
+  the API deployment from `5019945`; its Alembic migration gate completed.
+  The public CTA was not changed and production/main was not promoted.
+- Files: Vercel staging environment configuration; remote `development` and
+  `staging` branch refs; no application files changed in this session.
+- Verification Status: The API staging deployment is ready and exposes the
+  staging API domain. The Vercel web project has not produced a matching
+  `5019945` staging preview deployment yet; its production deployment remains
+  on `main`, so browser end-to-end verification of `/start` on the web staging
+  domain remains pending. The API and web feature flags are intended only for
+  staging preview verification.
+
 ## 2026-09-11 — Remove stale progressive-login decision wording
 
 - Agent: Codex
