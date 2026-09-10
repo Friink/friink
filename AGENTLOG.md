@@ -8277,3 +8277,25 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   authentication/session rehearsals.
 - Verification Status: `alembic current` reports the current head and
   `alembic check` reports no new upgrade operations.
+## 2026-09-10T08:00:00Z — Implement admin-only subscriptions foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the backend-only manual subscriptions foundation
+  from `docs/subscriptions.md`, including models, seed migration, capability
+  resolution, superadmin mutations, reads, audit events, and deterministic tests.
+- Changes Made: Added `Plan`, `PlanEntitlement`, and `SubscriptionAssignment`
+  models plus Alembic migration `20260910_0042` seeding Free, Pro, Pro+, and
+  the specified entitlement mappings. Added server-UTC lazy resolution with
+  Free fallback, single-assignment replacement, fixed/indefinite grants,
+  revocation, effective admin status, user/admin endpoints, and staff mutation
+  audit events. Updated active rules and changelog state.
+- Files: `api/app/models/subscription.py`, `api/app/models/__init__.py`,
+  `api/app/services/subscriptions.py`, `api/app/services/staff.py`,
+  `api/app/schemas/subscriptions.py`, `api/app/routers/subscriptions.py`,
+  `api/app/main.py`, `api/alembic/versions/20260910_0042_subscriptions.py`,
+  `api/tests/test_subscriptions.py`, `RULES.md`, `CHANGELOG.md`.
+- Verification Status: Focused subscription tests passed (`3 passed`). Staging
+  grant/revoke/expired-read request evidence and final commit are pending.
+- Boundary Confirmation: No scheduler, worker, cron, or background expiry job
+  was added. Auth, session, and refresh-token code was not modified.

@@ -149,6 +149,14 @@ the entry, so history isn't lost.
 - **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`
 - **Since:** 2026-09-08 (UTC)
 
+### Rule: Subscription Entitlements Use One Server-Resolved Assignment
+- **What:** The API seeds Friink Free, Pro, and Pro+ plans and resolves a user's effective plan from at most one current manual assignment. A missing, expired, or revoked assignment falls back to Free; expiry is checked against server UTC at read time.
+- **Edge cases:** Superadmins may grant an active plan for 1–3650 days or indefinitely, or revoke it, with a required reason. A new grant closes the prior effective assignment and preserves history. Admin assignment reads compute `active`, `expired`, or `revoked` from the same effective-state check rather than trusting the stored status column. No checkout, payment, billing, scheduler, or background expiry process exists.
+- **Status:** Active for the admin-only API foundation; frontend administration and billing remain out of scope.
+- **Platform:** API
+- **File(s):** `api/app/models/subscription.py`, `api/app/services/subscriptions.py`, `api/app/routers/subscriptions.py`, `api/alembic/versions/20260910_0042_subscriptions.py`
+- **Since:** 2026-09-10 (UTC)
+
 ### Rule: Password Recovery Uses Email Reset Links
 - **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
 - **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.

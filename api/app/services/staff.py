@@ -21,6 +21,13 @@ def permissions_for(session: Session, user: User) -> set[str]:
 def require_staff(session: Session, user: User, permission: str) -> None:
     if permission not in permissions_for(session, user): raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
 
+def require_superadmin(session: Session, user: User, token: str | None) -> PrivilegedStaffSession:
+    privileged = require_privileged(session, user, token, "roles.manage")
+    is_superadmin = session.execute(select(StaffRole.id).join(user_roles, user_roles.c.role_id == StaffRole.id).where(user_roles.c.user_id == user.id, StaffRole.key == "superadmin")).scalar_one_or_none()
+    if is_superadmin is None:
+        raise HTTPException(status_code=403, detail="Only superadmins may manage subscriptions.")
+    return privileged
+
 def require_privileged(session: Session, user: User, token: str | None, permission: str) -> PrivilegedStaffSession:
     now = datetime.now(UTC)
     row = session.execute(select(PrivilegedStaffSession).where(PrivilegedStaffSession.token_hash == PrivilegedStaffSession.hash_token(token or ""), PrivilegedStaffSession.user_id == user.id, PrivilegedStaffSession.revoked_at.is_(None))).scalar_one_or_none()

@@ -7,6 +7,17 @@
 - [api] Set username validation to 2–32 characters and made display names
   optional, trimmed, and limited to 124 characters.
 
+## 2026-09-10T08:00:00Z
+
+- [api] Added the admin-only subscriptions foundation: seeded Free/Pro/Pro+
+  plans and entitlements, one-assignment server-time capability resolution,
+  superadmin grant/revoke/read boundaries, lazy expiry, replacement history,
+  and immutable security audit events for subscription mutations.
+- [tests] Added deterministic lifecycle coverage for Free fallback, fixed and
+  indefinite access, expiry, replacement, revocation, entitlement denial, and
+  rejected client expiry/duration input. Staging request/response verification
+  remains pending deployment of this revision.
+
 ## 2026-09-10T05:15:00Z
 
 - [documentation] Documented OTP timeout recovery for standalone login and Add
@@ -1202,9 +1213,9 @@
 This changelog uses dated entries instead of release versions. Keep the "Current State" section updated in place, then append new dated entries below it with app tags. New entries must use a UTC ISO 8601 timestamp with seconds and a `Z` suffix (`YYYY-MM-DDTHH:mm:ssZ`); retain date-only values when the historical time is unknown.
 
 ## Current State
-_Last updated: 2026-09-01_
+_Last updated: 2026-09-10_
 
-- [api] The wiped `api/` folder now contains a structured FastAPI backend with SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, signup/login/JWT/refresh/logout/current-user routes, unified post/quote/reply creation on one posts model, private-profile visibility enforcement, dual-handshake follow requests/connections with cooldowns, in-app notifications, OTP/email stubs, focused validation/lockout tests, and Vercel entrypoint support.
+- [api] The FastAPI backend includes SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, auth/session and account lifecycle routes, staff controls, the admin-only manual subscriptions foundation with Free/Pro/Pro+ capability resolution and lazy expiry, unified post/quote/reply creation, private-profile visibility enforcement, follow requests/connections, notifications, OTP/email flows, focused tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while post images use submit-time R2 uploads and the `post_media` association table.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, rejected rows retain the 24-hour resend cooldown, and canceled rows retain sender-cancel history for the 3-hour/24-hour resend lockout cycle. Pending requests are auto-accepted when a private account flips public.
 - [api] In-app notifications are implemented with a `notifications` table, unread/feed/read endpoints, and synchronous notification creation for follow, request, accept, and private-to-public auto-accept events.
