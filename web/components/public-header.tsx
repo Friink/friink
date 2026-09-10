@@ -28,7 +28,7 @@ export function Header({ page = 'landing' }: HeaderProps) {
         <Link href="/" aria-label="Friink home">
           <picture>
             <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoFullWhite.svg" />
-            <Image src="/brand/logoFullBlack.svg" alt="Friink" width={176} height={56} className={styles.logoFull} priority />
+            <Image src="/brand/logoFullBlack.svg" alt="Friink" width={304} height={175} className={styles.logoFull} priority />
           </picture>
         </Link>
         <div className={styles.navActions}>

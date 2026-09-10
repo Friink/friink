@@ -139,7 +139,7 @@ export default function HomePage() {
         <div className={styles.footerInner}>
           <picture>
             <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoWhite.svg" />
-            <Image src="/brand/logoBlack.svg" alt="Friink" width={64} height={64} className={styles.footerLogo} />
+            <Image src="/brand/logoBlack.svg" alt="Friink" width={96} height={97} className={styles.footerLogo} />
           </picture>
           <p>&copy; 2026 Friink. Built for humans.</p>
         </div>
