@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-11T04:00:00Z
+
+- [docs/design] Added the progressive-entry UX contract, including neutral
+  identifier presentation, server-authoritative branching, OTP Back/restart
+  behavior, abandonment semantics, and the deferred public CTA rollout.
+
 ## 2026-09-11T03:30:00Z
 
 - [web/progressive-auth] Fixed the `/start` title to render as `Friink | Get

@@ -8941,6 +8941,20 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification Status: TypeScript and production Webpack verification pending
   after this fix; no existing `/login` route or auth service logic was changed.
 
+## 2026-09-11 — Document progressive-login UX contract in design system
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the design document to cover the progressive-login
+  UX and the OTP abandonment/restart behavior.
+- Changes Made: Added the neutral `/start` entry contract, opaque server flow
+  orchestration, legacy `/login` preservation, safe OTP Back behavior, and
+  same/cross-browser abandonment semantics to the Login & Signup design
+  contract. Documented the deferred `Get started` public CTA rollout.
+- Files: `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `RULES.md` remains unchanged
+  because progressive login is not yet a live authentication rule.
+
 ## 2026-09-11 — Remove stale progressive-login decision wording
 
 - Agent: Codex
