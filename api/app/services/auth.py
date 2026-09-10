@@ -39,6 +39,7 @@ def is_reserved_superadmin_email(email: str) -> bool:
 def build_user_from_signup(
     data: SignupRequest,
     *,
+    account_region: str | None = None,
     is_staff: bool = False,
     setup_step: int = 1,
     setup_completed: bool = False,
@@ -53,6 +54,7 @@ def build_user_from_signup(
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
+        account_region=account_region,
         is_verified=True,
         is_staff=is_staff,
         setup_step=setup_step,
@@ -86,7 +88,7 @@ async def is_username_available(session: Session, username: str, exclude_user_id
     return session.execute(select(ReservedUsername.id).where(ReservedUsername.username_key == username.casefold(), ReservedUsername.active.is_(True))).scalar_one_or_none() is None
 
 
-async def create_user(session: Session, data: SignupRequest, email_service: EmailService | None = None) -> User:
+async def create_user(session: Session, data: SignupRequest, email_service: EmailService | None = None, account_region: str | None = None) -> User:
     if is_reserved_superadmin_email(str(data.email)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
     if await get_user_by_email(session, data.email):
@@ -94,7 +96,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
     if not await is_username_available(session, data.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is taken.")
 
-    user = build_user_from_signup(data)
+    user = build_user_from_signup(data, account_region=account_region)
     session.add(user)
     await commit(session)
     await refresh(session, user)
@@ -111,7 +113,7 @@ def _reservation_token_hash(token: str) -> bytes:
     return hashlib.sha256(token.encode("ascii")).digest()
 
 
-async def start_signup_reservation(session: Session, data: SignupRequest, email_service: EmailService) -> str:
+async def start_signup_reservation(session: Session, data: SignupRequest, email_service: EmailService, account_region: str | None = None) -> str:
     normalized_email = str(data.email).strip().casefold()
     if is_reserved_superadmin_email(normalized_email):
         return secrets.token_urlsafe(32)
@@ -134,6 +136,7 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
+        account_region=account_region,
         expires_at=now + SIGNUP_RESERVATION_TTL,
     )
     session.add(reservation)
@@ -144,7 +147,7 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
     return token
 
 
-async def start_signup_email_reservation(session: Session, email: str, email_service: EmailService) -> str:
+async def start_signup_email_reservation(session: Session, email: str, email_service: EmailService, account_region: str | None = None) -> str:
     normalized_email = email.strip().casefold()
     if is_reserved_superadmin_email(normalized_email):
         return secrets.token_urlsafe(32)
@@ -154,6 +157,7 @@ async def start_signup_email_reservation(session: Session, email: str, email_ser
     reservation = SignupReservation(
         token_hash=_reservation_token_hash(token),
         email=normalized_email,
+        account_region=account_region,
         expires_at=now + SIGNUP_RESERVATION_TTL,
     )
     session.add(reservation)
@@ -175,7 +179,7 @@ async def verify_signup_email_reservation(session: Session, token: str, otp: str
     await commit(session)
 
 
-async def complete_signup_email_reservation(session: Session, token: str, data: SignupRequest) -> User:
+async def complete_signup_email_reservation(session: Session, token: str, data: SignupRequest, account_region: str | None = None) -> User:
     reservation = session.execute(
         select(SignupReservation).where(SignupReservation.token_hash == _reservation_token_hash(token))
     ).scalar_one_or_none()
@@ -196,6 +200,7 @@ async def complete_signup_email_reservation(session: Session, token: str, data: 
         password_hash=hash_password(data.password),
         date_of_birth=data.date_of_birth,
         location=data.location,
+        account_region=reservation.account_region or account_region,
         is_verified=True,
     )
     session.add(user)
@@ -233,6 +238,7 @@ async def complete_signup_reservation(session: Session, token: str, otp: str) ->
         password_hash=reservation.password_hash,
         date_of_birth=reservation.date_of_birth,
         location=reservation.location,
+        account_region=reservation.account_region,
         is_verified=True,
     )
     session.add(user)

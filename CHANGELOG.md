@@ -16,6 +16,14 @@
   `docs/auth-and-session.md`, and removed the product requirement from
   `packages/design/design.md`.
 
+## 2026-09-11T05:30:00Z
+
+- [auth/settings] Added the read-only Account-tab `Region` field, storing the
+  coarse country-region signal available at account creation without storing
+  the raw IP.
+- [docs] Added `docs/updated-account-info.md` covering the Joined and Region
+  fields, their fallbacks, and their separation from profile location.
+
 ## 2026-09-11T04:00:00Z
 
 - [docs/design] Added the progressive-entry UX contract, including neutral

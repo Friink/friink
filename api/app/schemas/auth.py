@@ -261,6 +261,7 @@ class UserResponse(BaseModel):
     likes_visible: bool
     is_verified: bool
     is_staff: bool
+    account_region: str | None
     created_at: datetime
     updated_at: datetime
 

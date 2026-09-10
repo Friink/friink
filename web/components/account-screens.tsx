@@ -840,6 +840,15 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             </SettingsRow>
 
             <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-location-dot" aria-hidden="true" /></span>}
+              title="Region"
+              subtitle="The province or state associated with account creation."
+              className="settings-row settings-row-expanded"
+            >
+              <output className="settings-readonly-value" aria-label="Region">{user.accountRegion ?? 'Unavailable'}</output>
+            </SettingsRow>
+
+            <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-envelope" aria-hidden="true" /></span>}
               title="Email"
               subtitle="Update the email address for this account."

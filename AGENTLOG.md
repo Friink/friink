@@ -1,5 +1,26 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T05:30:00Z — Add coarse account-creation region
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement the read-only Account-tab Region
+  field alongside Joined.
+- Changes Made: Added `docs/updated-account-info.md`; added nullable
+  `account_region` fields to users and signup reservations; captured Vercel’s
+  trusted country-region signal during signup; returned it through the existing
+  auth response; and rendered read-only Joined and Region rows in Settings >
+  Account. The existing profile `location` field remains separate and raw IPs
+  are not stored for this feature.
+- Files: `docs/updated-account-info.md`, `api/app/models/user.py`,
+  `api/app/models/signup_reservation.py`, `api/app/schemas/auth.py`,
+  `api/app/services/auth.py`, `api/app/routers/auth.py`,
+  `api/alembic/versions/20260911_0045_account_region.py`, `web/lib/auth.ts`,
+  `web/components/account-screens.tsx`, `RULES.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q api/app` and `npx tsc --noEmit`
+  passed; `git diff --check` passed.
+
 ## 2026-09-11T05:00:00Z — Implement Account Joined date
 
 - Agent: Codex

@@ -10,6 +10,7 @@ export type AuthUser = {
   about: string;
   dateOfBirth: string;
   createdAt: string;
+  accountRegion: string | null;
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
@@ -77,6 +78,7 @@ type ApiUser = {
   is_verified: boolean;
   is_staff: boolean;
   created_at: string;
+  account_region: string | null;
   updated_at: string;
   profile_picture_url: string | null;
   profile_picture_updated_at: string | null;
@@ -182,6 +184,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     about: '',
     dateOfBirth: '1990-01-01',
     createdAt: '2026-01-01T00:00:00.000Z',
+    accountRegion: null,
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
@@ -1807,6 +1810,7 @@ function mapApiUser(user: ApiUser): AuthUser {
     about: user.about ?? '',
     dateOfBirth: user.date_of_birth,
     createdAt: user.created_at,
+    accountRegion: user.account_region,
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,

@@ -89,6 +89,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
+
+def request_account_region(request: Request) -> str | None:
+    """Return Vercel's coarse first-level region code when available."""
+    country = (request.headers.get("x-vercel-ip-country") or "").strip().upper()
+    region = (request.headers.get("x-vercel-ip-country-region") or "").strip().upper()
+    if not country or not region or len(country) != 2 or len(region) > 16:
+        return None
+    return f"{country}-{region}"
+
 REFRESH_COOKIE_NAME = "friink_refresh_token"
 ACCOUNT_SLOT_HEADER = "X-Friink-Account-Slot"
 ACCOUNT_FLOW_HEADER = "X-Friink-Account-Flow"
@@ -133,7 +142,7 @@ async def signup(
     require_allowed_origin(request, settings)
     if settings.otp_enabled and settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
-    user = await create_user(session, payload, EmailService(settings))
+    user = await create_user(session, payload, EmailService(settings), request_account_region(request))
     return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
@@ -194,7 +203,7 @@ async def signup_email_start(
             message="If the signup details can be accepted, verification instructions will be sent.",
         )
     try:
-        token = await start_signup_email_reservation(session, normalized_email, EmailService(settings))
+        token = await start_signup_email_reservation(session, normalized_email, EmailService(settings), request_account_region(request))
     except EmailDeliveryError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
     return SignupStartResponse(
@@ -230,7 +239,7 @@ async def signup_complete(
     if not (settings.otp_enabled and settings.signup_otp_enabled):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup completion is not available.")
     data = SignupRequest.model_validate(payload.model_dump(exclude={"reservation_token"}))
-    user = await complete_signup_email_reservation(session, payload.reservation_token, data)
+    user = await complete_signup_email_reservation(session, payload.reservation_token, data, request_account_region(request))
     return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
