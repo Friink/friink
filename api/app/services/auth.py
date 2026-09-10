@@ -22,7 +22,7 @@ from app.services.otp import issue_signup_otp, verify_signup_otp
 from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
 from app.models.security_event import SecurityEvent, SecurityEventType
-from app.services.security_events import enqueue_email_hook, record_security_event
+from app.services.security_events import record_security_event_safely
 
 LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, timedelta(hours=24)))
 LOCKOUT_ATTEMPTS = 5
@@ -400,13 +400,7 @@ async def register_failed_login(
         if user.failed_login_attempts >= threshold:
             user.locked_until = datetime.now(UTC) + duration
             break
-    record_security_event(
-        session,
-        event_type=SecurityEventType.failed_login,
-        event_key=f"failed-login:{user.id}:{uuid.uuid4()}",
-        user_id=user.id,
-        payload={"kind": "failed_login"},
-    )
+    notification_needed = False
     if user.lifecycle_status == "active" and user.failed_login_attempts >= 3:
         cutoff = datetime.now(UTC) - timedelta(hours=24)
         recent = session.execute(
@@ -418,19 +412,27 @@ async def register_failed_login(
             )
         ).scalar_one_or_none()
         if recent is None:
-            event = record_security_event(
-                session,
-                event_type=SecurityEventType.failed_login,
-                event_key=f"failed-login-notification:{user.id}:{uuid.uuid4()}",
-                user_id=user.id,
-                payload={"kind": "failed_login_notification"},
-            )
-            enqueue_email_hook(session, event.id)
-            if background_tasks is not None and settings is not None:
-                from app.services.failed_login_notifications import deliver_failed_login_alert
-
-                background_tasks.add_task(deliver_failed_login_alert, event.id, settings)
+            notification_needed = True
     await commit(session)
+    record_security_event_safely(
+        session,
+        event_type=SecurityEventType.failed_login,
+        event_key=f"failed-login:{user.id}:{uuid.uuid4()}",
+        user_id=user.id,
+        payload={"kind": "failed_login"},
+    )
+    if notification_needed:
+        event = record_security_event_safely(
+            session,
+            event_type=SecurityEventType.failed_login,
+            event_key=f"failed-login-notification:{user.id}:{uuid.uuid4()}",
+            user_id=user.id,
+            payload={"kind": "failed_login_notification"},
+            notify_email=True,
+        )
+        if event is not None and background_tasks is not None and settings is not None:
+            from app.services.failed_login_notifications import deliver_failed_login_alert
+            background_tasks.add_task(deliver_failed_login_alert, event.id, settings)
 
 
 def user_id_from_subject(subject: str) -> uuid.UUID:

@@ -1,4 +1,5 @@
 import uuid
+import logging
 from datetime import UTC, datetime, timedelta
 from collections.abc import Callable
 
@@ -10,6 +11,8 @@ from sqlalchemy.orm import Session
 from app.models.notification import Notification, NotificationType
 from app.models.notification_outbox import NotificationChannel, NotificationOutbox, OutboxStatus
 from app.models.security_event import SecurityEvent, SecurityEventType
+
+logger = logging.getLogger(__name__)
 
 
 def record_security_event(
@@ -66,9 +69,58 @@ def record_security_event(
     return event
 
 
-def record_bootstrap_refusal(session: Session, *, reason: str, environment: str) -> SecurityEvent:
+def record_security_event_safely(
+    source_session: Session,
+    *,
+    event_type: SecurityEventType,
+    event_key: str,
+    user_id: uuid.UUID | None = None,
+    session_id: uuid.UUID | None = None,
+    device_id: uuid.UUID | None = None,
+    payload: dict | None = None,
+    notify_in_app: bool = False,
+    notify_email: bool = False,
+    idempotent: bool = False,
+) -> SecurityEvent | None:
+    """Persist an audit event without allowing it to affect the caller.
+
+    Audit writes use a separate transaction. Callers must invoke this after
+    committing their primary state change; failures are logged and absorbed.
+    """
+    audit_session = None
+    try:
+        audit_session = Session(bind=source_session.get_bind(), expire_on_commit=False)
+        event = record_security_event(
+            audit_session,
+            event_type=event_type,
+            event_key=event_key,
+            user_id=user_id,
+            session_id=session_id,
+            device_id=device_id,
+            payload=payload,
+            notify_in_app=notify_in_app,
+            idempotent=idempotent,
+        )
+        if notify_email:
+            audit_session.add(NotificationOutbox(event_id=event.id, channel=NotificationChannel.email))
+        audit_session.commit()
+        return event
+    except Exception:
+        if audit_session is not None:
+            audit_session.rollback()
+        logger.exception(
+            "Security-event audit write failed; primary operation is preserved",
+            extra={"event_key": event_key, "event_type": getattr(event_type, "value", str(event_type))},
+        )
+        return None
+    finally:
+        if audit_session is not None:
+            audit_session.close()
+
+
+def record_bootstrap_refusal(session: Session, *, reason: str, environment: str) -> SecurityEvent | None:
     """Record only a categorized, secret-free bootstrap refusal."""
-    return record_security_event(
+    return record_security_event_safely(
         session,
         event_type=SecurityEventType.bootstrap_refused,
         event_key=f"bootstrap-refused:{uuid.uuid4()}",

@@ -8342,3 +8342,90 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   migration chain uses PostgreSQL-specific types.
 - Boundary Confirmation: No auth, session, refresh-token, frontend,
   deployment, or staging database changes were made.
+
+## 2026-09-10T11:00:00Z — Consolidate auth/session incident and current state
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document today's refresh-reuse audit-write incident, the
+  subscriptions foundation status, and remaining auth/session risks. Documentation only.
+- Changes Made: Recorded the refresh-reuse audit-write failure chain: (a) concurrent
+  deterministic `event_key` writes raised `UniqueViolation` on
+  `uq_security_events_event_key`, turning the intended `401` into a `500`; (b)
+  the `ON CONFLICT DO NOTHING` fix exposed a follow-on `AssertionError` because
+  the fallback relied on a client-generated UUID that did not match the persisted
+  row ID; and (c) the second lookup attempt still retained id-based retrieval on
+  one branch, causing the same class of failure. The final fix in commit
+  `61628fe7bd911a1524146225623b7b36c267eccd` removes id-based lookup entirely
+  and always retrieves the event by `event_key`, regardless of insert outcome.
+  Also recorded the migration drift fix in commit
+  `6dc52c27a9959f9139e1e8f90414295645147cdf`, which removed the redundant
+  `uq_plan_entitlement` constraint duplicating the composite primary key.
+  Staging verification recorded two consecutive refresh-reuse requests returning
+  clean `401` responses with no runtime `AssertionError` or `UniqueViolation`.
+  One audit row could not be correlated to one request because the staging log
+  fields do not expose the event key; this is an observability limitation, not
+  evidence of a remaining bug.
+- Still Open: Cross-tab/cross-account session-state scoping remains unfixed and
+  was not reproduced with a real two-account collision because a second test
+  account was unavailable. `friink-auth-session`,
+  `friink-auth-refresh-coordination`, `friink-auth-refresh-lock`,
+  `friink-active-account-slot`, and
+  `BroadcastChannel('friink-auth-session')` are currently shared globally per
+  browser origin rather than scoped per account slot. The future shape, if
+  approved, is `{account_slot}` namespace prefixing. This remains a shipped
+  account-switching risk. The pre-existing Phase 7 fourth/fifth failed-login
+  duplicate-suppression check also remains open and is not a security blocker
+  because of the 30-minute cooldown.
+- Subscriptions Status: The backend foundation is live on staging from commit
+  `9eaf91dbc707af8adc332769bb4bf4851c3495c3` plus the migration fix above:
+  `Plan`, `PlanEntitlement`, and `SubscriptionAssignment`, the
+  `effective_plan()`/`has_entitlement()` resolver, superadmin grant/revoke
+  endpoints, lazy read-time expiry, single-assignment replacement, and audit
+  events. The frontend admin UI and user-facing settings display have not
+  started and remain a separate task.
+- Testing Gap: Security-event idempotency coverage was SQLite-only; no automated
+  Postgres-dialect check exists yet. A disposable self-hosted Postgres harness
+  remains worthwhile because dialect-specific insert/ID behavior caused two of
+  today's three regressions.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation diff reviewed. No code, auth/session,
+  deployment, or configuration changes were made by this entry. Nothing is
+  marked production-ready or fully closed beyond the explicitly recorded
+  staging verification.
+
+## 2026-09-10T12:00:00Z — Isolate security-event writes from primary auth decisions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make security-event audit failures unable to fail auth,
+  refresh, login, logout, failed-login, staff, or subscription operations.
+- Changes Made: Added `record_security_event_safely()`, which opens an
+  independent transaction on the caller's database bind, catches and logs all
+  audit-write failures, and returns without re-raising. Routed all application
+  audit call sites through it. Successful login audit is recorded after the
+  auth/session commit because its foreign keys reference newly created session
+  rows. Failed-login notification auditing now commits the login-attempt state
+  first, then creates the audit event and email outbox in the isolated audit
+  transaction. Subscription audit events are likewise recorded after the
+  assignment mutation commits.
+- Call Sites: Fresh login, refresh-reuse detection, normal refresh, both
+  logout paths, failed-login tracking and notification, bootstrap refusal,
+  internal mass-revocation/containment operations, staff mutations, and
+  subscription grant/replacement/revocation auditing.
+- Tests: Added endpoint regressions that monkeypatch the low-level audit
+  writer to raise arbitrary exceptions and verify login `200`, refresh `200`,
+  logout `204`, failed login `401`, and refresh reuse `401`. The focused
+  security-event, idempotency, subscriptions, and failed-login suite passes
+  (`13 passed`) against a file-backed SQLite database so the separate-session
+  boundary is exercised. The wider legacy suite still contains unrelated
+  TestClient cookie-persistence and overlong-username fixture failures.
+- Files: `api/app/services/security_events.py`, `api/app/routers/auth.py`,
+  `api/app/services/auth.py`, `api/app/routers/auth_operations.py`,
+  `api/app/services/staff.py`, `api/app/services/subscriptions.py`,
+  `api/tests/test_security_event_isolation.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local implementation and focused tests pass. No
+  staging deployment has been made yet in this entry. No scheduler, worker,
+  or new background-job infrastructure was added, and token validation,
+  refresh rotation, reuse detection, and other primary auth decisions were
+  not weakened.

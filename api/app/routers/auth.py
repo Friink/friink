@@ -57,7 +57,7 @@ from app.services.email import EmailDeliveryError, EmailService
 from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
-from app.services.security_events import process_notification_outbox, record_security_event
+from app.services.security_events import process_notification_outbox, record_security_event_safely
 from app.services.notifications import create_notification
 from app.models.notification import NotificationType
 from app.models.security_event import SecurityEventType
@@ -301,17 +301,6 @@ async def _issue_login_session(
     )
     auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
-    record_security_event(
-        session,
-        event_type=SecurityEventType.fresh_login,
-        event_key=f"fresh-login:{auth_session.id}",
-        user_id=user.id,
-            session_id=auth_session.id,
-            device_id=recognized_device.id,
-            payload={"kind": "login", "message": "A new login to your Friink account was successful.", "action": "review_sessions", "action_href": "/settings"},
-            notify_in_app=True,
-            idempotent=True,
-    )
     try:
         slot = create_or_replace_slot(session, user, device_identifier, auth_session, settings)
     except ValueError as exc:
@@ -329,6 +318,17 @@ async def _issue_login_session(
         session.rollback()
         raise HTTPException(status_code=409, detail="This account could not be added to the current browser. Please try again.")
     await commit(session)
+    record_security_event_safely(
+        session,
+        event_type=SecurityEventType.fresh_login,
+        event_key=f"fresh-login:{auth_session.id}",
+        user_id=user.id,
+        session_id=auth_session.id,
+        device_id=recognized_device.id,
+        payload={"kind": "login", "message": "A new login to your Friink account was successful.", "action": "review_sessions", "action_href": "/settings"},
+        notify_in_app=True,
+        idempotent=True,
+    )
     # Delivery is best-effort after authentication is committed. A failed drain leaves
     # the durable job available for a later worker/request and never logs the user out.
     if hasattr(session, "get"):
@@ -563,7 +563,7 @@ async def refresh(
                 set_refresh_cookie(response, issued_refresh.raw_token, settings)
             return RefreshResponse(access_token=access_token, account_slot=account_slot)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
-        record_security_event(
+        record_security_event_safely(
             session,
             event_type=SecurityEventType.refresh_reuse_detected,
             event_key=f"refresh-reuse:{token_record.id}",
@@ -628,7 +628,7 @@ async def refresh(
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
     access_token = create_access_token(user.id, user.security_epoch)
-    record_security_event(
+    record_security_event_safely(
         session,
         event_type=SecurityEventType.refresh,
         event_key=f"refresh:{issued_refresh.record.id}",
@@ -685,7 +685,7 @@ async def logout(
             auth_session = session.get(AuthSession, slot.auth_session_id)
             revoke_slot(session, slot)
             if auth_session:
-                record_security_event(
+                record_security_event_safely(
                     session,
                     event_type=SecurityEventType.logout,
                     event_key=f"logout:{auth_session.id}:{uuid.uuid4()}",
@@ -721,7 +721,7 @@ async def logout(
                     revoke_refresh_family(session, token_record.family_id, "logout")
             else:
                 revoke_refresh_family(session, token_record.family_id, "logout")
-            record_security_event(
+            record_security_event_safely(
                 session,
                 event_type=SecurityEventType.logout,
                 event_key=f"logout:{token_record.id}:{uuid.uuid4()}",

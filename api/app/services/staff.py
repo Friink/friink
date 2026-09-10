@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.staff import StaffPermission, StaffRole, UserPermissionGrant, PrivilegedStaffSession, user_roles
 from app.models.user import User
-from app.models.security_event import SecurityEvent, SecurityEventType
+from app.models.security_event import SecurityEventType
+from app.services.security_events import record_security_event_safely
 PERMISSIONS = {"staff.access", "users.view", "users.lock", "users.unlock", "sessions.revoke", "roles.manage", "audit.view"}
 IDLE = timedelta(minutes=16)
 ABSOLUTE = timedelta(hours=8)
@@ -37,7 +38,13 @@ def require_privileged(session: Session, user: User, token: str | None, permissi
     row.last_active_at = now; require_staff(session, user, permission); return row
 
 def audit(session: Session, actor: User, kind: str, payload: dict, privileged: PrivilegedStaffSession | None = None) -> None:
-    session.add(SecurityEvent(event_type=SecurityEventType.staff_mutation, event_key=f"staff:{kind}:{uuid.uuid4()}", user_id=actor.id, payload={"kind": kind, "actor": actor.public_id, **payload, "privileged_session": str(privileged.id) if privileged else None}))
+    record_security_event_safely(
+        session,
+        event_type=SecurityEventType.staff_mutation,
+        event_key=f"staff:{kind}:{uuid.uuid4()}",
+        user_id=actor.id,
+        payload={"kind": kind, "actor": actor.public_id, **payload, "privileged_session": str(privileged.id) if privileged else None},
+    )
 
 def start_privileged(session: Session, user: User, password: str) -> tuple[str, PrivilegedStaffSession]:
     from app.services.security import verify_password

@@ -5,7 +5,8 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.security_event import SecurityEvent, SecurityEventType
+from app.models.security_event import SecurityEventType
+from app.services.security_events import record_security_event_safely
 from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignment
 from app.models.user import User
 
@@ -53,7 +54,13 @@ def effective_status(assignment: SubscriptionAssignment, now: datetime | None = 
     return "active" if assignment_is_effective(assignment, now) else "expired"
 
 def _audit(session: Session, actor: User, kind: str, assignment: SubscriptionAssignment, reason: str, replaced_id: uuid.UUID | None = None) -> None:
-    session.add(SecurityEvent(event_type=SecurityEventType.staff_mutation, event_key=f"subscription:{kind}:{assignment.id}:{uuid.uuid4()}", user_id=actor.id, payload={"kind": kind, "target_user": assignment.user_id.hex, "assignment_id": str(assignment.id), "plan": assignment.plan.code, "reason": reason, "replaced_assignment_id": str(replaced_id) if replaced_id else None}))
+    record_security_event_safely(
+        session,
+        event_type=SecurityEventType.staff_mutation,
+        event_key=f"subscription:{kind}:{assignment.id}:{uuid.uuid4()}",
+        user_id=actor.id,
+        payload={"kind": kind, "target_user": assignment.user_id.hex, "assignment_id": str(assignment.id), "plan": assignment.plan.code, "reason": reason, "replaced_assignment_id": str(replaced_id) if replaced_id else None},
+    )
 
 def grant(session: Session, actor: User, user: User, plan_code: str, duration_days: int | None, reason: str) -> SubscriptionAssignment:
     if duration_days is not None and not 1 <= duration_days <= 3650:
@@ -66,14 +73,22 @@ def grant(session: Session, actor: User, user: User, plan_code: str, duration_da
     if prior:
         prior.status = "revoked"; prior.revoked_at = now; prior.revoked_by_user_id = actor.id
     assignment = SubscriptionAssignment(user_id=user.id, plan_id=plan.id, starts_at=now, expires_at=now + timedelta(days=duration_days) if duration_days is not None else None, status="active", granted_by_user_id=actor.id, reason=reason)
-    session.add(assignment); session.flush(); _audit(session, actor, "subscription_granted", assignment, reason, prior.id if prior else None)
-    if prior: _audit(session, actor, "subscription_replaced", prior, reason, assignment.id)
-    session.commit(); session.refresh(assignment); return assignment
+    session.add(assignment)
+    session.flush()
+    replaced_id = prior.id if prior else None
+    session.commit()
+    session.refresh(assignment)
+    _audit(session, actor, "subscription_granted", assignment, reason, replaced_id)
+    if prior:
+        _audit(session, actor, "subscription_replaced", prior, reason, assignment.id)
+    return assignment
 
 def revoke(session: Session, actor: User, user: User, reason: str) -> SubscriptionAssignment:
     assignment = active_assignment(session, user)
     if assignment is None:
         raise HTTPException(404, "No active subscription assignment.")
     assignment.status = "revoked"; assignment.revoked_at = utc_now(); assignment.revoked_by_user_id = actor.id
-    _audit(session, actor, "subscription_revoked", assignment, reason); session.commit(); session.refresh(assignment); return assignment
-
+    session.commit()
+    session.refresh(assignment)
+    _audit(session, actor, "subscription_revoked", assignment, reason)
+    return assignment

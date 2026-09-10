@@ -12,7 +12,7 @@ from app.db import get_session
 from app.models.security_event import SecurityEvent, SecurityEventType
 from app.models.user import User
 from app.schemas.auth_operations import AuthOperationRequest
-from app.services.security_events import record_security_event
+from app.services.security_events import record_security_event_safely
 from app.services.session_service import revoke_all_user_sessions
 from app.services.staff import revoke_staff_sessions
 
@@ -65,7 +65,7 @@ def revoke_user_sessions(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     user.security_epoch += 1
     counts = revoke_all_user_sessions(session, user.id, "security_incident")
-    record_security_event(
+    record_security_event_safely(
         session,
         event_type=SecurityEventType.staff_mutation,
         event_key=event_key,
@@ -99,7 +99,7 @@ def contain_compromised_admin(
     user.security_epoch += 1
     counts = revoke_all_user_sessions(session, user.id, "security_incident")
     counts["privileged_sessions"] = revoke_staff_sessions(session, user.id, "security_incident")
-    record_security_event(
+    record_security_event_safely(
         session,
         event_type=SecurityEventType.staff_mutation,
         event_key=event_key,
@@ -131,7 +131,7 @@ def revoke_all_sessions(
         for key in ("sessions", "refresh_tokens", "devices"):
             totals[key] += counts[key]
     result = {"status": "completed", "scope": "all_accounts", "counts": totals, "completed_at": datetime.now(UTC).isoformat()}
-    record_security_event(
+    record_security_event_safely(
         session,
         event_type=SecurityEventType.staff_mutation,
         event_key=event_key,
