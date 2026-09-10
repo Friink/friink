@@ -1,5 +1,76 @@
 # Changelog
 
+## 2026-09-10T20:30:00Z
+
+- [control-panel] Reorganized `/cp` into Overview, Staff, Users, Security &
+  Sessions, Audit Log, and Public site sections. Users remains the only
+  functional section for the current rollout; the others are explicit
+  placeholders.
+- [docs] Updated the Control Panel architecture and design contracts to make
+  the single drawer entry, internal tabs, and current implementation scope
+  explicit.
+
+## 2026-09-10T20:00:00Z
+
+- [auth/signup] Existing-email signup now sends a single-use, 15-minute sign-in
+  link to the registered address while keeping the browser response neutral.
+  Unknown-email login remains generic and never auto-creates an account.
+- [security] Reused the hashed, purpose-scoped password-reset token table for
+  sign-in links; reset tokens cannot be consumed as sign-in links or vice versa.
+- [verification] Added coverage for sign-in-link delivery, consumption, and
+  replay rejection.
+
+## 2026-09-10T19:30:00Z
+
+- [auth/copy] Simplified duplicate-username feedback to `Username is taken.`
+  across signup, profile settings, and API conflict responses.
+
+## 2026-09-10T19:15:00Z
+
+- [auth/privacy] Removed account-existence copy from email-first signup. An
+  existing email now remains on the signup email step with the same neutral
+  signup message and no login-with-this-email affordance.
+- [verification] Added a regression assertion that existing and fresh signup
+  starts share the same user-facing message.
+
+## 2026-09-10T18:45:00Z
+
+- [public-site] Updated the Development progress card from 25% to 50%,
+  including the visible value and progress fill.
+- [verification] Web TypeScript check passed.
+
+## 2026-09-10T19:00:00Z
+
+- [web/auth] Corrected the dark-mode login secondary action. The shared
+  accent-soft token was being resolved at the light root scope, leaving the
+  Back action with a pale surface despite the dark auth screen.
+- [verification] Confirmed there is no later `.button-secondary` override;
+  the scoped dark auth token now resolves against the dark paper surface.
+
+## 2026-09-10T18:30:00Z
+
+- [web/design] Formalized the three-surface boundary: public marketing,
+  app-owned authentication/workflow, and authenticated app. Login, signup,
+  password recovery/reset, OTP, and account-recovery screens now explicitly
+  use the shared app button system while remaining outside the authenticated
+  shell.
+- [web] Corrected dark-mode auth tokens so secondary buttons use a dark,
+  readable app treatment instead of a pale landing-style surface.
+- [verification] Web TypeScript check passed.
+
+## 2026-09-10T18:00:00Z
+
+- [web/design] Simplified the canonical in-app action layout: primary and
+  secondary buttons now remain intrinsic-width and align to the end of their
+  action row across modals, auth, add-account, reset-password, and wizard
+  flows. Removed the unused `.button-full-width` contract; narrow layouts may
+  stack actions responsively without creating a new button type.
+- [web] Removed the remaining auth and Add-account CSS rules that forced
+  submit actions to fill the row; the screenshots now follow the same
+  intrinsic-width modal action treatment.
+- [verification] Confirmed the legacy full-width button class and auth
+  full-row width rules have no remaining usage; the stylesheet diff is clean.
+
 ## 2026-09-10T17:35:00Z
 
 - [web/account-switcher] Replaced the transient `Updating accounts…` header

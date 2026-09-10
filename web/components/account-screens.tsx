@@ -285,8 +285,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     try {
       const availability = await checkUsernameAvailability(username);
       if (!availability.available && username.toLowerCase() !== user.username.toLowerCase()) {
-        setUsernameStatus('Username is already taken.');
-        onToast?.('Username is already taken.');
+        setUsernameStatus('Username is taken.');
+        onToast?.('Username is taken.');
         return;
       }
       const updatedUser = await updateCurrentUser(session.accessToken, { username });

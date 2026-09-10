@@ -117,6 +117,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class LoginLinkConsumeRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+
+
 class LoginChallengeResponse(BaseModel):
     challenge_required: bool = True
     challenge_token: str | None = Field(default=None, min_length=32, max_length=128)

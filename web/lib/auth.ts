@@ -467,6 +467,15 @@ export async function login(identifier: string, password: string, options: AuthF
   return mapTokenResponse(response as ApiTokenResponse);
 }
 
+export async function consumeLoginLink(token: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/link/consume', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+    skipAuthRefresh: true,
+  });
+  return mapTokenResponse(response);
+}
+
 export async function verifyLoginChallenge(challengeToken: string, otp: string, options: AuthFlowOptions = {}): Promise<AuthSession> {
   const response = await requestApi<ApiTokenResponse>('/auth/login/verify', {
     method: 'POST',

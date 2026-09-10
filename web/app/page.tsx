@@ -44,7 +44,7 @@ export default function HomePage() {
                   <h2>Under Development</h2>
                   <p>Laying the foundation for a better space.</p>
                 </div>
-                <span className={styles.progressValue}>25%</span>
+                <span className={styles.progressValue}>50%</span>
               </div>
               <div className={styles.progressTrack} role="progressbar" aria-label="Development progress" aria-valuenow={25} aria-valuemin={0} aria-valuemax={100}>
                 <div className={styles.progressFill} />

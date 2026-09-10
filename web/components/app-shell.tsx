@@ -958,10 +958,11 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
               <Tabs
                 tabs={[
                   { id: 'overview', label: 'Overview' },
-                  { id: 'users', label: 'Users & Accounts' },
-                  { id: 'roles', label: 'Roles & Permissions' },
+                  { id: 'staff', label: 'Staff' },
+                  { id: 'users', label: 'Users' },
                   { id: 'security', label: 'Security & Sessions' },
                   { id: 'audit', label: 'Audit Log' },
+                  { id: 'public-site', label: 'Public site' },
                 ]}
                 activeId={controlPanelTab}
                 onChange={(id) => setControlPanelTab(id as ControlPanelTab)}

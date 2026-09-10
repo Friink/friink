@@ -362,6 +362,9 @@ textarea {
     color: #f5f5f5;
     background: #161616;
     --color-ink: #f5f5f5;
+    --color-paper: #161616;
+    --color-line: #555555;
+    --color-accent-soft: color-mix(in srgb, var(--color-accent) 30%, var(--color-paper));
   }
 
   .login-screen .pill-field input {
@@ -614,10 +617,6 @@ textarea {
   opacity: 0.45;
 }
 
-.button-full-width {
-  width: 100%;
-}
-
 .icon-button {
   display: inline-grid;
   place-items: center;
@@ -646,7 +645,6 @@ textarea {
 }
 
 .login-submit {
-  width: 100%;
   min-width: 8rem;
   min-height: 3rem;
   justify-self: center;
@@ -726,12 +724,7 @@ textarea {
 }
 
 .account-auth-actions {
-  justify-content: stretch;
-}
-
-.account-auth-actions .login-submit,
-.account-auth-actions .button-secondary {
-  flex: 1 1 0;
+  justify-content: flex-end;
 }
 
 .account-auth-actions .login-submit {

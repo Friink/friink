@@ -19,6 +19,7 @@ from app.models.recognized_device import RecognizedDevice
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
+    LoginLinkConsumeRequest,
     LoginChallengeResponse,
     LifecycleChallengeResponse,
     LifecycleActionRequest,
@@ -54,6 +55,7 @@ from app.services.email_change import complete_email_change, start_email_change
 from app.services.auth_debug import log_account_list_event, log_account_slot_event, log_account_switch_event, log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailDeliveryError, EmailService
+from app.services.password_reset import consume_login_link, start_login_link, start_password_reset, complete_password_reset
 from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
@@ -81,7 +83,6 @@ from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
 from app.services.account_slots import create_or_replace_slot, find_slot_for_user, get_slot, list_slots, revoke_slot
-from app.services.password_reset import complete_password_reset, start_password_reset
 from app.services.login_throttling import enforce_ip_throttle
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -177,12 +178,20 @@ async def signup_email_start(
             message="If the signup details can be accepted, verification instructions will be sent.",
         )
     normalized_email = str(payload.email).strip().casefold()
-    if await get_user_by_email(session, normalized_email):
+    existing_user = await get_user_by_email(session, normalized_email)
+    if existing_user:
+        raw_login_token = await start_login_link(session, existing_user)
+        login_url = f"{str(settings.frontend_url).rstrip('/')}/login?login_token={raw_login_token}"
+        try:
+            await EmailService(settings).send_login_link(existing_user.email, login_url)
+        except EmailDeliveryError:
+            # Keep the browser response neutral when delivery is unavailable or
+            # fails; the account-existence signal must not cross this boundary.
+            pass
         return SignupStartResponse(
             verification_required=False,
             reservation_token="",
-            existing_account=True,
-            message="You already have a Friink account with this email. Log in instead, or use a different email address to sign up.",
+            message="If the signup details can be accepted, verification instructions will be sent.",
         )
     try:
         token = await start_signup_email_reservation(session, normalized_email, EmailService(settings))
@@ -425,6 +434,20 @@ async def login(
             message="We sent a verification code to your email to approve this login.",
         )
     return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
+
+
+@router.post("/login/link/consume", response_model=TokenResponse)
+async def consume_login_link_route(
+    payload: LoginLinkConsumeRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> TokenResponse:
+    require_allowed_origin(request, settings)
+    enforce_ip_throttle(session, request, settings)
+    user = await consume_login_link(session, payload.token)
+    return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
 @router.post("/login/verify", response_model=TokenResponse)

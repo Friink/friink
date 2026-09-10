@@ -6,6 +6,17 @@ noteworthy follow-up items.
 
 Last updated: 2026-09-10T13:30:00Z
 
+## Current Control Panel shape
+
+The Control Panel is one `/cp` destination exposed from the site drawer. Its
+internal sections are `Overview`, `Staff`, `Users`, `Security & Sessions`,
+`Audit Log`, and `Public site`. The current rollout makes only `Users`
+functional; it is the starting point for ordinary-user search and management.
+The other sections remain visible as explicit placeholders so their future
+permission boundaries and requirements can be refined without changing the
+main navigation. Server-side staff authorization remains authoritative for
+the panel and its actions.
+
 ## Database connection management
 
 The API uses synchronous SQLAlchemy sessions over PostgreSQL/psycopg3. Connection

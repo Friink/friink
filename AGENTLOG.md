@@ -8598,3 +8598,131 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   replacing the header text.
 - Files: `web/components/side-drawer.tsx`, `web/app/globals.css`.
 - Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.
+
+## 2026-09-10T20:30:00Z — Reshape Control Panel sections
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Split the Control Panel into future-facing sections while keeping only Users functional for the current rollout.
+- Changes Made: Replaced the flat Roles & Permissions tab with Staff, added Public site, kept Overview/Security/Audit as explicit placeholders, and retained Users as the only active data-backed section. Updated the existing Control Panel documentation and design/rules contracts.
+- Files: `web/components/control-panel-screen.tsx`, `web/components/app-shell.tsx`, `docs/auth-and-session.md`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.
+
+## 2026-09-10T18:00:00Z — Make intrinsic-width actions canonical
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the full-width button rule and make intrinsic-width,
+  end-aligned actions the single canonical in-app layout.
+- Changes Made: Updated the binding design contract so modal, auth,
+  add-account, reset-password, and wizard actions use intrinsic-width buttons
+  aligned to the end of their action row. Removed the unused
+  `.button-full-width` stylesheet contract and the remaining auth/Add-account
+  CSS rules that forced submit actions to fill the row. Responsive stacking
+  remains a layout decision for narrow screens, not a third button type.
+  Public landing button styles remain unchanged.
+- Files: `packages/design/design.md`, `web/app/globals.css`, `CHANGELOG.md`.
+- Verification Status: Confirmed no web component references to the removed
+  class or auth full-row width rules remain; `git diff --check` passed.
+
+## 2026-09-10T18:30:00Z — Establish app-owned auth surface boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Define whether login, signup, reset, and related
+  transactional screens belong to the public site or app design system.
+- Changes Made: Documented three product-surface layers: public marketing,
+  app-owned authentication/workflow, and authenticated web app. Auth/workflow
+  screens remain outside the authenticated shell but now explicitly share the
+  app button system. Corrected dark-mode auth tokens so secondary actions use
+  readable app treatment instead of the pale landing-style appearance.
+- Files: `packages/design/design.md`, `web/app/globals.css`, `README.md`,
+  `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` passed; `git diff --check`
+  passed.
+
+## 2026-09-10T18:45:00Z — Update public development progress indicator
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change the public-site Development progress indicator from
+  25% to 50%.
+- Changes Made: Updated both the displayed percentage and the CSS progress
+  fill in the public landing page. No authenticated app design rules changed.
+- Files: `web/app/page.tsx`, `web/app/landing.module.css`, `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` passed.
+
+## 2026-09-10T19:15:00Z — Neutralize existing-email signup copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove signup messaging that reveals whether an email is
+  registered with Friink.
+- Changes Made: Existing-email signup responses now use the same neutral copy
+  as fresh signup attempts. The frontend no longer renders the explicit
+  account-existence message or `Log in with this email` link; existing emails
+  remain on the signup email step, with no reservation or OTP created.
+  Updated the design and active security rules to make this boundary explicit.
+- Files: `web/components/login-screen.tsx`, `api/app/routers/auth.py`,
+  `api/tests/test_phase2_signup.py`, `packages/design/design.md`,
+  `RULES.md`, `CHANGELOG.md`.
+- Verification Status: Focused signup privacy assertion passed and web
+  TypeScript passed. Pytest then hit the known Windows SQLite temporary-file
+  cleanup failure (`WinError 32`) during session teardown.
+
+## 2026-09-10T19:30:00Z — Simplify duplicate-username feedback
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change `Username is already taken.` to `Username is taken.`
+  in the user-facing auth and profile flows.
+- Changes Made: Updated frontend validation/toast copy and API conflict
+  responses so signup, profile settings, and API consumers use the shorter
+  message.
+- Files: `web/components/account-screens.tsx`, `web/components/login-screen.tsx`,
+  `api/app/services/auth.py`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript and diff checks passed.
+
+## 2026-09-10T20:00:00Z — Add privacy-preserving existing-email sign-in link
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Send an existing-email signup user a secure login link while
+  keeping the browser response generic; do not auto-create accounts from
+  unknown-email login attempts; clarify the signup rule documentation.
+- Changes Made: Added a purpose-scoped, hashed, single-use 15-minute sign-in
+  token using the existing password-reset token table, security email delivery,
+  a normal session-issuing consume endpoint, and login-page token handling.
+  Existing-email signup still creates no reservation or signup OTP and keeps
+  neutral UI copy. Password-reset completion rejects sign-in-link tokens, and
+  unknown login identifiers remain generic with no account creation. Updated
+  RULES.md and the design contract to remove the old login-or-different-email
+  inconsistency.
+- Files: `api/app/services/password_reset.py`, `api/app/services/email.py`,
+  `api/app/routers/auth.py`, `api/app/schemas/auth.py`,
+  `api/tests/test_phase2_signup.py`, `web/lib/auth.ts`,
+  `web/app/login/login-client.tsx`, `RULES.md`,
+  `packages/design/design.md`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript, focused signup/link tests, and diff
+  checks are required after this change.
+
+## 2026-09-10T20:15:00Z — Verify existing-email sign-in link implementation
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the existing-email signup sign-in-link flow and remove the Rules.md inconsistency.
+- Changes Made: Corrected login-link endpoint placement, preserved the existing lifecycle-login branch, removed a duplicate email exception handler, and removed the `existing_account` account-enumeration signal from the signup response. The frontend now keeps the signup view neutral when no signup reservation is returned.
+- Files: `api/app/routers/auth.py`, `api/app/services/email.py`, `web/components/login-screen.tsx`, `api/tests/test_phase2_signup.py`, `RULES.md`.
+- Verification Status: API compileall passed; web `npx tsc --noEmit` passed; `git diff --check` passed; focused signup/link assertions passed. Pytest still exits during the existing Windows SQLite temp-file cleanup with `WinError 32` after the passing test.
+
+## 2026-09-10T19:00:00Z — Correct dark auth secondary button token resolution
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit the remaining pale secondary button on the dark login
+  screen for a class or cascade override.
+- Changes Made: Confirmed the shared `.button-secondary` rule was not being
+  overridden. The root `--color-accent-soft` custom property had been resolved
+  against the light paper token before entering the dark login surface. Added
+  a scoped dark auth value so the secondary action uses the intended dark app
+  treatment.
+- Files: `web/app/globals.css`, `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.

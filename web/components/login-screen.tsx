@@ -39,7 +39,6 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
   const [loginCooldownUntil, setLoginCooldownUntil] = useState<number | null>(null);
   const [loginCooldownSeconds, setLoginCooldownSeconds] = useState(0);
   const [errorMessage, setErrorMessage] = useState(initialMessage ?? '');
-  const [signupEmailAlreadyRegistered, setSignupEmailAlreadyRegistered] = useState(false);
 
   const isLoginEmailStep = step === 'login-email';
   const isLoginPasswordStep = step === 'login-password';
@@ -182,12 +181,11 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
         return;
       }
 
-      setIsSubmitting(true);
+        setIsSubmitting(true);
       try {
         const signupStart = await startSignupEmail(email);
-        if (signupStart.existing_account) {
-          setSignupEmailAlreadyRegistered(true);
-          setErrorMessage(signupStart.message);
+        if (!signupStart.verification_required && !signupStart.reservation_token) {
+          setErrorMessage('If the signup details can be accepted, verification instructions will be sent.');
           setSignupReservationToken('');
           return;
         }
@@ -238,7 +236,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
         const availability = await checkUsernameAvailability(normalizedUsername);
         if (!availability.available) {
           setIsSubmitting(false);
-          setErrorMessage('Username is already taken.');
+          setErrorMessage('Username is taken.');
           return;
         }
 
@@ -312,7 +310,6 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
   function handleStartSignup() {
     setErrorMessage('');
-    setSignupEmailAlreadyRegistered(false);
     setStep('signup-email');
   }
 
@@ -474,28 +471,12 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
-                setSignupEmailAlreadyRegistered(false);
                 setErrorMessage('');
               }}
               placeholder="Email"
               autoComplete="email"
               required
             />
-
-            {signupEmailAlreadyRegistered && (
-              <button
-                className="forgot-password"
-                type="button"
-                onClick={() => {
-                  setLoginIdentifier(email);
-                  setSignupEmailAlreadyRegistered(false);
-                  setErrorMessage('');
-                  setStep('login-email');
-                }}
-              >
-                Log in with this email
-              </button>
-            )}
 
             <div className="signup-actions signup-actions-single">
               <button

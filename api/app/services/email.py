@@ -108,6 +108,31 @@ class EmailService:
                 exc.response.text[:500],
             )
             raise EmailDeliveryError("Email delivery failed.") from exc
+
+    async def send_login_link(self, email: str, login_url: str) -> None:
+        if not self.settings.resend_api_key:
+            raise EmailDeliveryError("Email delivery is not configured.")
+        from_address = self._from_address("security")
+        if self.settings.resend_from_name.strip():
+            from_address = f"{self.settings.resend_from_name.strip()} <{from_address}>"
+        payload = {
+            "from": from_address,
+            "to": [email],
+            "subject": "Sign in to Friink",
+            "html": (
+                "<p>We received a request to sign in to Friink with this email address.</p>"
+                f"<p><a href=\"{escape(login_url)}\">Sign in to Friink</a></p>"
+                "<p>This link expires in 15 minutes and can only be used once. "
+                "If you did not request this, you can ignore this email.</p>"
+            ),
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {self.settings.resend_api_key}"}, json=payload)
+                response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            logger.warning("resend_email_rejected status=%s response=%s", exc.response.status_code, exc.response.text[:500])
+            raise EmailDeliveryError("Email delivery failed.") from exc
         except (httpx.HTTPError, ValueError) as exc:
             logger.warning("resend_email_request_failed error=%s", type(exc).__name__)
             raise EmailDeliveryError("Email delivery failed.") from exc

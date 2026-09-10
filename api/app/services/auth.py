@@ -92,7 +92,7 @@ async def create_user(session: Session, data: SignupRequest, email_service: Emai
     if await get_user_by_email(session, data.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
     if not await is_username_available(session, data.username):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is taken.")
 
     user = build_user_from_signup(data)
     session.add(user)
@@ -120,7 +120,7 @@ async def start_signup_reservation(session: Session, data: SignupRequest, email_
     if await get_user_by_email(session, normalized_email):
         return secrets.token_urlsafe(32)
     if not await is_username_available(session, data.username):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is taken.")
 
     session.execute(delete(SignupReservation).where(SignupReservation.email == normalized_email))
     token = secrets.token_urlsafe(32)
@@ -263,7 +263,7 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
 
     if data.username is not None and data.username != user.username:
         if not await is_username_available(session, data.username, exclude_user_id=user.id):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is already taken.")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username is taken.")
         old_username = user.username
         user.username = data.username
         user.username_key = data.username.casefold()

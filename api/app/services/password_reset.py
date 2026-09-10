@@ -17,6 +17,7 @@ from app.services.session_ops import commit
 from app.services.staff import revoke_staff_sessions
 
 RESET_TTL = timedelta(minutes=30)
+LOGIN_LINK_TTL = timedelta(minutes=15)
 
 
 def _hash(token: str) -> bytes:
@@ -28,17 +29,36 @@ async def start_password_reset(session: Session, email: str, *, purpose: str = "
     if not user or user.lifecycle_status == "deleted":
         return None, None
     now = datetime.now(UTC)
-    session.execute(update(PasswordResetToken).where(PasswordResetToken.user_id == user.id, PasswordResetToken.consumed_at.is_(None)).values(consumed_at=now))
+    session.execute(update(PasswordResetToken).where(PasswordResetToken.user_id == user.id, PasswordResetToken.purpose.in_(("ordinary", "suspicious_login")), PasswordResetToken.consumed_at.is_(None)).values(consumed_at=now))
     raw = secrets.token_urlsafe(48)
     session.add(PasswordResetToken(user_id=user.id, token_hash=_hash(raw), purpose=purpose, expires_at=now + RESET_TTL))
     await commit(session)
     return user, raw
 
 
+async def start_login_link(session: Session, user: User) -> str:
+    now = datetime.now(UTC)
+    session.execute(update(PasswordResetToken).where(PasswordResetToken.user_id == user.id, PasswordResetToken.purpose == "login_link", PasswordResetToken.consumed_at.is_(None)).values(consumed_at=now))
+    raw = secrets.token_urlsafe(48)
+    session.add(PasswordResetToken(user_id=user.id, token_hash=_hash(raw), purpose="login_link", expires_at=now + LOGIN_LINK_TTL))
+    await commit(session)
+    return raw
+
+
+async def consume_login_link(session: Session, token: str) -> User:
+    record = session.execute(select(PasswordResetToken).where(PasswordResetToken.token_hash == _hash(token), PasswordResetToken.purpose == "login_link", PasswordResetToken.consumed_at.is_(None))).scalar_one_or_none()
+    now = datetime.now(UTC)
+    user = session.get(User, record.user_id) if record else None
+    if not record or record.expires_at <= now or not user or user.lifecycle_status != "active":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This sign-in link is invalid or expired.")
+    record.consumed_at = now
+    return user
+
+
 async def complete_password_reset(session: Session, token: str, new_password: str) -> None:
     record = session.execute(select(PasswordResetToken).where(PasswordResetToken.token_hash == _hash(token), PasswordResetToken.consumed_at.is_(None))).scalar_one_or_none()
     now = datetime.now(UTC)
-    if not record or record.expires_at <= now:
+    if not record or record.purpose not in {"ordinary", "suspicious_login"} or record.expires_at <= now:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This password reset link is invalid or expired.")
     user = session.get(User, record.user_id)
     if not user or user.lifecycle_status == "deleted":

@@ -143,7 +143,7 @@ the entry, so history isn't lost.
 
 ### Rule: Staff Access Uses Roles And Additive Direct Grants
 - **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
-- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
+- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. The panel uses one drawer entry with `Overview`, `Staff`, `Users`, `Security & Sessions`, `Audit Log`, and `Public site` tabs. `Users` is the only functional section in the current rollout; the other sections are explicit placeholders. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
 - **Status:** Active; implementation and staging browser verification are complete.
 - **Platform:** Web/API
 - **File(s):** `docs/auth-and-session.md`, `packages/design/design.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`, `web/components/modal.tsx`
@@ -230,16 +230,19 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-04T22:06:53Z
 
 ### Rule: Existing Email Signup Recovery
-- **What:** When email-first signup receives an email already registered to Friink, the API creates no reservation and sends no OTP. The web flow stays on the email step and offers login with that email or signup with a different address.
-- **Security boundary:** This is an explicit UX exception to generic signup enumeration responses. The response exposes no user record, identifier, lifecycle state, or security detail; it only prevents a misleading OTP flow.
+- **What:** When email-first signup receives an email already registered to Friink, the API creates no signup reservation or signup OTP. It sends a separate single-use, 15-minute sign-in link to the registered address while the web flow stays on the email step with neutral copy.
+- **Security boundary:** The browser response must not say that the email is registered or offer account-specific recovery text. The link is delivered only to the address on file, uses the normal session path, and delivery failure does not change the neutral response. Unknown-email login remains generic and never auto-creates an account.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/auth-and-session.md`
 - **Since:** 2026-09-07T01:00:00Z
 
 ### Rule: Signup Email Ownership OTP
+- **Current clarification:** Existing registered emails use the separate
+  sign-in-link recovery rule above; they do not follow the former
+  login-or-different-email UI path.
 - **What:** With `SIGNUP_OTP_ENABLED=true`, signup uses `/auth/signup/email/start` immediately after email, followed by `/auth/signup/email/verify`, then `/auth/signup/complete`; no user row is created before successful verification. Codes are six uppercase alphanumeric characters, expire after four minutes, are single-use, and a newer code invalidates the previous code.
-- **Edge cases:** Verification is limited to five attempts. The pre-verification record contains only the normalized email and hashed OTP; password/profile data is submitted after verification. New signup emails receive the OTP flow; existing emails follow the separate login-or-different-email recovery rule. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
+- **Edge cases:** Verification is limited to five attempts. The pre-verification record contains only the normalized email and hashed OTP; password/profile data is submitted after verification. New signup emails receive the OTP flow; existing emails use the separate registered-address sign-in-link rule and do not receive a signup OTP. Resend delivery is server-side only through `RESEND_API_KEY`; ordinary login remains password-only unless the separate risk-based login OTP flow is implemented.
 - **Status:** Active; implementation and database-backed request tests pass. Live staging browser/provider verification remains a deployment acceptance step.
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/email.py`, `api/app/services/otp.py`, `api/app/config.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`, `api/tests/test_email.py`
