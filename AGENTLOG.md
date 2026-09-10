@@ -8923,6 +8923,24 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   domain remains pending. The API and web feature flags are intended only for
   staging preview verification.
 
+## 2026-09-11 — Fix progressive-login title and OTP abandonment back path
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the duplicated `/start` title, correct the new-email OTP
+  Back/restart regression, and document same-browser and cross-browser
+  abandonment behavior.
+- Changes Made: Removed the duplicated page-level `Friink |` title prefix.
+  Progressive signup OTP Back now returns to the progressive identifier entry
+  so a retry creates a fresh orchestration token and reselects the email
+  verification branch. Documented the existing 30-minute signup reservation,
+  OTP expiry/attempt limits, replacement behavior, and the fact that an
+  abandoned flow creates neither an account nor a session.
+- Files: `web/app/start/page.tsx`, `web/components/login-screen.tsx`,
+  `docs/progressive-login.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and production Webpack verification pending
+  after this fix; no existing `/login` route or auth service logic was changed.
+
 ## 2026-09-11 — Remove stale progressive-login decision wording
 
 - Agent: Codex

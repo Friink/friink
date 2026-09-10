@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-11T03:30:00Z
+
+- [web/progressive-auth] Fixed the `/start` title to render as `Friink | Get
+  started` without the duplicated `Friink |` prefix.
+- [web/progressive-auth] Fixed Back from the signup OTP step to restart through
+  the progressive identifier branch instead of falling into the password step.
+- [docs] Documented abandoned-flow behavior across the same and another
+  browser, including existing reservation replacement and OTP expiry rules.
+
 ## 2026-09-11T02:00:00Z
 
 - [auth/progressive] Added the feature-flagged `/start` progressive-login

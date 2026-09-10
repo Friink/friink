@@ -716,7 +716,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, pr
             />
 
             <div className="signup-actions signup-actions-single">
-              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('signup-email'); }}>
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep(progressive ? 'progressive-email' : 'signup-email'); }}>
                 Back
               </button>
               <Button className="login-submit" type="submit">

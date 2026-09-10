@@ -334,7 +334,20 @@ and remembered-account contexts.
 
 Back navigation, refresh, expired flow tokens, delayed OTP delivery, and
 partial signup must restart safely without leaking state or creating orphaned
-accounts.
+accounts. A progressive flow token expires after its short server-side TTL and
+is not reusable. If a new email reaches signup OTP and abandons the flow, the
+existing signup reservation and OTP rules continue to apply: the reservation
+expires under the existing 30-minute policy, the OTP remains subject to its
+existing expiry/attempt limits, and a later start from the same or another
+browser replaces the pending reservation and sends a fresh OTP through the
+existing signup-email service. No account or authenticated session exists
+until the existing signup completion step succeeds.
+
+In the web UI, Back from the progressive signup OTP step returns to the
+progressive identifier entry. Submitting again creates a fresh progressive
+flow and reselects the server-authoritative continuation, so it cannot fall
+through to the password step merely because the earlier OTP attempt was
+abandoned.
 
 ## Verification matrix
 
