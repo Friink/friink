@@ -4,6 +4,20 @@
 
 Friink is a calm, people-first social space centered on meaningful conversations and connection.
 
+## Brand Assets
+
+- The platform uses the six canonical SVG assets in `brand/`: black, white, and
+  brand-color mark variants plus the matching full lockups.
+- The web-served copies live in `web/public/brand/` and must remain byte-for-byte
+  synchronized with `brand/`.
+- These assets use tight viewboxes without the legacy surrounding padding. Keep
+  logo alignment in the consuming component's layout and size the mark and full
+  lockup according to their intrinsic proportions (`96×97` and `304×175`).
+- Use mark assets for compact identity surfaces and full lockups for headers,
+  authentication, lifecycle, and other branded wordmark surfaces. Select the
+  black/white variants for light/dark public surfaces and the brand-color variant
+  for authenticated application surfaces.
+
 ## Layout
 
 > Updated to match shipped behavior as of 2026-08-27 — see CHANGELOG.md entries 2026-08-26, 2026-08-27

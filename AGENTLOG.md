@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T00:00:00Z — Synchronize platform logo assets and documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace padded platform logos with the new six-file brand set,
+  push the update to staging, and document the change.
+- Changes Made: Synchronized the new tight-viewbox mark and full-lockup SVGs from
+  `brand/` into `web/public/brand/`; updated public `next/image` intrinsic
+  dimensions; documented canonical asset locations, synchronization, sizing,
+  and variant usage in `packages/design/design.md`; recorded the release in
+  `CHANGELOG.md`.
+- Files: `brand/*.svg`, `web/public/brand/*.svg`, `web/app/page.tsx`,
+  `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm run build -- --webpack` passed, all six served
+  assets matched their root counterparts by checksum, and `git diff --check`
+  passed. Commit `1c13686` was pushed to `origin/staging`.
+
 ## 2026-09-10T07:15:00Z — Clarify signup identity criteria and normalization
 
 - Agent: Codex

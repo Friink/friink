@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-11T00:00:00Z
+
+- [branding] Replaced the padded platform logo SVGs with the new tight-viewbox
+  black, white, and brand-color mark and full-lockup assets across the web app.
+- [docs] Documented the canonical logo asset locations, synchronization rule,
+  intrinsic dimensions, and surface-specific variant usage in the design contract.
+- [verification] Production Webpack build and logo asset checksum comparison
+  passed; the update was pushed to `origin/staging` as commit `1c13686`.
+
 ## 2026-09-10T20:30:00Z
 
 - [control-panel] Reorganized `/cp` into Overview, Staff, Users, Security &
