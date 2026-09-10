@@ -92,6 +92,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
   const [about, setAbout] = useState(user.about);
+  const [useIntentDraft, setUseIntentDraft] = useState(user.useIntent);
   const [dateOfBirth, setDateOfBirth] = useState(user.dateOfBirth);
   const [isPrivate, setIsPrivate] = useState(user.isPrivate);
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
@@ -122,6 +123,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
+  const [isUpdatingUseIntent, setIsUpdatingUseIntent] = useState(false);
   const [isUpdatingDateOfBirth, setIsUpdatingDateOfBirth] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -162,6 +164,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setEmailChangeOtp('');
     setDisplayName(user.name);
     setAbout(user.about);
+    setUseIntentDraft(user.useIntent);
     setDateOfBirth(user.dateOfBirth);
     setIsPrivate(user.isPrivate);
     setPrivacyDraft(user.isPrivate);
@@ -183,7 +186,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setShowConfirmPassword(false);
     setShowPasswordCriteria(false);
     setPasswordStatus('');
-  }, [user.username, user.email, user.name, user.about, user.dateOfBirth, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
+  }, [user.username, user.email, user.name, user.about, user.useIntent, user.dateOfBirth, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
 
   useEffect(() => {
     if (activeTab !== 'account') return;
@@ -253,6 +256,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const canUpdateAppearance = appearanceDraft !== appearance;
   const isAccentColorValid = /^#[0-9A-Fa-f]{6}$/.test(accentColorDraft);
   const canUpdateAccentColor = isAccentColorValid && accentColorDraft.toLowerCase() !== accentColor.toLowerCase();
+  const canUpdateUseIntent = useIntentDraft !== user.useIntent && useIntentDraft !== null && !isUpdatingUseIntent;
   const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
   const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
@@ -566,6 +570,29 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     }
   }
 
+  async function handleUseIntentUpdate() {
+    if (!canUpdateUseIntent) return;
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update your Friink preference.');
+      return;
+    }
+    setIsUpdatingUseIntent(true);
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, { useIntent: useIntentDraft });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setUseIntentDraft(updatedSession.user.useIntent);
+      onToast?.('Friink preference updated.', 'success');
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update your Friink preference.');
+      setUseIntentDraft(user.useIntent);
+    } finally {
+      setIsUpdatingUseIntent(false);
+    }
+  }
+
   async function handleDateOfBirthUpdate() {
     if (!canUpdateDateOfBirth) return;
     const session = loadAuthSession();
@@ -821,6 +848,23 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                 />
                 {!isAccentColorValid ? <small>Use a six-digit hex code, for example #33aa55.</small> : null}
               </div>
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-regular fa-compass" aria-hidden="true" /></span>}
+              title="How I use Friink"
+              subtitle="Choose the option that feels closest to you."
+              className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateUseIntent, busy: isUpdatingUseIntent, onClick: handleUseIntentUpdate, label: 'Update Friink preference' }}
+            >
+              <label className="settings-field">
+                <span className="settings-field-label">Your preference</span>
+                <select className="settings-select" value={useIntentDraft ?? ''} onChange={(event) => setUseIntentDraft(event.target.value === 'professional' || event.target.value === 'personal' ? event.target.value : null)} aria-label="How I use Friink">
+                  <option value="">Choose an option</option>
+                  <option value="professional">For professional networking</option>
+                  <option value="personal">For personal connection</option>
+                </select>
+              </label>
             </SettingsRow>
 
           </div>

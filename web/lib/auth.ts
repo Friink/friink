@@ -11,12 +11,14 @@ export type AuthUser = {
   dateOfBirth: string;
   createdAt: string;
   accountRegion: string | null;
+  location: string | null;
+  useIntent: 'professional' | 'personal' | null;
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
   likesVisible: boolean;
   isStaff: boolean;
-  setupStep: 1 | 2;
+  setupStep: 1 | 2 | 3;
   setupCompleted: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
@@ -73,12 +75,14 @@ type ApiUser = {
   date_of_birth: string;
   is_private: boolean;
   likes_visible: boolean;
-  setup_step: 1 | 2;
+  setup_step: 1 | 2 | 3;
   setup_completed: boolean;
   is_verified: boolean;
   is_staff: boolean;
   created_at: string;
   account_region: string | null;
+  location: string | null;
+  use_intent: 'professional' | 'personal' | null;
   updated_at: string;
   profile_picture_url: string | null;
   profile_picture_updated_at: string | null;
@@ -185,6 +189,8 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     dateOfBirth: '1990-01-01',
     createdAt: '2026-01-01T00:00:00.000Z',
     accountRegion: null,
+    location: null,
+    useIntent: null,
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
@@ -742,7 +748,7 @@ function refreshErrorFromState(state: RefreshCoordinationState): AuthApiError {
 
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string; dateOfBirth?: string; isPrivate?: boolean; likesVisible?: boolean },
+  input: { username?: string; email?: string; displayName?: string; about?: string; location?: string; useIntent?: 'professional' | 'personal' | null; dateOfBirth?: string; isPrivate?: boolean; likesVisible?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
@@ -755,6 +761,8 @@ export async function updateCurrentUser(
       email: input.email,
       display_name: input.displayName,
       about: input.about,
+      location: input.location,
+      use_intent: input.useIntent,
       date_of_birth: input.dateOfBirth,
       is_private: input.isPrivate,
       likes_visible: input.likesVisible,
@@ -863,7 +871,7 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
-export async function updateProfileSetup(accessToken: string, input: { step: 1 | 2; completed?: boolean }): Promise<AuthUser> {
+export async function updateProfileSetup(accessToken: string, input: { step: 1 | 2 | 3; completed?: boolean }): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me/setup', {
     method: 'PATCH',
     headers: {
@@ -1811,6 +1819,8 @@ function mapApiUser(user: ApiUser): AuthUser {
     dateOfBirth: user.date_of_birth,
     createdAt: user.created_at,
     accountRegion: user.account_region,
+    location: user.location,
+    useIntent: user.use_intent,
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,

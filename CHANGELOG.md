@@ -24,6 +24,16 @@
 - [docs] Added `docs/updated-account-info.md` covering the Joined and Region
   fields, their fallbacks, and their separation from profile location.
 
+## 2026-09-11T06:00:00Z
+
+- [web/onboarding] Expanded the account setup wizard to three optional steps:
+  Profile picture, About/Location, and Friink usage intent. The picture step
+  continues to use the shared Settings crop tool.
+- [auth] Persisted the optional `use_intent` preference and exposed Location
+  and intent editing through the existing authenticated profile-update API.
+- [web/onboarding] Prevented an incomplete wizard from reopening on every route
+  change by remembering dismissal for the current browser onboarding session.
+
 ## 2026-09-11T04:00:00Z
 
 - [docs/design] Added the progressive-entry UX contract, including neutral

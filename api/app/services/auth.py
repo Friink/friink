@@ -297,6 +297,14 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
         user.about = data.about
         changed = True
 
+    if data.location is not None and data.location != user.location:
+        user.location = data.location.strip() or None
+        changed = True
+
+    if data.use_intent is not None and data.use_intent != user.use_intent:
+        user.use_intent = data.use_intent
+        changed = True
+
     if data.date_of_birth is not None and data.date_of_birth != user.date_of_birth:
         user.date_of_birth = data.date_of_birth
         changed = True

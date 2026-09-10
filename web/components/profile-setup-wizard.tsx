@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from '@/components/modal';
 import { ProfilePictureCropModal } from '@/components/profile-picture-crop-modal';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -15,9 +15,11 @@ type ProfileSetupWizardProps = {
 };
 
 export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetupWizardProps) {
-  const [open, setOpen] = useState(!user.setupCompleted);
-  const [step, setStep] = useState<1 | 2>(user.setupStep);
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(user.setupStep);
   const [about, setAbout] = useState(user.about);
+  const [location, setLocation] = useState(user.location ?? '');
+  const [useIntent, setUseIntent] = useState(user.useIntent);
   const [busy, setBusy] = useState(false);
   const [cropSource, setCropSource] = useState<string | null>(null);
   const [cropFile, setCropFile] = useState<File | null>(null);
@@ -27,13 +29,22 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropPixels | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setStep(user.setupStep);
+    setAbout(user.about);
+    setLocation(user.location ?? '');
+    setUseIntent(user.useIntent);
+    const dismissed = typeof window !== 'undefined' && window.sessionStorage.getItem(`friink-setup-dismissed-${user.id}`) === 'true';
+    setOpen(!user.setupCompleted && !dismissed);
+  }, [user.id, user.setupStep, user.setupCompleted, user.about, user.location, user.useIntent]);
+
   function applyUser(nextUser: AuthUser) {
     const session = loadAuthSession();
     if (session) saveAuthSession({ ...session, user: nextUser });
     onUserChange(nextUser);
   }
 
-  async function saveSetup(nextStep: 1 | 2, completed = false) {
+  async function saveSetup(nextStep: 1 | 2 | 3, completed = false) {
     const session = loadAuthSession();
     if (!session) return false;
     const nextUser = await updateProfileSetup(session.accessToken, { step: nextStep, completed });
@@ -53,6 +64,7 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
       // trap the user inside the setup modal; the server will retain the last
       // successfully saved step for the next session.
       setOpen(false);
+      if (typeof window !== 'undefined') window.sessionStorage.setItem(`friink-setup-dismissed-${user.id}`, 'true');
     }
   }
 
@@ -61,8 +73,10 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
     try {
       if (step === 1) {
         await saveSetup(2);
+      } else if (step === 2) {
+        await saveSetup(3);
       } else {
-        await saveSetup(2, true);
+        await saveSetup(3, true);
         setOpen(false);
       }
     } catch {
@@ -78,15 +92,35 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
     setBusy(true);
     try {
       let nextUser = user;
-      if (about !== user.about) {
-        nextUser = await updateCurrentUser(session.accessToken, { about: about.trim() });
+      if (about !== user.about || location !== (user.location ?? '')) {
+        nextUser = await updateCurrentUser(session.accessToken, { about: about.trim(), location: location.trim() });
         applyUser(nextUser);
       }
-      const completedUser = await updateProfileSetup(session.accessToken, { step: 2, completed: true });
+      const completedUser = await updateProfileSetup(session.accessToken, { step: 3 });
+      applyUser(completedUser);
+      setStep(3);
+    } catch (error) {
+      onToast?.(error instanceof Error ? error.message : 'Could not update your About text.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleIntentFinish() {
+    const session = loadAuthSession();
+    if (!session) return;
+    setBusy(true);
+    try {
+      let nextUser = user;
+      if (useIntent !== user.useIntent) {
+        nextUser = await updateCurrentUser(session.accessToken, { useIntent });
+        applyUser(nextUser);
+      }
+      const completedUser = await updateProfileSetup(session.accessToken, { step: 3, completed: true });
       applyUser(completedUser);
       setOpen(false);
     } catch (error) {
-      onToast?.(error instanceof Error ? error.message : 'Could not update your About text.');
+      onToast?.(error instanceof Error ? error.message : 'Could not save your Friink preference.');
     } finally {
       setBusy(false);
     }
@@ -160,22 +194,22 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
       <Modal
         title="Let's update your settings"
         onClose={handleClose}
-        onBack={step === 2 ? () => setStep(1) : undefined}
-        backLabel="Back to profile picture"
+        onBack={step > 1 ? () => setStep(step === 3 ? 2 : 1) : undefined}
+        backLabel={step === 3 ? 'Back to About you' : 'Back to profile picture'}
         closeLabel="Close setup"
         className="profile-setup-dialog"
         actions={
           <>
-            <button className="button-secondary" type="button" disabled={busy} onClick={handleSkip}>{step === 1 ? 'Skip' : 'Skip and finish'}</button>
-            {step === 2 ? <button className="button-primary" type="button" disabled={busy} onClick={handleAboutNext}>{busy ? 'Saving...' : 'Finish'}</button> : <button className="button-primary" type="button" disabled={busy} onClick={handlePictureNext}>{busy ? 'Saving...' : 'Continue'}</button>}
+            <button className="button-secondary" type="button" disabled={busy} onClick={handleSkip}>{step === 3 ? 'Skip and finish' : 'Skip'}</button>
+            {step === 1 ? <button className="button-primary" type="button" disabled={busy} onClick={handlePictureNext}>{busy ? 'Saving...' : 'Continue'}</button> : step === 2 ? <button className="button-primary" type="button" disabled={busy} onClick={handleAboutNext}>{busy ? 'Saving...' : 'Continue'}</button> : <button className="button-primary" type="button" disabled={busy || !useIntent} onClick={handleIntentFinish}>{busy ? 'Saving...' : 'Finish'}</button>}
           </>
         }
       >
         <div className="profile-setup-intro">
           <span className="profile-setup-eyebrow">Make it yours</span>
-          <p className="profile-setup-progress">Step {step} of 2</p>
-          <div className="profile-setup-progress-track" role="progressbar" aria-label={`Profile setup progress: step ${step} of 2`} aria-valuemin={1} aria-valuemax={2} aria-valuenow={step}>
-            <span style={{ width: `${step === 1 ? 50 : 100}%` }} />
+          <p className="profile-setup-progress">Step {step} of 3</p>
+          <div className="profile-setup-progress-track" role="progressbar" aria-label={`Profile setup progress: step ${step} of 3`} aria-valuemin={1} aria-valuemax={3} aria-valuenow={step}>
+            <span style={{ width: `${step * 33.3333}%` }} />
           </div>
           <p className="profile-setup-intro-copy">A couple of small details help people recognize you around Friink.</p>
         </div>
@@ -192,7 +226,7 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
             <input ref={inputRef} className="profile-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={(event) => handleFileSelected(event.target.files?.[0])} />
             <button className="profile-setup-upload" type="button" disabled={busy} onClick={() => inputRef.current?.click()}><i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true" />{user.profilePictureUrl ? 'Change picture' : 'Upload picture'}</button>
           </div>
-        ) : (
+        ) : step === 2 ? (
           <div className="profile-setup-step">
             <div className="profile-setup-step-heading">
               <span className="profile-setup-step-icon"><i className="fa-regular fa-comment" aria-hidden="true" /></span>
@@ -205,6 +239,25 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
                 <span className="settings-field-count">{about.length}/128</span>
               </div>
             </label>
+            <label className="settings-field">
+              <span className="settings-field-label">Location</span>
+              <input type="text" value={location} maxLength={255} onChange={(event) => setLocation(event.target.value)} placeholder="City, region, or place" autoComplete="address-level2" />
+            </label>
+          </div>
+        ) : (
+          <div className="profile-setup-step">
+            <div className="profile-setup-step-heading">
+              <span className="profile-setup-step-icon"><i className="fa-regular fa-compass" aria-hidden="true" /></span>
+              <div><h3>How do you plan to use Friink?</h3><p>Choose the option that feels closest to you. You can change this later.</p></div>
+            </div>
+            <div className="profile-setup-intent-options" role="radiogroup" aria-label="How you plan to use Friink">
+              <button type="button" className={useIntent === 'professional' ? 'selected' : ''} role="radio" aria-checked={useIntent === 'professional'} onClick={() => setUseIntent('professional')}>
+                <strong>For professional networking</strong><span>Connect with people, ideas, and opportunities related to your work.</span>
+              </button>
+              <button type="button" className={useIntent === 'personal' ? 'selected' : ''} role="radio" aria-checked={useIntent === 'personal'} onClick={() => setUseIntent('personal')}>
+                <strong>For personal connection</strong><span>Follow people and conversations that interest you.</span>
+              </button>
+            </div>
           </div>
         )}
       </Modal>

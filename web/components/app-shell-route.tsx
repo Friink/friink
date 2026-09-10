@@ -95,6 +95,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
     setLogoutError(null);
     try {
       await logout(session.accessToken, session.accountSlot);
+      if (typeof window !== 'undefined') window.sessionStorage.removeItem(`friink-setup-dismissed-${session.user.id}`);
       clearAuthSession();
       router.replace('/');
     } catch {

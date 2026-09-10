@@ -406,9 +406,9 @@ the entry, so history isn't lost.
 - **Preview and confirmation:** Selecting or cropping a file must not replace the visible server-confirmed avatar. The modal tick is the only post-selection upload control, and the modal closes only after the complete upload and API confirmation flow succeeds.
 
 ### Rule: Profile Setup Resumes Until Complete
-- **What:** New accounts open the two-step profile setup flow after authentication. The flow is headed `Let's update your settings` and contains optional Profile picture and About steps.
-- **Progress:** The current setup step and completion state are persisted on the user record. Skipping a step marks that step done and advances; closing the setup preserves the current step when persistence succeeds and dismisses the local modal even if the save is temporarily unavailable. An incomplete setup resumes from its persisted step on a later login.
-- **Completion:** The setup is complete after the About step is saved or skipped. Existing accounts migrated after this flow was introduced are treated as already complete.
+- **What:** New accounts open the three-step profile setup flow after authentication. The flow is headed `Let's update your settings` and contains optional Profile picture, About and Location, and Friink usage-intent steps.
+- **Progress:** The current setup step and completion state are persisted on the user record. Skipping a step marks that step done and advances; closing the setup preserves the current step when persistence succeeds, dismisses the local modal, and suppresses it for the current browser onboarding session. Successful logout clears that temporary dismissal so a later login may resume incomplete setup from its persisted step.
+- **Completion:** The setup is complete after the usage-intent step is saved or skipped. The profile picture step reuses the shared Settings crop/upload flow. Location is user-entered profile data, while the usage intent is a private nullable preference with `professional` and `personal` values. Existing accounts migrated after this flow was introduced are treated as already complete.
 
 ### Rule: Preserve Sessions During Recoverable API Failures
 - **What:** Authenticated route bootstrap may clear the local session and redirect to login only after an explicit `401 Unauthorized` response.

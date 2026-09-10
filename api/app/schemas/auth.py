@@ -183,6 +183,8 @@ class UpdateCurrentUserRequest(BaseModel):
     email: EmailStr | None = None
     display_name: str | None = Field(default=None, max_length=DISPLAY_NAME_MAX_LENGTH)
     about: str | None = Field(default=None, max_length=256)
+    location: str | None = Field(default=None, max_length=255)
+    use_intent: Literal["professional", "personal"] | None = None
     date_of_birth: date | None = None
     is_private: bool | None = None
     likes_visible: bool | None = None
@@ -242,7 +244,7 @@ class PasswordResetConfirmRequest(BaseModel):
 
 
 class UpdateSetupRequest(BaseModel):
-    step: int = Field(ge=1, le=2)
+    step: int = Field(ge=1, le=3)
     completed: bool = False
 
 
@@ -261,7 +263,9 @@ class UserResponse(BaseModel):
     likes_visible: bool
     is_verified: bool
     is_staff: bool
+    location: str | None
     account_region: str | None
+    use_intent: Literal["professional", "personal"] | None
     created_at: datetime
     updated_at: datetime
 

@@ -20,3 +20,15 @@ accounts created before this field was introduced may also display
 
 The existing user-entered profile `location` field remains separate from this
 account-creation region value and is not used to populate it.
+
+## Onboarding profile information
+
+The post-account-creation wizard also collects two optional profile values:
+
+- **Location**: a user-entered profile value, such as a city, region, or place.
+- **How I use Friink**: a private preference with one of two values: `For
+  professional networking` or `For personal connection`.
+
+Both values are saved through the normal authenticated profile-update path and
+can be edited later. They currently have no effect on access, billing,
+recommendations, ranking, or other business rules.

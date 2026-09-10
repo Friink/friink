@@ -2657,6 +2657,40 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   outline: none;
 }
 
+.profile-setup-intent-options {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.profile-setup-intent-options button {
+  display: grid;
+  gap: 0.3rem;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  font: inherit;
+  text-align: left;
+}
+
+.profile-setup-intent-options button:hover,
+.profile-setup-intent-options button:focus-visible,
+.profile-setup-intent-options button.selected {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.profile-setup-intent-options button.selected {
+  background: var(--color-accent-soft);
+}
+
+.profile-setup-intent-options button span {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
 .modal-actions {
   justify-content: flex-end;
   flex: 0 0 auto;
@@ -3070,6 +3104,17 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   color: var(--color-muted);
   font-size: var(--text-xs);
   line-height: 1.35;
+}
+
+.settings-select {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.8rem;
+  color: var(--color-ink);
+  background: var(--color-background);
+  font: inherit;
 }
 
 .settings-sessions-list {

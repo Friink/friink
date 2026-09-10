@@ -1,5 +1,27 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T06:00:00Z — Expand profile setup wizard
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Build the agreed three-step onboarding wizard with optional
+  Location and Friink usage intent.
+- Changes Made: Added nullable `use_intent` persistence and migration; extended
+  the authenticated user update/response mapping for Location and intent;
+  expanded the wizard to Profile picture, About/Location, and usage intent;
+  reused `ProfilePictureCropModal`; added intent editing under Settings >
+  General; and remembered wizard dismissal for the current browser onboarding
+  session so route changes do not reopen it; successful logout clears that
+  temporary marker for a later login.
+- Files: `web/components/profile-setup-wizard.tsx`, `web/components/account-screens.tsx`,
+  `web/components/app-shell-route.tsx`,
+  `web/lib/auth.ts`, `web/app/globals.css`, `api/app/models/user.py`,
+  `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/alembic/versions/20260911_0046_profile_intent.py`,
+  `docs/updated-account-info.md`, `packages/design/design.md`, `RULES.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q api/app`, `npx tsc --noEmit`
+  in `web`, and `git diff --check` passed.
+
 ## 2026-09-11T05:30:00Z — Add coarse account-creation region
 
 - Agent: Codex
