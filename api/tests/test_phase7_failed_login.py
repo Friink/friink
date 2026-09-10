@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import BackgroundTasks, HTTPException
 import pytest
@@ -115,5 +115,25 @@ def test_suspicious_login_reset_requires_a_different_password() -> None:
             assert suspicious_token is not None
             with pytest.raises(HTTPException, match="different from your current password"):
                 asyncio.run(complete_password_reset(session, suspicious_token, "Strong1!pass"))
+    finally:
+        _delete_user(user_id)
+
+
+def test_successful_password_reset_clears_progressive_login_state() -> None:
+    user_id = _seed_user()
+    try:
+        with get_session_factory()() as session:
+            user = session.get(User, user_id)
+            user.failed_login_attempts = 9
+            user.failed_login_last_at = datetime.now(UTC)
+            user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
+            session.commit()
+            _user, raw_token = asyncio.run(start_password_reset(session, user.email))
+            assert raw_token is not None
+            asyncio.run(complete_password_reset(session, raw_token, "Another1!pass"))
+            session.refresh(user)
+            assert user.failed_login_attempts == 0
+            assert user.failed_login_last_at is None
+            assert user.locked_until is None
     finally:
         _delete_user(user_id)

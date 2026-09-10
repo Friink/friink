@@ -23,10 +23,9 @@ from app.services.session_ops import commit, refresh
 from app.services.security import hash_password, verify_password
 from app.models.security_event import SecurityEvent, SecurityEventType
 from app.services.security_events import record_security_event_safely
+from app.services.login_throttling import ACCOUNT_COOLDOWN_SCHEDULE, clear_expired_account_failure_state
 
-LOCKOUT_SCHEDULE = ((3, timedelta(minutes=30)), (4, timedelta(hours=1)), (5, timedelta(hours=24)))
-LOCKOUT_ATTEMPTS = 5
-LOCKOUT_DURATION = timedelta(hours=24)
+LOCKOUT_SCHEDULE = ACCOUNT_COOLDOWN_SCHEDULE
 SIGNUP_MESSAGE = "If the signup details can be accepted, verification instructions will be sent."
 SIGNUP_RESERVATION_TTL = timedelta(minutes=30)
 RESERVED_SUPERADMIN_EMAIL = "admin@friink.com"
@@ -353,28 +352,36 @@ async def authenticate_user(
     user = await get_user_by_login_identifier(session, identifier)
     now = datetime.now(UTC)
 
+    if user:
+        user = session.execute(select(User).where(User.id == user.id).with_for_update()).scalar_one()
+
     if user and user.account_locked:
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
             detail="Your account is locked. Contact support.",
         )
 
-    if user and user.locked_until and user.locked_until > now:
-        remaining = user.locked_until - now
-        if remaining.total_seconds() <= 30 * 60 + 1:
-            tier = "30 minutes"
-        elif remaining.total_seconds() <= 60 * 60 + 1:
-            tier = "1 hour"
-        else:
-            tier = "24 hours"
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={
-                "message": f"Too many login attempts. Try again in about {tier}, around {user.locked_until.isoformat()} UTC.",
-                "code": "LOGIN_COOLDOWN",
-                "retry_at": user.locked_until.isoformat(),
-            },
-        )
+    if user:
+        clear_expired_account_failure_state(user, now)
+        if user.failed_login_last_at is None and user.failed_login_attempts == 0 and user.locked_until is None:
+            pass
+        elif user.locked_until and user.locked_until > now:
+            remaining_seconds = max(1, int((user.locked_until - now).total_seconds() + 0.999))
+            if remaining_seconds <= 60:
+                tier = "about 1 minute"
+            elif remaining_seconds <= 5 * 60:
+                tier = "about 5 minutes"
+            else:
+                tier = "about 15 minutes"
+            await commit(session)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "message": f"Too many sign-in attempts. Try again in {tier}.",
+                    "code": "LOGIN_COOLDOWN",
+                    "cooldown_seconds": remaining_seconds,
+                },
+            )
 
     if not user or not verify_password(password, user.password_hash):
         if user:
@@ -382,6 +389,7 @@ async def authenticate_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 
     user.failed_login_attempts = 0
+    user.failed_login_last_at = None
     user.locked_until = None
     await commit(session)
     await refresh(session, user)
@@ -395,21 +403,25 @@ async def register_failed_login(
     background_tasks: BackgroundTasks | None = None,
     settings=None,
 ) -> None:
+    now = datetime.now(UTC)
+    clear_expired_account_failure_state(user, now)
     user.failed_login_attempts += 1
-    for threshold, duration in reversed(LOCKOUT_SCHEDULE):
+    user.failed_login_last_at = now
+    user.locked_until = None
+    for threshold, duration in ACCOUNT_COOLDOWN_SCHEDULE:
         if user.failed_login_attempts >= threshold:
-            user.locked_until = datetime.now(UTC) + duration
+            user.locked_until = now + duration
             break
     notification_needed = False
-    if user.lifecycle_status == "active" and user.failed_login_attempts >= 3:
-        cutoff = datetime.now(UTC) - timedelta(hours=24)
+    if user.lifecycle_status == "active" and user.failed_login_attempts == 3:
+        cutoff = now - timedelta(hours=24)
         recent = session.execute(
             select(SecurityEvent).where(
                 SecurityEvent.user_id == user.id,
                 SecurityEvent.event_type == SecurityEventType.failed_login,
                 SecurityEvent.created_at >= cutoff,
                 SecurityEvent.payload["kind"].as_string() == "failed_login_notification",
-            )
+            ).limit(1)
         ).scalar_one_or_none()
         if recent is None:
             notification_needed = True

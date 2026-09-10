@@ -82,6 +82,7 @@ from app.services.storage import StorageNotConfiguredError, StorageObjectError, 
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
 from app.services.account_slots import create_or_replace_slot, find_slot_for_user, get_slot, list_slots, revoke_slot
 from app.services.password_reset import complete_password_reset, start_password_reset
+from app.services.login_throttling import enforce_ip_throttle
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -363,6 +364,7 @@ async def login(
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse | LoginChallengeResponse | LifecycleChallengeResponse:
     require_allowed_origin(request, settings)
+    enforce_ip_throttle(session, request, settings)
     try:
         user = await authenticate_user(session, payload.identifier, payload.password, background_tasks=background_tasks, settings=settings)
     except HTTPException as exc:
@@ -434,6 +436,7 @@ async def login_verify(
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
     require_allowed_origin(request, settings)
+    enforce_ip_throttle(session, request, settings)
     challenge = get_login_challenge_for_update(session, payload.challenge_token)
     user = session.get(User, challenge.user_id) if challenge else None
     if not challenge or not user or user.account_locked:
@@ -757,6 +760,7 @@ async def password_reset_start(
     settings: Settings = Depends(get_settings),
 ) -> dict[str, str]:
     require_allowed_origin(request, settings)
+    enforce_ip_throttle(session, request, settings)
     user, raw_token = await start_password_reset(session, str(payload.email))
     if user and raw_token:
         reset_url = f"{str(settings.frontend_url).rstrip('/')}/reset-password?token={raw_token}"
@@ -880,9 +884,12 @@ async def pending_login_approvals(
 @router.post("/login/approve", status_code=status.HTTP_204_NO_CONTENT)
 async def approve_login(
     payload: LoginApprovalActionRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> Response:
+    enforce_ip_throttle(session, request, settings)
     challenge = session.execute(select(LoginChallenge).where(LoginChallenge.id == payload.challenge_id).with_for_update()).scalar_one_or_none()
     if not challenge or challenge.user_id != current_user.id or challenge.kind != "login" or challenge.consumed_at is not None or challenge.denied_at is not None or challenge.expires_at <= datetime.now(UTC):
         raise HTTPException(status_code=404, detail="Login request not found.")
@@ -894,9 +901,12 @@ async def approve_login(
 @router.post("/login/deny", status_code=status.HTTP_204_NO_CONTENT)
 async def deny_login(
     payload: LoginApprovalActionRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
 ) -> Response:
+    enforce_ip_throttle(session, request, settings)
     challenge = session.execute(select(LoginChallenge).where(LoginChallenge.id == payload.challenge_id).with_for_update()).scalar_one_or_none()
     if not challenge or challenge.user_id != current_user.id or challenge.consumed_at is not None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -929,6 +939,7 @@ async def complete_approved_login(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
+    enforce_ip_throttle(session, request, settings)
     challenge = get_login_challenge_for_update(session, payload.challenge_token)
     user = session.get(User, challenge.user_id) if challenge else None
     if not challenge or not user or user.account_locked or user.lifecycle_status != "active" or challenge.approved_at is None or challenge.consumed_at is not None or challenge.expires_at <= datetime.now(UTC):

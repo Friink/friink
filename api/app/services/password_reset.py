@@ -47,6 +47,9 @@ async def complete_password_reset(session: Session, token: str, new_password: st
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Choose a password different from your current password.")
     record.consumed_at = now
     user.password_hash = hash_password(new_password)
+    user.failed_login_attempts = 0
+    user.failed_login_last_at = None
+    user.locked_until = None
     for family in session.execute(select(RefreshToken.family_id).where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))).scalars().all():
         revoke_refresh_family(session, family, "password_reset", now)
     revoke_staff_sessions(session, user.id, "password_reset")

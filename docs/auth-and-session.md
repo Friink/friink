@@ -54,10 +54,11 @@ The following points are part of the planned scope:
   signup, login-risk, lifecycle, and email-change OTP challenges; production
   API startup rejects the disabled value. Leaving the variable unset uses the
   secure default.
-- Failed-login lockout uses a configurable progressive policy: the third
-  failure starts a 30-minute cooldown, the fourth starts a one-hour cooldown,
-  and the fifth starts a 24-hour cooldown. A successful login resets the
-  progressive failure state. The policy may be strengthened later.
+- Failed-login throttling follows the replacement policy in
+  `docs/failed-login-policy.md`: failures 1–3 have no cooldown, failures 4–5
+  use one minute, failures 6–8 use five minutes, and failures 9+ use a capped
+  fifteen-minute cooldown. Successful login or password reset clears the
+  state, which also expires after 24 hours of inactivity.
 - Multiple-account support has a fixed web user flow: `Add account` in the side
   drawer opens a design-system login/signup modal; successful authentication
   adds the account to the current browser profile; and `Change account` appears
@@ -453,10 +454,13 @@ device-recognition, lockout, and OTP decisions as email login.
 Add server-authoritative device/session recognition using a protected random
 device identifier and coarse signals. Do not trust a client claim, IP address
 alone, or browser fingerprint alone. Missing or changed identifiers trigger a
-step-up challenge rather than proving compromise. Add the configurable
-progressive policy: the third failure starts a 30-minute cooldown, the fourth
-starts one hour, the fifth starts 24 hours, and a successful login resets the
-progressive state. Independent IP/device rate limits remain required.
+step-up challenge rather than proving compromise. Apply the replacement
+progressive policy in `docs/failed-login-policy.md`: the third failure notifies
+without a cooldown, failures 4–5 use one minute, failures 6–8 use five
+minutes, and failures 9+ use a capped fifteen-minute cooldown. Successful login
+or password reset clears the progressive state. This phase adds the independent
+per-IP control; device/session throttling is explicitly deferred and is not
+part of this policy.
 
 Verification gate: test email login, username login, mixed-case identifiers,
 recognized versus new and suspicious logins, challenge skips and challenges,
@@ -2083,11 +2087,11 @@ progressive rate-limit cooldown:
 - **Full account lock (administrative or security-triggered):** show exactly
   `Your account is locked. Contact support.` Do not show a reason, duration,
   retry time, or other account-security detail.
-- **Temporary progressive cooldown:** after the failed-login tiers in section
-  16, show a distinct message such as `Too many attempts. Try again in about
-  30 minutes, around 3:45 PM.` Use the applicable 30-minute, one-hour, or
-  24-hour tier and an approximate retry time when available. This message is
-  not the full-account-lock message and must never be conflated with it.
+- **Temporary progressive cooldown:** show a distinct message such as `Too many
+  sign-in attempts. Try again in about 1 minute.` Use the server-provided
+  remaining time for the one-minute, five-minute, or fifteen-minute tier. This
+  message is not the full-account-lock message and must never be conflated
+  with it. See `docs/failed-login-policy.md` for the complete behavior.
 
 The side-drawer `Log out` action is different from `Log out all other
 sessions`: it ends and removes only the active account's current device session

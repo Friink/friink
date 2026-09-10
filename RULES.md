@@ -143,10 +143,10 @@ the entry, so history isn't lost.
 
 ### Rule: Staff Access Uses Roles And Additive Direct Grants
 - **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
-- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. Tabs and actions are shown only when the current effective permission allows them. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
+- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
 - **Status:** Active; implementation and staging browser verification are complete.
 - **Platform:** Web/API
-- **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`
+- **File(s):** `docs/auth-and-session.md`, `packages/design/design.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`, `web/components/modal.tsx`
 - **Since:** 2026-09-08 (UTC)
 
 ### Rule: Subscription Entitlements Use One Server-Resolved Assignment
@@ -269,7 +269,11 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27T00:00:00Z
 
 ### Rule: Login Lockout
-- **What:** Progressive failed-login cooldowns begin at the third failure for 30 minutes, the fourth for one hour, and the fifth for 24 hours; a successful login clears the progressive state. A separate full account lock returns `423` with exactly `Your account is locked. Contact support.` and no reason, duration, or retry detail. Cooldown responses use `429`, identify the applicable tier, and include an approximate retry time.
+- **What:** Failed-login throttling is account-based and progressive: failures 1–3 have no cooldown, failures 4–5 use one minute, failures 6–8 use five minutes, and failures 9+ use a capped fifteen-minute cooldown. A successful login or password reset clears the state; 24 hours without another failure also clears it. Attempts during cooldown do not extend or advance the tier. A secondary hashed per-IP throttle applies across protected authentication endpoints, using an initial 100-request/10-minute baseline followed by a one-minute IP cooldown; shared-network bans are not used.
+- **Security boundary:** Unknown identifiers do not create account-specific state and remain subject only to generic endpoint/IP protections. Email and username login share the same account state. Device/session throttling is explicitly out of scope; existing device recognition and risk-based OTP remain separate.
+- **Notifications:** The third failure creates at most one failed-login security notification per account per rolling 24 hours. Delivery is non-blocking and cannot alter the authentication result.
+- **UX:** Progressive cooldowns return `429` with server-provided remaining time and distinct retry copy. The web login form preserves the identifier, clears the password, disables submission, and maintains an accessible countdown across refreshes and tabs. It must not show attempts remaining, tier names, IP/device metadata, or full-lock copy.
+- **Full lock:** A separate full account lock returns `423` with exactly `Your account is locked. Contact support.` and no reason, duration, or retry detail.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/services/auth.py`, `api/tests/test_lockout.py`

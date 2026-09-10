@@ -8,6 +8,7 @@ import { PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/compo
 import { AuthApiError, checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, refreshAuthSession, requestPasswordReset, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
+const LOGIN_COOLDOWN_STORAGE_KEY = 'friink_login_cooldown';
 const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 type LoginScreenProps = {
@@ -35,6 +36,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
   const [loginChallengeToken, setLoginChallengeToken] = useState('');
   const [lifecycleStatus, setLifecycleStatus] = useState<'deactivated' | 'pending_deletion' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginCooldownUntil, setLoginCooldownUntil] = useState<number | null>(null);
+  const [loginCooldownSeconds, setLoginCooldownSeconds] = useState(0);
   const [errorMessage, setErrorMessage] = useState(initialMessage ?? '');
   const [signupEmailAlreadyRegistered, setSignupEmailAlreadyRegistered] = useState(false);
 
@@ -47,6 +50,50 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
   const isSignupProfileStep = step === 'signup-profile';
   const isSignupOtpStep = step === 'signup-otp';
   const signupProgressLabel = isSignupProfileStep ? 'Step 4 of 4' : isSignupPasswordStep ? 'Step 3 of 4' : isSignupOtpStep ? 'Step 2 of 4' : 'Step 1 of 4';
+
+  useEffect(() => {
+    const restoreCooldown = () => {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem(LOGIN_COOLDOWN_STORAGE_KEY) ?? 'null') as { identifier?: string; until?: number } | null;
+        if (!stored?.until || stored.until <= Date.now()) {
+          window.localStorage.removeItem(LOGIN_COOLDOWN_STORAGE_KEY);
+          setLoginCooldownUntil(null);
+          setLoginCooldownSeconds(0);
+          return;
+        }
+        if (stored.identifier) setLoginIdentifier(stored.identifier);
+        setLoginCooldownUntil(stored.until);
+        setLoginCooldownSeconds(Math.max(1, Math.ceil((stored.until - Date.now()) / 1000)));
+        setStep('login-password');
+      } catch {
+        // A blocked or malformed local-storage value must not block login.
+      }
+    };
+    restoreCooldown();
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === LOGIN_COOLDOWN_STORAGE_KEY) restoreCooldown();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!loginCooldownUntil) return;
+    const update = () => {
+      const remaining = Math.ceil((loginCooldownUntil - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setLoginCooldownUntil(null);
+        setLoginCooldownSeconds(0);
+        setErrorMessage('');
+        try { window.localStorage.removeItem(LOGIN_COOLDOWN_STORAGE_KEY); } catch { /* best effort */ }
+      } else {
+        setLoginCooldownSeconds(remaining);
+      }
+    };
+    update();
+    const interval = window.setInterval(update, 1000);
+    return () => window.clearInterval(interval);
+  }, [loginCooldownUntil]);
 
   useEffect(() => {
     // Approval and OTP are alternative completion paths. Once the user starts
@@ -111,7 +158,18 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
           finishAuthentication(result);
         }
       } catch (error) {
-        setErrorMessage(getAuthErrorMessage(error));
+        setPassword('');
+        if (error instanceof AuthApiError && error.cooldownSeconds) {
+          const until = Date.now() + error.cooldownSeconds * 1000;
+          setLoginCooldownUntil(until);
+          setLoginCooldownSeconds(error.cooldownSeconds);
+          try {
+            window.localStorage.setItem(LOGIN_COOLDOWN_STORAGE_KEY, JSON.stringify({ identifier: loginIdentifier, until }));
+          } catch { /* best effort; the server remains authoritative */ }
+          setErrorMessage(formatLoginCooldown(error.cooldownSeconds));
+        } else {
+          setErrorMessage(getAuthErrorMessage(error));
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -279,7 +337,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
       </a> : null}
       <form className={`login-form${mode === 'account-modal' ? ' login-form-account-modal' : ''}`} onSubmit={handleSubmit}>
         {mode === 'page' ? <BrandLockup size="lg" /> : null}
-        {errorMessage && <p className="login-error" role="alert">{errorMessage}</p>}
+        {errorMessage && <p className="login-error" role="alert" aria-live="assertive">{errorMessage}</p>}
 
         {isLoginEmailStep && (
           <>
@@ -352,8 +410,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
               <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
                 Back
               </button>
-              <Button className="login-submit" type="submit">
-                {isSubmitting ? 'Please wait...' : 'Login'}
+              <Button className="login-submit" type="submit" disabled={isSubmitting || loginCooldownSeconds > 0}>
+                {isSubmitting ? 'Please wait...' : loginCooldownSeconds > 0 ? `Try again in ${formatCountdown(loginCooldownSeconds)}` : 'Login'}
               </Button>
             </div>
           </>
@@ -629,4 +687,13 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
 function getAuthErrorMessage(error: unknown) {
   return error instanceof Error && error.message ? error.message : AUTH_FAILURE_MESSAGE;
+}
+
+function formatCountdown(seconds: number) {
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.ceil(seconds / 60)} min`;
+}
+
+function formatLoginCooldown(seconds: number) {
+  return `Too many sign-in attempts. Try again in about ${formatCountdown(seconds)}.`;
 }

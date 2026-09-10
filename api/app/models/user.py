@@ -38,6 +38,7 @@ class User(Base):
     read_receipts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     likes_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     failed_login_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    failed_login_last_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     account_locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     security_epoch: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")

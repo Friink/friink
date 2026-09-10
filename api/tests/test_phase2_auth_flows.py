@@ -224,7 +224,7 @@ def test_deactivation_rejects_existing_access_token_but_lock_does_not() -> None:
 def test_progressive_cooldown_has_distinct_tier_message() -> None:
     password = "Strong1!pass"
     email = f"cooldown-{uuid.uuid4().hex}@example.com"
-    user_id = _seed_user(email, f"cooldown_{uuid.uuid4().hex[:19]}", password, failed_login_attempts=2)
+    user_id = _seed_user(email, f"cooldown_{uuid.uuid4().hex[:19]}", password, failed_login_attempts=3)
     app.dependency_overrides[get_settings] = lambda: _settings()
     try:
         client = TestClient(app)
@@ -234,8 +234,8 @@ def test_progressive_cooldown_has_distinct_tier_message() -> None:
         assert cooldown.status_code == 429
         detail = cooldown.json()["detail"]
         assert detail["code"] == "LOGIN_COOLDOWN"
-        assert "Too many login attempts" in detail["message"]
-        assert "30 minutes" in detail["message"]
+        assert "Too many sign-in attempts" in detail["message"]
+        assert "1 minute" in detail["message"]
         assert "Your account is locked" not in detail["message"]
     finally:
         app.dependency_overrides.pop(get_settings, None)

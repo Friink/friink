@@ -8444,3 +8444,82 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `AGENTLOG.md`, `CHANGELOG.md`.
 - Verification Status: Documentation-only update; `git diff --check` passed.
   This is not a production-readiness declaration.
+
+## 2026-09-10T13:45:00Z — Document shared staff-verification modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documentation for the Control panel staff-verification
+  screen converted to the shared modal pattern.
+- Changes Made: Documented the modal step-up presentation, close behavior, and
+  preservation of the ordinary Friink session in the design contract and
+  active staff-access rule. Updated the Current State release reference.
+- Files: `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only follow-up to commit `5a8df2f`;
+  no auth/session behavior was changed.
+
+## 2026-09-10T15:00:00Z — Implement replacement failed-login throttling policy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the Phase 7 flat 30-minute/one-hour/24-hour
+  failed-login cooldown with the approved progressive account and IP policy,
+  including recovery, notification, and web countdown behavior.
+- Audit Findings: Failed-login state was already server-side on `users` via
+  `failed_login_attempts` and `locked_until`; the old schedule was 3 failures
+  for 30 minutes, 4 for one hour, and 5 for 24 hours. Successful login cleared
+  the state, but there was no inactivity expiry, password-reset clearing, or
+  IP throttle. Device recognition and risk-based OTP ran after successful
+  password authentication and were left untouched.
+- Changes Made: Added the 1–3/4–5/6–8/9+ progressive tiers, 24-hour inactivity
+  expiry, cooldown-safe attempts, successful password-reset clearing, hashed
+  server-side per-IP throttling, protected auth-endpoint integration, durable
+  migration state, notification deduplication, and persisted cross-tab web
+  countdown UX. Updated the active auth documentation and replacement-policy
+  document. `RULES.md` was not changed.
+- Files: `api/alembic/versions/20260910_0043_failed_login_policy.py`,
+  `api/app/models/login_ip_throttle.py`, `api/app/models/user.py`,
+  `api/app/services/login_throttling.py`, `api/app/services/auth.py`,
+  `api/app/services/password_reset.py`, `api/app/routers/auth.py`,
+  `web/components/login-screen.tsx`, related auth tests, and
+  `docs/failed-login-policy.md`.
+- Named Tests: `test_progressive_lockout_schedule_boundaries`,
+  `test_attempts_during_cooldown_do_not_advance_state`,
+  `test_successful_login_clears_counter_and_cooldown`,
+  `test_successful_password_reset_clears_progressive_login_state`,
+  `test_expired_failure_state_clears_after_24_hours`,
+  `test_email_and_username_identifiers_share_the_same_failure_state`,
+  `test_unknown_identifier_creates_no_account_failure_state`,
+  `test_unknown_identifier_and_wrong_password_are_generic_and_indistinguishable`,
+  `test_cooldown_response_uses_server_remaining_seconds`,
+  `test_add_account_cooldown_does_not_affect_the_active_account`,
+  `test_ip_throttle_is_secondary_shared_across_accounts_and_not_permanent`,
+  `test_notification_failure_does_not_change_login_result_or_primary_state`,
+  `test_third_failed_login_creates_one_alert_outbox_job`,
+  `test_failed_login_alert_is_suppressed_for_24_hours`, and
+  `test_progressive_cooldown_has_distinct_tier_message`.
+- Verification Status: 23 focused API tests passed locally with an explicit
+  isolated SQLite database; Python compilation and web `npx tsc --noEmit`
+  passed; `git diff --check` passed. No staging or production changes were
+  made. Commit hash: not created because the sandbox denied writes to
+  `.git/index`; the implementation remains uncommitted pending a local Git
+  commit.
+
+## 2026-09-10T16:00:00Z — Synchronize failed-login policy documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Synchronize the implemented failed-login throttling policy
+  across design, active rules, changelog, agent log, and `/docs`.
+- Changes Made: Updated `packages/design/design.md` and `RULES.md` with the
+  1–3/4–5/6–8/9+ cooldown tiers, 24-hour expiry, password-reset clearing,
+  hashed per-IP baseline, notification behavior, server-backed countdown UX,
+  and explicit device/session-throttling scope. Updated `CHANGELOG.md` and
+  the current auth documentation while preserving historical Phase 7 notes.
+  `RULES.md` is now synchronized after explicit review.
+- Files: `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`, `docs/failed-login-policy.md`, and
+  `docs/auth-and-session.md`.
+- Verification Status: Documentation diff reviewed; no staging or production
+  changes were made. The implementation remains uncommitted because the
+  sandbox denied writes to `.git/index`; commit hash remains pending.
