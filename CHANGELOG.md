@@ -2,9 +2,19 @@
 
 ## 2026-09-11T04:30:00Z
 
-- [docs/design] Documented the planned read-only Account-tab `Joined` field,
-  using the server-side account creation timestamp with locale/time-zone-aware
-  presentation.
+- [docs/auth] Documented the read-only Account-tab `Joined` field, using the
+  server-side account creation timestamp with locale/time-zone-aware
+  presentation. The requirement belongs with auth/account requirements, not
+  the visual design contract.
+
+## 2026-09-11T05:00:00Z
+
+- [web/settings] Implemented the read-only Account-tab `Joined` field using
+  the existing authenticated user `created_at` value; no API or migration was
+  needed.
+- [docs] Added the implemented Joined-date rule to `RULES.md` and
+  `docs/auth-and-session.md`, and removed the product requirement from
+  `packages/design/design.md`.
 
 ## 2026-09-11T04:00:00Z
 

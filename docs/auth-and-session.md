@@ -2080,6 +2080,11 @@ Settings > Account lists active sessions using safe fields:
 - last-active time
 - current-session indicator
 
+Settings > Account also shows a read-only `Joined` field. Its value is the
+server-authoritative account creation timestamp (`users.created_at`), formatted
+for the user’s locale and time zone. It is display-only and must not use the
+browser clock or be editable by the user.
+
 Session management is account-scoped. In a multi-account device, the Account
 page shows sessions for the currently active account only; the side-drawer
 account switcher is the separate mechanism for moving to another remembered

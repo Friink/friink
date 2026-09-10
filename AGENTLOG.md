@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T05:00:00Z — Implement Account Joined date
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the Joined-date documentation placement and implement
+  the read-only Account-tab field.
+- Changes Made: Mapped the existing API `created_at` value into `AuthUser.createdAt`,
+  rendered a locale/time-zone-aware read-only Joined row in Settings > Account,
+  documented the active behavior in `RULES.md` and `docs/auth-and-session.md`,
+  and removed the product requirement from `packages/design/design.md`.
+- Files: `web/lib/auth.ts`, `web/components/account-screens.tsx`, `RULES.md`,
+  `docs/auth-and-session.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed in `web`.
+
 ## 2026-09-11T01:00:00Z — Correct auth logo optical sizing
 
 - Agent: Codex

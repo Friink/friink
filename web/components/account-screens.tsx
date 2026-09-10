@@ -495,6 +495,11 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
   }
 
+  function formatAccountDate(value: string) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Unavailable' : formatSessionDate(value);
+  }
+
   async function handleNameUpdate() {
     if (!canUpdateName) {
       if (hasNameChanged && !isDisplayNameValid) {
@@ -825,6 +830,15 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       {activeTab === 'account' && (
         <div className="settings-panel">
           <div className="settings-section">
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-calendar-check" aria-hidden="true" /></span>}
+              title="Joined"
+              subtitle="The date and time this account was created."
+              className="settings-row settings-row-expanded"
+            >
+              <output className="settings-readonly-value" aria-label="Joined">{formatAccountDate(user.createdAt)}</output>
+            </SettingsRow>
+
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-envelope" aria-hidden="true" /></span>}
               title="Email"
