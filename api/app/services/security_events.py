@@ -60,8 +60,11 @@ def record_security_event(
 
     result = session.execute(statement)
     if result.rowcount == 0:
-        event_id = session.execute(select(SecurityEvent.id).where(SecurityEvent.event_key == event_key)).scalar_one()
-    event = session.get(SecurityEvent, event_id)
+        event = session.execute(
+            select(SecurityEvent).where(SecurityEvent.event_key == event_key)
+        ).scalar_one()
+    else:
+        event = session.get(SecurityEvent, event_id)
     assert event is not None
     if notify_in_app:
         session.add(NotificationOutbox(event_id=event.id, channel=NotificationChannel.in_app))
