@@ -357,8 +357,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             />
 
             <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
-              {mode === 'page' ? <a className="signup-back-button login-back-button" href="/">Back</a> : null}
-              {mode === 'account-modal' ? <Button variant="quiet" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
+              {mode === 'page' ? <a className="button-secondary login-back-button" href="/">Back</a> : null}
+              {mode === 'account-modal' ? <Button variant="secondary" type="button" onClick={handleStartSignup}>Sign up</Button> : null}
               <Button className="login-submit" type="submit">
                 Continue
               </Button>
@@ -407,7 +407,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             </button>
 
             <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
-              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
                 Back
               </button>
               <Button className="login-submit" type="submit" disabled={isSubmitting || loginCooldownSeconds > 0}>
@@ -422,7 +422,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             <div className="login-step-copy"><p>Reset your password</p><span>Enter your account email and we’ll send a single-use reset link.</span></div>
             <InputField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" autoComplete="email" required />
             <div className="signup-actions signup-actions-single">
-              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-password'); }}>Back</button>
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('login-password'); }}>Back</button>
               <Button className="login-submit" type="submit">{isSubmitting ? 'Please wait...' : 'Send reset link'}</Button>
             </div>
           </>
@@ -453,7 +453,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             />
 
             <div className="signup-actions signup-actions-single">
-              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('login-password'); }}>
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('login-password'); }}>
                 Back
               </button>
               <Button className="login-submit" type="submit">
@@ -499,7 +499,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
             <div className="signup-actions signup-actions-single">
               <button
-                className="signup-back-button"
+                className="button-secondary"
                 type="button"
                 onClick={() => {
                   setErrorMessage('');
@@ -581,7 +581,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
 
             <div className="signup-actions signup-actions-single">
               <button
-                className="signup-back-button"
+                className="button-secondary"
                 type="button"
                 onClick={() => {
                   setErrorMessage('');
@@ -639,7 +639,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             />
 
             <div className="signup-actions">
-              <button className="signup-back-button" type="button" onClick={() => setStep('signup-password')}>
+              <button className="button-secondary" type="button" onClick={() => setStep('signup-password')}>
                 Back
               </button>
               <Button className="login-submit" type="submit">
@@ -671,7 +671,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             />
 
             <div className="signup-actions signup-actions-single">
-              <button className="signup-back-button" type="button" onClick={() => { setErrorMessage(''); setStep('signup-email'); }}>
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('signup-email'); }}>
                 Back
               </button>
               <Button className="login-submit" type="submit">

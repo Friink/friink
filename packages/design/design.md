@@ -142,13 +142,13 @@ The following design tokens are locked hard values extracted directly from the c
 ### Corner Radius
 - **Buttons and Single-Line Inputs**: `8px` (`--radius-sm: 8px`). Per 2026-08-17 changelog decision, buttons, single-line inputs, search fields, toggle pills, and option menus use an `8px` corner radius, NOT a pill shape.
   - *Codebase `--radius-pill` status*: In `web/app/globals.css` and `web/theme.config.ts`, `--radius-pill` is hard-aliased to `8px` (`:root { --radius-pill: 8px; }`).
-  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
+  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`. Ordinary app buttons use the shared `8px` action radius directly.
 - **Radius Scale**:
   - `--radius-sm`: `8px` (Buttons, inputs, cards, dropdowns, floating bar)
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), and legacy/specialized circular action icons where explicitly required. Standard app icon controls use the shared `8px` radius (`.icon-button`).
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -286,7 +286,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
   - **Self-Profile Variant** (`isOwnProfile = true`): Renders the **Edit** action button (`.profile-action-edit`, icon `fa-pen-to-square` + text "Edit", right-aligned) and routes to Settings > Profile.
-  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the **Compose / Send Message** icon button (`.profile-message-icon`, icon `fa-paper-plane`, right-aligned) and routes to `/{username}/chat` when activated.
+  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the **Compose / Send Message** icon button (shared `.button-secondary.icon-button`, icon `fa-paper-plane`, right-aligned) and routes to `/{username}/chat` when activated.
   - *These are the only two variants.*
 - **State Invariant**: Sidebar navigation highlight ONLY tracks the signed-in user's profile (`sidebarActiveScreen`). When browsing another user's dummy profile via `/[username]`, the sidebar profile navigation item must NOT be highlighted.
 - **Props Contract**:
@@ -378,10 +378,13 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.
 - **Signup Identity Guidance**: Signup visibly explains the username rule: 2–32 characters using letters, numbers, `.`, `_`, and `-`. The optional display-name field accepts up to 124 characters; leading and trailing whitespace is normalized away before submission.
 - **Single-Line Inputs**: Height `2.5rem` to `3rem`, corner radius strictly `8px` (`border-radius: 8px !important`).
-- **Button Primitives** (`Button`):
-  - Height `3rem`, corner radius `8px` (`.pill-button`).
-  - Variants: `brand` (`.pill-button-brand`, background `#33aa55`, color white), `quiet` (`.pill-button-quiet`, background `#eaf5ed`, color ink), and hollow outline (`.signup-back-button`).
-  - Native modal action aliases (`.button-primary`, `.button-secondary`) use the same `3rem` height, `0.75rem 1.25rem` padding, `8px` radius, and theme tokens as the shared Button primitive.
+- **In-App Button System** (`Button`):
+  - The app has two action styles: `primary` (`.button-primary`) for the main action and `secondary` (`.button-secondary`) for supporting, reversible, or cancel actions. Both use `3rem` minimum height, `0.75rem 1.25rem` padding, `8px` radius, shared typography, focus, disabled, and loading behavior.
+  - Text-only, icon-and-text, and icon-only content are compositions, not additional button types. Icon-only controls use `.icon-button`, with a minimum `2.75rem` square hit area, an accessible label, and the same neutral utility treatment wherever they appear in fields, settings, navigation, or feed actions.
+  - Width is contextual rather than a button variant: action buttons are intrinsic-width by default; modal confirmation actions remain intrinsic-width and right-aligned; auth, add-account, reset-password, and wizard form actions use `.button-full-width`; narrow modal action rows may stack responsively.
+  - Low-emphasis navigation or optional actions use `.text-link`, not a third button type. Tabs, toggles, menus, and reaction controls remain specialized controls because their interaction model differs from ordinary actions.
+  - Every asynchronous button disables duplicate activation, preserves its layout width, and shows a visible loading state until the operation completes. Destructive intent changes the semantic color treatment without creating a third button type.
+  - The public landing-page button styles remain separate; this contract applies to the authenticated web app and app-owned auth/workflow surfaces.
 
 ### 10a. Login & Signup Screen (`web/components/login-screen.tsx`)
 - **Responsive Width Rule**: The auth form fills the available viewport width, caps at `31rem` on larger screens, and must remain shrinkable on narrow devices without horizontal overflow.
@@ -407,7 +410,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Expanded Row Rule**: An expanded setting renders its title and summary once in the shared row header; the control body must not repeat the setting title as a second visible field label. Inputs remain accessible through native labels or `aria-label` attributes.
-- **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging. Username changes check availability before submission; username identity is case-insensitive and stored/displayed canonically in lowercase.
+- **Profile Tab Rule**: `Name`, `Username`, `About`, and the private `Date of birth` field live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging. Date of birth is editable for the existing server-side age requirement but is not shown on the public profile in this phase. Username changes check availability before submission; username identity is case-insensitive and stored/displayed canonically in lowercase.
 - **Subscription Tab Rule**: Settings includes a dedicated Subscription tab showing the current `Friink Free` plan and a `View plans` link to `/subscriptions`. Paid billing and entitlement management are not active yet.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.

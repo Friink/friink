@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-10T17:35:00Z
+
+- [web/account-switcher] Replaced the transient `Updating accounts…` header
+  with a permanent `Switch Account` row. The refresh spinner now appears on
+  the right only while accounts are loading; retry remains available only when
+  a refresh fails.
+- [verification] Web TypeScript check and diff validation passed.
+
+## 2026-09-10T17:20:00Z
+
+- [settings/profile] Added an editable Date of birth field to Settings >
+  Profile using the existing server-side user attribute and minimum-age
+  validation. It is not displayed on public profiles in this phase.
+- [verification] Focused API date-of-birth update test and web TypeScript check
+  passed; no database migration was required.
+
+## 2026-09-10T17:00:00Z
+
+- [web/design] Consolidated in-app buttons around shared primary and secondary
+  action styles, intrinsic versus full-width layout rules, shared text links,
+  and compact icon controls. Removed obsolete duplicate app button classes from
+  the global stylesheet while leaving public landing-page styles unchanged.
+- [verification] Web TypeScript check and webpack production build passed.
+
 ## 2026-09-10T16:35:00Z
 
 - [release] Pushed the failed-login throttling release through `development`,

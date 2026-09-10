@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
           <InputField label="Confirm password" type={showConfirm ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" autoComplete="new-password" required trailing={<button className="password-toggle" type="button" onClick={() => setShowConfirm((value) => !value)} aria-label={showConfirm ? 'Hide password' : 'Show password'}><i className={`fa-regular ${showConfirm ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" /></button>} />
           <Button className="login-submit" type="submit" disabled={busy}>{busy ? 'Please wait...' : 'Reset password'}</Button>
         </>}
-        {done && <a className="signup-back-button login-back-button" href="/login" onClick={() => clearAuthSession()}>Return to login</a>}
+        {done && <a className="button-secondary login-back-button" href="/login" onClick={() => clearAuthSession()}>Return to login</a>}
         {message && !done && <p className="login-error" role="alert">{message}</p>}
       </form>
     </main>

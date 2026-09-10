@@ -101,10 +101,10 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
           <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} imageUrl={post.imageUrl} />
         </Link>
         <div className="feed-post-options" aria-label="Post actions">
-          <button className="icon-plain feed-post-share" type="button" aria-label="Share post">
+          <button className="icon-button feed-post-share" type="button" aria-label="Share post">
             <i className="fa-solid fa-share-nodes" aria-hidden="true" />
           </button>
-          <button className="icon-plain feed-post-more" type="button" aria-label="Post options">
+          <button className="icon-button feed-post-more" type="button" aria-label="Post options">
             <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
           </button>
         </div>

@@ -132,7 +132,7 @@ export function ProfileScreen({
 
           <div className="profile-actions">
             {isOwnProfile ? (
-              <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
+              <button className="button-secondary profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
                 <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
                 <span>Edit</span>
               </button>
@@ -140,7 +140,7 @@ export function ProfileScreen({
               <>
                 {action && (
                   <button
-                    className="profile-action-button"
+                    className="button-secondary icon-button"
                     type="button"
                     onClick={action.onClick}
                     disabled={connectionActionBusy}
@@ -150,10 +150,10 @@ export function ProfileScreen({
                     <span>{connectionActionBusy ? 'Updating' : action.label}</span>
                   </button>
                 )}
-                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user" onClick={onMessage}>
+                <button className="button-secondary icon-button" type="button" aria-label="Message user" onClick={onMessage}>
                   <i className="fa-regular fa-paper-plane" aria-hidden="true" />
                 </button>
-                <button ref={menuButtonRef} className="profile-action-button" type="button" aria-label="More profile options" onClick={() => setMenuOpen((value) => !value)}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /></button>
+                <button ref={menuButtonRef} className="button-secondary icon-button" type="button" aria-label="More profile options" onClick={() => setMenuOpen((value) => !value)}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /></button>
                 <ActionMenu open={menuOpen} anchorRef={menuButtonRef} onClose={() => setMenuOpen(false)} items={[{ label: 'Block user', icon: 'fa-ban', onClick: () => setConfirmBlock(true) }]} />
               </>
             )}

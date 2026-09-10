@@ -69,7 +69,7 @@ export default function GlobalError({
         </p>
 
         <div className="global-error-actions">
-          <button type="button" onClick={() => reset()} className="signup-back-button">
+          <button type="button" onClick={() => reset()} className="button-secondary">
             Try again
           </button>
 
@@ -100,7 +100,7 @@ function GoBackButton() {
   };
 
   return (
-    <button type="button" onClick={handleGoBack} className="pill-button pill-button-brand">
+    <button type="button" onClick={handleGoBack} className="button-primary">
       Go back
     </button>
   );

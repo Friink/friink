@@ -92,6 +92,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [email, setEmail] = useState(user.email);
   const [displayName, setDisplayName] = useState(user.name);
   const [about, setAbout] = useState(user.about);
+  const [dateOfBirth, setDateOfBirth] = useState(user.dateOfBirth);
   const [isPrivate, setIsPrivate] = useState(user.isPrivate);
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(user.profilePictureUrl);
@@ -121,6 +122,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isUpdatingAbout, setIsUpdatingAbout] = useState(false);
+  const [isUpdatingDateOfBirth, setIsUpdatingDateOfBirth] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [appearanceDraft, setAppearanceDraft] = useState(appearance);
@@ -160,6 +162,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setEmailChangeOtp('');
     setDisplayName(user.name);
     setAbout(user.about);
+    setDateOfBirth(user.dateOfBirth);
     setIsPrivate(user.isPrivate);
     setPrivacyDraft(user.isPrivate);
     setLikesVisibleDraft(user.likesVisible);
@@ -180,7 +183,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setShowConfirmPassword(false);
     setShowPasswordCriteria(false);
     setPasswordStatus('');
-  }, [user.username, user.email, user.name, user.about, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
+  }, [user.username, user.email, user.name, user.about, user.dateOfBirth, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
 
   useEffect(() => {
     if (activeTab !== 'account') return;
@@ -243,8 +246,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const isAboutValid = about.length <= 256;
   const hasNameChanged = displayName.trim() !== user.name;
   const hasAboutChanged = about !== user.about;
+  const hasDateOfBirthChanged = dateOfBirth !== user.dateOfBirth;
   const canUpdateName = hasNameChanged && isDisplayNameValid && !isUpdatingName;
   const canUpdateAbout = hasAboutChanged && isAboutValid && !isUpdatingAbout;
+  const canUpdateDateOfBirth = hasDateOfBirthChanged && Boolean(dateOfBirth) && !isUpdatingDateOfBirth;
   const canUpdateAppearance = appearanceDraft !== appearance;
   const isAccentColorValid = /^#[0-9A-Fa-f]{6}$/.test(accentColorDraft);
   const canUpdateAccentColor = isAccentColorValid && accentColorDraft.toLowerCase() !== accentColor.toLowerCase();
@@ -553,6 +558,29 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update about text.');
     } finally {
       setIsUpdatingAbout(false);
+    }
+  }
+
+  async function handleDateOfBirthUpdate() {
+    if (!canUpdateDateOfBirth) return;
+    const session = loadAuthSession();
+    if (!session) {
+      onToast?.('Please log in again to update your date of birth.');
+      return;
+    }
+
+    setIsUpdatingDateOfBirth(true);
+    try {
+      const updatedUser = await updateCurrentUser(session.accessToken, { dateOfBirth });
+      const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
+      saveAuthSession(updatedSession);
+      onUserChange?.(updatedSession.user);
+      setDateOfBirth(updatedSession.user.dateOfBirth);
+      onToast?.('Date of birth updated.', 'success');
+    } catch (error) {
+      onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update your date of birth.');
+    } finally {
+      setIsUpdatingDateOfBirth(false);
     }
   }
 
@@ -893,7 +921,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               subtitle="Manage the browsers and devices signed in to your account."
               className="settings-row settings-row-expanded settings-sessions-row"
               trailing={authSessions.some((item) => !item.current) ? (
-                <button className="settings-secondary-button" type="button" aria-label="Log out other sessions" title="Log out other sessions" disabled={sessionsBusyId !== null} onClick={handleRevokeOtherSessions}>
+                <button className="button-secondary" type="button" aria-label="Log out other sessions" title="Log out other sessions" disabled={sessionsBusyId !== null} onClick={handleRevokeOtherSessions}>
                   <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
                 </button>
               ) : null}
@@ -911,7 +939,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                         <small>Logged in {formatSessionDate(item.created_at)} · Last active {formatSessionDate(item.last_active_at)}</small>
                       </div>
                       {item.current ? <span className="settings-session-current">Current session</span> : (
-                        <button className="settings-secondary-button" type="button" aria-label={sessionsBusyId === item.id ? 'Logging out' : 'Log out'} title={sessionsBusyId === item.id ? 'Logging out' : 'Log out'} disabled={sessionsBusyId !== null} onClick={() => handleSessionRevoke(item.id)}>
+                        <button className="button-secondary" type="button" aria-label={sessionsBusyId === item.id ? 'Logging out' : 'Log out'} title={sessionsBusyId === item.id ? 'Logging out' : 'Log out'} disabled={sessionsBusyId !== null} onClick={() => handleSessionRevoke(item.id)}>
                           <i className={`fa-solid ${sessionsBusyId === item.id ? 'fa-spinner fa-spin' : 'fa-right-from-bracket'}`} aria-hidden="true" />
                         </button>
                       )}
@@ -929,7 +957,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             >
               {pendingApprovals.map((item) => <div className="settings-session-item" key={item.challengeId}>
                 <div className="settings-session-copy"><strong>{item.deviceLabel}</strong><span>{item.browser || 'Browser unavailable'}</span><small>Expires {formatSessionDate(item.expiresAt)}</small></div>
-                <div className="settings-session-actions"><button className="settings-secondary-button" type="button" onClick={() => void handleLoginApproval(item.challengeId, 'deny')}>Deny</button><button className="settings-update-button" type="button" onClick={() => void handleLoginApproval(item.challengeId, 'approve')}>Approve</button></div>
+                <div className="settings-session-actions"><button className="button-secondary" type="button" onClick={() => void handleLoginApproval(item.challengeId, 'deny')}>Deny</button><button className="button-primary" type="button" onClick={() => void handleLoginApproval(item.challengeId, 'approve')}>Approve</button></div>
               </div>)}
             </SettingsRow> : null}
 
@@ -938,7 +966,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Deactivate account"
               subtitle="Temporarily hide your account. You can return and reactivate it with a verified login."
               className="settings-row settings-row-expanded"
-              trailing={<button className="settings-secondary-button" type="button" disabled={lifecycleBusy || !lifecyclePassword} onClick={handleDeactivate}>Deactivate</button>}
+              trailing={<button className="button-secondary" type="button" disabled={lifecycleBusy || !lifecyclePassword} onClick={handleDeactivate}>Deactivate</button>}
             >
               <input type="password" value={lifecyclePassword} onChange={(event) => setLifecyclePassword(event.target.value)} placeholder="Current password" aria-label="Current password for account lifecycle" autoComplete="current-password" />
             </SettingsRow>
@@ -948,7 +976,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Delete account"
               subtitle="Deletion is permanent after the 32-day grace period. Billing is cancelled when deletion begins."
               className="settings-row settings-row-expanded"
-              trailing={deletionToken ? <button className="settings-secondary-button" type="button" disabled={lifecycleBusy || deletionOtp.length !== 6} onClick={handleDeletionConfirm}>Confirm deletion</button> : <button className="settings-secondary-button" type="button" disabled={lifecycleBusy || !lifecyclePassword} onClick={handleDeletionStart}>Send code</button>}
+              trailing={deletionToken ? <button className="button-secondary" type="button" disabled={lifecycleBusy || deletionOtp.length !== 6} onClick={handleDeletionConfirm}>Confirm deletion</button> : <button className="button-secondary" type="button" disabled={lifecycleBusy || !lifecyclePassword} onClick={handleDeletionStart}>Send code</button>}
             >
               {deletionToken ? <input type="text" value={deletionOtp} onChange={(event) => setDeletionOtp(event.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase())} placeholder="Email verification code" aria-label="Deletion verification code" autoComplete="one-time-code" /> : <p className="settings-field-message">You will verify this action with a fresh email code.</p>}
               {lifecycleStatus ? <span className="settings-field-message" role="status">{lifecycleStatus}</span> : null}
@@ -965,7 +993,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Current plan"
               subtitle="Your Friink plan and subscription options."
               className="settings-row settings-row-expanded"
-              trailing={<Link className="settings-secondary-button settings-subscription-link" href="/subscriptions" aria-label="View plans" title="View plans"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></Link>}
+              trailing={<Link className="button-secondary icon-button settings-subscription-link" href="/subscriptions" aria-label="View plans" title="View plans"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></Link>}
             >
               <div className="settings-plan-summary">
                 <strong>Friink Free</strong>
@@ -984,7 +1012,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Profile picture"
               subtitle="Choose an optional JPG, PNG, or WebP picture for your profile."
               className="settings-row settings-row-expanded"
-              trailing={<button className="settings-secondary-button settings-upload-trigger" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /></button>}
+              trailing={<button className="icon-button" type="button" aria-label="Upload profile picture" title="Upload profile picture" onClick={() => profilePictureInputRef.current?.click()}><i className="fa-solid fa-upload" aria-hidden="true" /></button>}
             >
               <div className="profile-picture-picker">
                 <div className="profile-picture-preview" aria-hidden="true">
@@ -1082,6 +1110,27 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               </label>
               {aboutStatus && <span className="settings-field-message" role="status">{aboutStatus}</span>}
             </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-cake-candles" aria-hidden="true" /></span>}
+              title="Date of birth"
+              subtitle="Used for account age requirements. It is not shown on your public profile."
+              className="settings-row settings-row-expanded"
+              save={{ disabled: !canUpdateDateOfBirth, busy: isUpdatingDateOfBirth, onClick: handleDateOfBirthUpdate, label: 'Update date of birth' }}
+            >
+              <label className="settings-field">
+                <div className="settings-field-row">
+                  <input
+                    type="date"
+                    value={dateOfBirth}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(event) => setDateOfBirth(event.target.value)}
+                    aria-label="Date of birth"
+                    autoComplete="bday"
+                  />
+                </div>
+              </label>
+            </SettingsRow>
           </div>
         </div>
       )}
@@ -1134,7 +1183,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               title="Blocked people"
               subtitle="Review and unblock people you have blocked."
               className="settings-row"
-              trailing={<button className="settings-update-button" type="button" aria-label="View blocked people" title="View blocked people" onClick={() => setBlockedOpen(true)}><i className="fa-solid fa-eye" aria-hidden="true" /></button>}
+              trailing={<button className="icon-button" type="button" aria-label="View blocked people" title="View blocked people" onClick={() => setBlockedOpen(true)}><i className="fa-solid fa-eye" aria-hidden="true" /></button>}
             />
 
             <SettingsRow
@@ -1149,7 +1198,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
           </div>
         </div>
       )}
-      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="settings-update-button" type="button" aria-label={`Unblock ${item.displayName}`} title={`Unblock ${item.displayName}`} onClick={() => setUnblockTarget(item)}><i className="fa-solid fa-unlock" aria-hidden="true" /></button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
+      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="icon-button" type="button" aria-label={`Unblock ${item.displayName}`} title={`Unblock ${item.displayName}`} onClick={() => setUnblockTarget(item)}><i className="fa-solid fa-unlock" aria-hidden="true" /></button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
     </PageSurface>
   );
 }
@@ -1166,7 +1215,7 @@ function SaveTickButton({
   label: string;
 }) {
   return (
-    <button className="settings-update-button" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>
+    <button className="button-primary icon-button" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>
       <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" />
     </button>
   );

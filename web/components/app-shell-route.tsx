@@ -114,8 +114,8 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
           <h1 id="session-recovery-title">We couldn’t restore this session.</h1>
           <p>{sessionError === 'offline' ? 'Friink is having trouble reconnecting. Your account has not been signed out.' : sessionError === 'security' ? 'For your security, your session ended. Please sign in again.' : 'Your session has expired or is no longer available. Sign in again to continue.'}</p>
           <div className="lifecycle-actions">
-            {sessionError === 'offline' ? <button className="lifecycle-primary-button" type="button" onClick={() => window.location.reload()}>Try again</button> : null}
-            <button className="lifecycle-secondary-button" type="button" onClick={() => router.replace('/login')}>Go to login</button>
+            {sessionError === 'offline' ? <button className="button-primary" type="button" onClick={() => window.location.reload()}>Try again</button> : null}
+            <button className="button-secondary" type="button" onClick={() => router.replace('/login')}>Go to login</button>
           </div>
         </section>
       </main>

@@ -268,7 +268,15 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           onClose={() => setAccountMenuOpen(false)}
           ariaLabel="Account switcher"
           className="account-switcher-menu"
-          header={accountLoading ? <div className="account-switcher-status" role="status"><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /><span>Updating accounts…</span></div> : accountLoadError ? <div className="account-switcher-status account-switcher-status-error" role="status"><span>Couldn’t update accounts.</span><button type="button" onClick={() => void refreshAccounts()}>Retry</button></div> : null}
+          header={
+            <div className="account-switcher-header" role="status" aria-live="polite">
+              <span>Switch Account</span>
+              <span className="account-switcher-header-status">
+                {accountLoading ? <i className="fa-solid fa-spinner fa-spin" aria-label="Updating accounts" /> : null}
+                {!accountLoading && accountLoadError ? <button type="button" onClick={() => void refreshAccounts()}>Retry</button> : null}
+              </span>
+            </div>
+          }
           items={accountMenuItems}
         />
       </div>

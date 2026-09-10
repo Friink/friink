@@ -8547,3 +8547,54 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   returned `{"database":true}`. No direct staging or production database
   mutation was performed from this workstation; their migrations run through
   the deployment build gate.
+
+## 2026-09-10T17:00:00Z — Consolidate in-app button system
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clean up webapp button styles and align them with the
+  approved two-action-type design system.
+- Changes Made: Migrated app actions to shared `.button-primary` and
+  `.button-secondary` styles, added shared `.text-link`, `.icon-button`, and
+  `.button-full-width` contracts, normalized auth/workflow width behavior, and
+  removed obsolete duplicate action classes from `web/app/globals.css`.
+  Public landing-page button styles were left unchanged. Updated the binding
+  design contract in `packages/design/design.md`.
+- Files: `web/app/globals.css`, `web/components/design/button.tsx`, migrated
+  app components, `packages/design/design.md`, `CHANGELOG.md`.
+- Verification Status: Deleted-class audit passed; `npx tsc --noEmit` passed;
+  `npm run build -- --webpack` passed. The default Turbopack build remains
+  unavailable on this Windows workstation because the installed native SWC
+  binding is invalid; webpack is the documented local fallback.
+
+## 2026-09-10T17:20:00Z — Add editable date of birth to Profile settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add an editable date-of-birth field to Settings > Profile
+  only; defer public-profile display and visibility controls.
+- Changes Made: Reused the existing `users.date_of_birth` column, exposed it
+  only in authenticated `UserResponse`, added server-side update and minimum-
+  age validation, wired the web session/update contract, and added the shared
+  SettingsRow field with its own save action. Public user responses remain
+  unchanged.
+- Files: `api/app/schemas/auth.py`, `api/app/services/auth.py`,
+  `api/tests/test_auth_updates.py`, `web/lib/auth.ts`,
+  `web/components/account-screens.tsx`, `packages/design/design.md`.
+- Verification Status: The focused DOB API test passed; web `npx tsc --noEmit`
+  passed. No database migration was required. The broader auth-update file
+  retains one unrelated legacy fixture failure because its FakeSession lacks
+  the current login row-lock `scalar_one()` method.
+
+## 2026-09-10T17:35:00Z — Stabilize account-switcher loading header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep `Switch Account` permanently visible in the account
+  switcher and show the loader on its right only during refresh.
+- Changes Made: Replaced the transient account-loading status header with a
+  permanent account-switcher header. The right-side spinner is conditional on
+  loading, and failed refreshes expose a right-side Retry action without
+  replacing the header text.
+- Files: `web/components/side-drawer.tsx`, `web/app/globals.css`.
+- Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.

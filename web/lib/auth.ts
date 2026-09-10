@@ -8,6 +8,7 @@ export type AuthUser = {
   email: string;
   username: string;
   about: string;
+  dateOfBirth: string;
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
@@ -67,6 +68,7 @@ type ApiUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  date_of_birth: string;
   is_private: boolean;
   likes_visible: boolean;
   setup_step: 1 | 2;
@@ -177,6 +179,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
     about: '',
+    dateOfBirth: '1990-01-01',
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
@@ -698,7 +701,7 @@ function refreshErrorFromState(state: RefreshCoordinationState): AuthApiError {
 
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string; isPrivate?: boolean; likesVisible?: boolean },
+  input: { username?: string; email?: string; displayName?: string; about?: string; dateOfBirth?: string; isPrivate?: boolean; likesVisible?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
@@ -711,6 +714,7 @@ export async function updateCurrentUser(
       email: input.email,
       display_name: input.displayName,
       about: input.about,
+      date_of_birth: input.dateOfBirth,
       is_private: input.isPrivate,
       likes_visible: input.likesVisible,
     }),
@@ -1763,6 +1767,7 @@ function mapApiUser(user: ApiUser): AuthUser {
     email: user.email,
     username: user.username,
     about: user.about ?? '',
+    dateOfBirth: user.date_of_birth,
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,

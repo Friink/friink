@@ -166,6 +166,24 @@ async def test_update_current_user_updates_profile_fields() -> None:
 
 
 @pytest.mark.asyncio
+async def test_update_current_user_updates_date_of_birth_and_enforces_minimum_age() -> None:
+    user = make_user("alex", "alex@example.com")
+    session = FakeSession()
+
+    updated = await service.update_current_user(
+        session,
+        user,
+        UpdateCurrentUserRequest(date_of_birth=date(1995, 6, 15)),
+    )
+
+    assert updated.date_of_birth == date(1995, 6, 15)
+    assert session.commits == 1
+
+    with pytest.raises(ValueError, match="at least 13"):
+        UpdateCurrentUserRequest(date_of_birth=date.today())
+
+
+@pytest.mark.asyncio
 async def test_change_password_requires_current_password() -> None:
     user = make_user("alex", "alex@example.com")
     user.password_hash = hash_password("CurrentPass1!")

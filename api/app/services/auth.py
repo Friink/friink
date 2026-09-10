@@ -291,6 +291,10 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
         user.about = data.about
         changed = True
 
+    if data.date_of_birth is not None and data.date_of_birth != user.date_of_birth:
+        user.date_of_birth = data.date_of_birth
+        changed = True
+
     if data.is_private is not None and data.is_private != user.is_private:
         user.is_private = data.is_private
         changed = True
