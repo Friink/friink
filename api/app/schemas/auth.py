@@ -132,7 +132,7 @@ class LoginApprovalResponse(BaseModel):
 
 
 class LoginApprovalStatusResponse(BaseModel):
-    status: Literal["pending", "approved", "denied", "expired"]
+    status: Literal["pending", "approved", "otp_verified", "denied", "expired"]
 
 
 class LoginApprovalActionRequest(BaseModel):

@@ -4,7 +4,7 @@ Status: Living implementation/progress document. Each phase and subphase below
 has an authoritative status plus implementation notes, test evidence, and
 noteworthy follow-up items.
 
-Last updated: 2026-09-10T02:00:00Z
+Last updated: 2026-09-10T05:15:00Z
 
 ## Database connection management
 
@@ -2753,3 +2753,31 @@ remaining account or returns to the public site; deactivated and pending-
 deletion accounts show lifecycle messaging and are removed from the device
 list; the dropdown closes after switching; and recoverable failures preserve
 the active account.
+
+## 2026-09-10 implementation and staging follow-up
+
+The web login and in-app Add account flow share the same OTP completion
+handler. If OTP verification ends in an ambiguous client or network failure
+after the server may have committed the login, the client makes one
+refresh-cookie recovery attempt before showing an error. Successful recovery
+continues the normal authenticated redirect; invalid or expired OTP responses
+retain their existing error behavior.
+
+This applies to standalone login and Add account. It does not treat a timeout
+as proof that the session is invalid, does not clear the active account, and
+does not retry indefinitely. Account display usernames must come from the
+server-returned account summary and must never be inferred from an email
+address. See `docs/latency.md` for the 2026-09-10 observations.
+
+The approval and emailed-OTP paths are alternatives. While the login screen is
+waiting for OTP input, approval-status polling may run; as soon as the user
+starts entering an OTP, polling stops. A late approval `expired` response must
+not overwrite the active OTP path or display stale error copy before successful
+OTP completion. Editing the OTP also clears earlier approval-status messaging.
+
+The API also records the winning path through the existing challenge fields and
+serializes OTP, approval, and denial transitions with a row lock. Its status
+endpoint reports `otp_verified` after OTP consumption when approval did not win,
+so delayed polls can distinguish a completed OTP challenge from a genuinely
+expired one. Both completion paths remain single-use and server-authoritative;
+the frontend guard is retained as a defensive response-ordering safeguard.

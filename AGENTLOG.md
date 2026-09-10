@@ -1,5 +1,58 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-10T05:15:00Z — Document OTP recovery and latency investigation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update authentication/session, design, rules, changelog, and
+  project documentation, and record today's login/account-switch latency tests.
+- Changes Made: Documented one-shot refresh-cookie recovery after an ambiguous
+  OTP verification timeout for standalone login and Add account; documented
+  cached selector rendering, async refresh, loading feedback, post-operation
+  refresh, and the username/email identity boundary. Added `docs/latency.md`
+  with measured and reported findings.
+- Files: `docs/auth-and-session.md`, `packages/design/design.md`, `RULES.md`,
+  `docs/latency.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only update. No code or deployment was
+  changed. Staging OTP recovery had already been exercised successfully; the
+  latency record does not claim backend timings that were not directly measured.
+
+## 2026-09-10T05:30:00Z — Prevent approval expiry from overwriting OTP login
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and fix the login-request-expired message that
+  appeared while OTP login still succeeded.
+- Changes Made: Stopped approval-status polling when OTP entry begins or OTP
+  submission is active, and clear stale approval errors when the code is edited.
+  Updated the auth/session and rules documentation with the mutually exclusive
+  OTP/approval contract.
+- Files: `web/components/login-screen.tsx`, `docs/auth-and-session.md`,
+  `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript passed. Focused API account tests passed
+  their assertions; pytest exited during the known Windows SQLite temporary
+  file cleanup with `WinError 32`. Staging deployment and browser retest are
+  still required.
+
+## 2026-09-10T05:45:00Z — Make OTP/approval completion server-authoritative
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the temporary client-only guard for the login-request
+  expiry race with a durable API contract and update the documentation.
+- Changes Made: Serialized challenge mutation with row locks, exposed an
+  `otp_verified` status for consumed OTP challenges, updated the web status
+  type/handling, and retained the client guard only as defense against stale
+  response ordering.
+- Files: `api/app/services/login_challenges.py`, `api/app/routers/auth.py`,
+  `api/app/schemas/auth.py`, `web/lib/auth.ts`,
+  `web/components/login-screen.tsx`, `docs/auth-and-session.md`, `RULES.md`,
+  `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript passed. Focused API account tests passed
+  their assertions; pytest exited during the known Windows SQLite temporary
+  file cleanup with `WinError 32`. Staging deployment and browser retest are
+  still required.
+
 ## 2026-09-10T03:00:00Z — Recover successful OTP logins after ambiguous timeout
 
 - Agent: Codex

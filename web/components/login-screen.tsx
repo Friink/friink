@@ -49,12 +49,15 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
   const signupProgressLabel = isSignupProfileStep ? 'Step 4 of 4' : isSignupPasswordStep ? 'Step 3 of 4' : isSignupOtpStep ? 'Step 2 of 4' : 'Step 1 of 4';
 
   useEffect(() => {
-    if (!loginChallengeToken || !isLoginOtpStep) return;
+    // Approval and OTP are alternative completion paths. Once the user starts
+    // entering the OTP, stop approval polling so a late `expired` response
+    // cannot overwrite the active OTP flow or its eventual success.
+    if (!loginChallengeToken || !isLoginOtpStep || loginOtp.length > 0 || isSubmitting) return;
     let stopped = false;
     const poll = async () => {
       try {
         const status = await getLoginApprovalStatus(loginChallengeToken);
-        if (stopped || status === 'pending') return;
+        if (stopped || status === 'pending' || status === 'otp_verified') return;
         if (status === 'approved') finishAuthentication(await completeApprovedLogin(loginChallengeToken, { addAccount: mode === 'account-modal' }));
         else if (status === 'denied') setErrorMessage('This login request was denied.');
         else setErrorMessage('This login request expired. Please try again.');
@@ -63,7 +66,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
     const interval = window.setInterval(() => void poll(), 2000);
     void poll();
     return () => { stopped = true; window.clearInterval(interval); };
-  }, [loginChallengeToken, isLoginOtpStep]);
+  }, [loginChallengeToken, isLoginOtpStep, loginOtp.length, isSubmitting]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -374,7 +377,10 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
               label="Verification code"
               type="text"
               value={loginOtp}
-              onChange={(event) => setLoginOtp(event.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase())}
+              onChange={(event) => {
+                setErrorMessage('');
+                setLoginOtp(event.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6).toUpperCase());
+              }}
               placeholder="Verification code"
               autoComplete="one-time-code"
               inputMode="text"

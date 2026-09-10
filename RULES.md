@@ -163,6 +163,13 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web
 - **File(s):** `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell-route.tsx`
+
+### Rule: OTP Verification Timeout Recovery
+- **What:** A client or network timeout while completing OTP verification is ambiguous because the API may already have committed the authenticated session. The shared web login handler may make one refresh-cookie recovery attempt before displaying an error, then continues the normal authenticated redirect if recovery succeeds.
+- **Edge cases:** This applies equally to standalone login and in-app Add account. Invalid or expired OTP responses retain their normal errors; recovery must not loop, clear the active account, or infer account identity from the email address. Only an explicitly confirmed terminal session result may clear local auth.
+- **Status:** Active
+- **Platform:** Web
+- **File(s):** `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/auth-and-session.md`
 - **Since:** 2026-09-01 (UTC)
 
 ### Rule: Multiple Account Switching
@@ -847,3 +854,17 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `docs/blocking.md`, `api/app/services/blocking.py`, `api/app/routers/users.py`, `api/app/services/chat.py`
+
+### Rule: OTP And Approval Paths Are Mutually Exclusive In The UI
+- **What:** The login screen may offer emailed OTP and existing-session approval for the same challenge, but once OTP entry begins, approval-status polling must stop. A late approval status cannot overwrite OTP validation, submission, or successful navigation.
+- **Edge cases:** Editing the OTP clears stale approval messaging. Polling must not run during OTP submission. The backend remains authoritative for whether the submitted OTP is valid or expired.
+- **Status:** Active
+- **Platform:** Web
+- **File(s):** `web/components/login-screen.tsx`, `docs/auth-and-session.md`
+
+### Rule: Login Challenge Completion Is Server-Authoritative
+- **What:** OTP verification, existing-session approval, and denial compete on one login challenge. The API serializes transitions, preserves the first terminal outcome, and reports `otp_verified` when OTP consumed the challenge without approval winning.
+- **Edge cases:** A delayed status response must not turn a completed OTP challenge into `expired`; the frontend may defensively ignore stale responses, but correctness belongs to the API. Completion remains single-use and must preserve add-account/device-slot behavior.
+- **Status:** Active
+- **Platform:** API/Web
+- **File(s):** `api/app/services/login_challenges.py`, `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`

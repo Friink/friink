@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-10T05:15:00Z
+
+- [documentation] Documented OTP timeout recovery for standalone login and Add
+  account, the account-selector async loading/refresh contract, and today's
+  measured and reported latency findings in `docs/latency.md`.
+
+## 2026-09-10T05:30:00Z
+
+- [web] Stopped login-approval polling when OTP entry or submission is active,
+  preventing a late approval-expired response from overwriting the OTP flow.
+- [documentation] Recorded the mutually exclusive OTP/approval behavior in
+  the authentication and rules documentation.
+
+## 2026-09-10T05:45:00Z
+
+- [api] Made OTP, approval, and denial challenge transitions serialized and
+  server-authoritative; completed OTP challenges now report `otp_verified`.
+- [web] Updated status handling while retaining stale-response protection.
+- [documentation] Documented the durable challenge-state contract.
+
 ## 2026-09-10T03:00:00Z
 
 - [web] OTP login now attempts refresh-cookie recovery after a client/network

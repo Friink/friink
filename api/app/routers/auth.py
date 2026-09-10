@@ -61,7 +61,7 @@ from app.services.security_events import process_notification_outbox, record_sec
 from app.services.notifications import create_notification
 from app.models.notification import NotificationType
 from app.models.security_event import SecurityEventType
-from app.services.login_challenges import create_login_challenge, derive_pending_device_identifier, get_login_challenge, verify_login_challenge
+from app.services.login_challenges import create_login_challenge, derive_pending_device_identifier, get_login_challenge, get_login_challenge_for_update, verify_login_challenge
 from app.services.session_service import (
     DEVICE_COOKIE_NAME,
     create_auth_session,
@@ -433,7 +433,7 @@ async def login_verify(
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
     require_allowed_origin(request, settings)
-    challenge = get_login_challenge(session, payload.challenge_token)
+    challenge = get_login_challenge_for_update(session, payload.challenge_token)
     user = session.get(User, challenge.user_id) if challenge else None
     if not challenge or not user or user.account_locked:
         if user and user.account_locked:
@@ -881,7 +881,7 @@ async def approve_login(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> Response:
-    challenge = session.get(LoginChallenge, payload.challenge_id)
+    challenge = session.execute(select(LoginChallenge).where(LoginChallenge.id == payload.challenge_id).with_for_update()).scalar_one_or_none()
     if not challenge or challenge.user_id != current_user.id or challenge.kind != "login" or challenge.consumed_at is not None or challenge.denied_at is not None or challenge.expires_at <= datetime.now(UTC):
         raise HTTPException(status_code=404, detail="Login request not found.")
     challenge.approved_at = datetime.now(UTC)
@@ -895,7 +895,7 @@ async def deny_login(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> Response:
-    challenge = session.get(LoginChallenge, payload.challenge_id)
+    challenge = session.execute(select(LoginChallenge).where(LoginChallenge.id == payload.challenge_id).with_for_update()).scalar_one_or_none()
     if not challenge or challenge.user_id != current_user.id or challenge.consumed_at is not None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     challenge.denied_at = datetime.now(UTC)
@@ -912,6 +912,8 @@ async def login_approval_status(challenge_token: str, session: Session = Depends
         return LoginApprovalStatusResponse(status="denied")
     if challenge.approved_at is not None:
         return LoginApprovalStatusResponse(status="approved")
+    if challenge.consumed_at is not None and challenge.approved_at is None:
+        return LoginApprovalStatusResponse(status="otp_verified")
     if challenge.consumed_at is not None or challenge.expires_at <= datetime.now(UTC):
         return LoginApprovalStatusResponse(status="expired")
     return LoginApprovalStatusResponse(status="pending")
@@ -925,7 +927,7 @@ async def complete_approved_login(
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
-    challenge = get_login_challenge(session, payload.challenge_token)
+    challenge = get_login_challenge_for_update(session, payload.challenge_token)
     user = session.get(User, challenge.user_id) if challenge else None
     if not challenge or not user or user.account_locked or user.lifecycle_status != "active" or challenge.approved_at is None or challenge.consumed_at is not None or challenge.expires_at <= datetime.now(UTC):
         raise HTTPException(status_code=400, detail="The login approval is invalid or expired.")

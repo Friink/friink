@@ -38,9 +38,12 @@ Friink is a calm, people-first social space centered on meaningful conversations
 ## Account Switcher
 
 - **Remembered Accounts**: The account caret lists server-provided device slots in recency order, followed by `Add account` and `Manage accounts`. The active account remains usable until a new account session and slot are fully established.
+- **Async Refresh**: Opening the selector renders the cached device-scoped list immediately while one deduplicated background refresh runs. During refresh, show the shared compact loader and `Updating accounts…`; keep the current account visible and usable instead of showing a blank state.
+- **Refresh Completion**: Add-account, switch, and logout actions trigger an immediate asynchronous list refresh. Display names and usernames come from the API summary; never derive a username from an email address. A failed refresh preserves the cached list and current account and exposes a retryable message.
 - **Limit State**: When the configured device-slot limit is reached, `Add account` does not start authentication; it opens account management with a clear remove-before-adding message.
 - **Fallback**: Active logout returns to the most-recent remaining account. Deactivation uses `Go Back` for the same fallback and returns to the public site only when no remembered account remains.
 - **Failure State**: Failed list, switch, logout, or add-account requests preserve the active account and expose a retryable message. Reload derives the active identity from the validated session rather than stale local account state.
+- **Busy State**: During a switch, the selected row shows the shared spinner and competing account, logout, and Add account actions are disabled until the operation settles. Success updates/remounts the app shell in place without a browser-level reload.
 
 ## Navigation
 

@@ -796,8 +796,8 @@ export async function respondToLoginApproval(accessToken: string, challengeId: s
   await requestApi<void>(`/auth/login/${decision}`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request', body: JSON.stringify({ challenge_id: challengeId }) });
 }
 
-export async function getLoginApprovalStatus(challengeToken: string): Promise<'pending' | 'approved' | 'denied' | 'expired'> {
-  const response = await requestApi<{ status: 'pending' | 'approved' | 'denied' | 'expired' }>(`/auth/login/status/${encodeURIComponent(challengeToken)}`, { method: 'GET', skipAuthRefresh: true });
+export async function getLoginApprovalStatus(challengeToken: string): Promise<'pending' | 'approved' | 'otp_verified' | 'denied' | 'expired'> {
+  const response = await requestApi<{ status: 'pending' | 'approved' | 'otp_verified' | 'denied' | 'expired' }>(`/auth/login/status/${encodeURIComponent(challengeToken)}`, { method: 'GET', skipAuthRefresh: true });
   return response.status;
 }
 

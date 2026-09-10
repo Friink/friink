@@ -43,6 +43,14 @@ def get_login_challenge(session: Session, raw_token: str) -> LoginChallenge | No
     ).scalar_one_or_none()
 
 
+def get_login_challenge_for_update(session: Session, raw_token: str) -> LoginChallenge | None:
+    return session.execute(
+        select(LoginChallenge)
+        .where(LoginChallenge.token_hash == hash_challenge_token(raw_token))
+        .with_for_update()
+    ).scalar_one_or_none()
+
+
 def verify_login_challenge(session: Session, challenge: LoginChallenge, user: User, code: str) -> bool:
     # The first completed path wins: approving or denying from an existing
     # session also invalidates the emailed OTP for this same request.
