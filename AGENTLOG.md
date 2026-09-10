@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T06:45:00Z — Correct project artifact references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit the repository documentation against the README’s
+  artifact and deployment rules.
+- Changes Made: Corrected README’s stale Alembic-head reference from `0041` to
+  `0046`, added `docs/updated-account-info.md` to the project documentation
+  index, and added a maintained current-state summary to `CHANGELOG.md`.
+- Files: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation references audited; push pending.
+
 ## 2026-09-11T06:30:00Z — Push onboarding changes to development and staging
 
 - Agent: Codex

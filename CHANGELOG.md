@@ -1,5 +1,15 @@
 # Changelog
 
+## Current State
+
+- The three-step account setup wizard collects optional Profile picture,
+  About/Location, and Friink usage intent. The values use existing profile
+  update logic; the intent currently has no business-rule effects.
+- Settings exposes read-only Joined and Region information, plus intent editing
+  under General. The current Alembic migration head is `20260911_0046`.
+- The latest tested onboarding implementation is pushed to both development and
+  staging.
+
 ## 2026-09-11T04:30:00Z
 
 - [docs/auth] Documented the read-only Account-tab `Joined` field, using the

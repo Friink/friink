@@ -51,8 +51,9 @@ The `development` branch is the local-work branch below `staging`. Its ignored
 `api/.env.development` file may copy the staging variable names, but must point
 to an isolated development database and must never contain production
 credentials. The development database is migrated to the current Alembic head
-before local auth/session rehearsals; the current verified head is
-`20260909_0041` with no reported schema drift.
+before local auth/session rehearsals; the current repository migration head is
+`20260911_0046`. Each environment must apply and verify that head before
+acceptance testing.
 
 ## Deployment
 
@@ -121,6 +122,8 @@ these files, and the live implementation, are:**
   requirements, intentionally deferred until a mobile client exists.
 - **`docs/chat-behavior.md`** — the implementation contract for chat requests, composer states, notifications, mute/archive behavior, blocking infrastructure, and subscription boundaries.
 - **`docs/like-and-star.md`** — the implementation contract for durable post Likes and Saves, privacy behavior, Like actor lists, notifications, API routes, risks, limitations, and end-to-end acceptance checks.
+- **`docs/updated-account-info.md`** — the Joined, Region, Location, and Friink
+  usage-intent account-information and onboarding contract.
 
 When these were prepared, this set was considered sufficient to fully rebuild Friink
 from scratch.
