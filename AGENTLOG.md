@@ -8533,3 +8533,17 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   failed-login throttling policy`). The earlier entries above were written
   before that commit succeeded and are retained unchanged for append-only
   history.
+
+## 2026-09-10T16:35:00Z — Push failed-login policy to all release branches
+
+- Agent: Codex
+- Model: GPT-5
+- Changes Made: Pushed release commit `3a3c723` to `origin/development`,
+  `origin/staging`, and `origin/main`. The API deployment migration gate is
+  configured in `api/vercel.json`; the isolated development database was
+  migrated through `20260910_0043` and passed `alembic check`.
+- Verification Status: `staging.friink.com` and `friink.com` returned HTTP
+  200. `staging-api.friink.com/health/db` and `api.friink.com/health/db`
+  returned `{"database":true}`. No direct staging or production database
+  mutation was performed from this workstation; their migrations run through
+  the deployment build gate.

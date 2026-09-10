@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-10T16:35:00Z
+
+- [release] Pushed the failed-login throttling release through `development`,
+  `staging`, and `main` at commit `3a3c723`.
+- [verification] Applied and verified the new Alembic migration in the
+  isolated development database; staging and production use the API
+  deployment migration gate. Confirmed staging and production web/API health
+  endpoints after the push.
+
 ## 2026-09-10T16:00:00Z
 
 - [auth/docs] Synchronized the failed-login throttling replacement across the
