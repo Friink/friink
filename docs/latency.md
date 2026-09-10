@@ -81,3 +81,12 @@ the API and exposes `otp_verified` for a challenge consumed by OTP. The web
 client also stops approval polling once OTP entry or submission begins. This
 change has passed local TypeScript and focused API assertions; a fresh staging
 browser retest remains the deployment gate.
+
+Staging retest on 2026-09-10 passed that gate: a fresh incognito session
+reached OTP, OTP submission redirected to `/home/explore`, and the former
+login-request-expired message did not appear. The authenticated feed continued
+loading afterward, which remains separate from OTP completion correctness.
+
+This verifies the normal deployed state flow only. It does not verify a
+concurrent OTP-versus-approval race, duplicate completion handling, or a direct
+`otp_verified` API response assertion.

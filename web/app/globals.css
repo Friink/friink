@@ -3021,6 +3021,12 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   list-style: none;
 }
 
+.username-criteria {
+  margin: -0.35rem 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
 .password-criteria li {
   display: flex;
   align-items: center;

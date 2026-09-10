@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-10T07:15:00Z
+
+- [web] Added visible signup username criteria and normalized trailing/leading
+  spaces before availability checks and submission.
+- [api] Set username validation to 2–32 characters and made display names
+  optional, trimmed, and limited to 124 characters.
+
 ## 2026-09-10T05:15:00Z
 
 - [documentation] Documented OTP timeout recovery for standalone login and Add
@@ -19,6 +26,12 @@
   server-authoritative; completed OTP challenges now report `otp_verified`.
 - [web] Updated status handling while retaining stale-response protection.
 - [documentation] Documented the durable challenge-state contract.
+
+## 2026-09-10T06:25:00Z
+
+- [documentation] Recorded the staging verification boundary: normal OTP
+  completion passed, while concurrent OTP/approval and duplicate-completion
+  guarantees remain unverified.
 
 ## 2026-09-10T03:00:00Z
 

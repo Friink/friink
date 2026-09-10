@@ -18,6 +18,11 @@ def test_password_requires_complexity() -> None:
 
 def test_username_allows_documented_characters_only() -> None:
     assert validate_username_rules("Friink.User-1_ok") == "Friink.User-1_ok"
+    assert validate_username_rules("  Friink  ") == "Friink"
+    with pytest.raises(ValueError):
+        validate_username_rules("F")
+    with pytest.raises(ValueError):
+        validate_username_rules("f" * 33)
     with pytest.raises(ValueError):
         validate_username_rules("friink user")
     with pytest.raises(ValueError):
@@ -49,7 +54,10 @@ def test_update_current_user_schema_validates_username() -> None:
 
 def test_update_current_user_schema_validates_profile_fields() -> None:
     assert UpdateCurrentUserRequest(display_name="Alex", about="Short about.").about == "Short about."
+    assert UpdateCurrentUserRequest(display_name="  Alex  ").display_name == "Alex"
+    assert UpdateCurrentUserRequest(display_name="   ").display_name is None
+    assert UpdateCurrentUserRequest(display_name="x" * 124).display_name == "x" * 124
     with pytest.raises(ValidationError):
-        UpdateCurrentUserRequest(display_name="")
+        UpdateCurrentUserRequest(display_name="x" * 125)
     with pytest.raises(ValidationError):
         UpdateCurrentUserRequest(about="x" * 257)

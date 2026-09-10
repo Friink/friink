@@ -2781,3 +2781,16 @@ endpoint reports `otp_verified` after OTP consumption when approval did not win,
 so delayed polls can distinguish a completed OTP challenge from a genuinely
 expired one. Both completion paths remain single-use and server-authoritative;
 the frontend guard is retained as a defensive response-ordering safeguard.
+
+### Staging verification boundary — 2026-09-10
+
+A fresh incognito staging run verified the normal OTP completion path after
+the server-authoritative challenge-state change: the OTP was submitted once,
+the UI remained in `Please wait…` without an expiry or timeout message, and the
+session redirected to `/home/explore` successfully. This verifies the deployed
+normal state flow and session continuity.
+
+It does not yet prove the concurrent race guarantee. No dedicated test has
+simultaneously submitted OTP and approval, submitted duplicate completions, or
+directly asserted the API's `otp_verified` status response. Those remain
+backend concurrency evidence requirements and must not be described as passed.

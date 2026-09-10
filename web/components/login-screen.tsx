@@ -167,20 +167,24 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
     if (isSignupProfileStep) {
       setIsSubmitting(true);
       try {
-        if (!USERNAME_PATTERN.test(username)) {
+        const normalizedName = fullName.trim();
+        const normalizedUsername = username.trim();
+        setFullName(normalizedName);
+        setUsername(normalizedUsername);
+        if (normalizedUsername.length < 2 || normalizedUsername.length > 32 || !USERNAME_PATTERN.test(normalizedUsername)) {
           setIsSubmitting(false);
-          setErrorMessage("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.");
+          setErrorMessage('Username must be 2–32 characters using only letters, numbers, \'-\', \'_\', or \'.\'.');
           return;
         }
 
-        const availability = await checkUsernameAvailability(username);
+        const availability = await checkUsernameAvailability(normalizedUsername);
         if (!availability.available) {
           setIsSubmitting(false);
           setErrorMessage('Username is already taken.');
           return;
         }
 
-        const signupInput: SignupInput = { name: fullName, email, username, password, dateOfBirth };
+        const signupInput: SignupInput = { name: normalizedName, email, username: normalizedUsername, password, dateOfBirth };
         const session = signupReservationToken
           ? await completeSignup(signupReservationToken, signupInput, { addAccount: mode === 'account-modal' })
           : await signUp(signupInput, { addAccount: mode === 'account-modal' });
@@ -547,7 +551,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
               onChange={(event) => setFullName(event.target.value)}
               placeholder="Name"
               autoComplete="name"
-              required
+              maxLength={124}
             />
 
             <InputField
@@ -557,8 +561,14 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
               placeholder="username"
               prefix={'@'}
               autoComplete="off"
+              minLength={2}
+              maxLength={32}
+              pattern={USERNAME_PATTERN.source}
+              title="Use 2–32 characters: letters, numbers, '.', '_', or '-'."
+              aria-describedby="signup-username-criteria"
               required
             />
+            <p className="username-criteria" id="signup-username-criteria">2–32 characters · letters, numbers, '.', '_', and '-'</p>
 
             <InputField
               label="Date of birth"

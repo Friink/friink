@@ -6,6 +6,9 @@ from typing import Literal
 from pydantic import AliasChoices, BaseModel, EmailStr, Field, field_validator, model_validator
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+USERNAME_MIN_LENGTH = 2
+USERNAME_MAX_LENGTH = 32
+DISPLAY_NAME_MAX_LENGTH = 124
 PASSWORD_MAX_BYTES = 72
 
 
@@ -28,9 +31,19 @@ def validate_password_rules(password: str) -> str:
 
 
 def validate_username_rules(username: str) -> str:
-    if " " in username or not USERNAME_PATTERN.fullmatch(username):
+    username = username.strip()
+    if len(username) < USERNAME_MIN_LENGTH:
+        raise ValueError("Username must be at least 2 characters long.")
+    if len(username) > USERNAME_MAX_LENGTH:
+        raise ValueError("Username must be 32 characters or fewer.")
+    if not USERNAME_PATTERN.fullmatch(username):
         raise ValueError("Username may contain only letters, numbers, '-', '_', and '.' with no spaces.")
     return username
+
+
+def normalize_display_name(display_name: str | None) -> str | None:
+    normalized = display_name.strip() if display_name is not None else None
+    return normalized or None
 
 
 def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date | None = None) -> date:
@@ -43,8 +56,8 @@ def validate_minimum_age(date_of_birth: date, minimum_age: int = 13, today: date
 
 class SignupRequest(BaseModel):
     email: EmailStr
-    username: str = Field(min_length=1, max_length=64)
-    display_name: str | None = Field(default=None, min_length=1, max_length=120)
+    username: str = Field(min_length=USERNAME_MIN_LENGTH, max_length=USERNAME_MAX_LENGTH)
+    display_name: str | None = Field(default=None, max_length=DISPLAY_NAME_MAX_LENGTH)
     password: str
     date_of_birth: date
     location: str | None = Field(default=None, max_length=255)
@@ -54,10 +67,15 @@ class SignupRequest(BaseModel):
     def validate_password(cls, password: str) -> str:
         return validate_password_rules(password)
 
-    @field_validator("username")
+    @field_validator("username", mode="before")
     @classmethod
     def validate_username(cls, username: str) -> str:
         return validate_username_rules(username)
+
+    @field_validator("display_name", mode="before")
+    @classmethod
+    def normalize_name(cls, display_name: str | None) -> str | None:
+        return normalize_display_name(display_name)
 
     @field_validator("date_of_birth")
     @classmethod
@@ -157,19 +175,24 @@ class EmailChangeVerifyRequest(BaseModel):
 
 
 class UpdateCurrentUserRequest(BaseModel):
-    username: str | None = Field(default=None, min_length=1, max_length=64)
+    username: str | None = Field(default=None, min_length=USERNAME_MIN_LENGTH, max_length=USERNAME_MAX_LENGTH)
     email: EmailStr | None = None
-    display_name: str | None = Field(default=None, min_length=1, max_length=120)
+    display_name: str | None = Field(default=None, max_length=DISPLAY_NAME_MAX_LENGTH)
     about: str | None = Field(default=None, max_length=256)
     is_private: bool | None = None
     likes_visible: bool | None = None
 
-    @field_validator("username")
+    @field_validator("username", mode="before")
     @classmethod
     def validate_username(cls, username: str | None) -> str | None:
         if username is None:
             return username
         return validate_username_rules(username)
+
+    @field_validator("display_name", mode="before")
+    @classmethod
+    def normalize_name(cls, display_name: str | None) -> str | None:
+        return normalize_display_name(display_name)
 
 
 class ChangePasswordRequest(BaseModel):

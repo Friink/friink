@@ -238,7 +238,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-04T22:06:53Z
 
 ### Rule: Password And Username Validation
-- **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Passwords are limited to 72 UTF-8 bytes to match the current bcrypt storage format. Usernames must be 1-64 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form.
+- **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Passwords are limited to 72 UTF-8 bytes to match the current bcrypt storage format. Usernames must be 2-32 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form. Display names are optional, trimmed, and limited to 124 characters.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
@@ -788,6 +788,7 @@ the entry, so history isn't lost.
 - **File(s):** `api/app/db.py`, `api/alembic/env.py`, `api/requirements.txt`, `api/api/index.py`
 - **Since:** 2026-08-27T00:00:00Z
 
+
 ### Rule: Deployment-Neutral Database Connection Management
 - **What:** Database connection management must remain portable across Neon and the planned Ubuntu deployment. Pool behavior is configured by environment, not by platform-specific application branches. The default is a small SQLAlchemy pool (3 base connections plus 2 overflow connections, with pre-ping, LIFO reuse, recycling, and a bounded checkout timeout); pooling can be disabled explicitly when a runtime requires short-lived connections.
 - **Edge cases:** Neon Free has scale-to-zero and connection limits, so a small pool must not be treated as a promise to keep the database warm. Ubuntu values may be increased only after accounting for API worker count and PostgreSQL `max_connections`; total connections across workers and processes are the controlling limit. The local post-pooling sample improved switch completion to approximately 1.0–1.7 seconds, but account-list refresh still reached approximately 12 seconds; continue treating refresh latency as a separate investigation.
@@ -868,3 +869,10 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** API/Web
 - **File(s):** `api/app/services/login_challenges.py`, `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/lib/auth.ts`, `web/components/login-screen.tsx`
+
+### Rule: Do Not Overstate OTP Concurrency Verification
+- **What:** A successful single-browser OTP redirect verifies the normal challenge flow only. It is not evidence that concurrent OTP, approval, or duplicate completion requests were serialized correctly.
+- **Edge cases:** Documentation and release notes must distinguish normal-flow staging evidence from direct API status assertions and backend concurrency tests. The concurrency gate remains open until those tests exist and pass.
+- **Status:** Active
+- **Platform:** API/Web
+- **File(s):** `docs/auth-and-session.md`, `docs/latency.md`, `api/tests/`

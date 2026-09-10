@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-10T07:15:00Z — Clarify signup identity criteria and normalization
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show username criteria during signup and normalize trailing
+  spaces while applying the agreed identity limits.
+- Changes Made: Username is now 2–32 characters; display names are optional,
+  trimmed, and capped at 124 characters. Signup visibly presents username
+  criteria and trims name/username values before availability and submission.
+- Files: `api/app/schemas/auth.py`, `web/components/login-screen.tsx`,
+  `web/app/globals.css`, `RULES.md`, `packages/design/design.md`,
+  `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript passed. Focused validation assertions
+  passed; pytest again exited during the known Windows SQLite cleanup with
+  `WinError 32`.
+
 ## 2026-09-10T05:15:00Z — Document OTP recovery and latency investigation
 
 - Agent: Codex
@@ -33,6 +49,31 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   their assertions; pytest exited during the known Windows SQLite temporary
   file cleanup with `WinError 32`. Staging deployment and browser retest are
   still required.
+
+## 2026-09-10T06:10:00Z — Verify OTP challenge fix on staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the server-authoritative OTP/approval fix to staging
+  and test it in a fresh incognito session.
+- Changes Made: Pushed commit `071d00d` to `origin/staging`; no main changes.
+- Verification Status: Fresh staging incognito login reached OTP, user-entered
+  OTP submission redirected to `/home/explore`, and no login-request-expired
+  message appeared. The authenticated shell settled; feed loading afterward
+  remains a separate latency concern.
+
+## 2026-09-10T06:25:00Z — Record OTP state verification boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document what the staging OTP test verified and what it did
+  not verify about the state mechanism.
+- Changes Made: Recorded that the normal deployed OTP state flow and session
+  continuity passed, while concurrent OTP/approval, duplicate completion, and
+  direct `otp_verified` API assertions remain unverified.
+- Files: `docs/auth-and-session.md`, `docs/latency.md`, `RULES.md`,
+  `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only update; no code or deployment change.
 
 ## 2026-09-10T05:45:00Z — Make OTP/approval completion server-authoritative
 

@@ -376,6 +376,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### 10. Form Inputs & Username Prefix Pattern (`InputField`, `account-screens.tsx`)
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.
+- **Signup Identity Guidance**: Signup visibly explains the username rule: 2–32 characters using letters, numbers, `.`, `_`, and `-`. The optional display-name field accepts up to 124 characters; leading and trailing whitespace is normalized away before submission.
 - **Single-Line Inputs**: Height `2.5rem` to `3rem`, corner radius strictly `8px` (`border-radius: 8px !important`).
 - **Button Primitives** (`Button`):
   - Height `3rem`, corner radius `8px` (`.pill-button`).
