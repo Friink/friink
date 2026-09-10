@@ -18,6 +18,7 @@ from app.routers.auth_diagnostics import router as auth_diagnostics_router
 from app.routers.auth_operations import router as auth_operations_router
 from app.routers.staff import router as staff_router
 from app.routers.subscriptions import router as subscriptions_router
+from app.routers.progressive_auth import router as progressive_auth_router
 
 settings = get_settings()
 logger = logging.getLogger("friink.auth")
@@ -61,6 +62,7 @@ app.include_router(auth_diagnostics_router)
 app.include_router(auth_operations_router)
 app.include_router(staff_router)
 app.include_router(subscriptions_router)
+app.include_router(progressive_auth_router)
 
 
 @app.get("/", response_class=PlainTextResponse)

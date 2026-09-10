@@ -215,6 +215,33 @@ export type SignupStartResponse = {
   existing_account: boolean;
 };
 
+export type ProgressiveStartResponse = {
+  accepted: boolean;
+  flow_token: string;
+  message: string;
+};
+
+export type ProgressiveContinueResponse = {
+  next_step: 'password' | 'email_verification';
+  message: string;
+};
+
+export async function startProgressiveLogin(identifier: string): Promise<ProgressiveStartResponse> {
+  return requestApi<ProgressiveStartResponse>('/auth/progressive/start', {
+    method: 'POST',
+    body: JSON.stringify({ identifier }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function continueProgressiveLogin(flowToken: string): Promise<ProgressiveContinueResponse> {
+  return requestApi<ProgressiveContinueResponse>('/auth/progressive/continue', {
+    method: 'POST',
+    body: JSON.stringify({ flow_token: flowToken }),
+    skipAuthRefresh: true,
+  });
+}
+
 type ApiEmailChangeStartResponse = {
   accepted: boolean;
   verification_required: boolean;

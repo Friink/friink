@@ -5,7 +5,7 @@ import { BrandLockup } from '@/components/design/brand-lockup';
 import { Button } from '@/components/design/button';
 import { InputField } from '@/components/design/input-field';
 import { PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/components/password-criteria';
-import { AuthApiError, checkUsernameAvailability, completeApprovedLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, refreshAuthSession, requestPasswordReset, saveAuthSession, signUp, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
+import { AuthApiError, checkUsernameAvailability, completeApprovedLogin, continueProgressiveLogin, completeSignup, getLoginApprovalStatus, isLoginChallenge, login, refreshAuthSession, requestPasswordReset, saveAuthSession, signUp, startProgressiveLogin, startSignupEmail, verifyLoginChallenge, verifySignupEmail, type AuthSession, type AuthUser, type SignupInput } from '@/lib/auth';
 
 const AUTH_FAILURE_MESSAGE = 'Sorry, that didn’t work.';
 const LOGIN_COOLDOWN_STORAGE_KEY = 'friink_login_cooldown';
@@ -15,11 +15,12 @@ type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
   mode?: 'page' | 'account-modal';
   initialMessage?: string;
+  progressive?: boolean;
 };
 
-type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'forgot-password' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp';
+type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'forgot-password' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp' | 'progressive-email' | 'progressive-continue';
 
-export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: LoginScreenProps) {
+export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, progressive = false }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -27,13 +28,14 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
-  const [step, setStep] = useState<AuthStep>('login-email');
+  const [step, setStep] = useState<AuthStep>(progressive ? 'progressive-email' : 'login-email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupOtp, setSignupOtp] = useState('');
   const [signupReservationToken, setSignupReservationToken] = useState('');
   const [loginOtp, setLoginOtp] = useState('');
   const [loginChallengeToken, setLoginChallengeToken] = useState('');
+  const [progressiveFlowToken, setProgressiveFlowToken] = useState('');
   const [lifecycleStatus, setLifecycleStatus] = useState<'deactivated' | 'pending_deletion' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginCooldownUntil, setLoginCooldownUntil] = useState<number | null>(null);
@@ -48,6 +50,8 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
   const isSignupPasswordStep = step === 'signup-password';
   const isSignupProfileStep = step === 'signup-profile';
   const isSignupOtpStep = step === 'signup-otp';
+  const isProgressiveEmailStep = step === 'progressive-email';
+  const isProgressiveContinueStep = step === 'progressive-continue';
   const signupProgressLabel = isSignupProfileStep ? 'Step 4 of 4' : isSignupPasswordStep ? 'Step 3 of 4' : isSignupOtpStep ? 'Step 2 of 4' : 'Step 1 of 4';
 
   useEffect(() => {
@@ -124,6 +128,49 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
         return;
       }
       setStep('login-password');
+      return;
+    }
+
+    if (isProgressiveEmailStep) {
+      if (!loginIdentifier.trim()) {
+        setErrorMessage('Please enter your email or username.');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const started = await startProgressiveLogin(loginIdentifier);
+        setProgressiveFlowToken(started.flow_token);
+        setStep('progressive-continue');
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (isProgressiveContinueStep) {
+      setIsSubmitting(true);
+      try {
+        const continued = await continueProgressiveLogin(progressiveFlowToken);
+        if (continued.next_step === 'password') {
+          setStep('login-password');
+        } else {
+          const signupStart = await startSignupEmail(loginIdentifier);
+          if (!signupStart.verification_required || !signupStart.reservation_token) {
+            setErrorMessage('If the signup details can be accepted, verification instructions will be sent.');
+            return;
+          }
+          setEmail(loginIdentifier);
+          setSignupReservationToken(signupStart.reservation_token);
+          setSignupOtp('');
+          setStep('signup-otp');
+        }
+      } catch (error) {
+        setErrorMessage(getAuthErrorMessage(error));
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -336,10 +383,10 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
         {mode === 'page' ? <BrandLockup size="lg" /> : null}
         {errorMessage && <p className="login-error" role="alert" aria-live="assertive">{errorMessage}</p>}
 
-        {isLoginEmailStep && (
+        {(isLoginEmailStep || isProgressiveEmailStep) && (
           <>
-            <div className="login-step-copy" aria-label="Login step 1 of 2">
-              <p>Welcome back</p>
+            <div className="login-step-copy" aria-label={isProgressiveEmailStep ? 'Login or create account' : 'Login step 1 of 2'}>
+              <p>{isProgressiveEmailStep ? 'Login or create account' : 'Welcome back'}</p>
               <span>Enter your email or username to continue.</span>
             </div>
 
@@ -361,7 +408,24 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
               </Button>
             </div>
 
-            {mode === 'page' ? <p className="login-switch">Don’t have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
+            {mode === 'page' && !progressive ? <p className="login-switch">Don’t have an account?{' '}<button type="button" onClick={handleStartSignup}>Sign up</button></p> : null}
+          </>
+        )}
+
+        {isProgressiveContinueStep && (
+          <>
+            <div className="login-step-copy" aria-label="Continue securely">
+              <p>Continue securely</p>
+              <span>We’ll take you to the next step.</span>
+            </div>
+            <button className="login-identifier-summary" type="button" onClick={() => { setErrorMessage(''); setStep('progressive-email'); }}>
+              {loginIdentifier}
+              <span>Change</span>
+            </button>
+            <div className="signup-actions signup-actions-single">
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('progressive-email'); }}>Back</button>
+              <Button className="login-submit" type="submit">{isSubmitting ? 'Please wait...' : 'Continue'}</Button>
+            </div>
           </>
         )}
 
@@ -369,7 +433,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
           <>
             <div className="login-step-copy" aria-label="Login step 2 of 2">
               <p>Enter your password</p>
-              <button className="login-identifier-summary" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
+              <button className="login-identifier-summary" type="button" onClick={() => { setErrorMessage(''); setStep(progressive ? 'progressive-email' : 'login-email'); }}>
                 {loginIdentifier}
                 <span>Change</span>
               </button>
@@ -404,7 +468,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage }: 
             </button>
 
             <div className={`signup-actions signup-actions-single${mode === 'account-modal' ? ' account-auth-actions' : ''}`}>
-              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep('login-email'); }}>
+              <button className="button-secondary" type="button" onClick={() => { setErrorMessage(''); setStep(progressive ? 'progressive-email' : 'login-email'); }}>
                 Back
               </button>
               <Button className="login-submit" type="submit" disabled={isSubmitting || loginCooldownSeconds > 0}>

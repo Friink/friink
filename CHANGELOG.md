@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-11T02:00:00Z
+
+- [auth/progressive] Added the feature-flagged `/start` progressive-login
+  entry point and opaque, short-lived, single-use flow orchestration for
+  existing-account password login and new-email verification.
+- [auth] Reused the existing login, signup-email, OTP, throttling, session,
+  and bootstrap protections; `/login` remains unchanged by default.
+- [schema] Added the `progressive_auth_flows` migration and model.
+- [web] Added the shared progressive identifier and neutral continuation
+  presentation without switching the public CTA.
+- [docs] Updated `docs/progressive-login.md` with implementation status,
+  endpoint details, security requirements, fallbacks, and deferred rollout
+  decisions. Staging browser, cross-origin-cookie, latency, and end-to-end
+  parity verification remain pending.
+
 ## 2026-09-11T01:00:00Z
 
 - [auth] Reduced the authentication/lifecycle full lockup to `13.5rem` and the

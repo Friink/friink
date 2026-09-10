@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     auth_diagnostics_internal_token: str = Field(default="", alias="AUTH_DIAGNOSTICS_INTERNAL_TOKEN")
     auth_operations_internal_token: str = Field(default="", alias="AUTH_OPERATIONS_INTERNAL_TOKEN")
     max_remembered_accounts_per_device: int = Field(default=4, alias="MAX_REMEMBERED_ACCOUNTS_PER_DEVICE")
+    progressive_login_enabled: bool = Field(default=False, alias="PROGRESSIVE_LOGIN_ENABLED")
 
     @model_validator(mode="after")
     def validate_lifecycle_timing(self) -> "Settings":

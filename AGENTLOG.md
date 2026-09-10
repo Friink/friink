@@ -8823,3 +8823,111 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   treatment.
 - Files: `web/app/globals.css`, `CHANGELOG.md`.
 - Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.
+
+## 2026-09-11 — Audit progressive-login specification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit and amend `docs/progressive-login.md` before any
+  progressive-login implementation; verify device-trust read order, timing
+  side-channel requirements, and failed-login notification parity.
+- Changes Made: Added explicit timing indistinguishability and
+  post-password device-trust requirements to the progressive-login spec and
+  added the requested verification items. Added the separate
+  `docs/progressive-login-audit.md` findings report, including code-level
+  citations, the visible-branch contradiction, current-vs-superseded Phase 7
+  behavior, and source-of-truth conflicts.
+- Files: `docs/progressive-login.md`, `docs/progressive-login-audit.md`,
+  `AGENTLOG.md`.
+- Verification Status: Documentation-only audit; no application code, existing
+  auth endpoint, `/login` route, or auth/session logic was modified. `git diff
+  --check` passed.
+
+## 2026-09-11 — Consolidate progressive-login audit findings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Merge the separate progressive-login audit report into the
+  main specification for simpler review.
+- Changes Made: Moved the audit findings, device-trust code citations, timing
+  side-channel requirement, current failed-login policy clarification, visible
+  branch contradiction, and implementation-gap notes into
+  `docs/progressive-login.md`. Removed the redundant standalone audit report.
+- Files: `docs/progressive-login.md`, `docs/progressive-login-audit.md`,
+  `AGENTLOG.md`.
+- Verification Status: Documentation-only consolidation; no application code,
+  existing auth endpoint, `/login` route, or auth/session logic was modified.
+  `git diff --check` passed.
+
+## 2026-09-11 — Clarify progressive-login failed-attempt UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restate the proposed progressive-login UX and document the
+  behavior after a failed password attempt.
+- Changes Made: Added a dedicated failed-attempt section to
+  `docs/progressive-login.md`, covering generic errors, identifier
+  preservation, password clearing, recovery controls, existing cooldown and
+  notification policy, and the prohibition on automatic account creation.
+- Files: `docs/progressive-login.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; no application code, existing
+  auth endpoint, `/login` route, or auth/session logic was modified. `git diff
+  --check` passed.
+
+## 2026-09-11 — Implement progressive-login entry point behind flags
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement `/start` according to the progressive-login
+  specification while preserving `/login`, existing authentication services,
+  and the public CTA until staging verification.
+- Changes Made: Added the `progressive_auth_flows` model and Alembic migration,
+  feature flags, `/auth/progressive/start` and `/continue` orchestration
+  endpoints, opaque short-lived single-use flow tokens, and the opt-in web
+  `/start` route. Reused existing signup-email, login, OTP, session, and
+  error-handling logic. Kept device-trust decisions downstream of password
+  verification and preserved the `/login` default path. Updated the main
+  progressive-login specification and changelog; no rules were changed because
+  the new flow is not yet live.
+- Files: `api/alembic/versions/20260911_0044_progressive_auth_flows.py`,
+  `api/app/models/progressive_auth_flow.py`, `api/app/routers/progressive_auth.py`,
+  `api/app/services/progressive_auth.py`, `api/app/config.py`,
+  `api/app/main.py`, `api/app/models/__init__.py`, `api/alembic/env.py`,
+  `api/.env.example`, `api/tests/test_progressive_login.py`,
+  `web/app/start/page.tsx`, `web/app/start/start-client.tsx`,
+  `web/components/login-screen.tsx`, `web/lib/auth.ts`,
+  `docs/progressive-login.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Python compilation and web `npx tsc --noEmit` passed.
+  The progressive API test assertions passed, but the existing Windows pytest
+  session teardown returned `WinError 32` while deleting its temporary SQLite
+  file. The Webpack production build and staging migration/deployment remain
+  pending; the public CTA is intentionally not enabled.
+
+## 2026-09-11 — Remove stale progressive-login decision wording
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the leftover reference to the progressive-login
+  visible-branch decision being open.
+- Changes Made: Updated the failed-attempt section in
+  `docs/progressive-login.md` to state that the neutral identifier-step
+  presentation is resolved and must not reveal the new-email branch.
+- Files: `docs/progressive-login.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only correction; no application code,
+  existing auth endpoint, `/login` route, or auth/session logic was modified.
+  `git diff --check` passed.
+
+## 2026-09-11 — Resolve progressive-login branch presentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Select the neutral presentation for the progressive-login
+  identifier step and record it in the main specification.
+- Changes Made: Resolved the visible-branch open decision in favor of neutral
+  copy and presentation. Clarified that the server may continue into distinct
+  existing-account or new-email flows without exposing account existence at
+  the identifier step, and updated the merged audit findings accordingly.
+- Files: `docs/progressive-login.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; no application code, existing
+  auth endpoint, `/login` route, or auth/session logic was modified. `git diff
+  --check` passed.
