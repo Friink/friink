@@ -115,8 +115,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.5rem;
+  width: 1.75rem;
+  height: 2rem;
 }
 
 .lifecycle-card {
@@ -423,7 +423,7 @@ textarea {
 }
 
 .brand-lockup-lg .brand-lockup-wordmark {
-  width: 18rem;
+  width: 13.5rem;
 }
 
 .pill-field {
@@ -743,7 +743,7 @@ textarea {
   }
 
   .brand-lockup-lg .brand-lockup-wordmark {
-    width: min(18rem, 76vw);
+    width: min(13.5rem, 76vw);
   }
 
   .forgot-password {
@@ -1822,7 +1822,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .topbar-full-logo {
   display: block;
-  width: 6rem;
+  width: 5rem;
   height: auto;
   margin-left: 0;
 }

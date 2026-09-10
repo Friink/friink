@@ -17,6 +17,17 @@ Friink is a calm, people-first social space centered on meaningful conversations
   authentication, lifecycle, and other branded wordmark surfaces. Select the
   black/white variants for light/dark public surfaces and the brand-color variant
   for authenticated application surfaces.
+- Public marketing surfaces use an optical size adjustment for the tight-viewbox
+  assets: the header full lockup is `2.5rem` high and footer mark is `1.75rem`
+  high. This preserves the established production visual scale; do not reuse
+  authenticated-shell logo dimensions for the public site.
+- The authenticated topbar uses the tight-viewbox full lockup at `5rem` wide.
+  This shared rule applies at desktop and mobile breakpoints so the app header
+  keeps the same compact optical scale across responsive layouts.
+- Authentication and lifecycle screens use the full lockup at `13.5rem` wide
+  and the fixed home mark at `1.75rem × 2rem`. These optical sizes compensate
+  for the tight viewboxes and keep login, reset-password, and recovery surfaces
+  aligned with the established production scale.
 
 ## Layout
 

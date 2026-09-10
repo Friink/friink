@@ -1,5 +1,53 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T01:00:00Z — Correct auth logo optical sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct oversized logos on authentication screens after the
+  tight-viewbox asset migration.
+- Changes Made: Reduced the auth/lifecycle `BrandLockup` large variant from
+  `18rem` to `13.5rem` and the fixed auth home mark from `2.25rem × 2.5rem` to
+  `1.75rem × 2rem`; updated responsive sizing and synchronized the design
+  contract and changelog.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Compared the user-provided production/staging login
+  captures and identified the tight-viewbox scale difference. `npm run build --
+  --webpack` passed, including TypeScript and all 22 static pages.
+
+## 2026-09-11T00:45:00Z — Resize authenticated app-header logo
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the authenticated app header logo size on desktop and
+  mobile after the tight-viewbox asset migration.
+- Changes Made: Reduced `.topbar-full-logo` from `6rem` to `5rem` wide in the
+  shared authenticated stylesheet. The same topbar rule covers desktop and
+  mobile responsive layouts. Updated the design contract and changelog.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: The authenticated header implementation and responsive
+  CSS were audited against the new asset proportions. `npm run build --
+  --webpack` passed, including TypeScript and all 22 static pages.
+
+## 2026-09-11T00:30:00Z — Correct public logo optical sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the oversized public header and footer logos after the
+  tight-viewbox asset migration.
+- Changes Made: Reduced the public marketing header full-lockup from `3.5rem`
+  to `2.5rem` and the footer mark from `2.25rem` to `1.75rem`, restoring the
+  established production optical scale without changing authenticated-shell
+  logo dimensions. Updated the design contract and changelog.
+- Files: `web/app/landing.module.css`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Compared the user-provided production/staging captures
+  and confirmed the new tight-viewbox assets were the cause of the scale change.
+  `npm run build -- --webpack` passed, including TypeScript and all 22 static
+  pages.
+
 ## 2026-09-11T00:00:00Z — Restore plain post-card action controls
 
 - Agent: Codex

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-11T01:00:00Z
+
+- [auth] Reduced the authentication/lifecycle full lockup to `13.5rem` and the
+  fixed home mark to `1.75rem × 2rem`, restoring the established visual scale for
+  login, reset-password, and recovery screens after the tight-viewbox migration.
+- [docs] Documented the authentication logo optical sizing exception.
+
+## 2026-09-11T00:45:00Z
+
+- [authenticated-web] Reduced the shared desktop/mobile app-header full logo to
+  `5rem` wide so the tight-viewbox asset matches the established compact optical
+  scale at both responsive layouts.
+- [docs] Documented the authenticated topbar logo sizing rule.
+
+## 2026-09-11T00:30:00Z
+
+- [public-site] Reduced the public header full-lockup and footer mark heights to
+  compensate for the tighter logo viewboxes and restore the established optical
+  scale.
+- [docs] Documented the public-site optical sizing exception for the new logo
+  assets.
+
 ## 2026-09-11T00:15:00Z
 
 - [web] Restored post-card Share and More controls to the compact, borderless
