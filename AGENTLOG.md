@@ -8299,3 +8299,25 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   grant/revoke/expired-read request evidence and final commit are pending.
 - Boundary Confirmation: No scheduler, worker, cron, or background expiry job
   was added. Auth, session, and refresh-token code was not modified.
+
+## 2026-09-10T09:00:00Z — Make deterministic security-event writes idempotent
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the approved Option A fix for duplicate
+  deterministic security-event keys, covering refresh reuse, fresh login, and
+  bootstrap success, without changing core auth/session decision logic.
+- Changes Made: Changed `record_security_event()` to use PostgreSQL and SQLite
+  `ON CONFLICT (event_key) DO NOTHING` inserts and to reuse the existing event
+  row when a duplicate is absorbed. Added focused duplicate/new-key tests and
+  a repeated refresh-reuse API regression asserting the intended `401`.
+- Files: `api/app/services/security_events.py`,
+  `api/tests/test_security_event_idempotency.py`,
+  `api/tests/test_refresh_token_rotation.py`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused idempotency tests passed; the existing Phase 3
+  integration test requires its pre-existing thread-safe SQLite test setup and
+  was not changed. Staging reproduction and deployment evidence remain
+  pending.
+- Boundary Confirmation: No frontend, refresh decision, session, logout,
+  failed-login, staff, subscription, scheduler, worker, or background-job code
+  was changed.

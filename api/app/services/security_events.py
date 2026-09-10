@@ -3,6 +3,8 @@ from datetime import UTC, datetime, timedelta
 from collections.abc import Callable
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from app.models.notification import Notification, NotificationType
@@ -20,20 +22,47 @@ def record_security_event(
     device_id: uuid.UUID | None = None,
     payload: dict | None = None,
     notify_in_app: bool = False,
+    idempotent: bool = False,
 ) -> SecurityEvent:
-    event = SecurityEvent(
-        event_key=event_key,
-        user_id=user_id,
-        session_id=session_id,
-        device_id=device_id,
-        event_type=event_type,
-        payload=payload or {},
-    )
-    session.add(event)
-    # SQLAlchemy assigns the UUID default at flush time; the outbox FK must use
-    # the concrete event id in the same transaction.
-    if hasattr(session, "flush"):
-        session.flush()
+    if not idempotent:
+        event = SecurityEvent(
+            event_key=event_key,
+            user_id=user_id,
+            session_id=session_id,
+            device_id=device_id,
+            event_type=event_type,
+            payload=payload or {},
+        )
+        session.add(event)
+        if hasattr(session, "flush"):
+            session.flush()
+        if notify_in_app:
+            session.add(NotificationOutbox(event_id=event.id, channel=NotificationChannel.in_app))
+        return event
+
+    event_id = uuid.uuid4()
+    values = {
+        "id": event_id,
+        "event_key": event_key,
+        "user_id": user_id,
+        "session_id": session_id,
+        "device_id": device_id,
+        "event_type": event_type,
+        "payload": payload or {},
+    }
+    dialect = session.get_bind().dialect.name
+    if dialect == "postgresql":
+        statement = postgresql_insert(SecurityEvent).values(**values).on_conflict_do_nothing(index_elements=[SecurityEvent.event_key])
+    elif dialect == "sqlite":
+        statement = sqlite_insert(SecurityEvent).values(**values).on_conflict_do_nothing(index_elements=[SecurityEvent.event_key])
+    else:
+        raise RuntimeError(f"Idempotent security-event inserts are unsupported for database dialect {dialect!r}.")
+
+    result = session.execute(statement)
+    if result.rowcount == 0:
+        event_id = session.execute(select(SecurityEvent.id).where(SecurityEvent.event_key == event_key)).scalar_one()
+    event = session.get(SecurityEvent, event_id)
+    assert event is not None
     if notify_in_app:
         session.add(NotificationOutbox(event_id=event.id, channel=NotificationChannel.in_app))
     return event

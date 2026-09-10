@@ -84,6 +84,10 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
         repeated_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
         repeated_reuse = repeated_client.post("/auth/refresh")
         assert repeated_reuse.status_code == 401, repeated_reuse.text
+        duplicate_reuse_client = TestClient(app)
+        duplicate_reuse_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
+        duplicate_reuse = duplicate_reuse_client.post("/auth/refresh")
+        assert duplicate_reuse.status_code == 401, duplicate_reuse.text
         with get_session_factory()() as session:
             reuse_events = session.execute(select(SecurityEvent).where(SecurityEvent.user_id == user_id, SecurityEvent.event_type == SecurityEventType.refresh_reuse_detected)).scalars().all()
             assert len(reuse_events) == 1

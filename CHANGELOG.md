@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-10T09:00:00Z
+
+- [api] Made security-event writes idempotent for the deterministic
+  `refresh-reuse:{token_id}`, `fresh-login:{auth_session_id}`, and
+  `bootstrap-succeeded:{user_id}` keys using database-level conflict handling.
+  Duplicate audit writes are now absorbed while the surrounding request keeps
+  its original response; UUID-keyed audit paths were unchanged.
+- [tests] Added duplicate-key coverage for all three deterministic event
+  families, distinct-key insertion coverage, and a repeated refresh-reuse
+  request regression asserting `401` rather than `500`.
+
 ## 2026-09-10T07:15:00Z
 
 - [web] Added visible signup username criteria and normalized trailing/leading
@@ -1215,7 +1226,7 @@ This changelog uses dated entries instead of release versions. Keep the "Current
 ## Current State
 _Last updated: 2026-09-10_
 
-- [api] The FastAPI backend includes SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, auth/session and account lifecycle routes, staff controls, the admin-only manual subscriptions foundation with Free/Pro/Pro+ capability resolution and lazy expiry, unified post/quote/reply creation, private-profile visibility enforcement, follow requests/connections, notifications, OTP/email flows, focused tests, and Vercel entrypoint support.
+- [api] The FastAPI backend includes SQLAlchemy/Postgres wiring via sync psycopg3 sessions, Alembic migrations, Neon Postgres support, auth/session and account lifecycle routes, idempotent deterministic security-event audit writes, staff controls, the admin-only manual subscriptions foundation with Free/Pro/Pro+ capability resolution and lazy expiry, unified post/quote/reply creation, private-profile visibility enforcement, follow requests/connections, notifications, OTP/email flows, focused tests, and Vercel entrypoint support.
 - [api] Posts, quotes, and replies now use a single `posts` table with nullable `quoted_post_id`, `parent_post_id`, and a `kind` enum; replies are fetched per post thread while post images use submit-time R2 uploads and the `post_media` association table.
 - [api] Connections use a single `follow_requests` table: pending rows represent requests, accepted rows represent active directional follows, rejected rows retain the 24-hour resend cooldown, and canceled rows retain sender-cancel history for the 3-hour/24-hour resend lockout cycle. Pending requests are auto-accepted when a private account flips public.
 - [api] In-app notifications are implemented with a `notifications` table, unread/feed/read endpoints, and synchronous notification creation for follow, request, accept, and private-to-public auto-accept events.

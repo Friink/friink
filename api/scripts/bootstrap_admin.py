@@ -149,6 +149,7 @@ def bootstrap(settings: Settings, password: str) -> None:
                     event_key=f"bootstrap-succeeded:{user.id}",
                     user_id=user.id,
                     payload={"operation": "reserved_superadmin_bootstrap", "environment": environment, "identity": "reserved_admin"},
+                    idempotent=True,
                 )
         print("Created the initial staff account admin@friink.com (@admin).")
     except BootstrapError as exc:

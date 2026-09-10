@@ -306,10 +306,11 @@ async def _issue_login_session(
         event_type=SecurityEventType.fresh_login,
         event_key=f"fresh-login:{auth_session.id}",
         user_id=user.id,
-        session_id=auth_session.id,
-        device_id=recognized_device.id,
-        payload={"kind": "login", "message": "A new login to your Friink account was successful.", "action": "review_sessions", "action_href": "/settings"},
-        notify_in_app=True,
+            session_id=auth_session.id,
+            device_id=recognized_device.id,
+            payload={"kind": "login", "message": "A new login to your Friink account was successful.", "action": "review_sessions", "action_href": "/settings"},
+            notify_in_app=True,
+            idempotent=True,
     )
     try:
         slot = create_or_replace_slot(session, user, device_identifier, auth_session, settings)
@@ -569,6 +570,7 @@ async def refresh(
             user_id=token_record.user_id,
             session_id=token_record.session_id,
             payload={"kind": "refresh_reuse"},
+            idempotent=True,
         )
         await commit(session)
         log_refresh_token_event(
