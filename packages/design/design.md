@@ -28,6 +28,10 @@ Friink is a calm, people-first social space centered on meaningful conversations
   and the fixed home mark at `1.75rem × 2rem`. These optical sizes compensate
   for the tight viewboxes and keep login, reset-password, and recovery surfaces
   aligned with the established production scale.
+- Authentication and lifecycle surfaces, including standalone session recovery,
+  follow the system light/dark scheme by default. A valid in-app appearance
+  preference (`light`, `dark`, or `system`) overrides the system scheme on the
+  device; public marketing surfaces remain system-driven.
 
 ## Layout
 

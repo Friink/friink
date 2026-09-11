@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { FriinkLogo } from '@/components/friink-logo';
+import type { AppearanceMode } from '@/components/account-screens';
 import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
@@ -25,6 +26,20 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
+  const [appearance, setAppearance] = useState<AppearanceMode>('system');
+
+  useEffect(() => {
+    try {
+      const match = document.cookie.match(/(?:^|; )friink_appearance=([^;]+)/);
+      if (!match?.[1]) return;
+      const value = decodeURIComponent(match[1]);
+      if (value === 'light' || value === 'dark' || value === 'system') {
+        setAppearance(value);
+      }
+    } catch {
+      // Keep the system preference when the cookie cannot be read.
+    }
+  }, []);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -108,7 +123,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   if (!user) {
     if (!authCheckComplete) return null;
     return (
-    <main className="lifecycle-screen">
+    <main className="lifecycle-screen" data-theme={appearance}>
         <a className="lifecycle-home-link" href="/" aria-label="Return to Friink home"><FriinkLogo /></a>
         <section className="lifecycle-card" aria-labelledby="session-recovery-title">
           <BrandLockup size="lg" />

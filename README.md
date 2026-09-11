@@ -83,6 +83,7 @@ dashboard.
 - `web/app/globals.css` owns generated CSS variables and all logged-in app visual/layout rules.
 - Logged-in TSX components contain structure, semantic class names, state, behavior, and accessibility only; they do not define visual design.
 - The app-owned web surfaces—including standalone auth/workflow screens and the logged-in app—have no page-specific CSS, CSS Modules, route-only stylesheets, or JSX inline styles. The public landing stylesheet `web/app/landing.module.css` is separate and outside this rule.
+- Theme defaults to the system color scheme across authenticated and standalone auth/lifecycle surfaces; a valid `friink_appearance` preference (`light`, `dark`, or `system`) overrides it, while public marketing remains system-driven.
 - The shared visible app content column and contextual floating composer use `--space-content-col` at a `720px` tablet/desktop cap. The shared inline gutter is outside that visible cap: `16px` on desktop and `8px` on mobile.
 - The floating composer is available on feed and supported contextual surfaces, but is intentionally hidden on profile pages.
 - The global Header owns the Chat link between Search and Notifications; it routes to `/chats` and shows an unread dot when any conversation has new messages. The drawer contains the remaining personal/network navigation.

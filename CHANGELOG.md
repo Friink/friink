@@ -10,6 +10,14 @@
 - The latest tested onboarding implementation is pushed to both development and
   staging.
 
+## 2026-09-11T06:50:00Z
+
+- [web/auth] Fixed the standalone session-recovery screen so it follows the
+  system theme by default and honors the app's explicit light/dark/system
+  appearance preference instead of always rendering with light tokens.
+- [docs] Recorded the theme behavior in README.md, RULES.md, and
+  packages/design/design.md.
+
 ## 2026-09-11T06:00:00Z
 
 - [web/navigation] Added Directory beneath Saved in the shared side drawer and

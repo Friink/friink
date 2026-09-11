@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T06:50:00Z — Apply theme preference to session recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the standalone session-recovery screen so it follows the
+  system theme and verify, document, and publish the change.
+- Changes Made: Added theme preference resolution to the lifecycle route and
+  dark/system lifecycle tokens. Synchronized the behavior into the project
+  README, rules, and design contract.
+- Files: `web/components/app-shell-route.tsx`, `web/app/globals.css`,
+  `RULES.md`, `packages/design/design.md`, `README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Passed. `npx tsc --noEmit --incremental false`,
+  `npm run build -- --webpack`, `git diff --check`, and a local HTTP smoke check
+  all passed. Deployment is being published to development and staging.
+
 ## 2026-09-11T06:00:00Z — Add Directory to side drawer
 
 - Agent: Codex
