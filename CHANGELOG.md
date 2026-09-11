@@ -6,9 +6,22 @@
   About/Location, and Friink usage intent. The values use existing profile
   update logic; the intent currently has no business-rule effects.
 - Settings exposes read-only Joined and Region information, plus intent editing
-  under General. The current Alembic migration head is `20260911_0046`.
+  under General. The current Alembic migration head is `20260911_0047`.
 - The latest tested onboarding implementation is pushed to both development and
   staging.
+
+## 2026-09-11T00:29:48Z
+
+- [web/notifications] Added the standard notification interaction model: All and
+  Security views, unread-only filtering, explicit mark-all-as-read, read-on-view
+  behavior, direct destination links, and inline follow/chat request actions.
+- [web/notifications] Corrected the four-second polling consumer so existing
+  unread notifications establish a silent baseline and important toasts fire
+  only for genuinely new notification IDs.
+- [chat] Added a persisted declined state and API action for received chat
+  requests so Decline works consistently from notification surfaces.
+- [docs] Synchronized RULES.md, packages/design/design.md, docs/chat-behavior.md,
+  README.md, and AGENTLOG.md with the notification behavior.
 
 ## 2026-09-11T04:30:00Z
 

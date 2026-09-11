@@ -14,6 +14,7 @@ type HeaderProps = {
   notificationCount?: number;
   notifications?: NotificationItem[];
   hasUnreadMessages?: boolean;
+  onNotificationRead?: (notificationId: string) => void;
 };
 
 export function Header({
@@ -23,6 +24,7 @@ export function Header({
   notificationCount = 0,
   notifications = [],
   hasUnreadMessages = false,
+  onNotificationRead,
 }: HeaderProps) {
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement | null>(null);
@@ -175,18 +177,33 @@ export function Header({
                 className="topbar-notification-dropdown"
                 ariaLabel="Recent notifications"
                 items={recentNotifications.map((notification) => (
-                  <button
-                    key={notification.id}
-                    className={`topbar-notification-item${notification.unread ? ' is-unread' : ''}`}
-                    type="button"
-                    onClick={() => { setNotificationsOpen(false); onNavigate('notifications'); }}
-                  >
-                    <span className="topbar-notification-item-copy">
-                      <strong>{notification.name}</strong>
-                      <span>{notification.text}</span>
-                    </span>
-                    <time dateTime={notification.createdAt}>{formatRelativeTime(notification.createdAt)}</time>
-                  </button>
+                  <div key={notification.id} className={`topbar-notification-item${notification.unread ? ' is-unread' : ''}`}>
+                    <button
+                      className="topbar-notification-item-button"
+                      type="button"
+                      onClick={() => {
+                        onNotificationRead?.(notification.id);
+                        setNotificationsOpen(false);
+                        if (notification.href) router.push(notification.href);
+                        else onNavigate('notifications');
+                      }}
+                    >
+                      <span className="topbar-notification-item-copy">
+                        <strong>{notification.name}</strong>
+                        <span>{notification.text}</span>
+                      </span>
+                      <time dateTime={notification.createdAt}>{formatRelativeTime(notification.createdAt)}</time>
+                    </button>
+                    {notification.actions?.length ? (
+                      <span className="topbar-notification-actions">
+                        {notification.actions.map((action) => (
+                          <button key={action.label} className="text-link" type="button" onClick={(event) => { event.stopPropagation(); action.onClick(); }} disabled={action.busy}>
+                            {action.busy ? 'Working…' : action.label}
+                          </button>
+                        ))}
+                      </span>
+                    ) : null}
+                  </div>
                 ))}
                 footer={(
                   <>

@@ -139,6 +139,8 @@ def _advance_cursor(conversation: Conversation, setting: ConversationSetting, fi
 def _composer_state(session: Session, conversation: Conversation | None, user: User, other: User) -> tuple[bool, str, str]:
     if conversation and _is_blocked(session, user, other):
         return False, "Chat unavailable.", "blocked"
+    if conversation and conversation.status == ConversationStatus.declined:
+        return False, "Chat unavailable.", "declined"
     if conversation is None:
         if can_initiate_chat_request(user):
             return True, "Write a message...", "new_request"
@@ -252,6 +254,8 @@ def _notify_if_unmuted(session: Session, conversation: Conversation, recipient: 
 
 async def _send_in_conversation(session: Session, conversation: Conversation, user: User, content: str, client_message_id: str) -> MessageResponse:
     other = _participant(conversation, user.id)
+    if conversation.status == ConversationStatus.declined:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chat unavailable.")
     if _is_blocked(session, user, other):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chat unavailable.")
     if conversation.status == ConversationStatus.accepted and not _has_mutual_connection_sync(session, user, other):
@@ -320,6 +324,16 @@ async def accept_request(session: Session, user: User, conversation_id: uuid.UUI
     conversation.status = ConversationStatus.accepted
     conversation.updated_at = datetime.now(UTC)
     _notify_if_unmuted(session, conversation, other, user, NotificationType.chat_request_accepted)
+    await commit(session)
+    return _conversation_response(session, conversation, user)
+
+
+async def reject_request(session: Session, user: User, conversation_id: uuid.UUID) -> ConversationResponse:
+    conversation = await _get_conversation(session, conversation_id, user)
+    if conversation.status != ConversationStatus.pending or conversation.requester_id == user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only a pending received request can be declined.")
+    conversation.status = ConversationStatus.declined
+    conversation.updated_at = datetime.now(UTC)
     await commit(session)
     return _conversation_response(session, conversation, user)
 
