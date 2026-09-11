@@ -16,6 +16,32 @@
   wired it to the canonical `/directory` route using the existing Directory
   screen component.
 
+## 2026-09-11T06:10:00Z
+
+- [docs/notifications] Added the complete notification contract covering the
+  unread-only dropdown, zero-unread empty state, scroll behavior, four-second
+  polling, read-state rules, All/Security tabs, filters, inline actions,
+  privacy, fallbacks, and acceptance checks.
+- [docs] Synchronized README.md, RULES.md, and packages/design/design.md with
+  the agreed notification contract. Failed-login notification behavior remains
+  unchanged.
+
+## 2026-09-11T06:20:00Z
+
+- [web/notifications] Aligned the implementation with the notification
+  contract: the bell dropdown now contains unread items only, is empty at zero
+  unread, scrolls when needed, and no longer marks items read when activated or
+  acted on. Full-list read marking now waits for user scrolling, and failed
+  read operations reconcile against authoritative state.
+
+## 2026-09-11T06:30:00Z
+
+- [verification] Local web smoke check returned HTTP 200 with the expected
+  Friink title. API compile passed and focused Phase 7 failed-login tests ran
+  all four assertions successfully; the Windows pytest process still exits
+  during fixture SQLite-file cleanup because the temporary database remains
+  locked. The notification implementation does not change failed-login policy.
+
 ## 2026-09-11T00:29:48Z
 
 - [web/notifications] Added the standard notification interaction model: All and

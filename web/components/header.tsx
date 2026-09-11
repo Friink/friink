@@ -14,7 +14,6 @@ type HeaderProps = {
   notificationCount?: number;
   notifications?: NotificationItem[];
   hasUnreadMessages?: boolean;
-  onNotificationRead?: (notificationId: string) => void;
 };
 
 export function Header({
@@ -24,7 +23,6 @@ export function Header({
   notificationCount = 0,
   notifications = [],
   hasUnreadMessages = false,
-  onNotificationRead,
 }: HeaderProps) {
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement | null>(null);
@@ -34,7 +32,7 @@ export function Header({
   const [searchQuery, setSearchQuery] = useState('');
   const shouldShowNotificationBadge = notificationCount > 0;
   const visibleNotificationCount = notificationCount > 99 ? '99+' : String(notificationCount);
-  const recentNotifications = notifications.slice(0, 4);
+  const unreadNotifications = notifications.filter((notification) => notification.unread);
   const suggestions = searchQuery.trim()
     ? [
         `Posts matching "${searchQuery.trim()}"`,
@@ -176,13 +174,12 @@ export function Header({
               <ContextualDropdown
                 className="topbar-notification-dropdown"
                 ariaLabel="Recent notifications"
-                items={recentNotifications.map((notification) => (
+                items={unreadNotifications.map((notification) => (
                   <div key={notification.id} className={`topbar-notification-item${notification.unread ? ' is-unread' : ''}`}>
                     <button
                       className="topbar-notification-item-button"
                       type="button"
                       onClick={() => {
-                        onNotificationRead?.(notification.id);
                         setNotificationsOpen(false);
                         if (notification.href) router.push(notification.href);
                         else onNavigate('notifications');

@@ -499,9 +499,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         .then((response) => {
           setUnreadNotificationCount(response.count);
         })
-        .catch(() => {
-          setUnreadNotificationCount(0);
-        });
+        .catch(() => undefined);
     }
 
     const targetUsername = viewingOtherConnections ? connectionsUsername! : user.username;
@@ -888,6 +886,10 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     setUnreadNotificationCount((current) => Math.max(0, current - 1));
     void markNotificationRead(session.accessToken, notificationId).catch(() => {
       notificationReadIds.current.delete(notificationId);
+      setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: true, tone: 'mint' } : item));
+      getUnreadNotificationCount(session.accessToken)
+        .then((response) => setUnreadNotificationCount(response.count))
+        .catch(() => undefined);
     });
   }
 
@@ -896,7 +898,15 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     if (!session) return;
     setNotifications((current) => current.map((item) => ({ ...item, unread: false, tone: 'sage' })));
     setUnreadNotificationCount(0);
-    void markAllNotificationsRead(session.accessToken).catch(() => addToast('Could not mark notifications as read.'));
+    void markAllNotificationsRead(session.accessToken).catch(() => {
+      addToast('Could not mark notifications as read.');
+      listNotifications(session.accessToken, { limit: 40 })
+        .then((page) => setNotifications(page.items.map(mapApiNotification)))
+        .catch(() => undefined);
+      getUnreadNotificationCount(session.accessToken)
+        .then((response) => setUnreadNotificationCount(response.count))
+        .catch(() => undefined);
+    });
   }
 
   async function handleNotificationAction(notificationId: string, action: 'accept-follow' | 'reject-follow' | 'accept-chat' | 'reject-chat', targetId: string) {
@@ -908,7 +918,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       if (action === 'reject-follow') await rejectFollowRequest(session.accessToken, targetId);
       if (action === 'accept-chat') await acceptChatRequest(session.accessToken, targetId);
       if (action === 'reject-chat') await rejectChatRequest(session.accessToken, targetId);
-      handleMarkNotificationRead(notificationId);
+      setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, actions: undefined } : item));
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Could not update notification.');
     } finally {
@@ -969,7 +979,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
             notificationCount={unreadNotificationCount}
             notifications={notifications}
-            onNotificationRead={handleMarkNotificationRead}
             hasUnreadMessages={hasUnreadMessages}
         />
 

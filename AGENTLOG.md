@@ -14,6 +14,55 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Verification Status: Passed. `npm run build -- --webpack` completed
   successfully; the generated route list included `/directory`.
 
+## 2026-09-11T06:10:00Z — Document complete notification contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the full agreed notification behavior in a dedicated
+  contract document.
+- Changes Made: Added `docs/notifications.md` with dropdown, polling, read
+  state, tabs, filters, inline actions, privacy, failure handling, API
+  boundaries, and acceptance checks. Corrected the summarized RULES/design
+  language so read notifications do not populate the dropdown and dropdown
+  activation does not mark items read. Failed-login notification behavior is
+  explicitly preserved.
+- Files: `docs/notifications.md`, `README.md`, `RULES.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+
+## 2026-09-11T06:20:00Z — Align notifications with contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement every missing requirement identified in
+  `docs/notifications.md`.
+- Changes Made: Filtered the bell dropdown to unread items, added a bounded
+  scrollable list, removed read marking from dropdown activation and inline
+  actions, delayed full-list read marking until user scrolling, preserved the
+  last known count on initial polling failure, and reconciled failed read
+  operations with authoritative state.
+- Files: `web/components/header.tsx`, `web/components/app-shell.tsx`,
+  `web/components/notifications-screen.tsx`, `web/app/globals.css`,
+  `docs/notifications.md`, `RULES.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npm run build -- --webpack` completed
+  successfully and generated all 24 routes.
+
+## 2026-09-11T06:30:00Z — Verify notifications locally and at API level
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the notification changes locally and at the API level,
+  then push development and staging.
+- Changes Made: Ran API `compileall`, focused Phase 3 security-event and Phase
+  7 failed-login tests, checked the local web root at `http://localhost:3000/`,
+  and verified the production Webpack build from the preceding implementation
+  pass. The four Phase 7 assertions passed; pytest exits with a Windows
+  temporary SQLite cleanup lock, so the runner reports failure during teardown.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web HTTP smoke check passed; API assertions passed with
+  the documented Windows fixture-cleanup limitation; push pending.
+
 ## 2026-09-11T00:29:48Z — Implement notification center behavior
 
 - Agent: Codex

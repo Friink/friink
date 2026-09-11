@@ -65,6 +65,8 @@ type NotificationsScreenProps = {
 
 export function NotificationsScreen({ notifications = [], onMarkRead, emptyMessage = 'No notifications yet.' }: NotificationsScreenProps) {
   const markedVisible = useRef(new Set<string>());
+  const visibleIds = useRef(new Set<string>());
+  const hasScrolled = useRef(false);
 
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -75,7 +77,12 @@ export function NotificationsScreen({ notifications = [], onMarkRead, emptyMessa
       const id = node.dataset.notificationId;
       if (!id || markedVisible.current.has(id)) return;
       const observer = new IntersectionObserver(([entry]) => {
-        if (!entry?.isIntersecting || markedVisible.current.has(id) || pendingIds.has(id)) return;
+        if (!entry?.isIntersecting) {
+          visibleIds.current.delete(id);
+          return;
+        }
+        visibleIds.current.add(id);
+        if (!hasScrolled.current || markedVisible.current.has(id) || pendingIds.has(id)) return;
         pendingIds.add(id);
         const timer = window.setTimeout(() => {
           markedVisible.current.add(id);
@@ -87,9 +94,24 @@ export function NotificationsScreen({ notifications = [], onMarkRead, emptyMessa
       observer.observe(node);
       observers.push(observer);
     });
+    const markScrolledIntoView = () => {
+      hasScrolled.current = true;
+      visibleIds.current.forEach((id) => {
+        if (markedVisible.current.has(id) || pendingIds.has(id)) return;
+        pendingIds.add(id);
+        const timer = window.setTimeout(() => {
+          markedVisible.current.add(id);
+          pendingIds.delete(id);
+          onMarkRead?.(id);
+        }, 700);
+        timers.push(timer);
+      });
+    };
+    document.addEventListener('scroll', markScrolledIntoView, { passive: true, capture: true });
     return () => {
       observers.forEach((observer) => observer.disconnect());
       timers.forEach((timer) => window.clearTimeout(timer));
+      document.removeEventListener('scroll', markScrolledIntoView, true);
     };
   }, [notifications, onMarkRead]);
 

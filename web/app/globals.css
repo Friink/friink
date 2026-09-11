@@ -2657,6 +2657,11 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   outline: none;
 }
 
+.topbar-notification-dropdown .contextual-dropdown-list {
+  max-height: min(24rem, calc(100vh - 10rem));
+  overflow-y: auto;
+}
+
 .topbar-notification-item-button {
   display: flex;
   width: 100%;
