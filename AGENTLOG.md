@@ -63,6 +63,19 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Verification Status: Web HTTP smoke check passed; API assertions passed with
   the documented Windows fixture-cleanup limitation; push pending.
 
+## 2026-09-11T06:40:00Z — Publish verified notification changes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the locally tested notification contract changes to
+  development and staging.
+- Changes Made: Integrated the remote staging merge history into development so
+  existing staging notification backend work was preserved, then published the
+  resulting commit to both requested branches.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Development and staging push completed; the generated
+  pre-existing `web/tsconfig.tsbuildinfo` change remains uncommitted.
+
 ## 2026-09-11T00:29:48Z — Implement notification center behavior
 
 - Agent: Codex

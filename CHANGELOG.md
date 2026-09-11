@@ -42,6 +42,12 @@
   during fixture SQLite-file cleanup because the temporary database remains
   locked. The notification implementation does not change failed-login policy.
 
+## 2026-09-11T06:40:00Z
+
+- [verification/deployment] Local web and API verification completed for the
+  notification contract. The tested changes were integrated with the remote
+  staging history and are ready on both development and staging.
+
 ## 2026-09-11T00:29:48Z
 
 - [web/notifications] Added the standard notification interaction model: All and
