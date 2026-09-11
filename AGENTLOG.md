@@ -1,5 +1,42 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-11T06:00:00Z — Add Directory to side drawer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a Directory item beneath Saved in the shared side drawer.
+- Changes Made: Added the Directory screen type and drawer item, wired the
+  `/directory` route through `AppShellRoute`, and reused the existing
+  `DirectoryScreen` component. Updated navigation/design documentation.
+- Files: `web/lib/data.ts`, `web/components/side-drawer.tsx`,
+  `web/components/app-shell.tsx`, `web/app/directory/page.tsx`, `RULES.md`,
+  `packages/design/design.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npm run build -- --webpack` completed
+  successfully; the generated route list included `/directory`.
+
+## 2026-09-11T00:29:48Z — Implement notification center behavior
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Build the agreed modern notification UX using reusable
+  components, preserve four-second polling, and synchronize project artifacts.
+- Changes Made: Added All/Security notification views, unread-only and explicit
+  mark-all actions, viewport-based per-notification read handling, destination
+  navigation, inline follow/chat request actions, and duplicate-safe important
+  notification toasts. Added declined chat-request persistence and API support
+  so chat-request Decline is available consistently.
+- Files: `web/components/app-shell.tsx`, `web/components/header.tsx`,
+  `web/components/notifications-screen.tsx`, `web/components/navigationbar.tsx`,
+  `web/app/globals.css`, `web/lib/auth.ts`, `api/app/models/chat.py`,
+  `api/app/services/chat.py`, `api/app/routers/chat.py`,
+  `api/alembic/versions/20260911_0047_declined_chat_requests.py`,
+  `RULES.md`, `packages/design/design.md`, `docs/chat-behavior.md`,
+  `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API compile, web TypeScript check, Webpack production
+  build, and `git diff --check` passed. Local authenticated browser verification
+  was unavailable because the local API did not start; the unauthenticated local
+  notification route rendered its expected session-recovery state.
+
 ## 2026-09-11T06:45:00Z — Correct project artifact references
 
 - Agent: Codex

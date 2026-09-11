@@ -1,15 +1,16 @@
 "use client";
 
 import { useRef, useState } from 'react';
-import { ActionMenu } from '@/components/action-menu';
+import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 
 type NavigationBarProps = {
   title: string;
   onBack?: () => void;
   backDisabled?: boolean;
+  menuItems?: ActionMenuItem[];
 };
 
-export function NavigationBar({ title, onBack, backDisabled = false }: NavigationBarProps) {
+export function NavigationBar({ title, onBack, backDisabled = false, menuItems }: NavigationBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -35,7 +36,7 @@ export function NavigationBar({ title, onBack, backDisabled = false }: Navigatio
         >
           <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
         </button>
-        <ActionMenu open={menuOpen} anchorRef={menuButtonRef} onClose={() => setMenuOpen(false)} />
+        <ActionMenu open={menuOpen} anchorRef={menuButtonRef} items={menuItems} onClose={() => setMenuOpen(false)} />
       </div>
     </div>
   );

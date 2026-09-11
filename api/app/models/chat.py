@@ -12,6 +12,7 @@ from app.db import Base
 class ConversationStatus(str, enum.Enum):
     pending = "pending"
     accepted = "accepted"
+    declined = "declined"
 
 
 class Conversation(Base):

@@ -1518,6 +1518,14 @@ export async function acceptChatRequest(accessToken: string, conversationId: str
   });
 }
 
+export async function rejectChatRequest(accessToken: string, conversationId: string): Promise<ApiConversation> {
+  return requestApi<ApiConversation>(`/chat/conversations/${conversationId}/reject`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function updateChatSettings(accessToken: string, conversationId: string, input: { muted?: boolean; archived?: boolean }): Promise<ApiConversation> {
   const params = new URLSearchParams();
   if (typeof input.muted === 'boolean') params.set('muted', String(input.muted));

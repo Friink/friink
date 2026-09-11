@@ -61,9 +61,10 @@ the entry, so history isn't lost.
 
 ### Rule: Route-Based Navigation Uses Real Links
 - **What:** Navigation controls that have a stable destination must render as anchors with an `href`, including the signed-in drawer routes. Client-side click handling may intercept normal clicks, but the destination must remain available to browser status previews, middle-click, and open-in-new-tab behavior.
+- **Edge cases:** The shared drawer order places Directory immediately after Saved and its canonical destination is `/directory`.
 - **Status:** Active
 - **Platform:** Web only
-- **File(s):** `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx`
+- **File(s):** `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx`, `web/app/directory/page.tsx`
 - **Since:** 2026-08-31 (Asia/Karachi)
 
 ### Rule: Profile Header Summary Uses ContentBox Spacing
@@ -618,8 +619,8 @@ the entry, so history isn't lost.
 ## Notifications
 
 ### Rule: In-App Notifications Are Fetchable And Readable
-- **What:** Authenticated users can fetch a paginated notification feed, fetch an unread count, mark one notification read, or mark all their notifications read.
-- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Marking another user's notification read returns `404`.
+- **What:** Authenticated users can fetch a paginated notification feed, fetch an unread count, mark one notification read, or mark all their notifications read. The web Notifications screen provides `All` and `Security` views plus an unread-only filter and an explicit mark-all action.
+- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Opening the bell or Notifications screen does not mark every item read. A notification becomes read when it is meaningfully visible in the full list, opened, or successfully resolved by an inline action. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. Informational notifications navigate to their destination, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Marking another user's notification read returns `404`.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/notification.py`, `api/app/services/notifications.py`, `api/app/routers/notifications.py`, `web/lib/auth.ts`, `web/components/notifications-screen.tsx`
@@ -756,7 +757,7 @@ the entry, so history isn't lost.
 
 ### Rule: Chat Uses REST With Polling Delivery
 - **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
-- **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription billing, profile hiding, and block controls remain future work; see `docs/chat-behavior.md`.
+- **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription billing, profile hiding, and block controls remain future work; see `docs/chat-behavior.md`.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/models/notification.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0016_add_chat_requests_and_settings.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
@@ -8,6 +8,7 @@ import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
 import { SavedScreen } from '@/components/saved-screen';
 import { Header } from '@/components/header';
 import { NavigationBar } from '@/components/navigationbar';
+import type { ActionMenuItem } from '@/components/action-menu';
 // legacy TabBar removed
 import { Tabs } from './tabs';
 import { ContentBox } from '@/components/content-box';
@@ -15,7 +16,7 @@ import { HomeScreen } from '@/components/home-screen';
 import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
-import { MessagesScreen } from '@/components/screens';
+import { DirectoryScreen, MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { ControlPanelScreen, type ControlPanelTab } from '@/components/control-panel-screen';
 import { SideDrawer } from '@/components/side-drawer';
@@ -34,8 +35,11 @@ import {
   listIncomingFollowRequests,
   listNotifications,
   listConversations,
+  acceptChatRequest,
+  rejectChatRequest,
   listOutgoingFollowRequests,
   markAllNotificationsRead,
+  markNotificationRead,
   getUnreadNotificationCount,
   listPosts,
   loadAuthSession,
@@ -125,12 +129,20 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [connectionsFilter, setConnectionsFilter] = useState<'all' | 'followers' | 'following' | 'requests'>(initialConnectionsFilter);
   const [messagesTab, setMessagesTab] = useState<'all' | 'muted' | 'requests' | 'archived'>(initialMessagesTab);
   const [settingsTab, setSettingsTab] = useState<'general' | 'profile' | 'account' | 'subscription' | 'privacy'>(initialSettingsTab);
+  const [notificationsTab, setNotificationsTab] = useState<'all' | 'security'>('all');
+  const [notificationsUnreadOnly, setNotificationsUnreadOnly] = useState(false);
+  const [notificationActionBusyId, setNotificationActionBusyId] = useState<string | null>(null);
   const [controlPanelTab, setControlPanelTab] = useState<ControlPanelTab>('overview');
   const [canGoBack, setCanGoBack] = useState(false);
+  const activeScreenRef = useRef(activeScreen);
+  const notificationCountRef = useRef<number | null>(null);
+  const notificationToastIds = useRef(new Set<string>());
+  const notificationReadIds = useRef(new Set<string>());
   useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
   useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
   useEffect(() => setMessagesTab(initialMessagesTab), [initialMessagesTab]);
   useEffect(() => setSettingsTab(initialSettingsTab), [initialSettingsTab]);
+  useEffect(() => { activeScreenRef.current = activeScreen; }, [activeScreen]);
   useEffect(() => setProfileLikedPosts(profileLikedPostsProp ?? []), [profileLikedPostsProp]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
@@ -149,6 +161,24 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
   const shouldShowFloatingBar = showFloatingBar && activeScreen !== 'profile' && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const visibleNotifications = notifications.filter((notification) => {
+    if (notificationsTab === 'security' && notification.kind !== 'login') return false;
+    if (notificationsUnreadOnly && !notification.unread) return false;
+    return true;
+  });
+  const notificationMenuItems: ActionMenuItem[] = [
+    {
+      label: notificationsUnreadOnly ? 'Show all notifications' : 'Show unread only',
+      icon: 'fa-filter',
+      onClick: () => setNotificationsUnreadOnly((current) => !current),
+    },
+    {
+      label: 'Mark all as read',
+      icon: 'fa-check-double',
+      onClick: handleMarkAllNotificationsRead,
+      disabled: unreadNotificationCount === 0,
+    },
+  ];
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -256,6 +286,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return 'Connections';
       case 'saved':
         return 'Saved';
+      case 'directory':
+        return 'Directory';
       case 'search':
         return 'Search';
       case 'messages':
@@ -286,6 +318,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         break;
       case 'saved':
         router.push('/saved/posts');
+        break;
+      case 'directory':
+        router.push('/directory');
         break;
       case 'settings':
         router.push('/settings/general');
@@ -380,23 +415,28 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     if (!session) return;
     const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
     return transport.subscribe((count) => {
+      const previousCount = notificationCountRef.current;
+      notificationCountRef.current = count;
       setUnreadNotificationCount(count);
-      if (count > unreadNotificationCount && activeScreen !== 'notifications') {
-        listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
-          .then((page) => {
-            if (page.items.some((item) => item.type === 'login_security' && item.payload.kind === 'login_approval' && !item.read)) {
-              addToast({ title: 'Login request', message: 'Review the new login request in Settings.', tone: 'success' });
+      if (previousCount === null || (count <= previousCount && activeScreenRef.current !== 'notifications')) return;
+      listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
+        .then((page) => {
+          page.items.forEach((item) => {
+            if (!item.read && previousCount !== null && count > previousCount && activeScreenRef.current !== 'notifications' && !notificationToastIds.current.has(item.id)) {
+              notificationToastIds.current.add(item.id);
+              if (item.type === 'login_security' && item.payload.kind === 'login_approval') {
+                addToast({ title: 'Login request', message: 'Review the new login request in Settings.', tone: 'success' });
+              }
             }
-          })
-          .catch(() => undefined);
-      }
-      if (activeScreen === 'notifications') {
-        listNotifications(loadAuthSession()?.accessToken ?? session.accessToken, { limit: 40 })
-          .then((page) => setNotifications(page.items.map(mapApiNotification).map((notification) => ({ ...notification, tone: 'sage', unread: false }))))
-          .catch(() => undefined);
-      }
+          });
+          page.items.filter((item) => item.read).forEach((item) => notificationReadIds.current.add(item.id));
+          if (activeScreenRef.current === 'notifications') {
+            setNotifications(page.items.map(mapApiNotification));
+          }
+        })
+        .catch(() => undefined);
     });
-  }, [activeScreen, addToast]);
+  }, [addToast]);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -446,28 +486,15 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
 
     listNotifications(session.accessToken, { limit: 40 })
       .then((page) => {
+        page.items.forEach((item) => notificationToastIds.current.add(item.id));
         const notificationItems = page.items.map(mapApiNotification);
-        setNotifications(viewingNotifications ? notificationItems.map((notification) => ({ ...notification, tone: 'sage', unread: false })) : notificationItems);
+        setNotifications(notificationItems);
       })
       .catch(() => {
-        setNotifications([]);
+        // Preserve the last known notification state when a refresh fails.
       });
 
-    if (viewingNotifications) {
-      setUnreadNotificationCount(0);
-      setNotifications((current) => current.map((notification) => ({ ...notification, tone: 'sage', unread: false })));
-      markAllNotificationsRead(session.accessToken)
-        .catch(() => {
-          addToast('Could not mark notifications as read.');
-          return getUnreadNotificationCount(session.accessToken)
-            .then((response) => {
-              setUnreadNotificationCount(response.count);
-            })
-            .catch(() => {
-              setUnreadNotificationCount(0);
-            });
-        });
-    } else {
+    if (!viewingNotifications) {
       getUnreadNotificationCount(session.accessToken)
         .then((response) => {
           setUnreadNotificationCount(response.count);
@@ -657,6 +684,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     const chatActorHandle = typeof payload.actor_username === 'string' && payload.actor_username ? payload.actor_username : actorHandle;
     const postPublicId = typeof payload.post_public_id === 'string' ? payload.post_public_id : null;
     const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
+    const connectionId = typeof payload.connection_id === 'string' ? payload.connection_id : null;
+    const conversationId = typeof payload.conversation_id === 'string' ? payload.conversation_id : null;
     const notificationHref = notification.type === 'login_security'
       ? (typeof payload.action_href === 'string' ? payload.action_href : '/settings')
       : (notification.type === 'mention' || notification.type === 'like') && postPublicId
@@ -673,6 +702,13 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
       href: notificationHref,
+      actions: !notification.read && notification.type === 'request_received' && connectionId ? [
+        { label: 'Accept', onClick: () => void handleNotificationAction(notification.id, 'accept-follow', connectionId), busy: notificationActionBusyId === notification.id },
+        { label: 'Decline', onClick: () => void handleNotificationAction(notification.id, 'reject-follow', connectionId), busy: notificationActionBusyId === notification.id },
+      ] : !notification.read && notification.type === 'chat_request_received' && conversationId ? [
+        { label: 'Accept', onClick: () => void handleNotificationAction(notification.id, 'accept-chat', conversationId), busy: notificationActionBusyId === notification.id },
+        { label: 'Decline', onClick: () => void handleNotificationAction(notification.id, 'reject-chat', conversationId), busy: notificationActionBusyId === notification.id },
+      ] : undefined,
     };
   }
 
@@ -842,6 +878,44 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     }
   }
 
+  function handleMarkNotificationRead(notificationId: string) {
+    const session = loadAuthSession();
+    if (!session || notificationReadIds.current.has(notificationId)) return;
+    const notification = notifications.find((item) => item.id === notificationId);
+    if (!notification?.unread) return;
+    notificationReadIds.current.add(notificationId);
+    setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: false, tone: 'sage' } : item));
+    setUnreadNotificationCount((current) => Math.max(0, current - 1));
+    void markNotificationRead(session.accessToken, notificationId).catch(() => {
+      notificationReadIds.current.delete(notificationId);
+    });
+  }
+
+  function handleMarkAllNotificationsRead() {
+    const session = loadAuthSession();
+    if (!session) return;
+    setNotifications((current) => current.map((item) => ({ ...item, unread: false, tone: 'sage' })));
+    setUnreadNotificationCount(0);
+    void markAllNotificationsRead(session.accessToken).catch(() => addToast('Could not mark notifications as read.'));
+  }
+
+  async function handleNotificationAction(notificationId: string, action: 'accept-follow' | 'reject-follow' | 'accept-chat' | 'reject-chat', targetId: string) {
+    const session = loadAuthSession();
+    if (!session || notificationActionBusyId === notificationId) return;
+    setNotificationActionBusyId(notificationId);
+    try {
+      if (action === 'accept-follow') await acceptFollowRequest(session.accessToken, targetId);
+      if (action === 'reject-follow') await rejectFollowRequest(session.accessToken, targetId);
+      if (action === 'accept-chat') await acceptChatRequest(session.accessToken, targetId);
+      if (action === 'reject-chat') await rejectChatRequest(session.accessToken, targetId);
+      handleMarkNotificationRead(notificationId);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not update notification.');
+    } finally {
+      setNotificationActionBusyId(null);
+    }
+  }
+
   async function handleCancelSentRequest(requestId: string) {
     const session = loadAuthSession();
     if (!session) return;
@@ -889,13 +963,14 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onAccountChange={onUserChange}
         />
 
-        <Header
+          <Header
           onNavigate={navigateTo}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
-          notificationCount={unreadNotificationCount}
-          notifications={notifications}
-          hasUnreadMessages={hasUnreadMessages}
+            notificationCount={unreadNotificationCount}
+            notifications={notifications}
+            onNotificationRead={handleMarkNotificationRead}
+            hasUnreadMessages={hasUnreadMessages}
         />
 
         <section className="main-panel">
@@ -904,6 +979,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
               title={getPageTitle(activeScreen)}
               onBack={() => router.back()}
               backDisabled={!canGoBack}
+              menuItems={activeScreen === 'notifications' ? notificationMenuItems : undefined}
             />
           </div>
 
@@ -938,6 +1014,14 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 activeId={messagesTab}
                 onChange={(id) => handleMessagesTabChange(id as 'all' | 'muted' | 'requests' | 'archived')}
                 ariaLabel="Chat filters"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'notifications' && (
+              <Tabs
+                tabs={[{ id: 'all', label: 'All' }, { id: 'security', label: 'Security' }]}
+                activeId={notificationsTab}
+                onChange={(id) => setNotificationsTab(id as 'all' | 'security')}
+                ariaLabel="Notification filters"
               />
             )}
             {showTabs !== false && activeScreen === 'settings' && (
@@ -1030,8 +1114,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                     />
                   )}
                   {activeScreen === 'saved' && <SavedScreen section={initialSavedSection} posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
+                  {activeScreen === 'directory' && <DirectoryScreen />}
                   {activeScreen === 'search' && <SearchScreen />}
-                  {activeScreen === 'notifications' && <NotificationsScreen notifications={notifications} />}
+                  {activeScreen === 'notifications' && <NotificationsScreen notifications={visibleNotifications} onMarkRead={handleMarkNotificationRead} emptyMessage={notificationsUnreadOnly ? 'No unread notifications.' : notificationsTab === 'security' ? 'No security notifications yet.' : 'No notifications yet.'} />}
                   {activeScreen === 'settings' && (
                     <SettingsScreen
                       user={user}

@@ -37,6 +37,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Top Headers**:
   - Desktop uses the top `Header` (`4rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, Chat link (`/chats`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
+  - The Notifications surface reuses `Tabs` for `All` and `Security`; its `NavigationBar` overflow uses `ActionMenu` for unread-only filtering and the explicit mark-all-as-read action. Notification rows reuse `ListRow` and keep pending request actions inline.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines. The direct chat route also uses this shared surface for its message composer and keeps it visible while changing enabled state and placeholder according to the chat policy contract.
 - **Profile Composer Rule**: The shared floating composer is not rendered on profile pages. Profile pages remain focused on identity, profile actions, and profile content; the app-wide post composer remains available on feed and other explicitly supported surfaces.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On tablet and desktop, the visible content surface is capped at `720px` via `--space-content-col` and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. The shared content inset is applied outside that cap as an available-width gutter, and `ContentBox` owns bottom spacing. Child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
@@ -87,6 +88,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
    - Saved (`fa-star` → `/saved/posts`)
+   - Directory (`fa-address-book` → `/directory`), directly beneath Saved
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
@@ -106,6 +108,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Saved uses `/saved/posts` and `/saved/profiles`; `/saved` redirects to `/saved/posts`. Posts contains the current user's private saved posts, while Profiles is reserved for future profile saving.
+- Directory uses `/directory` and reuses the existing Directory screen surface.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 
 ### Chat receipt presentation

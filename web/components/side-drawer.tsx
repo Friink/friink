@@ -204,6 +204,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         return `/${encodeURIComponent(user.username)}/connections`;
       case 'saved':
         return '/saved/posts';
+      case 'directory':
+        return '/directory';
       case 'settings':
         return '/settings/general';
       default:
