@@ -61,9 +61,10 @@ the entry, so history isn't lost.
 
 ### Rule: Route-Based Navigation Uses Real Links
 - **What:** Navigation controls that have a stable destination must render as anchors with an `href`, including the signed-in drawer routes. Client-side click handling may intercept normal clicks, but the destination must remain available to browser status previews, middle-click, and open-in-new-tab behavior.
+- **Edge cases:** The shared drawer order places Directory immediately after Saved and its canonical destination is `/directory`.
 - **Status:** Active
 - **Platform:** Web only
-- **File(s):** `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx`
+- **File(s):** `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx`, `web/app/directory/page.tsx`
 - **Since:** 2026-08-31 (Asia/Karachi)
 
 ### Rule: Profile Header Summary Uses ContentBox Spacing

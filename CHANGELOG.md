@@ -10,6 +10,12 @@
 - The latest tested onboarding implementation is pushed to both development and
   staging.
 
+## 2026-09-11T06:00:00Z
+
+- [web/navigation] Added Directory beneath Saved in the shared side drawer and
+  wired it to the canonical `/directory` route using the existing Directory
+  screen component.
+
 ## 2026-09-11T00:29:48Z
 
 - [web/notifications] Added the standard notification interaction model: All and

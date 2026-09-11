@@ -88,6 +88,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
    - Saved (`fa-star` → `/saved/posts`)
+   - Directory (`fa-address-book` → `/directory`), directly beneath Saved
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
@@ -107,6 +108,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Saved uses `/saved/posts` and `/saved/profiles`; `/saved` redirects to `/saved/posts`. Posts contains the current user's private saved posts, while Profiles is reserved for future profile saving.
+- Directory uses `/directory` and reuses the existing Directory screen surface.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 
 ### Chat receipt presentation

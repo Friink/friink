@@ -86,6 +86,7 @@ dashboard.
 - The shared visible app content column and contextual floating composer use `--space-content-col` at a `720px` tablet/desktop cap. The shared inline gutter is outside that visible cap: `16px` on desktop and `8px` on mobile.
 - The floating composer is available on feed and supported contextual surfaces, but is intentionally hidden on profile pages.
 - The global Header owns the Chat link between Search and Notifications; it routes to `/chats` and shows an unread dot when any conversation has new messages. The drawer contains the remaining personal/network navigation.
+- The global drawer places Directory directly beneath Saved and routes it to `/directory`; the surface currently reuses the existing Directory screen component.
 - Other-user profiles expose a functional Message action that opens `/{username}/chat`; chat access still requires mutual accepted follows.
 - Other-user profile connection actions resolve from the authenticated relationship status after profile loading; they must not inherit the self-profile state.
 - The signed-in account's Connections surface always exposes Requests; pending incoming requests provide Accept and Reject actions from the authenticated API.

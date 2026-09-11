@@ -16,7 +16,7 @@ import { HomeScreen } from '@/components/home-screen';
 import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
-import { MessagesScreen } from '@/components/screens';
+import { DirectoryScreen, MessagesScreen } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { ControlPanelScreen, type ControlPanelTab } from '@/components/control-panel-screen';
 import { SideDrawer } from '@/components/side-drawer';
@@ -286,6 +286,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return 'Connections';
       case 'saved':
         return 'Saved';
+      case 'directory':
+        return 'Directory';
       case 'search':
         return 'Search';
       case 'messages':
@@ -316,6 +318,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         break;
       case 'saved':
         router.push('/saved/posts');
+        break;
+      case 'directory':
+        router.push('/directory');
         break;
       case 'settings':
         router.push('/settings/general');
@@ -1109,6 +1114,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                     />
                   )}
                   {activeScreen === 'saved' && <SavedScreen section={initialSavedSection} posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
+                  {activeScreen === 'directory' && <DirectoryScreen />}
                   {activeScreen === 'search' && <SearchScreen />}
                   {activeScreen === 'notifications' && <NotificationsScreen notifications={visibleNotifications} onMarkRead={handleMarkNotificationRead} emptyMessage={notificationsUnreadOnly ? 'No unread notifications.' : notificationsTab === 'security' ? 'No security notifications yet.' : 'No notifications yet.'} />}
                   {activeScreen === 'settings' && (
