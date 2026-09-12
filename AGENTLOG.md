@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-12T04:48:32Z — Fix account-switch and profile post visibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix missing own and other-user posts, suspected to be related
+  to account switching.
+- Changes Made: App shell routes now react to the account-switch event; Home
+  reloads when the active account identity changes; profile posts use the
+  server-provided author-scoped collection without an extra handle filter.
+- Files: `web/components/app-shell-route.tsx`, `web/components/home-screen.tsx`,
+  `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web TypeScript check passed and `git diff --check`
+  passed. Focused API tests completed all 24 assertions; pytest still exits
+  with the known Windows SQLite cleanup `PermissionError`.
+
 ## 2026-09-12T04:07:18Z — Add progressive public authentication CTA
 
 - Agent: Codex
@@ -27,6 +43,38 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   visibility, compact mobile sizing, and the feature-flag fallback to `/login`.
 - Files: `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Rule count remains 116 and `git diff --check` passed.
+
+## 2026-09-12T04:20:12Z — Verify post flow locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test local post creation, viewing, cross-user viewing,
+  replying, quoting, and reading behavior end to end.
+- Changes Made: No application code changed. Ran the focused post and reaction
+  test suites and inspected the implemented API/UI paths for post, reply,
+  quote, visibility, and read-back behavior.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: All 24 focused post/reaction assertions completed
+  successfully. Pytest exited non-zero only during the known Windows SQLite
+  cleanup `PermissionError`. Web TypeScript passed; the Webpack production
+  build remains blocked by Windows `spawn EPERM`, so browser click-through
+  verification could not be completed locally.
+
+## 2026-09-12T04:43:27Z — Diagnose missing post visibility report
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate reports that own and other-user posts are not
+  visible despite focused post tests passing.
+- Changes Made: Traced Home, profile, post-detail, API origin, and author-scoped
+  post-loading paths. No application code changed. Confirmed the API query
+  includes visible normal posts and that the web loaders silently convert any
+  request failure into an empty feed/profile state.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local API health returned `200`; unauthenticated local
+  explore feed returned an empty page. Next dev server remains blocked by the
+  known Windows `spawn EPERM` limitation, preventing browser network
+  reproduction.
 
 ## 2026-09-12T02:02:03Z — Fix profile posts and replies
 

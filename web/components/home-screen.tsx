@@ -20,6 +20,7 @@ const LAST_VIEWED_POST_KEY = 'friink-home-last-viewed-post';
 
 type HomeScreenProps = {
   posts?: Post[];
+  accountId?: string;
   activeFilter?: 'all' | 'following';
   onFilterChange?: (id: string) => void;
   onReply?: (post: Post) => void;
@@ -194,7 +195,7 @@ function getTopVisiblePostId() {
   return partiallyVisible?.dataset.feedPostId ?? null;
 }
 
-export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
+export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
   void onFilterChange;
   const initialSeedPosts = useMemo(() => dedupeAndSortPosts(posts), [posts]);
   const [feedPosts, setFeedPosts] = useState<Post[]>(initialSeedPosts);
@@ -382,7 +383,7 @@ export function HomeScreen({ posts = [], activeFilter = 'all', onFilterChange, o
     setHasMore(true);
     setRestoreAnchorId(null);
     void loadInitialFeed();
-  }, [activeFilter]);
+  }, [activeFilter, accountId]);
 
   useEffect(() => {
     if (activeFilter === 'all' && feedPostsRef.current.length === 0 && initialSeedPosts.length > 0) {

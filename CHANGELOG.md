@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-12T04:48:32Z
+
+- [fix] Fixed account-switch synchronization so the active app shell updates
+  when the account slot changes and the Home feed reloads for the new account.
+- [fix] Profile posts now render the author-scoped response directly, avoiding
+  a second client-side handle filter that could hide valid posts.
+
 ## Current State
 
 - The three-step account setup wizard collects optional Profile picture,
@@ -19,6 +26,27 @@
   documentation with the implementation and feature-flag fallback.
 - [rules] Updated the public-header rule to document both authentication
   actions and the disabled-`/start` fallback.
+
+## 2026-09-12T04:20:12Z
+
+- [verification] Ran the focused post and reaction suite locally. All 24
+  post/reaction assertions completed successfully; pytest then exited non-zero
+  because its Windows SQLite cleanup hook could not unlink the temporary test
+  database.
+- [verification] Web TypeScript passed. The Webpack production build remains
+  blocked by the known Windows `spawn EPERM` limitation.
+
+## 2026-09-12T04:43:27Z
+
+- [diagnosis] Rechecked the post/profile data path after reports that both own
+  and other-user posts are missing. The API author-scoped query and visibility
+  logic include visible normal posts; the web profile and Home loaders still
+  swallow request failures and render an empty state, masking whether the
+  failure is authentication, API origin, or data availability.
+- [verification] Local API health is responding, but its unauthenticated
+  explore feed currently contains no posts. Local Next development cannot start
+  because of the known Windows `spawn EPERM` limitation, so browser network
+  reproduction remains unavailable.
 
 ## 2026-09-12T02:02:03Z
 

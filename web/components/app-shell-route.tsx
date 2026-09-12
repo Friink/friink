@@ -42,6 +42,19 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   }, []);
 
   useEffect(() => {
+    function handleAccountSwitched() {
+      const session = loadAuthSession();
+      if (!session) return;
+      setUser(session.user);
+      setSessionError(null);
+      setAuthCheckComplete(true);
+    }
+
+    window.addEventListener('friink-account-switched', handleAccountSwitched);
+    return () => window.removeEventListener('friink-account-switched', handleAccountSwitched);
+  }, []);
+
+  useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
       refreshAuthSession()

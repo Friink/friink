@@ -99,7 +99,6 @@ export function ProfileScreen({
     observer.observe(likesLoadMoreRef.current);
     return () => observer.disconnect();
   }, [activeTab, likedPostsHasMore, likedPostsLoading, onLoadMoreLikedPosts]);
-  const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
   const showLikesTab = isOwnProfile || user.likesVisible;
   const visibleProfileTabs = showLikesTab ? profileTabs : profileTabs.filter((tab) => tab.id !== 'likes');
   const aboutText = user.about?.trim();
@@ -178,8 +177,8 @@ export function ProfileScreen({
       />
 
       <div className="profile-feed">
-        {activeTab === 'posts' && profilePosts.length > 0 ? (
-          profilePosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+        {activeTab === 'posts' && posts.length > 0 ? (
+          posts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
         ) : activeTab === 'replies' && replies.length > 0 ? (
           replies.map((reply) => <FeedPost key={reply.id} post={reply} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && showLikesTab && likedPosts.length > 0 ? (

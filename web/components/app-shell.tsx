@@ -1072,6 +1072,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                   {activeScreen === 'home' && (
                     <HomeScreen
                       posts={posts}
+                      accountId={user.id}
                       activeFilter={homeFilter}
                       onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                       onReply={handleReply}
