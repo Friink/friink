@@ -321,7 +321,18 @@ async def _issue_login_session(
     auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
     try:
-        slot = create_or_replace_slot(session, user, device_identifier, auth_session, settings)
+        # The remembered-account cap applies to Add account. A normal login
+        # must still establish a usable session when this device already has
+        # the maximum number of other remembered accounts; it simply remains
+        # an un-slotted session until the user removes a remembered account.
+        slot = create_or_replace_slot(
+            session,
+            user,
+            device_identifier,
+            auth_session,
+            settings,
+            allow_over_limit=not is_add_account_flow,
+        )
     except ValueError as exc:
         if str(exc) == "ACCOUNT_LIMIT_REACHED":
             session.rollback()

@@ -823,6 +823,20 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
     window.localStorage.setItem(ACCOUNT_SLOT_KEY, currentAccount.accountSlot);
     return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
   }
+  if (currentUser) {
+    // A normal login may be valid without a remembered account slot when the
+    // device is already at its slot cap. Keep that active account visible in
+    // the switcher without inventing a switchable slot for it.
+    return [{
+      accountSlot: '',
+      username: currentUser.username,
+      displayName: currentUser.name,
+      profilePictureUrl: currentUser.profilePictureUrl,
+      active: true,
+      available: true,
+      lastUsedAt: '',
+    }, ...accounts.map((account) => ({ ...account, active: false }))];
+  }
   return accounts;
 }
 

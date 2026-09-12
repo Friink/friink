@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-12T13:23:20Z — Preserve normal login at remembered-account limit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix staging login losing the session after OTP verification
+  reports that the device session limit has been reached.
+- Changes Made: Normal logins now remain usable when the device has reached the
+  remembered-account slot cap; only Add account is rejected at the cap. The
+  account switcher also displays a valid unslotted current login without
+  inventing a switchable slot.
+- Files: `api/app/services/account_slots.py`, `api/app/routers/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`.
+- Verification Status: Focused assertions passed before the known Windows
+  SQLite temporary-database cleanup `PermissionError`; API compilation,
+  web TypeScript, and `git diff --check` passed. Live staging verification
+  was unavailable because the browser-control bridge could not load its
+  request-header policy.
+
 ## 2026-09-12T04:48:32Z — Fix account-switch and profile post visibility
 
 - Agent: Codex

@@ -408,6 +408,35 @@ def test_add_account_without_device_cookie_fails_without_creating_a_slot() -> No
         app.dependency_overrides.clear()
 
 
+def test_normal_login_succeeds_when_remembered_account_limit_is_reached() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings(MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1)
+    password = "Strong1!pass"
+    users = []
+    emails = []
+    for label in ("one", "two"):
+        user_id = uuid.uuid4()
+        users.append(user_id)
+        email = f"phase4-normal-login-{label}-{uuid.uuid4().hex}@example.com"
+        emails.append(email)
+        username = f"phase4_normal_{label}_{uuid.uuid4().hex[:12]}"
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": emails[0], "password": password})
+        assert first.status_code == 200, first.text
+        second = client.post("/auth/login", json={"identifier": emails[1], "password": password})
+        assert second.status_code == 200, second.text
+        assert second.json()["account_slot"] is None
+        assert client.get("/auth/me", headers={"Authorization": f"Bearer {second.json()['access_token']}"}).status_code == 200
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
 def test_three_account_logout_and_readd_sequence_preserves_all_slots() -> None:
     app.dependency_overrides[get_settings] = lambda: _settings()
     password = "Strong1!pass"

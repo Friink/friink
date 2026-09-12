@@ -21,7 +21,15 @@ def device_hash(raw_device: str | None) -> bytes | None:
     return hash_slot(raw_device) if raw_device else None
 
 
-def create_or_replace_slot(session: Session, user: User, raw_device: str | None, auth_session: AuthSession, settings: Settings) -> str | None:
+def create_or_replace_slot(
+    session: Session,
+    user: User,
+    raw_device: str | None,
+    auth_session: AuthSession,
+    settings: Settings,
+    *,
+    allow_over_limit: bool = False,
+) -> str | None:
     if not raw_device:
         return None
     current_device_hash = device_hash(raw_device)
@@ -37,6 +45,8 @@ def create_or_replace_slot(session: Session, user: User, raw_device: str | None,
         return raw_slot
     device_slots = session.execute(select(AccountSessionSlot).where(AccountSessionSlot.device_hash == current_device_hash, AccountSessionSlot.revoked_at.is_(None))).scalars().all()
     if len(device_slots) >= settings.max_remembered_accounts_per_device:
+        if allow_over_limit:
+            return None
         raise ValueError("ACCOUNT_LIMIT_REACHED")
     raw_slot = secrets.token_urlsafe(32)
     slot = AccountSessionSlot(user_id=user.id, device_hash=current_device_hash, slot_token_hash=hash_slot(raw_slot), auth_session_id=auth_session.id)

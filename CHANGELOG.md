@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-12T13:23:20Z
+
+- [fix] Normal login no longer fails when the device has reached the
+  remembered-account limit; only Add account remains subject to that cap.
+- [fix] The account switcher keeps a valid unslotted current login visible
+  while preserving all existing remembered account slots.
+
 ## 2026-09-12T04:48:32Z
 
 - [fix] Fixed account-switch synchronization so the active app shell updates
