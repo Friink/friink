@@ -1,5 +1,73 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-12T01:33:22Z — Re-verify posts contract locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm the completed implementation matches `docs/posts.md`
+  and test it locally.
+- Changes Made: No code changes; performed a fresh source-of-truth audit and
+  reran the local checks.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API compilation passed; all 23 post-test assertions
+  passed; web TypeScript passed; webpack production build passed with the
+  known SWC WASM fallback; `git diff --check` passed. Pytest exits non-zero only
+  because its Windows SQLite cleanup hook cannot unlink the temporary database.
+
+## 2026-09-12T01:29:22Z — Implement posts, replies, and Quotes contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement `docs/posts.md` as the source of truth, then
+  verify and test locally.
+- Changes Made: The API now returns visible nested descendants in chronological
+  tree order, accepts Likes/Saves for normal posts, replies, and Quotes, and
+  rechecks Quote visibility. The web adds parent IDs to mapped posts, renders
+  depth-capped threaded replies with rails and collapsible branches, loads
+  visible ancestor context for reply URLs, and exposes reaction controls on all
+  content kinds. Design/rules documentation and the stale private-Quote test
+  were synchronized with the agreed contract.
+- Files: `api/app/services/posts.py`, `api/app/services/reactions.py`,
+  `api/tests/test_posts.py`, `packages/design/design.md`, `RULES.md`,
+  `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`,
+  `web/app/globals.css`, `web/lib/data.ts`, both post-client routes,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q app` passed; all 23 post-test
+  assertions passed, with only the known Windows SQLite cleanup
+  `PermissionError` after test completion; web TypeScript passed; webpack
+  production build passed using the known WASM SWC fallback; `git diff --check`
+  passed.
+
+## 2026-09-12T01:20:46Z — Verify posts implementation against canonical contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the current implementation against `docs/posts.md`
+  and run local tests.
+- Changes Made: No application code changed. Recorded the verification result
+  and identified contract gaps: flat direct-reply rendering, no depth-capped
+  threaded/focused reply presentation, and reactions still restricted to
+  normal posts.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q api/app` passed; `npx tsc
+  --noEmit --incremental false` passed; all 23 assertions in
+  `api/tests/test_posts.py` passed, but pytest's Windows SQLite cleanup raised
+  `PermissionError`; `npm run build -- --webpack` passed with the known SWC
+  native-binary warning and WASM fallback; `git diff --check` passed.
+
+## 2026-09-12T01:12:17Z — Document posts, replies, and Quotes contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the agreed product contract for reply nesting,
+  standalone reply views, reactions, feed eligibility, visibility, and Quotes.
+- Changes Made: Added `docs/posts.md` as the canonical contract; corrected
+  RULES.md so visible replies can be liked and saved; and indexed the new
+  document in README.md. No implementation code was changed.
+- Files: `docs/posts.md`, `RULES.md`, `README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+
 ## 2026-09-12T00:39:05Z — Restore post sessions and load author-scoped profile posts
 
 - Agent: Codex

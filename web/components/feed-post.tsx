@@ -20,9 +20,11 @@ type FeedPostProps = {
   onReactionError?: (message: string) => void;
   truncateBody?: boolean;
   truncateQuotedPost?: boolean;
+  threadDepth?: number;
+  replyContext?: string;
 };
 
-export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionError, truncateBody = true, truncateQuotedPost = true }: FeedPostProps) {
+export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionError, truncateBody = true, truncateQuotedPost = true, threadDepth, replyContext }: FeedPostProps) {
   const router = useRouter();
   const bodyRef = useRef<HTMLParagraphElement | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -32,7 +34,6 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
   const [likesOpen, setLikesOpen] = useState(false);
   const postPath = getPostPathForPost(post);
   const shouldClampBody = !isExpanded;
-  const canReact = reactionPost.kind !== 'reply';
 
   useEffect(() => {
     setReactionPost(post);
@@ -92,7 +93,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
   return (
     <>
     <article
-      className="feed-post feed-post-clickable"
+      className={`feed-post feed-post-clickable${threadDepth !== undefined ? ' feed-post-threaded' : ''}`}
       onClick={handleCardClick}
       aria-label={`Open post by ${post.name}`}
     >
@@ -112,6 +113,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
       <div className="feed-post-date">
         <small>{formatRelativeTime(post.createdAt)}</small>
       </div>
+      {replyContext && <p className="feed-post-reply-context">Replying to {replyContext}</p>}
       <p ref={bodyRef} className={`feed-post-body${shouldClampBody ? ' feed-post-body-clamped' : ''}`}><MentionText>{post.text}</MentionText></p>
       <PostMediaGallery urls={post.media ?? []} authorName={post.name} />
       {post.quotedPost && (
@@ -164,8 +166,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
           <i className="fa-solid fa-quote-right" aria-hidden="true" />
           <span>{reactionPost.quotes}</span>
         </button>
-        {canReact && (
-          <>
+        <>
             <span className="feed-post-action-group">
               <button className={reactionPost.isLiked ? 'feed-post-action-active' : ''} type="button" aria-label={reactionPost.isLiked ? 'Unlike post' : 'Like post'} aria-pressed={reactionPost.isLiked} disabled={reactionBusy !== null} onClick={() => { void toggleReaction('like'); }}>
                 <i className={reactionPost.isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} aria-hidden="true" />
@@ -178,8 +179,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
               </button>
               <span className="feed-post-count" aria-label={`${reactionPost.savedCount} saves`}>{reactionPost.savedCount}</span>
             </span>
-          </>
-        )}
+        </>
       </div>
     </article>
     {likesOpen && <PostLikesModal postId={reactionPost.id} onClose={() => setLikesOpen(false)} />}

@@ -39,6 +39,7 @@ function mapApiPost(post: ApiPost): Post {
     tone: 'mint',
     createdAt: post.created_at,
     text: post.content,
+    parentPostId: post.parent_post_id,
     connectionType: 'following',
     isConnection: true,
     isSaved: post.saved ?? false,
@@ -69,6 +70,7 @@ export function PostClient({ postId }: PostClientProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [post, setPost] = useState<Post | null>(null);
   const [replies, setReplies] = useState<Post[]>([]);
+  const [ancestors, setAncestors] = useState<Post[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [composeContext, setComposeContext] = useState<{ kind: 'reply' | 'quote'; post: Post } | null>(null);
@@ -82,7 +84,20 @@ export function PostClient({ postId }: PostClientProps) {
       if (!active) return;
       setUser(activeSession.user);
       getPost(postId)
-        .then((apiPost) => { if (active) setPost(mapApiPost(apiPost)); })
+        .then(async (apiPost) => {
+          if (!active) return;
+          const selected = mapApiPost(apiPost);
+          setPost(selected);
+          const chain: Post[] = [];
+          let parentId = apiPost.parent_post_id;
+          while (parentId && chain.length < 50) {
+            let parent: Post;
+            try { parent = mapApiPost(await getPost(parentId)); } catch { break; }
+            chain.unshift(parent);
+            parentId = parent.parentPostId ?? null;
+          }
+          if (active) setAncestors(chain);
+        })
         .catch(() => { if (active) setPostUnavailable(true); });
       listPostReplies(postId)
         .then((items) => { if (active) setReplies(items.map(mapApiPost)); })
@@ -192,6 +207,7 @@ export function PostClient({ postId }: PostClientProps) {
       <PostDetailScreen
         post={post}
         replies={replies}
+        ancestors={ancestors}
         onReply={(target) => setComposeContext({ kind: 'reply', post: target })}
         onQuote={(target) => setComposeContext({ kind: 'quote', post: target })}
         onPostUpdated={(updated) => { if (updated.id === post.id) setPost(updated); setReplies((current) => current.map((item) => item.id === updated.id ? updated : item)); }}

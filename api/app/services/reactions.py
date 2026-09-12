@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.models.chat import UserBlock
 from app.models.notification import NotificationType
-from app.models.post import Post, PostKind, PostLike, PostSave
+from app.models.post import Post, PostLike, PostSave
 from app.models.user import User
 from app.schemas.posts import FeedPageResponse, LikeActorPageResponse, LikeActorResponse, ReactionResponse
 from app.services.notifications import create_notification
@@ -59,8 +59,6 @@ def _get_reactable_post(session: Session, viewer: User, post_id: uuid.UUID) -> P
     ).scalar_one_or_none()
     if not post or post.deleted_at is not None or not can_view_post(session, viewer, post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
-    if post.kind != PostKind.POST:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only posts can be liked or saved.")
     return post
 
 
@@ -179,7 +177,7 @@ async def list_liked_posts(session: Session, viewer: User, username: str, cursor
         select(PostLike, Post)
         .options(*post_load_options())
         .join(Post, Post.id == PostLike.post_id)
-        .where(PostLike.user_id == target.id, Post.deleted_at.is_(None), Post.kind == PostKind.POST)
+        .where(PostLike.user_id == target.id, Post.deleted_at.is_(None))
         .order_by(PostLike.created_at.desc(), PostLike.id.desc())
     )
     if cursor:
@@ -205,7 +203,7 @@ async def list_saved_posts(session: Session, viewer: User, cursor: str | None, l
         select(PostSave, Post)
         .options(*post_load_options())
         .join(Post, Post.id == PostSave.post_id)
-        .where(PostSave.user_id == viewer.id, Post.deleted_at.is_(None), Post.kind == PostKind.POST)
+        .where(PostSave.user_id == viewer.id, Post.deleted_at.is_(None))
         .order_by(PostSave.created_at.desc(), PostSave.id.desc())
     )
     if cursor:

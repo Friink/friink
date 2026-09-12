@@ -10,6 +10,51 @@
 - The latest tested onboarding implementation is pushed to both development and
   staging.
 
+## 2026-09-12T01:33:22Z
+
+- [verification] Rechecked the implementation against `docs/posts.md` and
+  reran local API compilation, all 23 post-test assertions, web TypeScript,
+  the webpack production build, and `git diff --check`. The implementation
+  remains aligned with the documented reply tree, permalink context, reaction,
+  Quote, feed, and visibility rules.
+- [verification] Pytest's assertions pass; its only failure is the known
+  Windows temporary SQLite cleanup `PermissionError` during session teardown.
+
+## 2026-09-12T01:29:22Z
+
+- [posts] Implemented the `docs/posts.md` contract across API and web: visible
+  descendant replies are returned in tree order, replies and Quotes support
+  Like/Save reactions, and Quote visibility is rechecked server-side.
+- [web] Added depth-capped threaded reply presentation with connector rails,
+  collapsible branches, parent context for deep replies, ancestor context for
+  reply permalinks, and a root conversation link.
+- [docs/tests] Updated the design/rules contract and the private-visible Quote
+  regression test to match the canonical posts contract.
+- [verification] API compilation, all 23 post-test assertions, TypeScript, the
+  webpack production build, and `git diff --check` passed. Pytest still exits
+  non-zero during Windows temporary SQLite cleanup after the assertions pass.
+
+## 2026-09-12T01:20:46Z
+
+- [verification] Audited the implementation against `docs/posts.md` as the
+  source of truth. API compilation, web TypeScript, the 23 post tests, and the
+  webpack production build were exercised locally.
+- [verification] The post tests passed assertions but pytest exited non-zero
+  during Windows temporary SQLite cleanup. The build passed with the existing
+  SWC native-binary warning and WASM fallback.
+- [posts] The audit found the nested-reply presentation, reply permalink
+  context, and Like/Save support for replies and Quotes are not implemented;
+  current replies remain flat and reactions still reject non-`post` kinds.
+
+## 2026-09-12T01:12:17Z
+
+- [docs/posts] Added the agreed contract for normal posts, nested replies,
+  reply permalinks, depth-capped threaded presentation, Likes/Saves on replies,
+  visibility behavior, and Quote posts.
+- [rules] Corrected the stale top-level-only reaction rule so visible replies
+  are valid Like and Save targets.
+- [docs] Added docs/posts.md to the README project-documentation index.
+
 ## 2026-09-12T00:39:05Z
 
 - [web/auth] Fixed post-detail routes to restore a refreshable session before

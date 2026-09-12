@@ -3,6 +3,7 @@ export type Post = {
   publicId?: string;
   slug?: string;
   kind?: 'post' | 'quote' | 'reply';
+  parentPostId?: string | null;
   name: string;
   handle: string;
   initials: string;

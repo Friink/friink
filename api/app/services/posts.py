@@ -116,9 +116,8 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
         quoted_post = session.get(Post, data.quoted_post_id)
         if not quoted_post:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quoted post was not found.")
-        quote_author = quoted_post.user or session.get(User, quoted_post.user_id)
-        if quote_author and quote_author.is_private:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Private posts cannot be quoted.")
+        if not can_view_post(session, user, quoted_post):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot quote this post.")
 
     parent_post: Post | None = None
     if data.parent_post_id:
@@ -316,10 +315,22 @@ async def get_post_replies(session: Session, post_id: uuid.UUID, viewer: User | 
     result = session.execute(
         select(Post)
         .options(*post_load_options())
-        .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY, Post.parent_post_id == post_id)
-        .order_by(Post.created_at.asc())
+        .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY)
+        .order_by(Post.created_at.asc(), Post.id.asc())
     )
-    return [post for post in result.scalars().all() if can_view_post(session, viewer, post)]
+    replies = list(result.scalars().all())
+    by_parent: dict[uuid.UUID, list[Post]] = {}
+    for reply in replies:
+        if can_view_post(session, viewer, reply):
+            by_parent.setdefault(reply.parent_post_id, []).append(reply)
+
+    ordered: list[Post] = []
+    stack = list(reversed(by_parent.get(post_id, [])))
+    while stack:
+        reply = stack.pop()
+        ordered.append(reply)
+        stack.extend(reversed(by_parent.get(reply.id, [])))
+    return ordered
 
 
 async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:

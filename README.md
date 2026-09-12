@@ -125,6 +125,8 @@ these files, and the live implementation, are:**
 - **`docs/chat-behavior.md`** — the implementation contract for chat requests, composer states, notifications, mute/archive behavior, blocking infrastructure, and subscription boundaries.
 - **`docs/notifications.md`** — the complete authenticated notification contract: dropdown behavior, polling, read state, tabs, filters, inline actions, privacy, fallbacks, and acceptance checks.
 - **`docs/like-and-star.md`** — the implementation contract for durable post Likes and Saves, privacy behavior, Like actor lists, notifications, API routes, risks, limitations, and end-to-end acceptance checks.
+- **`docs/posts.md`** — the agreed contract for posts, nested replies, reply
+  permalinks, reactions, visibility, and Quotes.
 - **`docs/updated-account-info.md`** — the Joined, Region, Location, and Friink
   usage-intent account-information and onboarding contract.
 

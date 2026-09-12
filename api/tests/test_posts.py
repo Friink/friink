@@ -367,7 +367,7 @@ async def test_reply_creation_rechecks_parent_visibility(monkeypatch: pytest.Mon
 
 
 @pytest.mark.asyncio
-async def test_quote_creation_blocks_private_posts_even_for_owner() -> None:
+async def test_quote_creation_allows_visible_private_posts_for_owner(monkeypatch: pytest.MonkeyPatch) -> None:
     owner = User(
         id=uuid.uuid4(),
         email="owner@example.com",
@@ -380,13 +380,21 @@ async def test_quote_creation_blocks_private_posts_even_for_owner() -> None:
     quoted.user = owner
 
     class Session:
+        def add(self, instance):
+            self.post = instance
+
         def get(self, model, object_id):
             return quoted if model is Post else owner
 
-    with pytest.raises(HTTPException) as error:
-        await create_post(Session(), owner, CreatePostRequest(content="Nope", kind="quote", quoted_post_id=quoted.id))
+    async def no_op(*args, **kwargs):
+        return None
 
-    assert error.value.status_code == 403
+    monkeypatch.setattr("app.services.posts.commit", no_op)
+    monkeypatch.setattr("app.services.posts.refresh", no_op)
+    created = await create_post(Session(), owner, CreatePostRequest(content="Nope", kind="quote", quoted_post_id=quoted.id))
+
+    assert created.kind == PostKind.QUOTE
+    assert created.quoted_post_id == quoted.id
 
 
 @pytest.mark.asyncio

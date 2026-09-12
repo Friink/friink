@@ -124,7 +124,7 @@ the entry, so history isn't lost.
 - **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Post Likes And Saves Are Durable, Unique Reactions
-- **What:** Signed-in users may Like/Unlike and Save/Unsave visible `POST` records. Each user can have at most one Like and one Save per post at a time. Like and Save counts are public post aggregates; viewer-specific active state is returned only to an authenticated viewer. Replies are not reaction targets.
+- **What:** Signed-in users may Like/Unlike and Save/Unsave visible normal posts, replies, and Quotes. Each user can have at most one Like and one Save per content object at a time. Like and Save counts are public aggregates for that object; viewer-specific active state is returned only to an authenticated viewer.
 - **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Save operations are silent. Deleted, private, blocked, or otherwise inaccessible posts cannot be reacted to and are omitted from the user's Liked/Saved lists. Direct unavailable post URLs render the neutral unavailable state.
 - **Privacy:** `likes_visible` defaults to true and is managed under Settings > Privacy. When disabled, the user's Like identity is omitted from actor lists and their Likes tab is hidden from other signed-in users, while counts and the user's own view remain intact. Saves have no actor list and are not controlled by this setting.
 - **Status:** Active; staging migration and authenticated reaction E2E passed, production migration/schema verified read-only. Deployed browser verification remains a release step after the code is deployed.
@@ -577,8 +577,8 @@ the entry, so history isn't lost.
 - **Related rules:** Private Post Visibility Is Enforced Server-Side
 
 ### Rule: Private Posts Cannot Be Quoted
-- **What:** Posts authored by private accounts cannot be quoted, even by the private account owner.
-- **Status:** Active
+- **What:** Deprecated. A Quote may reference any visible post or reply, including content owned by a private account when the quoting user is authorized to view it.
+- **Status:** Deprecated; superseded by the Posts, Replies & Quotes contract in `docs/posts.md`.
 - **Platform:** All
 - **File(s):** `api/app/services/posts.py`, `api/tests/test_posts.py`
 - **Since:** 2026-08-29T13:10:00Z
