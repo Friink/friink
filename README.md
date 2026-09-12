@@ -127,6 +127,8 @@ these files, and the live implementation, are:**
 - **`docs/like-and-star.md`** — the implementation contract for durable post Likes and Saves, privacy behavior, Like actor lists, notifications, API routes, risks, limitations, and end-to-end acceptance checks.
 - **`docs/posts.md`** — the agreed contract for posts, nested replies, reply
   permalinks, reactions, visibility, and Quotes.
+- **`docs/index.md`** — documentation index, source-of-truth map, and guide to
+  the feature, architecture, operations, and verification documents.
 - **`docs/updated-account-info.md`** — the Joined, Region, Location, and Friink
   usage-intent account-information and onboarding contract.
 

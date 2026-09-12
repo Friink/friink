@@ -85,7 +85,10 @@ export function Header({ page = 'landing' }: HeaderProps) {
             />
             </>
           ) : sessionChecked ? (
-            <Link className={styles.cta} href="/login">Login</Link>
+            <>
+              <Link className={styles.cta} href="/start">Get started</Link>
+              <Link className={`${styles.cta} ${styles.secondaryCta}`} href="/login">Login</Link>
+            </>
           ) : <span className={styles.authPlaceholder} aria-hidden="true" />}
         </div>
       </div>

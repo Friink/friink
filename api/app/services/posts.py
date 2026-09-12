@@ -258,6 +258,30 @@ async def get_user_posts(session: Session, viewer: User, username: str, limit: i
     )
 
 
+async def get_user_replies(session: Session, viewer: User, username: str, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None) -> FeedPageResponse:
+    target = await get_user_by_username(session, username)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    clamped_limit = clamp_feed_limit(limit)
+    query = (
+        select(Post).options(*post_load_options())
+        .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY, Post.user_id == target.id)
+        .order_by(Post.created_at.desc(), Post.id.desc())
+    )
+    if cursor:
+        created_at, post_id = decode_post_cursor(cursor)
+        query = query.where(build_older_than_filter(created_at, post_id))
+    replies = list(session.execute(query.limit(clamped_limit + 1)).scalars().all())
+    has_more = len(replies) > clamped_limit
+    page_items = replies[:clamped_limit]
+    visible_replies = [reply for reply in page_items if can_view_post(session, viewer, reply)]
+    return FeedPageResponse(
+        items=[serialize_post(reply, viewer=viewer, session=session) for reply in visible_replies],
+        next_cursor=encode_post_cursor(page_items[-1]) if has_more and page_items else None,
+        has_more=has_more,
+    )
+
+
 async def get_newer_posts(session: Session, after_created_at: datetime, after_post_id: uuid.UUID, limit: int = DEFAULT_FEED_LIMIT, viewer: User | None = None, feed: str = "explore") -> list[Post]:
     clamped_limit = clamp_feed_limit(limit)
     result = session.execute(

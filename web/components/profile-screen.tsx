@@ -14,6 +14,7 @@ import { blockUser, loadAuthSession } from '@/lib/auth';
 type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
+  replies?: Post[];
   likedPosts?: Post[];
   likedPostsHasMore?: boolean;
   likedPostsLoading?: boolean;
@@ -61,6 +62,7 @@ function getInitials(value: string) {
 export function ProfileScreen({
   user,
   posts,
+  replies = [],
   likedPosts = [],
   likedPostsHasMore = false,
   likedPostsLoading = false,
@@ -178,6 +180,8 @@ export function ProfileScreen({
       <div className="profile-feed">
         {activeTab === 'posts' && profilePosts.length > 0 ? (
           profilePosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+        ) : activeTab === 'replies' && replies.length > 0 ? (
+          replies.map((reply) => <FeedPost key={reply.id} post={reply} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && showLikesTab && likedPosts.length > 0 ? (
           likedPosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && !showLikesTab ? (

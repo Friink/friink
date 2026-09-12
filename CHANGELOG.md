@@ -10,6 +10,54 @@
 - The latest tested onboarding implementation is pushed to both development and
   staging.
 
+## 2026-09-12T04:07:18Z
+
+- [auth] Added the progressive `Get started` CTA to the public header while
+  retaining the legacy `Login` action on desktop and mobile. Narrow screens
+  use compact sizing instead of hiding either action.
+- [docs] Synchronized the public-header design and progressive-login rollout
+  documentation with the implementation and feature-flag fallback.
+- [rules] Updated the public-header rule to document both authentication
+  actions and the disabled-`/start` fallback.
+
+## 2026-09-12T02:02:03Z
+
+- [profiles] Fixed profile rendering to use the author-scoped posts collection
+  instead of the global feed collection.
+- [replies] Added `GET /users/{username}/replies`, client loading for profile
+  Replies tabs, and reply-card mapping including parent identity metadata.
+- [verification] API compilation, targeted post assertions, web TypeScript,
+  the real unauthenticated replies-route check (`401`), and the Webpack
+  production build passed. The known Windows SQLite teardown warning remains.
+
+## 2026-09-12T01:52:00Z
+
+- [verification] Read the active 919-line `RULES.md` and ran the full local
+  platform checks. Web TypeScript and the Webpack production build passed.
+- [verification] The API suite collected 149 tests but is not clean: assertion
+  failures remain, followed by the known Windows SQLite teardown
+  `PermissionError`. Web lint also fails with 65 errors and 38 warnings.
+- [verification] The local API starts and returns HTTP 200. The local Next
+  dev server fails with `spawn EPERM`, so browser-level platform verification
+  could not be completed.
+
+## 2026-09-12T01:45:50Z
+
+- [diagnosis] Local audit found that `ProfileClient` fetches author-scoped
+  `profilePosts`, but `AppShell` still passes the global `posts` collection to
+  `ProfileScreen`; other-user post results are therefore discarded. The
+  profile Replies tab has no API fetch/state path, so replies cannot appear
+  there.
+- [verification] Local API started and returned HTTP 200 at port 8000. The web
+  dev server could not start because Next.js failed with `spawn EPERM` on this
+  Windows environment; no browser click-through was possible. No code fix was
+  made during diagnosis.
+
+## 2026-09-12T01:35:00Z
+
+- [docs] Added `docs/index.md` as the documentation index and source-of-truth
+  map. Existing documents were not moved or rewritten.
+
 ## 2026-09-12T01:33:22Z
 
 - [verification] Rechecked the implementation against `docs/posts.md` and
@@ -2826,3 +2874,60 @@ _Last updated: 2026-09-10_
 - Fixed chat scrolling so the participant profile/separator stays pinned below navigation and the final message clears the floating composer.
 - Added a shared public-route session guard so authenticated users are redirected to `/home` from the landing page, subscriptions, and direct `/login` navigation.
 - Made chat participant identity clickable and restored end-of-conversation scroll on reopen; chat retains bottom clearance for the floating composer.
+
+## 2026-09-12
+
+### Docs
+- Added `docs/2026-09-12-capture.md`, auditing every document under `docs/`
+  against `RULES.md` and checking each material drift against the current
+  implementation.
+- Captured the latest progressive-auth, session, reaction, nested-reply,
+  profile-reply, visibility, lifecycle, and verification requirements.
+- Recorded that `RULES.md` and all existing contracts were intentionally left
+  unchanged for later review.
+
+### Verification
+- TypeScript compilation and the production webpack build pass.
+- The full API suite and web lint remain non-clean; Windows SQLite cleanup and
+  local Next dev startup (`spawn EPERM`) prevent a clean end-to-end claim.
+
+### Audit scope
+- Updated the documentation capture to exclude archival `docs/session/`
+  references from active conflicts and use `docs/auth-and-session.md` as the
+  current authentication/session authority.
+- Corrected the capture’s recency precedence: later focused progressive-login
+  and failed-login contracts supersede only their respective auth slices.
+
+### Rules
+- Promoted the latest Posts/Replies/Quotes contract into `RULES.md`, including
+  nested reply presentation, focused reply views, author-scoped profile
+  replies, and the `Post hidden` placeholder for newly-private quoted content.
+- Left progressive-login beta and verification/development status outside the
+  active business rules.
+- Synchronized the selected read-receipt, blocking, media-upload,
+  Like/Save, and account-lifecycle business rules into `RULES.md`; recorded
+  the remaining Like/Save implementation mismatch in the capture.
+- Added `docs/2026-09-21-notes.md` documenting MIME types, the current media
+  upload limitation, and safer validation/delivery follow-up options.
+- Synchronized business rules from `login.md`, `forget-password.md`, and
+  `auth-incident-response.md` into `RULES.md`; recorded the reset-email
+  delivery conflict for follow-up.
+- Added the complete authentication conflict list to
+  `docs/2026-09-21-notes.md`.
+- Added `rules-staging.md`, an exact local snapshot of `staging:RULES.md`.
+- Synchronized business rules from `account-switcher.md`, `subscriptions.md`,
+  and `failed-login-policy.md` into `RULES.md`.
+- Recorded the remaining account-switcher loading-copy, subscription
+  expiry-audit, and password-reset delivery conflicts for follow-up.
+- Synchronized active business rules from `updated-account-info.md`,
+  `notifications.md`, and `chat-behavior.md`; kept beta progressive login out
+  of active rules.
+- Aligned `RULES.md` with the implementation for account-switcher logout,
+  Like/Save reactions, and inaccessible private quoted posts.
+- Normalized all `RULES.md` `Since` fields to `YYYY-MM-DDTHH:MM:SSZ`, using
+  `00:00:00Z` where the original entry had no time.
+- Audited implementation-change entries in `AGENTLOG.md` against `RULES.md`;
+  no missing active rules were found, and four implementation conflicts were
+  flagged for review.
+- Updated `RULES.md` so those four rules now describe the current
+  implementation, including the known browser-state isolation limitation.

@@ -600,8 +600,18 @@
 }
 
 @media (max-width: 767px) {
+  .navActions {
+    gap: 0.5rem;
+  }
+
   .navLink {
     display: none;
+  }
+
+  .navActions .cta {
+    min-height: 2.75rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 

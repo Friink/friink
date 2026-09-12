@@ -6,11 +6,11 @@ Status: Implemented locally behind feature flags; staging verification pending
 
 Add a new public authentication entry point at `/start`.
 
-The intended public-site primary CTA should say **Get started** and link to
-`/start`. It is not enabled by this rollout yet; the existing public CTA and
-explicit Login action remain unchanged until staging verification is complete.
-The existing **Login** action should remain available as a secondary/fallback
-route to `/login` while the new experience is introduced and validated.
+The public-site primary CTA now says **Get started** and links to `/start`. The
+existing **Login** action remains visible as a secondary/fallback route to
+`/login` on both desktop and mobile while the new experience is introduced and
+validated. The `/start` route remains feature-flagged and falls back to `/login`
+when disabled.
 
 `/start` is an intentless entry point: the visitor does not need to decide
 between login and signup before entering an identifier. The existing login and
@@ -45,9 +45,8 @@ The field remains the existing `Email or username` field. It accepts email,
 username, and a leading `@` for username lookup using the current
 case-insensitive normalization rules.
 
-At rollout, the public header and landing-page primary CTA should use `Get
-started`. That CTA is not switched yet. An explicit `Login` link remains
-available and points to `/login`.
+The public header and landing-page primary CTA use `Get started` and point to
+`/start`. An explicit `Login` link remains visible and points to `/login`.
 
 The identifier submission uses a neutral presentation. The UI must not say
 whether the identifier belongs to an existing account or a new user, and must
@@ -420,8 +419,9 @@ Roll out in phases:
 ## Audit findings
 
 The `/start` route and progressive start/continue endpoints are implemented
-locally behind separate web/API feature flags. The public CTA is intentionally
-not switched, and staging cross-origin cookie, latency, device-cookie, and
+locally behind separate web/API feature flags. The public CTA now points to
+`/start`; when the web flag is disabled, the route falls back to `/login`.
+Staging cross-origin cookie, latency, device-cookie, and
 end-to-end parity verification remain required before rollout. `/login`,
 signup, OTP, session, device-recognition, and account-slot behavior remain the
 live source of truth.

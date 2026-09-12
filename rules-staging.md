@@ -1,9 +1,8 @@
 # Friink Rules
 
 This file documents product/business logic rules for features currently implemented
-and active in the codebase. It may also record implementation-bound UI and
-architecture constraints when they are part of an active product contract; detailed
-visual/design guidance remains in `packages/design/design.md`.
+and active in the codebase. It does NOT cover planned features, deprecated behavior
+(beyond marking it Deprecated below), or visual/design rules (see design.md).
 
 When adding a new rule after implementing a feature: add it under the relevant feature
 area heading using the template below. If no matching heading exists, create one. Do
@@ -14,11 +13,11 @@ the entry, so history isn't lost.
 
 ### Rule: Account Switcher Uses Device-Scoped Slots
 - **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
-- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Opening the selector shows the cached device-scoped list immediately while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
-- **Since:** 2026-09-07T00:00:00Z
+- **Since:** 2026-09-07 (UTC)
 
 ### Rule: OTP Flags Are API-Owned Runtime Configuration
 - **What:** `OTP_ENABLED` is the API-owned master switch and defaults to `true`. When enabled, `SIGNUP_OTP_ENABLED` controls signup verification and `LOGIN_RISK_OTP_ENABLED` controls risk-based normal-login OTP. When `OTP_ENABLED=false`, all OTP challenges are bypassed, including signup, risk-based login, lifecycle reactivation/deletion, and email-change verification. The master switch must be read from the FastAPI deployment environment and verified after redeployment; changing only the web project is insufficient.
@@ -26,15 +25,15 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** API/Web
 - **File(s):** `api/app/config.py`, `api/app/routers/auth.py`, `api/app/services/auth_debug.py`
-- **Since:** 2026-09-07T00:00:00Z
+- **Since:** 2026-09-07 (UTC)
 
 ### Rule: Post Media Uploads Are Submit-Time And Image-Only
-- **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits, allows the user to reorder the selected attachments before submission, and submits files in the visible order. Clicking a thumbnail opens the 3:5 crop tool directly; Reset restores the crop view, Apply saves the crop, and previous/next arrows switch among attached images. The browser prepares JPEG files and the API validates the authenticated user's ownership and post-media key contract before associating confirmed uploads with the user's new post.
-- **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. While the post/media request is running, the Post button is disabled and shows the posting spinner; failed submissions preserve the draft and attachments for retry, while successful submissions clear them. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Uploads use one-at-a-time browser preparation, presigned R2 `PUT`, confirmation, and final post association; confirmation validates the authenticated user's key ownership and namespace but does not use public `HEAD`/`GET` or S3 `HeadObject` to verify stored MIME type or byte length. Successfully associated media is returned as URL items and rendered through the shared gallery: multiple images remain available in the horizontal slider with a common nominal height (`24rem` desktop, `15rem` compact screens), a default 3:4 frame, an 8px gap, and 8px rounded image frames; a single image preserves its natural aspect ratio within the available content width and responsive maximum height without a trailing gallery background. The crop tool remains 3:5. Final crop width, height, and aspect ratio are not persisted in media rows. Freeform crop bounds and first-image carousel-ratio locking are not implemented. The shared modal backdrop is above application overlays so crop controls remain interactive.
+- **What:** A post may include up to 8 JPEG images. The composer keeps selected files local until the user submits, allows the user to reorder the selected attachments before submission, and submits files in the visible order. Clicking a thumbnail opens the 3:5 crop tool directly; Reset restores the crop view, Apply saves the crop, and previous/next arrows switch among attached images. The API then validates ownership, type, and size before associating them with the authenticated user's new post.
+- **Edge cases:** The shared post-media preparation targets a 1024px maximum longest edge and approximately 500KB per image. While the post/media request is running, the Post button is disabled and shows the posting spinner; failed submissions preserve the draft and attachments for retry, while successful submissions clear them. Failed submissions must clean up uploaded objects and must not leave a half-created post. Post deletion removes associated post-media objects before marking the post deleted. Successfully associated media is returned as URL items and rendered through the shared gallery: multiple images remain available in the horizontal slider with a common nominal height (`24rem` desktop, `15rem` compact screens), a default 3:4 frame, an 8px gap, and 8px rounded image frames; a single image preserves its natural aspect ratio within the available content width and responsive maximum height without a trailing gallery background. The crop tool remains 3:5. Final crop width, height, and aspect ratio are not persisted in media rows. Freeform crop bounds and first-image carousel-ratio locking are not implemented. The shared modal backdrop is above application overlays so crop controls remain interactive.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/components/post-media-gallery.tsx`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/app/globals.css`, `api/app/routers/posts.py`, `api/app/services/posts.py`, `api/app/services/storage.py`, `api/app/models/post.py`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (UTC)
 
 ### Rule: Web UI Fixes Must Be Component-Level
 - **What:** Reusable web UI behavior, layout, spacing, and interaction fixes must be implemented in shared components, shared CSS contracts, or shell-level state owners rather than inline styles, route-only patches, or one-off page wrappers.
@@ -42,7 +41,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/*`, `web/app/globals.css`, `packages/design/design.md`, `README.md`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Tablet And Desktop Content Use A 720px Shared Cap
 - **What:** The visible shared `ContentBox` and contextual `FloatingBar` surfaces cap at `720px` on tablet and desktop and center within the available main panel after accounting for the side drawer. The shared horizontal gutter is applied outside that visible cap (`16px` desktop, `8px` mobile); on smaller mobile screens both surfaces remain fluid within the gutter.
@@ -50,7 +49,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/content-box.tsx`, `web/app/globals.css`, `web/theme.config.ts`, `packages/design/design.md`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (UTC)
 
 ### Rule: In-App Accent Color Is Device-Local
 - **What:** Signed-in users may set a six-digit hex accent color from Settings > General. It overrides the app shell's brand token for the current device only; public/landing surfaces are not affected.
@@ -58,7 +57,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/account-screens.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (UTC)
 
 ### Rule: Theme Preference Applies Before Session Restore
 - **What:** The web app defaults to the system color scheme. A valid `friink_appearance` cookie with `light`, `dark`, or `system` is the device-local override, and the same preference applies to the authenticated shell and standalone authentication/lifecycle recovery screens.
@@ -66,7 +65,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`, `web/app/landing.module.css`
-- **Since:** 2026-09-11T00:00:00Z
+- **Since:** 2026-09-11 (UTC)
 
 ### Rule: Route-Based Navigation Uses Real Links
 - **What:** Navigation controls that have a stable destination must render as anchors with an `href`, including the signed-in drawer routes. Client-side click handling may intercept normal clicks, but the destination must remain available to browser status previews, middle-click, and open-in-new-tab behavior.
@@ -74,7 +73,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx`, `web/app/directory/page.tsx`
-- **Since:** 2026-08-31T00:00:00Z
+- **Since:** 2026-08-31 (Asia/Karachi)
 
 ### Rule: Profile Header Summary Uses ContentBox Spacing
 - **What:** Web profile pages render profile identity, about text, follower/following stats, and edit/message/follow actions through the shared `ProfileScreen` inside `ContentBox`. These elements are grouped in the component-level profile summary section, not patched with route-specific spacing.
@@ -82,7 +81,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Unknown Profile Routes Show Unavailable State
 - **What:** A username route that does not resolve to a public user must render `Does not exist or unavailable.` and must not create or display a synthetic/demo profile.
@@ -90,7 +89,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Contextual Header Lists Use Shared Dropdown
 - **What:** Floating Search and Notifications lists must use the shared `ContextualDropdown` shell for their container, list spacing, footer treatment, and empty state. The shared empty state displays `Nothing to show.` with centered whitespace; list-specific row content and footer actions may remain specialized.
@@ -98,7 +97,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/contextual-dropdown.tsx`, `web/components/header.tsx`, `web/app/globals.css`, `packages/design/design.md`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Header Chat Link Reflects Conversation Unread State
 - **What:** The global signed-in Header owns the Chat link between Search and Notifications. It routes to `/chats` and shows a small accent dot whenever the authenticated conversation list contains one or more unread messages. Chat is not duplicated in the SideDrawer.
@@ -114,7 +113,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/post.py`, `api/app/services/post_slug.py`, `api/app/routers/posts.py`, `api/alembic/versions/20260830_0009_add_public_id_to_posts.py`, `web/lib/post-path.ts`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Quoted Posts Link To Their Original
 - **What:** A quoted-post block in a feed or post card links to the original post's canonical detail URL when that original is available. The parent quote post remains navigable through its surrounding non-interactive card area.
@@ -122,11 +121,11 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/lib/data.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Post Likes And Saves Are Durable, Unique Reactions
-- **What:** Signed-in users may Like/Unlike and Save/Unsave visible posts, replies, and quotes. Each user can have at most one Like and one Save per content object at a time. Like and Save counts are public aggregates for that content object; viewer-specific active state is returned only to an authenticated viewer.
-- **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Save operations are silent. Deleted, private, blocked, or otherwise inaccessible content cannot be reacted to and is omitted from the user's Liked/Saved lists. Direct unavailable post URLs render the neutral unavailable state.
+- **What:** Signed-in users may Like/Unlike and Save/Unsave visible normal posts, replies, and Quotes. Each user can have at most one Like and one Save per content object at a time. Like and Save counts are public aggregates for that object; viewer-specific active state is returned only to an authenticated viewer.
+- **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Save operations are silent. Deleted, private, blocked, or otherwise inaccessible posts cannot be reacted to and are omitted from the user's Liked/Saved lists. Direct unavailable post URLs render the neutral unavailable state.
 - **Privacy:** `likes_visible` defaults to true and is managed under Settings > Privacy. When disabled, the user's Like identity is omitted from actor lists and their Likes tab is hidden from other signed-in users, while counts and the user's own view remain intact. Saves have no actor list and are not controlled by this setting.
 - **Status:** Active; staging migration and authenticated reaction E2E passed, production migration/schema verified read-only. Deployed browser verification remains a release step after the code is deployed.
 - **Platform:** Web/API
@@ -139,7 +138,7 @@ the entry, so history isn't lost.
 - **Status:** Active; profile saving is planned, not implemented.
 - **Platform:** Web only
 - **File(s):** `web/app/saved/page.tsx`, `web/app/saved/posts/page.tsx`, `web/app/saved/profiles/page.tsx`, `web/app/starred/page.tsx`, `web/components/saved-screen.tsx`, `web/components/feed-post.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`
-- **Since:** 2026-09-06T00:00:00Z
+- **Since:** 2026-09-06 (Asia/Karachi)
 
 ## Authentication & Accounts
 
@@ -149,7 +148,7 @@ the entry, so history isn't lost.
 - **Status:** Active for staff discovery and the staging-verified Control panel.
 - **Platform:** Web/API
 - **File(s):** `api/app/models/user.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `api/scripts/bootstrap_admin.py`
-- **Since:** 2026-09-08T00:00:00Z
+- **Since:** 2026-09-08 (UTC)
 
 ### Rule: Staff Access Uses Roles And Additive Direct Grants
 - **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
@@ -157,31 +156,23 @@ the entry, so history isn't lost.
 - **Status:** Active; implementation and staging browser verification are complete.
 - **Platform:** Web/API
 - **File(s):** `docs/auth-and-session.md`, `packages/design/design.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`, `web/components/modal.tsx`
-- **Since:** 2026-09-08T00:00:00Z
-
-### Rule: Authentication Incident Operations Are Protected And Idempotent
-- **What:** Authorized authentication-incident operators use the protected internal auth-operations path with the dedicated `AUTH_OPERATIONS_INTERNAL_TOKEN`; authentication rows are not edited manually. Operations require explicit confirmation, a unique `Idempotency-Key`, a recorded reason, operator/scope/result evidence, and the smallest safe applicable scope.
-- **Edge cases:** Retrying an operation with the same idempotency key returns the original result. Per-user revocation invalidates refresh sessions, recognized devices, and issued access tokens through the security epoch. Compromised staff accounts additionally lose staff access, account access is locked, privileged sessions are revoked, and the operation does not depend on the compromised administrator's session. Platform-wide revocation is reserved for confirmed platform-level incidents. The implementation records the operation's target, scope, reason, and result, but does not record a human operator identity. Secrets, passwords, OTPs, raw tokens, JWT secrets, private IP data, and other sensitive authentication material must never be placed in logs, tickets, or operator messages.
-- **Status:** Active
-- **Platform:** API/operations
-- **File(s):** `api/app/routers/auth_operations.py`, `api/app/services/session_service.py`, `api/app/services/staff.py`, `api/app/services/security_events.py`, `docs/auth-incident-response.md`
-- **Since:** 2026-09-12T00:00:00Z
-
-### Rule: Password Recovery Uses Email Reset Links
-- **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
-- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. A newer reset request invalidates older unused reset links. After the reset token is committed, the API directly attempts email delivery and swallows delivery failures so the neutral response remains unchanged; this is not a durable reset-email outbox. Successful reset revokes active privileged Control Panel sessions as well as ordinary refresh-token families and remembered device credentials. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.
-- **Status:** Active
-- **Platform:** Web/API
-- **File(s):** `docs/forget-password.md`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `web/app/reset-password/page.tsx`
-- **Since:** 2026-09-08T00:00:00Z
+- **Since:** 2026-09-08 (UTC)
 
 ### Rule: Subscription Entitlements Use One Server-Resolved Assignment
-- **What:** The API owns the stable entitlement keys for Friink Free, Pro, and Pro+ and resolves a user's effective plan through at most one current manual assignment. Free is the default and includes core participation; Pro and Pro+ add only application-defined capabilities. Feature boundaries check server-resolved entitlements rather than plan-name or client boolean checks. A missing, expired, or revoked assignment falls back to Free; expiry is checked against server UTC at read time.
-- **Edge cases:** Superadmins may grant an active Free, Pro, or Pro+ assignment for 1–3650 days or indefinitely, or revoke it, with a required reason. A new grant replaces the user's current effective assignment and preserves history. Fixed assignments transition from active to expired by effective server-time calculation; indefinite assignments remain active until revoked. Existing content and login sessions remain valid when paid access expires, while new paid-only actions are rejected. Admin assignment reads compute `active`, `expired`, or `revoked` from the same effective-state check rather than trusting the stored status column. The API exposes the effective plan for future user-facing entitlement display, but the current Settings summary remains a static Free-plan presentation and cannot grant or self-activate paid access. No checkout, payment, billing, scheduler, or background expiry process exists.
+- **What:** The API seeds Friink Free, Pro, and Pro+ plans and resolves a user's effective plan from at most one current manual assignment. A missing, expired, or revoked assignment falls back to Free; expiry is checked against server UTC at read time.
+- **Edge cases:** Superadmins may grant an active plan for 1–3650 days or indefinitely, or revoke it, with a required reason. A new grant closes the prior effective assignment and preserves history. Admin assignment reads compute `active`, `expired`, or `revoked` from the same effective-state check rather than trusting the stored status column. No checkout, payment, billing, scheduler, or background expiry process exists.
 - **Status:** Active for the admin-only API foundation; frontend administration and billing remain out of scope.
 - **Platform:** API
 - **File(s):** `api/app/models/subscription.py`, `api/app/services/subscriptions.py`, `api/app/routers/subscriptions.py`, `api/alembic/versions/20260910_0042_subscriptions.py`
-- **Since:** 2026-09-10T00:00:00Z
+- **Since:** 2026-09-10 (UTC)
+
+### Rule: Password Recovery Uses Email Reset Links
+- **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
+- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.
+- **Status:** Active
+- **Platform:** Web/API
+- **File(s):** `docs/forget-password.md`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `web/app/reset-password/page.tsx`
+- **Since:** 2026-09-08 (UTC)
 
 ### Rule: Account Settings Show Server-Created Joined Date
 - **What:** Settings > Account shows a read-only `Joined` field using the account’s server-side creation timestamp. The web client formats the value for the user’s locale and time zone and never derives it from the browser clock.
@@ -189,15 +180,15 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/auth-and-session.md`
-- **Since:** 2026-09-11T00:00:00Z
+- **Since:** 2026-09-11 (UTC)
 
 ### Rule: Account Settings Show Creation Region
 - **What:** Settings > Account shows a read-only `Region` field containing the province/state-level country-region signal available when the account is created. The server stores a coarse ISO 3166-2-style code and never stores the raw IP for this feature.
-- **Edge cases:** If the trusted deployment geolocation signal is unavailable, Region displays `Unavailable`. Existing accounts are not inferred or backfilled, and the existing user-entered profile `location` field remains separate. Onboarding may also collect optional user-entered `Location` and private `How I use Friink` values (`For professional networking` or `For personal connection`); both can be edited later and have no effect on access, billing, recommendations, ranking, or other business rules.
+- **Edge cases:** If the trusted deployment geolocation signal is unavailable, Region displays `Unavailable`. Existing accounts are not inferred or backfilled, and the existing user-entered profile `location` field remains separate.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/models/user.py`, `api/app/models/signup_reservation.py`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/updated-account-info.md`
-- **Since:** 2026-09-11T00:00:00Z
+- **Since:** 2026-09-11 (UTC)
 
 ### Rule: Authoritative Web Session And Refresh Model
 - **What:** This is the single authoritative model for all future web authentication/session work. Authenticated requests send the current access token and refresh only after a `401 TOKEN_EXPIRED`; they retry the original request exactly once with the refreshed token. No request proactively refreshes before receiving a 401. Only an explicit 401 returned by the refresh exchange clears local session state and redirects to `/login`.
@@ -212,11 +203,11 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web
 - **File(s):** `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/auth-and-session.md`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (UTC)
 
 ### Rule: Multiple Account Switching
-- **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile. The account-switcher menu remains available with the current account and `Add account`, and switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
-- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared server-side security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only. Server-side account data remains isolated, but the web browser currently uses origin-global `friink-auth-session`, `friink-active-account-slot`, refresh-coordination storage, refresh-lock coordination, and `BroadcastChannel('friink-auth-session')` state rather than account-slot namespaces; cross-account/tab state collisions remain possible. OTP completion for another account must preserve an existing `friink_device_id`; it must not silently replace the browser device identity and hide prior slots.
+- **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile. `Change account` remains hidden until at least two accounts are authenticated, then switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
+- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only, and all account-scoped data, notifications, caches, and session controls remain isolated. OTP completion for another account must preserve an existing `friink_device_id`; it must not silently replace the browser device identity and hide prior slots.
 - **Compatibility:** This is an additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
 - **Status:** Active for the web/API slice; mobile requirements deferred
 - **Platform:** Web/API
@@ -241,7 +232,7 @@ the entry, so history isn't lost.
 
 ### Rule: Account Switcher UX
 - **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
-- **Edge cases:** The selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A normal successful switch updates the in-memory app shell and remounts it for the new user without a browser-level reload; removing the active account may reload the browser after automatically switching to the most recently used remaining account.
+- **Edge cases:** Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful switch updates the in-memory app shell and remounts it for the new user without a browser-level reload.
 - **Status:** Active for the Phase 4e web slice; mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
 - **Platform:** Web
 - **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`
@@ -291,8 +282,8 @@ the entry, so history isn't lost.
 
 ### Rule: Security Events And Login Notifications Are Durable And Idempotent
 - **What:** Successful fresh logins create one durable security event and one user-visible `login_security` notification. Refreshes, retries, and ordinary session activity never create duplicate fresh-login notifications. Security events may record refreshes, failed logins, logout, login challenges, and refresh-token reuse with stable event keys and server-side user/session/device context.
-- **Edge cases:** Security events and notification jobs are written after authentication commits. Fresh-login in-app notification delivery then makes a best-effort synchronous outbox drain before the response is returned; provider, network, or configuration failures are swallowed, leave the durable job available for retry, and must not log the user out. Event-linked notification uniqueness and stale-processing recovery protect duplicate workers and delayed delivery. Future email delivery uses the provider-neutral outbox hook and is not required for in-app login notification success. Audit insertion uses idempotent conflict handling; after insert or conflict, the event is resolved by its unique event key.
-- **Failure isolation:** Security-event recording is non-blocking with respect to the primary authentication outcome at auth-critical call sites, including login, refresh/reuse detection, bootstrap, logout, failed-login tracking, and staff actions. Fresh-login notification draining is synchronously attempted after authentication commits, but delivery or processing failures are logged loudly and swallowed; they must not alter the primary auth response or roll back the token/session decision.
+- **Edge cases:** Notification delivery runs through a row-locked, retryable outbox after authentication commits. Provider, network, or configuration failures remain delivery failures and must not log the user out. Event-linked notification uniqueness and stale-processing recovery protect duplicate workers and delayed delivery. Future email delivery uses the provider-neutral outbox hook and is not required for in-app login notification success. Audit insertion uses idempotent conflict handling; after insert or conflict, the event is resolved by its unique event key.
+- **Failure isolation:** Security-event recording is a non-blocking side effect at auth-critical call sites, including login, refresh/reuse detection, bootstrap, logout, failed-login tracking, and staff actions. Any audit insert, lookup, assertion, connection, or other exception is logged loudly and swallowed; it must not alter the primary auth response or roll back the token/session decision.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/security_event.py`, `api/app/models/notification_outbox.py`, `api/app/models/notification.py`, `api/app/services/security_events.py`, `api/app/routers/auth.py`, `web/components/app-shell.tsx`
@@ -306,8 +297,8 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27T00:00:00Z
 
 ### Rule: Login Lockout
-- **What:** Failed-login throttling is account-based and progressive: failures 1–2 return a generic invalid-credentials response with no cooldown, failure 3 does the same while creating one security notification, failures 4–5 use one minute, failures 6–8 use five minutes, and failures 9+ use a capped fifteen-minute cooldown. A successful login or password reset clears the state; 24 hours without another failure also clears it. Attempts during cooldown do not extend or advance the tier. A secondary hashed per-IP throttle applies across protected authentication, password-reset, OTP-verification, login-approval, and Add-account login endpoints, using an initial 100-request/10-minute baseline followed by a one-minute IP cooldown; shared-network bans are not used.
-- **Security boundary:** Unknown identifiers do not create account-specific state and remain subject only to generic endpoint/IP protections. Email and username login share the same account state. Device/session throttling is explicitly out of scope; existing device recognition and risk-based OTP remain separate. Cooldowns for Add-account login apply only to the account being added and never disrupt the currently active account.
+- **What:** Failed-login throttling is account-based and progressive: failures 1–3 have no cooldown, failures 4–5 use one minute, failures 6–8 use five minutes, and failures 9+ use a capped fifteen-minute cooldown. A successful login or password reset clears the state; 24 hours without another failure also clears it. Attempts during cooldown do not extend or advance the tier. A secondary hashed per-IP throttle applies across protected authentication endpoints, using an initial 100-request/10-minute baseline followed by a one-minute IP cooldown; shared-network bans are not used.
+- **Security boundary:** Unknown identifiers do not create account-specific state and remain subject only to generic endpoint/IP protections. Email and username login share the same account state. Device/session throttling is explicitly out of scope; existing device recognition and risk-based OTP remain separate.
 - **Notifications:** The third failure creates at most one failed-login security notification per account per rolling 24 hours. Delivery is non-blocking and cannot alter the authentication result.
 - **UX:** Progressive cooldowns return `429` with server-provided remaining time and distinct retry copy. The web login form preserves the identifier, clears the password, disables submission, and maintains an accessible countdown across refreshes and tabs. It must not show attempts remaining, tier names, IP/device metadata, or full-lock copy.
 - **Full lock:** A separate full account lock returns `423` with exactly `Your account is locked. Contact support.` and no reason, duration, or retry detail.
@@ -360,7 +351,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/refresh_token.py`, `api/app/routers/auth.py`, `api/app/services/session_service.py`, `api/app/services/security.py`, `api/app/services/auth_errors.py`, `api/app/config.py`, `web/lib/auth.ts`, `api/tests/test_token_resilience.py`
-- **Since:** 2026-08-31T00:00:00Z
+- **Since:** 2026-08-31 (Asia/Karachi)
 
 ### Rule: Users Can Manage Their Active Sessions
 - **What:** Settings > Account lists the user's active server-managed auth sessions with best-effort device, browser, operating-system, logged-in, and last-active information. The server identifies the current session from the presented refresh cookie; the UI never supplies that identity. Users may revoke other sessions individually or revoke all other sessions while preserving the current one.
@@ -413,7 +404,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Profile Pictures Are Optional
 - **What:** Users may upload an optional profile picture through the authenticated profile settings flow. When `profile_picture_url` is null, all supported profile identity surfaces use the shared `web/public/media/profile.jpg` default profile picture.
@@ -435,7 +426,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/account-screens.tsx`, `web/app/globals.css`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Web Session Persistence
 - **What:** The web client stores only safe authenticated account metadata in `localStorage` under `friink-auth-session`; the short-lived access token remains in memory and the refresh credential remains an HTTP-only cookie. Logout clears the stored metadata and the current in-memory session.
@@ -469,7 +460,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/routers/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/components/home-screen.tsx`, `web/components/app-shell.tsx`, `web/app/home/[tab]/page.tsx`
-- **Since:** 2026-08-31T00:00:00Z
+- **Since:** 2026-08-31 (Asia/Karachi)
 
 ### Rule: Public Accounts Accept Follows Immediately
 - **What:** Following a public account creates an `accepted` follow request row immediately and returns it as the active following relationship.
@@ -559,7 +550,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/components/app-shell.tsx`, `web/components/composer.tsx`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ### Rule: Create Payload Must Match Post Kind
 - **What:** Reply posts require `parent_post_id`; non-replies may not set `parent_post_id`. Quote posts require `quoted_post_id`; non-quotes may not set `quoted_post_id`.
@@ -567,30 +558,6 @@ the entry, so history isn't lost.
 - **Platform:** All
 - **File(s):** `api/app/services/posts.py`, `api/tests/test_posts.py`
 - **Since:** 2026-08-29T00:00:00Z
-
-### Rule: Replies Preserve Their Nested Conversation Tree
-- **What:** A reply is a complete post object with its own author, ID, canonical URL, visibility, reactions, and descendants. Top-level replies belong directly under the root post; nested replies remain attached to their true parent. Standalone replies are excluded from the main feed, but a reply may be shown inside a Quote when deliberately referenced.
-- **Edge cases:** Logical nesting has no fixed depth limit. Branches can be collapsed and expanded independently, and large branches load through explicit `View replies` or `Open thread` controls. Reply order is chronological within each branch.
-- **Status:** Active
-- **Platform:** All
-- **File(s):** `api/app/services/posts.py`, `api/app/routers/posts.py`, `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`, `web/app/globals.css`, `docs/posts.md`
-- **Since:** 2026-09-12T00:00:00Z
-
-### Rule: Reply Thread Presentation Caps Visual Indentation
-- **What:** The first three visual reply levels use progressive indentation and a subtle connector rail. Visual indentation is capped after level three; deeper replies reuse the capped indentation and show parent context such as `Replying to @username`.
-- **Edge cases:** Opening a deep reply makes that reply local level zero in focused view. Its descendants display relative depth, while the root and relevant ancestor chain remain available as compact navigable context. A focused reply view highlights the selected reply, shows its direct replies, and provides `View full conversation` back to the root thread.
-- **Status:** Active
-- **Platform:** Web
-- **File(s):** `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`, `web/app/globals.css`, `docs/posts.md`
-- **Since:** 2026-09-12T00:00:00Z
-
-### Rule: Profile Replies Are Author-Scoped Content
-- **What:** A profile's Replies tab returns only visible replies authored by that profile, using the same server-side visibility rules as post details and reply threads. Each reply remains a reply and preserves its parent context and canonical reply URL.
-- **Edge cases:** The profile Posts tab excludes replies; the Replies tab does not treat replies as normal posts or promote them into the main feed. Unavailable parents do not bypass server-side visibility checks.
-- **Status:** Active
-- **Platform:** Web/API
-- **File(s):** `api/app/services/posts.py`, `api/app/routers/users.py`, `web/lib/auth.ts`, `web/app/[username]/profile-client.tsx`, `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`
-- **Since:** 2026-09-12T00:00:00Z
 
 ### Rule: Private Post Visibility Is Enforced Server-Side
 - **What:** A private author's posts are visible only to the author and accepted followers. Public-author posts are visible without an accepted-follow check.
@@ -617,8 +584,8 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-29T13:10:00Z
 
 ### Rule: Quote Cards Hide Protected Content
-- **What:** If a quoted post is deleted or unavailable, the quote payload is marked unavailable. If the quoted post's author is private and the viewer cannot view it, the Quote remains visible while the embedded content is replaced by `Content not available`.
-- **Edge cases:** An inaccessible private post exposes no author, text, media, or navigable original link. Deleted or missing quoted posts use `Original post unavailable.` The Quote itself remains subject to its own visibility and reaction rules.
+- **What:** If a quoted post is deleted or unavailable, the quote payload is marked unavailable. If the quoted post's author is private and the viewer cannot view it, the quote card content becomes `Content not available`.
+- **Edge cases:** Deleted or missing quoted posts use `Original post unavailable.`
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/services/posts.py`, `web/components/feed-post.tsx`
@@ -655,13 +622,13 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/feed-post.tsx`, `web/app/globals.css`
-- **Since:** 2026-08-30T00:00:00Z
+- **Since:** 2026-08-30 (Asia/Karachi)
 
 ## Notifications
 
 ### Rule: In-App Notifications Are Fetchable And Readable
 - **What:** Authenticated users can fetch a paginated notification feed, fetch an unread count, mark one notification read, or mark all their notifications read. The web Notifications screen provides `All` and `Security` views plus an unread-only filter and an explicit mark-all action.
-- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The bell shows a green dot when unread count is positive, displays the actual count up to `99+`, and shows unread items only, up to four initially with scrolling for more. With zero unread notifications it shows the shared `Nothing to show.` state; read notifications never populate the dropdown. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Opening the bell or selecting a dropdown item does not mark anything read. Opening the Notifications screen does not mark every item read; a notification becomes read only when it is meaningfully visible in the full list or through explicit mark-all. Dropdown activation, destination navigation, and inline action completion do not replace the full-list read rule. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. Informational notifications navigate to their canonical destinations, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Unknown notification types render safely with generic API/client-provided copy and must not cause unsafe navigation. Failed refreshes retain the last known list/count and failed actions preserve the item with recoverable feedback. Marking another user's notification read returns `404`. See `docs/notifications.md` for the complete contract.
+- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. The bell dropdown shows unread notifications only, is empty when unread count is zero, and scrolls when needed; opening the bell does not mark anything read. Opening the Notifications screen does not mark every item read; a notification becomes read only when it is meaningfully visible in the full list or through explicit mark-all. Dropdown activation, destination navigation, and inline action completion do not replace the full-list read rule. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. Informational notifications navigate to their destination, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Marking another user's notification read returns `404`. See `docs/notifications.md` for the complete contract.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/models/notification.py`, `api/app/services/notifications.py`, `api/app/routers/notifications.py`, `web/lib/auth.ts`, `web/components/notifications-screen.tsx`
@@ -696,7 +663,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** All
 - **File(s):** `api/app/services/posts.py`, `api/app/models/notification.py`, `api/alembic/versions/20260901_0012_add_mention_notification.py`, `web/components/mention-text.tsx`, `web/components/feed-post.tsx`, `web/components/notifications-screen.tsx`, `web/components/app-shell.tsx`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Composer Mentions Resolve To Editable Identity Tokens
 - **What:** In post, reply, and quote composers, typing a valid `@username` followed by a space resolves that user and displays an editable inline token with their small profile picture and `@username`.
@@ -704,7 +671,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/mention-input.tsx`, `web/components/composer.tsx`, `web/components/mention-text.tsx`, `api/app/services/posts.py`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ## Web Navigation & Client Behavior
 
@@ -714,7 +681,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/chat/chat-client.tsx`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Profile Connection State Resolves Before Actions
 - **What:** When an other-user profile resolves, its Follow/Following/request action must resolve from the authenticated connection-status API rather than retaining the self-profile state from the initial loading render.
@@ -722,7 +689,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `api/app/routers/connections.py`, `api/app/services/connections.py`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Incoming Requests Are Available In The Owner's Connections
 - **What:** The signed-in account's Connections surface always exposes the Requests tab. Incoming pending follow requests are loaded from the authenticated API and render Accept and Reject actions; the client must not hide or reset the tab based on a cached privacy flag.
@@ -730,7 +697,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `web/components/app-shell.tsx`, `web/components/connections-screen.tsx`, `api/app/routers/connections.py`, `api/app/services/connections.py`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Floating Post Composer Expands Above Its Controls
 - **What:** The floating post composer has no field background or border. Once typing begins, its text editor occupies the full-width top row and grows upward to eight lines; longer drafts scroll within the editor. Attachment, character count, and send controls remain in the bottom row.
@@ -738,7 +705,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/composer.tsx`, `web/components/mention-input.tsx`, `web/app/globals.css`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: API Origin Resolution
 - **What:** Web API calls use `NEXT_PUBLIC_API_BASE_URL` when configured. Localhost browsing falls back to `http://localhost:8000`. Deployed browser contexts without an API origin throw a configuration error instead of silently calling localhost.
@@ -754,15 +721,15 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/lib/auth.ts`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Public Header Uses Signed-In Account Menu
-- **What:** The shared public header shows `Get started` linking to the feature-flagged progressive `/start` entry and a secondary legacy `Login` action linking to `/login` to signed-out visitors. Both actions remain visible on desktop and mobile; narrow screens use compact sizing rather than hiding either action. Authenticated visitors see the signed-in user's profile picture instead. Clicking the picture opens the reusable account menu directly below the picture with a 2px gap and 2px right offset; it shows the user's profile information, Feed (`/home`), Settings (`/settings`), and Log out.
-- **Edge cases:** If progressive login is disabled, `/start` falls back to `/login`. The Friink logo remains the public landing-page link; the public header does not add a redundant Home link. Logout clears the persisted client session and leaves the user on the public site.
+- **What:** The shared public header shows `Login` to signed-out visitors and the signed-in user's profile picture to authenticated visitors. Clicking the picture opens the reusable account menu directly below the picture with a 2px gap and 2px right offset; it shows the user's profile information, Feed (`/home`), Settings (`/settings`), and Log out.
+- **Edge cases:** The Friink logo remains the public landing-page link; the public header does not add a redundant Home link. Logout clears the persisted client session and leaves the user on the public site.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/public-header.tsx`, `web/components/action-menu.tsx`, `web/lib/auth.ts`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Internal Account Identifiers Are Not User-Facing
 - **What:** Database UUIDs and other internal implementation identifiers are not displayed in the normal Settings > Account screen.
@@ -770,7 +737,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/account-screens.tsx`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Public Plans Are Informational Until Billing Exists
 - **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
@@ -778,15 +745,15 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing.module.css`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Subscription Settings Starts As A Plan Summary
-- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing a static Friink Free plan summary and linking to the public `/subscriptions` comparison page. It does not yet resolve the user's server-side effective entitlement.
-- **Edge cases:** The summary is presentation-only even though the API entitlement foundation exists; this tab does not process upgrades, payments, cancellations, or paid access.
+- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the current Friink Free plan and linking to the public `/subscriptions` comparison page.
+- **Edge cases:** The current plan is presentation-only until billing and entitlements exist; this tab does not process upgrades, payments, cancellations, or paid access.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/globals.css`
-- **Since:** 2026-09-01T00:00:00Z
+- **Since:** 2026-09-01 (Asia/Karachi)
 
 ### Rule: Landing Newsletter Uses Zoho Form Submission
 - **What:** The landing-page subscribe form submits the `Email` field to the configured Zoho Forms endpoint through a hidden iframe target and then disables the form with a submitted state.
@@ -798,7 +765,7 @@ the entry, so history isn't lost.
 
 ### Rule: Chat Uses REST With Polling Delivery
 - **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
-- **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription checkout/billing remains future work; blocking and profile access enforcement are governed by their active rules. See `docs/chat-behavior.md`.
+- **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription billing, profile hiding, and block controls remain future work; see `docs/chat-behavior.md`.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/models/notification.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0016_add_chat_requests_and_settings.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`
@@ -806,11 +773,11 @@ the entry, so history isn't lost.
 
 ### Rule: Chat Read Receipts Use Per-User Cursors
 - **What:** Chat exposes sent, delivered, and read states. A visible app-level inbox sync or the full conversation endpoint records delivery; the visible conversation advances the viewer's read cursor through an idempotent endpoint. Polling returns receipt metadata even without new messages, so tick state can change on the existing 4-second cycle.
-- **Edge cases:** Unread counts include only incoming messages; a user's own outgoing messages are never unread for that user. Counts appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. A visible inbox sync marks discovered incoming messages delivered, but only viewport visibility/scroll advances read state. Read cursors advance monotonically across earlier messages and receipt/unread state synchronizes across refreshes, devices, and browser tabs. Mute and archive do not change receipt state. Blocked conversations do not advance or expose delivery/read receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled; disabling the setting hides both participants' read state while delivery remains visible. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
+- **Edge cases:** Unread counts include only incoming messages and appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. A visible inbox sync marks discovered incoming messages delivered, but only viewport visibility/scroll advances read state. Mute and archive do not change receipt state. Blocked conversations do not advance or expose delivery/read receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `docs/read-receipts.md`
-- **Since:** 2026-09-02T00:00:00Z
+- **Since:** 2026-09-02 (UTC)
 
 ### Rule: Chat List Refreshes Through Visibility-Aware Polling
 - **What:** The `/chats` conversation-list screen refreshes `GET /chat/conversations` every 4 seconds while visible. Each response refreshes previews, latest-activity ordering, unread counts, unread styling, and the row state for the currently selected All, Muted, Requests, or Archived tab.
@@ -818,7 +785,7 @@ the entry, so history isn't lost.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/screens.tsx`, `web/lib/auth.ts`, `docs/chat-behavior.md`
-- **Since:** 2026-09-02T00:00:00Z
+- **Since:** 2026-09-02 (UTC)
 
 ### Rule: Appearance And Sidebar Preferences Use Cookies
 - **What:** The web app stores appearance (`light`, `dark`, or `system`) and desktop sidebar collapsed state in cookies for one year.
@@ -853,7 +820,7 @@ the entry, so history isn't lost.
 
 ### Rule: Media Storage Follows The API Environment
 - **What:** Avatar and post-media upload services use the active API environment's `R2_BUCKET_NAME`; public delivery uses its configured `R2_PUBLIC_URL`. Staging uses `friink-staging`; production uses `friink-prod-media` with `https://media.friink.com`.
-- **Edge cases:** Media rows are safe across environments because the databases are separate. New profile-picture records store an object key, while existing post-media records retain their key and URL fields. Browser viewing requires readable delivery URLs; a private-bucket deployment must use short-lived signed download URLs while upload may continue using presigned `PUT` URLs. No bucket/environment column is required while database isolation is maintained.
+- **Edge cases:** Media rows are safe across environments because the databases are separate. New profile-picture records store an object key, while existing post-media records retain their key and URL fields. No bucket/environment column is required while database isolation is maintained.
 
 ### Rule: FastAPI Uses Sync SQLAlchemy Sessions
 - **What:** The backend uses FastAPI with synchronous SQLAlchemy sessions and psycopg3 database URLs. Alembic migrations define the database schema.
@@ -907,11 +874,11 @@ the entry, so history isn't lost.
 - **Since:** 2026-08-27T00:00:00Z
 
 ### Rule: Account Lifecycle Uses Owner-Verified State Transitions
-- **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation requires current-password confirmation only; deletion requires current-password confirmation plus OTP when the API OTP master switch is enabled. Reactivation requires valid credentials plus fresh OTP when that switch is enabled and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain protected backend recovery capability.
-- **Edge cases:** Deactivation revokes all sessions and refresh families and immediately rejects access for the inactive account. The account's email and username remain reserved until permanent deletion; the account is removed from directories/search, standard notifications are suppressed, and it cannot send or receive new messages. Existing chats remain readable and read-only, and retained identity renders as `Friink User` with the real username and default avatar. Deletion is cancellable for 32 days, including the final hour before the deletion transaction, then removes public/user-generated content while retaining restricted UUID tombstones, identity history, required billing/security records, and chats as `Account Deleted`.
+- **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation requires current-password confirmation only; deletion requires current-password confirmation plus OTP. Reactivation requires valid credentials plus fresh OTP and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain protected backend recovery capability.
+- **Edge cases:** Deactivation revokes all sessions and refresh families and immediately rejects access for the inactive account. It preserves readable, read-only chats and renders retained identity as `Friink User` with the real username and default avatar. Deletion is cancellable for 32 days, including the final hour before the deletion transaction, then removes public/user-generated content while retaining restricted UUID tombstones, identity history, required billing/security records, and chats as `Account Deleted`.
 - **Billing:** The contract requires deactivation not to pause/cancel subscriptions and deletion to cancel billing immediately; the billing-provider adapter is not yet wired, so this behavior must not be represented as verified until that integration is delivered. Reactivation must not resume a cancelled subscription.
 - **Cooldown:** After reactivation, the same account cannot be deactivated again for 8 minutes (480 seconds). A blocked attempt returns `429`, and the web UI surfaces the server-provided remaining time in a live countdown toast.
-- **Security:** Inactive-account failed logins never send email and use only minimal restricted internal events. Unknown identifiers and wrong passwords remain lifecycle-state agnostic. Valid credentials for deactivated or pending-deletion accounts enter only the narrowly scoped reactivation flow; they do not create a normal session until the required confirmation and OTP succeed. Successful reactivation creates one new session and does not restore previous sessions or remembered-device credentials.
+- **Security:** Inactive-account failed logins never send email and use only minimal restricted internal events. Unknown identifiers and wrong passwords remain lifecycle-state agnostic.
 - **Status:** Active runtime slice; full contract gates remain open for warning-link delivery, billing-provider integration, exhaustive transition concurrency/idempotency, abuse controls, and fully audited staff overrides.
 - **Platform:** All
 - **File(s):** `docs/account-lifecycle.md`, `docs/auth-and-session.md`
@@ -924,9 +891,8 @@ the entry, so history isn't lost.
 - **Platform:** API
 - **File(s):** `api/app/config.py`, `api/app/services/email.py`, `api/.env.example`
 - **Since:** 2026-09-06T23:30:00Z
-### Rule: Blocking Is Bilateral And Irreversible For Relationships
-- **What:** A signed-in user can block another user from that user's profile overflow menu regardless of follow state, chat state, or subscription tier. Blocking removes accepted and pending follow relationships in both directions transactionally. Unblocking never restores them. Both users lose profile access, follow access, and message sending, while existing chats remain readable and read-only.
-- **Edge cases:** Blocking is confirmed in the shared modal. Pending chat requests remain in Requests but become read-only; a blocked pending request freezes its requester-message count and does not reset or extend the eight-message cap. Existing notifications and messages are retained, and blocking creates no notification. The blocked-people settings action provides case-insensitive database-backed search, opaque-cursor loading, and confirmed unblocking. Blocked-list profile cards remain clickable but resolve to the neutral `Profile unavailable.` state. Direct profile URLs behave the same way. Block access checks are bilateral and server-authoritative; self-blocking is rejected.
+- ### Rule: Blocking Is Bilateral And Irreversible For Relationships
+- **What:** Blocking removes accepted and pending follow relationships in both directions transactionally. Unblocking never restores them. Both users lose profile access and message sending, while existing chats remain readable and read-only.
 - **Status:** Active
 - **Platform:** Web/API
 - **File(s):** `docs/blocking.md`, `api/app/services/blocking.py`, `api/app/routers/users.py`, `api/app/services/chat.py`

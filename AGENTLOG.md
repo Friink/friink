@@ -1,5 +1,137 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-12T04:07:18Z — Add progressive public authentication CTA
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add `Get started` for progressive `/start` while retaining
+  the legacy `Login` action in the public header on all viewport sizes.
+- Changes Made: Signed-out public headers now show primary `Get started` →
+  `/start` and secondary `Login` → `/login`. Mobile styling compacts both
+  actions without hiding either one. Updated the design and progressive-login
+  documents to record the rollout and feature-flag fallback.
+- Files: `web/components/public-header.tsx`, `web/app/landing.module.css`,
+  `packages/design/design.md`, `docs/progressive-login.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Web TypeScript check passed and `git diff --check`
+  passed. The Webpack production build reached Next.js but remains blocked by
+  the known Windows `spawn EPERM` limitation.
+
+## 2026-09-12T04:08:30Z — Document progressive public authentication CTA
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `RULES.md` to match the public header's progressive
+  `/start` CTA and retained legacy `/login` action.
+- Changes Made: Documented both signed-out header actions, their desktop/mobile
+  visibility, compact mobile sizing, and the feature-flag fallback to `/login`.
+- Files: `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Rule count remains 116 and `git diff --check` passed.
+
+## 2026-09-12T02:02:03Z — Fix profile posts and replies
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix other-user profile posts and own reply visibility.
+- Changes Made: ProfileScreen now receives the author-scoped post list while
+  Home continues using the global feed. Added an author-scoped replies API,
+  client loader, ProfileScreen reply rendering, and parent ID mapping so reply
+  cards remain canonical/openable.
+- Files: `api/app/services/posts.py`, `api/app/routers/users.py`,
+  `web/lib/auth.ts`, `web/app/[username]/profile-client.tsx`,
+  `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API compilation passed; all targeted post assertions
+  passed before the known Windows SQLite cleanup `PermissionError`; web
+  TypeScript passed; the current API exposes `/users/{username}/replies` and
+  returns `401` without authentication; Webpack production build passed.
+
+## 2026-09-12T01:52:00Z — Full platform verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check `RULES.md` and test the entire platform locally.
+- Changes Made: No application code changed. Read the active rules index and
+  executed the full available API suite, web typecheck, web lint, production
+  build, and local service startup checks.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: 149 API tests collected but the suite has assertion
+  failures and the known Windows SQLite cleanup error. Web TypeScript passed;
+  lint failed with 65 errors and 38 warnings; the Webpack production build
+  passed. API health returned HTTP 200; Next local development failed with
+  `spawn EPERM`, blocking browser verification.
+
+## 2026-09-12T01:45:50Z — Diagnose profile posts and reply routing regression
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the issue locally first and identify why other-user
+  profile posts and own replies are unavailable.
+- Changes Made: No application code changed. Found that fetched
+  author-scoped `profilePosts` are not passed into `ProfileScreen`; `AppShell`
+  passes the global `posts` list instead. Also found that the Replies profile
+  tab has no reply-fetching state or API call. The local API started, while the
+  local Next dev server failed with `spawn EPERM`.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Source audit complete; API root returned HTTP 200 on
+  port 8000. Browser reproduction was blocked by the local Next.js process
+  spawn error on port 3000.
+
+## 2026-09-12T01:35:00Z — Add documentation index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin improving documentation with an index before making
+  structural changes.
+- Changes Made: Renamed the documentation landing page to `docs/index.md` and
+  kept its source-of-truth map and grouped links to feature contracts,
+  authentication/session documents, and media/performance/testing notes.
+  Updated the root README and existing documentation references.
+- Files: `docs/index.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-12 — Audit implementation changes against active rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review implementation-change entries in `AGENTLOG.md`,
+  compare the latest active behavior with `RULES.md`, and identify missing
+  rules or newer implementation conflicts.
+- Changes Made: No missing active business rules were identified. Flagged the
+  password-reset delivery, synchronous login notification processing,
+  authentication-incident operator identity, and cross-account session-state
+  isolation conflicts for review. Progressive `/start` remains excluded as a
+  beta flow, and unimplemented requirements were not promoted into active rules.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Source audit completed; no application code or active
+  rule text was changed.
+
+## 2026-09-12 — Align four active rules with implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the four implementation conflicts identified from
+  `AGENTLOG.md` and update `RULES.md` to describe the current code.
+- Changes Made: Documented direct best-effort password-reset email delivery,
+  synchronous best-effort fresh-login notification draining, operation records
+  without human operator identity, and origin-global browser auth state across
+  account slots.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed; source behavior was checked
+  in the current API and web implementation.
+
+## 2026-09-12 — Normalize RULES timestamps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Normalize every `Since` field in `RULES.md` to
+  `YYYY-MM-DDTHH:MM:SSZ`.
+- Changes Made: Preserved each existing date and filled missing times with
+  `00:00:00Z`; no rule text was changed.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: All `Since` fields match the requested format;
+  `git diff --check` passed.
+
 ## 2026-09-12T01:33:22Z — Re-verify posts contract locally
 
 - Agent: Codex
@@ -9297,3 +9429,189 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification Status: Documentation-only update; no application code, existing
   auth endpoint, `/login` route, or auth/session logic was modified. `git diff
   --check` passed.
+
+## 2026-09-12 — Capture documentation and business-rule drift
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read all documents under `docs/`, compare them with
+  `RULES.md`, check the identified differences against the implementation, and
+  record the conflicts without changing the rules or existing contracts.
+- Changes Made: Added `docs/2026-09-12-capture.md` with the latest-requirement
+  inventory, precedence decisions, implementation-checked conflict table,
+  aligned items, and verification record. The capture identifies progressive
+  auth rule coverage, stale session/reaction wording, nested-reply/profile
+  contract gaps, and the current test/lint/local-runtime verification limits.
+- Files: `docs/2026-09-12-capture.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation audit completed. `RULES.md` and existing
+  docs were intentionally not modified.
+- Verification Status: Documentation audit completed. `RULES.md` and existing
+  docs were intentionally not modified.
+
+## 2026-09-12 — Exclude archival session documents from capture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the audit scope so `docs/session/` is treated as an
+  old reference repository and `docs/auth-and-session.md` is the current
+  authentication/session implementation authority.
+- Changes Made: Updated `docs/2026-09-12-capture.md` to remove session-folder
+  findings from the active comparison and renumber the remaining conflict rows.
+- Files: `docs/2026-09-12-capture.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Read all files in `docs/session/` for context; no files
+  in that archival folder, `RULES.md`, or existing active contracts were
+  modified.
+
+## 2026-09-12 — Correct capture document recency precedence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reconcile the audit using each active document’s last-updated
+  metadata and recognize that focused progressive-login requirements postdate
+  the older authentication baseline.
+- Changes Made: Updated `docs/2026-09-12-capture.md` so
+  `auth-and-session.md` remains authoritative for the session model and shared
+  baseline, while the later progressive-login and failed-login documents
+  supersede only their focused beta/policy slices.
+- Files: `docs/2026-09-12-capture.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only correction; `RULES.md` and existing
+  feature documents were not modified.
+
+## 2026-09-12 — Promote post and reply contract into active rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `RULES.md` so it contains the latest implemented post,
+  nested-reply, profile-Replies, and Quote visibility behavior.
+- Changes Made: Added active rules for nested conversation trees, capped reply
+  indentation/focused reply views, author-scoped profile Replies, and updated
+  protected Quote placeholders to require `Post hidden` when a previously
+  visible quoted post becomes private. Beta and testing-status items were left
+  outside the active rules.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation/rules update only. The Quote placeholder
+  copy remains an identified implementation gap for the next code change.
+
+## 2026-09-12 — Synchronize selected active rules from feature documents
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `read-receipts.md`, `blocking.md`, `media-upload.md`,
+  `like-and-star.md`, and `account-lifecycle.md` in order and synchronize
+  business rules into `RULES.md`.
+- Changes Made: Expanded read-receipt, blocking, media-delivery, and lifecycle
+  rules. Restored the first-release Like/Save scope to visible normal posts,
+  matching `like-and-star.md`; replies and Quotes are now explicitly outside
+  that release. Updated the capture with the resulting conflict status.
+- Files: `RULES.md`, `docs/2026-09-12-capture.md`, `AGENTLOG.md`,
+  `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. The Like/Save implementation
+  still accepts replies and Quotes and is recorded as an implementation gap.
+
+## 2026-09-12 — Record media MIME-type limitation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document whether the current MIME-type handling creates a
+  media-upload risk.
+- Changes Made: Added `docs/2026-09-21-notes.md` describing MIME types, the
+  current JPEG/presigned-upload boundary, the limitation that uploaded bytes
+  are not independently inspected, and safer follow-up validation/delivery
+  options.
+- Files: `docs/2026-09-21-notes.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only note; no application code,
+  `RULES.md`, or existing feature document was modified.
+
+## 2026-09-12 — Synchronize selected authentication documents
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `login.md`, `forget-password.md`, and
+  `auth-incident-response.md` in order and synchronize business rules into
+  `RULES.md`.
+- Changes Made: Expanded password recovery with reset-link invalidation,
+  durable non-blocking delivery, privileged-session/device revocation, and
+  recovery boundaries. Added protected, confirmed, idempotent authentication
+  incident operations. The login timeout investigation and deferred fix were
+  not promoted into active product rules.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. The current password-reset
+  endpoint still directly awaits email delivery rather than using the required
+  durable outbox; this remains an implementation conflict.
+
+## 2026-09-12 — Add auth conflicts to notes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the authentication conflicts identified during the
+  login, password-recovery, and incident-response rule sync in today's notes.
+- Changes Made: Added the three conflicts to `docs/2026-09-21-notes.md`:
+  password-reset delivery blocking, synchronous login outbox processing, and
+  missing human-operator identification in incident-operation records.
+- Files: `docs/2026-09-21-notes.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only update; no code or rules changed.
+
+## 2026-09-12 — Snapshot staging rules locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Copy `RULES.md` from the local `staging` branch into a
+  separate local reference file.
+- Changes Made: Created `rules-staging.md` from `staging:RULES.md` without
+  changing the working-tree `RULES.md`.
+- Files: `rules-staging.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: The local file's Git blob hash matches
+  `staging:RULES.md` exactly.
+
+## 2026-09-12 — Synchronize account, subscription, and failed-login rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `account-switcher.md`, `subscriptions.md`, and
+  `failed-login-policy.md` in order and synchronize their business rules into
+  `RULES.md`.
+- Changes Made: Expanded account-switcher fallback/loading behavior, added the
+  subscription entitlement and assignment lifecycle contract, and aligned the
+  failed-login rule with the exact attempt boundaries and layered anti-abuse
+  scope.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. Remaining conflicts are
+  listed in the task response; no code was changed.
+
+## 2026-09-12 — Record account/subscription/login rule conflicts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record conflicts found while synchronizing the account
+  switcher, subscriptions, and failed-login documents.
+- Changes Made: Confirmed that account-switcher and failed-login behavior is
+  otherwise aligned. Recorded the remaining UI copy, subscription expiry-audit,
+  and password-reset delivery conflicts for follow-up.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation audit only; `git diff --check` passed.
+
+## 2026-09-12 — Synchronize account-info, progressive, notification, and chat rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `updated-account-info.md`, `progressive-login.md`,
+  `notifications.md`, and `chat-behavior.md` in order and synchronize active
+  business rules into `RULES.md`.
+- Changes Made: Added onboarding account-info boundaries, expanded the active
+  notification contract, and aligned chat wording with the implemented
+  blocking boundary. Progressive `/start` remains beta and was not promoted
+  into active rules.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. Remaining document-versus-
+  implementation conflicts are listed in the task response.
+
+## 2026-09-12 — Align rules with implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Compare `RULES.md` with `rules-staging.md`, verify the six
+  identified conflicts against the implementation, and update active rules.
+- Changes Made: Aligned account-switcher logout fallback, Like/Save scope, and
+  inaccessible private quote presentation with the implemented behavior.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed.
