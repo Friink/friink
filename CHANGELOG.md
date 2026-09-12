@@ -10,6 +10,14 @@
 - The latest tested onboarding implementation is pushed to both development and
   staging.
 
+## 2026-09-12T00:22:45Z
+
+- [web/profile] Fixed hard navigation to another user's profile incorrectly
+  redirecting through login when the refreshable session had not yet been
+  hydrated into the in-memory auth store. Profile routes now restore a valid
+  session before redirecting on terminal refresh failure.
+- [verification] Web TypeScript check and `git diff --check` passed.
+
 ## 2026-09-11T06:50:00Z
 
 - [web/auth] Fixed the standalone session-recovery screen so it follows the

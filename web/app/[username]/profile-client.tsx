@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getPublicUser, listFollowers, listFollowing, listLikedPosts, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -51,12 +51,26 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (!session) {
-      router.replace('/login');
+    if (session) {
+      setUser(session.user);
       return;
     }
 
-    setUser(session.user);
+    let active = true;
+    refreshAuthSession()
+      .then((restoredSession) => {
+        if (!active) return;
+        saveAuthSession(restoredSession);
+        setUser(restoredSession.user);
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (isTerminalRefreshFailure(error)) router.replace('/login');
+      });
+
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   useEffect(() => {

@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-12T00:22:45Z — Restore session before profile redirect
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the blank/`/login`/`/home` redirect cascade when
+  opening another user's profile while signed in.
+- Changes Made: Updated `ProfileClient` to use the shared refresh-session path
+  when no in-memory session is available, persist the restored session, and
+  redirect to login only after a terminal refresh failure. This prevents a
+  hard profile navigation from treating a refreshable session as logged out.
+- Files: `web/app/[username]/profile-client.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npx tsc --noEmit --incremental false` in `web`
+  and `git diff --check` completed successfully.
+
 ## 2026-09-11T06:50:00Z — Apply theme preference to session recovery
 
 - Agent: Codex
