@@ -1126,6 +1126,12 @@ export async function listLikedPosts(accessToken: string, username: string, curs
   return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/likes?${params.toString()}`);
 }
 
+export async function listUserPosts(accessToken: string, username: string, cursor?: string | null): Promise<ApiFeedPage> {
+  const params = new URLSearchParams({ limit: '100' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/posts?${params.toString()}`);
+}
+
 export async function listSavedPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
   const params = new URLSearchParams({ limit: '20' });
   if (cursor) params.set('cursor', cursor);

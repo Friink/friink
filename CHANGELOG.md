@@ -10,6 +10,18 @@
 - The latest tested onboarding implementation is pushed to both development and
   staging.
 
+## 2026-09-12T00:39:05Z
+
+- [web/auth] Fixed post-detail routes to restore a refreshable session before
+  redirecting to login, covering both root and username-scoped post URLs.
+- [profiles] Added an author-scoped posts endpoint and switched profile feeds
+  away from filtering the limited global Explore page, so older own posts are
+  available on the profile.
+- [docs] Recorded the profile post-source rule in RULES.md.
+- [verification] Web TypeScript check, API compilation, and `git diff --check`
+  passed. An authenticated endpoint response check remains pending because no
+  local API session is available.
+
 ## 2026-09-12T00:22:45Z
 
 - [web/profile] Fixed hard navigation to another user's profile incorrectly

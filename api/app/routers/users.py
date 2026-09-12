@@ -7,6 +7,7 @@ from app.routers.auth import get_current_user
 from app.schemas.blocking import BlockResponse, BlockedUserListResponse
 from app.schemas.posts import FeedPageResponse
 from app.services.blocking import block_user, list_blocked, unblock_user
+from app.services.posts import get_user_posts
 from app.services.reactions import list_liked_posts
 from app.services.session_ops import commit
 
@@ -36,3 +37,14 @@ async def liked_posts(
     session: Session = Depends(get_session),
 ) -> FeedPageResponse:
     return await list_liked_posts(session, current_user, username, cursor, limit)
+
+
+@router.get("/{username}/posts", response_model=FeedPageResponse)
+async def user_posts(
+    username: str,
+    cursor: str | None = None,
+    limit: int = Query(default=20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> FeedPageResponse:
+    return await get_user_posts(session, current_user, username, cursor, limit)

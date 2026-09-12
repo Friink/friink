@@ -77,7 +77,7 @@ the entry, so history isn't lost.
 
 ### Rule: Profile Header Summary Uses ContentBox Spacing
 - **What:** Web profile pages render profile identity, about text, follower/following stats, and edit/message/follow actions through the shared `ProfileScreen` inside `ContentBox`. These elements are grouped in the component-level profile summary section, not patched with route-specific spacing.
-- **Edge cases:** Profile stats are API-backed, remain inline and left-aligned, and each complete number-and-label statistic is an ununderlined link. Self-profile links use `/connections?tab=...`; another profile uses `/{username}/connections?tab=...`. Edit/message/follow actions move to a dedicated left-aligned row below them on all viewports. The dynamic `/{username}` route must continue delegating to shared `AppShell` and `ProfileScreen`.
+- **Edge cases:** Profile posts are loaded from the viewed user's author-scoped post feed rather than from the global Explore page, and remain subject to the same visibility rules. Profile stats are API-backed, remain inline and left-aligned, and each complete number-and-label statistic is an ununderlined link. Self-profile links use `/connections?tab=...`; another profile uses `/{username}/connections?tab=...`. Edit/message/follow actions move to a dedicated left-aligned row below them on all viewports. The dynamic `/{username}` route must continue delegating to shared `AppShell` and `ProfileScreen`.
 - **Status:** Active
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/components/app-shell.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, `packages/design/design.md`

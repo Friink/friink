@@ -60,6 +60,7 @@ type AppShellProps = {
   logoutError?: string | null;
   initialScreen?: Screen;
   profileUser?: AuthUser;
+  profilePosts?: Post[];
   children?: React.ReactNode;
   floatingBarContent?: React.ReactNode;
   showTabs?: boolean;
@@ -99,7 +100,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', profileUser, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', profileUser, profilePosts, children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -1069,7 +1070,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 <>
                   {activeScreen === 'home' && (
                     <HomeScreen
-                      posts={posts}
+                      posts={profilePosts ?? posts}
                       activeFilter={homeFilter}
                       onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
                       onReply={handleReply}

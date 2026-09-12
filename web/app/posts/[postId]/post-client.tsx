@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
-import { clearAuthSession, createPost, getPost, listPostReplies, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 
@@ -77,24 +77,33 @@ export function PostClient({ postId }: PostClientProps) {
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (!session) {
-      router.replace('/login');
-      return;
+    let active = true;
+    const loadPost = async (activeSession: NonNullable<typeof session>) => {
+      if (!active) return;
+      setUser(activeSession.user);
+      getPost(postId)
+        .then((apiPost) => { if (active) setPost(mapApiPost(apiPost)); })
+        .catch(() => { if (active) setPostUnavailable(true); });
+      listPostReplies(postId)
+        .then((items) => { if (active) setReplies(items.map(mapApiPost)); })
+        .catch(() => { if (active) setReplies([]); });
+    };
+
+    if (session) {
+      void loadPost(session);
+    } else {
+      refreshAuthSession()
+        .then((restoredSession) => {
+          if (!active) return;
+          saveAuthSession(restoredSession);
+          void loadPost(restoredSession);
+        })
+        .catch((error) => {
+          if (active && isTerminalRefreshFailure(error)) router.replace('/login');
+        });
     }
 
-    setUser(session.user);
-
-    getPost(postId)
-      .then((apiPost) => setPost(mapApiPost(apiPost)))
-      .catch(() => {
-        setPostUnavailable(true);
-      });
-
-    listPostReplies(postId)
-      .then((items) => setReplies(items.map(mapApiPost)))
-      .catch(() => {
-        setReplies([]);
-      });
+    return () => { active = false; };
   }, [postId, router]);
 
   function handleLogout() {

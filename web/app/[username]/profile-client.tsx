@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -43,6 +43,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profileUser, setProfileUser] = useState<AuthUser | null>(null);
   const [profileStats, setProfileStats] = useState<{ followers: number; following: number } | null>(null);
+  const [profilePosts, setProfilePosts] = useState<Post[]>([]);
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [likedCursor, setLikedCursor] = useState<string | null>(null);
   const [likedHasMore, setLikedHasMore] = useState(false);
@@ -119,6 +120,25 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     };
   }, [user, username]);
 
+  useEffect(() => {
+    if (!user) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    let active = true;
+    const profileHandle = username || user.username;
+    setProfilePosts([]);
+    listUserPosts(session.accessToken, profileHandle)
+      .then((page) => {
+        if (active) setProfilePosts(page.items.map(mapApiPost));
+      })
+      .catch(() => {
+        if (active) setProfilePosts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, username]);
+
   async function loadLikedPosts(reset = false) {
     if (!user || likedLoading || (!reset && !likedCursor)) return;
     const session = loadAuthSession();
@@ -189,6 +209,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     <AppShell
       user={user}
       profileUser={isOwnProfile ? undefined : (profileUser ?? undefined)}
+      profilePosts={profilePosts}
       profileStats={profileStats}
       profileLikedPosts={likedPosts}
       profileLikedPostsHasMore={likedHasMore}

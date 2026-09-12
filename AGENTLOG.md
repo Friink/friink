@@ -1,5 +1,25 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
 
+## 2026-09-12T00:39:05Z — Restore post sessions and load author-scoped profile posts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate post links incorrectly redirecting through login
+  and profile posts not appearing under the user's profile.
+- Changes Made: Updated both post-detail clients to restore a valid refreshable
+  session before redirecting to login. Added authenticated `GET
+  /users/{username}/posts` pagination backed by an author-scoped post query,
+  and passed those results into ProfileScreen instead of filtering the global
+  Explore page.
+- Files: `web/app/[username]/[postId]/post-client.tsx`,
+  `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/profile-client.tsx`,
+  `web/components/app-shell.tsx`, `web/lib/auth.ts`, `api/app/routers/users.py`,
+  `api/app/services/posts.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npx tsc --noEmit --incremental false` in `web`,
+  `python -m compileall -q api/app`, and `git diff --check` passed. An
+  authenticated endpoint response check is pending because no local API session
+  is available.
+
 ## 2026-09-12T00:22:45Z — Restore session before profile redirect
 
 - Agent: Codex

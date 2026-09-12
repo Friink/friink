@@ -16,6 +16,7 @@ from app.models.post import Post, PostKind, PostMedia
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostMediaResponse, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh, rollback
+from app.services.auth import get_user_by_username
 from app.services.post_slug import generate_post_slug
 from app.services.post_ids import generate_public_id
 from app.services.notifications import create_notification
@@ -225,6 +226,32 @@ async def get_posts_page(session: Session, limit: int = DEFAULT_FEED_LIMIT, curs
     has_more = len(posts) > clamped_limit
     page_items = posts[:clamped_limit]
 
+    return FeedPageResponse(
+        items=[serialize_post(post, viewer=viewer, session=session) for post in page_items if can_view_post(session, viewer, post)],
+        next_cursor=encode_post_cursor(page_items[-1]) if has_more and page_items else None,
+        has_more=has_more,
+    )
+
+
+async def get_user_posts(session: Session, viewer: User, username: str, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None) -> FeedPageResponse:
+    target = await get_user_by_username(session, username)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    clamped_limit = clamp_feed_limit(limit)
+    query = (
+        post_feed_base_query()
+        .where(Post.user_id == target.id)
+        .order_by(Post.created_at.desc(), Post.id.desc())
+    )
+    if cursor:
+        created_at, post_id = decode_post_cursor(cursor)
+        query = query.where(build_older_than_filter(created_at, post_id))
+
+    result = session.execute(query.limit(clamped_limit + 1))
+    posts = list(result.scalars().all())
+    has_more = len(posts) > clamped_limit
+    page_items = posts[:clamped_limit]
     return FeedPageResponse(
         items=[serialize_post(post, viewer=viewer, session=session) for post in page_items if can_view_post(session, viewer, post)],
         next_cursor=encode_post_cursor(page_items[-1]) if has_more and page_items else None,
