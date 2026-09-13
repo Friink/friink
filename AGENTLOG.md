@@ -1,4 +1,770 @@
-INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
+INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
+
+## 2026-09-13T00:16:39Z — Fix rules page mobile overflow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify every documentation page, including mobile rendering.
+- Changes Made: Identified `rules.md` as the only mobile overflow case; enabled wrapping for long article text such as implementation paths and identifiers.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:12:36Z — Fix wrapped Markdown list rendering
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct broken list formatting visible in the documentation viewer.
+- Changes Made: Updated the Markdown renderer to append indented continuation lines to the preceding list item.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:10:48Z — Add explicit verification-discipline rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the two specific testing rules from the root README's agent guidance.
+- Changes Made: Added the exact targeted-verification rule and mandatory real request/response verification rule for new or changed API endpoints to `docs/testing.md`.
+- Files: `docs/testing.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:07:42Z — Prevent stale Markdown in documentation viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure updated Markdown files are picked up immediately by `docs/index.html`.
+- Changes Made: Added a timestamp query parameter and `cache: 'no-store'` to Markdown fetches.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:05:14Z — Establish shared testing guide
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the testing guidance out of the root README into `docs/testing.md`.
+- Changes Made: Populated the testing placeholder with shared testing principles, API/web/manual verification, environment checks, acceptance traceability, release gates, and deferred-verification policy; added root README and documentation-agent pointers and removed detailed verification guidance from the README architecture section.
+- Files: `docs/testing.md`, `docs/AGENTS.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:00:51Z — Connect root and documentation agent guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the documentation-agent context to the root agent instructions.
+- Changes Made: Root guidance now requires reading `docs/AGENTS.md` before documentation work and keeping `docs/index.html` synchronized with documentation changes.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:58:37Z — Update viewer documentation navigation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show `AGENTS.md` in the viewer and remove `template.md` from navigation.
+- Changes Made: Replaced the Template entry with an Agents entry in the viewer's document registry; the template is no longer listed or searchable.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:56:58Z — Require documentation viewer synchronization
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add instructions to keep `docs/index.html` synchronized with documentation files.
+- Changes Made: Added rules covering new, renamed, moved, archived, and removed documents, including unit files, sidebar sections, search results, indexes, and viewer verification.
+- Files: `docs/AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:53:27Z — Add documentation agent instructions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create `docs/AGENTS.md` to guide documentation work and require the template for consistent unit documents.
+- Changes Made: Added documentation-specific source-of-truth boundaries, template usage rules, evidence/status guidance, cross-document consistency rules, and verification requirements.
+- Files: `docs/AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:43:18Z — Add documentation favicon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the Friink favicon in the single-file documentation viewer.
+- Changes Made: Added a favicon link to the existing project asset at `web/public/favicon.png`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:41:32Z — Make sidebar heading typography explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Sidebar headings still appeared bold and visually matched the links.
+- Changes Made: Increased selector specificity and explicitly set section headings to the body font, 16px, and 400 weight so the generic `#nav a` rule cannot override them.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:40:05Z — Restyle sidebar section headings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make sidebar section headings non-bold and 2px larger than document links.
+- Changes Made: Set section headings to 16px regular text; document links remain 14px bold.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:37:16Z — Correct sidebar heading hover and size
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep Documentation and Product units headings transparent on hover/active and restore the smaller heading font.
+- Changes Made: Added higher-specificity light and dark theme overrides for transparent heading backgrounds and set section-heading text to 12px while regular links remain 14px.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:33:16Z — Add clickable sidebar section headings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make Documentation and Product units sidebar headings clickable while preserving their muted color until hover or active state.
+- Changes Made: Rendered both section headings as links to their built-in indexes, added active-state paths, and scoped their hover/active styling to brand green with no filled background.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:29:53Z — Full-width mobile drawer with close icon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the mobile drawer full width and show an X icon while it is open.
+- Changes Made: Set the mobile drawer to full viewport width, changed mobile navigation to one column, and toggled the hamburger to Font Awesome `fa-xmark` only while the drawer is open. Desktop keeps the hamburger icon.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:26:17Z — Theme zoom Reset control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the zoom Reset button follow the selected theme.
+- Changes Made: Added the missing themed control styling to Reset, including border, transparent background, text, typography, cursor, and hover/focus behavior while preserving its disabled state.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:25:24Z — Group mobile search and settings controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the mobile search icon next to the gear icon.
+- Changes Made: Moved the mobile auto-margin to the search control so search and settings remain grouped at the right, and added a temporary header state that preserves settings alignment while the search overlay is open.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:23:58Z — Fix mobile sidebar drawer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the mobile sidebar appearing to contain the main page content.
+- Changes Made: Changed the mobile sidebar to a fixed overlay drawer below the header, constrained it to 320px or the available viewport width, and added a shadow and correct mobile height. The underlying main content now remains separate behind the drawer.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:22:38Z — Align mobile search and header icons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the settings icon at the right when mobile search opens and make all header icons the same size.
+- Changes Made: Reserved the right-side flex position for the settings control on mobile even when the search field becomes an overlay, and normalized hamburger, home, search, and gear icons to 1rem.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:20:39Z — Rework zoom controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Disable Reset at 100% and place it beneath the zoom controls as a full-width control.
+- Changes Made: Made the zoom percentage a centered readout between minus and plus, moved Reset to its own full-width row, and dynamically disables Reset whenever the zoom is 100%.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:19:45Z — Fix mobile documentation viewer controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the mobile header, replace the mobile search field with a tap-to-open icon, and collapse the sidebar by default on mobile.
+- Changes Made: Added a Font Awesome search toggle that opens a full-width search field, kept header controls in one row, closed the mobile search when clicking outside, and initialize the sidebar closed at widths of 760px or less.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:15:53Z — Add explicit zoom reset button
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make zoom reset discoverable instead of making the percentage itself clickable.
+- Changes Made: Changed the zoom percentage to a read-only live status and added a clearly labeled `Reset` button that returns zoom to 100%. Corrected the zoom value selector to use the status display.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:15:04Z — Fix theme dropdown and mobile layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the theme dropdown colors in System/dark mode and improve documentation viewer mobile responsiveness.
+- Changes Made: Added dark System-mode styling for the custom theme options and improved small-screen layout with a wrapping header, full-width second-row search, tighter content padding, smaller mobile logo/buttons, and responsive article heading sizing.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:11:12Z — Standardize viewer zoom and add reset
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use standard zoom behavior and make returning to the default zoom immediate.
+- Changes Made: Switched from inherited font-only scaling to browser-like body page zoom, preserving 50%–150% bounds and 10% increments. Replaced the center zoom readout with a 100%-reset button.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:10:04Z — Replace native theme dropdown
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the Theme dropdown spacing and visual consistency.
+- Changes Made: Replaced the browser-native select with a styled custom listbox using the existing viewer theme tokens. Added selected/hover/focus states, System/Light/Dark support, and keyboard navigation.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:07:08Z — Add System theme option
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a System theme option to the documentation viewer and discuss a better zoom implementation.
+- Changes Made: Added System to the theme selector. System mode removes the explicit `data-theme` override and follows `prefers-color-scheme`; explicit Light and Dark modes remain persistent. Zoom was not changed in this pass.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:04:59Z — Add documentation viewer settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a right-side gear menu for theme selection and font-size zoom.
+- Changes Made: Added a Font Awesome gear dropdown with Light/Dark theme selection and persistent font-size zoom controls from 50% to 150% in 10% steps, defaulting to 100%. Explicit theme overrides preserve correct light/dark styling, and settings close when clicking outside the menu.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:57:00Z — Refine sidebar link typography and spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make sidebar list items 2px smaller, bold, and separated by 2px of spacing.
+- Changes Made: Set sidebar links to 14px and bold, and added 2px vertical spacing between adjacent links, including the first link after the Product Units divider.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:54:49Z — Add Documentation index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Documentation breadcrumb open a list of core documentation files.
+- Changes Made: Added a built-in Documentation index route and rendered list of all non-unit documentation files. Each entry links to its document in the viewer; Product Units remains a separate index.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:52:35Z — Fix breadcrumb casing and add Product Units index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix breadcrumb casing and make the Product units breadcrumb open a list of all unit documents.
+- Changes Made: Scoped uppercase styling to `#nav` links only, added clickable Documentation and Product units breadcrumb parents, and added a built-in Product Units index route listing all unit documents.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:54:00Z — Prevent breadcrumb wrapping
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Home appearing above the rest of the breadcrumb trail on narrow documentation-viewer screens.
+- Changes Made: Made the breadcrumb container a single horizontal flex row with no wrapping and narrow-screen horizontal overflow support. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:50:00Z — Use clean Home document link
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the documentation viewer Home icon navigate to the document file itself instead of changing the hash URL.
+- Changes Made: Changed the Home icon and Friink logo links to `./index.html` and removed the hash-navigation interception for those links. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:47:00Z — Fix search dropdown dark theme
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the search dropdown in `docs/index.html` so it follows the dark theme.
+- Changes Made: Added explicit dark-theme styling for the search input and dropdown panel, border, shadow, result text, and hover/focus highlight. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:43:51Z — Move Home to header and add breadcrumbs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove Home from the documentation sidebar, add a header home icon, and use breadcrumbs above document content.
+- Changes Made: Added a Font Awesome home link between the hamburger and Friink logo, removed Home from the sidebar/search document list, preserved the built-in Home route, and replaced the repeated status label with accessible breadcrumbs that distinguish core documentation from Product units.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:37:05Z — Remove orphaned root profile image
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Delete the unused root `profile.jpg` while keeping the root `package.json`.
+- Changes Made: Removed the orphaned root image after confirming the application fallback remains at `web/public/media/profile.jpg`. Left `package.json` unchanged. No application code was changed.
+- Files: `profile.jpg`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:31:50Z — Archive obsolete admin brainstorm
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the obsolete `admin/admin.txt` document into the archives and remove the empty admin folder.
+- Changes Made: Moved `admin/admin.txt` to `docs/archives/admin.txt` after confirming it was the only item in the folder, then removed the empty `admin/` directory. No application code was changed.
+- Files: `docs/archives/admin.txt`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:24:00Z — Retire root rules file
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the root rules file into the documentation archive and make `docs/rules.md` the maintained source of truth.
+- Changes Made: Moved root `RULES.md` to `docs/archives/RULES.md`. Updated `README.md`, `AGENTS.md`, `docs/rules.md`, and the account-access unit to use `docs/rules.md` as the current rulebook. Historical log entries remain unchanged.
+- Files: `docs/archives/RULES.md`, `README.md`, `AGENTS.md`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:20:39Z — Make docs rules the complete current rulebook
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make `docs/rules.md` the most complete source of truth and add the missing platform and implementation-file fields.
+- Changes Made: Added `Platform` and `File(s)` to all 116 current rule entries using root `RULES.md` as historical input. Updated the document’s ownership language so root `RULES.md` is historical only. Five rules whose historical entries lacked these fields are explicitly marked for future implementation audit rather than guessed.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:12:00Z — Keep stack and architecture outside product units
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Place Stack and Architecture in the documentation group outside Product Units.
+- Changes Made: Updated the viewer’s navigation grouping so the Stack and Architecture links remain in the core documentation list, while the 15 product-unit documents remain under the Product Units divider. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:10:13Z — Separate stack and architecture documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create dedicated stack and architecture documents under `docs/` while leaving the root README unchanged for review.
+- Changes Made: Added implementation-backed technology-stack and architecture documents, linked them from `docs/README.md`, and added them to the HTML documentation viewer sidebar. No application code was changed.
+- Files: `docs/stack.md`, `docs/architecture.md`, `docs/README.md`, `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:02:18Z — Add current agent operating guide
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create `AGENTS.md` so agent guidance can be separated from the repository README before deciding the final README split.
+- Changes Made: Added root `AGENTS.md` with current workflow, documentation ownership, product/code boundaries, verification, and handoff guidance. It identifies `docs/rules.md` as the current rules source and root `RULES.md` as historical reference only. Left `README.md` unchanged for the follow-up README discussion.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T21:55:08Z — Embed Home overview in viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep README separate and place the Home overview directly
+  in the HTML viewer.
+- Changes Made: Removed `docs/home.md`, embedded the Home overview in
+  `docs/index.html`, made it the default built-in route, kept `README` as its
+  own sidebar item, and corrected README links.
+- Files: `docs/index.html`, `docs/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed `docs/home.md` is absent, both Home and README
+  remain in the sidebar, JavaScript syntax passed, local HTTP response
+  returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:52:07Z — Separate Home from README
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make Home the default overview page without replacing the
+  documentation README.
+- Changes Made: Added `docs/home.md` for the Friink product overview, restored
+  `docs/README.md` as the documentation-structure README, and updated the
+  viewer's default route, logo link, and sidebar entries.
+- Files: `docs/index.html`, `docs/home.md`, `docs/README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Confirmed both pages exist, Home is the default route,
+  JavaScript syntax passed, local HTTP response returned `200`, and
+  `git diff --check` passed.
+
+## 2026-09-12T21:48:57Z — Add documentation home overview
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the first sidebar item Home and use it to show a brief
+  overview of Friink.
+- Changes Made: Renamed the first viewer item to `Home` and populated
+  `docs/README.md` with a concise product overview covering Friink's purpose,
+  major capabilities, and product character.
+- Files: `docs/index.html`, `docs/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:47:50Z — Use Font Awesome hamburger icon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use Font Awesome for the documentation viewer hamburger
+  icon without changing it to a close icon.
+- Changes Made: Added the existing Font Awesome 6.5.2 stylesheet used by the
+  project, replaced the custom span icon with `fa-solid fa-bars`, and kept the
+  bars icon in both sidebar states.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, Font Awesome markup was confirmed, and `git diff --check` passed.
+
+## 2026-09-12T21:46:11Z — Move docs search into header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move documentation search to the header and show matching
+  files in a dropdown while typing.
+- Changes Made: Removed the sidebar search control, added the right-aligned
+  header search field and live results list, and wired result selection to the
+  existing hash-based in-page renderer. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:43:17Z — Simplify and uppercase documentation sidebar
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide archived migration documentation from the sidebar and
+  uppercase every sidebar item.
+- Changes Made: Removed the archived migration entry from the viewer's
+  document list and applied uppercase text transformation to all navigation
+  links. Search continues to use the original labels and paths.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:41:38Z — Archive completed migration process
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the completed migration process into the documentation
+  archives.
+- Changes Made: Moved `docs/migration.md` to
+  `docs/archives/migration.md`, updated links in `docs/index.html` and
+  `docs/rules.md`, and preserved the migration conflict register. No
+  application code was changed.
+- Files: `docs/archives/migration.md`, `docs/index.html`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old path is absent, the archived path
+  exists, and `git diff --check` passed.
+
+## 2026-09-12T21:39:09Z — Separate core docs from product units
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add visual separation between root-level documentation and
+  unit documents in the viewer sidebar.
+- Changes Made: Added a `Product units` section label and divider, with search
+  aware rendering so the label appears only when matching unit links remain.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed and `git diff --check` passed.
+
+## 2026-09-12T21:37:54Z — Remove hamburger button border
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the unusual border around the documentation viewer
+  hamburger menu.
+- Changes Made: Removed the visible border, preserved a subtle hover state,
+  and retained a clear keyboard focus outline in light and dark themes.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed and `git diff --check` passed.
+
+## 2026-09-12T21:36:40Z — Fix dark theme precedence and header margin
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix broken dark-theme elements and reduce the header's
+  excessive horizontal margin.
+- Changes Made: Added final dark-mode surface overrides after the base rules so
+  hardcoded light surfaces cannot override dark variables, and changed header
+  padding to a simple `1rem` horizontal margin.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:34:11Z — Add system theme support to docs viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add light and dark documentation themes based on browser
+  or system settings.
+- Changes Made: Added a `prefers-color-scheme: dark` CSS variant while keeping
+  the public green accent, typography, and layout. Updated dark surfaces,
+  dividers, navigation states, and table styling. No application code changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:31:53Z — Refine public-site theme alignment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the documentation viewer follow the public site theme.
+- Changes Made: Added the project’s local Nunito font fallback, matched public
+  Inter/Nunito typography, aligned header spacing to the public 1280px shell,
+  reduced the logo to 2rem, and matched public light colors, dividers, focus,
+  and control styling. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Font asset exists, JavaScript syntax passed, local HTTP
+  response returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:29:53Z — Align documentation viewer with public theme
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the public site theme for the documentation viewer.
+- Changes Made: Replaced the viewer's dark-capable palette with the public
+  light palette, added the public green accent and divider colors, matched the
+  Inter/Nunito typography pairing, and refined surface/button styling. No
+  application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T17:50:12Z — Refine documentation viewer layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the documentation viewer header less oversized and
+  keep the content centered when the sidebar is collapsed.
+- Changes Made: Reduced the header to 56px, reduced the Friink logo to 82px,
+  adjusted sidebar dimensions, and moved max-width/centering to the status and
+  article surfaces so they center within the available viewport.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, logo path exists, local HTTP
+  response returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T17:47:23Z — Add documentation viewer header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a far-left hamburger control and Friink logo to the
+  documentation viewer header.
+- Changes Made: Added the responsive header, canonical `logoFullBrand.svg`,
+  accessible sidebar toggle state, desktop collapse behavior, and mobile
+  close-after-selection behavior. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, logo path exists, local HTTP
+  response returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T17:29:40Z — Add in-page Markdown documentation viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make `docs/index.html` render linked Markdown files inside
+  the documentation page.
+- Changes Made: Added a self-contained JavaScript Markdown renderer with
+  headings, lists, tables, links, code blocks, search filtering, hash-based
+  document navigation, and internal cross-document link handling. Markdown
+  files remain the source documents. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax check passed, all documentation paths
+  exist, and `git diff --check` passed.
+
+## 2026-09-12T17:23:18Z — Correct documentation hub to HTML
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the documentation hub filename and format to
+  `docs/index.html`.
+- Changes Made: Added the static HTML documentation hub with links to core
+  docs and all 15 units, and removed `docs/index.md`. No application code was
+  changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed `docs/index.html` exists, both Markdown index
+  copies are absent, and `git diff --check` passed.
+
+## 2026-09-12T17:17:24Z — Add root documentation index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create a root-level documentation index so the product
+  documentation can be navigated from one place.
+- Changes Made: Added `index.md` with links to core documentation, all 15
+  product units, migration guidance, archives, root rules, and project setup.
+  No application code was changed.
+- Files: `index.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all listed unit and documentation paths exist;
+  `git diff --check` passed.
+
+## 2026-09-12T17:12:49Z — Cross-reference unit rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Compare the central implementation-backed rules index with
+  all 15 unit documents so detailed current rules are discoverable centrally.
+- Changes Made: Added a unit-rule cross-reference table to `docs/rules.md`,
+  indexing all 116 local unit rule IDs and linking each to its canonical unit
+  document. No application code was changed.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed 116 central entries, 116 indexed unit rules,
+  15 unit files, and a clean `git diff --check`.
+
+## 2026-09-12T17:08:41Z — Populate documentation rules index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Build `docs/rules.md` from root `RULES.md` and compare it
+  with the 15 unit documents so active behavior is centrally discoverable.
+- Changes Made: Added stable area-scoped rule IDs for all 116 root rule
+  entries, copied their implementation-backed clauses and effective dates,
+  linked affected unit documents, and kept planning material out of the active
+  rules section. Added a reserved history section for deferred, superseded,
+  or retired decisions. No application code was changed.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed 116 rule entries, 15 unit links resolve, no
+  malformed literal escape sequences remain, and `git diff --check` passed.
+
+## 2026-09-12T16:47:17Z — Normalize unit-document timestamps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update all 15 unit-document timestamps to the project’s full
+  UTC ISO 8601 format, using dates recorded in `RULES.md` and `AGENTLOG.md`.
+- Changes Made: Replaced date-only `Last edited` values in every
+  `docs/units/*.md` file. Used the completion timestamp for the full migration
+  and the later account-access revision timestamp for `account-access.md`.
+  No application code was changed.
+- Files: `docs/units/*.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all 15 unit files have full ISO timestamps;
+  `git diff --check` passed.
+
+## 2026-09-12T16:25:00Z — Resolve refresh-token documentation conflict
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the current implementation and align documentation to
+  the 30-day refresh-token lifetime.
+- Changes Made: Updated the active `RULES.md` JWT session rule from 14 to 30
+  days, marked `MIG-001` as Documented in `docs/migration.md`, and updated
+  `account-access.md` to record the resolved decision. No application code was
+  changed.
+- Files: `RULES.md`, `docs/migration.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed active documentation references agree with
+  the 30-day API/configuration contract; `git diff --check` pending.
+
+## 2026-09-12T16:20:00Z — Complete all unit documentation migrations
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Migrate all 15 unit documents one at a time using the
+  documented reconciliation process without stopping between units.
+- Changes Made: Populated all unit documents with product scope, ownership,
+  related units, rules, UX flows, technical contracts, acceptance criteria,
+  testing guidance, implementation status, and rebuild guidance. Preserved
+  `MIG-001` for the refresh-token lifetime conflict. Kept Directory explicitly
+  unimplemented and professional/PMDC verification out of scope.
+- Files: `docs/units/*.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all 15 unit files are non-placeholder
+  documents, checked migration conflict references, ran `git diff --check`,
+  and confirmed no API or web application files changed.
+
+## 2026-09-12T16:05:00Z — Migrate account-access unit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restart the one-unit-at-a-time documentation migration with
+  `account-access.md`.
+- Changes Made: Populated the Full-tier account-access contract with product
+  scope, actors, security, domain model, signup, login, risk verification,
+  sessions, recovery, active-session management, account switching, technical
+  contracts, acceptance criteria, testing, and rebuild steps. Preserved
+  `MIG-001` for the active 14-day rule versus 30-day implementation conflict;
+  no code was changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the completed unit structure and traceability
+  references; `git diff --check` passed. No application code was modified.
+
+## 2026-09-12T15:45:00Z — Pause account-access migration on refresh-lifetime conflict
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin the one-unit-at-a-time documentation migration with
+  `account-access.md`.
+- Changes Made: During the implementation audit, found that active `RULES.md`
+  specifies a 14-day refresh-token default while `api/app/config.py` and
+  `api/.env.example` specify 30 days. Logged `MIG-001` in `docs/migration.md`
+  and recorded it in the account-access document's Open Questions.
+- Files: `docs/migration.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Migration stopped at the conflict as required; no
+  application code was modified.
+
+## 2026-09-12T15:40:00Z — Establish design-system documentation split
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the product-level and implementation-level design
+  documents to standard structures.
+- Changes Made: Created `docs/design-system.md` with Friink's design
+  principles, foundations, layout, interaction, component-use,
+  accessibility, content, authority, and change guidance. Reframed
+  `packages/design/design.md` as the repository implementation contract and
+  linked it to the product-level document while preserving its existing token
+  and component contracts.
+- Files: `docs/design-system.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed both design documents and project log changes
+  were applied; no application code was changed.
+
+## 2026-09-12T15:35:00Z — Close migration implementation-fix loophole
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the contradictory Output discipline wording in the
+  migration playbook.
+- Changes Made: Supporting changes may now record documentation inconsistencies,
+  separately authorized cross-unit rule updates, and project-log entries;
+  implementation-versus-rule conflicts must be recorded and escalated rather
+  than corrected during migration.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the updated wording and project log changes
+  were applied; no application code was changed.
+
+## 2026-09-12T15:32:00Z — Add migration conflict register
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a persistent notes section for recording migration
+  conflicts for collective review after all units are migrated.
+- Changes Made: Added a central Migration notes and conflicts table with
+  identifiers, unit, date, conflict, evidence, recommended resolution, and
+  status fields; notes are retained after resolution.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the migration playbook and project log
+  changes were applied; no application code was changed.
+
+## 2026-09-12T15:30:00Z — Add implementation-conflict approval gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Narrow the migration approval gate to genuine conflicts
+  between implementation and active rules or documented product decisions.
+- Changes Made: Migration may document observed behavior without approval, but
+  must stop code changes when a genuine implementation-versus-rule conflict is
+  found; the conflict, evidence, impact, and recommendation must be recorded
+  and flagged for product-owner review.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the migration playbook and project log
+  changes were applied; no application code was changed.
+
+## 2026-09-12T15:27:00Z — Add unit documentation migration playbook
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the repeatable process for reconciling archived
+  docs, active rules, and current implementation into unit documents.
+- Changes Made: Added source precedence, one-unit-at-a-time workflow,
+  implementation audit guidance, behavior classifications, code-versus-doc
+  decision rules, verification checklist, and completion standard.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the migration playbook and project log
+  changes were applied; no application code was changed.
+
+## 2026-09-12T15:24:00Z — Clarify documentation-tier verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the unit-document template to resolve the Minimal
+  verification and Standard traceability decisions.
+- Changes Made: Added a required lightweight Verification section for every
+  tier, clarified that Minimal units use it instead of full test scenarios,
+  and explicitly included traceability and test matrices for Standard units.
+- Files: `docs/template.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the template and project log changes were
+  applied; no application code was changed.
+
+## 2026-09-12T15:21:14Z — Establish complete unit-document template
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the empty documentation template with a complete
+  artifact structure for rebuilding product units.
+- Changes Made: Added tier guidance, canonical ownership, related-unit links,
+  product and domain sections, repeatable subunit UX/business/technical/test
+  sections, stable requirement IDs, traceability matrices, architecture,
+  deployment, status, and rebuild-checklist sections.
+- Files: `docs/template.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the template and project log changes were
+  applied; no application code was changed.
 
 ## 2026-09-12T13:23:20Z — Preserve normal login at remembered-account limit
 
@@ -11,7 +777,8 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   account switcher also displays a valid unslotted current login without
   inventing a switchable slot.
 - Files: `api/app/services/account_slots.py`, `api/app/routers/auth.py`,
-  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`.
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `docs/auth-and-session.md`.
 - Verification Status: Focused assertions passed before the known Windows
   SQLite temporary-database cleanup `PermissionError`; API compilation,
   web TypeScript, and `git diff --check` passed. Live staging verification

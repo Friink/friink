@@ -1,4 +1,34 @@
-# Friink Design
+# Friink Design Implementation
+
+This document is the repository-level implementation contract for the product
+design language defined in [`docs/design-system.md`](../../docs/design-system.md).
+It records how the design system is realized in code: token values, CSS
+ownership, shared layout contracts, component contracts, and known
+implementation constraints.
+
+**Status:** Active
+**Last edited:** 2026-09-12
+**Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
+**Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
+**Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
+
+## Implementation boundaries
+
+- Product-level design intent, principles, and shared usage guidance belong in
+  [`docs/design-system.md`](../../docs/design-system.md).
+- This file owns exact implementation details and code mappings.
+- Canonical token values live in `web/theme.config.ts`.
+- Generated CSS variables and shared visual/layout rules live in
+  `web/app/globals.css`.
+- Logged-in TSX components provide structure, state, semantic classes,
+  behavior, and accessibility; they do not define visual design.
+- Page-specific CSS, CSS Modules, route-only stylesheets, and JSX inline
+  styles are not permitted for the logged-in app.
+- The public landing stylesheet remains a separate public-site concern.
+
+When a product design decision changes, update `docs/design-system.md` first,
+then update this implementation contract and the owning code as needed. Do not
+maintain competing values or duplicate implementation rules in both documents.
 
 ## Product Direction
 

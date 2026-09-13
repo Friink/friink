@@ -1,5 +1,450 @@
 # Changelog
 
+## 2026-09-13T00:16:39Z
+
+- [docs] Fixed mobile overflow in the documentation viewer by allowing long
+  implementation paths, identifiers, and other unbroken text in articles to
+  wrap within the content surface.
+
+## 2026-09-13T00:12:36Z
+
+- [docs] Fixed Markdown list rendering in the viewer so indented wrapped
+  lines remain part of their preceding list item instead of becoming stray
+  paragraphs between bullets.
+
+## 2026-09-13T00:10:48Z
+
+- [docs] Added the two explicit verification-discipline rules from the root
+  agent guidance to `docs/testing.md`: targeted verification by default and
+  mandatory real request/response checks for new or changed API endpoints.
+
+## 2026-09-13T00:07:42Z
+
+- [docs] Updated the documentation viewer to bypass browser caching when
+  fetching Markdown, so edited documents appear without a hard refresh.
+
+## 2026-09-13T00:05:14Z
+
+- [docs] Made `docs/testing.md` the canonical shared testing guide, covering
+  API, web, browser, deployment, acceptance, traceability, and release gates.
+  Added root README and documentation-agent pointers to the guide.
+
+## 2026-09-13T00:00:51Z
+
+- [docs] Updated root agent guidance to point documentation work to
+  `docs/AGENTS.md` and require keeping `docs/index.html` synchronized with
+  documentation files.
+
+## 2026-09-12T23:58:37Z
+
+- [docs] Updated the documentation viewer navigation to include `AGENTS.md`
+  and remove `template.md` from the sidebar and search registry.
+
+## 2026-09-12T23:56:58Z
+
+- [docs] Added a documentation-viewer synchronization rule requiring
+  `docs/index.html` to be updated when documents are added, renamed, moved,
+  archived, or removed.
+
+## 2026-09-12T23:53:27Z
+
+- [docs] Added `docs/AGENTS.md` with documentation source-of-truth boundaries,
+  mandatory template usage, evidence rules, consistency guidance, and
+  verification requirements.
+
+## 2026-09-12T23:43:18Z
+
+- [docs] Added the existing Friink favicon to the documentation viewer.
+
+## 2026-09-12T23:41:32Z
+
+- [docs] Made the sidebar section-heading typography explicit so the
+  `#nav a` link rule cannot make it bold. Section headings now use the body
+  font at 16px regular weight; document links remain 14px bold.
+
+## 2026-09-12T23:40:05Z
+
+- [docs] Restyled sidebar section headings to 16px regular text while
+  document links remain 14px and bold.
+
+## 2026-09-12T23:37:16Z
+
+- [docs] Fixed sidebar section-heading hover styling so headings keep a
+  transparent background and only change text color to brand green. Reduced
+  section-heading text to 12px while document links remain 14px.
+
+## 2026-09-12T23:33:16Z
+
+- [docs] Added clickable Documentation and Product units sidebar headings.
+  Section headings retain the muted section color by default and use brand
+  green on hover or when active.
+
+## 2026-09-12T23:29:53Z
+
+- [docs] Changed the mobile documentation drawer to full width with a
+  single-column navigation. The hamburger now becomes a Font Awesome X only
+  while the drawer is open on mobile; desktop remains unchanged.
+
+## 2026-09-12T23:26:17Z
+
+- [docs] Styled the full-width zoom Reset button with the same themed border,
+  transparent background, typography, text color, and hover/focus behavior as
+  the other viewer controls.
+
+## 2026-09-12T23:25:24Z
+
+- [docs] Fixed mobile header grouping so the search and settings icons remain
+  adjacent at the right side. When search opens as an overlay, settings keeps
+  its right-side alignment.
+
+## 2026-09-12T23:23:58Z
+
+- [docs] Fixed the mobile sidebar by making it a fixed drawer overlay below
+  the header instead of a normal-flow block that pushed page content into the
+  drawer area.
+
+## 2026-09-12T23:22:38Z
+
+- [docs] Fixed mobile header alignment when search opens by reserving the
+  right-side position for the settings control. Standardized header icon size
+  to 1rem across desktop and mobile.
+
+## 2026-09-12T23:20:39Z
+
+- [docs] Reworked viewer zoom controls so `−`, percentage, and `+` form one
+  row while Reset is a full-width control beneath them. Reset is disabled at
+  the default 100% zoom.
+
+## 2026-09-12T23:19:45Z
+
+- [docs] Improved mobile documentation-viewer behavior: the header now uses a
+  search icon that opens the search field on tap, and the sidebar starts
+  collapsed on mobile widths.
+
+## 2026-09-12T23:15:53Z
+
+- [docs] Replaced the implicit clickable zoom percentage with a visible
+  `Reset` button. The percentage is now a read-only status display.
+
+## 2026-09-12T23:15:04Z
+
+- [docs] Fixed System-mode theme styling for the custom theme dropdown and
+  improved mobile responsiveness by wrapping the header, moving search to a
+  full-width row, tightening mobile spacing, and scaling down small-screen
+  controls.
+
+## 2026-09-12T23:11:12Z
+
+- [docs] Changed viewer zoom to browser-like page scaling so the whole
+  documentation surface scales consistently. Made the current zoom percentage
+  a reset control that returns directly to 100%.
+
+## 2026-09-12T23:10:04Z
+
+- [docs] Replaced the native Theme select in the documentation viewer with a
+  styled accessible dropdown. It now follows the viewer design consistently,
+  preserves System/Light/Dark selection, and supports keyboard navigation.
+
+## 2026-09-12T23:07:08Z
+
+- [docs] Added a System theme option to the documentation viewer. System mode
+  removes the explicit theme override and follows the browser/OS color-scheme
+  preference; Light and Dark remain explicit overrides.
+
+## 2026-09-12T23:04:59Z
+
+- [docs] Added a right-aligned gear settings menu to the documentation viewer
+  with persistent Light/Dark theme selection and font-size zoom from 50% to
+  150% in 10% increments, defaulting to 100%.
+
+## 2026-09-12T22:57:00Z
+
+- [docs] Refined documentation sidebar links to use a bold 14px label and a
+  2px gap between adjacent items.
+
+## 2026-09-12T22:54:49Z
+
+- [docs] Added a built-in Documentation index to the viewer. The
+  Documentation breadcrumb now opens a list of core documentation files, with
+  each entry linking to its rendered document.
+
+## 2026-09-12T22:52:35Z
+
+- [docs] Scoped uppercase sidebar styling to the sidebar so breadcrumb labels
+  retain normal casing. Added a built-in Product Units index reachable from the
+  breadcrumb, listing all unit documents.
+
+## 2026-09-12T22:54:00Z
+
+- [docs] Fixed narrow-screen breadcrumb wrapping so Home stays in the same
+  horizontal trail as the current section and document; very small screens
+  may scroll the trail horizontally instead.
+
+## 2026-09-12T22:50:00Z
+
+- [docs] Changed the documentation viewer Home icon and logo to use normal
+  `./index.html` links instead of hash-based Home routing, returning users to a
+  clean document URL.
+
+## 2026-09-12T22:47:00Z
+
+- [docs] Fixed the documentation viewer search dropdown's dark-theme styling
+  for its panel, border, text, shadow, and hover/focus states.
+
+## 2026-09-12T22:43:51Z
+
+- [docs] Updated the documentation viewer so Home is a header home icon rather
+  than a sidebar entry, and replaced the repeated document label with
+  breadcrumbs showing Home, Documentation or Product units, and the current
+  document.
+
+## 2026-09-12T22:37:05Z
+
+- [cleanup] Removed the unused root `profile.jpg`. The application fallback at
+  `web/public/media/profile.jpg` remains in place. Kept the root `package.json`.
+
+## 2026-09-12T22:31:50Z
+
+- [docs] Archived the obsolete deferred admin brainstorm as
+  `docs/archives/admin.txt` and removed the now-empty root `admin/` folder.
+  The current staff-admin contract remains in `docs/units/staff-admin.md`.
+
+## 2026-09-12T22:24:00Z
+
+- [docs] Retired the root `RULES.md` by moving it to
+  `docs/archives/RULES.md`. Updated current documentation and agent guidance
+  to maintain and consult `docs/rules.md` as the sole current rulebook. Kept
+  historical log references unchanged. No application code was changed.
+
+## 2026-09-12T22:20:39Z
+
+- [docs] Made `docs/rules.md` the complete current source of truth by adding
+  Platform and File(s) fields to all 116 rules, sourced from historical
+  `RULES.md` where available. Five rules are explicitly marked for future
+  implementation audit because the historical source did not record those
+  fields. No application code was changed.
+
+## 2026-09-12T22:12:00Z
+
+- [docs] Kept Stack and Architecture in the core documentation navigation,
+  outside the Product Units section.
+
+## 2026-09-12T22:10:13Z
+
+- [docs] Added `docs/stack.md` and `docs/architecture.md` to separate
+  technology and implementation architecture from the root README. Added both
+  documents to the documentation README and viewer navigation. No application
+  code was changed.
+
+## 2026-09-12T22:02:18Z
+
+- [docs] Added `AGENTS.md` as the current operating guide for AI agents,
+  separating agent workflow from the repository README and directing current
+  product rules to `docs/rules.md`. No application code was changed.
+
+## 2026-09-12T21:55:08Z
+
+- [docs] Moved the Friink overview directly into `docs/index.html` as the
+  built-in Home page, kept `docs/README.md` as a separate documentation
+  README, and removed the unnecessary `docs/home.md` file. No application code
+  was changed.
+
+## 2026-09-12T21:52:07Z
+
+- [docs] Separated the documentation viewer's `HOME` page from `README`.
+  Added `docs/home.md` as the default Friink overview while keeping
+  `docs/README.md` as the documentation-structure README. No application code
+  was changed.
+
+## 2026-09-12T21:48:57Z
+
+- [docs] Changed the first documentation viewer entry to `HOME` and populated
+  `docs/README.md` with a concise overview of Friink and its implemented
+  product areas. No application code was changed.
+
+## 2026-09-12T21:47:50Z
+
+- [docs] Replaced the custom CSS hamburger with the project’s Font Awesome
+  `fa-solid fa-bars` icon and kept it unchanged across sidebar states. No
+  application code was changed.
+
+## 2026-09-12T21:46:11Z
+
+- [docs] Moved documentation search into the right side of the viewer header
+  and added a live dropdown of matching files. Selecting a result renders the
+  document in place. No application code was changed.
+
+## 2026-09-12T21:43:17Z
+
+- [docs] Removed archived migration history from the documentation viewer
+  sidebar and changed all sidebar document labels to uppercase. No application
+  code was changed.
+
+## 2026-09-12T21:41:38Z
+
+- [docs] Moved the completed migration process to
+  `docs/archives/migration.md` and updated the documentation viewer and rules
+  index to link to its archived location. No application code was changed.
+
+## 2026-09-12T21:39:09Z
+
+- [docs] Added a labeled divider between core documentation and product units
+  in the documentation viewer sidebar. The grouping remains compatible with
+  document search. No application code was changed.
+
+## 2026-09-12T21:37:54Z
+
+- [docs] Removed the visible border from the documentation viewer hamburger
+  control while retaining hover and keyboard-focus feedback. No application
+  code was changed.
+
+## 2026-09-12T21:36:40Z
+
+- [docs] Fixed dark-theme CSS precedence in the documentation viewer so dark
+  surfaces, header, navigation states, and tables no longer mix with light
+  styling. Reduced the header's horizontal margin to a simple 1rem. No
+  application code was changed.
+
+## 2026-09-12T21:34:11Z
+
+- [docs] Added automatic light/dark theme support to the documentation viewer
+  using the browser or operating system `prefers-color-scheme` setting. No
+  application code was changed.
+
+## 2026-09-12T21:31:53Z
+
+- [docs] Refined the documentation viewer to match the public site more
+  closely, including the actual local Nunito font, public typography, exact
+  spacing conventions, 1280px header alignment, light surfaces, and public
+  control styling. No application code was changed.
+
+## 2026-09-12T21:29:53Z
+
+- [docs] Aligned the documentation viewer with the public-site theme: light
+  canvas, white surfaces, public green accent, muted gray typography, public
+  divider color, Inter/Nunito type pairing, and restrained rounded surfaces.
+  No application code was changed.
+
+## 2026-09-12T17:50:12Z
+
+- [docs] Refined the documentation viewer header and layout: reduced header
+  height and logo size, and centered the content independently of the sidebar
+  state. No application code was changed.
+
+## 2026-09-12T17:47:23Z
+
+- [docs] Added a responsive header to `docs/index.html` with a far-left
+  hamburger button, canonical Friink logo, accessible sidebar state, and
+  mobile sidebar behavior. No application code was changed.
+
+## 2026-09-12T17:29:40Z
+
+- [docs] Converted `docs/index.html` into a JavaScript documentation viewer
+  that loads and renders the Markdown documentation in-page, with search,
+  hash navigation, and internal document-link handling. No application code
+  was changed.
+
+## 2026-09-12T17:23:18Z
+
+- [docs] Corrected the documentation hub format from Markdown to HTML at
+  `docs/index.html`; removed `docs/index.md`. No application code was changed.
+
+## 2026-09-12T17:20:38Z
+
+- [docs] Moved the documentation hub from the repository root to
+  `docs/index.md` and corrected its relative links. No application code was
+  changed.
+
+## 2026-09-12T17:17:24Z
+
+- [docs] Added the root `index.md` documentation hub with links to core
+  documentation, all 15 product units, archives, and project guidance. No
+  application code was changed.
+
+## 2026-09-12T17:12:49Z
+
+- [docs] Added a unit-rule cross-reference to `docs/rules.md`, indexing the
+  116 detailed rule IDs across the 15 unit documents while keeping their full
+  wording and evidence in the unit docs. No application code was changed.
+
+## 2026-09-12T17:08:41Z
+
+- [docs] Populated `docs/rules.md` from the implementation-backed root
+  `RULES.md`, adding stable rule IDs, effective timestamps, active rule clauses,
+  unit cross-links, and a reserved history section for deferred or superseded
+  rules. No application code was changed.
+
+## 2026-09-12T16:47:17Z
+
+- [docs] Normalized the `Last edited` metadata in all 15 unit documents to
+  full UTC ISO 8601 timestamps using the dated migration entries in
+  `AGENTLOG.md`. No application code was changed.
+
+## 2026-09-12T16:25:00Z
+
+- [docs] Resolved `MIG-001` by aligning the active refresh-token rule with the
+  existing 30-day API implementation and environment contract. No code changed.
+
+## 2026-09-12T16:20:00Z
+
+- [docs] Completed migration of all 15 `docs/units` documents from archived
+  material, active rules, and implementation evidence. The Directory remains
+  explicitly unimplemented, professional/PMDC verification remains out of
+  scope, and the refresh-token lifetime conflict remains open as `MIG-001`.
+  No application code was changed.
+
+## 2026-09-12T16:05:00Z
+
+- [docs] Completed the first unit migration for `account-access.md` using
+  archived documentation, active rules, and current implementation evidence.
+  Preserved the open refresh-token lifetime conflict as `MIG-001`; no code was
+  changed.
+
+## 2026-09-12T15:45:00Z
+
+- [docs] Recorded the first migration conflict: the active 14-day refresh-token
+  rule disagrees with the API and example environment's 30-day default. The
+  account-access migration is paused pending a product decision; no code was
+  changed.
+
+## 2026-09-12T15:40:00Z
+
+- [docs] Established the product/implementation split between
+  `docs/design-system.md` and `packages/design/design.md`, preserving the
+  existing token and component contracts while adding standard design-system
+  principles, usage patterns, accessibility, and authority boundaries.
+
+## 2026-09-12T15:35:00Z
+
+- [docs] Removed the migration playbook wording that could be read as
+  permitting implementation fixes during conflict reconciliation.
+
+## 2026-09-12T15:32:00Z
+
+- [docs] Added a central migration-notes and conflicts register to preserve
+  implementation-versus-rule findings for review after unit migration.
+
+## 2026-09-12T15:30:00Z
+
+- [docs] Added an approval gate to the migration playbook: implementation-
+  versus-rule conflicts are recorded and escalated without modifying code.
+
+## 2026-09-12T15:27:00Z
+
+- [docs] Added the unit documentation migration playbook covering source
+  precedence, one-unit-at-a-time reconciliation, implementation audits,
+  conflict classification, and completion checks.
+
+## 2026-09-12T15:24:00Z
+
+- [docs] Clarified that Standard units include traceability and test matrices,
+  while Minimal units require lightweight verification checklists.
+
+## 2026-09-12T15:21:14Z
+
+- [docs] Replaced the empty unit-document template with a complete product,
+  UX, technical-contract, testing, traceability, and rebuild structure.
+
 ## 2026-09-12T13:23:20Z
 
 - [fix] Normal login no longer fails when the device has reached the

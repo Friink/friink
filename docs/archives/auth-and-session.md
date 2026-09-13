@@ -1903,6 +1903,11 @@ refresh-token rotation semantics.
    limit is reached, `Add account` explains that the user must remove one
    account before adding another; it never silently replaces an existing
    account.
+   The limit applies to remembered account slots, not to ordinary login:
+   when a normal login succeeds but no new slot can be retained, the session
+   remains usable without a remembered slot. The switcher must still show
+   that account as the active account, while only slot-backed accounts are
+   switchable or removable from the device list.
 8. When the active account logs out and other accounts remain, the most
    recently used remaining account becomes active. If none remain, the user
    returns to the signed-out login screen.
@@ -1975,9 +1980,12 @@ server-authoritative operations:
   tokens, or secrets. The server enforces the validated
   `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value.
 - Existing login and signup endpoints: after successful authentication,
-  create or restore only that account's device-scoped session slot and return
-  the active account's normal access context. The primary and add-account
-  flows use the same endpoints and security checks; they never link identities.
+  create or restore only that account's device-scoped session slot when the
+  device has capacity and return the active account's normal access context.
+  A normal login remains valid without a new slot when the remembered-account
+  limit is reached; Add account must reject that case. The primary and
+  add-account flows use the same endpoints and security checks; they never link
+  identities.
 - `POST /auth/accounts/switch`: accept only an opaque account-slot reference;
   verify the current device/session and slot state; then issue or activate the
   selected account's normal short-lived access context.
@@ -2004,7 +2012,9 @@ to `4` and must be validated at startup as an integer between `1` and `16`.
 The browser client must not provide or override it. If an operator
 lowers the value below the number of existing slots, existing sessions remain
 usable and no account is silently removed; new additions are blocked until the
-device is under the configured limit.
+device is under the configured limit. A normal re-login is not a new
+remembered-account addition and remains usable without creating a slot when
+the limit is already reached.
 
 ### 8.5.5 Isolation, notifications, and session management
 

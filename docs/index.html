@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Friink Documentation</title>
+    <link rel="icon" type="image/png" href="../web/public/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Nunito:wght@600;700;800&display=swap');
+      :root { color-scheme: light; --bg: #f9f9f9; --panel: #ffffff; --text: #1a1c1c; --muted: #5f5e5e; --line: #cfc4c5; --accent: #33aa55; --code: #f3f1f1; --display: 'Nunito Local', 'Nunito', sans-serif; --body: 'Inter', sans-serif; }
+      @font-face { font-family: 'Nunito Local'; src: url('../web/public/fonts/Nunito-VariableFont_wght.ttf') format('truetype'), url('/fonts/Nunito-VariableFont_wght.ttf') format('truetype'); font-weight: 200 1000; font-style: normal; font-display: swap; }
+      @media (prefers-color-scheme: dark) {
+        :root { color-scheme: dark; --bg: #1a1c1c; --panel: #242727; --text: #f9f9f9; --muted: #cfc4c5; --line: #5f5e5e; --accent: #66c77d; --code: #303535; }
+        .site-header { background: rgba(26, 28, 28, .92); }
+        #nav a:hover, #nav a.active { background: #263d2b; }
+        article th { background: #303535; }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 var(--body); zoom: var(--doc-zoom, 1); }
+      a { color: var(--accent); }
+      .site-header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: .75rem; height: 5rem; padding: 0 1rem; border-bottom: 1px solid var(--line); background: rgba(249, 249, 249, .9); backdrop-filter: blur(14px); }
+      .menu-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: .5rem; border: 0; border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; }
+      .menu-button:hover { background: #edf7ef; color: var(--accent); }
+      .menu-button:focus-visible { color: var(--accent); outline: 2px solid var(--accent); outline-offset: 2px; }
+      .menu-button > i { font-size: 1rem; line-height: 1; }
+      .hamburger { font-size: 1rem; line-height: 1; }
+      .home-button { text-decoration: none; }
+      .home-button i { font-size: 1rem; }
+      .brand-logo { display: block; width: auto; height: 2rem; }
+      .header-search { position: relative; width: min(280px, 42vw); margin-left: auto; }
+      .header-search label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .search-toggle { display: none; }
+      #search { width: 100%; padding: .65rem .75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
+      #search:focus { border-color: var(--accent); outline: 1px solid var(--accent); }
+      .search-results { position: absolute; top: calc(100% + .5rem); right: 0; left: 0; z-index: 20; display: grid; max-height: min(60vh, 24rem); overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .12); }
+      .search-results[hidden] { display: none; }
+      .search-results a { padding: .65rem .75rem; color: var(--text); text-decoration: none; }
+      .search-results a:hover, .search-results a:focus-visible { color: var(--accent); background: #edf7ef; outline: none; }
+      .settings-wrap { position: relative; }
+      .settings-button { flex: 0 0 auto; }
+      .settings-panel { position: absolute; top: calc(100% + .5rem); right: 0; z-index: 20; display: grid; gap: 1rem; width: min(280px, calc(100vw - 2rem)); padding: 1rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .12); }
+      .settings-panel[hidden] { display: none; }
+      .settings-row { display: grid; gap: .45rem; }
+      .settings-label { font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+      .theme-control { position: relative; }
+      .theme-select-button { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+      .theme-select-button:hover, .theme-select-button:focus-visible { border-color: var(--accent); outline: none; }
+      .theme-options { position: absolute; top: calc(100% + .35rem); right: 0; left: 0; z-index: 30; display: grid; gap: 2px; padding: .3rem; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); box-shadow: 0 .75rem 1.5rem rgba(0, 0, 0, .16); }
+      .theme-options[hidden] { display: none; }
+      .theme-option { padding: .45rem .55rem; border: 0; border-radius: 4px; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+      .theme-option:hover, .theme-option:focus-visible, .theme-option[aria-selected="true"] { background: #edf7ef; color: var(--accent); outline: none; }
+      .zoom-controls { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+      .zoom-controls button { width: 2rem; height: 2rem; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+      .zoom-reset { width: 100%; height: 2rem; padding: 0 .55rem; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+      .zoom-controls button:hover, .zoom-controls button:focus-visible, .zoom-reset:hover:not(:disabled), .zoom-reset:focus-visible:not(:disabled) { border-color: var(--accent); color: var(--accent); outline: none; }
+      .zoom-reset:disabled { border-color: var(--line); color: var(--muted); opacity: .6; cursor: not-allowed; }
+      .zoom-value { min-width: 4rem; text-align: center; font-variant-numeric: tabular-nums; }
+      [data-theme="dark"] { color-scheme: dark; --bg: #1a1c1c; --panel: #242727; --text: #f9f9f9; --muted: #cfc4c5; --line: #5f5e5e; --accent: #66c77d; --code: #303535; }
+      [data-theme="dark"] .site-header { background: rgba(26, 28, 28, .92); }
+      [data-theme="dark"] .menu-button { background: transparent; color: var(--text); }
+      [data-theme="dark"] .menu-button:hover { background: #263d2b; color: var(--accent); }
+      [data-theme="dark"] #nav a:hover, [data-theme="dark"] #nav a.active { background: #263d2b; }
+      [data-theme="dark"] #search, [data-theme="dark"] .theme-select-button { background: var(--panel); color: var(--text); border-color: var(--line); }
+      [data-theme="dark"] .search-results, [data-theme="dark"] .settings-panel { background: var(--panel); border-color: var(--line); box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .35); }
+      [data-theme="dark"] .search-results a { color: var(--text); }
+      [data-theme="dark"] .search-results a:hover, [data-theme="dark"] .search-results a:focus-visible { color: var(--accent); background: #263d2b; }
+      [data-theme="dark"] .theme-option:hover, [data-theme="dark"] .theme-option:focus-visible, [data-theme="dark"] .theme-option[aria-selected="true"] { background: #263d2b; color: var(--accent); }
+      [data-theme="dark"] article th { background: #303535; }
+      [data-theme="light"] { color-scheme: light; --bg: #f9f9f9; --panel: #ffffff; --text: #1a1c1c; --muted: #5f5e5e; --line: #cfc4c5; --accent: #33aa55; --code: #f3f1f1; }
+      [data-theme="light"] .site-header { background: rgba(249, 249, 249, .9); }
+      [data-theme="light"] #nav a:hover, [data-theme="light"] #nav a.active { background: #edf7ef; }
+      [data-theme="light"] #search, [data-theme="light"] .theme-select-button { background: var(--panel); color: var(--text); border-color: var(--line); }
+      [data-theme="light"] .search-results, [data-theme="light"] .settings-panel { background: var(--panel); border-color: var(--line); box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .12); }
+      [data-theme="light"] .search-results a { color: var(--text); }
+      [data-theme="light"] .search-results a:hover, [data-theme="light"] .search-results a:focus-visible { color: var(--accent); background: #edf7ef; }
+      [data-theme="light"] .theme-option:hover, [data-theme="light"] .theme-option:focus-visible, [data-theme="light"] .theme-option[aria-selected="true"] { background: #edf7ef; color: var(--accent); }
+      [data-theme="light"] article th { background: #f3f2f2; }
+      @media (max-width: 760px) {
+        .site-header { height: auto; min-height: 4rem; flex-wrap: wrap; padding: .5rem .75rem; }
+        .header-search { order: 5; flex: 1 0 100%; width: 100%; margin-left: 0; }
+        main { padding: 1.25rem .75rem; }
+      }
+      @media (max-width: 520px) {
+        .site-header { gap: .4rem; }
+        .brand-logo { height: 1.75rem; }
+        .home-button, .settings-button { width: 32px; height: 32px; }
+        .settings-panel { right: -.25rem; }
+        .breadcrumbs { margin-bottom: .75rem; }
+        article h1 { font-size: 2rem; }
+      }
+      .app { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+      .app.sidebar-closed { grid-template-columns: 0 minmax(0, 1fr); }
+      aside { position: sticky; top: 5rem; height: calc(100vh - 5rem); min-width: 0; overflow: auto; padding: 1.25rem; border-right: 1px solid var(--line); background: var(--panel); transition: opacity .15s ease, padding .15s ease; }
+      .sidebar-closed aside { padding-right: 0; padding-left: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+      aside h1, article h1, article h2, article h3, article h4 { font-family: var(--display); }
+      aside h1 { margin: 0 0 .25rem; font-size: 1.25rem; }
+      aside p { margin: 0 0 1rem; color: var(--muted); font-size: .9rem; }
+      nav { margin-top: 1rem; }
+      #nav a { display: block; padding: .4rem .5rem; border-radius: .35rem; font-size: 14px; font-weight: 700; text-decoration: none; text-transform: uppercase; }
+      #nav a + a, .nav-section-label + a { margin-top: 2px; }
+      #nav a:hover, #nav a.active { color: var(--accent); background: #edf7ef; }
+      #nav .nav-section-label { margin: 1rem 0 .35rem; padding: .75rem .5rem .25rem; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--body); font-size: 16px; font-weight: 400; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+      #nav .nav-section-label:hover, #nav .nav-section-label.active { color: var(--accent); background: transparent; }
+      [data-theme="dark"] #nav .nav-section-label:hover, [data-theme="dark"] #nav .nav-section-label.active { background: transparent; }
+      [data-theme="light"] #nav .nav-section-label:hover, [data-theme="light"] #nav .nav-section-label.active { background: transparent; }
+      main { width: 100%; min-width: 0; padding: 2rem clamp(1rem, 4vw, 4rem); }
+      .breadcrumbs { display: flex; align-items: center; width: min(960px, 100%); margin: 0 auto 1rem; overflow-x: auto; color: var(--muted); font-size: .9rem; white-space: nowrap; scrollbar-width: thin; }
+      .breadcrumbs a { color: var(--muted); text-decoration: none; }
+      .breadcrumbs a:hover, .breadcrumbs a:focus-visible { color: var(--accent); text-decoration: underline; }
+      .breadcrumbs .separator { margin: 0 .45rem; color: var(--line); }
+      .breadcrumbs [aria-current="page"] { color: var(--text); font-weight: 600; }
+      article { width: min(960px, 100%); margin: 0 auto; padding: 2rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow-wrap: anywhere; }
+      article h1 { font-size: clamp(2rem, 4vw, 3rem); }
+      article h1, article h2, article h3, article h4 { line-height: 1.2; letter-spacing: 0; }
+      article h1 { margin-top: 0; }
+      article img { max-width: 100%; }
+      article table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+      article th, article td { min-width: 8rem; padding: .55rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+      article th { background: #f3f2f2; }
+      article pre { overflow: auto; padding: 1rem; border-radius: .45rem; background: var(--code); }
+      article code { padding: .12rem .3rem; border-radius: .25rem; background: var(--code); }
+      article pre code { padding: 0; background: transparent; }
+      article blockquote { margin-left: 0; padding-left: 1rem; border-left: 3px solid var(--accent); color: var(--muted); }
+      .error { color: #b42318; }
+      @media (max-width: 760px) { .app { display: block; } aside { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); } .sidebar-closed aside { display: none; } nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } article { padding: 1rem; } }
+      @media (max-width: 520px) { .site-header { gap: .5rem; } .header-search { width: min(220px, 58vw); } }
+      @media (max-width: 760px) {
+        .app { display: block; position: relative; }
+        aside { position: fixed; top: 4rem; left: 0; z-index: 15; width: min(320px, calc(100vw - 1rem)); height: calc(100vh - 4rem); border-right: 1px solid var(--line); border-bottom: 0; box-shadow: .75rem 0 1.5rem rgba(0, 0, 0, .18); }
+        .sidebar-closed aside { display: none; }
+      }
+      @media (max-width: 760px) {
+        .site-header { height: 4rem; flex-wrap: nowrap; padding: 0 .75rem; }
+        .header-search { order: initial; flex: 0 0 auto; width: auto; margin-left: auto; }
+        .header-search.search-open { position: absolute; top: calc(100% + .5rem); right: .75rem; left: .75rem; z-index: 25; width: auto; margin-left: 0; }
+      }
+      @media (max-width: 760px) {
+        .site-header { height: 4rem; flex-wrap: nowrap; padding: 0 .75rem; }
+        .header-search { order: initial; flex: 0 0 auto; width: auto; margin-left: auto; }
+        .settings-wrap { margin-left: 0; }
+        .site-header.search-visible .settings-wrap { margin-left: auto; }
+        .search-toggle { display: inline-grid; }
+        .header-search #search { display: none; }
+        .header-search.search-open { position: absolute; top: calc(100% + .5rem); right: .75rem; left: .75rem; z-index: 25; width: auto; margin-left: 0; }
+        .header-search.search-open #search { display: block; }
+        .header-search.search-open .search-toggle { display: none; }
+      }
+      @media (prefers-color-scheme: dark) {
+        .site-header { background: rgba(26, 28, 28, .92); }
+        .menu-button { background: transparent; color: var(--text); }
+        .menu-button:hover { background: #263d2b; color: var(--accent); }
+        #nav a:hover, #nav a.active { background: #263d2b; }
+        #search { background: var(--panel); color: var(--text); border-color: var(--line); }
+        .search-results { background: var(--panel); border-color: var(--line); box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .35); }
+        .search-results a { color: var(--text); }
+        .search-results a:hover, .search-results a:focus-visible { color: var(--accent); background: #263d2b; }
+        .theme-options { background: var(--panel); border-color: var(--line); box-shadow: 0 .75rem 1.5rem rgba(0, 0, 0, .35); }
+        .theme-option { color: var(--text); }
+        .theme-option:hover, .theme-option:focus-visible, .theme-option[aria-selected="true"] { background: #263d2b; color: var(--accent); }
+        article th { background: #303535; }
+      }
+      @media (max-width: 760px) {
+        aside { width: 100%; max-width: none; border-right: 0; }
+        nav#nav { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <button id="menu-button" class="menu-button" type="button" aria-label="Close sidebar" aria-expanded="true" aria-controls="sidebar">
+        <i id="menu-icon" class="fa-solid fa-bars hamburger" aria-hidden="true"></i>
+      </button>
+      <a id="home-link" class="menu-button home-button" href="./index.html" aria-label="Home"><i class="fa-solid fa-house" aria-hidden="true"></i></a>
+      <a id="brand-link" href="./index.html" aria-label="Friink Documentation home"><img class="brand-logo" src="../brand/logoFullBrand.svg" alt="Friink"></a>
+      <div class="header-search">
+        <label for="search">Search documents</label>
+        <button id="search-toggle" class="menu-button search-toggle" type="button" aria-label="Open search" aria-expanded="false" aria-controls="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+        <input id="search" type="search" placeholder="Search documents…" autocomplete="off" aria-controls="search-results" aria-expanded="false">
+        <div id="search-results" class="search-results" role="listbox" hidden></div>
+      </div>
+      <div class="settings-wrap">
+        <button id="settings-button" class="menu-button settings-button" type="button" aria-label="Open settings" aria-expanded="false" aria-controls="settings-panel">
+          <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        </button>
+        <div id="settings-panel" class="settings-panel" hidden>
+          <div class="settings-row">
+            <span class="settings-label">Theme</span>
+            <div class="theme-control">
+              <button id="theme-button" class="theme-select-button" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-options">
+                <span id="theme-value">System</span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+              </button>
+              <div id="theme-options" class="theme-options" role="listbox" aria-label="Theme" hidden>
+                <button class="theme-option" type="button" role="option" data-theme-option="system" aria-selected="true">System</button>
+                <button class="theme-option" type="button" role="option" data-theme-option="light" aria-selected="false">Light</button>
+                <button class="theme-option" type="button" role="option" data-theme-option="dark" aria-selected="false">Dark</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Zoom</span>
+            <div class="zoom-controls">
+              <button id="zoom-decrease" type="button" aria-label="Decrease font size">−</button>
+              <span id="zoom-value" class="zoom-value" aria-live="polite">100%</span>
+              <button id="zoom-increase" type="button" aria-label="Increase font size">+</button>
+            </div>
+            <button id="zoom-reset" class="zoom-reset" type="button" disabled>Reset</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="app">
+      <aside id="sidebar">
+        <h1>Friink Documentation</h1>
+        <p>Implementation-backed product and engineering documentation.</p>
+        <nav id="nav" aria-label="Documentation"></nav>
+      </aside>
+      <main>
+        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb"></nav>
+        <article id="content">
+          <h1>Friink Documentation</h1>
+          <p>Select a document from the left. Markdown files will be loaded and rendered here.</p>
+      <p><strong>Last edited:</strong> 2026-09-12T21:55:08Z</p>
+        </article>
+      </main>
+    </div>
+    <script>
+      const DOCS = [
+        ['README', 'README.md'], ['Agents', 'AGENTS.md'], ['Rules', 'rules.md'],
+        ['Testing', 'testing.md'], ['Design system', 'design-system.md'],
+        ['Stack', 'stack.md'], ['Architecture', 'architecture.md'],
+        ['Account access', 'units/account-access.md'],
+        ['Account lifecycle', 'units/account-lifecycle.md'], ['Blocking', 'units/blocking.md'],
+        ['Chat', 'units/chat.md'], ['Connections', 'units/connections.md'],
+        ['Discovery', 'units/discovery.md'], ['Feed', 'units/feed.md'],
+        ['Media', 'units/media.md'], ['Notifications', 'units/notifications.md'],
+        ['Posts', 'units/posts.md'], ['Profiles', 'units/profiles.md'],
+        ['Saved items', 'units/saved-items.md'], ['Settings', 'units/settings.md'],
+        ['Staff admin', 'units/staff-admin.md'], ['Subscriptions', 'units/subscriptions.md']
+      ];
+      const nav = document.querySelector('#nav');
+      const search = document.querySelector('#search');
+      const searchToggle = document.querySelector('#search-toggle');
+      const searchResults = document.querySelector('#search-results');
+      const content = document.querySelector('#content');
+      const breadcrumbs = document.querySelector('#breadcrumbs');
+      const app = document.querySelector('.app');
+      const header = document.querySelector('.site-header');
+      const menuButton = document.querySelector('#menu-button');
+      const menuIcon = document.querySelector('#menu-icon');
+      const settingsButton = document.querySelector('#settings-button');
+      const settingsPanel = document.querySelector('#settings-panel');
+      const themeButton = document.querySelector('#theme-button');
+      const themeValue = document.querySelector('#theme-value');
+      const themeOptions = document.querySelector('#theme-options');
+      const themeOptionButtons = [...document.querySelectorAll('[data-theme-option]')];
+      const zoomValue = document.querySelector('#zoom-value');
+      const zoomDecrease = document.querySelector('#zoom-decrease');
+      const zoomIncrease = document.querySelector('#zoom-increase');
+      const zoomReset = document.querySelector('#zoom-reset');
+      const HOME_PATH = '__home__';
+      const DOCUMENTATION_PATH = '__documentation__';
+      const UNITS_PATH = '__units__';
+      const HOME_CONTENT = `<h1>Friink</h1>
+        <p>Friink is a people-first social platform for meaningful conversation and professional discovery. It combines authored posts, trusted relationships, direct chat, and identity-focused profiles in one calm space.</p>
+        <p><strong>Last edited:</strong> 2026-09-12T21:52:07Z</p>
+        <h2>What Friink includes</h2>
+        <ul>
+          <li>Profiles with public identity, About text, connection counts, content tabs, and profile actions.</li>
+          <li>Posts, replies, quotes, image attachments, reactions, saved posts, and author-scoped content.</li>
+          <li>Explore and Following feeds with visibility-aware content selection.</li>
+          <li>Connections with public and private account behavior, follow requests, and relationship controls.</li>
+          <li>Direct chat with conversation requests, read receipts, mute, archive, and safety restrictions.</li>
+          <li>Search and discovery, notifications, settings, account access, and account lifecycle controls.</li>
+          <li>Staff administration and subscription-plan presentation where those surfaces are available.</li>
+        </ul>
+        <h2>Product character</h2>
+        <p>Friink is designed to feel calm, clear, human, and trustworthy. Privacy, safety, accessible interaction, honest feedback, and recoverable failure are part of the product experience—not additions after the fact.</p>
+        <p>The product is built as a web and API platform. The active implementation rules, product-unit contracts, design language, and testing guidance are available through this documentation viewer.</p>`;
+
+      function applyTheme(theme) {
+        if (theme === 'system') delete document.documentElement.dataset.theme;
+        else document.documentElement.dataset.theme = theme;
+        themeValue.textContent = theme[0].toUpperCase() + theme.slice(1);
+        themeOptionButtons.forEach(option => option.setAttribute('aria-selected', String(option.dataset.themeOption === theme)));
+        localStorage.setItem('docs-theme', theme);
+      }
+
+      function setThemeOptions(open, focusFirst = false) {
+        themeOptions.hidden = !open;
+        themeButton.setAttribute('aria-expanded', String(open));
+        if (open && focusFirst) themeOptionButtons.find(option => option.getAttribute('aria-selected') === 'true')?.focus();
+      }
+
+      function applyZoom(zoom) {
+        const value = Math.max(50, Math.min(150, zoom));
+        document.documentElement.style.setProperty('--doc-zoom', String(value / 100));
+        zoomValue.textContent = `${value}%`;
+        zoomReset.disabled = value === 100;
+        localStorage.setItem('docs-zoom', String(value));
+      }
+
+      const savedTheme = localStorage.getItem('docs-theme');
+      applyTheme(savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system' ? savedTheme : 'system');
+      applyZoom(Number(localStorage.getItem('docs-zoom')) || 100);
+
+      function renderUnitsContent() {
+        const units = DOCS.filter(([, path]) => path.startsWith('units/'));
+        return `<h1>Product units</h1><p>These documents describe Friink's implementation-backed product areas.</p><ul>${units.map(([title, path]) => `<li><a href="#doc=${encodeURIComponent(path)}">${escapeHtml(title)}</a></li>`).join('')}</ul>`;
+      }
+
+      function renderDocumentationContent() {
+        const core = DOCS.filter(([, path]) => !path.startsWith('units/'));
+        return `<h1>Documentation</h1><p>Core product and engineering documents for understanding, building, and verifying Friink.</p><ul>${core.map(([title, path]) => `<li><a href="#doc=${encodeURIComponent(path)}">${escapeHtml(title)}</a></li>`).join('')}</ul>`;
+      }
+
+      function setSidebar(open) {
+        app.classList.toggle('sidebar-closed', !open);
+        menuButton.setAttribute('aria-expanded', String(open));
+        menuButton.setAttribute('aria-label', open ? 'Close sidebar' : 'Open sidebar');
+        const mobileOpen = window.innerWidth <= 760 && open;
+        menuIcon.classList.toggle('fa-bars', !mobileOpen);
+        menuIcon.classList.toggle('fa-xmark', mobileOpen);
+      }
+
+      function escapeHtml(value) {
+        return value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+      }
+
+      function safeUrl(value) {
+        const url = value.trim();
+        return /^(https?:|mailto:|#|\.\.?\/|[a-z0-9_/-]+\.md(?:#.*)?$)/i.test(url) ? url : '#';
+      }
+
+      function inlineMarkdown(value) {
+        let html = escapeHtml(value);
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${safeUrl(url)}" alt="${alt}">`);
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => `<a href="${safeUrl(url)}">${label}</a>`);
+        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+        html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+        return html;
+      }
+
+      function isTableSeparator(line) { return /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(line); }
+      function tableCells(line) { return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell => cell.trim()); }
+
+      function renderMarkdown(markdown) {
+        const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
+        const output = []; let paragraph = []; let list = null; let quote = [];
+        const flushParagraph = () => { if (paragraph.length) { output.push(`<p>${inlineMarkdown(paragraph.join(' '))}</p>`); paragraph = []; } };
+        const flushList = () => { if (list) { output.push(`<${list.type}>${list.items.map(item => `<li>${inlineMarkdown(item)}</li>`).join('')}</${list.type}>`); list = null; } };
+        const flushQuote = () => { if (quote.length) { output.push(`<blockquote>${quote.map(line => `<p>${inlineMarkdown(line)}</p>`).join('')}</blockquote>`); quote = []; } };
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = lines[i];
+          if (/^```/.test(line)) {
+            flushParagraph(); flushList(); flushQuote(); const language = line.slice(3).trim(); const code = [];
+            i += 1; while (i < lines.length && !/^```/.test(lines[i])) { code.push(lines[i]); i += 1; }
+            output.push(`<pre><code class="language-${escapeHtml(language)}">${escapeHtml(code.join('\n'))}</code></pre>`); continue;
+          }
+          if (/^\s*$/.test(line)) { flushParagraph(); flushList(); flushQuote(); continue; }
+          const heading = line.match(/^(#{1,6})\s+(.+?)\s*#*$/);
+          if (heading) { flushParagraph(); flushList(); flushQuote(); const level = heading[1].length; output.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`); continue; }
+          if (line.startsWith('> ')) { flushParagraph(); flushList(); quote.push(line.slice(2)); continue; }
+          const bullet = line.match(/^\s*[-*+]\s+(.+)$/); const ordered = line.match(/^\s*\d+\.\s+(.+)$/);
+          if (bullet || ordered) { flushParagraph(); flushQuote(); const type = ordered ? 'ol' : 'ul'; if (!list || list.type !== type) { flushList(); list = { type, items: [] }; } list.items.push((bullet || ordered)[1]); continue; }
+          if (line.includes('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+            flushParagraph(); flushList(); flushQuote(); const headers = tableCells(line); i += 1; const rows = [];
+            while (i + 1 < lines.length && lines[i + 1].includes('|') && lines[i + 1].trim()) { i += 1; rows.push(tableCells(lines[i])); }
+            output.push(`<table><thead><tr>${headers.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map((_, n) => `<td>${inlineMarkdown(row[n] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`); continue;
+          }
+          if (list && /^\s{2,}\S/.test(line)) { list.items[list.items.length - 1] += ` ${line.trim()}`; continue; }
+          paragraph.push(line.trim());
+        }
+        flushParagraph(); flushList(); flushQuote(); return output.join('\n');
+      }
+
+      function renderNav(filter = '') {
+        const query = filter.trim().toLowerCase();
+        const matches = ([title, path]) => `${title} ${path}`.toLowerCase().includes(query);
+        const link = ([title, path]) => `<a href="#doc=${encodeURIComponent(path)}" data-path="${path}">${title}</a>`;
+        const core = DOCS.slice(0, 7).filter(matches).map(link).join('');
+        const units = DOCS.slice(7).filter(matches).map(link).join('');
+        const coreHeading = core || !query ? `<a class="nav-section-label" href="#doc=${DOCUMENTATION_PATH}" data-path="${DOCUMENTATION_PATH}">Documentation</a>` : '';
+        const unitsHeading = units || !query ? `<a class="nav-section-label" href="#doc=${UNITS_PATH}" data-path="${UNITS_PATH}">Product units</a>` : '';
+        nav.innerHTML = coreHeading + core + unitsHeading + units;
+      }
+
+      function renderBreadcrumbs(item) {
+        const [title, path] = item;
+        if (path === HOME_PATH) {
+          breadcrumbs.innerHTML = '<span aria-current="page">Home</span>';
+          return;
+        }
+        if (path === UNITS_PATH) {
+          breadcrumbs.innerHTML = `<a href="./index.html">Home</a><span class="separator" aria-hidden="true">/</span><span aria-current="page">Product units</span>`;
+          return;
+        }
+        if (path === DOCUMENTATION_PATH) {
+          breadcrumbs.innerHTML = `<a href="./index.html">Home</a><span class="separator" aria-hidden="true">/</span><span aria-current="page">Documentation</span>`;
+          return;
+        }
+        const section = path.startsWith('units/') ? 'Product units' : 'Documentation';
+        const sectionLink = path.startsWith('units/')
+          ? `<a href="#doc=${UNITS_PATH}">${section}</a>`
+          : `<a href="#doc=${DOCUMENTATION_PATH}">${section}</a>`;
+        breadcrumbs.innerHTML = `<a href="./index.html">Home</a><span class="separator" aria-hidden="true">/</span>${sectionLink}<span class="separator" aria-hidden="true">/</span><span aria-current="page">${escapeHtml(title)}</span>`;
+      }
+
+      function renderSearchResults() {
+        const query = search.value.trim().toLowerCase();
+        if (!query) { searchResults.hidden = true; search.setAttribute('aria-expanded', 'false'); return; }
+        const matches = DOCS.filter(([title, path]) => `${title} ${path}`.toLowerCase().includes(query));
+        searchResults.innerHTML = matches.length
+          ? matches.map(([title, path]) => `<a href="#doc=${encodeURIComponent(path)}" data-search-path="${path}" role="option">${title}</a>`).join('')
+          : '<span style="padding:.65rem .75rem;color:var(--muted)">No matching documents</span>';
+        searchResults.hidden = false; search.setAttribute('aria-expanded', 'true');
+      }
+
+      async function loadDocument(path) {
+        const item = path === HOME_PATH ? ['Home', HOME_PATH] : path === DOCUMENTATION_PATH ? ['Documentation', DOCUMENTATION_PATH] : path === UNITS_PATH ? ['Product units', UNITS_PATH] : DOCS.find(([, candidate]) => candidate === path); if (!item) return;
+        searchResults.hidden = true; search.setAttribute('aria-expanded', 'false');
+        renderBreadcrumbs(item); document.querySelectorAll('#nav a').forEach(link => link.classList.toggle('active', link.dataset.path === path));
+        if (path === HOME_PATH) { content.innerHTML = HOME_CONTENT; return; }
+        if (path === DOCUMENTATION_PATH) { content.innerHTML = renderDocumentationContent(); return; }
+        if (path === UNITS_PATH) { content.innerHTML = renderUnitsContent(); return; }
+        try {
+          const response = await fetch(`${path}?v=${Date.now()}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+          content.innerHTML = renderMarkdown(await response.text());
+          content.querySelectorAll('a[href]').forEach(link => {
+            const href = link.getAttribute('href'); if (!href || /^(https?:|mailto:|#)/i.test(href)) return;
+            const resolved = new URL(href, new URL(path, location.href)).pathname.split('/docs/')[1];
+            const match = DOCS.find(([, candidate]) => candidate === resolved || candidate.endsWith(resolved));
+            if (match) { link.href = `#doc=${encodeURIComponent(match[1])}`; link.addEventListener('click', event => { event.preventDefault(); location.hash = link.getAttribute('href').slice(1); }); }
+          });
+        } catch (error) {
+          content.innerHTML = `<p class="error">${escapeHtml(error.message)}</p><p>Serve the repository through a local web server, then open <code>docs/index.html</code>. Browsers usually block <code>fetch()</code> when this file is opened directly from disk.</p>`;
+        }
+      }
+
+      function route() { const path = decodeURIComponent(location.hash.replace(/^#doc=/, '')); loadDocument(path || HOME_PATH); }
+      menuButton.addEventListener('click', () => setSidebar(app.classList.contains('sidebar-closed')));
+      settingsButton.addEventListener('click', () => {
+        const open = settingsPanel.hidden;
+        settingsPanel.hidden = !open;
+        settingsButton.setAttribute('aria-expanded', String(open));
+      });
+      searchToggle.addEventListener('click', () => {
+        const open = search.parentElement.classList.toggle('search-open');
+        header.classList.toggle('search-visible', open);
+        searchToggle.setAttribute('aria-expanded', String(open));
+        if (open) search.focus();
+      });
+      themeButton.addEventListener('click', () => setThemeOptions(themeOptions.hidden, true));
+      themeOptionButtons.forEach(option => option.addEventListener('click', () => { applyTheme(option.dataset.themeOption); setThemeOptions(false); themeButton.focus(); }));
+      themeButton.addEventListener('keydown', event => {
+        if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setThemeOptions(true, true); }
+      });
+      themeOptions.addEventListener('keydown', event => {
+        const current = themeOptionButtons.indexOf(document.activeElement);
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); themeOptionButtons[(current + (event.key === 'ArrowDown' ? 1 : -1) + themeOptionButtons.length) % themeOptionButtons.length].focus(); }
+        if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); themeOptionButtons[event.key === 'Home' ? 0 : themeOptionButtons.length - 1].focus(); }
+        if (event.key === 'Escape') { event.preventDefault(); setThemeOptions(false); themeButton.focus(); }
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); document.activeElement.click(); }
+      });
+      zoomDecrease.addEventListener('click', () => applyZoom(Number(zoomValue.textContent.replace('%', '')) - 10));
+      zoomIncrease.addEventListener('click', () => applyZoom(Number(zoomValue.textContent.replace('%', '')) + 10));
+      zoomReset.addEventListener('click', () => applyZoom(100));
+      document.querySelector('#nav').addEventListener('click', () => { if (window.innerWidth <= 760) setSidebar(false); });
+      search.addEventListener('input', renderSearchResults);
+      searchResults.addEventListener('click', event => { const link = event.target.closest('[data-search-path]'); if (link) { event.preventDefault(); location.hash = link.getAttribute('href').slice(1); } });
+      document.addEventListener('click', event => {
+        if (!event.target.closest('.header-search')) { searchResults.hidden = true; search.setAttribute('aria-expanded', 'false'); search.parentElement.classList.remove('search-open'); header.classList.remove('search-visible'); searchToggle.setAttribute('aria-expanded', 'false'); }
+        if (!event.target.closest('.settings-wrap')) { settingsPanel.hidden = true; settingsButton.setAttribute('aria-expanded', 'false'); setThemeOptions(false); }
+      });
+      window.addEventListener('hashchange', route); renderNav(); setSidebar(window.innerWidth > 760); route();
+    </script>
+  </body>
+</html>

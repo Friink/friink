@@ -96,7 +96,7 @@ dashboard.
 - Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. Mutual accepted follows enable chat immediately; a paid-tier user can initiate a non-mutual request with up to eight requester messages, after which the receiver must accept or reply. Pending requests appear in Requests, accepted chats in All, and per-user mute/archive settings control notifications and placement. See `docs/chat-behavior.md` for the complete contract.
 - Notifications use a 4-second adaptive unread-count polling transport with visibility/focus recovery; the full list refreshes while Notifications is open. The bell dropdown shows only unread items, is empty at zero unread, and scrolls when needed. The full web surface provides All/Security views, unread-only filtering, scroll-based per-item read tracking, inline request actions, and duplicate-safe important-event toasts. See `docs/notifications.md` for the complete contract.
 - Usernames are case-insensitive identities: signup and Settings check availability before submission, the API remains authoritative, and accepted values are canonicalized to lowercase.
-- The web production build and TypeScript checks are the current automated web verification. On the current Windows development machine, the build/dev server use Next's `--webpack` fallback because the local native SWC binding is invalid; Vercel should use its normal native build environment. Browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.
+- Shared testing, verification, and release-gate requirements are maintained in [`docs/testing.md`](docs/testing.md). The current automated web checks are the production build and TypeScript checks; browser end-to-end coverage, deployed Vercel configuration, and R2 health still require release verification.
 
 ## Project Documentation
 
@@ -104,8 +104,9 @@ This repo is governed by a small set of living documents rather than a static PR
 **The Product Requirements Document is not the source of truth for what's built —
 these files, and the live implementation, are:**
 
-- **`RULES.md`** — active product/business logic rules, organized by feature area.
-  Read before changing behavior.
+- **`docs/rules.md`** — current active product/business logic rules, organized by
+  feature area. Read before changing behavior.
+- **`docs/testing.md`** — shared testing, verification, and release-gate guidance.
 - **`packages/design/design.md`** — binding design tokens and component contracts.
   Read before any visual/UI/layout change.
 - **`CHANGELOG.md`** — dated change history plus a maintained "Current State" summary
@@ -140,7 +141,7 @@ from scratch.
 ### Always do this
 
 - Read `CHANGELOG.md` and `AGENTLOG.md` before starting any task.
-- Read `RULES.md` before changing product or business behavior.
+- Read `docs/rules.md` before changing product or business behavior.
 - Read `packages/design/design.md` before making any visual, layout, or styling change.
 - Keep reusable behavior and layout fixes at the shared component or documented
   contract level. Do not use inline styles, route-only patches, or page-specific
@@ -165,7 +166,7 @@ from scratch.
   need to know in order to build consistent UI. Changes that do not alter a visual
   contract do not require a design entry; do not add noise entries for non-visual work.
 
-- Update `RULES.md` as needed whenever a change adds, removes, or alters product,
+- Update `docs/rules.md` as needed whenever a change adds, removes, or alters product,
   business, or platform behavior, such as monetization rules, verification requirements,
   or privacy constraints. Pure implementation details, refactors, and bug fixes that do
   not change platform behavior do not require a rules entry. Never delete old rules;
