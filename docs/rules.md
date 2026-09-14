@@ -1355,7 +1355,7 @@ missing evidence can be filled in.
 - **Platform:** All
 - **File(s):** `api/app/main.py`
 
-- **What:** `GET /health/db` opens a psycopg connection and runs `SELECT 1`, returning `{"database": true}` on success.
+- **What:** `GET /` returns the minimal public service response `{"service":"friink-api","status":"ok"}`. `GET /health` returns the dependency-free liveness response `{"status":"ok"}`. `GET /health/db` opens a psycopg connection and runs `SELECT 1`, returning `{"database": true}` on success.
 - **Edge cases:** This endpoint does not verify ORM schema compatibility; ORM-backed endpoint checks are still needed after migrations.
 
 ### INFRA-R-009 — Account Lifecycle Uses Owner-Verified State Transitions

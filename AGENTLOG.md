@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-14T23:07:16Z — Standardize public API health responses
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply standard practice to the public API root and health
+  endpoints.
+- Changes Made: Replaced the generic root text response with minimal service
+  identity JSON and added dependency-free `/health` liveness behavior. Kept
+  `/health/db` as the database readiness check without exposing configuration.
+- Files: `api/app/main.py`, `api/README.md`, `docs/rules.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q app` passed; FastAPI
+  `TestClient` returned 200 with the expected JSON from `/` and `/health`;
+  `git diff --check` passed.
+
 ## 2026-09-14T23:07:16Z — Restore API deployment dependency manifest
 
 - Agent: Codex

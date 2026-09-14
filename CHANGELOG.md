@@ -2,6 +2,12 @@
 
 ## 2026-09-14T23:07:16Z
 
+- [api] Replaced the generic root `Hello, World!` response with a minimal
+  service identity JSON response and added a dependency-free `/health`
+  liveness endpoint; `/health/db` remains the database readiness check.
+
+## 2026-09-14T23:07:16Z
+
 - [deployment] Restored `api/requirements.txt`, which had been deleted by the
   latest staging cleanup commit and prevented Vercel from installing the
   dependencies required by `scripts/migrate_before_deploy.py`.
