@@ -3,6 +3,7 @@ export type Post = {
   publicId?: string;
   slug?: string;
   kind?: 'post' | 'quote' | 'reply';
+  parentPostId?: string | null;
   name: string;
   handle: string;
   initials: string;
@@ -34,7 +35,7 @@ export type Post = {
   } | null;
 };
 
-export type Screen = 'home' | 'profile' | 'connections' | 'saved' | 'search' | 'messages' | 'notifications' | 'settings' | 'control-panel';
+export type Screen = 'home' | 'profile' | 'connections' | 'saved' | 'directory' | 'search' | 'messages' | 'notifications' | 'settings' | 'control-panel';
 
 export type NavItem = {
   id: Screen;
@@ -54,6 +55,7 @@ export const sidebarNavItems: NavItem[] = [
   { id: 'profile', label: 'Profile', icon: 'fa-solid fa-user' },
   { id: 'connections', label: 'Connections', icon: 'fa-solid fa-user-group' },
   { id: 'saved', label: 'Saved', icon: 'fa-solid fa-star' },
+  { id: 'directory', label: 'Directory', icon: 'fa-solid fa-address-book' },
 ];
 
 export const initialPosts: Post[] = [];

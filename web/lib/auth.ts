@@ -8,12 +8,17 @@ export type AuthUser = {
   email: string;
   username: string;
   about: string;
+  dateOfBirth: string;
+  createdAt: string;
+  accountRegion: string | null;
+  location: string | null;
+  useIntent: 'professional' | 'personal' | null;
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
   likesVisible: boolean;
   isStaff: boolean;
-  setupStep: 1 | 2;
+  setupStep: 1 | 2 | 3;
   setupCompleted: boolean;
   status: 'pending_email_verification' | 'active' | 'locked';
   emailVerifiedAt: string | null;
@@ -67,13 +72,17 @@ type ApiUser = {
   username: string;
   display_name: string | null;
   about: string | null;
+  date_of_birth: string;
   is_private: boolean;
   likes_visible: boolean;
-  setup_step: 1 | 2;
+  setup_step: 1 | 2 | 3;
   setup_completed: boolean;
   is_verified: boolean;
   is_staff: boolean;
   created_at: string;
+  account_region: string | null;
+  location: string | null;
+  use_intent: 'professional' | 'personal' | null;
   updated_at: string;
   profile_picture_url: string | null;
   profile_picture_updated_at: string | null;
@@ -177,6 +186,11 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     email: DEFAULT_DEMO_EMAIL,
     username: 'demouser',
     about: '',
+    dateOfBirth: '1990-01-01',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    accountRegion: null,
+    location: null,
+    useIntent: null,
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
@@ -211,6 +225,33 @@ export type SignupStartResponse = {
   message: string;
   existing_account: boolean;
 };
+
+export type ProgressiveStartResponse = {
+  accepted: boolean;
+  flow_token: string;
+  message: string;
+};
+
+export type ProgressiveContinueResponse = {
+  next_step: 'password' | 'email_verification';
+  message: string;
+};
+
+export async function startProgressiveLogin(identifier: string): Promise<ProgressiveStartResponse> {
+  return requestApi<ProgressiveStartResponse>('/auth/progressive/start', {
+    method: 'POST',
+    body: JSON.stringify({ identifier }),
+    skipAuthRefresh: true,
+  });
+}
+
+export async function continueProgressiveLogin(flowToken: string): Promise<ProgressiveContinueResponse> {
+  return requestApi<ProgressiveContinueResponse>('/auth/progressive/continue', {
+    method: 'POST',
+    body: JSON.stringify({ flow_token: flowToken }),
+    skipAuthRefresh: true,
+  });
+}
 
 type ApiEmailChangeStartResponse = {
   accepted: boolean;
@@ -464,6 +505,15 @@ export async function login(identifier: string, password: string, options: AuthF
   return mapTokenResponse(response as ApiTokenResponse);
 }
 
+export async function consumeLoginLink(token: string): Promise<AuthSession> {
+  const response = await requestApi<ApiTokenResponse>('/auth/login/link/consume', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+    skipAuthRefresh: true,
+  });
+  return mapTokenResponse(response);
+}
+
 export async function verifyLoginChallenge(challengeToken: string, otp: string, options: AuthFlowOptions = {}): Promise<AuthSession> {
   const response = await requestApi<ApiTokenResponse>('/auth/login/verify', {
     method: 'POST',
@@ -698,7 +748,7 @@ function refreshErrorFromState(state: RefreshCoordinationState): AuthApiError {
 
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string; isPrivate?: boolean; likesVisible?: boolean },
+  input: { username?: string; email?: string; displayName?: string; about?: string; location?: string; useIntent?: 'professional' | 'personal' | null; dateOfBirth?: string; isPrivate?: boolean; likesVisible?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
@@ -711,6 +761,9 @@ export async function updateCurrentUser(
       email: input.email,
       display_name: input.displayName,
       about: input.about,
+      location: input.location,
+      use_intent: input.useIntent,
+      date_of_birth: input.dateOfBirth,
       is_private: input.isPrivate,
       likes_visible: input.likesVisible,
     }),
@@ -770,6 +823,20 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
     window.localStorage.setItem(ACCOUNT_SLOT_KEY, currentAccount.accountSlot);
     return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
   }
+  if (currentUser) {
+    // A normal login may be valid without a remembered account slot when the
+    // device is already at its slot cap. Keep that active account visible in
+    // the switcher without inventing a switchable slot for it.
+    return [{
+      accountSlot: '',
+      username: currentUser.username,
+      displayName: currentUser.name,
+      profilePictureUrl: currentUser.profilePictureUrl,
+      active: true,
+      available: true,
+      lastUsedAt: '',
+    }, ...accounts.map((account) => ({ ...account, active: false }))];
+  }
   return accounts;
 }
 
@@ -818,7 +885,7 @@ export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
   return mapApiUser(response);
 }
 
-export async function updateProfileSetup(accessToken: string, input: { step: 1 | 2; completed?: boolean }): Promise<AuthUser> {
+export async function updateProfileSetup(accessToken: string, input: { step: 1 | 2 | 3; completed?: boolean }): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me/setup', {
     method: 'PATCH',
     headers: {
@@ -1071,6 +1138,18 @@ export async function listLikedPosts(accessToken: string, username: string, curs
   const params = new URLSearchParams({ limit: '20' });
   if (cursor) params.set('cursor', cursor);
   return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/likes?${params.toString()}`);
+}
+
+export async function listUserPosts(accessToken: string, username: string, cursor?: string | null): Promise<ApiFeedPage> {
+  const params = new URLSearchParams({ limit: '100' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/posts?${params.toString()}`);
+}
+
+export async function listUserReplies(accessToken: string, username: string, cursor?: string | null): Promise<ApiFeedPage> {
+  const params = new URLSearchParams({ limit: '100' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiFeedPage>(accessToken, `/users/${encodeURIComponent(username)}/replies?${params.toString()}`);
 }
 
 export async function listSavedPosts(accessToken: string, cursor?: string | null): Promise<ApiFeedPage> {
@@ -1465,6 +1544,14 @@ export async function acceptChatRequest(accessToken: string, conversationId: str
   });
 }
 
+export async function rejectChatRequest(accessToken: string, conversationId: string): Promise<ApiConversation> {
+  return requestApi<ApiConversation>(`/chat/conversations/${conversationId}/reject`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function updateChatSettings(accessToken: string, conversationId: string, input: { muted?: boolean; archived?: boolean }): Promise<ApiConversation> {
   const params = new URLSearchParams();
   if (typeof input.muted === 'boolean') params.set('muted', String(input.muted));
@@ -1763,6 +1850,11 @@ function mapApiUser(user: ApiUser): AuthUser {
     email: user.email,
     username: user.username,
     about: user.about ?? '',
+    dateOfBirth: user.date_of_birth,
+    createdAt: user.created_at,
+    accountRegion: user.account_region,
+    location: user.location,
+    useIntent: user.use_intent,
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,

@@ -14,6 +14,7 @@ import { blockUser, loadAuthSession } from '@/lib/auth';
 type ProfileScreenProps = {
   user: AuthUser;
   posts: Post[];
+  replies?: Post[];
   likedPosts?: Post[];
   likedPostsHasMore?: boolean;
   likedPostsLoading?: boolean;
@@ -61,6 +62,7 @@ function getInitials(value: string) {
 export function ProfileScreen({
   user,
   posts,
+  replies = [],
   likedPosts = [],
   likedPostsHasMore = false,
   likedPostsLoading = false,
@@ -97,7 +99,6 @@ export function ProfileScreen({
     observer.observe(likesLoadMoreRef.current);
     return () => observer.disconnect();
   }, [activeTab, likedPostsHasMore, likedPostsLoading, onLoadMoreLikedPosts]);
-  const profilePosts = posts.filter((post) => post.handle === `@${user.username}`);
   const showLikesTab = isOwnProfile || user.likesVisible;
   const visibleProfileTabs = showLikesTab ? profileTabs : profileTabs.filter((tab) => tab.id !== 'likes');
   const aboutText = user.about?.trim();
@@ -132,7 +133,7 @@ export function ProfileScreen({
 
           <div className="profile-actions">
             {isOwnProfile ? (
-              <button className="profile-action-button profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
+              <button className="button-secondary profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
                 <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
                 <span>Edit</span>
               </button>
@@ -140,7 +141,7 @@ export function ProfileScreen({
               <>
                 {action && (
                   <button
-                    className="profile-action-button"
+                    className="button-secondary icon-button"
                     type="button"
                     onClick={action.onClick}
                     disabled={connectionActionBusy}
@@ -150,10 +151,10 @@ export function ProfileScreen({
                     <span>{connectionActionBusy ? 'Updating' : action.label}</span>
                   </button>
                 )}
-                <button className="profile-action-button profile-message-icon" type="button" aria-label="Message user" onClick={onMessage}>
+                <button className="button-secondary icon-button" type="button" aria-label="Message user" onClick={onMessage}>
                   <i className="fa-regular fa-paper-plane" aria-hidden="true" />
                 </button>
-                <button ref={menuButtonRef} className="profile-action-button" type="button" aria-label="More profile options" onClick={() => setMenuOpen((value) => !value)}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /></button>
+                <button ref={menuButtonRef} className="button-secondary icon-button" type="button" aria-label="More profile options" onClick={() => setMenuOpen((value) => !value)}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /></button>
                 <ActionMenu open={menuOpen} anchorRef={menuButtonRef} onClose={() => setMenuOpen(false)} items={[{ label: 'Block user', icon: 'fa-ban', onClick: () => setConfirmBlock(true) }]} />
               </>
             )}
@@ -176,8 +177,10 @@ export function ProfileScreen({
       />
 
       <div className="profile-feed">
-        {activeTab === 'posts' && profilePosts.length > 0 ? (
-          profilePosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+        {activeTab === 'posts' && posts.length > 0 ? (
+          posts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+        ) : activeTab === 'replies' && replies.length > 0 ? (
+          replies.map((reply) => <FeedPost key={reply.id} post={reply} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && showLikesTab && likedPosts.length > 0 ? (
           likedPosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && !showLikesTab ? (

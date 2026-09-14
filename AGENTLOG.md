@@ -1,4 +1,1379 @@
-INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change that required modifying code, append a new entry here with the fields below.
+INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
+
+## 2026-09-14T23:07:16Z — Restore API deployment dependency manifest
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose `python scripts/migrate_before_deploy.py` exiting
+  with status 1 on staging and during the merge to main.
+- Changes Made: Found that commit `fbdde4a` deleted `api/requirements.txt`, the
+  dependency manifest Vercel needs before executing the migration gate. Restored
+  the manifest with the previously committed API dependencies.
+- Files: `api/requirements.txt`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The migration gate succeeded locally from `api/`,
+  applying revisions through `20260911_0047` and reporting `No new upgrade
+  operations detected.` from `alembic check`.
+
+## 2026-09-13T00:16:39Z — Fix rules page mobile overflow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify every documentation page, including mobile rendering.
+- Changes Made: Identified `rules.md` as the only mobile overflow case; enabled wrapping for long article text such as implementation paths and identifiers.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:12:36Z — Fix wrapped Markdown list rendering
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct broken list formatting visible in the documentation viewer.
+- Changes Made: Updated the Markdown renderer to append indented continuation lines to the preceding list item.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:10:48Z — Add explicit verification-discipline rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the two specific testing rules from the root README's agent guidance.
+- Changes Made: Added the exact targeted-verification rule and mandatory real request/response verification rule for new or changed API endpoints to `docs/testing.md`.
+- Files: `docs/testing.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:07:42Z — Prevent stale Markdown in documentation viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure updated Markdown files are picked up immediately by `docs/index.html`.
+- Changes Made: Added a timestamp query parameter and `cache: 'no-store'` to Markdown fetches.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:05:14Z — Establish shared testing guide
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the testing guidance out of the root README into `docs/testing.md`.
+- Changes Made: Populated the testing placeholder with shared testing principles, API/web/manual verification, environment checks, acceptance traceability, release gates, and deferred-verification policy; added root README and documentation-agent pointers and removed detailed verification guidance from the README architecture section.
+- Files: `docs/testing.md`, `docs/AGENTS.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-13T00:00:51Z — Connect root and documentation agent guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the documentation-agent context to the root agent instructions.
+- Changes Made: Root guidance now requires reading `docs/AGENTS.md` before documentation work and keeping `docs/index.html` synchronized with documentation changes.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:58:37Z — Update viewer documentation navigation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show `AGENTS.md` in the viewer and remove `template.md` from navigation.
+- Changes Made: Replaced the Template entry with an Agents entry in the viewer's document registry; the template is no longer listed or searchable.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:56:58Z — Require documentation viewer synchronization
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add instructions to keep `docs/index.html` synchronized with documentation files.
+- Changes Made: Added rules covering new, renamed, moved, archived, and removed documents, including unit files, sidebar sections, search results, indexes, and viewer verification.
+- Files: `docs/AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:53:27Z — Add documentation agent instructions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create `docs/AGENTS.md` to guide documentation work and require the template for consistent unit documents.
+- Changes Made: Added documentation-specific source-of-truth boundaries, template usage rules, evidence/status guidance, cross-document consistency rules, and verification requirements.
+- Files: `docs/AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:43:18Z — Add documentation favicon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the Friink favicon in the single-file documentation viewer.
+- Changes Made: Added a favicon link to the existing project asset at `web/public/favicon.png`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:41:32Z — Make sidebar heading typography explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Sidebar headings still appeared bold and visually matched the links.
+- Changes Made: Increased selector specificity and explicitly set section headings to the body font, 16px, and 400 weight so the generic `#nav a` rule cannot override them.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:40:05Z — Restyle sidebar section headings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make sidebar section headings non-bold and 2px larger than document links.
+- Changes Made: Set section headings to 16px regular text; document links remain 14px bold.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:37:16Z — Correct sidebar heading hover and size
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep Documentation and Product units headings transparent on hover/active and restore the smaller heading font.
+- Changes Made: Added higher-specificity light and dark theme overrides for transparent heading backgrounds and set section-heading text to 12px while regular links remain 14px.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:33:16Z — Add clickable sidebar section headings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make Documentation and Product units sidebar headings clickable while preserving their muted color until hover or active state.
+- Changes Made: Rendered both section headings as links to their built-in indexes, added active-state paths, and scoped their hover/active styling to brand green with no filled background.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:29:53Z — Full-width mobile drawer with close icon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the mobile drawer full width and show an X icon while it is open.
+- Changes Made: Set the mobile drawer to full viewport width, changed mobile navigation to one column, and toggled the hamburger to Font Awesome `fa-xmark` only while the drawer is open. Desktop keeps the hamburger icon.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:26:17Z — Theme zoom Reset control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the zoom Reset button follow the selected theme.
+- Changes Made: Added the missing themed control styling to Reset, including border, transparent background, text, typography, cursor, and hover/focus behavior while preserving its disabled state.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:25:24Z — Group mobile search and settings controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the mobile search icon next to the gear icon.
+- Changes Made: Moved the mobile auto-margin to the search control so search and settings remain grouped at the right, and added a temporary header state that preserves settings alignment while the search overlay is open.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:23:58Z — Fix mobile sidebar drawer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the mobile sidebar appearing to contain the main page content.
+- Changes Made: Changed the mobile sidebar to a fixed overlay drawer below the header, constrained it to 320px or the available viewport width, and added a shadow and correct mobile height. The underlying main content now remains separate behind the drawer.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:22:38Z — Align mobile search and header icons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the settings icon at the right when mobile search opens and make all header icons the same size.
+- Changes Made: Reserved the right-side flex position for the settings control on mobile even when the search field becomes an overlay, and normalized hamburger, home, search, and gear icons to 1rem.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:20:39Z — Rework zoom controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Disable Reset at 100% and place it beneath the zoom controls as a full-width control.
+- Changes Made: Made the zoom percentage a centered readout between minus and plus, moved Reset to its own full-width row, and dynamically disables Reset whenever the zoom is 100%.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:19:45Z — Fix mobile documentation viewer controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the mobile header, replace the mobile search field with a tap-to-open icon, and collapse the sidebar by default on mobile.
+- Changes Made: Added a Font Awesome search toggle that opens a full-width search field, kept header controls in one row, closed the mobile search when clicking outside, and initialize the sidebar closed at widths of 760px or less.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:15:53Z — Add explicit zoom reset button
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make zoom reset discoverable instead of making the percentage itself clickable.
+- Changes Made: Changed the zoom percentage to a read-only live status and added a clearly labeled `Reset` button that returns zoom to 100%. Corrected the zoom value selector to use the status display.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:15:04Z — Fix theme dropdown and mobile layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the theme dropdown colors in System/dark mode and improve documentation viewer mobile responsiveness.
+- Changes Made: Added dark System-mode styling for the custom theme options and improved small-screen layout with a wrapping header, full-width second-row search, tighter content padding, smaller mobile logo/buttons, and responsive article heading sizing.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:11:12Z — Standardize viewer zoom and add reset
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use standard zoom behavior and make returning to the default zoom immediate.
+- Changes Made: Switched from inherited font-only scaling to browser-like body page zoom, preserving 50%–150% bounds and 10% increments. Replaced the center zoom readout with a 100%-reset button.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:10:04Z — Replace native theme dropdown
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the Theme dropdown spacing and visual consistency.
+- Changes Made: Replaced the browser-native select with a styled custom listbox using the existing viewer theme tokens. Added selected/hover/focus states, System/Light/Dark support, and keyboard navigation.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:07:08Z — Add System theme option
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a System theme option to the documentation viewer and discuss a better zoom implementation.
+- Changes Made: Added System to the theme selector. System mode removes the explicit `data-theme` override and follows `prefers-color-scheme`; explicit Light and Dark modes remain persistent. Zoom was not changed in this pass.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T23:04:59Z — Add documentation viewer settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a right-side gear menu for theme selection and font-size zoom.
+- Changes Made: Added a Font Awesome gear dropdown with Light/Dark theme selection and persistent font-size zoom controls from 50% to 150% in 10% steps, defaulting to 100%. Explicit theme overrides preserve correct light/dark styling, and settings close when clicking outside the menu.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:57:00Z — Refine sidebar link typography and spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make sidebar list items 2px smaller, bold, and separated by 2px of spacing.
+- Changes Made: Set sidebar links to 14px and bold, and added 2px vertical spacing between adjacent links, including the first link after the Product Units divider.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:54:49Z — Add Documentation index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Documentation breadcrumb open a list of core documentation files.
+- Changes Made: Added a built-in Documentation index route and rendered list of all non-unit documentation files. Each entry links to its document in the viewer; Product Units remains a separate index.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:52:35Z — Fix breadcrumb casing and add Product Units index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix breadcrumb casing and make the Product units breadcrumb open a list of all unit documents.
+- Changes Made: Scoped uppercase styling to `#nav` links only, added clickable Documentation and Product units breadcrumb parents, and added a built-in Product Units index route listing all unit documents.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:54:00Z — Prevent breadcrumb wrapping
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Home appearing above the rest of the breadcrumb trail on narrow documentation-viewer screens.
+- Changes Made: Made the breadcrumb container a single horizontal flex row with no wrapping and narrow-screen horizontal overflow support. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:50:00Z — Use clean Home document link
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the documentation viewer Home icon navigate to the document file itself instead of changing the hash URL.
+- Changes Made: Changed the Home icon and Friink logo links to `./index.html` and removed the hash-navigation interception for those links. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:47:00Z — Fix search dropdown dark theme
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the search dropdown in `docs/index.html` so it follows the dark theme.
+- Changes Made: Added explicit dark-theme styling for the search input and dropdown panel, border, shadow, result text, and hover/focus highlight. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:43:51Z — Move Home to header and add breadcrumbs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove Home from the documentation sidebar, add a header home icon, and use breadcrumbs above document content.
+- Changes Made: Added a Font Awesome home link between the hamburger and Friink logo, removed Home from the sidebar/search document list, preserved the built-in Home route, and replaced the repeated status label with accessible breadcrumbs that distinguish core documentation from Product units.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:37:05Z — Remove orphaned root profile image
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Delete the unused root `profile.jpg` while keeping the root `package.json`.
+- Changes Made: Removed the orphaned root image after confirming the application fallback remains at `web/public/media/profile.jpg`. Left `package.json` unchanged. No application code was changed.
+- Files: `profile.jpg`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:31:50Z — Archive obsolete admin brainstorm
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the obsolete `admin/admin.txt` document into the archives and remove the empty admin folder.
+- Changes Made: Moved `admin/admin.txt` to `docs/archives/admin.txt` after confirming it was the only item in the folder, then removed the empty `admin/` directory. No application code was changed.
+- Files: `docs/archives/admin.txt`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:24:00Z — Retire root rules file
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the root rules file into the documentation archive and make `docs/rules.md` the maintained source of truth.
+- Changes Made: Moved root `RULES.md` to `docs/archives/RULES.md`. Updated `README.md`, `AGENTS.md`, `docs/rules.md`, and the account-access unit to use `docs/rules.md` as the current rulebook. Historical log entries remain unchanged.
+- Files: `docs/archives/RULES.md`, `README.md`, `AGENTS.md`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:20:39Z — Make docs rules the complete current rulebook
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make `docs/rules.md` the most complete source of truth and add the missing platform and implementation-file fields.
+- Changes Made: Added `Platform` and `File(s)` to all 116 current rule entries using root `RULES.md` as historical input. Updated the document’s ownership language so root `RULES.md` is historical only. Five rules whose historical entries lacked these fields are explicitly marked for future implementation audit rather than guessed.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:12:00Z — Keep stack and architecture outside product units
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Place Stack and Architecture in the documentation group outside Product Units.
+- Changes Made: Updated the viewer’s navigation grouping so the Stack and Architecture links remain in the core documentation list, while the 15 product-unit documents remain under the Product Units divider. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:10:13Z — Separate stack and architecture documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create dedicated stack and architecture documents under `docs/` while leaving the root README unchanged for review.
+- Changes Made: Added implementation-backed technology-stack and architecture documents, linked them from `docs/README.md`, and added them to the HTML documentation viewer sidebar. No application code was changed.
+- Files: `docs/stack.md`, `docs/architecture.md`, `docs/README.md`, `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T22:02:18Z — Add current agent operating guide
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create `AGENTS.md` so agent guidance can be separated from the repository README before deciding the final README split.
+- Changes Made: Added root `AGENTS.md` with current workflow, documentation ownership, product/code boundaries, verification, and handoff guidance. It identifies `docs/rules.md` as the current rules source and root `RULES.md` as historical reference only. Left `README.md` unchanged for the follow-up README discussion.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+
+## 2026-09-12T21:55:08Z — Embed Home overview in viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep README separate and place the Home overview directly
+  in the HTML viewer.
+- Changes Made: Removed `docs/home.md`, embedded the Home overview in
+  `docs/index.html`, made it the default built-in route, kept `README` as its
+  own sidebar item, and corrected README links.
+- Files: `docs/index.html`, `docs/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed `docs/home.md` is absent, both Home and README
+  remain in the sidebar, JavaScript syntax passed, local HTTP response
+  returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:52:07Z — Separate Home from README
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make Home the default overview page without replacing the
+  documentation README.
+- Changes Made: Added `docs/home.md` for the Friink product overview, restored
+  `docs/README.md` as the documentation-structure README, and updated the
+  viewer's default route, logo link, and sidebar entries.
+- Files: `docs/index.html`, `docs/home.md`, `docs/README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Confirmed both pages exist, Home is the default route,
+  JavaScript syntax passed, local HTTP response returned `200`, and
+  `git diff --check` passed.
+
+## 2026-09-12T21:48:57Z — Add documentation home overview
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the first sidebar item Home and use it to show a brief
+  overview of Friink.
+- Changes Made: Renamed the first viewer item to `Home` and populated
+  `docs/README.md` with a concise product overview covering Friink's purpose,
+  major capabilities, and product character.
+- Files: `docs/index.html`, `docs/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:47:50Z — Use Font Awesome hamburger icon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use Font Awesome for the documentation viewer hamburger
+  icon without changing it to a close icon.
+- Changes Made: Added the existing Font Awesome 6.5.2 stylesheet used by the
+  project, replaced the custom span icon with `fa-solid fa-bars`, and kept the
+  bars icon in both sidebar states.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, Font Awesome markup was confirmed, and `git diff --check` passed.
+
+## 2026-09-12T21:46:11Z — Move docs search into header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move documentation search to the header and show matching
+  files in a dropdown while typing.
+- Changes Made: Removed the sidebar search control, added the right-aligned
+  header search field and live results list, and wired result selection to the
+  existing hash-based in-page renderer. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:43:17Z — Simplify and uppercase documentation sidebar
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide archived migration documentation from the sidebar and
+  uppercase every sidebar item.
+- Changes Made: Removed the archived migration entry from the viewer's
+  document list and applied uppercase text transformation to all navigation
+  links. Search continues to use the original labels and paths.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:41:38Z — Archive completed migration process
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the completed migration process into the documentation
+  archives.
+- Changes Made: Moved `docs/migration.md` to
+  `docs/archives/migration.md`, updated links in `docs/index.html` and
+  `docs/rules.md`, and preserved the migration conflict register. No
+  application code was changed.
+- Files: `docs/archives/migration.md`, `docs/index.html`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old path is absent, the archived path
+  exists, and `git diff --check` passed.
+
+## 2026-09-12T21:39:09Z — Separate core docs from product units
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add visual separation between root-level documentation and
+  unit documents in the viewer sidebar.
+- Changes Made: Added a `Product units` section label and divider, with search
+  aware rendering so the label appears only when matching unit links remain.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed and `git diff --check` passed.
+
+## 2026-09-12T21:37:54Z — Remove hamburger button border
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the unusual border around the documentation viewer
+  hamburger menu.
+- Changes Made: Removed the visible border, preserved a subtle hover state,
+  and retained a clear keyboard focus outline in light and dark themes.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed and `git diff --check` passed.
+
+## 2026-09-12T21:36:40Z — Fix dark theme precedence and header margin
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix broken dark-theme elements and reduce the header's
+  excessive horizontal margin.
+- Changes Made: Added final dark-mode surface overrides after the base rules so
+  hardcoded light surfaces cannot override dark variables, and changed header
+  padding to a simple `1rem` horizontal margin.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:34:11Z — Add system theme support to docs viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add light and dark documentation themes based on browser
+  or system settings.
+- Changes Made: Added a `prefers-color-scheme: dark` CSS variant while keeping
+  the public green accent, typography, and layout. Updated dark surfaces,
+  dividers, navigation states, and table styling. No application code changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:31:53Z — Refine public-site theme alignment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the documentation viewer follow the public site theme.
+- Changes Made: Added the project’s local Nunito font fallback, matched public
+  Inter/Nunito typography, aligned header spacing to the public 1280px shell,
+  reduced the logo to 2rem, and matched public light colors, dividers, focus,
+  and control styling. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Font asset exists, JavaScript syntax passed, local HTTP
+  response returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T21:29:53Z — Align documentation viewer with public theme
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the public site theme for the documentation viewer.
+- Changes Made: Replaced the viewer's dark-capable palette with the public
+  light palette, added the public green accent and divider colors, matched the
+  Inter/Nunito typography pairing, and refined surface/button styling. No
+  application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, local HTTP response returned
+  `200`, and `git diff --check` passed.
+
+## 2026-09-12T17:50:12Z — Refine documentation viewer layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the documentation viewer header less oversized and
+  keep the content centered when the sidebar is collapsed.
+- Changes Made: Reduced the header to 56px, reduced the Friink logo to 82px,
+  adjusted sidebar dimensions, and moved max-width/centering to the status and
+  article surfaces so they center within the available viewport.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, logo path exists, local HTTP
+  response returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T17:47:23Z — Add documentation viewer header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a far-left hamburger control and Friink logo to the
+  documentation viewer header.
+- Changes Made: Added the responsive header, canonical `logoFullBrand.svg`,
+  accessible sidebar toggle state, desktop collapse behavior, and mobile
+  close-after-selection behavior. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax passed, logo path exists, local HTTP
+  response returned `200`, and `git diff --check` passed.
+
+## 2026-09-12T17:29:40Z — Add in-page Markdown documentation viewer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make `docs/index.html` render linked Markdown files inside
+  the documentation page.
+- Changes Made: Added a self-contained JavaScript Markdown renderer with
+  headings, lists, tables, links, code blocks, search filtering, hash-based
+  document navigation, and internal cross-document link handling. Markdown
+  files remain the source documents. No application code was changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: JavaScript syntax check passed, all documentation paths
+  exist, and `git diff --check` passed.
+
+## 2026-09-12T17:23:18Z — Correct documentation hub to HTML
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the documentation hub filename and format to
+  `docs/index.html`.
+- Changes Made: Added the static HTML documentation hub with links to core
+  docs and all 15 units, and removed `docs/index.md`. No application code was
+  changed.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed `docs/index.html` exists, both Markdown index
+  copies are absent, and `git diff --check` passed.
+
+## 2026-09-12T17:17:24Z — Add root documentation index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create a root-level documentation index so the product
+  documentation can be navigated from one place.
+- Changes Made: Added `index.md` with links to core documentation, all 15
+  product units, migration guidance, archives, root rules, and project setup.
+  No application code was changed.
+- Files: `index.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all listed unit and documentation paths exist;
+  `git diff --check` passed.
+
+## 2026-09-12T17:12:49Z — Cross-reference unit rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Compare the central implementation-backed rules index with
+  all 15 unit documents so detailed current rules are discoverable centrally.
+- Changes Made: Added a unit-rule cross-reference table to `docs/rules.md`,
+  indexing all 116 local unit rule IDs and linking each to its canonical unit
+  document. No application code was changed.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed 116 central entries, 116 indexed unit rules,
+  15 unit files, and a clean `git diff --check`.
+
+## 2026-09-12T17:08:41Z — Populate documentation rules index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Build `docs/rules.md` from root `RULES.md` and compare it
+  with the 15 unit documents so active behavior is centrally discoverable.
+- Changes Made: Added stable area-scoped rule IDs for all 116 root rule
+  entries, copied their implementation-backed clauses and effective dates,
+  linked affected unit documents, and kept planning material out of the active
+  rules section. Added a reserved history section for deferred, superseded,
+  or retired decisions. No application code was changed.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed 116 rule entries, 15 unit links resolve, no
+  malformed literal escape sequences remain, and `git diff --check` passed.
+
+## 2026-09-12T16:47:17Z — Normalize unit-document timestamps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update all 15 unit-document timestamps to the project’s full
+  UTC ISO 8601 format, using dates recorded in `RULES.md` and `AGENTLOG.md`.
+- Changes Made: Replaced date-only `Last edited` values in every
+  `docs/units/*.md` file. Used the completion timestamp for the full migration
+  and the later account-access revision timestamp for `account-access.md`.
+  No application code was changed.
+- Files: `docs/units/*.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all 15 unit files have full ISO timestamps;
+  `git diff --check` passed.
+
+## 2026-09-12T16:25:00Z — Resolve refresh-token documentation conflict
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the current implementation and align documentation to
+  the 30-day refresh-token lifetime.
+- Changes Made: Updated the active `RULES.md` JWT session rule from 14 to 30
+  days, marked `MIG-001` as Documented in `docs/migration.md`, and updated
+  `account-access.md` to record the resolved decision. No application code was
+  changed.
+- Files: `RULES.md`, `docs/migration.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed active documentation references agree with
+  the 30-day API/configuration contract; `git diff --check` pending.
+
+## 2026-09-12T16:20:00Z — Complete all unit documentation migrations
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Migrate all 15 unit documents one at a time using the
+  documented reconciliation process without stopping between units.
+- Changes Made: Populated all unit documents with product scope, ownership,
+  related units, rules, UX flows, technical contracts, acceptance criteria,
+  testing guidance, implementation status, and rebuild guidance. Preserved
+  `MIG-001` for the refresh-token lifetime conflict. Kept Directory explicitly
+  unimplemented and professional/PMDC verification out of scope.
+- Files: `docs/units/*.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all 15 unit files are non-placeholder
+  documents, checked migration conflict references, ran `git diff --check`,
+  and confirmed no API or web application files changed.
+
+## 2026-09-12T16:05:00Z — Migrate account-access unit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restart the one-unit-at-a-time documentation migration with
+  `account-access.md`.
+- Changes Made: Populated the Full-tier account-access contract with product
+  scope, actors, security, domain model, signup, login, risk verification,
+  sessions, recovery, active-session management, account switching, technical
+  contracts, acceptance criteria, testing, and rebuild steps. Preserved
+  `MIG-001` for the active 14-day rule versus 30-day implementation conflict;
+  no code was changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the completed unit structure and traceability
+  references; `git diff --check` passed. No application code was modified.
+
+## 2026-09-12T15:45:00Z — Pause account-access migration on refresh-lifetime conflict
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin the one-unit-at-a-time documentation migration with
+  `account-access.md`.
+- Changes Made: During the implementation audit, found that active `RULES.md`
+  specifies a 14-day refresh-token default while `api/app/config.py` and
+  `api/.env.example` specify 30 days. Logged `MIG-001` in `docs/migration.md`
+  and recorded it in the account-access document's Open Questions.
+- Files: `docs/migration.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Migration stopped at the conflict as required; no
+  application code was modified.
+
+## 2026-09-12T15:40:00Z — Establish design-system documentation split
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the product-level and implementation-level design
+  documents to standard structures.
+- Changes Made: Created `docs/design-system.md` with Friink's design
+  principles, foundations, layout, interaction, component-use,
+  accessibility, content, authority, and change guidance. Reframed
+  `packages/design/design.md` as the repository implementation contract and
+  linked it to the product-level document while preserving its existing token
+  and component contracts.
+- Files: `docs/design-system.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed both design documents and project log changes
+  were applied; no application code was changed.
+
+## 2026-09-12T15:35:00Z — Close migration implementation-fix loophole
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the contradictory Output discipline wording in the
+  migration playbook.
+- Changes Made: Supporting changes may now record documentation inconsistencies,
+  separately authorized cross-unit rule updates, and project-log entries;
+  implementation-versus-rule conflicts must be recorded and escalated rather
+  than corrected during migration.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the updated wording and project log changes
+  were applied; no application code was changed.
+
+## 2026-09-12T15:32:00Z — Add migration conflict register
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a persistent notes section for recording migration
+  conflicts for collective review after all units are migrated.
+- Changes Made: Added a central Migration notes and conflicts table with
+  identifiers, unit, date, conflict, evidence, recommended resolution, and
+  status fields; notes are retained after resolution.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the migration playbook and project log
+  changes were applied; no application code was changed.
+
+## 2026-09-12T15:30:00Z — Add implementation-conflict approval gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Narrow the migration approval gate to genuine conflicts
+  between implementation and active rules or documented product decisions.
+- Changes Made: Migration may document observed behavior without approval, but
+  must stop code changes when a genuine implementation-versus-rule conflict is
+  found; the conflict, evidence, impact, and recommendation must be recorded
+  and flagged for product-owner review.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the migration playbook and project log
+  changes were applied; no application code was changed.
+
+## 2026-09-12T15:27:00Z — Add unit documentation migration playbook
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the repeatable process for reconciling archived
+  docs, active rules, and current implementation into unit documents.
+- Changes Made: Added source precedence, one-unit-at-a-time workflow,
+  implementation audit guidance, behavior classifications, code-versus-doc
+  decision rules, verification checklist, and completion standard.
+- Files: `docs/migration.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the migration playbook and project log
+  changes were applied; no application code was changed.
+
+## 2026-09-12T15:24:00Z — Clarify documentation-tier verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the unit-document template to resolve the Minimal
+  verification and Standard traceability decisions.
+- Changes Made: Added a required lightweight Verification section for every
+  tier, clarified that Minimal units use it instead of full test scenarios,
+  and explicitly included traceability and test matrices for Standard units.
+- Files: `docs/template.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the template and project log changes were
+  applied; no application code was changed.
+
+## 2026-09-12T15:21:14Z — Establish complete unit-document template
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the empty documentation template with a complete
+  artifact structure for rebuilding product units.
+- Changes Made: Added tier guidance, canonical ownership, related-unit links,
+  product and domain sections, repeatable subunit UX/business/technical/test
+  sections, stable requirement IDs, traceability matrices, architecture,
+  deployment, status, and rebuild-checklist sections.
+- Files: `docs/template.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the template and project log changes were
+  applied; no application code was changed.
+
+## 2026-09-12T13:23:20Z — Preserve normal login at remembered-account limit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix staging login losing the session after OTP verification
+  reports that the device session limit has been reached.
+- Changes Made: Normal logins now remain usable when the device has reached the
+  remembered-account slot cap; only Add account is rejected at the cap. The
+  account switcher also displays a valid unslotted current login without
+  inventing a switchable slot.
+- Files: `api/app/services/account_slots.py`, `api/app/routers/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `docs/auth-and-session.md`.
+- Verification Status: Focused assertions passed before the known Windows
+  SQLite temporary-database cleanup `PermissionError`; API compilation,
+  web TypeScript, and `git diff --check` passed. Live staging verification
+  was unavailable because the browser-control bridge could not load its
+  request-header policy.
+
+## 2026-09-12T04:48:32Z — Fix account-switch and profile post visibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix missing own and other-user posts, suspected to be related
+  to account switching.
+- Changes Made: App shell routes now react to the account-switch event; Home
+  reloads when the active account identity changes; profile posts use the
+  server-provided author-scoped collection without an extra handle filter.
+- Files: `web/components/app-shell-route.tsx`, `web/components/home-screen.tsx`,
+  `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web TypeScript check passed and `git diff --check`
+  passed. Focused API tests completed all 24 assertions; pytest still exits
+  with the known Windows SQLite cleanup `PermissionError`.
+
+## 2026-09-12T04:07:18Z — Add progressive public authentication CTA
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add `Get started` for progressive `/start` while retaining
+  the legacy `Login` action in the public header on all viewport sizes.
+- Changes Made: Signed-out public headers now show primary `Get started` →
+  `/start` and secondary `Login` → `/login`. Mobile styling compacts both
+  actions without hiding either one. Updated the design and progressive-login
+  documents to record the rollout and feature-flag fallback.
+- Files: `web/components/public-header.tsx`, `web/app/landing.module.css`,
+  `packages/design/design.md`, `docs/progressive-login.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Web TypeScript check passed and `git diff --check`
+  passed. The Webpack production build reached Next.js but remains blocked by
+  the known Windows `spawn EPERM` limitation.
+
+## 2026-09-12T04:08:30Z — Document progressive public authentication CTA
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `RULES.md` to match the public header's progressive
+  `/start` CTA and retained legacy `/login` action.
+- Changes Made: Documented both signed-out header actions, their desktop/mobile
+  visibility, compact mobile sizing, and the feature-flag fallback to `/login`.
+- Files: `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Rule count remains 116 and `git diff --check` passed.
+
+## 2026-09-12T04:20:12Z — Verify post flow locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test local post creation, viewing, cross-user viewing,
+  replying, quoting, and reading behavior end to end.
+- Changes Made: No application code changed. Ran the focused post and reaction
+  test suites and inspected the implemented API/UI paths for post, reply,
+  quote, visibility, and read-back behavior.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: All 24 focused post/reaction assertions completed
+  successfully. Pytest exited non-zero only during the known Windows SQLite
+  cleanup `PermissionError`. Web TypeScript passed; the Webpack production
+  build remains blocked by Windows `spawn EPERM`, so browser click-through
+  verification could not be completed locally.
+
+## 2026-09-12T04:43:27Z — Diagnose missing post visibility report
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate reports that own and other-user posts are not
+  visible despite focused post tests passing.
+- Changes Made: Traced Home, profile, post-detail, API origin, and author-scoped
+  post-loading paths. No application code changed. Confirmed the API query
+  includes visible normal posts and that the web loaders silently convert any
+  request failure into an empty feed/profile state.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local API health returned `200`; unauthenticated local
+  explore feed returned an empty page. Next dev server remains blocked by the
+  known Windows `spawn EPERM` limitation, preventing browser network
+  reproduction.
+
+## 2026-09-12T02:02:03Z — Fix profile posts and replies
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix other-user profile posts and own reply visibility.
+- Changes Made: ProfileScreen now receives the author-scoped post list while
+  Home continues using the global feed. Added an author-scoped replies API,
+  client loader, ProfileScreen reply rendering, and parent ID mapping so reply
+  cards remain canonical/openable.
+- Files: `api/app/services/posts.py`, `api/app/routers/users.py`,
+  `web/lib/auth.ts`, `web/app/[username]/profile-client.tsx`,
+  `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API compilation passed; all targeted post assertions
+  passed before the known Windows SQLite cleanup `PermissionError`; web
+  TypeScript passed; the current API exposes `/users/{username}/replies` and
+  returns `401` without authentication; Webpack production build passed.
+
+## 2026-09-12T01:52:00Z — Full platform verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check `RULES.md` and test the entire platform locally.
+- Changes Made: No application code changed. Read the active rules index and
+  executed the full available API suite, web typecheck, web lint, production
+  build, and local service startup checks.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: 149 API tests collected but the suite has assertion
+  failures and the known Windows SQLite cleanup error. Web TypeScript passed;
+  lint failed with 65 errors and 38 warnings; the Webpack production build
+  passed. API health returned HTTP 200; Next local development failed with
+  `spawn EPERM`, blocking browser verification.
+
+## 2026-09-12T01:45:50Z — Diagnose profile posts and reply routing regression
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the issue locally first and identify why other-user
+  profile posts and own replies are unavailable.
+- Changes Made: No application code changed. Found that fetched
+  author-scoped `profilePosts` are not passed into `ProfileScreen`; `AppShell`
+  passes the global `posts` list instead. Also found that the Replies profile
+  tab has no reply-fetching state or API call. The local API started, while the
+  local Next dev server failed with `spawn EPERM`.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Source audit complete; API root returned HTTP 200 on
+  port 8000. Browser reproduction was blocked by the local Next.js process
+  spawn error on port 3000.
+
+## 2026-09-12T01:35:00Z — Add documentation index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin improving documentation with an index before making
+  structural changes.
+- Changes Made: Renamed the documentation landing page to `docs/index.md` and
+  kept its source-of-truth map and grouped links to feature contracts,
+  authentication/session documents, and media/performance/testing notes.
+  Updated the root README and existing documentation references.
+- Files: `docs/index.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-12 — Audit implementation changes against active rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Review implementation-change entries in `AGENTLOG.md`,
+  compare the latest active behavior with `RULES.md`, and identify missing
+  rules or newer implementation conflicts.
+- Changes Made: No missing active business rules were identified. Flagged the
+  password-reset delivery, synchronous login notification processing,
+  authentication-incident operator identity, and cross-account session-state
+  isolation conflicts for review. Progressive `/start` remains excluded as a
+  beta flow, and unimplemented requirements were not promoted into active rules.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Source audit completed; no application code or active
+  rule text was changed.
+
+## 2026-09-12 — Align four active rules with implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the four implementation conflicts identified from
+  `AGENTLOG.md` and update `RULES.md` to describe the current code.
+- Changes Made: Documented direct best-effort password-reset email delivery,
+  synchronous best-effort fresh-login notification draining, operation records
+  without human operator identity, and origin-global browser auth state across
+  account slots.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed; source behavior was checked
+  in the current API and web implementation.
+
+## 2026-09-12 — Normalize RULES timestamps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Normalize every `Since` field in `RULES.md` to
+  `YYYY-MM-DDTHH:MM:SSZ`.
+- Changes Made: Preserved each existing date and filled missing times with
+  `00:00:00Z`; no rule text was changed.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: All `Since` fields match the requested format;
+  `git diff --check` passed.
+
+## 2026-09-12T01:33:22Z — Re-verify posts contract locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm the completed implementation matches `docs/posts.md`
+  and test it locally.
+- Changes Made: No code changes; performed a fresh source-of-truth audit and
+  reran the local checks.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API compilation passed; all 23 post-test assertions
+  passed; web TypeScript passed; webpack production build passed with the
+  known SWC WASM fallback; `git diff --check` passed. Pytest exits non-zero only
+  because its Windows SQLite cleanup hook cannot unlink the temporary database.
+
+## 2026-09-12T01:29:22Z — Implement posts, replies, and Quotes contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement `docs/posts.md` as the source of truth, then
+  verify and test locally.
+- Changes Made: The API now returns visible nested descendants in chronological
+  tree order, accepts Likes/Saves for normal posts, replies, and Quotes, and
+  rechecks Quote visibility. The web adds parent IDs to mapped posts, renders
+  depth-capped threaded replies with rails and collapsible branches, loads
+  visible ancestor context for reply URLs, and exposes reaction controls on all
+  content kinds. Design/rules documentation and the stale private-Quote test
+  were synchronized with the agreed contract.
+- Files: `api/app/services/posts.py`, `api/app/services/reactions.py`,
+  `api/tests/test_posts.py`, `packages/design/design.md`, `RULES.md`,
+  `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`,
+  `web/app/globals.css`, `web/lib/data.ts`, both post-client routes,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q app` passed; all 23 post-test
+  assertions passed, with only the known Windows SQLite cleanup
+  `PermissionError` after test completion; web TypeScript passed; webpack
+  production build passed using the known WASM SWC fallback; `git diff --check`
+  passed.
+
+## 2026-09-12T01:20:46Z — Verify posts implementation against canonical contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify the current implementation against `docs/posts.md`
+  and run local tests.
+- Changes Made: No application code changed. Recorded the verification result
+  and identified contract gaps: flat direct-reply rendering, no depth-capped
+  threaded/focused reply presentation, and reactions still restricted to
+  normal posts.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q api/app` passed; `npx tsc
+  --noEmit --incremental false` passed; all 23 assertions in
+  `api/tests/test_posts.py` passed, but pytest's Windows SQLite cleanup raised
+  `PermissionError`; `npm run build -- --webpack` passed with the known SWC
+  native-binary warning and WASM fallback; `git diff --check` passed.
+
+## 2026-09-12T01:12:17Z — Document posts, replies, and Quotes contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the agreed product contract for reply nesting,
+  standalone reply views, reactions, feed eligibility, visibility, and Quotes.
+- Changes Made: Added `docs/posts.md` as the canonical contract; corrected
+  RULES.md so visible replies can be liked and saved; and indexed the new
+  document in README.md. No implementation code was changed.
+- Files: `docs/posts.md`, `RULES.md`, `README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+
+## 2026-09-12T00:39:05Z — Restore post sessions and load author-scoped profile posts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate post links incorrectly redirecting through login
+  and profile posts not appearing under the user's profile.
+- Changes Made: Updated both post-detail clients to restore a valid refreshable
+  session before redirecting to login. Added authenticated `GET
+  /users/{username}/posts` pagination backed by an author-scoped post query,
+  and passed those results into ProfileScreen instead of filtering the global
+  Explore page.
+- Files: `web/app/[username]/[postId]/post-client.tsx`,
+  `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/profile-client.tsx`,
+  `web/components/app-shell.tsx`, `web/lib/auth.ts`, `api/app/routers/users.py`,
+  `api/app/services/posts.py`, `RULES.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npx tsc --noEmit --incremental false` in `web`,
+  `python -m compileall -q api/app`, and `git diff --check` passed. An
+  authenticated endpoint response check is pending because no local API session
+  is available.
+
+## 2026-09-12T00:22:45Z — Restore session before profile redirect
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the blank/`/login`/`/home` redirect cascade when
+  opening another user's profile while signed in.
+- Changes Made: Updated `ProfileClient` to use the shared refresh-session path
+  when no in-memory session is available, persist the restored session, and
+  redirect to login only after a terminal refresh failure. This prevents a
+  hard profile navigation from treating a refreshable session as logged out.
+- Files: `web/app/[username]/profile-client.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npx tsc --noEmit --incremental false` in `web`
+  and `git diff --check` completed successfully.
+
+## 2026-09-11T06:50:00Z — Apply theme preference to session recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the standalone session-recovery screen so it follows the
+  system theme and verify, document, and publish the change.
+- Changes Made: Added theme preference resolution to the lifecycle route and
+  dark/system lifecycle tokens. Synchronized the behavior into the project
+  README, rules, and design contract.
+- Files: `web/components/app-shell-route.tsx`, `web/app/globals.css`,
+  `RULES.md`, `packages/design/design.md`, `README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Passed. `npx tsc --noEmit --incremental false`,
+  `npm run build -- --webpack`, `git diff --check`, and a local HTTP smoke check
+  all passed. Deployment is being published to development and staging.
+
+## 2026-09-11T06:00:00Z — Add Directory to side drawer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a Directory item beneath Saved in the shared side drawer.
+- Changes Made: Added the Directory screen type and drawer item, wired the
+  `/directory` route through `AppShellRoute`, and reused the existing
+  `DirectoryScreen` component. Updated navigation/design documentation.
+- Files: `web/lib/data.ts`, `web/components/side-drawer.tsx`,
+  `web/components/app-shell.tsx`, `web/app/directory/page.tsx`, `RULES.md`,
+  `packages/design/design.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npm run build -- --webpack` completed
+  successfully; the generated route list included `/directory`.
+
+## 2026-09-11T06:10:00Z — Document complete notification contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the full agreed notification behavior in a dedicated
+  contract document.
+- Changes Made: Added `docs/notifications.md` with dropdown, polling, read
+  state, tabs, filters, inline actions, privacy, failure handling, API
+  boundaries, and acceptance checks. Corrected the summarized RULES/design
+  language so read notifications do not populate the dropdown and dropdown
+  activation does not mark items read. Failed-login notification behavior is
+  explicitly preserved.
+- Files: `docs/notifications.md`, `README.md`, `RULES.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` passed.
+
+## 2026-09-11T06:20:00Z — Align notifications with contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement every missing requirement identified in
+  `docs/notifications.md`.
+- Changes Made: Filtered the bell dropdown to unread items, added a bounded
+  scrollable list, removed read marking from dropdown activation and inline
+  actions, delayed full-list read marking until user scrolling, preserved the
+  last known count on initial polling failure, and reconciled failed read
+  operations with authoritative state.
+- Files: `web/components/header.tsx`, `web/components/app-shell.tsx`,
+  `web/components/notifications-screen.tsx`, `web/app/globals.css`,
+  `docs/notifications.md`, `RULES.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Passed. `npm run build -- --webpack` completed
+  successfully and generated all 24 routes.
+
+## 2026-09-11T06:30:00Z — Verify notifications locally and at API level
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Test the notification changes locally and at the API level,
+  then push development and staging.
+- Changes Made: Ran API `compileall`, focused Phase 3 security-event and Phase
+  7 failed-login tests, checked the local web root at `http://localhost:3000/`,
+  and verified the production Webpack build from the preceding implementation
+  pass. The four Phase 7 assertions passed; pytest exits with a Windows
+  temporary SQLite cleanup lock, so the runner reports failure during teardown.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web HTTP smoke check passed; API assertions passed with
+  the documented Windows fixture-cleanup limitation; push pending.
+
+## 2026-09-11T06:40:00Z — Publish verified notification changes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the locally tested notification contract changes to
+  development and staging.
+- Changes Made: Integrated the remote staging merge history into development so
+  existing staging notification backend work was preserved, then published the
+  resulting commit to both requested branches.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Development and staging push completed; the generated
+  pre-existing `web/tsconfig.tsbuildinfo` change remains uncommitted.
+
+## 2026-09-11T00:29:48Z — Implement notification center behavior
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Build the agreed modern notification UX using reusable
+  components, preserve four-second polling, and synchronize project artifacts.
+- Changes Made: Added All/Security notification views, unread-only and explicit
+  mark-all actions, viewport-based per-notification read handling, destination
+  navigation, inline follow/chat request actions, and duplicate-safe important
+  notification toasts. Added declined chat-request persistence and API support
+  so chat-request Decline is available consistently.
+- Files: `web/components/app-shell.tsx`, `web/components/header.tsx`,
+  `web/components/notifications-screen.tsx`, `web/components/navigationbar.tsx`,
+  `web/app/globals.css`, `web/lib/auth.ts`, `api/app/models/chat.py`,
+  `api/app/services/chat.py`, `api/app/routers/chat.py`,
+  `api/alembic/versions/20260911_0047_declined_chat_requests.py`,
+  `RULES.md`, `packages/design/design.md`, `docs/chat-behavior.md`,
+  `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API compile, web TypeScript check, Webpack production
+  build, and `git diff --check` passed. Local authenticated browser verification
+  was unavailable because the local API did not start; the unauthenticated local
+  notification route rendered its expected session-recovery state.
+
+## 2026-09-11T06:45:00Z — Correct project artifact references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit the repository documentation against the README’s
+  artifact and deployment rules.
+- Changes Made: Corrected README’s stale Alembic-head reference from `0041` to
+  `0046`, added `docs/updated-account-info.md` to the project documentation
+  index, and added a maintained current-state summary to `CHANGELOG.md`.
+- Files: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation references audited; push pending.
+
+## 2026-09-11T06:30:00Z — Push onboarding changes to development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the completed account setup wizard changes to
+  development and staging.
+- Changes Made: Fast-forwarded `origin/development` and `origin/staging` to
+  the tested onboarding implementation.
+- Files: `AGENTLOG.md`.
+- Verification Status: Both remotes were updated successfully; implementation
+  commit `b8f8778` is now available on development and staging.
+
+## 2026-09-11T06:00:00Z — Expand profile setup wizard
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Build the agreed three-step onboarding wizard with optional
+  Location and Friink usage intent.
+- Changes Made: Added nullable `use_intent` persistence and migration; extended
+  the authenticated user update/response mapping for Location and intent;
+  expanded the wizard to Profile picture, About/Location, and usage intent;
+  reused `ProfilePictureCropModal`; added intent editing under Settings >
+  General; and remembered wizard dismissal for the current browser onboarding
+  session so route changes do not reopen it; successful logout clears that
+  temporary marker for a later login.
+- Files: `web/components/profile-setup-wizard.tsx`, `web/components/account-screens.tsx`,
+  `web/components/app-shell-route.tsx`,
+  `web/lib/auth.ts`, `web/app/globals.css`, `api/app/models/user.py`,
+  `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/alembic/versions/20260911_0046_profile_intent.py`,
+  `docs/updated-account-info.md`, `packages/design/design.md`, `RULES.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q api/app`, `npx tsc --noEmit`
+  in `web`, and `git diff --check` passed.
+
+## 2026-09-11T05:30:00Z — Add coarse account-creation region
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement the read-only Account-tab Region
+  field alongside Joined.
+- Changes Made: Added `docs/updated-account-info.md`; added nullable
+  `account_region` fields to users and signup reservations; captured Vercel’s
+  trusted country-region signal during signup; returned it through the existing
+  auth response; and rendered read-only Joined and Region rows in Settings >
+  Account. The existing profile `location` field remains separate and raw IPs
+  are not stored for this feature.
+- Files: `docs/updated-account-info.md`, `api/app/models/user.py`,
+  `api/app/models/signup_reservation.py`, `api/app/schemas/auth.py`,
+  `api/app/services/auth.py`, `api/app/routers/auth.py`,
+  `api/alembic/versions/20260911_0045_account_region.py`, `web/lib/auth.ts`,
+  `web/components/account-screens.tsx`, `RULES.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `python -m compileall -q api/app` and `npx tsc --noEmit`
+  passed; `git diff --check` passed.
+
+## 2026-09-11T05:00:00Z — Implement Account Joined date
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the Joined-date documentation placement and implement
+  the read-only Account-tab field.
+- Changes Made: Mapped the existing API `created_at` value into `AuthUser.createdAt`,
+  rendered a locale/time-zone-aware read-only Joined row in Settings > Account,
+  documented the active behavior in `RULES.md` and `docs/auth-and-session.md`,
+  and removed the product requirement from `packages/design/design.md`.
+- Files: `web/lib/auth.ts`, `web/components/account-screens.tsx`, `RULES.md`,
+  `docs/auth-and-session.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed in `web`.
+
+## 2026-09-11T01:00:00Z — Correct auth logo optical sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct oversized logos on authentication screens after the
+  tight-viewbox asset migration.
+- Changes Made: Reduced the auth/lifecycle `BrandLockup` large variant from
+  `18rem` to `13.5rem` and the fixed auth home mark from `2.25rem × 2.5rem` to
+  `1.75rem × 2rem`; updated responsive sizing and synchronized the design
+  contract and changelog.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Compared the user-provided production/staging login
+  captures and identified the tight-viewbox scale difference. `npm run build --
+  --webpack` passed, including TypeScript and all 22 static pages.
+
+## 2026-09-11T00:45:00Z — Resize authenticated app-header logo
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the authenticated app header logo size on desktop and
+  mobile after the tight-viewbox asset migration.
+- Changes Made: Reduced `.topbar-full-logo` from `6rem` to `5rem` wide in the
+  shared authenticated stylesheet. The same topbar rule covers desktop and
+  mobile responsive layouts. Updated the design contract and changelog.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: The authenticated header implementation and responsive
+  CSS were audited against the new asset proportions. `npm run build --
+  --webpack` passed, including TypeScript and all 22 static pages.
+
+## 2026-09-11T00:30:00Z — Correct public logo optical sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the oversized public header and footer logos after the
+  tight-viewbox asset migration.
+- Changes Made: Reduced the public marketing header full-lockup from `3.5rem`
+  to `2.5rem` and the footer mark from `2.25rem` to `1.75rem`, restoring the
+  established production optical scale without changing authenticated-shell
+  logo dimensions. Updated the design contract and changelog.
+- Files: `web/app/landing.module.css`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Compared the user-provided production/staging captures
+  and confirmed the new tight-viewbox assets were the cause of the scale change.
+  `npm run build -- --webpack` passed, including TypeScript and all 22 static
+  pages.
+
+## 2026-09-11T00:00:00Z — Restore plain post-card action controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Revert the shared button restyle for post-card Share and
+  overflow controls after comparing production and staging.
+- Changes Made: Restored `.feed-post-more` and `.feed-post-share` to the former
+  compact `1.75rem` plain-icon treatment with transparent backgrounds, no
+  borders, and no hover/focus outline or accent color change.
+- Files: `web/app/globals.css`, `AGENTLOG.md`.
+- Verification Status: Open production and staging home surfaces were compared;
+  production confirmed the plain compact treatment. `npm run build -- --webpack`
+  passed, including TypeScript and all 22 static pages. This fix has not been
+  pushed or deployed.
+
+## 2026-09-11T00:00:00Z — Restore plain composer attachment control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the composer plus control to the production look after
+  the shared button restyle added a border and hover treatment.
+- Changes Made: Scoped the composer attachment button back to the former plain
+  icon behavior: transparent background, no border, no accent hover color, and
+  no hover/focus outline. Shared button styles remain unchanged for other
+  controls.
+- Files: `web/app/globals.css`, `AGENTLOG.md`.
+- Verification Status: Compared the open production and staging home surfaces;
+  production confirmed the intended plain plus control. `npm run build --
+  --webpack` passed, including TypeScript and all 22 static pages. This fix has
+  not been pushed or deployed.
+
+## 2026-09-11T00:00:00Z — Synchronize platform logo assets and documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace padded platform logos with the new six-file brand set,
+  push the update to staging, and document the change.
+- Changes Made: Synchronized the new tight-viewbox mark and full-lockup SVGs from
+  `brand/` into `web/public/brand/`; updated public `next/image` intrinsic
+  dimensions; documented canonical asset locations, synchronization, sizing,
+  and variant usage in `packages/design/design.md`; recorded the release in
+  `CHANGELOG.md`.
+- Files: `brand/*.svg`, `web/public/brand/*.svg`, `web/app/page.tsx`,
+  `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm run build -- --webpack` passed, all six served
+  assets matched their root counterparts by checksum, and `git diff --check`
+  passed. Commit `1c13686` was pushed to `origin/staging`.
 
 ## 2026-09-10T07:15:00Z — Clarify signup identity criteria and normalization
 
@@ -8547,3 +9922,543 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   returned `{"database":true}`. No direct staging or production database
   mutation was performed from this workstation; their migrations run through
   the deployment build gate.
+
+## 2026-09-10T17:00:00Z — Consolidate in-app button system
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clean up webapp button styles and align them with the
+  approved two-action-type design system.
+- Changes Made: Migrated app actions to shared `.button-primary` and
+  `.button-secondary` styles, added shared `.text-link`, `.icon-button`, and
+  `.button-full-width` contracts, normalized auth/workflow width behavior, and
+  removed obsolete duplicate action classes from `web/app/globals.css`.
+  Public landing-page button styles were left unchanged. Updated the binding
+  design contract in `packages/design/design.md`.
+- Files: `web/app/globals.css`, `web/components/design/button.tsx`, migrated
+  app components, `packages/design/design.md`, `CHANGELOG.md`.
+- Verification Status: Deleted-class audit passed; `npx tsc --noEmit` passed;
+  `npm run build -- --webpack` passed. The default Turbopack build remains
+  unavailable on this Windows workstation because the installed native SWC
+  binding is invalid; webpack is the documented local fallback.
+
+## 2026-09-10T17:20:00Z — Add editable date of birth to Profile settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add an editable date-of-birth field to Settings > Profile
+  only; defer public-profile display and visibility controls.
+- Changes Made: Reused the existing `users.date_of_birth` column, exposed it
+  only in authenticated `UserResponse`, added server-side update and minimum-
+  age validation, wired the web session/update contract, and added the shared
+  SettingsRow field with its own save action. Public user responses remain
+  unchanged.
+- Files: `api/app/schemas/auth.py`, `api/app/services/auth.py`,
+  `api/tests/test_auth_updates.py`, `web/lib/auth.ts`,
+  `web/components/account-screens.tsx`, `packages/design/design.md`.
+- Verification Status: The focused DOB API test passed; web `npx tsc --noEmit`
+  passed. No database migration was required. The broader auth-update file
+  retains one unrelated legacy fixture failure because its FakeSession lacks
+  the current login row-lock `scalar_one()` method.
+
+## 2026-09-10T17:35:00Z — Stabilize account-switcher loading header
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep `Switch Account` permanently visible in the account
+  switcher and show the loader on its right only during refresh.
+- Changes Made: Replaced the transient account-loading status header with a
+  permanent account-switcher header. The right-side spinner is conditional on
+  loading, and failed refreshes expose a right-side Retry action without
+  replacing the header text.
+- Files: `web/components/side-drawer.tsx`, `web/app/globals.css`.
+- Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.
+
+## 2026-09-10T20:30:00Z — Reshape Control Panel sections
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Split the Control Panel into future-facing sections while keeping only Users functional for the current rollout.
+- Changes Made: Replaced the flat Roles & Permissions tab with Staff, added Public site, kept Overview/Security/Audit as explicit placeholders, and retained Users as the only active data-backed section. Updated the existing Control Panel documentation and design/rules contracts.
+- Files: `web/components/control-panel-screen.tsx`, `web/components/app-shell.tsx`, `docs/auth-and-session.md`, `packages/design/design.md`, `RULES.md`, `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.
+
+## 2026-09-10T18:00:00Z — Make intrinsic-width actions canonical
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the full-width button rule and make intrinsic-width,
+  end-aligned actions the single canonical in-app layout.
+- Changes Made: Updated the binding design contract so modal, auth,
+  add-account, reset-password, and wizard actions use intrinsic-width buttons
+  aligned to the end of their action row. Removed the unused
+  `.button-full-width` stylesheet contract and the remaining auth/Add-account
+  CSS rules that forced submit actions to fill the row. Responsive stacking
+  remains a layout decision for narrow screens, not a third button type.
+  Public landing button styles remain unchanged.
+- Files: `packages/design/design.md`, `web/app/globals.css`, `CHANGELOG.md`.
+- Verification Status: Confirmed no web component references to the removed
+  class or auth full-row width rules remain; `git diff --check` passed.
+
+## 2026-09-10T18:30:00Z — Establish app-owned auth surface boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Define whether login, signup, reset, and related
+  transactional screens belong to the public site or app design system.
+- Changes Made: Documented three product-surface layers: public marketing,
+  app-owned authentication/workflow, and authenticated web app. Auth/workflow
+  screens remain outside the authenticated shell but now explicitly share the
+  app button system. Corrected dark-mode auth tokens so secondary actions use
+  readable app treatment instead of the pale landing-style appearance.
+- Files: `packages/design/design.md`, `web/app/globals.css`, `README.md`,
+  `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` passed; `git diff --check`
+  passed.
+
+## 2026-09-10T18:45:00Z — Update public development progress indicator
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change the public-site Development progress indicator from
+  25% to 50%.
+- Changes Made: Updated both the displayed percentage and the CSS progress
+  fill in the public landing page. No authenticated app design rules changed.
+- Files: `web/app/page.tsx`, `web/app/landing.module.css`, `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` passed.
+
+## 2026-09-10T19:15:00Z — Neutralize existing-email signup copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove signup messaging that reveals whether an email is
+  registered with Friink.
+- Changes Made: Existing-email signup responses now use the same neutral copy
+  as fresh signup attempts. The frontend no longer renders the explicit
+  account-existence message or `Log in with this email` link; existing emails
+  remain on the signup email step, with no reservation or OTP created.
+  Updated the design and active security rules to make this boundary explicit.
+- Files: `web/components/login-screen.tsx`, `api/app/routers/auth.py`,
+  `api/tests/test_phase2_signup.py`, `packages/design/design.md`,
+  `RULES.md`, `CHANGELOG.md`.
+- Verification Status: Focused signup privacy assertion passed and web
+  TypeScript passed. Pytest then hit the known Windows SQLite temporary-file
+  cleanup failure (`WinError 32`) during session teardown.
+
+## 2026-09-10T19:30:00Z — Simplify duplicate-username feedback
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Change `Username is already taken.` to `Username is taken.`
+  in the user-facing auth and profile flows.
+- Changes Made: Updated frontend validation/toast copy and API conflict
+  responses so signup, profile settings, and API consumers use the shorter
+  message.
+- Files: `web/components/account-screens.tsx`, `web/components/login-screen.tsx`,
+  `api/app/services/auth.py`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript and diff checks passed.
+
+## 2026-09-10T20:00:00Z — Add privacy-preserving existing-email sign-in link
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Send an existing-email signup user a secure login link while
+  keeping the browser response generic; do not auto-create accounts from
+  unknown-email login attempts; clarify the signup rule documentation.
+- Changes Made: Added a purpose-scoped, hashed, single-use 15-minute sign-in
+  token using the existing password-reset token table, security email delivery,
+  a normal session-issuing consume endpoint, and login-page token handling.
+  Existing-email signup still creates no reservation or signup OTP and keeps
+  neutral UI copy. Password-reset completion rejects sign-in-link tokens, and
+  unknown login identifiers remain generic with no account creation. Updated
+  RULES.md and the design contract to remove the old login-or-different-email
+  inconsistency.
+- Files: `api/app/services/password_reset.py`, `api/app/services/email.py`,
+  `api/app/routers/auth.py`, `api/app/schemas/auth.py`,
+  `api/tests/test_phase2_signup.py`, `web/lib/auth.ts`,
+  `web/app/login/login-client.tsx`, `RULES.md`,
+  `packages/design/design.md`, `CHANGELOG.md`.
+- Verification Status: Web TypeScript, focused signup/link tests, and diff
+  checks are required after this change.
+
+## 2026-09-10T20:15:00Z — Verify existing-email sign-in link implementation
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the existing-email signup sign-in-link flow and remove the Rules.md inconsistency.
+- Changes Made: Corrected login-link endpoint placement, preserved the existing lifecycle-login branch, removed a duplicate email exception handler, and removed the `existing_account` account-enumeration signal from the signup response. The frontend now keeps the signup view neutral when no signup reservation is returned.
+- Files: `api/app/routers/auth.py`, `api/app/services/email.py`, `web/components/login-screen.tsx`, `api/tests/test_phase2_signup.py`, `RULES.md`.
+- Verification Status: API compileall passed; web `npx tsc --noEmit` passed; `git diff --check` passed; focused signup/link assertions passed. Pytest still exits during the existing Windows SQLite temp-file cleanup with `WinError 32` after the passing test.
+
+## 2026-09-10T19:00:00Z — Correct dark auth secondary button token resolution
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit the remaining pale secondary button on the dark login
+  screen for a class or cascade override.
+- Changes Made: Confirmed the shared `.button-secondary` rule was not being
+  overridden. The root `--color-accent-soft` custom property had been resolved
+  against the light paper token before entering the dark login surface. Added
+  a scoped dark auth value so the secondary action uses the intended dark app
+  treatment.
+- Files: `web/app/globals.css`, `CHANGELOG.md`.
+- Verification Status: Web `npx tsc --noEmit` and `git diff --check` passed.
+
+## 2026-09-11 — Audit progressive-login specification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit and amend `docs/progressive-login.md` before any
+  progressive-login implementation; verify device-trust read order, timing
+  side-channel requirements, and failed-login notification parity.
+- Changes Made: Added explicit timing indistinguishability and
+  post-password device-trust requirements to the progressive-login spec and
+  added the requested verification items. Added the separate
+  `docs/progressive-login-audit.md` findings report, including code-level
+  citations, the visible-branch contradiction, current-vs-superseded Phase 7
+  behavior, and source-of-truth conflicts.
+- Files: `docs/progressive-login.md`, `docs/progressive-login-audit.md`,
+  `AGENTLOG.md`.
+- Verification Status: Documentation-only audit; no application code, existing
+  auth endpoint, `/login` route, or auth/session logic was modified. `git diff
+  --check` passed.
+
+## 2026-09-11 — Consolidate progressive-login audit findings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Merge the separate progressive-login audit report into the
+  main specification for simpler review.
+- Changes Made: Moved the audit findings, device-trust code citations, timing
+  side-channel requirement, current failed-login policy clarification, visible
+  branch contradiction, and implementation-gap notes into
+  `docs/progressive-login.md`. Removed the redundant standalone audit report.
+- Files: `docs/progressive-login.md`, `docs/progressive-login-audit.md`,
+  `AGENTLOG.md`.
+- Verification Status: Documentation-only consolidation; no application code,
+  existing auth endpoint, `/login` route, or auth/session logic was modified.
+  `git diff --check` passed.
+
+## 2026-09-11 — Clarify progressive-login failed-attempt UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restate the proposed progressive-login UX and document the
+  behavior after a failed password attempt.
+- Changes Made: Added a dedicated failed-attempt section to
+  `docs/progressive-login.md`, covering generic errors, identifier
+  preservation, password clearing, recovery controls, existing cooldown and
+  notification policy, and the prohibition on automatic account creation.
+- Files: `docs/progressive-login.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; no application code, existing
+  auth endpoint, `/login` route, or auth/session logic was modified. `git diff
+  --check` passed.
+
+## 2026-09-11 — Implement progressive-login entry point behind flags
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement `/start` according to the progressive-login
+  specification while preserving `/login`, existing authentication services,
+  and the public CTA until staging verification.
+- Changes Made: Added the `progressive_auth_flows` model and Alembic migration,
+  feature flags, `/auth/progressive/start` and `/continue` orchestration
+  endpoints, opaque short-lived single-use flow tokens, and the opt-in web
+  `/start` route. Reused existing signup-email, login, OTP, session, and
+  error-handling logic. Kept device-trust decisions downstream of password
+  verification and preserved the `/login` default path. Updated the main
+  progressive-login specification and changelog; no rules were changed because
+  the new flow is not yet live.
+- Files: `api/alembic/versions/20260911_0044_progressive_auth_flows.py`,
+  `api/app/models/progressive_auth_flow.py`, `api/app/routers/progressive_auth.py`,
+  `api/app/services/progressive_auth.py`, `api/app/config.py`,
+  `api/app/main.py`, `api/app/models/__init__.py`, `api/alembic/env.py`,
+  `api/.env.example`, `api/tests/test_progressive_login.py`,
+  `web/app/start/page.tsx`, `web/app/start/start-client.tsx`,
+  `web/components/login-screen.tsx`, `web/lib/auth.ts`,
+  `docs/progressive-login.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Python compilation and web `npx tsc --noEmit` passed.
+  The progressive API test assertions passed, but the existing Windows pytest
+  session teardown returned `WinError 32` while deleting its temporary SQLite
+  file. The Webpack production build and staging migration/deployment remain
+  pending; the public CTA is intentionally not enabled.
+
+## 2026-09-11 — Push progressive-login implementation to development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the progressive-login implementation to development and
+  staging and prepare the staged rollout behind feature flags.
+- Changes Made: Pushed commit `5019945` to `origin/development` and
+  `origin/staging`. Added the progressive flag to the Vercel staging web/API
+  project configuration, scoped to the staging preview branch, and redeployed
+  the API deployment from `5019945`; its Alembic migration gate completed.
+  The public CTA was not changed and production/main was not promoted.
+- Files: Vercel staging environment configuration; remote `development` and
+  `staging` branch refs; no application files changed in this session.
+- Verification Status: The API staging deployment is ready and exposes the
+  staging API domain. The Vercel web project has not produced a matching
+  `5019945` staging preview deployment yet; its production deployment remains
+  on `main`, so browser end-to-end verification of `/start` on the web staging
+  domain remains pending. The API and web feature flags are intended only for
+  staging preview verification.
+
+## 2026-09-11 — Fix progressive-login title and OTP abandonment back path
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the duplicated `/start` title, correct the new-email OTP
+  Back/restart regression, and document same-browser and cross-browser
+  abandonment behavior.
+- Changes Made: Removed the duplicated page-level `Friink |` title prefix.
+  Progressive signup OTP Back now returns to the progressive identifier entry
+  so a retry creates a fresh orchestration token and reselects the email
+  verification branch. Documented the existing 30-minute signup reservation,
+  OTP expiry/attempt limits, replacement behavior, and the fact that an
+  abandoned flow creates neither an account nor a session.
+- Files: `web/app/start/page.tsx`, `web/components/login-screen.tsx`,
+  `docs/progressive-login.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and production Webpack verification pending
+  after this fix; no existing `/login` route or auth service logic was changed.
+
+## 2026-09-11 — Document progressive-login UX contract in design system
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the design document to cover the progressive-login
+  UX and the OTP abandonment/restart behavior.
+- Changes Made: Added the neutral `/start` entry contract, opaque server flow
+  orchestration, legacy `/login` preservation, safe OTP Back behavior, and
+  same/cross-browser abandonment semantics to the Login & Signup design
+  contract. Documented the deferred `Get started` public CTA rollout.
+- Files: `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `RULES.md` remains unchanged
+  because progressive login is not yet a live authentication rule.
+
+## 2026-09-11 — Document read-only Joined account field
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the Account-tab `Joined` field requirement before
+  implementation and clarify the proposed accuracy of IP-based location data.
+- Changes Made: Added the design rule for a non-editable `Joined` field backed
+  by the server-side account creation timestamp and formatted for the user’s
+  locale/time zone. No location-logging implementation was authorized or
+  added; IP geolocation remains a future, approximate security signal requiring
+  retention and privacy decisions.
+- Files: `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; no application code or
+  `RULES.md` behavior changed.
+
+## 2026-09-11 — Remove stale progressive-login decision wording
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the leftover reference to the progressive-login
+  visible-branch decision being open.
+- Changes Made: Updated the failed-attempt section in
+  `docs/progressive-login.md` to state that the neutral identifier-step
+  presentation is resolved and must not reveal the new-email branch.
+- Files: `docs/progressive-login.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only correction; no application code,
+  existing auth endpoint, `/login` route, or auth/session logic was modified.
+  `git diff --check` passed.
+
+## 2026-09-11 — Resolve progressive-login branch presentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Select the neutral presentation for the progressive-login
+  identifier step and record it in the main specification.
+- Changes Made: Resolved the visible-branch open decision in favor of neutral
+  copy and presentation. Clarified that the server may continue into distinct
+  existing-account or new-email flows without exposing account existence at
+  the identifier step, and updated the merged audit findings accordingly.
+- Files: `docs/progressive-login.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; no application code, existing
+  auth endpoint, `/login` route, or auth/session logic was modified. `git diff
+  --check` passed.
+
+## 2026-09-12 — Capture documentation and business-rule drift
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read all documents under `docs/`, compare them with
+  `RULES.md`, check the identified differences against the implementation, and
+  record the conflicts without changing the rules or existing contracts.
+- Changes Made: Added `docs/2026-09-12-capture.md` with the latest-requirement
+  inventory, precedence decisions, implementation-checked conflict table,
+  aligned items, and verification record. The capture identifies progressive
+  auth rule coverage, stale session/reaction wording, nested-reply/profile
+  contract gaps, and the current test/lint/local-runtime verification limits.
+- Files: `docs/2026-09-12-capture.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation audit completed. `RULES.md` and existing
+  docs were intentionally not modified.
+- Verification Status: Documentation audit completed. `RULES.md` and existing
+  docs were intentionally not modified.
+
+## 2026-09-12 — Exclude archival session documents from capture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the audit scope so `docs/session/` is treated as an
+  old reference repository and `docs/auth-and-session.md` is the current
+  authentication/session implementation authority.
+- Changes Made: Updated `docs/2026-09-12-capture.md` to remove session-folder
+  findings from the active comparison and renumber the remaining conflict rows.
+- Files: `docs/2026-09-12-capture.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Read all files in `docs/session/` for context; no files
+  in that archival folder, `RULES.md`, or existing active contracts were
+  modified.
+
+## 2026-09-12 — Correct capture document recency precedence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reconcile the audit using each active document’s last-updated
+  metadata and recognize that focused progressive-login requirements postdate
+  the older authentication baseline.
+- Changes Made: Updated `docs/2026-09-12-capture.md` so
+  `auth-and-session.md` remains authoritative for the session model and shared
+  baseline, while the later progressive-login and failed-login documents
+  supersede only their focused beta/policy slices.
+- Files: `docs/2026-09-12-capture.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only correction; `RULES.md` and existing
+  feature documents were not modified.
+
+## 2026-09-12 — Promote post and reply contract into active rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `RULES.md` so it contains the latest implemented post,
+  nested-reply, profile-Replies, and Quote visibility behavior.
+- Changes Made: Added active rules for nested conversation trees, capped reply
+  indentation/focused reply views, author-scoped profile Replies, and updated
+  protected Quote placeholders to require `Post hidden` when a previously
+  visible quoted post becomes private. Beta and testing-status items were left
+  outside the active rules.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation/rules update only. The Quote placeholder
+  copy remains an identified implementation gap for the next code change.
+
+## 2026-09-12 — Synchronize selected active rules from feature documents
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `read-receipts.md`, `blocking.md`, `media-upload.md`,
+  `like-and-star.md`, and `account-lifecycle.md` in order and synchronize
+  business rules into `RULES.md`.
+- Changes Made: Expanded read-receipt, blocking, media-delivery, and lifecycle
+  rules. Restored the first-release Like/Save scope to visible normal posts,
+  matching `like-and-star.md`; replies and Quotes are now explicitly outside
+  that release. Updated the capture with the resulting conflict status.
+- Files: `RULES.md`, `docs/2026-09-12-capture.md`, `AGENTLOG.md`,
+  `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. The Like/Save implementation
+  still accepts replies and Quotes and is recorded as an implementation gap.
+
+## 2026-09-12 — Record media MIME-type limitation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document whether the current MIME-type handling creates a
+  media-upload risk.
+- Changes Made: Added `docs/2026-09-21-notes.md` describing MIME types, the
+  current JPEG/presigned-upload boundary, the limitation that uploaded bytes
+  are not independently inspected, and safer follow-up validation/delivery
+  options.
+- Files: `docs/2026-09-21-notes.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only note; no application code,
+  `RULES.md`, or existing feature document was modified.
+
+## 2026-09-12 — Synchronize selected authentication documents
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `login.md`, `forget-password.md`, and
+  `auth-incident-response.md` in order and synchronize business rules into
+  `RULES.md`.
+- Changes Made: Expanded password recovery with reset-link invalidation,
+  durable non-blocking delivery, privileged-session/device revocation, and
+  recovery boundaries. Added protected, confirmed, idempotent authentication
+  incident operations. The login timeout investigation and deferred fix were
+  not promoted into active product rules.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. The current password-reset
+  endpoint still directly awaits email delivery rather than using the required
+  durable outbox; this remains an implementation conflict.
+
+## 2026-09-12 — Add auth conflicts to notes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the authentication conflicts identified during the
+  login, password-recovery, and incident-response rule sync in today's notes.
+- Changes Made: Added the three conflicts to `docs/2026-09-21-notes.md`:
+  password-reset delivery blocking, synchronous login outbox processing, and
+  missing human-operator identification in incident-operation records.
+- Files: `docs/2026-09-21-notes.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation-only update; no code or rules changed.
+
+## 2026-09-12 — Snapshot staging rules locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Copy `RULES.md` from the local `staging` branch into a
+  separate local reference file.
+- Changes Made: Created `rules-staging.md` from `staging:RULES.md` without
+  changing the working-tree `RULES.md`.
+- Files: `rules-staging.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: The local file's Git blob hash matches
+  `staging:RULES.md` exactly.
+
+## 2026-09-12 — Synchronize account, subscription, and failed-login rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `account-switcher.md`, `subscriptions.md`, and
+  `failed-login-policy.md` in order and synchronize their business rules into
+  `RULES.md`.
+- Changes Made: Expanded account-switcher fallback/loading behavior, added the
+  subscription entitlement and assignment lifecycle contract, and aligned the
+  failed-login rule with the exact attempt boundaries and layered anti-abuse
+  scope.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. Remaining conflicts are
+  listed in the task response; no code was changed.
+
+## 2026-09-12 — Record account/subscription/login rule conflicts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record conflicts found while synchronizing the account
+  switcher, subscriptions, and failed-login documents.
+- Changes Made: Confirmed that account-switcher and failed-login behavior is
+  otherwise aligned. Recorded the remaining UI copy, subscription expiry-audit,
+  and password-reset delivery conflicts for follow-up.
+- Files: `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: Documentation audit only; `git diff --check` passed.
+
+## 2026-09-12 — Synchronize account-info, progressive, notification, and chat rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Read `updated-account-info.md`, `progressive-login.md`,
+  `notifications.md`, and `chat-behavior.md` in order and synchronize active
+  business rules into `RULES.md`.
+- Changes Made: Added onboarding account-info boundaries, expanded the active
+  notification contract, and aligned chat wording with the implemented
+  blocking boundary. Progressive `/start` remains beta and was not promoted
+  into active rules.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed. Remaining document-versus-
+  implementation conflicts are listed in the task response.
+
+## 2026-09-12 — Align rules with implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Compare `RULES.md` with `rules-staging.md`, verify the six
+  identified conflicts against the implementation, and update active rules.
+- Changes Made: Aligned account-switcher logout fallback, Like/Save scope, and
+  inaccessible private quote presentation with the implemented behavior.
+- Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
+- Verification Status: `git diff --check` passed.

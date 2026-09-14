@@ -41,7 +41,7 @@ export default function AccountDeactivatedPage() {
         onClose={() => void handleReturn()}
         closeLabel="Okay"
         className="account-deactivated-modal"
-        actions={<button className="pill-button pill-button-brand" type="button" onClick={() => void handleReturn()} disabled={isRestoring}>{isRestoring ? 'Please wait...' : 'Okay'}</button>}
+        actions={<button className="button-primary" type="button" onClick={() => void handleReturn()} disabled={isRestoring}>{isRestoring ? 'Please wait...' : 'Okay'}</button>}
       >
         <p>All sessions for this account have been logged out. Your profile and public content are unavailable to others.</p>
         <p>Existing chats remain readable but are now read-only. If you have another remembered account on this device, it will be restored automatically.</p>

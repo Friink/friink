@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
-import { clearAuthSession, createPost, getPost, listPostReplies, loadAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 
@@ -39,6 +39,7 @@ function mapApiPost(post: ApiPost): Post {
     tone: 'mint',
     createdAt: post.created_at,
     text: post.content,
+    parentPostId: post.parent_post_id,
     connectionType: 'following',
     isConnection: true,
     isSaved: post.saved ?? false,
@@ -69,6 +70,7 @@ export function PostClient({ postId }: PostClientProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [post, setPost] = useState<Post | null>(null);
   const [replies, setReplies] = useState<Post[]>([]);
+  const [ancestors, setAncestors] = useState<Post[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [composeContext, setComposeContext] = useState<{ kind: 'reply' | 'quote'; post: Post } | null>(null);
@@ -77,24 +79,46 @@ export function PostClient({ postId }: PostClientProps) {
 
   useEffect(() => {
     const session = loadAuthSession();
-    if (!session) {
-      router.replace('/login');
-      return;
+    let active = true;
+    const loadPost = async (activeSession: NonNullable<typeof session>) => {
+      if (!active) return;
+      setUser(activeSession.user);
+      getPost(postId)
+        .then(async (apiPost) => {
+          if (!active) return;
+          const selected = mapApiPost(apiPost);
+          setPost(selected);
+          const chain: Post[] = [];
+          let parentId = apiPost.parent_post_id;
+          while (parentId && chain.length < 50) {
+            let parent: Post;
+            try { parent = mapApiPost(await getPost(parentId)); } catch { break; }
+            chain.unshift(parent);
+            parentId = parent.parentPostId ?? null;
+          }
+          if (active) setAncestors(chain);
+        })
+        .catch(() => { if (active) setPostUnavailable(true); });
+      listPostReplies(postId)
+        .then((items) => { if (active) setReplies(items.map(mapApiPost)); })
+        .catch(() => { if (active) setReplies([]); });
+    };
+
+    if (session) {
+      void loadPost(session);
+    } else {
+      refreshAuthSession()
+        .then((restoredSession) => {
+          if (!active) return;
+          saveAuthSession(restoredSession);
+          void loadPost(restoredSession);
+        })
+        .catch((error) => {
+          if (active && isTerminalRefreshFailure(error)) router.replace('/login');
+        });
     }
 
-    setUser(session.user);
-
-    getPost(postId)
-      .then((apiPost) => setPost(mapApiPost(apiPost)))
-      .catch(() => {
-        setPostUnavailable(true);
-      });
-
-    listPostReplies(postId)
-      .then((items) => setReplies(items.map(mapApiPost)))
-      .catch(() => {
-        setReplies([]);
-      });
+    return () => { active = false; };
   }, [postId, router]);
 
   function handleLogout() {
@@ -186,6 +210,7 @@ export function PostClient({ postId }: PostClientProps) {
       <PostDetailScreen
         post={post}
         replies={replies}
+        ancestors={ancestors}
         onReply={(target) => setComposeContext({ kind: 'reply', post: target })}
         onQuote={(target) => setComposeContext({ kind: 'quote', post: target })}
         onPostUpdated={(updated) => { if (updated.id === post.id) setPost(updated); setReplies((current) => current.map((item) => item.id === updated.id ? updated : item)); }}

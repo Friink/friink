@@ -1,5 +1,872 @@
 # Changelog
 
+## 2026-09-14T23:07:16Z
+
+- [deployment] Restored `api/requirements.txt`, which had been deleted by the
+  latest staging cleanup commit and prevented Vercel from installing the
+  dependencies required by `scripts/migrate_before_deploy.py`.
+
+## 2026-09-13T00:16:39Z
+
+- [docs] Fixed mobile overflow in the documentation viewer by allowing long
+  implementation paths, identifiers, and other unbroken text in articles to
+  wrap within the content surface.
+
+## 2026-09-13T00:12:36Z
+
+- [docs] Fixed Markdown list rendering in the viewer so indented wrapped
+  lines remain part of their preceding list item instead of becoming stray
+  paragraphs between bullets.
+
+## 2026-09-13T00:10:48Z
+
+- [docs] Added the two explicit verification-discipline rules from the root
+  agent guidance to `docs/testing.md`: targeted verification by default and
+  mandatory real request/response checks for new or changed API endpoints.
+
+## 2026-09-13T00:07:42Z
+
+- [docs] Updated the documentation viewer to bypass browser caching when
+  fetching Markdown, so edited documents appear without a hard refresh.
+
+## 2026-09-13T00:05:14Z
+
+- [docs] Made `docs/testing.md` the canonical shared testing guide, covering
+  API, web, browser, deployment, acceptance, traceability, and release gates.
+  Added root README and documentation-agent pointers to the guide.
+
+## 2026-09-13T00:00:51Z
+
+- [docs] Updated root agent guidance to point documentation work to
+  `docs/AGENTS.md` and require keeping `docs/index.html` synchronized with
+  documentation files.
+
+## 2026-09-12T23:58:37Z
+
+- [docs] Updated the documentation viewer navigation to include `AGENTS.md`
+  and remove `template.md` from the sidebar and search registry.
+
+## 2026-09-12T23:56:58Z
+
+- [docs] Added a documentation-viewer synchronization rule requiring
+  `docs/index.html` to be updated when documents are added, renamed, moved,
+  archived, or removed.
+
+## 2026-09-12T23:53:27Z
+
+- [docs] Added `docs/AGENTS.md` with documentation source-of-truth boundaries,
+  mandatory template usage, evidence rules, consistency guidance, and
+  verification requirements.
+
+## 2026-09-12T23:43:18Z
+
+- [docs] Added the existing Friink favicon to the documentation viewer.
+
+## 2026-09-12T23:41:32Z
+
+- [docs] Made the sidebar section-heading typography explicit so the
+  `#nav a` link rule cannot make it bold. Section headings now use the body
+  font at 16px regular weight; document links remain 14px bold.
+
+## 2026-09-12T23:40:05Z
+
+- [docs] Restyled sidebar section headings to 16px regular text while
+  document links remain 14px and bold.
+
+## 2026-09-12T23:37:16Z
+
+- [docs] Fixed sidebar section-heading hover styling so headings keep a
+  transparent background and only change text color to brand green. Reduced
+  section-heading text to 12px while document links remain 14px.
+
+## 2026-09-12T23:33:16Z
+
+- [docs] Added clickable Documentation and Product units sidebar headings.
+  Section headings retain the muted section color by default and use brand
+  green on hover or when active.
+
+## 2026-09-12T23:29:53Z
+
+- [docs] Changed the mobile documentation drawer to full width with a
+  single-column navigation. The hamburger now becomes a Font Awesome X only
+  while the drawer is open on mobile; desktop remains unchanged.
+
+## 2026-09-12T23:26:17Z
+
+- [docs] Styled the full-width zoom Reset button with the same themed border,
+  transparent background, typography, text color, and hover/focus behavior as
+  the other viewer controls.
+
+## 2026-09-12T23:25:24Z
+
+- [docs] Fixed mobile header grouping so the search and settings icons remain
+  adjacent at the right side. When search opens as an overlay, settings keeps
+  its right-side alignment.
+
+## 2026-09-12T23:23:58Z
+
+- [docs] Fixed the mobile sidebar by making it a fixed drawer overlay below
+  the header instead of a normal-flow block that pushed page content into the
+  drawer area.
+
+## 2026-09-12T23:22:38Z
+
+- [docs] Fixed mobile header alignment when search opens by reserving the
+  right-side position for the settings control. Standardized header icon size
+  to 1rem across desktop and mobile.
+
+## 2026-09-12T23:20:39Z
+
+- [docs] Reworked viewer zoom controls so `−`, percentage, and `+` form one
+  row while Reset is a full-width control beneath them. Reset is disabled at
+  the default 100% zoom.
+
+## 2026-09-12T23:19:45Z
+
+- [docs] Improved mobile documentation-viewer behavior: the header now uses a
+  search icon that opens the search field on tap, and the sidebar starts
+  collapsed on mobile widths.
+
+## 2026-09-12T23:15:53Z
+
+- [docs] Replaced the implicit clickable zoom percentage with a visible
+  `Reset` button. The percentage is now a read-only status display.
+
+## 2026-09-12T23:15:04Z
+
+- [docs] Fixed System-mode theme styling for the custom theme dropdown and
+  improved mobile responsiveness by wrapping the header, moving search to a
+  full-width row, tightening mobile spacing, and scaling down small-screen
+  controls.
+
+## 2026-09-12T23:11:12Z
+
+- [docs] Changed viewer zoom to browser-like page scaling so the whole
+  documentation surface scales consistently. Made the current zoom percentage
+  a reset control that returns directly to 100%.
+
+## 2026-09-12T23:10:04Z
+
+- [docs] Replaced the native Theme select in the documentation viewer with a
+  styled accessible dropdown. It now follows the viewer design consistently,
+  preserves System/Light/Dark selection, and supports keyboard navigation.
+
+## 2026-09-12T23:07:08Z
+
+- [docs] Added a System theme option to the documentation viewer. System mode
+  removes the explicit theme override and follows the browser/OS color-scheme
+  preference; Light and Dark remain explicit overrides.
+
+## 2026-09-12T23:04:59Z
+
+- [docs] Added a right-aligned gear settings menu to the documentation viewer
+  with persistent Light/Dark theme selection and font-size zoom from 50% to
+  150% in 10% increments, defaulting to 100%.
+
+## 2026-09-12T22:57:00Z
+
+- [docs] Refined documentation sidebar links to use a bold 14px label and a
+  2px gap between adjacent items.
+
+## 2026-09-12T22:54:49Z
+
+- [docs] Added a built-in Documentation index to the viewer. The
+  Documentation breadcrumb now opens a list of core documentation files, with
+  each entry linking to its rendered document.
+
+## 2026-09-12T22:52:35Z
+
+- [docs] Scoped uppercase sidebar styling to the sidebar so breadcrumb labels
+  retain normal casing. Added a built-in Product Units index reachable from the
+  breadcrumb, listing all unit documents.
+
+## 2026-09-12T22:54:00Z
+
+- [docs] Fixed narrow-screen breadcrumb wrapping so Home stays in the same
+  horizontal trail as the current section and document; very small screens
+  may scroll the trail horizontally instead.
+
+## 2026-09-12T22:50:00Z
+
+- [docs] Changed the documentation viewer Home icon and logo to use normal
+  `./index.html` links instead of hash-based Home routing, returning users to a
+  clean document URL.
+
+## 2026-09-12T22:47:00Z
+
+- [docs] Fixed the documentation viewer search dropdown's dark-theme styling
+  for its panel, border, text, shadow, and hover/focus states.
+
+## 2026-09-12T22:43:51Z
+
+- [docs] Updated the documentation viewer so Home is a header home icon rather
+  than a sidebar entry, and replaced the repeated document label with
+  breadcrumbs showing Home, Documentation or Product units, and the current
+  document.
+
+## 2026-09-12T22:37:05Z
+
+- [cleanup] Removed the unused root `profile.jpg`. The application fallback at
+  `web/public/media/profile.jpg` remains in place. Kept the root `package.json`.
+
+## 2026-09-12T22:31:50Z
+
+- [docs] Archived the obsolete deferred admin brainstorm as
+  `docs/archives/admin.txt` and removed the now-empty root `admin/` folder.
+  The current staff-admin contract remains in `docs/units/staff-admin.md`.
+
+## 2026-09-12T22:24:00Z
+
+- [docs] Retired the root `RULES.md` by moving it to
+  `docs/archives/RULES.md`. Updated current documentation and agent guidance
+  to maintain and consult `docs/rules.md` as the sole current rulebook. Kept
+  historical log references unchanged. No application code was changed.
+
+## 2026-09-12T22:20:39Z
+
+- [docs] Made `docs/rules.md` the complete current source of truth by adding
+  Platform and File(s) fields to all 116 rules, sourced from historical
+  `RULES.md` where available. Five rules are explicitly marked for future
+  implementation audit because the historical source did not record those
+  fields. No application code was changed.
+
+## 2026-09-12T22:12:00Z
+
+- [docs] Kept Stack and Architecture in the core documentation navigation,
+  outside the Product Units section.
+
+## 2026-09-12T22:10:13Z
+
+- [docs] Added `docs/stack.md` and `docs/architecture.md` to separate
+  technology and implementation architecture from the root README. Added both
+  documents to the documentation README and viewer navigation. No application
+  code was changed.
+
+## 2026-09-12T22:02:18Z
+
+- [docs] Added `AGENTS.md` as the current operating guide for AI agents,
+  separating agent workflow from the repository README and directing current
+  product rules to `docs/rules.md`. No application code was changed.
+
+## 2026-09-12T21:55:08Z
+
+- [docs] Moved the Friink overview directly into `docs/index.html` as the
+  built-in Home page, kept `docs/README.md` as a separate documentation
+  README, and removed the unnecessary `docs/home.md` file. No application code
+  was changed.
+
+## 2026-09-12T21:52:07Z
+
+- [docs] Separated the documentation viewer's `HOME` page from `README`.
+  Added `docs/home.md` as the default Friink overview while keeping
+  `docs/README.md` as the documentation-structure README. No application code
+  was changed.
+
+## 2026-09-12T21:48:57Z
+
+- [docs] Changed the first documentation viewer entry to `HOME` and populated
+  `docs/README.md` with a concise overview of Friink and its implemented
+  product areas. No application code was changed.
+
+## 2026-09-12T21:47:50Z
+
+- [docs] Replaced the custom CSS hamburger with the project’s Font Awesome
+  `fa-solid fa-bars` icon and kept it unchanged across sidebar states. No
+  application code was changed.
+
+## 2026-09-12T21:46:11Z
+
+- [docs] Moved documentation search into the right side of the viewer header
+  and added a live dropdown of matching files. Selecting a result renders the
+  document in place. No application code was changed.
+
+## 2026-09-12T21:43:17Z
+
+- [docs] Removed archived migration history from the documentation viewer
+  sidebar and changed all sidebar document labels to uppercase. No application
+  code was changed.
+
+## 2026-09-12T21:41:38Z
+
+- [docs] Moved the completed migration process to
+  `docs/archives/migration.md` and updated the documentation viewer and rules
+  index to link to its archived location. No application code was changed.
+
+## 2026-09-12T21:39:09Z
+
+- [docs] Added a labeled divider between core documentation and product units
+  in the documentation viewer sidebar. The grouping remains compatible with
+  document search. No application code was changed.
+
+## 2026-09-12T21:37:54Z
+
+- [docs] Removed the visible border from the documentation viewer hamburger
+  control while retaining hover and keyboard-focus feedback. No application
+  code was changed.
+
+## 2026-09-12T21:36:40Z
+
+- [docs] Fixed dark-theme CSS precedence in the documentation viewer so dark
+  surfaces, header, navigation states, and tables no longer mix with light
+  styling. Reduced the header's horizontal margin to a simple 1rem. No
+  application code was changed.
+
+## 2026-09-12T21:34:11Z
+
+- [docs] Added automatic light/dark theme support to the documentation viewer
+  using the browser or operating system `prefers-color-scheme` setting. No
+  application code was changed.
+
+## 2026-09-12T21:31:53Z
+
+- [docs] Refined the documentation viewer to match the public site more
+  closely, including the actual local Nunito font, public typography, exact
+  spacing conventions, 1280px header alignment, light surfaces, and public
+  control styling. No application code was changed.
+
+## 2026-09-12T21:29:53Z
+
+- [docs] Aligned the documentation viewer with the public-site theme: light
+  canvas, white surfaces, public green accent, muted gray typography, public
+  divider color, Inter/Nunito type pairing, and restrained rounded surfaces.
+  No application code was changed.
+
+## 2026-09-12T17:50:12Z
+
+- [docs] Refined the documentation viewer header and layout: reduced header
+  height and logo size, and centered the content independently of the sidebar
+  state. No application code was changed.
+
+## 2026-09-12T17:47:23Z
+
+- [docs] Added a responsive header to `docs/index.html` with a far-left
+  hamburger button, canonical Friink logo, accessible sidebar state, and
+  mobile sidebar behavior. No application code was changed.
+
+## 2026-09-12T17:29:40Z
+
+- [docs] Converted `docs/index.html` into a JavaScript documentation viewer
+  that loads and renders the Markdown documentation in-page, with search,
+  hash navigation, and internal document-link handling. No application code
+  was changed.
+
+## 2026-09-12T17:23:18Z
+
+- [docs] Corrected the documentation hub format from Markdown to HTML at
+  `docs/index.html`; removed `docs/index.md`. No application code was changed.
+
+## 2026-09-12T17:20:38Z
+
+- [docs] Moved the documentation hub from the repository root to
+  `docs/index.md` and corrected its relative links. No application code was
+  changed.
+
+## 2026-09-12T17:17:24Z
+
+- [docs] Added the root `index.md` documentation hub with links to core
+  documentation, all 15 product units, archives, and project guidance. No
+  application code was changed.
+
+## 2026-09-12T17:12:49Z
+
+- [docs] Added a unit-rule cross-reference to `docs/rules.md`, indexing the
+  116 detailed rule IDs across the 15 unit documents while keeping their full
+  wording and evidence in the unit docs. No application code was changed.
+
+## 2026-09-12T17:08:41Z
+
+- [docs] Populated `docs/rules.md` from the implementation-backed root
+  `RULES.md`, adding stable rule IDs, effective timestamps, active rule clauses,
+  unit cross-links, and a reserved history section for deferred or superseded
+  rules. No application code was changed.
+
+## 2026-09-12T16:47:17Z
+
+- [docs] Normalized the `Last edited` metadata in all 15 unit documents to
+  full UTC ISO 8601 timestamps using the dated migration entries in
+  `AGENTLOG.md`. No application code was changed.
+
+## 2026-09-12T16:25:00Z
+
+- [docs] Resolved `MIG-001` by aligning the active refresh-token rule with the
+  existing 30-day API implementation and environment contract. No code changed.
+
+## 2026-09-12T16:20:00Z
+
+- [docs] Completed migration of all 15 `docs/units` documents from archived
+  material, active rules, and implementation evidence. The Directory remains
+  explicitly unimplemented, professional/PMDC verification remains out of
+  scope, and the refresh-token lifetime conflict remains open as `MIG-001`.
+  No application code was changed.
+
+## 2026-09-12T16:05:00Z
+
+- [docs] Completed the first unit migration for `account-access.md` using
+  archived documentation, active rules, and current implementation evidence.
+  Preserved the open refresh-token lifetime conflict as `MIG-001`; no code was
+  changed.
+
+## 2026-09-12T15:45:00Z
+
+- [docs] Recorded the first migration conflict: the active 14-day refresh-token
+  rule disagrees with the API and example environment's 30-day default. The
+  account-access migration is paused pending a product decision; no code was
+  changed.
+
+## 2026-09-12T15:40:00Z
+
+- [docs] Established the product/implementation split between
+  `docs/design-system.md` and `packages/design/design.md`, preserving the
+  existing token and component contracts while adding standard design-system
+  principles, usage patterns, accessibility, and authority boundaries.
+
+## 2026-09-12T15:35:00Z
+
+- [docs] Removed the migration playbook wording that could be read as
+  permitting implementation fixes during conflict reconciliation.
+
+## 2026-09-12T15:32:00Z
+
+- [docs] Added a central migration-notes and conflicts register to preserve
+  implementation-versus-rule findings for review after unit migration.
+
+## 2026-09-12T15:30:00Z
+
+- [docs] Added an approval gate to the migration playbook: implementation-
+  versus-rule conflicts are recorded and escalated without modifying code.
+
+## 2026-09-12T15:27:00Z
+
+- [docs] Added the unit documentation migration playbook covering source
+  precedence, one-unit-at-a-time reconciliation, implementation audits,
+  conflict classification, and completion checks.
+
+## 2026-09-12T15:24:00Z
+
+- [docs] Clarified that Standard units include traceability and test matrices,
+  while Minimal units require lightweight verification checklists.
+
+## 2026-09-12T15:21:14Z
+
+- [docs] Replaced the empty unit-document template with a complete product,
+  UX, technical-contract, testing, traceability, and rebuild structure.
+
+## 2026-09-12T13:23:20Z
+
+- [fix] Normal login no longer fails when the device has reached the
+  remembered-account limit; only Add account remains subject to that cap.
+- [fix] The account switcher keeps a valid unslotted current login visible
+  while preserving all existing remembered account slots.
+
+## 2026-09-12T04:48:32Z
+
+- [fix] Fixed account-switch synchronization so the active app shell updates
+  when the account slot changes and the Home feed reloads for the new account.
+- [fix] Profile posts now render the author-scoped response directly, avoiding
+  a second client-side handle filter that could hide valid posts.
+
+## Current State
+
+- The three-step account setup wizard collects optional Profile picture,
+  About/Location, and Friink usage intent. The values use existing profile
+  update logic; the intent currently has no business-rule effects.
+- Settings exposes read-only Joined and Region information, plus intent editing
+  under General. The current Alembic migration head is `20260911_0047`.
+- The latest tested onboarding implementation is pushed to both development and
+  staging.
+
+## 2026-09-12T04:07:18Z
+
+- [auth] Added the progressive `Get started` CTA to the public header while
+  retaining the legacy `Login` action on desktop and mobile. Narrow screens
+  use compact sizing instead of hiding either action.
+- [docs] Synchronized the public-header design and progressive-login rollout
+  documentation with the implementation and feature-flag fallback.
+- [rules] Updated the public-header rule to document both authentication
+  actions and the disabled-`/start` fallback.
+
+## 2026-09-12T04:20:12Z
+
+- [verification] Ran the focused post and reaction suite locally. All 24
+  post/reaction assertions completed successfully; pytest then exited non-zero
+  because its Windows SQLite cleanup hook could not unlink the temporary test
+  database.
+- [verification] Web TypeScript passed. The Webpack production build remains
+  blocked by the known Windows `spawn EPERM` limitation.
+
+## 2026-09-12T04:43:27Z
+
+- [diagnosis] Rechecked the post/profile data path after reports that both own
+  and other-user posts are missing. The API author-scoped query and visibility
+  logic include visible normal posts; the web profile and Home loaders still
+  swallow request failures and render an empty state, masking whether the
+  failure is authentication, API origin, or data availability.
+- [verification] Local API health is responding, but its unauthenticated
+  explore feed currently contains no posts. Local Next development cannot start
+  because of the known Windows `spawn EPERM` limitation, so browser network
+  reproduction remains unavailable.
+
+## 2026-09-12T02:02:03Z
+
+- [profiles] Fixed profile rendering to use the author-scoped posts collection
+  instead of the global feed collection.
+- [replies] Added `GET /users/{username}/replies`, client loading for profile
+  Replies tabs, and reply-card mapping including parent identity metadata.
+- [verification] API compilation, targeted post assertions, web TypeScript,
+  the real unauthenticated replies-route check (`401`), and the Webpack
+  production build passed. The known Windows SQLite teardown warning remains.
+
+## 2026-09-12T01:52:00Z
+
+- [verification] Read the active 919-line `RULES.md` and ran the full local
+  platform checks. Web TypeScript and the Webpack production build passed.
+- [verification] The API suite collected 149 tests but is not clean: assertion
+  failures remain, followed by the known Windows SQLite teardown
+  `PermissionError`. Web lint also fails with 65 errors and 38 warnings.
+- [verification] The local API starts and returns HTTP 200. The local Next
+  dev server fails with `spawn EPERM`, so browser-level platform verification
+  could not be completed.
+
+## 2026-09-12T01:45:50Z
+
+- [diagnosis] Local audit found that `ProfileClient` fetches author-scoped
+  `profilePosts`, but `AppShell` still passes the global `posts` collection to
+  `ProfileScreen`; other-user post results are therefore discarded. The
+  profile Replies tab has no API fetch/state path, so replies cannot appear
+  there.
+- [verification] Local API started and returned HTTP 200 at port 8000. The web
+  dev server could not start because Next.js failed with `spawn EPERM` on this
+  Windows environment; no browser click-through was possible. No code fix was
+  made during diagnosis.
+
+## 2026-09-12T01:35:00Z
+
+- [docs] Added `docs/index.md` as the documentation index and source-of-truth
+  map. Existing documents were not moved or rewritten.
+
+## 2026-09-12T01:33:22Z
+
+- [verification] Rechecked the implementation against `docs/posts.md` and
+  reran local API compilation, all 23 post-test assertions, web TypeScript,
+  the webpack production build, and `git diff --check`. The implementation
+  remains aligned with the documented reply tree, permalink context, reaction,
+  Quote, feed, and visibility rules.
+- [verification] Pytest's assertions pass; its only failure is the known
+  Windows temporary SQLite cleanup `PermissionError` during session teardown.
+
+## 2026-09-12T01:29:22Z
+
+- [posts] Implemented the `docs/posts.md` contract across API and web: visible
+  descendant replies are returned in tree order, replies and Quotes support
+  Like/Save reactions, and Quote visibility is rechecked server-side.
+- [web] Added depth-capped threaded reply presentation with connector rails,
+  collapsible branches, parent context for deep replies, ancestor context for
+  reply permalinks, and a root conversation link.
+- [docs/tests] Updated the design/rules contract and the private-visible Quote
+  regression test to match the canonical posts contract.
+- [verification] API compilation, all 23 post-test assertions, TypeScript, the
+  webpack production build, and `git diff --check` passed. Pytest still exits
+  non-zero during Windows temporary SQLite cleanup after the assertions pass.
+
+## 2026-09-12T01:20:46Z
+
+- [verification] Audited the implementation against `docs/posts.md` as the
+  source of truth. API compilation, web TypeScript, the 23 post tests, and the
+  webpack production build were exercised locally.
+- [verification] The post tests passed assertions but pytest exited non-zero
+  during Windows temporary SQLite cleanup. The build passed with the existing
+  SWC native-binary warning and WASM fallback.
+- [posts] The audit found the nested-reply presentation, reply permalink
+  context, and Like/Save support for replies and Quotes are not implemented;
+  current replies remain flat and reactions still reject non-`post` kinds.
+
+## 2026-09-12T01:12:17Z
+
+- [docs/posts] Added the agreed contract for normal posts, nested replies,
+  reply permalinks, depth-capped threaded presentation, Likes/Saves on replies,
+  visibility behavior, and Quote posts.
+- [rules] Corrected the stale top-level-only reaction rule so visible replies
+  are valid Like and Save targets.
+- [docs] Added docs/posts.md to the README project-documentation index.
+
+## 2026-09-12T00:39:05Z
+
+- [web/auth] Fixed post-detail routes to restore a refreshable session before
+  redirecting to login, covering both root and username-scoped post URLs.
+- [profiles] Added an author-scoped posts endpoint and switched profile feeds
+  away from filtering the limited global Explore page, so older own posts are
+  available on the profile.
+- [docs] Recorded the profile post-source rule in RULES.md.
+- [verification] Web TypeScript check, API compilation, and `git diff --check`
+  passed. An authenticated endpoint response check remains pending because no
+  local API session is available.
+
+## 2026-09-12T00:22:45Z
+
+- [web/profile] Fixed hard navigation to another user's profile incorrectly
+  redirecting through login when the refreshable session had not yet been
+  hydrated into the in-memory auth store. Profile routes now restore a valid
+  session before redirecting on terminal refresh failure.
+- [verification] Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-11T06:50:00Z
+
+- [web/auth] Fixed the standalone session-recovery screen so it follows the
+  system theme by default and honors the app's explicit light/dark/system
+  appearance preference instead of always rendering with light tokens.
+- [docs] Recorded the theme behavior in README.md, RULES.md, and
+  packages/design/design.md.
+
+## 2026-09-11T06:00:00Z
+
+- [web/navigation] Added Directory beneath Saved in the shared side drawer and
+  wired it to the canonical `/directory` route using the existing Directory
+  screen component.
+
+## 2026-09-11T06:10:00Z
+
+- [docs/notifications] Added the complete notification contract covering the
+  unread-only dropdown, zero-unread empty state, scroll behavior, four-second
+  polling, read-state rules, All/Security tabs, filters, inline actions,
+  privacy, fallbacks, and acceptance checks.
+- [docs] Synchronized README.md, RULES.md, and packages/design/design.md with
+  the agreed notification contract. Failed-login notification behavior remains
+  unchanged.
+
+## 2026-09-11T06:20:00Z
+
+- [web/notifications] Aligned the implementation with the notification
+  contract: the bell dropdown now contains unread items only, is empty at zero
+  unread, scrolls when needed, and no longer marks items read when activated or
+  acted on. Full-list read marking now waits for user scrolling, and failed
+  read operations reconcile against authoritative state.
+
+## 2026-09-11T06:30:00Z
+
+- [verification] Local web smoke check returned HTTP 200 with the expected
+  Friink title. API compile passed and focused Phase 7 failed-login tests ran
+  all four assertions successfully; the Windows pytest process still exits
+  during fixture SQLite-file cleanup because the temporary database remains
+  locked. The notification implementation does not change failed-login policy.
+
+## 2026-09-11T06:40:00Z
+
+- [verification/deployment] Local web and API verification completed for the
+  notification contract. The tested changes were integrated with the remote
+  staging history and are ready on both development and staging.
+
+## 2026-09-11T00:29:48Z
+
+- [web/notifications] Added the standard notification interaction model: All and
+  Security views, unread-only filtering, explicit mark-all-as-read, read-on-view
+  behavior, direct destination links, and inline follow/chat request actions.
+- [web/notifications] Corrected the four-second polling consumer so existing
+  unread notifications establish a silent baseline and important toasts fire
+  only for genuinely new notification IDs.
+- [chat] Added a persisted declined state and API action for received chat
+  requests so Decline works consistently from notification surfaces.
+- [docs] Synchronized RULES.md, packages/design/design.md, docs/chat-behavior.md,
+  README.md, and AGENTLOG.md with the notification behavior.
+
+## 2026-09-11T04:30:00Z
+
+- [docs/auth] Documented the read-only Account-tab `Joined` field, using the
+  server-side account creation timestamp with locale/time-zone-aware
+  presentation. The requirement belongs with auth/account requirements, not
+  the visual design contract.
+
+## 2026-09-11T05:00:00Z
+
+- [web/settings] Implemented the read-only Account-tab `Joined` field using
+  the existing authenticated user `created_at` value; no API or migration was
+  needed.
+- [docs] Added the implemented Joined-date rule to `RULES.md` and
+  `docs/auth-and-session.md`, and removed the product requirement from
+  `packages/design/design.md`.
+
+## 2026-09-11T05:30:00Z
+
+- [auth/settings] Added the read-only Account-tab `Region` field, storing the
+  coarse country-region signal available at account creation without storing
+  the raw IP.
+- [docs] Added `docs/updated-account-info.md` covering the Joined and Region
+  fields, their fallbacks, and their separation from profile location.
+
+## 2026-09-11T06:00:00Z
+
+- [web/onboarding] Expanded the account setup wizard to three optional steps:
+  Profile picture, About/Location, and Friink usage intent. The picture step
+  continues to use the shared Settings crop tool.
+- [auth] Persisted the optional `use_intent` preference and exposed Location
+  and intent editing through the existing authenticated profile-update API.
+- [web/onboarding] Prevented an incomplete wizard from reopening on every route
+  change by remembering dismissal for the current browser onboarding session.
+
+## 2026-09-11T04:00:00Z
+
+- [docs/design] Added the progressive-entry UX contract, including neutral
+  identifier presentation, server-authoritative branching, OTP Back/restart
+  behavior, abandonment semantics, and the deferred public CTA rollout.
+
+## 2026-09-11T03:30:00Z
+
+- [web/progressive-auth] Fixed the `/start` title to render as `Friink | Get
+  started` without the duplicated `Friink |` prefix.
+- [web/progressive-auth] Fixed Back from the signup OTP step to restart through
+  the progressive identifier branch instead of falling into the password step.
+- [docs] Documented abandoned-flow behavior across the same and another
+  browser, including existing reservation replacement and OTP expiry rules.
+
+## 2026-09-11T02:00:00Z
+
+- [auth/progressive] Added the feature-flagged `/start` progressive-login
+  entry point and opaque, short-lived, single-use flow orchestration for
+  existing-account password login and new-email verification.
+- [auth] Reused the existing login, signup-email, OTP, throttling, session,
+  and bootstrap protections; `/login` remains unchanged by default.
+- [schema] Added the `progressive_auth_flows` migration and model.
+- [web] Added the shared progressive identifier and neutral continuation
+  presentation without switching the public CTA.
+- [docs] Updated `docs/progressive-login.md` with implementation status,
+  endpoint details, security requirements, fallbacks, and deferred rollout
+  decisions. Staging browser, cross-origin-cookie, latency, and end-to-end
+  parity verification remain pending.
+
+## 2026-09-11T01:00:00Z
+
+- [auth] Reduced the authentication/lifecycle full lockup to `13.5rem` and the
+  fixed home mark to `1.75rem × 2rem`, restoring the established visual scale for
+  login, reset-password, and recovery screens after the tight-viewbox migration.
+- [docs] Documented the authentication logo optical sizing exception.
+
+## 2026-09-11T00:45:00Z
+
+- [authenticated-web] Reduced the shared desktop/mobile app-header full logo to
+  `5rem` wide so the tight-viewbox asset matches the established compact optical
+  scale at both responsive layouts.
+- [docs] Documented the authenticated topbar logo sizing rule.
+
+## 2026-09-11T00:30:00Z
+
+- [public-site] Reduced the public header full-lockup and footer mark heights to
+  compensate for the tighter logo viewboxes and restore the established optical
+  scale.
+- [docs] Documented the public-site optical sizing exception for the new logo
+  assets.
+
+## 2026-09-11T00:15:00Z
+
+- [web] Restored post-card Share and More controls to the compact, borderless
+  production treatment and preserved the same plain-icon exception for the
+  composer attachment control.
+- [docs] Updated the design contract to document the compact `1.75rem` post
+  action controls and the composer’s exemption from shared `.icon-button`
+  borders and hover/focus styling.
+
+## 2026-09-11T00:00:00Z
+
+- [branding] Replaced the padded platform logo SVGs with the new tight-viewbox
+  black, white, and brand-color mark and full-lockup assets across the web app.
+- [docs] Documented the canonical logo asset locations, synchronization rule,
+  intrinsic dimensions, and surface-specific variant usage in the design contract.
+- [verification] Production Webpack build and logo asset checksum comparison
+  passed; the update was pushed to `origin/staging` as commit `1c13686`.
+
+## 2026-09-10T20:30:00Z
+
+- [control-panel] Reorganized `/cp` into Overview, Staff, Users, Security &
+  Sessions, Audit Log, and Public site sections. Users remains the only
+  functional section for the current rollout; the others are explicit
+  placeholders.
+- [docs] Updated the Control Panel architecture and design contracts to make
+  the single drawer entry, internal tabs, and current implementation scope
+  explicit.
+
+## 2026-09-10T20:00:00Z
+
+- [auth/signup] Existing-email signup now sends a single-use, 15-minute sign-in
+  link to the registered address while keeping the browser response neutral.
+  Unknown-email login remains generic and never auto-creates an account.
+- [security] Reused the hashed, purpose-scoped password-reset token table for
+  sign-in links; reset tokens cannot be consumed as sign-in links or vice versa.
+- [verification] Added coverage for sign-in-link delivery, consumption, and
+  replay rejection.
+
+## 2026-09-10T19:30:00Z
+
+- [auth/copy] Simplified duplicate-username feedback to `Username is taken.`
+  across signup, profile settings, and API conflict responses.
+
+## 2026-09-10T19:15:00Z
+
+- [auth/privacy] Removed account-existence copy from email-first signup. An
+  existing email now remains on the signup email step with the same neutral
+  signup message and no login-with-this-email affordance.
+- [verification] Added a regression assertion that existing and fresh signup
+  starts share the same user-facing message.
+
+## 2026-09-10T18:45:00Z
+
+- [public-site] Updated the Development progress card from 25% to 50%,
+  including the visible value and progress fill.
+- [verification] Web TypeScript check passed.
+
+## 2026-09-10T19:00:00Z
+
+- [web/auth] Corrected the dark-mode login secondary action. The shared
+  accent-soft token was being resolved at the light root scope, leaving the
+  Back action with a pale surface despite the dark auth screen.
+- [verification] Confirmed there is no later `.button-secondary` override;
+  the scoped dark auth token now resolves against the dark paper surface.
+
+## 2026-09-10T18:30:00Z
+
+- [web/design] Formalized the three-surface boundary: public marketing,
+  app-owned authentication/workflow, and authenticated app. Login, signup,
+  password recovery/reset, OTP, and account-recovery screens now explicitly
+  use the shared app button system while remaining outside the authenticated
+  shell.
+- [web] Corrected dark-mode auth tokens so secondary buttons use a dark,
+  readable app treatment instead of a pale landing-style surface.
+- [verification] Web TypeScript check passed.
+
+## 2026-09-10T18:00:00Z
+
+- [web/design] Simplified the canonical in-app action layout: primary and
+  secondary buttons now remain intrinsic-width and align to the end of their
+  action row across modals, auth, add-account, reset-password, and wizard
+  flows. Removed the unused `.button-full-width` contract; narrow layouts may
+  stack actions responsively without creating a new button type.
+- [web] Removed the remaining auth and Add-account CSS rules that forced
+  submit actions to fill the row; the screenshots now follow the same
+  intrinsic-width modal action treatment.
+- [verification] Confirmed the legacy full-width button class and auth
+  full-row width rules have no remaining usage; the stylesheet diff is clean.
+
+## 2026-09-10T17:35:00Z
+
+- [web/account-switcher] Replaced the transient `Updating accounts…` header
+  with a permanent `Switch Account` row. The refresh spinner now appears on
+  the right only while accounts are loading; retry remains available only when
+  a refresh fails.
+- [verification] Web TypeScript check and diff validation passed.
+
+## 2026-09-10T17:20:00Z
+
+- [settings/profile] Added an editable Date of birth field to Settings >
+  Profile using the existing server-side user attribute and minimum-age
+  validation. It is not displayed on public profiles in this phase.
+- [verification] Focused API date-of-birth update test and web TypeScript check
+  passed; no database migration was required.
+
+## 2026-09-10T17:00:00Z
+
+- [web/design] Consolidated in-app buttons around shared primary and secondary
+  action styles, intrinsic versus full-width layout rules, shared text links,
+  and compact icon controls. Removed obsolete duplicate app button classes from
+  the global stylesheet while leaving public landing-page styles unchanged.
+- [verification] Web TypeScript check and webpack production build passed.
+
 ## 2026-09-10T16:35:00Z
 
 - [release] Pushed the failed-login throttling release through `development`,
@@ -2493,3 +3360,60 @@ _Last updated: 2026-09-10_
 - Fixed chat scrolling so the participant profile/separator stays pinned below navigation and the final message clears the floating composer.
 - Added a shared public-route session guard so authenticated users are redirected to `/home` from the landing page, subscriptions, and direct `/login` navigation.
 - Made chat participant identity clickable and restored end-of-conversation scroll on reopen; chat retains bottom clearance for the floating composer.
+
+## 2026-09-12
+
+### Docs
+- Added `docs/2026-09-12-capture.md`, auditing every document under `docs/`
+  against `RULES.md` and checking each material drift against the current
+  implementation.
+- Captured the latest progressive-auth, session, reaction, nested-reply,
+  profile-reply, visibility, lifecycle, and verification requirements.
+- Recorded that `RULES.md` and all existing contracts were intentionally left
+  unchanged for later review.
+
+### Verification
+- TypeScript compilation and the production webpack build pass.
+- The full API suite and web lint remain non-clean; Windows SQLite cleanup and
+  local Next dev startup (`spawn EPERM`) prevent a clean end-to-end claim.
+
+### Audit scope
+- Updated the documentation capture to exclude archival `docs/session/`
+  references from active conflicts and use `docs/auth-and-session.md` as the
+  current authentication/session authority.
+- Corrected the capture’s recency precedence: later focused progressive-login
+  and failed-login contracts supersede only their respective auth slices.
+
+### Rules
+- Promoted the latest Posts/Replies/Quotes contract into `RULES.md`, including
+  nested reply presentation, focused reply views, author-scoped profile
+  replies, and the `Post hidden` placeholder for newly-private quoted content.
+- Left progressive-login beta and verification/development status outside the
+  active business rules.
+- Synchronized the selected read-receipt, blocking, media-upload,
+  Like/Save, and account-lifecycle business rules into `RULES.md`; recorded
+  the remaining Like/Save implementation mismatch in the capture.
+- Added `docs/2026-09-21-notes.md` documenting MIME types, the current media
+  upload limitation, and safer validation/delivery follow-up options.
+- Synchronized business rules from `login.md`, `forget-password.md`, and
+  `auth-incident-response.md` into `RULES.md`; recorded the reset-email
+  delivery conflict for follow-up.
+- Added the complete authentication conflict list to
+  `docs/2026-09-21-notes.md`.
+- Added `rules-staging.md`, an exact local snapshot of `staging:RULES.md`.
+- Synchronized business rules from `account-switcher.md`, `subscriptions.md`,
+  and `failed-login-policy.md` into `RULES.md`.
+- Recorded the remaining account-switcher loading-copy, subscription
+  expiry-audit, and password-reset delivery conflicts for follow-up.
+- Synchronized active business rules from `updated-account-info.md`,
+  `notifications.md`, and `chat-behavior.md`; kept beta progressive login out
+  of active rules.
+- Aligned `RULES.md` with the implementation for account-switcher logout,
+  Like/Save reactions, and inaccessible private quoted posts.
+- Normalized all `RULES.md` `Since` fields to `YYYY-MM-DDTHH:MM:SSZ`, using
+  `00:00:00Z` where the original entry had no time.
+- Audited implementation-change entries in `AGENTLOG.md` against `RULES.md`;
+  no missing active rules were found, and four implementation conflicts were
+  flagged for review.
+- Updated `RULES.md` so those four rules now describe the current
+  implementation, including the known browser-state isolation limitation.

@@ -44,7 +44,7 @@ export default function HomePage() {
                   <h2>Under Development</h2>
                   <p>Laying the foundation for a better space.</p>
                 </div>
-                <span className={styles.progressValue}>25%</span>
+                <span className={styles.progressValue}>50%</span>
               </div>
               <div className={styles.progressTrack} role="progressbar" aria-label="Development progress" aria-valuenow={25} aria-valuemin={0} aria-valuemax={100}>
                 <div className={styles.progressFill} />
@@ -139,7 +139,7 @@ export default function HomePage() {
         <div className={styles.footerInner}>
           <picture>
             <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoWhite.svg" />
-            <Image src="/brand/logoBlack.svg" alt="Friink" width={64} height={64} className={styles.footerLogo} />
+            <Image src="/brand/logoBlack.svg" alt="Friink" width={96} height={97} className={styles.footerLogo} />
           </picture>
           <p>&copy; 2026 Friink. Built for humans.</p>
         </div>

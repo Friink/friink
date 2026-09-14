@@ -1,6 +1,7 @@
 import re
 import uuid
 from datetime import date
+from urllib.parse import parse_qs, urlparse
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
@@ -26,11 +27,17 @@ def _payload(suffix: str) -> dict[str, str]:
 
 def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(monkeypatch) -> None:
     sent_codes: list[str] = []
+    login_links: list[str] = []
 
     async def capture_code(self, email: str, otp_code: str) -> None:
         sent_codes.append(otp_code)
 
     monkeypatch.setattr("app.services.email.EmailService.send_signup_otp", capture_code)
+
+    async def capture_login_link(self, email: str, login_url: str) -> None:
+        login_links.append(login_url)
+
+    monkeypatch.setattr("app.services.email.EmailService.send_login_link", capture_login_link)
     app.dependency_overrides[get_settings] = lambda: Settings(
         _env_file=None,
         JWT_SECRET_KEY="phase2-test-secret",
@@ -68,8 +75,16 @@ def test_signup_start_is_neutral_and_verification_creates_only_after_valid_otp(m
         assert existing.json()["accepted"] is True
         assert fresh.json()["accepted"] is True
         assert existing.json()["verification_required"] is False
-        assert existing.json()["existing_account"] is True
+        assert existing.json()["existing_account"] is False
         assert existing.json()["reservation_token"] == ""
+        assert existing.json()["message"] == fresh.json()["message"]
+        assert len(login_links) == 1
+        login_token = parse_qs(urlparse(login_links[0]).query)["login_token"][0]
+        login_link_session = client.post("/auth/login/link/consume", json={"token": login_token})
+        assert login_link_session.status_code == 200, login_link_session.text
+        assert login_link_session.json()["user"]["email"] == existing_email
+        replayed_login_link = client.post("/auth/login/link/consume", json={"token": login_token})
+        assert replayed_login_link.status_code == 400
         assert fresh.json()["verification_required"] is True
         assert fresh.json()["existing_account"] is False
         assert re.fullmatch(r"[A-Za-z0-9_-]{32,128}", fresh.json()["reservation_token"])

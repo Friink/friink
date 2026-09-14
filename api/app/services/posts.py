@@ -16,6 +16,7 @@ from app.models.post import Post, PostKind, PostMedia
 from app.models.user import User
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, PostKind as PostKindSchema, PostMediaResponse, PostResponse, QuotedPostResponse
 from app.services.session_ops import commit, refresh, rollback
+from app.services.auth import get_user_by_username
 from app.services.post_slug import generate_post_slug
 from app.services.post_ids import generate_public_id
 from app.services.notifications import create_notification
@@ -115,9 +116,8 @@ async def create_post(session: Session, user: User, data: CreatePostRequest) -> 
         quoted_post = session.get(Post, data.quoted_post_id)
         if not quoted_post:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quoted post was not found.")
-        quote_author = quoted_post.user or session.get(User, quoted_post.user_id)
-        if quote_author and quote_author.is_private:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Private posts cannot be quoted.")
+        if not can_view_post(session, user, quoted_post):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot quote this post.")
 
     parent_post: Post | None = None
     if data.parent_post_id:
@@ -232,6 +232,56 @@ async def get_posts_page(session: Session, limit: int = DEFAULT_FEED_LIMIT, curs
     )
 
 
+async def get_user_posts(session: Session, viewer: User, username: str, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None) -> FeedPageResponse:
+    target = await get_user_by_username(session, username)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    clamped_limit = clamp_feed_limit(limit)
+    query = (
+        post_feed_base_query()
+        .where(Post.user_id == target.id)
+        .order_by(Post.created_at.desc(), Post.id.desc())
+    )
+    if cursor:
+        created_at, post_id = decode_post_cursor(cursor)
+        query = query.where(build_older_than_filter(created_at, post_id))
+
+    result = session.execute(query.limit(clamped_limit + 1))
+    posts = list(result.scalars().all())
+    has_more = len(posts) > clamped_limit
+    page_items = posts[:clamped_limit]
+    return FeedPageResponse(
+        items=[serialize_post(post, viewer=viewer, session=session) for post in page_items if can_view_post(session, viewer, post)],
+        next_cursor=encode_post_cursor(page_items[-1]) if has_more and page_items else None,
+        has_more=has_more,
+    )
+
+
+async def get_user_replies(session: Session, viewer: User, username: str, limit: int = DEFAULT_FEED_LIMIT, cursor: str | None = None) -> FeedPageResponse:
+    target = await get_user_by_username(session, username)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    clamped_limit = clamp_feed_limit(limit)
+    query = (
+        select(Post).options(*post_load_options())
+        .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY, Post.user_id == target.id)
+        .order_by(Post.created_at.desc(), Post.id.desc())
+    )
+    if cursor:
+        created_at, post_id = decode_post_cursor(cursor)
+        query = query.where(build_older_than_filter(created_at, post_id))
+    replies = list(session.execute(query.limit(clamped_limit + 1)).scalars().all())
+    has_more = len(replies) > clamped_limit
+    page_items = replies[:clamped_limit]
+    visible_replies = [reply for reply in page_items if can_view_post(session, viewer, reply)]
+    return FeedPageResponse(
+        items=[serialize_post(reply, viewer=viewer, session=session) for reply in visible_replies],
+        next_cursor=encode_post_cursor(page_items[-1]) if has_more and page_items else None,
+        has_more=has_more,
+    )
+
+
 async def get_newer_posts(session: Session, after_created_at: datetime, after_post_id: uuid.UUID, limit: int = DEFAULT_FEED_LIMIT, viewer: User | None = None, feed: str = "explore") -> list[Post]:
     clamped_limit = clamp_feed_limit(limit)
     result = session.execute(
@@ -289,10 +339,22 @@ async def get_post_replies(session: Session, post_id: uuid.UUID, viewer: User | 
     result = session.execute(
         select(Post)
         .options(*post_load_options())
-        .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY, Post.parent_post_id == post_id)
-        .order_by(Post.created_at.asc())
+        .where(Post.deleted_at.is_(None), Post.kind == PostKind.REPLY)
+        .order_by(Post.created_at.asc(), Post.id.asc())
     )
-    return [post for post in result.scalars().all() if can_view_post(session, viewer, post)]
+    replies = list(result.scalars().all())
+    by_parent: dict[uuid.UUID, list[Post]] = {}
+    for reply in replies:
+        if can_view_post(session, viewer, reply):
+            by_parent.setdefault(reply.parent_post_id, []).append(reply)
+
+    ordered: list[Post] = []
+    stack = list(reversed(by_parent.get(post_id, [])))
+    while stack:
+        reply = stack.pop()
+        ordered.append(reply)
+        stack.extend(reversed(by_parent.get(reply.id, [])))
+    return ordered
 
 
 async def get_post(session: Session, post_id: uuid.UUID) -> Post | None:

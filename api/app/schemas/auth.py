@@ -117,6 +117,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class LoginLinkConsumeRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+
+
 class LoginChallengeResponse(BaseModel):
     challenge_required: bool = True
     challenge_token: str | None = Field(default=None, min_length=32, max_length=128)
@@ -179,6 +183,9 @@ class UpdateCurrentUserRequest(BaseModel):
     email: EmailStr | None = None
     display_name: str | None = Field(default=None, max_length=DISPLAY_NAME_MAX_LENGTH)
     about: str | None = Field(default=None, max_length=256)
+    location: str | None = Field(default=None, max_length=255)
+    use_intent: Literal["professional", "personal"] | None = None
+    date_of_birth: date | None = None
     is_private: bool | None = None
     likes_visible: bool | None = None
 
@@ -193,6 +200,11 @@ class UpdateCurrentUserRequest(BaseModel):
     @classmethod
     def normalize_name(cls, display_name: str | None) -> str | None:
         return normalize_display_name(display_name)
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_age(cls, date_of_birth: date | None) -> date | None:
+        return validate_minimum_age(date_of_birth) if date_of_birth is not None else None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -232,7 +244,7 @@ class PasswordResetConfirmRequest(BaseModel):
 
 
 class UpdateSetupRequest(BaseModel):
-    step: int = Field(ge=1, le=2)
+    step: int = Field(ge=1, le=3)
     completed: bool = False
 
 
@@ -242,6 +254,7 @@ class UserResponse(BaseModel):
     username: str
     display_name: str | None
     about: str | None
+    date_of_birth: date
     profile_picture_url: str | None
     profile_picture_updated_at: datetime | None
     setup_step: int
@@ -250,6 +263,9 @@ class UserResponse(BaseModel):
     likes_visible: bool
     is_verified: bool
     is_staff: bool
+    location: str | None
+    account_region: str | None
+    use_intent: Literal["professional", "personal"] | None
     created_at: datetime
     updated_at: datetime
 

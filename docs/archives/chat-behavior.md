@@ -38,9 +38,10 @@ Conversation access state is independent from per-user presentation state:
   request remains read-only. Unblocking does not reset or extend the eight-message
   limit; the request may resume from its existing count if it has not reached eight.
 
-There is intentionally no declined state. A receiver may mute a request instead of
-declining it, preserving the request and suppressing notifications. The receiver may
-still accept or reply later.
+Declining a pending request records a declined state for the conversation. A receiver
+may still mute a request instead of declining it, preserving the request and
+suppressing notifications. A declined conversation is unavailable and cannot be
+used for messaging.
 
 ## Composer states and copy
 
@@ -58,7 +59,8 @@ from policy state. The backend remains authoritative for every send.
 ## Requests, chats, and tabs
 
 Pending requests are visible to both participants in Requests. Once accepted, the
-request leaves Requests and appears in All Chats. Accepted conversations are filtered
+request leaves Requests and appears in All Chats. A declined request leaves Requests
+and is unavailable. Accepted conversations are filtered
 by the viewer's archive state:
 
 - All: active, non-archived accepted chats.
@@ -78,8 +80,8 @@ read behavior remain in use.
 
 ## Technical design
 
-- `Conversation.status` and `Conversation.requester_id` model pending versus accepted
-  state. A single conversation remains the durable thread for a user pair.
+- `Conversation.status` and `Conversation.requester_id` model pending, accepted, and
+  declined state. A single conversation remains the durable thread for a user pair.
 - `Conversation.requester_message_count` is incremented only for requester-authored
   messages while pending and is enforced transactionally at eight.
 - `ConversationSetting` stores per-user `muted`, `archived`, and whether mute was an

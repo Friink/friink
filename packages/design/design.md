@@ -1,8 +1,67 @@
-# Friink Design
+# Friink Design Implementation
+
+This document is the repository-level implementation contract for the product
+design language defined in [`docs/design-system.md`](../../docs/design-system.md).
+It records how the design system is realized in code: token values, CSS
+ownership, shared layout contracts, component contracts, and known
+implementation constraints.
+
+**Status:** Active
+**Last edited:** 2026-09-12
+**Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
+**Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
+**Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
+
+## Implementation boundaries
+
+- Product-level design intent, principles, and shared usage guidance belong in
+  [`docs/design-system.md`](../../docs/design-system.md).
+- This file owns exact implementation details and code mappings.
+- Canonical token values live in `web/theme.config.ts`.
+- Generated CSS variables and shared visual/layout rules live in
+  `web/app/globals.css`.
+- Logged-in TSX components provide structure, state, semantic classes,
+  behavior, and accessibility; they do not define visual design.
+- Page-specific CSS, CSS Modules, route-only stylesheets, and JSX inline
+  styles are not permitted for the logged-in app.
+- The public landing stylesheet remains a separate public-site concern.
+
+When a product design decision changes, update `docs/design-system.md` first,
+then update this implementation contract and the owning code as needed. Do not
+maintain competing values or duplicate implementation rules in both documents.
 
 ## Product Direction
 
 Friink is a calm, people-first social space centered on meaningful conversations and connection.
+
+## Brand Assets
+
+- The platform uses the six canonical SVG assets in `brand/`: black, white, and
+  brand-color mark variants plus the matching full lockups.
+- The web-served copies live in `web/public/brand/` and must remain byte-for-byte
+  synchronized with `brand/`.
+- These assets use tight viewboxes without the legacy surrounding padding. Keep
+  logo alignment in the consuming component's layout and size the mark and full
+  lockup according to their intrinsic proportions (`96×97` and `304×175`).
+- Use mark assets for compact identity surfaces and full lockups for headers,
+  authentication, lifecycle, and other branded wordmark surfaces. Select the
+  black/white variants for light/dark public surfaces and the brand-color variant
+  for authenticated application surfaces.
+- Public marketing surfaces use an optical size adjustment for the tight-viewbox
+  assets: the header full lockup is `2.5rem` high and footer mark is `1.75rem`
+  high. This preserves the established production visual scale; do not reuse
+  authenticated-shell logo dimensions for the public site.
+- The authenticated topbar uses the tight-viewbox full lockup at `5rem` wide.
+  This shared rule applies at desktop and mobile breakpoints so the app header
+  keeps the same compact optical scale across responsive layouts.
+- Authentication and lifecycle screens use the full lockup at `13.5rem` wide
+  and the fixed home mark at `1.75rem × 2rem`. These optical sizes compensate
+  for the tight viewboxes and keep login, reset-password, and recovery surfaces
+  aligned with the established production scale.
+- Authentication and lifecycle surfaces, including standalone session recovery,
+  follow the system light/dark scheme by default. A valid in-app appearance
+  preference (`light`, `dark`, or `system`) overrides the system scheme on the
+  device; public marketing surfaces remain system-driven.
 
 ## Layout
 
@@ -12,6 +71,7 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Top Headers**:
   - Desktop uses the top `Header` (`4rem` height) containing the sidebar toggle hamburger button, full brand logo, inline search control, Chat link (`/chats`), and Notifications bell (`/notifications`).
   - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
+  - The Notifications surface reuses `Tabs` for `All` and `Security`; its `NavigationBar` overflow uses `ActionMenu` for unread-only filtering and the explicit mark-all-as-read action. Notification rows reuse `ListRow` and keep pending request actions inline. The bell dropdown shows unread notifications only, is empty at zero unread, and scrolls when the unread list exceeds its compact viewport. See `docs/notifications.md` for the full interaction contract.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines. The direct chat route also uses this shared surface for its message composer and keeps it visible while changing enabled state and placeholder according to the chat policy contract.
 - **Profile Composer Rule**: The shared floating composer is not rendered on profile pages. Profile pages remain focused on identity, profile actions, and profile content; the app-wide post composer remains available on feed and other explicitly supported surfaces.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On tablet and desktop, the visible content surface is capped at `720px` via `--space-content-col` and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. The shared content inset is applied outside that cap as an available-width gutter, and `ContentBox` owns bottom spacing. Child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
@@ -25,24 +85,26 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Component-Level Fix Rule**: Global UI behavior and layout fixes must land in shared components, shell state owners, shared CSS selectors/tokens, or documented component contracts. Do not solve recurring UI issues with inline styles, page-only spacing overrides, or route-specific quick fixes.
 - **Deployment-Neutral Database Connection Rule**: Database connection management is infrastructure configuration, not product behavior. The API uses environment-configurable SQLAlchemy pool settings that work with Neon and a future Ubuntu-hosted PostgreSQL deployment. The default is a conservative 3 base connections plus 2 overflow connections with pre-ping, LIFO reuse, bounded checkout, and recycling; Ubuntu may use a larger pool based on worker count and PostgreSQL `max_connections`. Pooling can be disabled explicitly for runtimes that require short-lived connections. Do not encode Neon-only branching in application features.
 - **Web Styling Ownership Rule**: The logged-in web app owns one shared styling surface in `web/app/globals.css`, backed by tokens from `web/theme.config.ts`. Components use semantic classes and must not emit JSX `style` props. Runtime-calculated geometry may be expressed through documented CSS custom properties when a static class cannot represent the value. The public site is excluded from this rule.
+- **Web Surface Boundary**: Friink has three product-surface layers: the public marketing site, app-owned authentication/workflow surfaces, and the authenticated web app. Login, signup, OTP, password recovery/reset, account-deleted recovery, and similar transactional screens belong to the app-owned product surface and use the shared app button system even when they do not render the authenticated shell. The public marketing site remains the only surface with separate landing-page button styling.
 - **Absolute Inline CSS Ban**: Never use inline CSS in `web/`. This means no JSX `style` props, HTML `style` attributes, or component-level inline CSS declarations—regardless of how small or convenient the change appears. Static styling belongs in `web/app/globals.css`; runtime values must use a documented shared class/state or CSS custom-property mechanism. Do not make exceptions for quick fixes. The public site is outside this contract.
 - **Absolute Page-Specific CSS Ban**: Never create or introduce page-specific CSS for the logged-in web app. Do not add CSS Modules, route-only stylesheets, or page-only style sections. All app styling must use semantic classes and shared rules in `web/app/globals.css`, backed by `web/theme.config.ts` tokens. The existing public-site `web/app/landing.module.css` is outside this contract and must not be changed as part of app work.
 - **Absolute TSX Design Ban**: Never define or modify visual design in logged-in web-app TSX components. TSX is limited to structure, semantic class names, state, behavior, and accessibility. Colors, spacing, sizing, positioning, typography, borders, shadows, and layout must be changed only in `web/app/globals.css` using canonical tokens from `web/theme.config.ts`. This is a styling ownership rule; it does not prohibit TSX state or behavior changes and does not govern the public site.
 - **Exclusive Design File Rule**: For the logged-in web app, design changes may be made only in `web/theme.config.ts` and `web/app/globals.css`. `theme.config.ts` is the sole owner of canonical token values; `globals.css` is the sole owner of generated variables and shared visual/layout rules. Never add design rules to TSX, page-specific CSS, CSS Modules, route stylesheets, or any other web-app file. The public site remains outside this contract.
 - **Settings Sections**: Settings uses the shared `Tabs` strip for General, Profile, Account, and Privacy & Safety. Profile edits own public `Name`, `Username`, and `About` as separate rows with separate update actions; Account edits login/account identifiers such as email and password. Internal database UUIDs are not shown in the normal Account screen.
-- **Control Panel Sections**: Control Panel uses the shared `NavigationBar`, `Tabs`, `ContentBox`, `PageSurface`, and `ListRow`/settings-row treatment. The side-drawer entry is discoverability only. Staff users with no roles see a calm no-access empty state; users see only tabs allowed by their effective permissions. Multiple roles are presented as one combined access view, while additive per-user grants appear separately as `Additional access`. Loading, denied, expired, retry, and access-lost states are explicit; no protected area renders as a blank panel. Missing or expired privileged access is presented in the shared `Modal` as a staff-verification step-up; closing it returns to the prior screen while keeping the ordinary Friink session active. A future role such as `marketer` may expose a `Public site` tab without exposing unrelated staff areas.
-- **Authentication Copy Surfaces**: The login identifier field is labeled `Email or username`; signup remains email-first and shows the verification-code screen before password/profile fields. If the submitted signup email is already registered, the flow stays on the email step, sends no OTP, and offers calm login-or-different-email recovery copy. Email changes first confirm the current password, then verify ownership of the new address with an OTP. Password recovery is email-only and always uses neutral `If an account exists for that email, password-reset instructions have been sent.` copy; valid, expired, used, invalid, and successful reset states follow `docs/forget-password.md` and never expose tokens or account existence. A full account lock shows exactly `Your account is locked. Contact support.` with no reason or duration. Progressive failed-login throttling allows failures 1–3 without cooldown, then uses one-minute, five-minute, and capped fifteen-minute cooldown tiers at failures 4–5, 6–8, and 9+. Cooldown copy uses the server-provided remaining time, never shows attempts remaining or tier names, and must never be presented as a full account lock. The login form preserves the identifier, clears the password, disables submission during cooldown, and exposes an accessible countdown that survives refreshes and tabs. Deliberate session invalidation uses `For your security, your session ended. Please sign in again.` and is distinct from generic expiry or recoverable API failure.
+- **Control Panel Sections**: Control Panel uses one side-drawer entry and a shared `Tabs` strip inside `/cp`, with `Overview`, `Staff`, `Users`, `Security & Sessions`, `Audit Log`, and `Public site` sections. The side-drawer entry is discoverability only. For the current rollout, `Users` is the only functional section; the other sections render explicit placeholders. Staff users with no roles see a calm no-access empty state; users see only tabs allowed by their effective permissions. Multiple roles are presented as one combined access view, while additive per-user grants appear separately as `Additional access`. Loading, denied, expired, retry, and access-lost states are explicit; no protected area renders as a blank panel. Missing or expired privileged access is presented in the shared `Modal` as a staff-verification step-up; closing it returns to the prior screen while keeping the ordinary Friink session active. A future role such as `marketer` may expose the `Public site` tab without exposing unrelated staff areas.
+- **Authentication Copy Surfaces**: The login identifier field is labeled `Email or username`; signup remains email-first and shows the verification-code screen before password/profile fields. If the submitted signup email is already registered, the flow stays on the email step, sends no OTP, and shows only the same neutral `If the signup details can be accepted, verification instructions will be sent.` copy; it must not show account-existence, login, or different-email recovery text. Email changes first confirm the current password, then verify ownership of the new address with an OTP. Password recovery is email-only and always uses neutral `If an account exists for that email, password-reset instructions have been sent.` copy; valid, expired, used, invalid, and successful reset states follow `docs/forget-password.md` and never expose tokens or account existence. A full account lock shows exactly `Your account is locked. Contact support.` with no reason or duration. Progressive failed-login throttling allows failures 1–3 without cooldown, then uses one-minute, five-minute, and capped fifteen-minute cooldown tiers at failures 4–5, 6–8, and 9+. Cooldown copy uses the server-provided remaining time, never shows attempts remaining or tier names, and must never be presented as a full account lock. The login form preserves the identifier, clears the password, disables submission during cooldown, and exposes an accessible countdown that survives refreshes and tabs. Deliberate session invalidation uses `For your security, your session ended. Please sign in again.` and is distinct from generic expiry or recoverable API failure.
+- **Existing Email Sign-in Link Rule**: When signup receives an existing email, the browser stays neutral while the registered address receives a single-use, 15-minute sign-in link. Consuming the link creates the same normal session as password login; it never creates a new account or exposes the raw token in the UI.
 - **OTP Configuration Surface**: OTP behavior is controlled by the API-owned `OTP_ENABLED` master setting, which defaults to `true`. An explicit `OTP_ENABLED=false` may be used for local, test, or staging validation and removes OTP prompts across signup, login-risk, reactivation, deletion, and email-change flows. Production must keep OTP enabled; the API refuses to start with the master switch disabled. The frontend must follow API response state and must not render an OTP step when verification is disabled.
 - **About Empty State**: A profile with no About text renders no visitor-facing About copy. The signed-in owner sees `Add about in settings.` as the only placeholder.
 
 ## Account Switcher
 
 - **Remembered Accounts**: The account caret lists server-provided device slots in recency order, followed by `Add account` and `Manage accounts`. The active account remains usable until a new account session and slot are fully established.
-- **Async Refresh**: Opening the selector renders the cached device-scoped list immediately while one deduplicated background refresh runs. During refresh, show the shared compact loader and `Updating accounts…`; keep the current account visible and usable instead of showing a blank state.
+- **Async Refresh**: Opening the selector renders the cached device-scoped list immediately while one deduplicated background refresh runs. The menu always begins with a permanent `Switch Account` header; while refreshing, the shared compact loader appears on the header’s right side, and the header text remains unchanged. The loader disappears when refresh completes; no transient `Updating accounts…` row replaces the header. Keep the current account visible and usable instead of showing a blank state.
 - **Refresh Completion**: Add-account, switch, and logout actions trigger an immediate asynchronous list refresh. Display names and usernames come from the API summary; never derive a username from an email address. A failed refresh preserves the cached list and current account and exposes a retryable message.
 - **Limit State**: When the configured device-slot limit is reached, `Add account` does not start authentication; it opens account management with a clear remove-before-adding message.
 - **Fallback**: Active logout returns to the most-recent remaining account. Deactivation uses `Go Back` for the same fallback and returns to the public site only when no remembered account remains.
-- **Failure State**: Failed list, switch, logout, or add-account requests preserve the active account and expose a retryable message. Reload derives the active identity from the validated session rather than stale local account state.
+- **Failure State**: Failed list, switch, logout, or add-account requests preserve the active account and expose a retryable message. For a failed account-list refresh, the header keeps `Switch Account`, the loader disappears, and a right-side `Retry` action is shown. Reload derives the active identity from the validated session rather than stale local account state.
 - **Busy State**: During a switch, the selected row shows the shared spinner and competing account, logout, and Add account actions are disabled until the operation settles. Success updates/remounts the app shell in place without a browser-level reload.
 
 ## Navigation
@@ -60,6 +122,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
    - Home (`fa-house` → `/home`)
    - Connections (`fa-user-group` → `/connections`)
    - Saved (`fa-star` → `/saved/posts`)
+   - Directory (`fa-address-book` → `/directory`), directly beneath Saved
    - Footer: Settings (`fa-gear` → `/settings`), Log out (`fa-right-from-bracket`)
 3. **Header (Global Utilities)**:
    - Search (`fa-magnifying-glass` opens an inline header search box with text-only suggestions; submit routes to `/search/{searched-string}`)
@@ -79,6 +142,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
 - Saved uses `/saved/posts` and `/saved/profiles`; `/saved` redirects to `/saved/posts`. Posts contains the current user's private saved posts, while Profiles is reserved for future profile saving.
+- Directory uses `/directory` and reuses the existing Directory screen surface.
 - Legacy tab roots remain compatibility entry points and redirect to the corresponding canonical tab path.
 
 ### Chat receipt presentation
@@ -93,7 +157,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - **Connections Directory**: A dedicated people management view with `All`, `Followers`, `Following`, and `Requests` filters.
 - **Saved Feed**: A preset saved-post view containing only saved posts at `/saved/posts`. The sibling `/saved/profiles` route is reserved for future profile saving and currently shows a coming-soon empty state.
 - **Saved Posts**: Saved posts display the brand-colored filled star icon (`fa-solid fa-star`).
-- **Post Reactions**: Shared `FeedPost` cards expose public Like and Save counts in the counted action row. Signed-in users can toggle the outlined heart/star controls for posts; active reactions use filled glyphs. Clicking the Like count opens the shared responsive actor modal, while the Save count is display-only because Save actors are private. Replies do not render reaction controls.
+- **Post Reactions**: Shared `FeedPost` cards expose public Like and Save counts in the counted action row. Signed-in users can toggle the outlined heart/star controls for normal posts, replies, and Quotes; active reactions use filled glyphs. Clicking the Like count opens the shared responsive actor modal, while the Save count is display-only because Save actors are private.
 - **Liked Posts**: Profile tabs include `Likes` at `/{username}/likes` when the profile's Like visibility permits it. The tab reuses `FeedPost` and cursor-paginated API data; unavailable/deleted posts are omitted.
 - **Post Card Navigation Rule**: Clicking a non-interactive area of a post card opens the canonical post detail page.
 - **Post Text Expansion Rule**: `Show more...` appears only when post body text overflows four visible lines on feed or post detail surfaces. Activating it expands that post card in place to show the full text; it does not navigate.
@@ -128,7 +192,7 @@ Fallback and error screens should be quiet, centered, and branded.
 Standard app surfaces should be reusable components. Page-specific markup/content may remain local when it is not reused elsewhere, but logged-in app design rules must never be page-specific; they belong only in `web/theme.config.ts` and `web/app/globals.css`.
 
 - **Modal** (`web/components/modal.tsx`): Global modal primitive with an accessible dialog, dimmed backdrop dismissal, Escape dismissal, an optional left-side back-arrow control, a centered title, a top-right cross close control, and a bottom action ribbon for adjacent actions. The header uses fixed back/title/close columns so the title remains centered even when the back control is absent. The modal portals to `document.body`, and its backdrop is the topmost application layer (`z-index: 10000`) so dialogs and their controls remain above navigation, floating bars, menus, and toasts regardless of the caller's stacking context. Dialogs use a responsive desktop/tablet/mobile viewport-constrained shell defined once in `web/app/globals.css`; the themed header, body background, and action ribbon are global, while body content/layout remains contextual. Modal text actions use the shared `.button-primary` / `.button-secondary` primitive at 3rem height with `0.75rem 1.25rem` padding; icon-only settings controls must not be used for text actions. The body owns overflow scrolling while the header and action ribbon remain visible. The back arrow is shown only when `onBack` is provided and must perform the flow's previous-step action without replacing the close control.
-- **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated two-step setup flow mounted by `AppShell`. It uses the shared themed `Modal`, accent progress treatment, icon-led step headings, helper copy, ProfileCard identity preview, optional Profile picture and About steps, and persists step/completion state through the authenticated setup endpoint.
+- **ProfileSetupWizard** (`web/components/profile-setup-wizard.tsx`): Authenticated three-step setup flow mounted by `AppShell`. It uses the shared themed `Modal`, accent progress treatment, icon-led step headings, helper copy, ProfileCard identity preview, optional Profile picture, About/Location, and usage-intent steps, and persists step/completion state through the authenticated setup endpoint.
 - **ProfilePictureCropModal** (`web/components/profile-picture-crop-modal.tsx`): Shared square crop interaction used by Settings and ProfileSetupWizard; it owns the crop modal presentation while callers own upload/confirmation state.
 - **PostLikesModal** (`web/components/post-likes-modal.tsx`): Shared responsive `Modal` for Like actors. It uses `ListRow` and `ProfileCard`, server-side search, opaque-cursor pagination, duplicate suppression, and privacy/block filtering supplied by the API.
 - **FeedPost reactions** (`web/components/feed-post.tsx`): The shared post surface owns optimistic Like/Save state, server-authoritative count reconciliation, rollback/error feedback, and the Like-count modal entry point. Reaction presentation stays in the shared app CSS.
@@ -142,13 +206,13 @@ The following design tokens are locked hard values extracted directly from the c
 ### Corner Radius
 - **Buttons and Single-Line Inputs**: `8px` (`--radius-sm: 8px`). Per 2026-08-17 changelog decision, buttons, single-line inputs, search fields, toggle pills, and option menus use an `8px` corner radius, NOT a pill shape.
   - *Codebase `--radius-pill` status*: In `web/app/globals.css` and `web/theme.config.ts`, `--radius-pill` is hard-aliased to `8px` (`:root { --radius-pill: 8px; }`).
-  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.profile-action-button`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`.
+  - *Remaining usage of `--radius-pill`*: The token variable `var(--radius-pill)` is still referenced in CSS class selectors (`.settings-toggle-pill`, `.appearance-toggle`, `.message-search`, `.composer input`, `.input-with-prefix`, `.post-submit`, `.floating-bar`, `.floating-bar-item`), but resolves strictly to `8px`. Ordinary app buttons use the shared `8px` action radius directly.
 - **Radius Scale**:
   - `--radius-sm`: `8px` (Buttons, inputs, cards, dropdowns, floating bar)
   - `--radius-md`: `12px`
   - `--radius-lg`: `16px`
   - `--radius-pill`: `8px` (Hard-aliased to 8px; legacy token name)
-  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), circular action icons (`.post-option`, `.topbar-menu`, `.messages-toolbar .icon-plain`)
+  - Circular (`50%`): Avatars (`.user-avatar`, `.profile-card-avatar`), and legacy/specialized circular action icons where explicitly required. Standard app icon controls use the shared `8px` radius (`.icon-button`).
   - Landing CTA buttons: `4px` (`border-radius: 4px`)
 
 ### Colors
@@ -286,7 +350,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
   - **Self-Profile Variant** (`isOwnProfile = true`): Renders the **Edit** action button (`.profile-action-edit`, icon `fa-pen-to-square` + text "Edit", right-aligned) and routes to Settings > Profile.
-  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the **Compose / Send Message** icon button (`.profile-message-icon`, icon `fa-paper-plane`, right-aligned) and routes to `/{username}/chat` when activated.
+  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the **Compose / Send Message** icon button (shared `.button-secondary.icon-button`, icon `fa-paper-plane`, right-aligned) and routes to `/{username}/chat` when activated.
   - *These are the only two variants.*
 - **State Invariant**: Sidebar navigation highlight ONLY tracks the signed-in user's profile (`sidebarActiveScreen`). When browsing another user's dummy profile via `/[username]`, the sidebar profile navigation item must NOT be highlighted.
 - **Props Contract**:
@@ -300,7 +364,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
      - Right action cluster (`.feed-post-options`) containing Share and More buttons with a visible fixed gap.
-     - More options button (`.feed-post-more`, `fa-ellipsis-vertical`) uses the same button and icon box height as `NavigationBar` overflow.
+     - Share (`.feed-post-share`, `fa-share-nodes`) and More (`.feed-post-more`, `fa-ellipsis-vertical`) are compact plain icon controls: `1.75rem` square, transparent, borderless, and without accent hover/focus treatment. They are intentionally exempt from the shared bordered `.icon-button` treatment.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
@@ -322,7 +386,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   - Left: Single sidebar toggle hamburger button (`fa-bars`) + Full Brand Logo (`/brand/logoFullBrand.svg`).
   - Right: Search button (`fa-magnifying-glass`) opens an inline header search input with the search submit icon before the close (`fa-xmark`) button. Chat link (`fa-regular fa-envelope`) sits between Search and Notifications, routes to `/chats`, and shows a green dot whenever any conversation has an unread message. Search, Chat, and Notifications use equal `2rem` action cells with a shared centered icon box and equal column spacing; their glyphs use the outlined treatment visible in the header. On mobile, the active search input and floating dropdown span the available viewport width with `8px` left/right inset. The floating suggestions dropdown uses the shared `ContextualDropdown`, appears `8px` below the search input, matches the input width, uses text-only rows without leading icons, shows up to four rows, and includes an `Open Search` link to `/search`; it stays naturally sized without a scrollbar when four or fewer rows are present.
   - Search submission: Clicking the right-side search button or pressing Enter navigates to `/search/{searched-string}`.
-  - Notifications bell button (`fa-regular fa-bell`) matches search icon height, stays aligned at the right edge of the header actions, and opens a floating dropdown anchored to the bell. The dropdown shows up to four recent notifications, an `x new` pill using the actual unread count (`99+` when above 99), and an `All Notifications` link to `/notifications`. The bell shows a small green dot only when unread notifications exist; the dot is hidden at `0`. Header spacing must reserve room so the indicator is not clipped at the viewport edge.
+  - Notifications bell button (`fa-regular fa-bell`) matches search icon height, stays aligned at the right edge of the header actions, and opens a floating dropdown anchored to the bell. The dropdown shows unread notifications only, is empty when unread count is zero, supports scrolling when needed, shows an `x new` pill using the actual unread count (`99+` when above 99), and provides an `All Notifications` link to `/notifications`. The bell shows a small green dot only when unread notifications exist; the dot is hidden at `0`. Header spacing must reserve room so the indicator is not clipped at the viewport edge.
   - Both header dropdowns use the shared `ContextualDropdown`, including the same bordered footer-bar treatment for `Open Search` and `All Notifications`, and render a centered `Nothing to show.` empty state with whitespace when their item list is empty.
   - The reusable portaled `ActionMenu` must resolve app-shell light/dark theme state even though it renders under `document.body`; app menus use the selected app surface, foreground, border, and secondary-text colors rather than relying on inherited `.app-shell` variables. The public account menu remains explicitly themed as a public surface.
   - *Invariant*: Header owns sidebar toggling; drawer does not duplicate hamburger button.
@@ -338,7 +402,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Fixed Internal Layout Order**:
   1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`) with a separate caret trigger (`.sidebar-account-menu-button`) for account actions. The ProfileCard itself is not the account-menu trigger; the drawer's Profile navigation item remains the profile destination.
   2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
-  3. Staff action, when `AuthUser.isStaff` is true: Control panel (`fa-shield-halved`) linking to `/cp`. This is a discoverability control only; server-side authorization remains authoritative. The protected panel uses the shared app-shell theme and exposes Overview, Users & Accounts, Roles & Permissions, Security & Sessions, and Audit Log sections. It shows a calm step-up state when privileged access is absent, retains the ordinary session during verification expiry, and shows only permission-authorized areas and actions.
+  3. Staff action, when `AuthUser.isStaff` is true: Control panel (`fa-shield-halved`) linking to `/cp`. This is a discoverability control only; server-side authorization remains authoritative. The protected panel uses the shared app-shell theme and exposes Overview, Staff, Users, Security & Sessions, Audit Log, and Public site sections. Only Users is functional in the current rollout; the remaining sections are explicit placeholders until their requirements are refined. It shows a calm step-up state when privileged access is absent, retains the ordinary session during verification expiry, and shows only permission-authorized areas and actions.
   4. Footer actions (`.sidebar-footer`): Settings (`fa-gear`) and Log out (`fa-right-from-bracket`). Account switching, Add account, and Manage accounts live in the profile-card account menu. The switcher remains a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
@@ -346,7 +410,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### 8. Composer (`web/components/composer.tsx`)
 - **`Composer`**:
-  - Default layout: Attachment button (`fa-plus`, `8px` radius) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right.
+  - Default layout: Plain attachment button (`fa-plus`, transparent and borderless) on the far left, single-line text field in the middle, and Send/Post button (`fa-arrow-up`, `8px` radius, disabled when empty) on the far right. The composer attachment control is intentionally exempt from the shared bordered `.icon-button` treatment and has no accent hover/focus treatment.
   - Floating post composer enforces a frontend-only `256` character limit and shows a live `x/256` counter.
   - Quote mode may submit without typed text when a quoted post is selected; normal posts and replies still require text.
   - Floating post multiline mode: Starts in the same single-line layout, then moves the text editor to a full-width top row as soon as typing begins. It grows upward with the draft to a maximum of eight lines (`10rem`); additional content scrolls inside the editor while attachment, count, and send/post controls remain bottom-aligned.
@@ -378,20 +442,24 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.
 - **Signup Identity Guidance**: Signup visibly explains the username rule: 2–32 characters using letters, numbers, `.`, `_`, and `-`. The optional display-name field accepts up to 124 characters; leading and trailing whitespace is normalized away before submission.
 - **Single-Line Inputs**: Height `2.5rem` to `3rem`, corner radius strictly `8px` (`border-radius: 8px !important`).
-- **Button Primitives** (`Button`):
-  - Height `3rem`, corner radius `8px` (`.pill-button`).
-  - Variants: `brand` (`.pill-button-brand`, background `#33aa55`, color white), `quiet` (`.pill-button-quiet`, background `#eaf5ed`, color ink), and hollow outline (`.signup-back-button`).
-  - Native modal action aliases (`.button-primary`, `.button-secondary`) use the same `3rem` height, `0.75rem 1.25rem` padding, `8px` radius, and theme tokens as the shared Button primitive.
+- **In-App Button System** (`Button`):
+  - The app has two action styles: `primary` (`.button-primary`) for the main action and `secondary` (`.button-secondary`) for supporting, reversible, or cancel actions. Both use `3rem` minimum height, `0.75rem 1.25rem` padding, `8px` radius, shared typography, focus, disabled, and loading behavior.
+  - Text-only, icon-and-text, and icon-only content are compositions, not additional button types. Icon-only controls use `.icon-button`, with a minimum `2.75rem` square hit area, an accessible label, and the same neutral utility treatment wherever they appear in fields, settings, navigation, or feed actions.
+  - Width is contextual rather than a button variant: the canonical action layout is intrinsic-width buttons aligned to the end of their action row. This applies to modal, auth, add-account, reset-password, and wizard actions. On narrow screens, action rows may stack buttons vertically; stacking is a responsive layout decision, not a separate button style.
+  - Low-emphasis navigation or optional actions use `.text-link`, not a third button type. Tabs, toggles, menus, and reaction controls remain specialized controls because their interaction model differs from ordinary actions.
+  - Every asynchronous button disables duplicate activation, preserves its layout width, and shows a visible loading state until the operation completes. Destructive intent changes the semantic color treatment without creating a third button type.
+  - The public landing-page button styles remain separate; this contract applies to the authenticated web app and all app-owned auth/workflow surfaces.
 
 ### 10a. Login & Signup Screen (`web/components/login-screen.tsx`)
 - **Responsive Width Rule**: The auth form fills the available viewport width, caps at `31rem` on larger screens, and must remain shrinkable on narrow devices without horizontal overflow.
 - **Dark Mode Rule**: When the system prefers dark mode, the auth screen background is `#161616`.
 - **Mobile Action Rule**: At widths up to `480px`, auth action groups are right-aligned, while the Forgot password control remains left-aligned.
 - **Login Flow Rule**: Login uses progressive disclosure across two screens. The first screen contains one required text field labeled `Email or username`, with `autocomplete="username"`, and a `Continue` action. The second screen preserves the identifier, provides the required password field with `autocomplete="current-password"`, a visible password toggle, Forgot password action, and clear Back/Change identifier control before `Login`. The API is called only after the password step. The flow accepts either identifier case-insensitively. Signup keeps its separate email-only field and OTP sequence.
+- **Progressive Entry Rule**: The feature-flagged `/start` route begins with neutral `Login or create account` copy and reuses the shared `LoginScreen` rather than changing `/login`. Identifier submission uses the opaque server flow token from `POST /auth/progressive/start`; continuation uses `POST /auth/progressive/continue` before rendering either the existing password step or the existing signup-email OTP step. The identifier step must not reveal account existence. Back from an unverified progressive signup OTP returns to the progressive identifier step and starts a fresh server-authoritative branch; it must not fall through to the legacy login-email step. Abandoned signup retains the existing reservation/OTP expiry and replacement behavior, and creates no account or session.
 - **Signup Email Verification Rule**: When signup OTP is enabled, signup shows a verification-code step immediately after the email step, before password and profile details. The six-character code field uses the shared input treatment, `autocomplete="one-time-code"`, uppercase alphanumeric normalization, and a clear `Verify email` action. Expiry, attempt limits, replacement, single use, and account creation timing remain server-controlled.
 - **Add-account Modal Rule**: The authenticated side-drawer `Add account` action opens an in-app themed modal variant of this flow, not the standalone full-page auth surface. The modal starts with `Email or username`, then reveals `Password`, exposes `Sign up` on the left and `Continue`/Login on the right using the shared Button primitive, and reuses the signup/login fields, validation, OTP flow, loading states, errors, and accessibility treatment from this screen. A successful login or signup adds the independently authenticated account to the device session list and may activate it; an add-account failure must not log out or replace the currently active account. No account relationship is created. Non-current remembered accounts expose a logout action directly in the account selector; the current account retains its checkmark and cannot be logged out through that selector action.
 - **Account Selector Logout Rule**: Each non-current remembered account keeps its selectable account row and exposes a separate right-side logout icon action on that same row. The logout icon opens the existing confirmation dialog, which must show the selected account's profile card before the destructive action. The current account retains its right-side checkmark and has no selector logout action; the drawer's primary Log out control remains unchanged.
-- **Account Selector Loading Rule**: Opening the account selector displays the cached device-scoped account list immediately while an asynchronous refresh runs. The menu shows the shared spinner treatment during refresh, deduplicates overlapping list requests, and replaces the cache with the server list when complete. The list also refreshes after account add, switch, and logout operations. A failed refresh keeps the cached/current account usable and offers a subtle retry action. While an account switch is in flight, the menu stays open, its selected row shows a spinner, and all account rows, logout actions, and Add account are disabled to prevent competing authentication requests. A successful switch updates the app shell in place and remounts it for the new user instead of performing a browser-level reload.
+- **Account Selector Loading Rule**: Opening the account selector displays the cached device-scoped account list immediately while an asynchronous refresh runs. The menu always shows a permanent `Switch Account` header; the shared spinner appears on the header’s right side only during refresh and disappears when the refresh settles. No transient `Updating accounts…` status row replaces the header. Refresh requests are deduplicated, and the cache is replaced with the server list when complete. The list also refreshes after account add, switch, and logout operations. A failed refresh keeps the cached/current account usable and changes the header’s right-side affordance to a subtle `Retry` action. While an account switch is in flight, the menu stays open, its selected row shows a spinner, and all account rows, logout actions, and Add account are disabled to prevent competing authentication requests. A successful switch updates the app shell in place and remounts it for the new user instead of performing a browser-level reload.
 
 ### Password Reset Screen (`web/app/reset-password/page.tsx`)
 - Uses the shared password field treatment: visible placeholders, visibility toggles, the shared `PasswordCriteria` checklist, and readable dark-mode text tokens. The shared centered auth-form structure keeps forgot-password, reset-password, and reset-success states aligned across viewport sizes. Suspicious-login reset links require a different password; ordinary recovery may reuse the current password.
@@ -407,7 +475,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Grouping Rule**: Settings items are grouped in divider-bounded sections, not rendered as isolated outlined cards per item.
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Expanded Row Rule**: An expanded setting renders its title and summary once in the shared row header; the control body must not repeat the setting title as a second visible field label. Inputs remain accessible through native labels or `aria-label` attributes.
-- **Profile Tab Rule**: `Name`, `Username`, and `About` live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging. Username changes check availability before submission; username identity is case-insensitive and stored/displayed canonically in lowercase.
+- **Profile Tab Rule**: `Name`, `Username`, `About`, and the private `Date of birth` field live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging. Date of birth is editable for the existing server-side age requirement but is not shown on the public profile in this phase. Username changes check availability before submission; username identity is case-insensitive and stored/displayed canonically in lowercase.
 - **Subscription Tab Rule**: Settings includes a dedicated Subscription tab showing the current `Friink Free` plan and a `View plans` link to `/subscriptions`. Paid billing and entitlement management are not active yet.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.
@@ -427,7 +495,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### Public Header and Plans (`web/components/public-header.tsx`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`)
 - Public marketing surfaces are governed by the same light/dark theme contract: every explicit light-theme foreground, background, border, and interactive-state color must have a matching dark-mode override.
 - The landing page and `/subscriptions` reuse `Header`; public pages must not duplicate site navigation markup.
-- `Header` detects the persisted authenticated session on the client. Signed-out users see a Login CTA; signed-in users see their current profile picture as an account-menu trigger. The shared `ActionMenu` positions the public account menu directly below the avatar with a 2px gap and 2px right offset, stays above the public header, and uses explicit light/dark public-surface colors. Its menu header shows the display name and secondary `@username`, followed by Feed (`fa-house` → `/home`), Settings (`fa-gear` → `/settings`), and Log out (`fa-right-from-bracket`). Public headers do not show a redundant Home link because the Friink logo already links to `/`.
+- `Header` detects the persisted authenticated session on the client. Signed-out users see a primary `Get started` CTA linking to `/start` and a secondary `Login` action linking to `/login`; signed-in users see their current profile picture as an account-menu trigger. The shared `ActionMenu` positions the public account menu directly below the avatar with a 2px gap and 2px right offset, stays above the public header, and uses explicit light/dark public-surface colors. Its menu header shows the display name and secondary `@username`, followed by Feed (`fa-house` → `/home`), Settings (`fa-gear` → `/settings`), and Log out (`fa-right-from-bracket`). Public headers do not show a redundant Home link because the Friink logo already links to `/`.
+- The progressive `/start` route remains feature-flagged; when disabled, it falls back to `/login`. Both public authentication actions remain visible at desktop and mobile widths, with compact button sizing on narrow screens rather than hiding either action.
 - The `/subscriptions` page uses the same landing-page surface and dark-mode treatment as the landing page, including the shared navigation, cards, borders, text colors, and backgrounds.
 - Public plan-card text, including feature lists and prices, must use the dark-theme foreground token in dark mode; no light-theme hardcoded foreground may remain visible on dark card surfaces.
 - Public plan links, including hover and keyboard-focus states, must remain readable against dark-mode surfaces.

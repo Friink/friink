@@ -56,7 +56,7 @@ export function ConnectionsScreen({
                 trailing={
                   <span className="connection-request-actions">
                     <button
-                      className="profile-action-button connection-accept"
+                      className="button-primary connection-accept"
                       type="button"
                       disabled={requestActionBusyId === request.id}
                       onClick={() => onAcceptRequest?.(request.id)}

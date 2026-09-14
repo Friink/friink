@@ -271,7 +271,7 @@ export function Composer({
         <div className="composer-attachment-menu">
           <button
             ref={attachmentButtonRef}
-            className="icon-plain"
+            className="icon-button"
             type="button"
             aria-label="Add to post"
             aria-haspopup="menu"

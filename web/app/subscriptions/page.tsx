@@ -48,7 +48,7 @@ export default function SubscriptionsPage() {
           <Link href="/" aria-label="Friink home">
             <picture>
               <source media="(prefers-color-scheme: dark)" srcSet="/brand/logoWhite.svg" />
-              <Image src="/brand/logoBlack.svg" alt="Friink" width={64} height={64} className={styles.footerLogo} />
+              <Image src="/brand/logoBlack.svg" alt="Friink" width={96} height={97} className={styles.footerLogo} />
             </picture>
           </Link>
           <p>&copy; 2026 Friink. Built for humans.</p>

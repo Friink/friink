@@ -19,6 +19,7 @@ from app.models.recognized_device import RecognizedDevice
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
+    LoginLinkConsumeRequest,
     LoginChallengeResponse,
     LifecycleChallengeResponse,
     LifecycleActionRequest,
@@ -54,6 +55,7 @@ from app.services.email_change import complete_email_change, start_email_change
 from app.services.auth_debug import log_account_list_event, log_account_slot_event, log_account_switch_event, log_auth_failure, log_refresh_token_event, log_token_issued, log_token_verification_failure
 from app.services.auth_errors import AuthErrorCode, auth_error_detail
 from app.services.email import EmailDeliveryError, EmailService
+from app.services.password_reset import consume_login_link, start_login_link, start_password_reset, complete_password_reset
 from app.services.profile_media import profile_picture_url_for
 from app.services.security import TokenValidationError, create_access_token, decode_token
 from app.services.session_ops import commit
@@ -81,12 +83,20 @@ from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
 from app.services.account_slots import create_or_replace_slot, find_slot_for_user, get_slot, list_slots, revoke_slot
-from app.services.password_reset import complete_password_reset, start_password_reset
 from app.services.login_throttling import enforce_ip_throttle
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+
+
+def request_account_region(request: Request) -> str | None:
+    """Return Vercel's coarse first-level region code when available."""
+    country = (request.headers.get("x-vercel-ip-country") or "").strip().upper()
+    region = (request.headers.get("x-vercel-ip-country-region") or "").strip().upper()
+    if not country or not region or len(country) != 2 or len(region) > 16:
+        return None
+    return f"{country}-{region}"
 
 REFRESH_COOKIE_NAME = "friink_refresh_token"
 ACCOUNT_SLOT_HEADER = "X-Friink-Account-Slot"
@@ -132,7 +142,7 @@ async def signup(
     require_allowed_origin(request, settings)
     if settings.otp_enabled and settings.signup_otp_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup is available through email verification.")
-    user = await create_user(session, payload, EmailService(settings))
+    user = await create_user(session, payload, EmailService(settings), request_account_region(request))
     return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
@@ -177,15 +187,23 @@ async def signup_email_start(
             message="If the signup details can be accepted, verification instructions will be sent.",
         )
     normalized_email = str(payload.email).strip().casefold()
-    if await get_user_by_email(session, normalized_email):
+    existing_user = await get_user_by_email(session, normalized_email)
+    if existing_user:
+        raw_login_token = await start_login_link(session, existing_user)
+        login_url = f"{str(settings.frontend_url).rstrip('/')}/login?login_token={raw_login_token}"
+        try:
+            await EmailService(settings).send_login_link(existing_user.email, login_url)
+        except EmailDeliveryError:
+            # Keep the browser response neutral when delivery is unavailable or
+            # fails; the account-existence signal must not cross this boundary.
+            pass
         return SignupStartResponse(
             verification_required=False,
             reservation_token="",
-            existing_account=True,
-            message="You already have a Friink account with this email. Log in instead, or use a different email address to sign up.",
+            message="If the signup details can be accepted, verification instructions will be sent.",
         )
     try:
-        token = await start_signup_email_reservation(session, normalized_email, EmailService(settings))
+        token = await start_signup_email_reservation(session, normalized_email, EmailService(settings), request_account_region(request))
     except EmailDeliveryError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Verification email could not be sent. Please try again later.") from exc
     return SignupStartResponse(
@@ -221,7 +239,7 @@ async def signup_complete(
     if not (settings.otp_enabled and settings.signup_otp_enabled):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signup completion is not available.")
     data = SignupRequest.model_validate(payload.model_dump(exclude={"reservation_token"}))
-    user = await complete_signup_email_reservation(session, payload.reservation_token, data)
+    user = await complete_signup_email_reservation(session, payload.reservation_token, data, request_account_region(request))
     return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
@@ -303,7 +321,18 @@ async def _issue_login_session(
     auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
     try:
-        slot = create_or_replace_slot(session, user, device_identifier, auth_session, settings)
+        # The remembered-account cap applies to Add account. A normal login
+        # must still establish a usable session when this device already has
+        # the maximum number of other remembered accounts; it simply remains
+        # an un-slotted session until the user removes a remembered account.
+        slot = create_or_replace_slot(
+            session,
+            user,
+            device_identifier,
+            auth_session,
+            settings,
+            allow_over_limit=not is_add_account_flow,
+        )
     except ValueError as exc:
         if str(exc) == "ACCOUNT_LIMIT_REACHED":
             session.rollback()
@@ -425,6 +454,20 @@ async def login(
             message="We sent a verification code to your email to approve this login.",
         )
     return await _issue_login_session(user, request, response, session, settings, raw_device_identifier)
+
+
+@router.post("/login/link/consume", response_model=TokenResponse)
+async def consume_login_link_route(
+    payload: LoginLinkConsumeRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> TokenResponse:
+    require_allowed_origin(request, settings)
+    enforce_ip_throttle(session, request, settings)
+    user = await consume_login_link(session, payload.token)
+    return await _issue_login_session(user, request, response, session, settings, request.cookies.get(DEVICE_COOKIE_NAME))
 
 
 @router.post("/login/verify", response_model=TokenResponse)
