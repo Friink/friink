@@ -49,11 +49,14 @@ ACCOUNT_LIFECYCLE_INTERNAL_TOKEN=
 uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000/` and it should return:
+Open `http://127.0.0.1:8000/` and it should return a minimal service response:
 
-```text
-Hello, World!
+```json
+{"service":"friink-api","status":"ok"}
 ```
+
+`GET /health` is the dependency-free liveness check. `GET /health/db` is the
+database readiness check and runs `SELECT 1`.
 
 ## Migrations
 

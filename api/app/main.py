@@ -4,7 +4,6 @@ import logging
 import psycopg
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
 
 from app.config import get_settings
 from app.routers.auth import router as auth_router
@@ -65,9 +64,16 @@ app.include_router(subscriptions_router)
 app.include_router(progressive_auth_router)
 
 
-@app.get("/", response_class=PlainTextResponse)
-def read_root() -> str:
-    return "Hello, World!"
+@app.get("/")
+def read_root() -> dict[str, str]:
+    """Return a minimal public service identity response."""
+    return {"service": "friink-api", "status": "ok"}
+
+
+@app.get("/health")
+def read_health() -> dict[str, str]:
+    """Return a dependency-free liveness response for platform probes."""
+    return {"status": "ok"}
 
 
 @app.get("/health/db")
