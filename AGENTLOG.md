@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-14T23:07:16Z — Restore API deployment dependency manifest
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose `python scripts/migrate_before_deploy.py` exiting
+  with status 1 on staging and during the merge to main.
+- Changes Made: Found that commit `fbdde4a` deleted `api/requirements.txt`, the
+  dependency manifest Vercel needs before executing the migration gate. Restored
+  the manifest with the previously committed API dependencies.
+- Files: `api/requirements.txt`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The migration gate succeeded locally from `api/`,
+  applying revisions through `20260911_0047` and reporting `No new upgrade
+  operations detected.` from `alembic check`.
+
 ## 2026-09-13T00:16:39Z — Fix rules page mobile overflow
 
 - Agent: Codex

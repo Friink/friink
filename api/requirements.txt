@@ -1,0 +1,15 @@
+alembic
+boto3
+bcrypt
+email-validator
+fastapi
+httpx
+psycopg[binary]
+PyJWT
+pydantic-settings
+pytest
+pytest-asyncio
+python-dotenv
+SQLAlchemy
+user-agents
+uvicorn[standard]
