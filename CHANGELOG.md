@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-15T22:05:46Z
+
+- [docs] Fixed the documentation viewer's navigation grouping after adding
+  Deployment: core documents are now classified by their `units/` path instead
+  of a hardcoded positional slice, so Notes and future core documents remain
+  under Documentation.
+
+## 2026-09-15T22:02:00Z
+
+- [docs] Added `docs/deployment.md` as the canonical active deployment guide
+  for environment flow, Alembic migration gates, release checks, and
+  configuration boundaries. Replaced duplicated current-head guidance with
+  links, synchronized agent guidance and the documentation viewer, and aligned
+  the staging OTP policy.
+
+## 2026-09-15T21:56:09Z
+
+- [docs] Restored `docs/home.md` as the documentation viewer's Home content
+  and synchronized the current documentation references with their archived
+  locations. Corrected the API environment notes, migration-head reference,
+  archive index links, and mobile-auth archive pointer.
+
 ## 2026-09-14T23:07:16Z
 
 - [api] Replaced the generic root `Hello, World!` response with a minimal

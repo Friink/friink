@@ -1,5 +1,55 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-15T22:05:46Z — Fix documentation navigation grouping
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct Notes appearing under Product units after adding the
+  deployment document to the viewer.
+- Changes Made: Replaced the viewer's hardcoded core/unit positional split with
+  path-based classification using the `units/` prefix.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the registry now classifies all non-unit
+  documents as Documentation regardless of ordering; `git diff --check`
+  remains clean.
+
+## 2026-09-15T22:02:00Z — Centralize deployment guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Consolidate active deployment and migration guidance while
+  preserving changelog and agent-log history.
+- Changes Made: Added `docs/deployment.md` as the canonical deployment guide;
+  removed duplicated current migration-head values from stack and testing docs;
+  linked the deployment guide from README, API README, agent guidance, docs
+  navigation, and the design contract; and aligned the OTP policy so
+  development may disable OTP while staging and production keep it enabled.
+- Files: `docs/deployment.md`, `README.md`, `api/README.md`, `docs/README.md`,
+  `docs/stack.md`, `docs/testing.md`, `AGENTS.md`, `docs/AGENTS.md`,
+  `packages/design/design.md`, `docs/index.html`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Confirmed the deployment guide references the existing
+  Vercel migration gate and script, checked all new documentation paths, and
+  passed `git diff --check`.
+
+## 2026-09-15T21:56:09Z — Repair documentation archive references and environment notes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check documentation integrity and repair confirmed stale or
+  misplaced references while preserving historical archives.
+- Changes Made: Updated current rule references to point to archived feature
+  contracts, corrected the archive index's repository-relative links, moved the
+  mobile-auth note to its archived location, corrected the documented Alembic
+  head to `20260911_0047`, and clarified development/staging/production OTP
+  switch expectations. Confirmed the existing `docs/home.md` file and added
+  the missing changelog record for its restoration.
+- Files: `docs/rules.md`, `docs/archives/index.md`, `docs/notes.md`,
+  `docs/testing.md`, `api/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Read-only reference checks confirmed the corrected
+  paths, current migration head, 30-day refresh-token setting, and environment
+  notes. The future-dated archive was left unchanged as historical material.
+
 ## 2026-09-14T23:07:16Z — Standardize public API health responses
 
 - Agent: Codex

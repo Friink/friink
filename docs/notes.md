@@ -13,5 +13,6 @@ privileged sessions, and administrative security are implemented and verified
 on staging, and Phase 6 operations are implemented with final operational
 rehearsals still open. Production rollout remains a separate release gate.
 
-Mobile authentication and session requirements are preserved separately in
-`docs/auth-and-session-mobile.md` and are deferred until a mobile client exists.
+Mobile authentication and session requirements are preserved in the historical
+archive at `docs/archives/auth-and-session-mobile.md` and remain deferred until
+a mobile client exists.

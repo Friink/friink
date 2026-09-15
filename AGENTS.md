@@ -76,6 +76,8 @@ repository.
   and runtime boundaries.
 - Read [`docs/testing.md`](docs/testing.md) for verification and release
   criteria.
+- Read [`docs/deployment.md`](docs/deployment.md) for environments, migration
+  gates, and release flow.
 - Read [`docs/design-system.md`](docs/design-system.md) and
   `packages/design/design.md` before visual or UI work.
 - Read the relevant document in [`docs/units/`](docs/units/) before changing a

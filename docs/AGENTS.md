@@ -11,10 +11,12 @@ Read the current guidance and relevant evidence before editing:
 2. [`rules.md`](./rules.md) for the current implementation-backed rules.
 3. [`template.md`](./units/template.md) for the required unit-document structure.
 4. [`testing.md`](./testing.md) for shared testing and release-gate criteria.
-5. The affected unit documents and their related-unit links.
-6. [`design-system.md`](./design-system.md) for shared product-level visual
+5. [`deployment.md`](./deployment.md) for environments, migration gates, and
+   release flow.
+6. The affected unit documents and their related-unit links.
+7. [`design-system.md`](./design-system.md) for shared product-level visual
    and interaction contracts when the change concerns UX or UI.
-7. [`stack.md`](./stack.md) and [`architecture.md`](./architecture.md) when
+8. [`stack.md`](./stack.md) and [`architecture.md`](./architecture.md) when
    the change concerns technology, runtime boundaries, or implementation
    structure.
 
@@ -36,6 +38,9 @@ the existing documentation does not establish the answer.
 - `docs/stack.md` owns the technology stack and environment description.
 - `docs/architecture.md` owns repository boundaries and cross-cutting runtime
   structure.
+- `docs/deployment.md` owns active deployment environments, migration gates,
+  and release flow. Do not duplicate a current Alembic revision in general
+  guidance; historical revision numbers belong in the logs.
 - Archives are historical references. Do not treat archived documents as
   current authority unless explicitly comparing history.
 
