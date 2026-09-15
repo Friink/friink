@@ -25,13 +25,13 @@ Required environment variables:
 DATABASE_URL=
 FRONTEND_URL=http://localhost:3000
 ENVIRONMENT=development
-OTP_ENABLED=true
+OTP_ENABLED=false  # development; keep true in staging and production
 JWT_SECRET_KEY=
 JWT_ALGORITHM=HS256
 JWT_ACTIVE_KID=default
 JWT_KEYS=
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=14
+REFRESH_TOKEN_EXPIRE_DAYS=30
 REFRESH_TOKEN_REUSE_GRACE_SECONDS=60
 SIGNUP_OTP_ENABLED=false
 LOGIN_RISK_OTP_ENABLED=true
@@ -64,7 +64,8 @@ The Vercel API project runs the migration gate in `vercel.json` before the API
 build is allowed to proceed. It runs `alembic upgrade head` and then
 `alembic check`; either a migration failure or schema drift exits non-zero and
 blocks the deployment. The API project's `DATABASE_URL` must therefore be set
-in Vercel before a deployment.
+in Vercel before a deployment. See the [deployment guide](../docs/deployment.md)
+for the repository-wide release workflow.
 
 Run the same gate locally:
 
@@ -72,7 +73,10 @@ Run the same gate locally:
 python scripts/migrate_before_deploy.py
 ```
 
-The initial migration creates `users` and `otp_codes`. OTP storage and service stubs exist, but OTP is not active yet.
+The initial migration creates `users` and `otp_codes`. OTP behavior is
+environment-specific: keep the global OTP switch off for local development,
+and on for staging and production. Signup OTP and login-risk OTP remain
+controlled independently by their dedicated settings.
 
 ## Auth Endpoints
 

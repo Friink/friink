@@ -226,7 +226,7 @@
     <script>
       const DOCS = [
         ['README', 'README.md'], ['Agents', 'AGENTS.md'], ['Rules', 'rules.md'],
-        ['Testing', 'testing.md'], ['Design system', 'design-system.md'],
+        ['Testing', 'testing.md'], ['Deployment', 'deployment.md'], ['Design system', 'design-system.md'],
         ['Stack', 'stack.md'], ['Architecture', 'architecture.md'], ['Notes', 'notes.md'],
         ['Account access', 'units/account-access.md'],
         ['Account lifecycle', 'units/account-lifecycle.md'], ['Blocking', 'units/blocking.md'],
@@ -363,8 +363,8 @@
         const query = filter.trim().toLowerCase();
         const matches = ([title, path]) => `${title} ${path}`.toLowerCase().includes(query);
         const link = ([title, path]) => `<a href="#doc=${encodeURIComponent(path)}" data-path="${path}">${title}</a>`;
-        const core = DOCS.slice(0, 8).filter(matches).map(link).join('');
-        const units = DOCS.slice(8).filter(matches).map(link).join('');
+        const core = DOCS.filter(([, path]) => !path.startsWith('units/')).filter(matches).map(link).join('');
+        const units = DOCS.filter(([, path]) => path.startsWith('units/')).filter(matches).map(link).join('');
         const coreHeading = core || !query ? `<a class="nav-section-label" href="#doc=${DOCUMENTATION_PATH}" data-path="${DOCUMENTATION_PATH}">Documentation</a>` : '';
         const unitsHeading = units || !query ? `<a class="nav-section-label" href="#doc=${UNITS_PATH}" data-path="${UNITS_PATH}">Product units</a>` : '';
         nav.innerHTML = coreHeading + core + unitsHeading + units;

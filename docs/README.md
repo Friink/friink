@@ -9,6 +9,7 @@ This folder contains Friink’s product and engineering documentation.
 - [Rules](rules.md) — active, implementation-backed product rules.
 - [Template](units/template.md) — the standard structure for unit documents.
 - [Testing](testing.md) — shared testing criteria and completion rules.
+- [Deployment](deployment.md) — environments, migration gates, and release flow.
 - [Design system](design-system.md) — product-level visual and interaction language.
 - [Stack](stack.md) — technologies, services, environments, and development commands.
 - [Architecture](architecture.md) — repository boundaries, runtime shape, and cross-cutting implementation patterns.

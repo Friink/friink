@@ -102,14 +102,16 @@ Friink deploys as two independent Vercel projects:
   server-side variables documented in `api/.env.example`.
 
 The API deployment runs the migration gate defined in `api/vercel.json`.
-Deployment environments and release flow are documented in [the architecture
-guide](docs/architecture.md) and [the technology stack](docs/stack.md).
+Deployment environments, migration gates, and release flow are documented in
+the [deployment guide](docs/deployment.md). The [architecture guide](docs/architecture.md)
+and [technology stack](docs/stack.md) describe the related runtime boundaries.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md) — repository boundaries and runtime shape
 - [Technology stack](docs/stack.md) — tools, services, environments, and commands
 - [Testing](docs/testing.md) — verification and release criteria
+- [Deployment](docs/deployment.md) — environments, migration gates, and release flow
 - [Rules](docs/rules.md) — active, implementation-backed product rules
 - [Design system](docs/design-system.md) — product-level visual contracts
 - [Unit documentation](docs/units/) — feature ownership, behavior, and acceptance criteria
