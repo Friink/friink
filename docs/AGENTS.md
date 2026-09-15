@@ -9,7 +9,7 @@ Read the current guidance and relevant evidence before editing:
 
 1. [`README.md`](./README.md) for the documentation map.
 2. [`rules.md`](./rules.md) for the current implementation-backed rules.
-3. [`template.md`](./template.md) for the required unit-document structure.
+3. [`template.md`](./units/template.md) for the required unit-document structure.
 4. [`testing.md`](./testing.md) for shared testing and release-gate criteria.
 5. The affected unit documents and their related-unit links.
 6. [`design-system.md`](./design-system.md) for shared product-level visual
@@ -42,7 +42,7 @@ the existing documentation does not establish the answer.
 ## Creating and maintaining unit documents
 
 - Before creating a new unit document or substantially rewriting one, read
-  the current [`template.md`](./template.md) and use it as the structural
+  the current [`template.md`](./units/template.md) and use it as the structural
   contract.
 - Preserve the template's metadata, heading order, ownership sections,
   related-unit links, UX and flow sections, technical sections, testing,
@@ -52,7 +52,7 @@ the existing documentation does not establish the answer.
 - Use the template tier rules to control depth, not product importance:
   `Full`, `Standard`, or `Minimal`.
 - Keep the template generic. Unit-specific behavior belongs in the unit doc,
-  not in `template.md`.
+  not in `units/template.md`.
 - Every unit document must state canonical ownership and what it does not own.
 - Link related units at the top of the document and inline where a dependency
   or shared contract matters. Do not duplicate another document's canonical

@@ -4,13 +4,15 @@ This folder contains Friink’s product and engineering documentation.
 
 ## Structure
 
-- [Home](index.html) — a short overview of the Friink product in the viewer.
+- [Documentation viewer](index.html) — the interactive documentation browser.
+- [Home](home.md) — the overview rendered on the viewer's Home route.
 - [Rules](rules.md) — active, implementation-backed product rules.
-- [Template](template.md) — the standard structure for unit documents.
+- [Template](units/template.md) — the standard structure for unit documents.
 - [Testing](testing.md) — shared testing criteria and completion rules.
 - [Design system](design-system.md) — product-level visual and interaction language.
 - [Stack](stack.md) — technologies, services, environments, and development commands.
 - [Architecture](architecture.md) — repository boundaries, runtime shape, and cross-cutting implementation patterns.
+- [Notes](notes.md) — retained implementation notes and historical context.
 - [Units](units/) — complete documentation for each major product area.
 - [Archives](archives/) — historical and non-standard documents kept for reference.
 

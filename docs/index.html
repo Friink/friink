@@ -219,8 +219,7 @@
         <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb"></nav>
         <article id="content">
           <h1>Friink Documentation</h1>
-          <p>Select a document from the left. Markdown files will be loaded and rendered here.</p>
-      <p><strong>Last edited:</strong> 2026-09-12T21:55:08Z</p>
+          <p>Loading documentation home…</p>
         </article>
       </main>
     </div>
@@ -228,7 +227,7 @@
       const DOCS = [
         ['README', 'README.md'], ['Agents', 'AGENTS.md'], ['Rules', 'rules.md'],
         ['Testing', 'testing.md'], ['Design system', 'design-system.md'],
-        ['Stack', 'stack.md'], ['Architecture', 'architecture.md'],
+        ['Stack', 'stack.md'], ['Architecture', 'architecture.md'], ['Notes', 'notes.md'],
         ['Account access', 'units/account-access.md'],
         ['Account lifecycle', 'units/account-lifecycle.md'], ['Blocking', 'units/blocking.md'],
         ['Chat', 'units/chat.md'], ['Connections', 'units/connections.md'],
@@ -258,26 +257,9 @@
       const zoomDecrease = document.querySelector('#zoom-decrease');
       const zoomIncrease = document.querySelector('#zoom-increase');
       const zoomReset = document.querySelector('#zoom-reset');
-      const HOME_PATH = '__home__';
+      const HOME_PATH = 'home.md';
       const DOCUMENTATION_PATH = '__documentation__';
       const UNITS_PATH = '__units__';
-      const HOME_CONTENT = `<h1>Friink</h1>
-        <p>Friink is a people-first social platform for meaningful conversation and professional discovery. It combines authored posts, trusted relationships, direct chat, and identity-focused profiles in one calm space.</p>
-        <p><strong>Last edited:</strong> 2026-09-12T21:52:07Z</p>
-        <h2>What Friink includes</h2>
-        <ul>
-          <li>Profiles with public identity, About text, connection counts, content tabs, and profile actions.</li>
-          <li>Posts, replies, quotes, image attachments, reactions, saved posts, and author-scoped content.</li>
-          <li>Explore and Following feeds with visibility-aware content selection.</li>
-          <li>Connections with public and private account behavior, follow requests, and relationship controls.</li>
-          <li>Direct chat with conversation requests, read receipts, mute, archive, and safety restrictions.</li>
-          <li>Search and discovery, notifications, settings, account access, and account lifecycle controls.</li>
-          <li>Staff administration and subscription-plan presentation where those surfaces are available.</li>
-        </ul>
-        <h2>Product character</h2>
-        <p>Friink is designed to feel calm, clear, human, and trustworthy. Privacy, safety, accessible interaction, honest feedback, and recoverable failure are part of the product experience—not additions after the fact.</p>
-        <p>The product is built as a web and API platform. The active implementation rules, product-unit contracts, design language, and testing guidance are available through this documentation viewer.</p>`;
-
       function applyTheme(theme) {
         if (theme === 'system') delete document.documentElement.dataset.theme;
         else document.documentElement.dataset.theme = theme;
@@ -381,8 +363,8 @@
         const query = filter.trim().toLowerCase();
         const matches = ([title, path]) => `${title} ${path}`.toLowerCase().includes(query);
         const link = ([title, path]) => `<a href="#doc=${encodeURIComponent(path)}" data-path="${path}">${title}</a>`;
-        const core = DOCS.slice(0, 7).filter(matches).map(link).join('');
-        const units = DOCS.slice(7).filter(matches).map(link).join('');
+        const core = DOCS.slice(0, 8).filter(matches).map(link).join('');
+        const units = DOCS.slice(8).filter(matches).map(link).join('');
         const coreHeading = core || !query ? `<a class="nav-section-label" href="#doc=${DOCUMENTATION_PATH}" data-path="${DOCUMENTATION_PATH}">Documentation</a>` : '';
         const unitsHeading = units || !query ? `<a class="nav-section-label" href="#doc=${UNITS_PATH}" data-path="${UNITS_PATH}">Product units</a>` : '';
         nav.innerHTML = coreHeading + core + unitsHeading + units;
@@ -423,7 +405,6 @@
         const item = path === HOME_PATH ? ['Home', HOME_PATH] : path === DOCUMENTATION_PATH ? ['Documentation', DOCUMENTATION_PATH] : path === UNITS_PATH ? ['Product units', UNITS_PATH] : DOCS.find(([, candidate]) => candidate === path); if (!item) return;
         searchResults.hidden = true; search.setAttribute('aria-expanded', 'false');
         renderBreadcrumbs(item); document.querySelectorAll('#nav a').forEach(link => link.classList.toggle('active', link.dataset.path === path));
-        if (path === HOME_PATH) { content.innerHTML = HOME_CONTENT; return; }
         if (path === DOCUMENTATION_PATH) { content.innerHTML = renderDocumentationContent(); return; }
         if (path === UNITS_PATH) { content.innerHTML = renderUnitsContent(); return; }
         try {

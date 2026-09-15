@@ -3423,3 +3423,91 @@ _Last updated: 2026-09-10_
   flagged for review.
 - Updated `RULES.md` so those four rules now describe the current
   implementation, including the known browser-state isolation limitation.
+
+## 2026-09-15T20:07:54Z
+
+- [maintenance] Removed 165 empty `api/pytest-cache-files-*` temporary
+  folders left by local test tooling or synchronization artifacts. No API
+  source, tests, or runtime environment files were changed.
+
+## 2026-09-15T20:21:17Z
+
+- [docs] Rewrote the root README as a concise developer entry point covering
+  repository layout, prerequisites, local setup, common commands, deployment,
+  documentation, and development conventions. Moved detailed architecture,
+  product behavior, and operational guidance behind links to their canonical
+  documents.
+
+## 2026-09-15T20:25:35Z
+
+- [docs] Removed the duplicated technology-stack section from the legacy block
+  in `AGENTS.md`; stack details remain owned by `docs/stack.md`.
+
+## 2026-09-15T20:31:18Z
+
+- [docs] Replaced the duplicated legacy project-documentation inventory in
+  `AGENTS.md` with a pointer to `docs/README.md` and `docs/AGENTS.md`.
+
+## 2026-09-15T20:36:05Z
+
+- [docs] Replaced the duplicated web-architecture details in `AGENTS.md` with
+  a pointer to `docs/architecture.md`, preserving the agent-facing styling
+  and code-boundary rules at the top of the file.
+
+## 2026-09-15T20:37:17Z
+
+- [docs] Removed references to the deleted `localhost/localhost.ps1` helper
+  from `AGENTS.md`, `README.md`, and `docs/stack.md`.
+
+## 2026-09-15T20:40:42Z
+
+- [docs] Moved the unit-document template from `docs/template.md` to
+  `docs/units/template.md` and updated active documentation references.
+
+## 2026-09-15T20:45:45Z
+
+- [docs] Removed only the redundant duplicated agent-guidance section from
+  the old block in `AGENTS.md`; the remaining old-block content was preserved.
+
+## 2026-09-15T20:49:06Z
+
+- [docs] Removed the old `Local Development` and `Deployment` sections from
+  `AGENTS.md`. Kept the branch workflow in the top verification guidance and
+  confirmed setup/release details remain in the README and canonical docs.
+
+## 2026-09-15T20:53:53Z
+
+- [docs] Reformatted `AGENTS.md` into a consistent Markdown structure,
+  normalized line wrapping and spacing, and clarified the retained legacy
+  auth/session note without changing its intended guidance.
+
+## 2026-09-15T20:55:50Z
+
+- [docs] Moved the retained auth/session note to `docs/notes.md`, removed it
+  from `AGENTS.md`, and added it to the documentation map and viewer registry.
+
+## 2026-09-15T20:59:15Z
+
+- [docs] Updated the embedded documentation home copy in `docs/index.html`
+  so the fallback and rendered home views describe the current documentation
+  structure, including Notes, and use the current edit timestamp.
+
+## 2026-09-15T21:02:52Z
+
+- [docs] Moved the documentation Home content into `docs/home.md` and updated
+  the viewer to load it as Markdown through the normal document route.
+
+## 2026-09-15T21:04:10Z
+
+- [docs] Removed Home from the documentation viewer sidebar and search while
+  retaining `docs/home.md` as the content loaded by the header Home button.
+
+## 2026-09-15T21:09:43Z
+
+- [docs] Removed the obsolete one-time documentation-migration rule from
+  `AGENTS.md`.
+
+## 2026-09-15T21:13:59Z
+
+- [docs] Expanded `AGENTS.md` with concise routing guidance for the full set
+  of canonical product, engineering, testing, design, unit, and archive docs.

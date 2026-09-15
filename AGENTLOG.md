@@ -952,6 +952,30 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Files: `docs/index.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: `git diff --check` passed.
 
+## 2026-09-15T20:21:17Z — Rewrite root README
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clean up the root README into a standard repository entry
+  point.
+- Changes Made: Replaced the mixed overview/status/runbook document with a
+  concise README covering layout, prerequisites, quick start, commands,
+  deployment summary, documentation links, and development conventions.
+- Files: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: All local README links resolve; `git diff --check`
+  passed for `README.md`.
+
+## 2026-09-15T20:07:54Z — Remove pytest cache artifacts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the extra `api/pytest-cache-files-*` folders.
+- Changes Made: Deleted exactly 165 top-level empty pytest-cache artifact
+  folders under `api/`; verified that zero matching folders remain.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Target paths were constrained to `api/`; removal
+  completed successfully with 0 matching folders remaining.
+
 ## 2026-09-12 — Audit implementation changes against active rules
 
 - Agent: Codex
@@ -10477,3 +10501,182 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   inaccessible private quote presentation with the implemented behavior.
 - Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
 - Verification Status: `git diff --check` passed.
+
+## 2026-09-15T20:25:35Z — Remove duplicated stack section from AGENTS.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the old stack section from `AGENTS.md` because
+  `docs/stack.md` is the canonical source.
+- Changes Made: Deleted only the legacy `## Stack` heading and its stack
+  details, preserving the user's other concurrent `AGENTS.md` edits.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old block no longer contains `## Stack`.
+
+## 2026-09-15T20:31:18Z — Simplify AGENTS.md documentation pointer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the duplicated project-documentation section in
+  `AGENTS.md` with a pointer to the dedicated docs guidance.
+- Changes Made: Removed the stale documentation inventory and added concise
+  links to `docs/README.md` and `docs/AGENTS.md`.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the replacement links exist.
+
+## 2026-09-15T20:36:05Z — Simplify AGENTS.md architecture guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the duplicated current web-app architecture block
+  with a pointer to the canonical architecture document.
+- Changes Made: Removed the legacy web-architecture details and added a
+  pointer to `docs/architecture.md`; retained the top product and code
+  boundaries as agent-specific guidance.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the architecture pointer exists and the
+  product/code-boundary section remains intact.
+
+## 2026-09-15T20:37:17Z — Remove deleted local setup helper references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the broken `localhost/localhost.ps1` reference.
+- Changes Made: Removed the deleted helper reference from the legacy agent
+  block, the root README, and the stack documentation.
+- Files: `AGENTS.md`, `README.md`, `docs/stack.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Confirmed no remaining repository references to
+  `localhost/localhost.ps1`.
+
+## 2026-09-15T20:40:42Z — Move unit template into docs/units
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move `docs/template.md` to `docs/units/template.md` and
+  update all references.
+- Changes Made: Moved the unit template and updated `AGENTS.md`,
+  `docs/AGENTS.md`, `docs/README.md`, `docs/testing.md`, and the archived
+  migration guide. Historical changelog and agentlog references were retained.
+- Files: `docs/units/template.md`, `AGENTS.md`, `docs/AGENTS.md`,
+  `docs/README.md`, `docs/testing.md`, `docs/archives/migration.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old path is absent from active repository
+  content; the new file exists and changed-document diff checks pass.
+
+## 2026-09-15T20:45:45Z — Remove redundant old-block agent guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Delete only the duplicated agent-guidance copy from the old
+  block in `AGENTS.md`.
+- Changes Made: Removed the old `## For AI Agents — Keep Documentation Current`
+  section and preserved all other old-block sections.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old-block project and pointer sections
+  remain present.
+
+## 2026-09-15T20:49:06Z — Remove duplicated local and deployment sections
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove detailed local-development and deployment sections
+  from `AGENTS.md` while retaining agent-specific branch guidance.
+- Changes Made: Deleted both old sections, moved the concise development/
+  staging/production branch workflow into the top verification section, and
+  confirmed the detailed content remains in `README.md`, `docs/stack.md`, and
+  `docs/architecture.md`.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed no `Local Development` or `Deployment`
+  sections remain in `AGENTS.md`; targeted diff check passed.
+
+## 2026-09-15T20:53:53Z — Reformat AGENTS.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reformat the user's edited `AGENTS.md` and summarize its
+  resulting instructions.
+- Changes Made: Normalized Markdown headings, spacing, line wrapping, and the
+  legacy auth/session note while preserving the file's substantive guidance.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed for `AGENTS.md`.
+
+## 2026-09-15T20:55:50Z — Move auth/session note to docs/notes.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the retained auth/session note out of `AGENTS.md` and
+  add it to the documentation viewer.
+- Changes Made: Created `docs/notes.md`, removed the note from `AGENTS.md`,
+  added it to `docs/README.md`, and registered it in `docs/index.html`,
+  including the core-document search grouping.
+- Files: `docs/notes.md`, `AGENTS.md`, `docs/README.md`, `docs/index.html`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the new file exists, the old AGENTS section
+  is gone, and targeted documentation diff checks pass.
+
+## 2026-09-15T20:59:15Z — Update documentation viewer home copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the embedded documentation home copy in
+  `docs/index.html`.
+- Changes Made: Updated both the initial HTML fallback and JavaScript home
+  content to describe the current docs structure, added Notes to the overview,
+  and refreshed the edit timestamp.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Refreshed the live viewer and confirmed the new
+  overview text is visible; targeted diff check passed.
+
+## 2026-09-15T21:02:52Z — Move documentation home to home.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the embedded documentation Home section to
+  `docs/home.md`.
+- Changes Made: Created `docs/home.md`, registered it as the Home document,
+  removed the embedded `HOME_CONTENT` copy, and updated the viewer to fetch and
+  render Home through the Markdown document loader. Updated the documentation
+  README link and core-document grouping.
+- Files: `docs/home.md`, `docs/index.html`, `docs/README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Refreshed the live viewer and confirmed the Markdown
+  Home page displays the `Start here` section; targeted diff checks passed.
+
+## 2026-09-15T21:04:10Z — Keep Home in header only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove Home from the documentation viewer sidebar because
+  it is already available in the header.
+- Changes Made: Removed `home.md` from the viewer registry and restored the
+  core/unit navigation split while keeping the header Home route backed by
+  `docs/home.md`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed Home is absent from sidebar text, the header
+  Home button remains present, and the Home content still loads.
+
+## 2026-09-15T21:09:43Z — Remove obsolete migration rule
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the one-time documentation-migration restriction
+  from `AGENTS.md`.
+- Changes Made: Deleted only the obsolete rule prohibiting application-code
+  changes during documentation migration.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the targeted rule is absent and the
+  `AGENTS.md` diff check passes.
+
+## 2026-09-15T21:13:59Z — Expand documentation routing guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Expand the narrow reference section in `AGENTS.md` to cover
+  the full documentation set.
+- Changes Made: Replaced the two-file reference section with routing guidance
+  for the documentation map, rules, stack, architecture, testing, design,
+  product units, archives, and documentation-agent instructions.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed every referenced path exists and the targeted
+  `AGENTS.md` diff check passes.

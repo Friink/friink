@@ -147,7 +147,7 @@ during migration.
 
 ### 7. Write the unit document
 
-Populate the target file using `template.md`. Include enough detail to
+Populate the target file using `units/template.md`. Include enough detail to
 rebuild and verify the unit:
 
 - canonical ownership and scope;
@@ -214,5 +214,4 @@ A unit is complete when a new developer or agent can understand what the unit
 is, implement its behavior, test its important paths, identify its dependencies,
 and distinguish current behavior from planned or deprecated behavior without
 having to reconstruct the product from scattered history.
-
 

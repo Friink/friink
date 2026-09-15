@@ -47,8 +47,6 @@ npm --prefix web run dev
 # See api/.env.example for required environment variables.
 ```
 
-`localhost/localhost.ps1` is available for local environment setup.
-
 The `development` branch is the local-work branch below `staging`. Its ignored
 `api/.env.development` file may copy staging variable names, but must point to
 an isolated development database and must never contain production credentials.

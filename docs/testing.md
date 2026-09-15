@@ -7,7 +7,7 @@ release.
 
 **Status:** Active  
 **Last edited:** 2026-09-13T00:05:14Z  
-**Related:** [`template.md`](template.md), [`rules.md`](rules.md), and the
+**Related:** [`template.md`](units/template.md), [`rules.md`](rules.md), and the
 relevant documents in [`units/`](units/)
 
 ## Testing principles
