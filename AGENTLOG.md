@@ -10680,3 +10680,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Confirmed every referenced path exists and the targeted
   `AGENTS.md` diff check passes.
+
+## 2026-09-15T21:34:35Z — Correct README and stack references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the two stale references found in staging documentation.
+- Changes Made: Removed the nonexistent `localhost/` directory from the README
+  layout and changed the documented Alembic head in `docs/stack.md` to
+  `20260911_0047`.
+- Files: `README.md`, `docs/stack.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed no `localhost/` layout entry remains and the
+  stack document matches the latest migration file.

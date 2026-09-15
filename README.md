@@ -13,7 +13,6 @@ web/       Next.js web client
 api/       FastAPI service, models, migrations, scripts, and tests
 docs/      Product, architecture, stack, design, and testing documentation
 packages/  Shared packages and design contracts
-localhost/ Local development helpers
 ```
 
 ## Technology

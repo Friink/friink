@@ -3511,3 +3511,9 @@ _Last updated: 2026-09-10_
 
 - [docs] Expanded `AGENTS.md` with concise routing guidance for the full set
   of canonical product, engineering, testing, design, unit, and archive docs.
+
+## 2026-09-15T21:34:35Z
+
+- [docs] Removed the nonexistent `localhost/` directory from the README
+  layout and updated the documented Alembic head in `docs/stack.md` from
+  `20260911_0046` to `20260911_0047`.

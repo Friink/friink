@@ -52,7 +52,7 @@ The `development` branch is the local-work branch below `staging`. Its ignored
 an isolated development database and must never contain production credentials.
 The development database must be migrated to the current Alembic head before
 local auth/session rehearsals; the current repository migration head is
-`20260911_0046`.
+`20260911_0047`.
 
 ## Verification tools
 
