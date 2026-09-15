@@ -3517,3 +3517,8 @@ _Last updated: 2026-09-10_
 - [docs] Removed the nonexistent `localhost/` directory from the README
   layout and updated the documented Alembic head in `docs/stack.md` from
   `20260911_0046` to `20260911_0047`.
+
+## 2026-09-15T21:39:37Z
+
+- [maintenance] Force-synchronized the experimental `development` branch
+  with `staging`; local and remote development now point to the staging tip.

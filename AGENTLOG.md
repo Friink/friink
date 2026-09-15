@@ -10692,3 +10692,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `README.md`, `docs/stack.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Confirmed no `localhost/` layout entry remains and the
   stack document matches the latest migration file.
+
+## 2026-09-15T21:39:37Z — Force staging into development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Force the experimental `staging` branch into `development`
+  without creating a backup branch.
+- Changes Made: Updated the local `development` ref and force-pushed
+  `staging` to `origin/development` using `--force-with-lease`.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Before logging, `staging`, local `development`, and
+  `origin/development` all resolved to `80e7da5`.
