@@ -1,5 +1,71 @@
 # Changelog
 
+## 2026-09-15T23:00:01Z
+
+- [docs] Added the trailing slash to the Product units navigation and index
+  breadcrumb to make its directory nature explicit: `/units/`.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Removed the `/` breadcrumb from the virtual Home introduction;
+  breadcrumbs now appear only for documentation paths and unit indexes.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Fixed the new inline viewer home so the empty Home route renders the
+  short introduction instead of falling through to an empty-path fetch.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Simplified the documentation viewer home to a short inline
+  introduction, removed `README.md` from viewer navigation and search, and
+  deleted the redundant `docs/home.md` file.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Changed the documentation viewer header Home and logo links to use
+  `#doc=home.md`, preventing the implementation filename `index.html` from
+  appearing in the URL.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Replaced leaked virtual breadcrumb/index hash identifiers with the
+  semantic virtual paths `/` and `/units`.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Adjusted directory-style index links so hover and focus change only
+  font color; removed the filled hover background to keep the treatment theme
+  neutral in dark mode.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Replaced the Documentation and Product units index prose and bullet
+  lists with plain directory-style links showing their exact source paths.
+
+## 2026-09-15T22:42:50Z
+
+- [docs] Simplified documentation breadcrumbs to show only the exact current
+  source path, removing hardcoded Home and section prefixes.
+
+## 2026-09-15T22:42:50Z
+
+- [docs] Aligned sidebar section labels and breadcrumb parent labels with the
+  documentation hierarchy: the root documentation section is `/` and Product
+  units is `/units`.
+
+## 2026-09-15T22:42:50Z
+
+- [docs] Restored the muted breadcrumb text color for the current document
+  path so it matches the older breadcrumb treatment while retaining the exact
+  source-path labels.
+
+## 2026-09-15T22:39:25Z
+
+- [docs] Updated documentation viewer breadcrumbs to show the exact source
+  paths, including `/home.md`, `/rules.md`, and `/units/<name>.md`, while
+  preserving the existing static hash-based navigation.
+
 ## 2026-09-15T22:05:46Z
 
 - [docs] Fixed the documentation viewer's navigation grouping after adding

@@ -109,12 +109,15 @@
       .breadcrumbs a { color: var(--muted); text-decoration: none; }
       .breadcrumbs a:hover, .breadcrumbs a:focus-visible { color: var(--accent); text-decoration: underline; }
       .breadcrumbs .separator { margin: 0 .45rem; color: var(--line); }
-      .breadcrumbs [aria-current="page"] { color: var(--text); font-weight: 600; }
+      .breadcrumbs [aria-current="page"] { color: var(--muted); font-weight: 600; }
       article { width: min(960px, 100%); margin: 0 auto; padding: 2rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow-wrap: anywhere; }
       article h1 { font-size: clamp(2rem, 4vw, 3rem); }
       article h1, article h2, article h3, article h4 { line-height: 1.2; letter-spacing: 0; }
       article h1 { margin-top: 0; }
       article img { max-width: 100%; }
+      .directory-list { display: grid; gap: 2px; }
+      .directory-list a { display: block; padding: .4rem .5rem; border-radius: .35rem; color: var(--text); text-decoration: none; }
+      .directory-list a:hover, .directory-list a:focus-visible { color: var(--accent); background: transparent; outline: none; }
       article table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
       article th, article td { min-width: 8rem; padding: .55rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
       article th { background: #f3f2f2; }
@@ -171,8 +174,8 @@
       <button id="menu-button" class="menu-button" type="button" aria-label="Close sidebar" aria-expanded="true" aria-controls="sidebar">
         <i id="menu-icon" class="fa-solid fa-bars hamburger" aria-hidden="true"></i>
       </button>
-      <a id="home-link" class="menu-button home-button" href="./index.html" aria-label="Home"><i class="fa-solid fa-house" aria-hidden="true"></i></a>
-      <a id="brand-link" href="./index.html" aria-label="Friink Documentation home"><img class="brand-logo" src="../brand/logoFullBrand.svg" alt="Friink"></a>
+      <a id="home-link" class="menu-button home-button" href="#doc=" aria-label="Home"><i class="fa-solid fa-house" aria-hidden="true"></i></a>
+      <a id="brand-link" href="#doc=" aria-label="Friink Documentation home"><img class="brand-logo" src="../brand/logoFullBrand.svg" alt="Friink"></a>
       <div class="header-search">
         <label for="search">Search documents</label>
         <button id="search-toggle" class="menu-button search-toggle" type="button" aria-label="Open search" aria-expanded="false" aria-controls="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
@@ -225,7 +228,7 @@
     </div>
     <script>
       const DOCS = [
-        ['README', 'README.md'], ['Agents', 'AGENTS.md'], ['Rules', 'rules.md'],
+        ['Agents', 'AGENTS.md'], ['Rules', 'rules.md'],
         ['Testing', 'testing.md'], ['Deployment', 'deployment.md'], ['Design system', 'design-system.md'],
         ['Stack', 'stack.md'], ['Architecture', 'architecture.md'], ['Notes', 'notes.md'],
         ['Account access', 'units/account-access.md'],
@@ -257,9 +260,10 @@
       const zoomDecrease = document.querySelector('#zoom-decrease');
       const zoomIncrease = document.querySelector('#zoom-increase');
       const zoomReset = document.querySelector('#zoom-reset');
-      const HOME_PATH = 'home.md';
-      const DOCUMENTATION_PATH = '__documentation__';
-      const UNITS_PATH = '__units__';
+      const HOME_PATH = '';
+      const HOME_CONTENT = '<h1>Friink Documentation</h1><p>Click on a file from navigation to open.</p>';
+      const DOCUMENTATION_PATH = '/';
+      const UNITS_PATH = '/units';
       function applyTheme(theme) {
         if (theme === 'system') delete document.documentElement.dataset.theme;
         else document.documentElement.dataset.theme = theme;
@@ -288,12 +292,12 @@
 
       function renderUnitsContent() {
         const units = DOCS.filter(([, path]) => path.startsWith('units/'));
-        return `<h1>Product units</h1><p>These documents describe Friink's implementation-backed product areas.</p><ul>${units.map(([title, path]) => `<li><a href="#doc=${encodeURIComponent(path)}">${escapeHtml(title)}</a></li>`).join('')}</ul>`;
+        return `<div class="directory-list" aria-label="Product unit documents">${units.map(([title, path]) => `<a href="#doc=${encodeURIComponent(path)}">/${escapeHtml(path)}</a>`).join('')}</div>`;
       }
 
       function renderDocumentationContent() {
         const core = DOCS.filter(([, path]) => !path.startsWith('units/'));
-        return `<h1>Documentation</h1><p>Core product and engineering documents for understanding, building, and verifying Friink.</p><ul>${core.map(([title, path]) => `<li><a href="#doc=${encodeURIComponent(path)}">${escapeHtml(title)}</a></li>`).join('')}</ul>`;
+        return `<div class="directory-list" aria-label="Documentation files">${core.map(([title, path]) => `<a href="#doc=${encodeURIComponent(path)}">/${escapeHtml(path)}</a>`).join('')}</div>`;
       }
 
       function setSidebar(open) {
@@ -365,30 +369,28 @@
         const link = ([title, path]) => `<a href="#doc=${encodeURIComponent(path)}" data-path="${path}">${title}</a>`;
         const core = DOCS.filter(([, path]) => !path.startsWith('units/')).filter(matches).map(link).join('');
         const units = DOCS.filter(([, path]) => path.startsWith('units/')).filter(matches).map(link).join('');
-        const coreHeading = core || !query ? `<a class="nav-section-label" href="#doc=${DOCUMENTATION_PATH}" data-path="${DOCUMENTATION_PATH}">Documentation</a>` : '';
-        const unitsHeading = units || !query ? `<a class="nav-section-label" href="#doc=${UNITS_PATH}" data-path="${UNITS_PATH}">Product units</a>` : '';
+        const coreHeading = core || !query ? `<a class="nav-section-label" href="#doc=${DOCUMENTATION_PATH}" data-path="${DOCUMENTATION_PATH}">/</a>` : '';
+        const unitsHeading = units || !query ? `<a class="nav-section-label" href="#doc=${UNITS_PATH}" data-path="${UNITS_PATH}">/units/</a>` : '';
         nav.innerHTML = coreHeading + core + unitsHeading + units;
       }
 
       function renderBreadcrumbs(item) {
-        const [title, path] = item;
+        const [, path] = item;
         if (path === HOME_PATH) {
-          breadcrumbs.innerHTML = '<span aria-current="page">Home</span>';
+          breadcrumbs.innerHTML = '';
+          breadcrumbs.hidden = true;
           return;
         }
+        breadcrumbs.hidden = false;
         if (path === UNITS_PATH) {
-          breadcrumbs.innerHTML = `<a href="./index.html">Home</a><span class="separator" aria-hidden="true">/</span><span aria-current="page">Product units</span>`;
+          breadcrumbs.innerHTML = '<span aria-current="page">/units/</span>';
           return;
         }
         if (path === DOCUMENTATION_PATH) {
-          breadcrumbs.innerHTML = `<a href="./index.html">Home</a><span class="separator" aria-hidden="true">/</span><span aria-current="page">Documentation</span>`;
+          breadcrumbs.innerHTML = '<span aria-current="page">/</span>';
           return;
         }
-        const section = path.startsWith('units/') ? 'Product units' : 'Documentation';
-        const sectionLink = path.startsWith('units/')
-          ? `<a href="#doc=${UNITS_PATH}">${section}</a>`
-          : `<a href="#doc=${DOCUMENTATION_PATH}">${section}</a>`;
-        breadcrumbs.innerHTML = `<a href="./index.html">Home</a><span class="separator" aria-hidden="true">/</span>${sectionLink}<span class="separator" aria-hidden="true">/</span><span aria-current="page">${escapeHtml(title)}</span>`;
+        breadcrumbs.innerHTML = `<span aria-current="page">/${escapeHtml(path)}</span>`;
       }
 
       function renderSearchResults() {
@@ -405,6 +407,7 @@
         const item = path === HOME_PATH ? ['Home', HOME_PATH] : path === DOCUMENTATION_PATH ? ['Documentation', DOCUMENTATION_PATH] : path === UNITS_PATH ? ['Product units', UNITS_PATH] : DOCS.find(([, candidate]) => candidate === path); if (!item) return;
         searchResults.hidden = true; search.setAttribute('aria-expanded', 'false');
         renderBreadcrumbs(item); document.querySelectorAll('#nav a').forEach(link => link.classList.toggle('active', link.dataset.path === path));
+        if (path === HOME_PATH) { content.innerHTML = HOME_CONTENT; return; }
         if (path === DOCUMENTATION_PATH) { content.innerHTML = renderDocumentationContent(); return; }
         if (path === UNITS_PATH) { content.innerHTML = renderUnitsContent(); return; }
         try {

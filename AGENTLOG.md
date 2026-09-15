@@ -1,5 +1,157 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-15T23:00:01Z — Mark Product units as a directory
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use directory-style notation for the Product units
+  navigation path.
+- Changes Made: The sidebar and Product units index breadcrumb now display
+  `/units/`; the underlying static route remains `#doc=/units`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T23:00:01Z — Hide Home breadcrumb
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the root slash breadcrumb from the virtual Home
+  introduction because Home is not a directory.
+- Changes Made: Home now clears and hides the breadcrumb navigation; actual
+  documentation and unit paths continue to show their exact breadcrumb path.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T23:00:01Z — Fix inline viewer home rendering
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Repair the documentation viewer Home page after removing
+  `home.md`.
+- Changes Made: Added the missing early return so the empty Home route renders
+  the short inline introduction rather than fetching `index.html`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T23:00:01Z — Simplify documentation viewer home
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant README viewer entry and replace the
+  deleted Home Markdown page with a minimal inline introduction.
+- Changes Made: Removed `README.md` from the viewer registry, deleted
+  `docs/home.md`, and made the default index home render only `Friink
+  Documentation` and `Click on a file from navigation to open.`. The existing
+  static hash routing remains in place.
+- Files: `docs/index.html`, `docs/README.md`, `docs/home.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Keep index filename out of Home URLs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent clicking the documentation viewer Home control from
+  adding `index.html` to the URL.
+- Changes Made: Header Home and Friink logo links now target `#doc=home.md`,
+  using the existing static viewer route for Home.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Replace virtual hash identifiers
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove `__documentation__` and `__units__` from viewer URLs.
+- Changes Made: Virtual Documentation and Product units routes now use `/` and
+  `/units` in the existing hash-based navigation.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Remove directory-list hover backgrounds
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make directory-style documentation links respect dark theme
+  colors without using a full hover background.
+- Changes Made: Directory-list hover and focus states now change only the
+  font color to the theme accent and use a transparent background.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Use directory-style documentation indexes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove explanatory index text and bullets from the viewer's
+  Documentation and Product units pages.
+- Changes Made: Both index views now render unbulleted clickable paths such as
+  `/testing.md` and `/units/account-access.md`, with shared directory-list
+  styling and no introductory headings or prose.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:42:50Z — Remove hardcoded breadcrumb prefixes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the hardcoded Home and Product units breadcrumb
+  segments shown before documentation source paths.
+- Changes Made: Breadcrumbs now render only the exact current path, including
+  `/home.md`, `/`, `/units`, `/testing.md`, and `/units/account-access.md`.
+  Existing static hash-based navigation remains unchanged.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:42:50Z — Align documentation section paths
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show the exact root and Product units directory paths in
+  the documentation sidebar and breadcrumb hierarchy.
+- Changes Made: Sidebar section labels now show `/` and `/units`; breadcrumb
+  parent labels use the same exact paths. Existing hash-based navigation and
+  document filenames remain unchanged.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:42:50Z — Restore muted breadcrumb color
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match the breadcrumb current-path color to the older muted
+  visual treatment shown in the reference screenshots.
+- Changes Made: Changed only `.breadcrumbs [aria-current="page"]` from the
+  bright text token to the shared muted token. Exact source-path labels remain
+  unchanged.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:39:25Z — Show exact source paths in breadcrumbs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make documentation breadcrumbs display the exact directory
+  and filename for each rendered document.
+- Changes Made: Updated only the breadcrumb labels in `docs/index.html` so
+  Home shows `/home.md`, root documents show paths such as `/testing.md`, and
+  unit documents show paths such as `/units/profiles.md`. Existing static
+  hash-based routing was preserved.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
 ## 2026-09-15T22:05:46Z — Fix documentation navigation grouping
 
 - Agent: Codex

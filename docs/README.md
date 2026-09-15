@@ -5,7 +5,6 @@ This folder contains Friink’s product and engineering documentation.
 ## Structure
 
 - [Documentation viewer](index.html) — the interactive documentation browser.
-- [Home](home.md) — the overview rendered on the viewer's Home route.
 - [Rules](rules.md) — active, implementation-backed product rules.
 - [Template](units/template.md) — the standard structure for unit documents.
 - [Testing](testing.md) — shared testing criteria and completion rules.
