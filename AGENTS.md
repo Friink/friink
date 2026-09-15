@@ -82,3 +82,5 @@ repository.
   product area.
 - Treat [`docs/archives/`](docs/archives/) as historical reference only.
 - Read [`docs/AGENTS.md`](docs/AGENTS.md) before changing documentation.
+
+.
