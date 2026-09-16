@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T00:00:00Z — Migrate and promote all environments
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the correct development database, update all three database heads, and push the latest code to development, staging, and main.
+- Changes Made: Verified `.env.development`, `.env.staging`, and `.env` database targets; migrated development and staging to `20260917_0049`; verified production was already at head; pushed development/staging and merged the release into main.
+- Files: Release logs; database state in development, staging, and production.
+- Verification Status: All three migration gates completed successfully with `alembic check` reporting no new upgrade operations; remote branch pushes succeeded.
+
 ## 2026-09-17T00:00:00Z — Add shared CSS scrollbar treatment
 
 - Agent: Codex
