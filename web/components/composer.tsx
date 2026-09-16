@@ -75,6 +75,7 @@ type ComposerProps = {
     initials: string;
     tone: string;
     imageUrl?: string | null;
+    showProfessionalBadge?: boolean;
     text: string;
     mediaCount?: number;
   } | null;
@@ -258,7 +259,7 @@ export function Composer({
       {contextLabel ? <div className="composer-context-label">{contextLabel}</div> : null}
       {referencedPreview ? (
         <div className="composer-quoted-preview">
-          <ProfileCard name={referencedPreview.name} handle={referencedPreview.handle} tone={referencedPreview.tone} initials={referencedPreview.initials} imageUrl={referencedPreview.imageUrl} />
+          <ProfileCard name={referencedPreview.name} handle={referencedPreview.handle} tone={referencedPreview.tone} initials={referencedPreview.initials} imageUrl={referencedPreview.imageUrl} showProfessionalBadge={referencedPreview.showProfessionalBadge} />
           {onClearContext ? <button className="composer-context-close" type="button" onClick={onClearContext} aria-label="Remove quoted post" title="Remove quoted post"><i className="fa-solid fa-xmark" aria-hidden="true" /></button> : null}
           <p className="composer-quoted-preview-text">{referencedPreview.text}</p>
           {referencedPreview.mediaCount ? <span className="composer-quoted-preview-media">Media attached</span> : null}

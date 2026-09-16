@@ -9,6 +9,7 @@ class BlockedUserResponse(BaseModel):
     display_name: str | None
     profile_picture_url: str | None
     blocked_at: datetime
+    show_professional_badge: bool = False
 
 
 class BlockedUserListResponse(BaseModel):

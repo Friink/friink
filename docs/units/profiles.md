@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T21:20:00Z
+**Last edited:** 2026-09-16T21:51:28Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -62,12 +62,19 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-011:** Profile bootstrap shows an explicit session-restoration
   state and a retry action for recoverable API failures; it never leaves the
   profile as a blank surface while authentication is being restored.
+- **PROFILE-R-012:** When the owner enables the professional-profile badge
+  preference, the public profile renders `Professional` immediately next to
+  the displayed name. The badge is omitted otherwise.
 
 ## UX and flows
 
 Profile pages show identity, About, follower/following statistics, actions,
 and Posts/Replies tabs. Loading and unavailable states are explicit. A self
 profile offers Edit; another profile may offer Message or connection actions.
+The shared profile-card identity name row may include the opt-in `Professional`
+badge next to the displayed name. Data-backed profile cards reuse the same
+visibility value across profiles, posts, quoted posts, connections, chat,
+notifications, likes, blocked users, and remembered-account surfaces.
 The contextual NavigationBar overflow menu exposes Block for another user and
 opens the shared confirmation modal. Profile content uses author-scoped routes
 and visibility rules.

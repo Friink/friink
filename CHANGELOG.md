@@ -1,5 +1,97 @@
 # Changelog
 
+## 2026-09-17T00:00:00Z
+
+- [web/design] Added a shared CSS scrollbar treatment for the platform while
+  preserving native scrolling and accessibility behavior.
+
+## 2026-09-17T00:00:00Z
+
+- [web/notifications] Limited the visible TopBar notification dropdown to
+  eight rendered rows; additional unread notifications remain available by
+  scrolling the list.
+
+## 2026-09-17T00:00:00Z
+
+- [web/auth-ux] Fixed a hydration regression in optimistic session bootstrap
+  by deferring browser-only cached-user hydration until after mount.
+
+## 2026-09-17T00:00:00Z
+
+- [web/notifications] Fixed the active notification dropdown’s constrained
+  layout so its list scrolls inside the available viewport space while the
+  footer remains visible; geometry now also tracks top-bar reflow.
+
+## 2026-09-17T00:00:00Z
+
+- [web/auth-ux] Added frontend-only optimistic session bootstrap. The app can
+  mount from safe cached user metadata while the existing HttpOnly-cookie
+  refresh runs, without treating cached metadata as authentication.
+
+## 2026-09-17T00:00:00Z
+
+- [web/notifications] Made the TopBar notification dropdown calculate its
+  maximum height from its actual rendered top edge instead of a fixed top-bar
+  height token, keeping the scrollable list within the available viewport.
+
+## 2026-09-16T22:42:00Z
+
+- [web/navigation] Constrained the search suggestions dropdown to the active
+  search bar width so it cannot extend beyond the search control.
+
+## 2026-09-16T22:38:00Z
+
+- [web/notifications] Made the active TopBar notification dropdown responsive
+  to viewport width and height; long unread lists now scroll inside a viewport-
+  bounded menu while keeping the footer visible.
+
+## 2026-09-16T22:34:00Z
+
+- [web/feed] Removed the refresh control's duplicate horizontal inset so it
+  aligns with the feed body and floating composer without changing the shared
+  content-column width.
+
+## 2026-09-16T22:30:18Z
+
+- [diagnosis] Investigated missing older posts. The professional badge change
+  only adds an additive response field and does not alter post filtering,
+  ordering, or pagination. The local API session was invalid and the current
+  database contains only one active post total for `muflah`.
+
+## 2026-09-16T22:26:59Z
+
+- [web/navigation] Restored search expansion/submission, chat unread dots, and
+  the notification unread dropdown inside the newer TopBar visual treatment.
+- [docs/navigation] Updated the navigation, discovery, and design contracts
+  to describe the active TopBar behavior.
+
+## 2026-09-16T22:09:49Z
+
+- [web/api] Completed migration `20260917_0049` and propagated the professional
+  badge through data-backed profile cards across posts, quoted posts, likes,
+  connections, chat, notifications, blocked users, and account surfaces.
+- [data] Audited the live schema: the user badge column is present and the
+  migration is current; professional entitlement keys remain separate from
+  badge visibility.
+
+## 2026-09-16T21:55:52Z
+
+- [web/api] Implemented the professional profile badge preference. Users can
+  enable `Show you are a professional on Profile` for professional networking;
+  the server persists the choice and public profiles render the `Professional`
+  badge next to the displayed name.
+
+## 2026-09-16T21:40:52Z
+
+- [docs/settings] Specified that the opt-in professional badge appears next
+  to the user's displayed name on their public profile.
+
+## 2026-09-16T21:38:35Z
+
+- [docs/settings] Documented the planned conditional professional-profile
+  badge setting under General > How I use Friink, including its opt-in,
+  hidden-by-default, and non-entitlement behavior.
+
 ## 2026-09-16T21:40:00Z
 
 - [web/ui] Positioned shared tab scroll arrows flush against the tab-strip

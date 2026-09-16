@@ -222,6 +222,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     active: true,
     available: true,
     lastUsedAt: '',
+    showProfessionalBadge: user.showProfessionalBadge,
   } satisfies AccountSummary];
   const accountMenuItems: ActionMenuItem[] = [
     ...menuAccounts.map((account) => ({
@@ -246,7 +247,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
-        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} imageUrl={user.profilePictureUrl} />
+        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} imageUrl={user.profilePictureUrl} showProfessionalBadge={user.showProfessionalBadge} />
         <button
           ref={accountMenuButtonRef}
           className="sidebar-account-menu-button"
@@ -333,7 +334,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
         </button>
       </div>
       {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); setAccountModal(null); }} /></Modal> : null}
-      {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><div className="logout-confirm-account"><ProfileCard name={removeTarget.displayName || removeTarget.username} handle={`@${removeTarget.username}`} tone="mint" initials={getInitials(removeTarget.displayName || removeTarget.username)} imageUrl={removeTarget.profilePictureUrl || DEFAULT_PROFILE_IMAGE} /></div><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
+      {removeTarget ? <Modal title="Log out account" onClose={() => setRemoveTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)}>Cancel</button><button className="button-primary" type="button" disabled={accountBusy} onClick={() => void confirmRemoveAccount()}>Log out</button></>}><div className="logout-confirm-account"><ProfileCard name={removeTarget.displayName || removeTarget.username} handle={`@${removeTarget.username}`} tone="mint" initials={getInitials(removeTarget.displayName || removeTarget.username)} imageUrl={removeTarget.profilePictureUrl || DEFAULT_PROFILE_IMAGE} showProfessionalBadge={removeTarget.showProfessionalBadge} /></div><p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p></Modal> : null}
     </aside>
   );
 }

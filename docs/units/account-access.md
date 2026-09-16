@@ -254,6 +254,13 @@ Network, timeout, CORS, 403, 5xx, malformed-response, and other recoverable
 failures do not clear local session state. Only an explicit terminal refresh
 response clears local state and redirects to `/login`.
 
+On a full browser reload, the client may use the previously stored safe user
+metadata to mount the application shell immediately while the refresh-cookie
+exchange runs in the background. This cached metadata is presentation-only:
+authenticated API effects and actions still wait for the in-memory access token
+created by a successful refresh. A failed refresh returns to the existing
+recovery surface.
+
 #### Business rules and contract
 
 - **ACCESS-R-014:** Access tokens use the current 30-minute implementation

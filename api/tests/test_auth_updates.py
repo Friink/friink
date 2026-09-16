@@ -166,6 +166,52 @@ async def test_update_current_user_updates_profile_fields() -> None:
 
 
 @pytest.mark.asyncio
+async def test_update_current_user_enables_professional_badge_for_professional_intent() -> None:
+    user = make_user("alex", "alex@example.com")
+    session = FakeSession()
+
+    updated = await service.update_current_user(
+        session,
+        user,
+        UpdateCurrentUserRequest(use_intent="professional", show_professional_badge=True),
+    )
+
+    assert updated.use_intent == "professional"
+    assert updated.show_professional_badge is True
+
+
+@pytest.mark.asyncio
+async def test_update_current_user_clears_professional_badge_when_switching_to_personal() -> None:
+    user = make_user("alex", "alex@example.com")
+    user.use_intent = "professional"
+    user.show_professional_badge = True
+
+    updated = await service.update_current_user(
+        FakeSession(),
+        user,
+        UpdateCurrentUserRequest(use_intent="personal"),
+    )
+
+    assert updated.use_intent == "personal"
+    assert updated.show_professional_badge is False
+
+
+@pytest.mark.asyncio
+async def test_update_current_user_rejects_professional_badge_for_personal_intent() -> None:
+    user = make_user("alex", "alex@example.com")
+    user.use_intent = "personal"
+
+    with pytest.raises(HTTPException) as error:
+        await service.update_current_user(
+            FakeSession(),
+            user,
+            UpdateCurrentUserRequest(show_professional_badge=True),
+        )
+
+    assert error.value.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_update_current_user_updates_date_of_birth_and_enforces_minimum_age() -> None:
     user = make_user("alex", "alex@example.com")
     session = FakeSession()

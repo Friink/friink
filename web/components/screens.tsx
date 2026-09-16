@@ -112,7 +112,7 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
             key={conversation.id}
             avatar={
               <Link className="message-row-profile" href={`/${conversation.participant.username}`} aria-label={`Open ${conversation.participant.display_name || conversation.participant.username} profile`}>
-                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} />
+                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} showProfessionalBadge={conversation.participant.show_professional_badge} />
               </Link>
             }
             title={

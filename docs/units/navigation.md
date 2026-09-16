@@ -12,7 +12,7 @@ NavigationBar, drawer, or tabs.
 
 ## Canonical ownership
 
-This document owns the signed-in TopBar preview and its interaction contract.
+This document owns the signed-in TopBar and its interaction contract.
 The drawer owns destination discovery, NavigationBar owns the existing
 contextual navigation, and Tabs own section selection.
 
@@ -26,9 +26,8 @@ contextual navigation, and Tabs own section selection.
 
 ## Product definition
 
-The TopBar preview gives signed-in users a consistent, testable shell surface
-without removing the existing Header or NavigationBar before the new design is
-accepted.
+The TopBar gives signed-in users a consistent shell surface while preserving
+the established search, chat-unread, and notification interactions.
 
 ## UX and interaction
 
@@ -36,17 +35,19 @@ accepted.
   activating it goes to Home. Home adds the sidebar toggle, while contextual
   screens add Back beside the mark.
 - The current screen title remains centered in every mode.
+- Home mode provides inline Search, Chat, and Notifications actions. Search
+  expands into a text input with suggestions and routes submitted queries to
+  `/search/{query}`. Chat shows a dot when conversations are unread, and the
+  notification bell shows a dot and opens the unread notification dropdown.
 - Contextual mode provides a history-aware Back control, the page title, and
   the existing three-dot ActionMenu populated by shell-owned menu items.
-- All controls use the existing navigation callbacks, so the preview does not
-  create parallel routing or notification semantics.
-- The existing Header and NavigationBar remain mounted but are visually hidden
-  during preview evaluation; their code and state remain available for safe
-  rollback. Tabs remain rendered and functional.
+- All controls use the existing navigation callbacks and server-authoritative
+  unread state. The legacy Header remains mounted but visually hidden for
+  rollback safety; NavigationBar and Tabs remain rendered and functional.
 
 ## Business rules
 
-- **NAV-R-001:** Preview controls must preserve established destinations and
+- **NAV-R-001:** TopBar controls must preserve established destinations and
   action semantics.
 - **NAV-R-002:** Back is disabled when shell history says there is no safe
   prior destination.
@@ -58,12 +59,13 @@ accepted.
 
 ## Acceptance criteria
 
-- [ ] **NAV-AC-001** Home preview actions navigate to the established screens.
-- [ ] **NAV-AC-002** Contextual preview Back and ActionMenu invoke the existing
+- [ ] **NAV-AC-001** Home Search expands, submits to search, Chat shows unread
+  state, and Notifications opens its unread dropdown.
+- [ ] **NAV-AC-002** Contextual Back and ActionMenu invoke the existing
   shell handlers.
 - [ ] **NAV-AC-003** Existing Header, NavigationBar, and Tabs remain intact.
 - [ ] **NAV-AC-004** Light/dark logo variants remain readable and accessible.
-- [ ] **NAV-AC-005** Legacy Header and NavigationBar are hidden without being
+- [ ] **NAV-AC-005** Legacy Header is hidden without being
   deleted, and the TopBar does not leave a reserved navigation gap.
 
 ## Verification checklist

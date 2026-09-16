@@ -81,4 +81,5 @@ def serialize_notification(notification: Notification) -> NotificationResponse:
         payload=notification.payload,
         read=notification.read,
         created_at=notification.created_at,
+        actor_show_professional_badge=bool(notification.actor and notification.actor.show_professional_badge),
     )

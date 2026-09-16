@@ -316,7 +316,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/models/user.py`, `api/app/models/signup_reservation.py`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/archives/updated-account-info.md`
 
 - **What:** Settings > Account shows a read-only `Region` field containing the province/state-level country-region signal available when the account is created. The server stores a coarse ISO 3166-2-style code and never stores the raw IP for this feature.
-- **Edge cases:** If the trusted deployment geolocation signal is unavailable, Region displays `Unavailable`. Existing accounts are not inferred or backfilled, and the existing user-entered profile `location` field remains separate. Onboarding may also collect optional user-entered `Location` and private `How I use Friink` values (`For professional networking` or `For personal connection`); both can be edited later and have no effect on access, billing, recommendations, ranking, or other business rules.
+- **Edge cases:** If the trusted deployment geolocation signal is unavailable, Region displays `Unavailable`. Existing accounts are not inferred or backfilled, and the existing user-entered profile `location` field remains separate. Onboarding may also collect optional user-entered `Location` and private `How I use Friink` values (`For professional networking` or `For personal connection`); both can be edited later. The professional-networking value controls availability of the profile-badge preference but does not grant access, billing, recommendations, ranking, professional status, or directory eligibility.
 
 ### AUTH-R-008 — Authoritative Web Session And Refresh Model
 
@@ -705,9 +705,9 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/app/[username]/profile-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `web/app/[username]/profile-client.tsx`
 
-- **What:** Authenticated route bootstrap must show an explicit restoration state while the session is being recovered. Recoverable API failures preserve the session and provide an in-place retry; they must not leave the page blank or require repeated browser reloads.
+- **What:** Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered. The shell metadata is presentation-only; authenticated API effects and actions require a successful in-memory refresh. Terminal refresh failures redirect to login, while recoverable failures return to the explicit recovery state with an in-place retry.
 - **Edge cases:** Terminal refresh failures redirect to login, while network and other recoverable failures remain on the recovery surface. Refresh-token rotation and server-side validation remain authoritative.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
@@ -984,6 +984,27 @@ missing evidence can be filled in.
   the shared confirmation modal for the viewed profile.
 - **Edge cases:** Block is not rendered as a detached menu in the profile
   action row. Self profiles do not receive the other-user Block menu item.
+
+### PROFILE-R-012 — Professional Badge Visibility Is User-Controlled
+
+- **Status:** Active
+- **Effective:** 2026-09-16T21:51:28Z
+- **Related units:** [profiles](units/profiles.md), [settings](units/settings.md)
+- **Platform:** Web/API
+- **Source:** Current implementation
+- **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260917_0049_professional_badge.py`, `web/components/account-screens.tsx`, `web/components/profile-card.tsx`, `web/components/profile-screen.tsx`, `web/lib/auth.ts`, `web/app/globals.css`
+
+- **What:** A user may enable `Show you are a professional on Profile` only
+  when their private `How I use Friink` preference is `For professional
+  networking`. The public profile then renders a `Professional` badge
+  immediately next to the displayed name. The preference is off by default.
+- **Edge cases:** Selecting `For personal connection` hides the setting and
+  clears the stored badge visibility. The API rejects attempts to enable the
+  badge without the professional-networking preference. Badge visibility does
+  not award professional status, verify credentials, grant directory access,
+  or change subscription entitlements. The same effective value is returned
+  for data-backed profile-card surfaces so the badge remains consistent
+  wherever that user is represented.
 
 ### POST-R-008 — Reply Creation Rechecks Parent Visibility
 
@@ -1624,6 +1645,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [profiles](units/profiles.md) | PROFILE-R-009 | Other-user connection labels use text-button geometry. |
 | [profiles](units/profiles.md) | PROFILE-R-010 | Profile moderation uses the contextual navigation overflow. |
 | [profiles](units/profiles.md) | PROFILE-R-011 | Profile bootstrap exposes restoration and retry states. |
+| [profiles](units/profiles.md) | PROFILE-R-012 | Professional badge visibility is user-controlled and appears next to the displayed name. |
 | [saved-items](units/saved-items.md) | SAVED-R-001 | Saves are private to the saving user and have no actor list. |
 | [saved-items](units/saved-items.md) | SAVED-R-002 | Deleted, private, blocked, or inaccessible content is omitted |
 | [saved-items](units/saved-items.md) | SAVED-R-003 | One user has at most one active Save per content object. |
@@ -1635,6 +1657,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [settings](units/settings.md) | SETTINGS-R-005 | Sessions are listed using server-derived metadata and |
 | [settings](units/settings.md) | SETTINGS-R-006 | Appearance and accent preferences are device-local; |
 | [settings](units/settings.md) | SETTINGS-R-007 | Successful saves provide clear success feedback. |
+| [settings](units/settings.md) | SETTINGS-R-008 | Professional badge setting is conditional on the professional-networking preference. |
 | [staff-admin](units/staff-admin.md) | STAFF-R-001 | `is_staff` controls discoverability only; it does not |
 | [staff-admin](units/staff-admin.md) | STAFF-R-002 | Effective permissions are the union of assigned role |
 | [staff-admin](units/staff-admin.md) | STAFF-R-003 | The server authorizes every protected operation regardless of |

@@ -99,7 +99,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
     >
       <div className="feed-post-heading">
         <Link className="feed-post-profile-link" href={`/${post.handle.replace('@', '')}`} aria-label={`Open ${post.name} profile`}>
-          <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} imageUrl={post.imageUrl} />
+          <ProfileCard name={post.name} handle={post.handle} tone={post.tone} initials={post.initials} imageUrl={post.imageUrl} showProfessionalBadge={post.showProfessionalBadge} />
         </Link>
         <div className="feed-post-options" aria-label="Post actions">
           <button className="icon-button feed-post-share" type="button" aria-label="Share post">
@@ -130,6 +130,7 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
                   handle={`@${quotedPost.authorUsername}`}
                   tone="mint"
                   imageUrl={quotedPost.imageUrl}
+                  showProfessionalBadge={quotedPost.showProfessionalBadge}
                 />
               ) : (
                 <strong>Original post unavailable</strong>

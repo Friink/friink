@@ -18,6 +18,7 @@ export type NotificationItem = {
   createdAt: string;
   initials: string;
   tone: 'coral' | 'sage' | 'sun' | 'mint';
+  showProfessionalBadge?: boolean;
   unread?: boolean;
   href?: string;
   actions?: NotificationAction[];
@@ -128,6 +129,7 @@ export function NotificationsScreen({ notifications = [], onMarkRead, emptyMessa
                   tone={notification.tone}
                   initials={notification.initials}
                   href={profileHref(notification.handle)}
+                  showProfessionalBadge={notification.showProfessionalBadge}
                 />
               }
               subtitle={

@@ -149,6 +149,15 @@ The exact widths, heights, breakpoints, and token names are defined in
 
 ## Interaction patterns
 
+### Scrollbar treatment
+
+The web platform uses native scrolling with a shared CSS scrollbar treatment.
+Scrollable surfaces use a thin rounded thumb blended from the active accent and
+line colors, with the accent color on hover and transparent tracks. The styling
+must preserve native wheel, keyboard, touch, accessibility, and reduced-motion
+behavior; JavaScript scrollbar replacements are not part of the platform design
+system.
+
 ### Actions
 
 - Each surface should have one visually clear primary action.
@@ -204,9 +213,15 @@ Subscription surfaces use explicit plan and lifecycle labels: `Free`, `Pro`, or
 `Pro+` for the effective plan, and `Active`, `Expired`, or `Revoked` for the
 assignment state. Indefinite access is labeled `No expiration`. Manual admin
 access is described as granted or activated access, never as a purchase.
-Public plan and professional badges are opt-in and hidden by default. Expiry
-and revocation messaging must explain the resulting return to Free without
-implying a payment event when billing is unavailable.
+Public plan and professional badges are opt-in and hidden by default. The
+professional-badge preference is conditionally revealed under the General
+`How I use Friink` setting only for `For professional networking`; it is not
+shown for `For personal connection`. When enabled, the badge sits immediately
+next to the user's displayed name on the public profile. The preference
+changes profile display only and must not imply professional verification,
+directory eligibility, or paid access. Expiry and revocation messaging must
+explain the resulting
+return to Free without implying a payment event when billing is unavailable.
 
 ### Feedback
 

@@ -48,6 +48,9 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
   content remains to the right; tab arrows must fit inside the tab bar without
   extending beyond its bounds, and visible arrows sit flush against the bar's
   left or right edge.
+- **FEED-R-010:** The Home feed refresh control spans the same content column as
+  the feed body and floating composer; it must not add a second horizontal
+  inset of its own.
 
 ## UX and flows
 

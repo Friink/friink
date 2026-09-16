@@ -109,10 +109,13 @@ the full immutable assignment history and audit details.
 
 Professional status is independently modeled in the planned staff workflow and
 may be awarded to any active user, including a Free user, with its own 64-day
-expiry. The professional
-directory requires both professional status and Pro or Pro+ access. A user may
-opt in from Settings to show a professional badge on their profile; plan
-badges are also opt-in and default to hidden.
+expiry. The professional directory requires both professional status and Pro
+or Pro+ access. A user may opt in from Settings to show a professional badge
+immediately next to their displayed name on their profile only when `How I use
+Friink` is set to `For professional networking`; plan badges are also opt-in
+and default to hidden. This
+profile-display preference does not award professional status or grant any
+subscription entitlement.
 
 Grant, change, expiry, and revoke events have an in-app and email notification
 contract; delivery remains planned. Email delivery failure must not roll back
@@ -139,5 +142,4 @@ Payments, checkout, recurring billing, cancellation, automatic renewal,
 nonpayment enforcement, and customer self-service are not implemented. The
 current Settings subscription summary is connected to the server-resolved
 entitlement. Public plan cards remain informational, and the final capability
-matrix, notifications, professional-status workflow, and profile-badge
-preferences remain planned.
+matrix, notifications, and professional-status workflow remain planned.

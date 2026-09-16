@@ -8,6 +8,7 @@ export type Post = {
   handle: string;
   initials: string;
   imageUrl?: string | null;
+  showProfessionalBadge?: boolean;
   tone: string;
   createdAt: string;
   text: string;
@@ -28,6 +29,7 @@ export type Post = {
     authorUsername: string | null;
     authorDisplayName?: string | null;
     imageUrl?: string | null;
+    showProfessionalBadge?: boolean;
     content: string;
     mediaCount?: number;
     media?: string[];
@@ -75,6 +77,7 @@ export type Connection = {
   tone: string;
   relationship: 'follower' | 'following' | 'mutual';
   status: 'connected' | 'request';
+  showProfessionalBadge?: boolean;
 };
 
 export type ConnectionRequest = {
@@ -84,6 +87,7 @@ export type ConnectionRequest = {
   initials: string;
   status: 'pending';
   createdAt: string;
+  showProfessionalBadge?: boolean;
 };
 
 export const initialConnections: Connection[] = [

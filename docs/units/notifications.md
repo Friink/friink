@@ -42,8 +42,11 @@ meaning that causes a notification.
 
 ## UX and flows
 
-The bell shows an unread indicator and count pill. Its compact dropdown uses a
-shared contextual surface and a calm empty state. `/notifications` provides the
+The TopBar bell shows an unread indicator and count pill. Its compact dropdown uses a
+shared contextual surface, measures its rendered top edge, remains within the
+current viewport, shows at most eight rendered rows at once, and scrolls only its
+unread list after the eighth row while keeping the destination footer visible.
+`/notifications` provides the
 full list with tabs, filters, read tracking, actions, loading, empty, and retry
 states. Security notifications use the shield treatment and may link to
 session review.
@@ -52,7 +55,7 @@ session review.
 
 API endpoints are in `api/app/routers/notifications.py`; records and outbox
 behavior are represented by notification models and services. The web surface
-uses `notifications-screen.tsx` and the shared header dropdown.
+uses `notifications-screen.tsx` and the TopBar dropdown.
 
 ## Acceptance criteria
 

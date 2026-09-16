@@ -645,6 +645,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       handle: `@${post.author_username}`,
       initials: getInitials(post.author_display_name || post.author_username),
       imageUrl: post.profile_picture_url,
+      showProfessionalBadge: post.show_professional_badge,
       tone: 'mint',
       createdAt: post.created_at,
       text: post.content,
@@ -670,6 +671,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
             mediaCount: post.quoted_post.media_count,
             media: post.quoted_post.media.map((item) => item.url),
             unavailable: post.quoted_post.unavailable,
+            showProfessionalBadge: post.quoted_post.show_professional_badge,
           }
         : null,
     };
@@ -684,6 +686,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       initials: getInitials(connectionUser.username),
       status: 'pending',
       createdAt: request.created_at,
+      showProfessionalBadge: connectionUser.show_professional_badge,
     };
   }
 
@@ -718,6 +721,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
       initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
+      showProfessionalBadge: notification.actor_show_professional_badge,
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
       href: notificationHref,
@@ -780,6 +784,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       tone: connectionUser.is_private ? 'sage' : 'mint',
       relationship,
       status: 'connected' as const,
+      showProfessionalBadge: connectionUser.show_professional_badge,
     };
   }
 
@@ -1016,6 +1021,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           isHome={activeScreen === 'home'}
           sidebarCollapsed={sidebarCollapsed}
           notificationCount={unreadNotificationCount}
+          notifications={notifications}
           hasUnreadMessages={hasUnreadMessages}
           backDisabled={!canGoBack}
           menuItems={navigationMenuItems}
@@ -1262,6 +1268,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                   initials: composeContext.post.initials,
                   tone: composeContext.post.tone,
                   imageUrl: composeContext.post.imageUrl,
+                  showProfessionalBadge: composeContext.post.showProfessionalBadge,
                   text: composeContext.post.text,
                   mediaCount: 0,
                 } : null}

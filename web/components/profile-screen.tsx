@@ -105,6 +105,7 @@ export function ProfileScreen({
             tone="mint"
             initials={getInitials(user.name)}
             imageUrl={user.profilePictureUrl}
+            showProfessionalBadge={user.showProfessionalBadge}
           />
         </div>
 

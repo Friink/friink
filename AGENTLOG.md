@@ -1,5 +1,138 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T00:00:00Z — Add shared CSS scrollbar treatment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply a consistent Friink scrollbar design using platform CSS rather than a custom JavaScript scrollbar.
+- Changes Made: Added global thin rounded scrollbar styling with accent hover treatment and native scrolling preserved; documented the design contract.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Limit notification dropdown to eight visible rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show no more than eight notification rows before the dropdown list scrolls.
+- Changes Made: Measure the ninth rendered row and use that boundary as the list max-height, preserving responsive viewport bounds and the visible footer.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`, `docs/units/notifications.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Fix cached session hydration mismatch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the hydration error introduced by optimistic session bootstrap.
+- Changes Made: Removed browser-only session/cache reads from initial state initializers and moved cached-user hydration into the post-mount effect; preserved the existing server-authoritative refresh flow.
+- Files: `web/components/app-shell-route.tsx`, release logs.
+- Verification Status: Targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Optimistic frontend session bootstrap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Avoid showing the full session-restoration screen on every refresh without changing auth or session behavior.
+- Changes Made: Added safe cached-user metadata hydration, mounted the shell during the existing background refresh, remounted after a real session is restored, and preserved the existing recovery path on refresh failure.
+- Files: `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, `docs/units/account-access.md`, `docs/rules.md`, release logs.
+- Verification Status: Targeted TypeScript validation and diff checks pending.
+
+## 2026-09-17T00:00:00Z — Stabilize responsive notification dropdown layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the notification dropdown still overflowing or clipping at the viewport edge.
+- Changes Made: Converted the active dropdown to a flex column with a constrained scrolling list and non-scrolling footer; added ResizeObserver-based geometry updates for top-bar reflow.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`, release logs.
+- Verification Status: Browser-control visual inspection was unavailable because the browser request-header policy failed twice; targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Bound notification dropdown to actual viewport space
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make notification dropdown height responsive to its real position below the top bar.
+- Changes Made: Added runtime geometry measurement for the rendered dropdown top edge and used that value in the viewport max-height calculation; retained list scrolling for overflow.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`, `docs/units/notifications.md`, `packages/design/design.md`, release logs.
+- Verification Status: TypeScript and CSS changes reviewed; targeted diff validation pending.
+
+## 2026-09-16T22:42:00Z — Align search dropdown width
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the search suggestions dropdown no wider than the search bar.
+- Changes Made: Replaced the active preview search dropdown's independent width with `width: 100%` and `max-width: 100%`, inheriting the search wrapper width.
+- Files: `web/app/globals.css`, release logs.
+- Verification Status: CSS change is scoped to the TopBar search dropdown.
+
+## 2026-09-16T22:38:00Z — Bound notification dropdown to viewport
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the TopBar notification dropdown responsive and scrollable when it exceeds the viewport.
+- Changes Made: Applied viewport-aware width and dynamic-height limits to the active TopBar dropdown; constrained overflow to the notification list so the footer remains visible. Updated the notifications unit contract.
+- Files: `web/app/globals.css`, `docs/units/notifications.md`, release logs.
+- Verification Status: CSS change is scoped to the active TopBar notification dropdown; no full suite run per repository guidance.
+
+## 2026-09-16T22:34:00Z — Align Home feed refresh control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the Check for new posts control with the feed body and floating bar.
+- Changes Made: Removed the refresh control's extra horizontal width subtraction and inline margins; preserved the shared content column unchanged. Added the feed alignment rule to the feed unit document.
+- Files: `web/app/globals.css`, `docs/units/feed.md`, release logs.
+- Verification Status: CSS change is limited to `.home-feed-refresh`; no full suite run per repository guidance.
+
+## 2026-09-16T22:30:18Z — Diagnose missing older posts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Research why older posts were no longer visible after the professional badge work.
+- Changes Made: Diagnosis only; no product code changed. Compared the badge diff with post loading paths, inspected API logs and live database contents.
+- Verification Status: Badge changes are additive only. API logs showed repeated `TOKEN_SIGNATURE_MISMATCH` failures followed by refresh `401`; the configured local database currently contains one active post total for `muflah` and no older records to display.
+
+## 2026-09-16T22:26:59Z — Restore TopBar interactions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the previous search box, unread dots, and notification dropdown while keeping the newer TopBar appearance.
+- Changes Made: Moved the legacy Header interaction behavior into the visible `TopBar`, including expandable search suggestions and submission, chat unread indicator, and unread notification dropdown. Wired notification data into TopBar and updated navigation/discovery/design documentation.
+- Files: `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`, `docs/units/navigation.md`, `docs/units/discovery.md`, `packages/design/design.md`, release logs.
+- Verification Status: TypeScript compilation passed. Live browser verification was blocked by the existing local session/API mismatch after the API process restart; the TopBar code path is type-checked and uses the existing notification/message state.
+
+## 2026-09-16T22:09:49Z — Complete migration and propagate professional badge
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the professional badge migration, show the badge in every data-backed profile card, and report professional database checks.
+- Changes Made: Added the badge field to identity response contracts and mappings for posts, quoted posts, likes, connections, chat, notifications, blocked users, remembered accounts, and shared profile-card surfaces. Updated profile documentation and active rules.
+- Verification Status: Migration applied successfully; Alembic reports no pending operations. TypeScript compilation, Python compilation, and `git diff --check` passed. Live schema audit found two persisted user controls (`use_intent`, `show_professional_badge`), two professional plan-entitlement keys, one `professional_status.manage` permission, and no business-rule CHECK constraint for professional status.
+
+## 2026-09-16T21:55:52Z — Implement professional profile badge
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the professional-networking setting and profile badge.
+- Changes Made: Added the persisted `show_professional_badge` user field and migration; made the API enforce that it is available only for professional networking and clears it when switching to personal connection; added the conditional Settings checkbox and shared styling; exposed the effective public-profile value and rendered the `Professional` badge next to the displayed name; added focused service tests and updated active rules/docs.
+- Files: `api/alembic/versions/20260917_0049_professional_badge.py`, `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/tests/test_auth_updates.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/components/profile-card.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, documentation and release logs.
+- Verification Status: Python compilation and TypeScript compilation passed. Existing repository-wide ESLint errors remain; the targeted pytest process is affected by the Windows SQLite cleanup hook (`WinError 32`) after test execution.
+
+## 2026-09-16T21:40:52Z — Specify professional badge placement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify that the professional badge appears next to the user's name.
+- Changes Made: Documented adjacent-to-displayed-name placement across Settings, subscriptions, and shared design contracts while preserving conditional visibility and non-entitlement behavior.
+- Files: `docs/units/settings.md`, `docs/units/subscriptions.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-16T21:38:35Z — Document conditional professional profile badge
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document a General setting that lets professional-networking users show or hide a professional badge on their profile.
+- Changes Made: Added the planned conditional setting, exact user-facing label, hidden-by-default behavior, and the boundary that badge visibility does not award status or paid access. Aligned subscription and shared design contracts.
+- Files: `docs/units/settings.md`, `docs/units/subscriptions.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Markdown/link-oriented diff review and `git diff --check` passed.
+
 ## 2026-09-16T21:40:00Z — Flush tab arrows to strip edges
 
 - Agent: Codex

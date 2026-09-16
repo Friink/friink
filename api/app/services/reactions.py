@@ -155,6 +155,7 @@ async def list_like_actors(session: Session, viewer: User, post_id: uuid.UUID, q
                 username=user.username,
                 display_name=user.display_name if user.lifecycle_status == "active" else "Friink User",
                 profile_picture_url=profile_picture_url_for(user) if user.lifecycle_status == "active" else None,
+                show_professional_badge=user.show_professional_badge if user.lifecycle_status == "active" else False,
             )
             for _, user in rows
         ],

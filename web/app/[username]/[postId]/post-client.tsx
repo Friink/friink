@@ -37,6 +37,7 @@ function mapApiPost(post: ApiPost): Post {
     handle: `@${post.author_username}`,
     initials: getInitials(post.author_display_name || post.author_username),
     imageUrl: post.profile_picture_url,
+    showProfessionalBadge: post.show_professional_badge,
     tone: 'mint',
     createdAt: post.created_at,
     text: post.content,
@@ -58,6 +59,7 @@ function mapApiPost(post: ApiPost): Post {
           authorUsername: post.quoted_post.author_username,
           authorDisplayName: post.quoted_post.author_display_name,
           imageUrl: post.quoted_post.profile_picture_url,
+          showProfessionalBadge: post.quoted_post.show_professional_badge,
           content: post.quoted_post.content,
           mediaCount: post.quoted_post.media_count,
           unavailable: post.quoted_post.unavailable,
@@ -198,6 +200,7 @@ export function PostClient({ postId }: PostClientProps) {
             initials: composeContext.post.initials,
             tone: composeContext.post.tone,
             imageUrl: composeContext.post.imageUrl,
+            showProfessionalBadge: composeContext.post.showProfessionalBadge,
             text: composeContext.post.text,
             mediaCount: 0,
           }}

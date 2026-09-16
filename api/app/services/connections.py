@@ -261,7 +261,7 @@ async def get_follow_request(session: Session, request_id: uuid.UUID) -> FollowR
 
 
 def serialize_connection_user(user: User) -> ConnectionUserResponse:
-    return ConnectionUserResponse(id=user.public_id, username=user.username, is_private=user.is_private)
+    return ConnectionUserResponse(id=user.public_id, username=user.username, is_private=user.is_private, show_professional_badge=user.show_professional_badge)
 
 
 def serialize_follow_request(request: FollowRequest) -> FollowRequestResponse:

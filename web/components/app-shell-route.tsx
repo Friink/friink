@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -21,9 +21,12 @@ type AppShellRouteProps = {
 
 export function AppShellRoute({ initialScreen, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts' }: AppShellRouteProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
+  // Keep the server and first client render identical. Browser-only cached
+  // metadata is hydrated in the effect below after React has mounted.
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
   const [authRetry, setAuthRetry] = useState(0);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
@@ -46,6 +49,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
       const session = loadAuthSession();
       if (!session) return;
       setUser(session.user);
+      setSessionReady(true);
       setSessionError(null);
       setAuthCheckComplete(true);
     }
@@ -57,14 +61,18 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
+      const cachedUser = loadCachedAuthUser();
+      if (cachedUser) setUser(cachedUser);
       refreshAuthSession()
         .then((restoredSession) => {
           saveAuthSession(restoredSession);
           setUser(restoredSession.user);
+          setSessionReady(true);
           setSessionError(null);
           setAuthCheckComplete(true);
         })
         .catch((error) => {
+          setSessionReady(false);
           setAuthCheckComplete(true);
           if (isTerminalRefreshFailure(error)) {
             const deliberateSecurityRevocation = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY';
@@ -73,6 +81,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
             router.replace(deliberateSecurityRevocation ? '/login?reason=security-revocation' : '/login');
           } else {
             setSessionError('offline');
+            setUser(null);
           }
         });
       return;
@@ -138,5 +147,5 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
     return <SessionRecoveryScreen status={sessionError ?? 'offline'} appearance={appearance} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} />;
   }
 
-  return <AppShell key={user.id} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
+  return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
 }

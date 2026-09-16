@@ -14,6 +14,7 @@ class NotificationResponse(BaseModel):
     payload: dict
     read: bool
     created_at: datetime
+    actor_show_professional_badge: bool = False
 
 
 class NotificationPageResponse(BaseModel):

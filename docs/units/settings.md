@@ -5,7 +5,7 @@ account credentials, privacy, sessions, and subscription visibility.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T01:18:28Z
+**Last edited:** 2026-09-16T21:51:28Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -45,12 +45,31 @@ save/result state, and accessible controls.
 - **SETTINGS-R-006:** Appearance and accent preferences are device-local;
   public marketing surfaces are not changed by the in-app accent.
 - **SETTINGS-R-007:** Successful saves provide clear success feedback.
+- **SETTINGS-R-008:** General shows the professional-profile badge preference
+  only when `How I use Friink` is `For professional networking`; the saved
+  preference controls whether the badge appears next to the displayed name.
 
 ## UX and flows
 
 Settings uses divider-bounded rows rather than isolated cards. Editable fields
 show their action in a consistent action rail. Loading, validation, success,
 failure, and retry states remain attached to the setting being changed.
+
+### Professional profile badge
+
+General includes the private `How I use Friink` preference with the values
+`For professional networking` and `For personal connection`. When the user
+selects `For professional networking`, General reveals a subordinate opt-in
+setting labeled `Show you are a professional on Profile`. The setting is
+hidden or unavailable while `For personal connection` is selected.
+
+When enabled, the user's public profile may display the professional badge
+immediately next to their displayed name; when disabled, it must not display
+it. This preference controls badge visibility only. It does not award
+professional status, verify credentials,
+grant directory access, or change subscription entitlements. The badge remains
+hidden by default, and saving either preference uses the normal Settings save
+feedback and failure-recovery behavior.
 
 ### Subscription visibility (current rollout)
 
@@ -62,8 +81,10 @@ expires, or is revoked. Expiry reminders are planned for 7 days and 1 day
 before expiry, followed by an expiry notice.
 
 Users may independently opt in to show a plan badge and, when eligible, a
-professional badge on their public profile. Both are hidden by default. Plan
-visibility does not affect entitlement or feature access.
+professional badge on their public profile. The professional badge preference
+is available only when `How I use Friink` is `For professional networking`.
+Both badges are hidden by default. Badge visibility does not affect
+entitlement or feature access.
 
 ## Technical contract
 
@@ -82,5 +103,4 @@ API remains authoritative for credential, identity, and privacy changes.
 ## Known limitations
 
 Paid billing and entitlement management are not active. The current plan
-display is server-resolved; profile-badge preferences and notification
-delivery remain planned.
+display is server-resolved, and subscription notifications remain planned.
