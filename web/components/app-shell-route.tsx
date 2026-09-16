@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { BrandLockup } from '@/components/design/brand-lockup';
-import { FriinkLogo } from '@/components/friink-logo';
+import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
 import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
@@ -26,6 +25,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
+  const [authRetry, setAuthRetry] = useState(0);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
           }
         }
       });
-  }, [refreshCurrentUser, router]);
+  }, [authRetry, refreshCurrentUser, router]);
 
   async function handleLogout() {
     const session = loadAuthSession();
@@ -134,21 +134,8 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
   }
 
   if (!user) {
-    if (!authCheckComplete) return null;
-    return (
-    <main className="lifecycle-screen" data-theme={appearance}>
-        <a className="lifecycle-home-link" href="/" aria-label="Return to Friink home"><FriinkLogo /></a>
-        <section className="lifecycle-card" aria-labelledby="session-recovery-title">
-          <BrandLockup size="lg" />
-          <h1 id="session-recovery-title">We couldn’t restore this session.</h1>
-          <p>{sessionError === 'offline' ? 'Friink is having trouble reconnecting. Your account has not been signed out.' : sessionError === 'security' ? 'For your security, your session ended. Please sign in again.' : 'Your session has expired or is no longer available. Sign in again to continue.'}</p>
-          <div className="lifecycle-actions">
-            {sessionError === 'offline' ? <button className="button-primary" type="button" onClick={() => window.location.reload()}>Try again</button> : null}
-            <button className="button-secondary" type="button" onClick={() => router.replace('/login')}>Go to login</button>
-          </div>
-        </section>
-      </main>
-    );
+    if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
+    return <SessionRecoveryScreen status={sessionError ?? 'offline'} appearance={appearance} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} />;
   }
 
   return <AppShell key={user.id} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;

@@ -353,7 +353,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
   - **Self-Profile Variant** (`isOwnProfile = true`): Renders the **Edit** action button (`.profile-action-edit`, icon `fa-pen-to-square` + text "Edit", right-aligned) and routes to Settings > Profile.
-  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the connection action as `.button-secondary.profile-connection-action` with icon and label on one line; Message and More remain compact `.button-secondary.icon-button` controls, and Message routes to `/{username}/chat` when activated.
+  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the connection action as `.button-secondary.profile-connection-action` with icon and label on one line; Message remains a compact `.button-secondary.icon-button` control and routes to `/{username}/chat` when activated. Profile moderation actions such as Block are supplied by the shell-owned contextual NavigationBar menu.
   - *These are the only two variants.*
 - **State Invariant**: Sidebar navigation highlight ONLY tracks the signed-in user's profile (`sidebarActiveScreen`). When browsing another user's dummy profile via `/[username]`, the sidebar profile navigation item must NOT be highlighted.
 - **Props Contract**:
@@ -579,7 +579,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   time is presented in a live-updating toast.
 
 - ### Blocking surfaces
-- Profile overflow uses the shared `ActionMenu` and `Modal` for block confirmation.
+- Profile moderation uses the shell-owned contextual `NavigationBar` overflow and
+  the shared `Modal` for block confirmation.
 - Privacy > Blocked people uses the shared `Modal`, `ListRow`, and `ProfileCard`; search is API-backed and loading uses an opaque cursor.
 - A blocked profile, including a direct URL, renders the neutral `Profile unavailable.` state. Existing chats remain visible but read-only.
 

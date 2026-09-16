@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-16T03:45:00Z
+**Last edited:** 2026-09-16T20:03:49Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { AuthApiError, clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -50,11 +51,15 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
   const [likedHasMore, setLikedHasMore] = useState(false);
   const [likedLoading, setLikedLoading] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
+  const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
+  const [authRetry, setAuthRetry] = useState(0);
 
   useEffect(() => {
     const session = loadAuthSession();
     if (session) {
       setUser(session.user);
+      setAuthCheckComplete(true);
       return;
     }
 
@@ -64,16 +69,25 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
         if (!active) return;
         saveAuthSession(restoredSession);
         setUser(restoredSession.user);
+        setSessionError(null);
+        setAuthCheckComplete(true);
       })
       .catch((error) => {
         if (!active) return;
-        if (isTerminalRefreshFailure(error)) router.replace('/login');
+        setAuthCheckComplete(true);
+        if (isTerminalRefreshFailure(error)) {
+          const deliberateSecurityRevocation = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY';
+          setSessionError(deliberateSecurityRevocation ? 'security' : 'expired');
+          router.replace(deliberateSecurityRevocation ? '/login?reason=security-revocation' : '/login');
+        } else {
+          setSessionError('offline');
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [authRetry, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -211,7 +225,10 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     router.replace('/');
   }
 
-  if (!user) return null;
+  if (!user) {
+    if (!authCheckComplete) return <SessionRecoveryScreen status="loading" />;
+    return <SessionRecoveryScreen status={sessionError ?? 'offline'} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} />;
+  }
 
   const profileHandle = username || user.username;
   const isOwnProfile = profileHandle.toLowerCase() === user.username.toLowerCase();

@@ -1,5 +1,36 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-16T20:03:49Z — Fix blank session restoration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Explain and fix repeated reloads needed before the local app
+  loaded.
+- Changes Made: Added a shared session restoration/recovery surface, added an
+  in-place retry for recoverable failures, and applied it to profile and shell
+  route bootstrap. Updated the active access, profile, and business-rule docs.
+- Files: `web/components/session-recovery-screen.tsx`,
+  `web/components/app-shell-route.tsx`, `web/app/[username]/profile-client.tsx`,
+  `docs/units/account-access.md`, `docs/units/profiles.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec --offline tsc -- --noEmit`, HTTP checks for
+  frontend/API, and `git diff --check` passed.
+
+## 2026-09-16T04:30:00Z — Move profile Block to contextual menu
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Put the profile Block action in the contextual tabs/navigation
+  overflow menu instead of the middle of the profile action row.
+- Changes Made: Routed the other-user Block item through the shell-owned
+  NavigationBar menu, moved its confirmation modal and API call to the shell,
+  and removed the detached ProfileScreen ActionMenu. Updated Profiles, Rules,
+  and shared design contracts.
+- Files: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`,
+  `docs/units/profiles.md`, `docs/rules.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec tsc -- --noEmit` and `git diff --check` passed.
+
 ## 2026-09-16T04:15:00Z — Prepare web-only release for development and staging
 
 - Agent: Codex

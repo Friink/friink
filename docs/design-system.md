@@ -60,6 +60,8 @@ contract rather than repeated here.
   accent color.
 - Profile connection actions that include a label use the standard text-button
   layout; icon-only Message and More controls retain `.icon-button` geometry.
+- Profile moderation actions use the shell-owned contextual NavigationBar
+  overflow menu rather than a detached menu in the profile action row.
 - Ink and muted gray establish the text hierarchy.
 - Paper and background colors distinguish surfaces from the application
   canvas.

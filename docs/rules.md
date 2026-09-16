@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-16T04:15:00Z
+**Last edited:** 2026-09-16T20:03:49Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -686,6 +686,18 @@ missing evidence can be filled in.
 - **What:** The web client stores only safe authenticated account metadata in `localStorage` under `friink-auth-session`; the short-lived access token remains in memory and the refresh credential remains an HTTP-only cookie. Logout clears the stored metadata and the current in-memory session.
 - **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions. Planned multiple-account support may store safe summaries for more than one account, but must not store access/refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or device secrets in browser-readable storage.
 
+### AUTH-R-040 — Session Restoration Has Explicit Recovery UX
+
+- **Status:** Active
+- **Effective:** 2026-09-16T20:03:49Z
+- **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/app/[username]/profile-client.tsx`
+
+- **What:** Authenticated route bootstrap must show an explicit restoration state while the session is being recovered. Recoverable API failures preserve the session and provide an in-place retry; they must not leave the page blank or require repeated browser reloads.
+- **Edge cases:** Terminal refresh failures redirect to login, while network and other recoverable failures remain on the recovery surface. Refresh-token rotation and server-side validation remain authoritative.
+
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
 - **Status:** Active
@@ -945,6 +957,21 @@ missing evidence can be filled in.
 - **Edge cases:** The connection action remains API-state-driven and may show
   `Follow`, `Following`, or `Cancel request`; its label must not be forced into
   an icon-only grid layout.
+
+### PROFILE-R-010 — Profile Moderation Uses Contextual Navigation
+
+- **Status:** Active
+- **Effective:** 2026-09-16T04:30:00Z
+- **Related units:** [profiles](units/profiles.md), [blocking](units/blocking.md)
+- **Source:** [profiles unit](units/profiles.md), [design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/components/navigationbar.tsx`
+
+- **What:** Other-user profile moderation actions are exposed through the
+  shell-owned contextual NavigationBar overflow menu. Selecting Block opens
+  the shared confirmation modal for the viewed profile.
+- **Edge cases:** Block is not rendered as a detached menu in the profile
+  action row. Self profiles do not receive the other-user Block menu item.
 
 ### POST-R-008 — Reply Creation Rechecks Parent Visibility
 
@@ -1581,6 +1608,10 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [profiles](units/profiles.md) | PROFILE-R-005 | Public profile tabs include posts, replies, and likes only |
 | [profiles](units/profiles.md) | PROFILE-R-006 | Empty About text shows no visitor-facing placeholder; the |
 | [profiles](units/profiles.md) | PROFILE-R-007 | Profile pictures are optional and retain the last |
+| [profiles](units/profiles.md) | PROFILE-R-008 | Profile content requests preserve the API pagination contract. |
+| [profiles](units/profiles.md) | PROFILE-R-009 | Other-user connection labels use text-button geometry. |
+| [profiles](units/profiles.md) | PROFILE-R-010 | Profile moderation uses the contextual navigation overflow. |
+| [profiles](units/profiles.md) | PROFILE-R-011 | Profile bootstrap exposes restoration and retry states. |
 | [saved-items](units/saved-items.md) | SAVED-R-001 | Saves are private to the saving user and have no actor list. |
 | [saved-items](units/saved-items.md) | SAVED-R-002 | Deleted, private, blocked, or inaccessible content is omitted |
 | [saved-items](units/saved-items.md) | SAVED-R-003 | One user has at most one active Save per content object. |

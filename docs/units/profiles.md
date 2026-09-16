@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T04:00:00Z
+**Last edited:** 2026-09-16T20:03:49Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -53,13 +53,21 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-009:** Other-user connection actions that include a label use the
   standard text-button layout so the icon and label remain on one line. Message
   and More remain icon-only controls.
+- **PROFILE-R-010:** Other-user profile moderation actions are exposed through
+  the shell-owned contextual NavigationBar menu; Block is not rendered as a
+  detached action-row menu.
+- **PROFILE-R-011:** Profile bootstrap shows an explicit session-restoration
+  state and a retry action for recoverable API failures; it never leaves the
+  profile as a blank surface while authentication is being restored.
 
 ## UX and flows
 
 Profile pages show identity, About, follower/following statistics, actions,
 and Posts/Replies tabs. Loading and unavailable states are explicit. A self
 profile offers Edit; another profile may offer Message or connection actions.
-Profile content uses author-scoped routes and visibility rules.
+The contextual NavigationBar overflow menu exposes Block for another user and
+opens the shared confirmation modal. Profile content uses author-scoped routes
+and visibility rules.
 
 ## Technical contract
 

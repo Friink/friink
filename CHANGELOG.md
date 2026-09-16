@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-16T20:03:49Z
+
+- [web] Replaced blank profile/session bootstrap states with an explicit
+  restoration screen and in-place retry for recoverable API failures.
+
+## 2026-09-16T04:30:00Z
+
+- [web] Moved the other-user profile Block action into the shell-owned
+  contextual NavigationBar overflow menu and removed the detached profile-row
+  menu.
+
+
 ## 2026-09-16T04:15:00Z
 
 - [release/docs] Recorded the signup criteria and profile-action fixes in the

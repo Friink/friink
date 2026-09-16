@@ -22,6 +22,7 @@ import { ControlPanelScreen, type ControlPanelTab } from '@/components/control-p
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
+import { Modal } from '@/components/modal';
 import { getPostPath } from '@/lib/post-path';
 import { PollingNotificationTransport } from '@/lib/notification-transport';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
@@ -29,6 +30,7 @@ import {
   acceptFollowRequest,
   cancelFollowRequest,
   createPost,
+  blockUser,
   getConnectionStatus,
   listFollowers,
   listFollowing,
@@ -117,6 +119,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
+  const [profileBlockOpen, setProfileBlockOpen] = useState(false);
+  const [profileBlockBusy, setProfileBlockBusy] = useState(false);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -182,6 +186,18 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       disabled: unreadNotificationCount === 0,
     },
   ];
+  const profileMenuItems: ActionMenuItem[] = profileUser ? [
+    {
+      label: 'Block user',
+      icon: 'fa-ban',
+      onClick: () => setProfileBlockOpen(true),
+    },
+  ] : [];
+  const navigationMenuItems = activeScreen === 'profile' && profileUser
+    ? profileMenuItems
+    : activeScreen === 'notifications'
+      ? notificationMenuItems
+      : [];
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -1009,7 +1025,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
               title={getPageTitle(activeScreen)}
               onBack={() => router.back()}
               backDisabled={!canGoBack}
-              menuItems={activeScreen === 'notifications' ? notificationMenuItems : undefined}
+              menuItems={navigationMenuItems}
             />
           </div>
 
@@ -1120,7 +1136,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onReactionError={(message) => addToast(message)}
                       onEditProfile={openProfileSettings}
                       onMessage={() => router.push(`/${encodeURIComponent((profileUser ?? user).username)}/chat`)}
-                      onBlocked={() => router.refresh()}
                       initialTab={profileTab}
                       onTabChange={onProfileTabChange}
                       connectionState={profileConnectionState}
@@ -1168,6 +1183,40 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 </>
               )}
             </ContentBox>
+            {profileBlockOpen && profileUser && (
+              <Modal
+                title="Block user"
+                onClose={() => !profileBlockBusy && setProfileBlockOpen(false)}
+                actions={(
+                  <>
+                    <button className="button-secondary" type="button" onClick={() => setProfileBlockOpen(false)} disabled={profileBlockBusy}>Cancel</button>
+                    <button
+                      className="button-primary"
+                      type="button"
+                      disabled={profileBlockBusy}
+                      onClick={async () => {
+                        const session = loadAuthSession();
+                        if (!session) return;
+                        setProfileBlockBusy(true);
+                        try {
+                          await blockUser(session.accessToken, profileUser.username);
+                          setProfileBlockOpen(false);
+                          router.refresh();
+                        } catch (error) {
+                          addToast(error instanceof Error ? error.message : 'Could not block user.');
+                        } finally {
+                          setProfileBlockBusy(false);
+                        }
+                      }}
+                    >
+                      {profileBlockBusy ? 'Blocking…' : 'Block user'}
+                    </button>
+                  </>
+                )}
+              >
+                <p>They will not be able to view your profile or message you. Follow relationships will be removed and existing chats will become read-only.</p>
+              </Modal>
+            )}
           </div>
         </section>
 
