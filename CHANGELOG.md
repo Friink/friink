@@ -2,6 +2,12 @@
 
 ## 2026-09-17T00:00:00Z
 
+- [release] Applied migration `20260917_0049` and verified Alembic head/check
+  on the isolated development, staging, and production databases; promoted
+  the release through `development`, `staging`, and `main`.
+
+## 2026-09-17T00:00:00Z
+
 - [web/design] Added a shared CSS scrollbar treatment for the platform while
   preserving native scrolling and accessibility behavior.
 
