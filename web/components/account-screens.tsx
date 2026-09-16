@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getMySubscription, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval, type SubscriptionSummary } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -152,6 +152,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [sessionsError, setSessionsError] = useState('');
   const [sessionsBusyId, setSessionsBusyId] = useState<string | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<PendingLoginApproval[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState('');
   const [lifecyclePassword, setLifecyclePassword] = useState('');
   const [deletionToken, setDeletionToken] = useState('');
   const [deletionOtp, setDeletionOtp] = useState('');
@@ -213,6 +215,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       .catch(() => { if (!cancelled) onToast?.('Could not load read-receipt preference.'); });
     return () => { cancelled = true; };
   }, [activeTab, onToast]);
+
+  useEffect(() => {
+    if (activeTab !== 'subscription') return;
+    const session = loadAuthSession();
+    if (!session) return;
+    let cancelled = false;
+    getMySubscription(session.accessToken)
+      .then((value) => { if (!cancelled) setSubscription(value); })
+      .catch((error) => { if (!cancelled) setSubscriptionError(error instanceof Error ? error.message : 'Could not load your plan.'); });
+    return () => { cancelled = true; };
+  }, [activeTab]);
 
   async function loadBlocked(reset = false) {
     const session = loadAuthSession();
@@ -1063,8 +1076,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               trailing={<Link className="button-secondary icon-button settings-subscription-link" href="/subscriptions" aria-label="View plans" title="View plans"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></Link>}
             >
               <div className="settings-plan-summary">
-                <strong>Friink Free</strong>
-                <span>Free · Never expires</span>
+                <strong>{subscription?.plan_name ?? 'Loading plan…'}</strong>
+                <span>{subscription ? `${subscription.plan_code.replace('friink_', '').replace('_', ' ')} · ${subscription.expires_at ? `Access until ${formatSessionDate(subscription.expires_at)}` : 'No expiration'}` : 'Checking your current access.'}</span>
+                {subscription?.status === 'expired' ? <small role="status">Your paid access expired and your account is on Friink Free.</small> : null}
+                {subscriptionError ? <small className="settings-field-message" role="alert">{subscriptionError}</small> : null}
               </div>
             </SettingsRow>
           </div>

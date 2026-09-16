@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-12  
+**Last edited:** 2026-09-16T03:25:00Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -53,6 +53,8 @@ contract rather than repeated here.
 
 - The primary brand color is green and is used for active states, selected
   tabs, important links, primary actions, indicators, and focus treatment.
+- Post actions use the current accent color on hover, keyboard focus, and
+  press; persistent Like and Save states also retain the accent color.
 - Ink and muted gray establish the text hierarchy.
 - Paper and background colors distinguish surfaces from the application
   canvas.
@@ -157,6 +159,29 @@ what action can populate the surface.
   existence through copy or visual details.
 - Retry should be explicit when retrying is useful.
 
+Direct post URLs that resolve to a missing, deleted, private, or otherwise
+inaccessible post use a post-like unavailable state rather than the generic
+404-styled error surface. The state uses calm explanatory copy and a `Go home`
+action; it must not expose technical error codes or reveal whether a protected
+post exists.
+
+### Beta disclosure
+
+Use a small visible `Beta` badge when an otherwise available feature is still
+being stabilized. The badge is informational only and must not change feature
+permissions or behavior. Features not yet available use the existing
+`Coming soon` or planned treatment.
+
+### Subscription status and entitlement disclosure
+
+Subscription surfaces use explicit plan and lifecycle labels: `Free`, `Pro`, or
+`Pro+` for the effective plan, and `Active`, `Expired`, or `Revoked` for the
+assignment state. Indefinite access is labeled `No expiration`. Manual admin
+access is described as granted or activated access, never as a purchase.
+Public plan and professional badges are opt-in and hidden by default. Expiry
+and revocation messaging must explain the resulting return to Free without
+implying a payment event when billing is unavailable.
+
 ### Feedback
 
 Use inline feedback when it belongs to a specific control or flow. Use shared
@@ -178,6 +203,9 @@ Before creating a new pattern:
 Feature units own what a component means in context. This document owns the
 shared design language. The implementation details and component contracts are
 in [`packages/design/design.md`](../packages/design/design.md).
+
+Icon-and-text primary and secondary buttons use a consistent 8px inline gap;
+icon-only `.icon-button` controls remain compact and are excluded.
 
 ## Accessibility
 

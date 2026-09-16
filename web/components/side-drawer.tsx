@@ -3,6 +3,7 @@ import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
 import { Modal } from '@/components/modal';
 import { LoginScreen } from '@/components/login-screen';
 import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
+import { BetaBadge } from '@/components/design/beta-badge';
 import type { AuthUser } from '@/lib/auth';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
@@ -272,7 +273,10 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           className="account-switcher-menu"
           header={
             <div className="account-switcher-header" role="status" aria-live="polite">
-              <span>Switch Account</span>
+              <span className="account-switcher-header-title">
+                <span>Switch Account</span>
+                <BetaBadge />
+              </span>
               <span className="account-switcher-header-status">
                 {accountLoading ? <i className="fa-solid fa-spinner fa-spin" aria-label="Updating accounts" /> : null}
                 {!accountLoading && accountLoadError ? <button type="button" onClick={() => void refreshAccounts()}>Retry</button> : null}

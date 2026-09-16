@@ -310,6 +310,10 @@ actions, validates the slot, and updates the shell in place. Removing or
 logging out the active account selects the most-recent remaining valid account,
 or returns to the public site when none remain.
 
+The account switcher header includes an accessible `Beta` badge. This is a
+disclosure that the account-switching experience is still being stabilized; it
+does not change account limits, authorization, session behavior, or access.
+
 #### Business rules and contract
 
 - **ACCESS-R-024:** Remembered accounts are device-scoped slots, not account

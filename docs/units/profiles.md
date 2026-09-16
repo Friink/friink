@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T01:32:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -47,6 +47,9 @@ relationship, privacy, and blocking state.
   owner sees `Add about in settings.`.
 - **PROFILE-R-007:** Profile pictures are optional and retain the last
   server-confirmed image until a complete upload succeeds.
+- **PROFILE-R-008:** Profile posts, replies, and connection counts load from
+  author-scoped API requests; pagination arguments must preserve their named
+  meaning so a profile never silently loses its content after the shell loads.
 
 ## UX and flows
 

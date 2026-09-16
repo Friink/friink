@@ -75,6 +75,9 @@ Friink is a calm, people-first social space centered on meaningful conversations
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines. The direct chat route also uses this shared surface for its message composer and keeps it visible while changing enabled state and placeholder according to the chat policy contract.
 - **Profile Composer Rule**: The shared floating composer is not rendered on profile pages. Profile pages remain focused on identity, profile actions, and profile content; the app-wide post composer remains available on feed and other explicitly supported surfaces.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On tablet and desktop, the visible content surface is capped at `720px` via `--space-content-col` and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. The shared content inset is applied outside that cap as an available-width gutter, and `ContentBox` owns bottom spacing. Child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
+- **Unavailable Post State**: Direct post URLs that cannot display a post render the shared `PostUnavailableState` (`web/components/post-unavailable-state.tsx`) with a bordered, centered post-like card, calm copy, and a `Go home` link. It is used by both route-level not-found boundaries and client-side post-load failures. Authenticated client-side failures remain inside `AppShell`; route-level boundaries use the same card in a lightweight page wrapper. This state has no technical 404 code and does not disclose whether a protected post exists.
+- **Beta Disclosure**: The shared `BetaBadge` (`web/components/design/beta-badge.tsx`) is an informational disclosure for available features that are still being stabilized. It does not change permissions or behavior. The current application usage is limited to the account-switcher header; unavailable or unimplemented features continue to use their existing planned or `Coming soon` treatment.
+- **Subscription Disclosure**: Subscription surfaces use explicit plan labels (`Free`, `Pro`, `Pro+`) and assignment states (`Active`, `Expired`, `Revoked`); indefinite access is labeled `No expiration`. Manual access is described as granted or activated access, never as a purchase. Public plan and professional badges are opt-in and hidden by default.
 - **Floating Bar Rail Rule**: The persistent `FloatingBar` is rendered inside a fixed rail covering the same main-panel area as `ContentBox`: full viewport width on mobile, and from the desktop sidebar edge to the viewport edge on tablet and desktop. The rail uses the shared content gutter (`16px` on desktop and `8px` on mobile); the bar itself is fluid up to the same `--space-content-col` cap (`720px`) as `ContentBox` and is centered with flex alignment and `margin: auto`. Its contextual composer therefore aligns with the content surface after the side drawer.
 - **Page Gutter Ownership Rule**: The shared content container owns app-page horizontal gutters outside the visible `ContentBox`/`FloatingBar` width cap. Screen-level wrappers such as Home, Settings, Notifications, Connections, Chat list, and similar primary app surfaces must not add their own page-width centering, fixed max-width narrowing, or duplicate horizontal padding unless a documented component contract explicitly declares an exception.
 - **Shared Content Inset Rule**: Primary in-app list and card surfaces use one common horizontal inset token of `1rem` (`--space-content-inset-inline`) on desktop and `0.5rem` on mobile, with a standard top row/block inset of `0.75rem` (`--space-content-inset-block`). `ListRow`, `FeedPost`, and settings rows must align to this same left/right content edge unless a surface has an explicit documented exception.
@@ -364,13 +367,13 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   1. Post Header (`.feed-post-heading`):
      - `ProfileCard` linked to `/[username]`.
      - Right action cluster (`.feed-post-options`) containing Share and More buttons with a visible fixed gap.
-     - Share (`.feed-post-share`, `fa-share-nodes`) and More (`.feed-post-more`, `fa-ellipsis-vertical`) are compact plain icon controls: `1.75rem` square, transparent, borderless, and without accent hover/focus treatment. They are intentionally exempt from the shared bordered `.icon-button` treatment.
+     - Share (`.feed-post-share`, `fa-share-nodes`) and More (`.feed-post-more`, `fa-ellipsis-vertical`) are compact plain icon controls: `1.75rem` square, transparent, borderless, with zero standard-button minimum dimensions, no decorative outline, and a `12px` gap. They are intentionally exempt from the shared bordered `.icon-button` treatment, but use the current accent color on hover, keyboard focus, and press.
   2. Date Row (`.feed-post-date`): Rendered on a separate line **below** the identity block, left-aligned under avatar/name/handle.
   3. Post Body (`.feed-post-body`): Text content.
   4. Quoted Post Block (`.feed-post-quote`, optional): When the original post is available, the entire block is a link to that post's canonical detail page; unavailable originals remain a non-clickable status block.
      - The quoted post identity uses the original author's display name, username, and profile picture when available, with the shared avatar fallback otherwise.
   5. Show More Button (`.feed-post-show-more`): Rendered only when body text exceeds four visible lines. Expands the post card in place to reveal the full body text. When a quoted-post block exists, this button sits beneath that block.
-  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), and Save (`fa-star`) controls. Save is operated from this lower action row; there is no redundant header Save control.
+  6. Post Action Bar (`.feed-post-actions`): Comment (`fa-comment`) with reply count, Quote (`fa-quote-right`) with quote count, Like (`fa-heart`), and Save (`fa-star`) controls. Every control uses the current accent color on hover, keyboard focus, and press. Like and Save retain the accent color while active. Save is operated from this lower action row; there is no redundant header Save control.
   - **Post Card Navigation Rule**: Clicking a non-interactive area of the card opens the canonical post detail page. Interactive controls, profile links, and available quoted-post links keep their own behavior.
   - **Mention Rule**: Recognized `@username` mentions in post and quoted-post text are links to the mentioned profile, use the current app accent, and do not display an underline in any interaction state. Mention notification copy links to the canonical post that contains the mention.
 - **Show More Styling Rule**: `Show more...` uses regular weight and muted color by default; it should read as a lightweight local expansion control rather than a primary CTA.
@@ -379,6 +382,24 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Props Contract**:
   - `post: Post` (required)
   - `highlightedStar?: boolean` (optional, default `false`)
+
+### 5a. PostUnavailableState (`web/components/post-unavailable-state.tsx`)
+- **Purpose**: Shared detail-surface state for a missing, deleted, private, or
+  otherwise inaccessible post.
+- **Presentation**: A centered bordered card with a neutral file icon, the
+  heading `Post unavailable`, explanatory copy, and a `Go home` link. It does
+  not show a numeric HTTP status or distinguish privacy from deletion.
+- **Placement**: Route-level not-found boundaries wrap it in the lightweight
+  `.post-unavailable-page`; authenticated client-side failures render it inside
+  `AppShell` so normal navigation remains available.
+
+### 5b. BetaBadge (`web/components/design/beta-badge.tsx`)
+- **Purpose**: Visible, accessible disclosure that an available feature is
+  still being stabilized.
+- **Presentation**: Compact accent-tinted `Beta` label. It is non-interactive
+  and informational only.
+- **Usage**: Currently rendered beside `Switch Account` in the account
+  switcher header. Do not use it for unavailable or unimplemented features.
 
 ### 6. Header (`web/components/header.tsx`) & NavigationBar (`web/components/navigationbar.tsx`)
 - **Desktop `Header`**:
@@ -444,7 +465,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Single-Line Inputs**: Height `2.5rem` to `3rem`, corner radius strictly `8px` (`border-radius: 8px !important`).
 - **In-App Button System** (`Button`):
   - The app has two action styles: `primary` (`.button-primary`) for the main action and `secondary` (`.button-secondary`) for supporting, reversible, or cancel actions. Both use `3rem` minimum height, `0.75rem 1.25rem` padding, `8px` radius, shared typography, focus, disabled, and loading behavior.
-  - Text-only, icon-and-text, and icon-only content are compositions, not additional button types. Icon-only controls use `.icon-button`, with a minimum `2.75rem` square hit area, an accessible label, and the same neutral utility treatment wherever they appear in fields, settings, navigation, or feed actions.
+  - Text-only, icon-and-text, and icon-only content are compositions, not additional button types. Icon-and-text `.button-primary`/`.button-secondary` controls use the shared `0.5rem` gap; icon-only controls use `.icon-button`, with a minimum `2.75rem` square hit area, an accessible label, and the same neutral utility treatment wherever they appear in fields, settings, navigation, or feed actions.
   - Width is contextual rather than a button variant: the canonical action layout is intrinsic-width buttons aligned to the end of their action row. This applies to modal, auth, add-account, reset-password, and wizard actions. On narrow screens, action rows may stack buttons vertically; stacking is a responsive layout decision, not a separate button style.
   - Low-emphasis navigation or optional actions use `.text-link`, not a third button type. Tabs, toggles, menus, and reaction controls remain specialized controls because their interaction model differs from ordinary actions.
   - Every asynchronous button disables duplicate activation, preserves its layout width, and shows a visible loading state until the operation completes. Destructive intent changes the semantic color treatment without creating a third button type.

@@ -5,7 +5,7 @@ account credentials, privacy, sessions, and subscription visibility.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T01:18:28Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -52,6 +52,19 @@ Settings uses divider-bounded rows rather than isolated cards. Editable fields
 show their action in a consistent action rail. Loading, validation, success,
 failure, and retry states remain attached to the setting being changed.
 
+### Subscription visibility (current rollout)
+
+The Subscription tab shows the server-resolved plan (`Free`, `Pro`, or
+`Pro+`), status (`Active`, `Expired`, or `Revoked`), and access-until date.
+Indefinite access is shown as `No expiration`. A user sees recent plan changes
+and receives clear in-app and email feedback when access is granted, changed,
+expires, or is revoked. Expiry reminders are planned for 7 days and 1 day
+before expiry, followed by an expiry notice.
+
+Users may independently opt in to show a plan badge and, when eligible, a
+professional badge on their public profile. Both are hidden by default. Plan
+visibility does not affect entitlement or feature access.
+
 ## Technical contract
 
 Settings is implemented primarily through `account-screens.tsx`, shared
@@ -68,5 +81,6 @@ API remains authoritative for credential, identity, and privacy changes.
 
 ## Known limitations
 
-Paid billing and entitlement management are not active; subscription settings
-is currently informational.
+Paid billing and entitlement management are not active. The current plan
+display is server-resolved; profile-badge preferences and notification
+delivery remain planned.

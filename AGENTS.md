@@ -35,6 +35,12 @@ repository.
 
 - Every completed task must be logged in both `CHANGELOG.md` and `AGENTLOG.md`,
   including documentation-only work.
+- For every product behavior, UX, or implementation task, identify the
+  relevant document in `docs/units/` and update it in the same change so it
+  matches the implemented behavior. If no relevant unit document exists, read
+  `docs/AGENTS.md`, `docs/README.md`, and `docs/units/template.md`, create the
+  unit document from that template, and register it in `docs/index.html`'s
+  document registry, sidebar, search index, and links as applicable.
 - Use UTC ISO 8601 timestamps with seconds and a `Z` suffix for new entries:
   `YYYY-MM-DDTHH:mm:ssZ`. Preserve older date-only entries when the time is
   unknown.

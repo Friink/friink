@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
-import { flushSync } from 'react-dom';
 import { FeedPost } from '@/components/feed-post';
 import { PageSurface } from '@/components/page-surface';
 import { getFeedContext, listNewerPosts, listPosts, type ApiFeedContext, type ApiFeedPage, type ApiPost } from '@/lib/auth';
@@ -222,6 +221,7 @@ export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilt
   const pollIntervalRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const pullActiveRef = useRef(false);
+  const pendingScrollAdjustmentRef = useRef<{ previousHeight: number; previousTop: number } | null>(null);
 
   const visiblePosts = useMemo(
     () => (activeFilter === 'following' ? feedPosts.filter((post) => post.isConnection) : feedPosts),
@@ -266,19 +266,12 @@ export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilt
     const preserveScroll = !isWindowAtTop();
     const previousHeight = preserveScroll ? document.documentElement.scrollHeight : 0;
 
-    flushSync(() => {
-      const merged = mergeNewerPosts(feedPostsRef.current, newPosts);
-      feedPostsRef.current = merged;
-      setFeedPosts(merged);
-    });
-
-    if (preserveScroll) {
-      const nextHeight = document.documentElement.scrollHeight;
-      const heightDelta = Math.max(0, nextHeight - previousHeight);
-      if (heightDelta > 0) {
-        window.scrollTo({ top: window.scrollY + heightDelta });
-      }
-    }
+    pendingScrollAdjustmentRef.current = preserveScroll
+      ? { previousHeight, previousTop: window.scrollY }
+      : null;
+    const merged = mergeNewerPosts(feedPostsRef.current, newPosts);
+    feedPostsRef.current = merged;
+    setFeedPosts(merged);
 
     setManualRefreshReason(null);
   }
@@ -393,6 +386,15 @@ export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilt
   }, [initialSeedPosts]);
 
   useLayoutEffect(() => {
+    const pendingScrollAdjustment = pendingScrollAdjustmentRef.current;
+    if (pendingScrollAdjustment) {
+      pendingScrollAdjustmentRef.current = null;
+      const heightDelta = Math.max(0, document.documentElement.scrollHeight - pendingScrollAdjustment.previousHeight);
+      if (heightDelta > 0) {
+        window.scrollTo({ top: pendingScrollAdjustment.previousTop + heightDelta });
+      }
+    }
+
     if (!restoreAnchorId || typeof window === 'undefined') return;
 
     const anchorElement = document.querySelector<HTMLElement>(`[data-feed-post-id="${restoreAnchorId}"]`);

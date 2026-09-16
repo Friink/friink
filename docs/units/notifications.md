@@ -5,7 +5,7 @@ requests, accepted requests, mentions, and other user-visible events.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T02:32:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -36,6 +36,9 @@ meaning that causes a notification.
   cannot roll back the operation that produced the event.
 - **NOTIFY-R-006:** Notification content must not expose secrets, internal IDs,
   or account-sensitive existence information.
+- **NOTIFY-R-007:** Optimistic read state must survive notification-list
+  refreshes while a read mutation settles; stale polling responses must not
+  restore the bell dot or reclassify a read item as new.
 
 ## UX and flows
 

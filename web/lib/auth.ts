@@ -108,15 +108,33 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
 }
 
 export type StaffRole = { key: string; display_name: string; system: boolean; permissions: string[] };
-export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; permissions: string[] };
+export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; lifecycle_status: 'active' | 'deactivated' | 'pending_deletion' | 'deleted'; deletion_deadline: string | null; permissions: string[] };
+export type SubscriptionSummary = { plan_code: string; plan_name: string; expires_at: string | null; status: 'active' | 'expired' | 'revoked'; assignment_status: 'active' | 'expired' | 'revoked' | null; assignment_id: string | null };
+export type SubscriptionAssignment = SubscriptionSummary & { user_id: string; starts_at: string | null; reason: string | null; created_at: string | null; revoked_at: string | null };
 export async function staffStepUp(accessToken: string, password: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/step-up', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ password }), skipAuthRefresh: true });
 }
 export async function staffMe(accessToken: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
 }
-export async function listStaffUsers(accessToken: string): Promise<StaffUser[]> {
-  return requestApi('/staff/users', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+export async function listStaffUsers(accessToken: string, query = ''): Promise<StaffUser[]> {
+  const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+  return requestApi(`/staff/users${suffix}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listSubscriptionAssignments(accessToken: string, publicId: string): Promise<SubscriptionAssignment[]> {
+  return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/assignments`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listSubscriptionPlans(accessToken: string): Promise<Array<{ code: string; name: string; description: string; active: boolean }>> {
+  return requestApi('/subscriptions/admin/plans', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function grantSubscription(accessToken: string, publicId: string, payload: { plan_code: string; duration_days?: number; expires_at?: string; reason: string }): Promise<SubscriptionAssignment> {
+  return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/grant`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(payload), skipAuthRefresh: true });
+}
+export async function revokeSubscription(accessToken: string, publicId: string, reason: string): Promise<SubscriptionAssignment> {
+  return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/revoke`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ reason }), skipAuthRefresh: true });
+}
+export async function getMySubscription(accessToken: string): Promise<SubscriptionSummary> {
+  return requestApi('/subscriptions/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
 }
 export async function listStaffRoles(accessToken: string): Promise<StaffRole[]> {
   return requestApi('/staff/roles', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
@@ -1724,15 +1742,17 @@ export async function markAllNotificationsRead(accessToken: string): Promise<voi
   });
 }
 
-export async function listFollowers(username: string): Promise<ApiConnectionList> {
+export async function listFollowers(username: string, accessToken?: string): Promise<ApiConnectionList> {
   return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/followers`, {
     method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
   });
 }
 
-export async function listFollowing(username: string): Promise<ApiConnectionList> {
+export async function listFollowing(username: string, accessToken?: string): Promise<ApiConnectionList> {
   return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/following`, {
     method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
   });
 }
 

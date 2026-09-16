@@ -66,6 +66,14 @@ loading, error, retry, focus, and keyboard-accessible states. A failed
 operation preserves the usable current state. A pending deletion screen clearly
 distinguishes cancellation from ordinary sign-in.
 
+### Subscription interaction
+
+Deactivated and pending-deletion accounts remain visible to staff for context,
+but subscription-management actions are unavailable. Pending deletion is shown
+with the remaining days in its 32-day grace window. Subscription expiry or
+revocation does not reactivate, deactivate, delete, or otherwise change the
+account lifecycle state.
+
 ## Technical contract
 
 Lifecycle operations are exposed through `api/app/routers/account_lifecycle.py`

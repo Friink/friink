@@ -187,10 +187,12 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     if (!user) return;
 
     let active = true;
+    const session = loadAuthSession();
+    if (!session) return;
     const profileHandle = username || user.username;
     setProfileStats(null);
 
-    Promise.all([listFollowers(profileHandle), listFollowing(profileHandle)])
+    Promise.all([listFollowers(profileHandle, session.accessToken), listFollowing(profileHandle, session.accessToken)])
       .then(([followers, following]) => {
         if (!active) return;
         setProfileStats({ followers: followers.count, following: following.count });

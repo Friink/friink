@@ -3,9 +3,9 @@
 Subscriptions describes Friink plans, current entitlement presentation, and
 the boundary between informational plans and future billing.
 
-**Status:** Partial — informational plans and entitlement scaffolding exist; billing is not active  
+**Status:** Partial — informational plans, server-resolved summaries, and manual staff assignment are active; billing is not active
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T01:18:28Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -19,6 +19,45 @@ Chat may consume the server-resolved entitlement for its paid request policy.
 - [Settings](./settings.md) — shows the current plan and links to plans.
 - [Staff Admin](./staff-admin.md) — owns current administrative assignments.
 - [Design System](../design-system.md) — owns public plan-card presentation.
+
+## Plan definitions
+
+### Friink Free
+
+Free is the default plan and includes:
+
+1. Unlimited posts, replies, and quotes.
+2. Chat with mutual followers.
+
+### Friink Pro
+
+Pro includes everything in Free, plus:
+
+1. Message requests.
+2. Profile view count.
+3. Longer posts up to 512 characters.
+4. Optional professional registration request.
+5. Directory listing for registered professionals.
+
+The planned commercial price is USD 4 per month after the first month. Planned
+billing rules revoke Pro after 8 days of nonpayment. Professional registration
+is a separate status and is planned to revoke after 64 days of nonpayment.
+
+### Friink Pro+
+
+Pro+ includes everything in Pro, plus:
+
+1. Profile and post analytics.
+2. Profile boost for the feed.
+3. Fewer ads.
+
+The planned commercial price is USD 8 per month. The planned launch offer is
+one month free for Pro users, and planned billing rules revoke Pro+ after 8
+days of nonpayment.
+
+Pricing, introductory offers, automatic renewal, and nonpayment revocation are
+future billing behavior. They are not active while billing and payment
+integration remain unavailable.
 
 ## Rules
 
@@ -38,6 +77,50 @@ The public `/subscriptions` surface compares Friink Free, Pro, and Pro+. The
 Settings Subscription tab summarizes the current plan. No checkout, payment,
 or self-service billing flow is active.
 
+Until billing exists, a superadmin may manually promote a user from Free to Pro
+or Pro+, change Pro and Pro+ assignments, or return a paid assignment to Free.
+Manual assignments require a plan, an optional expiration or no-expiration
+choice, and a reason; the effective plan remains server-resolved. Users should
+see their current plan and access expiration in Settings, with clear in-app
+feedback when access is granted, changed, expired, or revoked.
+
+### Manual-assignment UX (current rollout)
+
+The Control Panel Users surface searches by username or email and shows all
+matching accounts, including deactivated and pending-deletion accounts. A
+deactivated account remains visible for context, but plan-management actions
+are disabled. Pending deletion is shown with its deletion countdown, such as
+`Scheduled for deletion in 18 days`, based on the existing 32-day lifecycle
+window.
+
+The user detail surface shows the current plan, effective status, expiry,
+and assignment history. `Adjust plan` will use a duration selector with
+presets for 30 days, 90 days, 1 year, a custom expiry date, and no expiration.
+The custom date control is revealed only when selected, and cannot be earlier
+than the current date. The form requires a reason and shows a confirmation
+summary before saving. Replacing an active assignment explains the effect
+before confirmation.
+
+Manual renewal extends from the existing expiry when the assignment is still
+active; an expired assignment starts from the current date. Revoke is a
+separate confirmed action and immediately returns the effective plan to Free.
+The user-facing state uses `Active`, `Expired`, and `Revoked`; staff also see
+the full immutable assignment history and audit details.
+
+Professional status is independently modeled in the planned staff workflow and
+may be awarded to any active user, including a Free user, with its own 64-day
+expiry. The professional
+directory requires both professional status and Pro or Pro+ access. A user may
+opt in from Settings to show a professional badge on their profile; plan
+badges are also opt-in and default to hidden.
+
+Grant, change, expiry, and revoke events have an in-app and email notification
+contract; delivery remains planned. Email delivery failure must not roll back
+the entitlement. The
+planned expiry reminders are sent once at 7 days before expiry, 1 day before
+expiry, and at expiry. Until payment integration exists, these are manual
+assignment lifecycle notifications rather than billing or renewal notices.
+
 ## Technical contract
 
 Subscription routes, schemas, models, and services provide current plan and
@@ -52,5 +135,9 @@ administrative assignment behavior. Billing provider integration is not present.
 
 ## Known limitations
 
-Payments, checkout, recurring billing, cancellation, and customer self-service
-are not implemented.
+Payments, checkout, recurring billing, cancellation, automatic renewal,
+nonpayment enforcement, and customer self-service are not implemented. The
+current Settings subscription summary is connected to the server-resolved
+entitlement. Public plan cards remain informational, and the final capability
+matrix, notifications, professional-status workflow, and profile-badge
+preferences remain planned.

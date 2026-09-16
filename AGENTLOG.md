@@ -1,5 +1,310 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-16T02:40:00Z — Fix notification read-state races
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent the notification bell dot and read items from
+  reappearing after notifications are read.
+- Changes Made: Preserved locally confirmed read IDs across list refreshes,
+  cleared stale notification actions, synchronized the unread-count reference
+  during individual and bulk reads, and paused count polling while read
+  mutations are pending. Updated active notification rules and unit docs.
+- Files: `web/components/app-shell.tsx`, `docs/rules.md`,
+  `docs/units/notifications.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed. Targeted
+  app-shell lint retains the component's existing set-state-in-effect errors
+  and dependency warnings.
+
+## 2026-09-16T02:18:00Z — Align FeedPost header utility pair
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the Share/More order and align the pair in the post
+  header.
+- Changes Made: Restored Share then More DOM order, vertically centered the
+  shared utility cluster against the profile heading, and retained the 12px
+  inter-control gap within the content inset. Updated the Feed unit rule and
+  task logs.
+- Files: `web/components/feed-post.tsx`, `web/app/globals.css`,
+  `docs/units/feed.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed. The
+  authenticated localhost render confirms each post presents Share followed by
+  Post options in the aligned header pair.
+
+## 2026-09-16T02:02:00Z — Add shared icon-and-text button spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the missing spacing between icons and labels in shared
+  buttons.
+- Changes Made: Added one shared CSS contract applying an 8px gap to primary
+  and secondary buttons while excluding icon-only `.icon-button` controls.
+  Updated the product and implementation design documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed.
+
+## 2026-09-16T01:48:00Z — Refine post action edge spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Spread post actions from edge to edge and place the share
+  utility immediately to the right of the overflow utility.
+- Changes Made: Updated the shared FeedPost header order to overflow then share,
+  set their gap to 12px, and changed the shared bottom action row from centered
+  equal columns to edge-anchored distribution across the content width.
+  Updated the Feed unit contract and task logs.
+- Files: `web/components/feed-post.tsx`, `web/app/globals.css`,
+  `docs/units/feed.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed. The existing
+  FeedPost lint error remains isolated to its pre-existing state-sync effect.
+  The authenticated localhost Home render shows each post with `Post options`
+  followed by `Share post`, and the updated action row is present across the
+  post content width.
+
+## 2026-09-16T01:32:00Z — Fix profile loading and post action spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the uneven FeedPost action row, refine post-header
+  utility spacing, and repair profile posts and connection counts loading.
+- Changes Made: Corrected `/users/{username}/posts` and `/replies` service
+  calls to pass `limit` and `cursor` by name, preventing the profile-post 500.
+  Made the shared post action row distribute its four actions evenly across
+  the content width and adjusted header utility padding/gap. Added Profile and
+  Feed unit rules for the repaired API/layout contracts.
+- Files: `api/app/routers/users.py`, `web/app/globals.css`,
+  `docs/units/profiles.md`, `docs/units/feed.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Real localhost verification now returns HTTP 200 for
+  profile posts, replies, followers, and following; the repaired profile UI
+  rendered the post and resolved the statistics when an authenticated tab was
+  used. TypeScript, Python compilation, and `git diff --check` passed. Targeted
+  lint retains pre-existing set-state-in-effect findings in profile/feed
+  components.
+
+## 2026-09-16T01:18:28Z — Implement manual subscription UX slice
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin the documented subscription UX implementation and test
+  it according to repository guidelines.
+- Changes Made: Added staff live search and lifecycle-aware subscription
+  management UI, server-resolved user subscription summaries, assignment
+  history, preset/custom/no-expiry plan adjustment, renewal extension, and
+  revoke behavior. Added API validation preventing plan changes for inactive
+  or pending-deletion users. Local development staff step-up cookies now work
+  over HTTP. Updated subscription, Settings, Staff Admin, and active Rules
+  documentation to distinguish shipped behavior from planned notifications,
+  professional-status workflow, and profile badges.
+- Files: `api/app/routers/staff.py`, `api/app/services/subscriptions.py`,
+  `api/tests/test_subscriptions.py`, `web/components/control-panel-screen.tsx`,
+  `web/components/account-screens.tsx`, `web/lib/auth.ts`,
+  `docs/units/subscriptions.md`, `docs/units/settings.md`,
+  `docs/units/staff-admin.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, Python compilation, and `git diff --check`
+  passed. Focused subscription/staff tests reached 9 passing assertions; the
+  Windows pytest session teardown returned a file-lock error after assertions
+  completed. Real localhost login and staff step-up returned HTTP 200, and
+  `/subscriptions/admin/plans` returned HTTP 200 with 3 plans. Targeted lint
+  passed for the changed control-panel/auth files; account-screens retains two
+  pre-existing set-state-in-effect errors and six warnings.
+
+## 2026-09-16T00:55:00Z — Fix feed prepend lifecycle warning
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the React `flushSync` lifecycle warning triggered when
+  creating a post and prepending it to Home.
+- Changes Made: Removed `flushSync` from `HomeScreen.applyPrepend`; scroll
+  compensation now runs in the existing layout effect after feed state commits.
+  Documented the lifecycle-safe update contract for Feed.
+- Files: `web/components/home-screen.tsx`, `docs/units/feed.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `flushSync` is removed from `HomeScreen`; `git diff --check`
+  passed. Targeted ESLint still reports three pre-existing set-state-in-effect
+  errors and five dependency warnings elsewhere in `home-screen.tsx`.
+
+## 2026-09-16T00:49:02Z — Align staff authorization with database permissions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the implementation so permissions are database-backed and
+  subscription access is delegated through permissions rather than hardcoded
+  superadmin checks.
+- Changes Made: Resolved superadmin permissions dynamically from the database
+  catalog, added migration `20260916_0048` for subscription and professional-
+  status permissions, changed subscription endpoints to require
+  `subscriptions.manage`, and added focused regression coverage.
+- Files: `api/app/services/staff.py`, `api/app/routers/staff.py`,
+  `api/app/routers/subscriptions.py`,
+  `api/alembic/versions/20260916_0048_staff_subscription_permissions.py`,
+  `api/tests/test_subscriptions.py`, `docs/rules.md`,
+  `docs/units/staff-admin.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused role/subscription tests passed 7/7; real admin
+  step-up returned database-backed permissions and `/subscriptions/admin/plans`
+  returned HTTP 200 with 3 plans; migration applied successfully.
+
+## 2026-09-16T00:40:27Z — Clarify database-backed permission architecture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the documentation first to explicitly prohibit
+  hardcoded permission and role assignments.
+- Changes Made: Added the permission architecture contract to Staff Admin and
+  the active staff rule, including database-backed permissions, delegated
+  subscription/professional-status permissions, and the current implementation
+  gap requiring migration.
+- Files: `docs/units/staff-admin.md`, `docs/rules.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; referenced Staff Admin and
+  Rules documents exist and no viewer index update was required.
+
+## 2026-09-16T00:32:10Z — Document subscription UX contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fully document the agreed manual subscription-management
+  and user-facing entitlement UX.
+- Changes Made: Documented cross-unit UX for user search, lifecycle-aware
+  staff actions, plan adjustment and renewal, expiry/revocation, notifications,
+  professional status, profile badges, and future billing boundaries. Kept
+  planned behavior separate from active implementation-backed rules.
+- Files: `docs/units/subscriptions.md`, `docs/units/staff-admin.md`,
+  `docs/units/settings.md`, `docs/units/account-lifecycle.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; affected unit links resolve,
+  and no `docs/index.html` update was required because no document was added,
+  renamed, moved, archived, or removed.
+
+## 2026-09-16T00:20:47Z — Document subscription plan definitions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the supplied Free, Pro, and Pro+ plan definitions
+  while distinguishing planned billing from current manual assignment.
+- Changes Made: Expanded the Subscriptions unit with the plan capability matrix,
+  planned prices and nonpayment rules, current superadmin manual assignment,
+  expiration feedback expectations, and billing limitations.
+- Files: `docs/units/subscriptions.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; existing relative unit links
+  remain valid and no index update was required because no document was added,
+  renamed, moved, archived, or removed.
+
+## 2026-09-16T00:10:23Z — Assign development admin superadmin role
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Give the already-created development admin account the
+  superadmin role.
+- Changes Made: Added the existing `superadmin` role association for
+  `admin@friink.com` in the development database.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; development database role assignment
+  created.
+- Verification Status: Read-only query confirmed the account has the
+  `superadmin` role.
+
+## 2026-09-16T00:04:27Z — Provision development admin account
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create the reserved admin account in the development database.
+- Changes Made: Ran the guarded `bootstrap_admin` command against the development
+  database connector using process-local `test` target overrides required by the
+  script's local-environment guard. No environment files were edited.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; development database record created.
+- Verification Status: Read-only query confirmed `admin@friink.com` is present,
+  `username=admin`, `is_staff=true`, and `setup_completed=true`.
+
+## 2026-09-15T23:49:03Z — Add account-switcher beta disclosure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a Beta badge for the account switcher only.
+- Changes Made: Added the shared `BetaBadge` component and semantic styling;
+  rendered it beside `Switch Account` in the account-switcher header. Documented
+  that Beta is informational and does not change permissions or behavior, while
+  planned features retain their existing treatments.
+- Files: `web/components/design/beta-badge.tsx`,
+  `web/components/side-drawer.tsx`, `web/app/globals.css`,
+  `docs/units/account-access.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The new badge component passed targeted ESLint and
+  `git diff --check` passed. The combined lint command still reports three
+  pre-existing `no-html-link-for-pages` errors at `side-drawer.tsx:311`.
+
+## 2026-09-15T23:43:02Z — Migrate development database
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm the development and staging database connectors and
+  update the development database to fix the API schema mismatch.
+- Changes Made: Verified that `.env.development` and `.env.staging` use
+  different Neon connectors. Applied migrations `20260911_0045` through
+  `20260911_0047` to the development database, including `users.account_region`,
+  and ran the migration gate.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; database schema updated through the
+  migration chain.
+- Verification Status: `alembic check` reported no pending operations; a real
+  `POST /auth/password-reset/start` request returned HTTP 202 with the neutral
+  response shape.
+
+## 2026-09-15T23:34:06Z — Correct local API environment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the copied development environment file and start the
+  local API with OTP disabled.
+- Changes Made: Updated `api/.env.development` from staging identity values to
+  `ENVIRONMENT=development` and `FRONTEND_URL=http://localhost:3000`; disabled
+  `OTP_ENABLED`, `SIGNUP_OTP_ENABLED`, and `LOGIN_RISK_OTP_ENABLED`. Started
+  Uvicorn with that file explicitly.
+- Files: `api/.env.development`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API startup completed and `GET /health` returned HTTP
+  200 with `{"status":"ok"}`.
+
+## 2026-09-15T23:19:08Z — Clarify unit-document requirement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a clear root-agent instruction requiring relevant unit
+  documentation updates or creation and registration when absent.
+- Changes Made: Added an explicit documentation workflow rule to `AGENTS.md`.
+  It requires same-change updates to the relevant unit document and directs
+  agents to use the documentation guidance and template when creating a new
+  unit, including registering it in `docs/index.html`.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-15T23:19:08Z — Document unavailable post UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documentation to match the new post-like unavailable
+  state for private, deleted, or invalid post URLs.
+- Changes Made: Updated the Posts unit, product design system, and design
+  implementation contract with the shared component, privacy-safe copy,
+  route-level behavior, and authenticated-shell behavior.
+- Files: `docs/units/posts.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation references resolve, and `git diff --check` passed.
+
+## 2026-09-15T23:14:48Z — Improve unavailable post UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the 404-styled page shown for private or invalid post
+  URLs with a post-like unavailable state.
+- Changes Made: Added a shared `PostUnavailableState` component and reused it
+  in both dynamic post route not-found screens and client-side post failures.
+  Added calm card styling and neutral copy covering private, deleted, and
+  inaccessible posts.
+- Files: `web/components/post-unavailable-state.tsx`, post route not-found and
+  client files, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted ESLint check passed.
+
 ## 2026-09-15T23:00:01Z — Mark Product units as a directory
 
 - Agent: Codex
@@ -10906,3 +11211,61 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Files: `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Before logging, `staging`, local `development`, and
   `origin/development` all resolved to `80e7da5`.
+## 2026-09-16T02:55:00Z — Add post action interaction states
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make comment, quote, like, save, share, and overflow post
+  actions change color when active or hovered.
+- Changes Made: Added shared accent-color hover, keyboard-focus, and press
+  states for post actions; preserved persistent active coloring for Like and
+  Save; synchronized feed and design documentation.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed. The
+  authenticated localhost render confirms the six post-action controls are
+  present with Share then Post options in the header pair.
+
+## 2026-09-16T03:05:00Z — Correct FeedPost header utility geometry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the Share/More pair to the true right inset, bring the
+  icons closer together, and remove inherited standard-button sizing.
+- Changes Made: Removed the extra heading right padding, set the pair gap to
+  the documented 12px, and explicitly reset `.icon-button` minimum dimensions
+  for these plain icon controls. Updated the Feed and implementation design
+  contracts.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed. The
+  local browser still exposes the Share and Post options controls in the
+  expected header order.
+
+## 2026-09-16T03:15:00Z — Remove FeedPost utility outlines
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the remaining visible borders around the Share and
+  More post utilities.
+- Changes Made: Removed the accent outline from hover and keyboard-focus state;
+  the controls remain borderless and continue to change color on interaction.
+  Synchronized the Feed and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed.
+
+## 2026-09-16T03:25:00Z — Reconcile post-control documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the applicable agent log, changelog, active rules,
+  and unit documentation for the FeedPost utility-control fix.
+- Changes Made: Added `POST-R-015` to the active Rules registry, linked its
+  implementation and Feed unit contract, updated the design-system timestamp,
+  and confirmed existing Feed unit and project logs describe the change.
+- Files: `docs/rules.md`, `docs/design-system.md`, `docs/units/feed.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Required documentation paths exist, `POST-R-015` and
+  Feed traceability entries are present, and `git diff --check` passes.

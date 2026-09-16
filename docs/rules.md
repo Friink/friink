@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-12T22:20:39Z  
+**Last edited:** 2026-09-16T03:25:00Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -245,7 +245,7 @@ missing evidence can be filled in.
 - **File(s):** `docs/archives/auth-and-session.md`, `packages/design/design.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`, `web/components/modal.tsx`
 
 - **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
-- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. The panel uses one drawer entry with `Overview`, `Staff`, `Users`, `Security & Sessions`, `Audit Log`, and `Public site` tabs. `Users` is the only functional section in the current rollout; the other sections are explicit placeholders. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
+- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. The panel uses one drawer entry with `Overview`, `Staff`, `Users`, `Security & Sessions`, `Audit Log`, and `Public site` tabs. `Users` is the only functional section in the current rollout; the other sections are explicit placeholders. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected. Permission definitions, role ownership, and role-to-permission assignments are database-backed and must not be hardcoded in application logic. Superadmin effective permissions are resolved dynamically from the database permission catalog.
 
 ### AUTH-R-003 — Authentication Incident Operations Are Protected And Idempotent
 
@@ -916,6 +916,19 @@ missing evidence can be filled in.
 - **Edge cases:** Unauthorized or unauthenticated post detail and reply-list access resolves as `404`-equivalent `Post not found.` for protected posts.
 - **Related rules:** Reply Creation Rechecks Parent Visibility; Quote Cards Hide Protected Content
 
+### PROFILE-R-008 — Profile Content Requests Preserve Pagination Semantics
+
+- **Status:** Active
+- **Effective:** 2026-09-16T01:32:00Z
+- **Related units:** [profiles](units/profiles.md), [feed](units/feed.md)
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/users.py`, `api/app/services/posts.py`, `web/app/[username]/profile-client.tsx`, `web/lib/auth.ts`
+
+- **What:** Profile posts and replies pass `limit` and `cursor` to the
+  author-scoped API using their named meanings. A profile route must not show a
+  loaded shell while silently losing its content because pagination arguments
+  were reordered.
+
 ### POST-R-008 — Reply Creation Rechecks Parent Visibility
 
 - **Status:** Active
@@ -1000,6 +1013,24 @@ missing evidence can be filled in.
 - **What:** Clicking a non-interactive area of a web post card opens the canonical post detail page. `Show more...` appears only when the body text exceeds four visible lines and expands that card in place instead of navigating.
 - **Edge cases:** Profile links, reply/quote/like/share, Save, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
 
+### POST-R-015 — Post Utility Controls Use Plain Accent States
+
+- **Status:** Active
+- **Effective:** 2026-09-16T03:15:00Z
+- **Related units:** [feed](units/feed.md), [posts](units/posts.md)
+- **Source:** [feed unit](units/feed.md), [design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/feed-post.tsx`, `web/app/globals.css`
+
+- **What:** FeedPost Share and More utilities use compact, transparent,
+  borderless icon-control geometry rather than standard button dimensions. They
+  sit in a Share-then-More pair at the right content inset with a 12px gap and
+  use the current accent color on hover, focus, and press.
+- **Edge cases:** The utilities have no decorative border or outline and do not
+  inherit the shared `.icon-button` minimum dimensions. The lower Comment,
+  Quote, Like, and Save actions use the same accent interaction states; Like
+  and Save retain the accent color while active.
+
 ## Notifications
 
 ### NOTIF-R-001 — In-App Notifications Are Fetchable And Readable
@@ -1012,7 +1043,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/models/notification.py`, `api/app/services/notifications.py`, `api/app/routers/notifications.py`, `web/lib/auth.ts`, `web/components/notifications-screen.tsx`
 
 - **What:** Authenticated users can fetch a paginated notification feed, fetch an unread count, mark one notification read, or mark all their notifications read. The web Notifications screen provides `All` and `Security` views plus an unread-only filter and an explicit mark-all action.
-- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The bell shows a green dot when unread count is positive, displays the actual count up to `99+`, and shows unread items only, up to four initially with scrolling for more. With zero unread notifications it shows the shared `Nothing to show.` state; read notifications never populate the dropdown. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Opening the bell or selecting a dropdown item does not mark anything read. Opening the Notifications screen does not mark every item read; a notification becomes read only when it is meaningfully visible in the full list or through explicit mark-all. Dropdown activation, destination navigation, and inline action completion do not replace the full-list read rule. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. Informational notifications navigate to their canonical destinations, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Unknown notification types render safely with generic API/client-provided copy and must not cause unsafe navigation. Failed refreshes retain the last known list/count and failed actions preserve the item with recoverable feedback. Marking another user's notification read returns `404`. See `docs/archives/notifications.md` for the complete contract.
+- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The bell shows a green dot when unread count is positive, displays the actual count up to `99+`, and shows unread items only, up to four initially with scrolling for more. With zero unread notifications it shows the shared `Nothing to show.` state; read notifications never populate the dropdown. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Opening the bell or selecting a dropdown item does not mark anything read. Opening the Notifications screen does not mark every item read; a notification becomes read only when it is meaningfully visible in the full list or through explicit mark-all. Dropdown activation, destination navigation, and inline action completion do not replace the full-list read rule. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. While a read mutation is pending, stale count/list poll responses must not restore the bell dot or reclassify that item as unread. Informational notifications navigate to their canonical destinations, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Unknown notification types render safely with generic API/client-provided copy and must not cause unsafe navigation. Failed refreshes retain the last known list/count and failed actions preserve the item with recoverable feedback. Marking another user's notification read returns `404`. See `docs/archives/notifications.md` for the complete contract.
 
 ### NOTIF-R-002 — Follow Notifications
 
@@ -1182,7 +1213,7 @@ missing evidence can be filled in.
 - **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
 - **Edge cases:** This page does not create subscriptions, process payments, or grant paid entitlements. The displayed plan benefits and prices are marketing content and must be updated with the subscription implementation before paid launch.
 
-### CLIENT-R-010 — Subscription Settings Starts As A Plan Summary
+### CLIENT-R-010 — Subscription Settings Shows The Server-Resolved Plan
 
 - **Status:** Active
 - **Effective:** 2026-09-01T00:00:00Z
@@ -1191,7 +1222,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/globals.css`
 
-- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing a static Friink Free plan summary and linking to the public `/subscriptions` comparison page. It does not yet resolve the user's server-side effective entitlement.
+- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the server-resolved effective plan, status, expiry (or no expiration), and a link to the public `/subscriptions` comparison page. Billing and self-service plan changes are not active.
 - **Edge cases:** The summary is presentation-only even though the API entitlement foundation exists; this tab does not process upgrades, payments, cancellations, or paid access.
 
 ### CLIENT-R-011 — Landing Newsletter Uses Zoho Form Submission
@@ -1503,6 +1534,8 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [feed](units/feed.md) | FEED-R-004 | Home restores reading position where the current web contract |
 | [feed](units/feed.md) | FEED-R-005 | Profile feeds use the viewed author's scoped collection, not |
 | [feed](units/feed.md) | FEED-R-006 | Feed failures preserve usable content and expose retry rather |
+| [feed](units/feed.md) | FEED-R-007 | The shared post action row anchors its four actions from the left |
+| [feed](units/feed.md) | FEED-R-008 | Post action controls change to the current accent color on hover |
 | [media](units/media.md) | MEDIA-R-001 | Post images remain local until submit; up to eight JPEG images |
 | [media](units/media.md) | MEDIA-R-002 | Post preparation targets a 1024px maximum longest edge, |
 | [media](units/media.md) | MEDIA-R-003 | Profile pictures accept JPG/JPEG, PNG, and WebP, require a |

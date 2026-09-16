@@ -6,7 +6,7 @@ audit information.
 
 **Status:** Partial — staff discovery, bootstrap, roles, and user controls are implemented; several sections are placeholders  
 **Tier:** Full  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T01:18:28Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -45,12 +45,48 @@ protection and must not interrupt ordinary personal use.
 - **STAFF-R-007:** Staff sessions have a separate privileged timeout and can be
   revoked without treating ordinary personal access as privileged.
 
+### Permission architecture contract
+
+- Permission definitions are database-backed `staff_permissions` records.
+- Roles are database-backed `staff_roles` records connected to permissions
+  through `role_permissions`; users receive the union of their assigned-role
+  permissions and additive direct grants.
+- Permission keys, role ownership, and role-to-permission assignments must not
+  be hardcoded in application logic. New capabilities must be represented as
+  permission records and assigned through the role/permission model.
+- A `superadmin` is a full-authority role, but its effective permissions must
+  be resolved from the database permission catalog rather than a hardcoded
+  application permission list.
+- Subscription administration and professional-status administration should be
+  represented as separate permissions that a superadmin can delegate through
+  roles or direct grants.
+
 ## UX and flows
 
 The drawer shows Control panel only for staff discovery. The panel presents
 permission-aware tabs and actions. Users with no effective access see a calm
 no-access state. Expired privileged access opens a step-up modal; closing it
 returns to the prior screen.
+
+### Subscription administration (current rollout)
+
+Staff with the delegated `subscriptions.manage` permission manage entitlements
+from Control Panel → Users. Search accepts
+both username and email and returns all matching accounts. Deactivated and
+pending-deletion accounts remain visible but have plan actions disabled;
+pending-deletion rows show the remaining deletion window.
+
+The user detail view will provide `Adjust plan`, assignment history, and the
+current effective status. Staff select Pro, Pro+, or Free, choose a preset
+duration, custom expiry date, or no expiration, enter a required reason, and
+review a replacement summary before saving. Renewal extends an active
+assignment from its current expiry; a new assignment after expiry starts now.
+Revoke is confirmed separately and returns the effective plan to Free.
+
+Plan changes require an active privileged superadmin session, are authorized
+server-side, and create redacted audit events. User-facing copy describes the
+result as access being granted or changed; staff-facing copy identifies it as
+manual plan assignment. The flow must never imply that a payment occurred.
 
 ## Technical contract
 
@@ -69,5 +105,8 @@ privileged sessions, and audit records are server-backed.
 
 ## Known limitations
 
-The full staff dashboard, moderation requirements, and some control-panel
-sections remain to be specified and implemented.
+The full staff dashboard, moderation requirements, professional-status workflow,
+and some control-panel sections remain to be specified and implemented. The
+subscription and professional-status permission records now exist in the
+database catalog; the corresponding professional-status workflow remains
+planned.

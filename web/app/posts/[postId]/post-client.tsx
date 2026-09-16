@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
+import { PostUnavailableState } from '@/components/post-unavailable-state';
 import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
@@ -162,10 +163,7 @@ export function PostClient({ postId }: PostClientProps) {
   if (!post) {
     return postUnavailable ? (
       <AppShell user={user} onLogout={handleLogout} initialScreen="home" showTabs={false} showFloatingBar={false}>
-        <section className="post-unavailable" aria-live="polite">
-          <h1>Post unavailable</h1>
-          <p>This post may have been deleted or is no longer visible to you.</p>
-        </section>
+        <PostUnavailableState />
       </AppShell>
     ) : null;
   }

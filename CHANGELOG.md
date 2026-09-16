@@ -1,5 +1,137 @@
 # Changelog
 
+## 2026-09-16T03:25:00Z
+
+- [docs] Reconciled the active Rules registry with the borderless FeedPost
+  Share/More utility contract and its Feed/design documentation.
+
+
+## 2026-09-16T03:15:00Z
+
+- [web] Removed the visible focus/hover outline from the plain FeedPost
+  Share/More icon controls so they no longer resemble bordered buttons.
+
+
+## 2026-09-16T03:05:00Z
+
+- [web] Tightened the FeedPost header utility pair: removed the extra reserved
+  right padding, restored the documented 12px gap, and reset inherited
+  standard-button minimum dimensions from the plain Share/More controls.
+
+
+## 2026-09-16T02:40:00Z
+
+- [web] Fixed notification read-state races: stale polling cannot restore the
+  bell dot or reclassify locally read notifications as new while read actions
+  settle. Updated notification rules and unit documentation.
+
+## 2026-09-16T02:18:00Z
+
+- [web] Corrected the FeedPost header utility pair to Share then More, with
+  shared vertical centering and a 12px gap inside the content inset.
+
+## 2026-09-16T02:02:00Z
+
+- [web/design] Added the shared 8px gap for icon-and-text primary and secondary
+  buttons, excluding icon-only controls, and documented the global contract.
+
+## 2026-09-16T01:48:00Z
+
+- [web] Refined shared post controls so the four bottom actions span from the
+  content edges, and reordered the header utilities to overflow then share with
+  a 12px gap.
+
+## 2026-09-16T01:32:00Z
+
+- [web/api] Fixed profile post/reply loading by passing pagination arguments to
+  the API with their correct names. Profile feeds now load author-scoped posts
+  instead of receiving a server error. Updated the shared FeedPost action row
+  to use the full content width with even spacing and refined the post-header
+  utility spacing. Documented the profile and feed contracts.
+
+## 2026-09-16T01:18:28Z
+
+- [subscriptions] Added the first manual-plan-management UX slice: live staff
+  user search, lifecycle-aware user detail/history, plan adjustment with
+  preset/custom/no-expiry options, renewal extension, revoke, and a
+  server-resolved Settings summary. Enforced inactive-account mutation
+  boundaries and fixed local development staff-cookie behavior. Updated the
+  subscription, Settings, Staff Admin, and active rules documentation.
+
+## 2026-09-16T00:55:00Z
+
+- [web] Fixed the feed prepend path to preserve scroll position after new posts
+  without calling `flushSync` inside a React lifecycle effect.
+
+## 2026-09-16T00:49:02Z
+
+- [api] Replaced the hardcoded superadmin permission set with database-backed
+  permission resolution, added subscription and professional-status permissions,
+  and authorized subscription administration through `subscriptions.manage`.
+
+## 2026-09-16T00:40:27Z
+
+- [docs] Made the database-backed role and permission architecture explicit:
+  permission definitions, role ownership, and assignments must not be
+  hardcoded, and recorded the current superadmin shortcut as a migration gap.
+
+## 2026-09-16T00:32:10Z
+
+- [docs] Documented the agreed subscription UX across Subscriptions, Staff
+  Admin, Settings, Account Lifecycle, and the shared design contracts,
+  including manual assignment, expiry, notifications, professional status,
+  profile-badge preferences, and planned billing boundaries.
+
+## 2026-09-16T00:20:47Z
+
+- [docs] Expanded the Subscriptions unit with the Free, Pro, and Pro+ plan
+  definitions, manual-admin assignment behavior, and explicit future-billing
+  boundaries.
+
+## 2026-09-16T00:10:23Z
+
+- [development] Assigned the existing `superadmin` role to the development
+  `admin@friink.com` account.
+
+## 2026-09-16T00:04:27Z
+
+- [development] Provisioned the reserved staff admin account
+  `admin@friink.com` / `@admin` in the development database using the guarded
+  bootstrap command and the user-provided initial password.
+
+## 2026-09-15T23:49:03Z
+
+- [web] Added the shared accessible `Beta` badge and applied it only to the
+  account-switcher header while that feature continues to stabilize.
+
+## 2026-09-15T23:43:02Z
+
+- [development] Migrated the isolated development database to the current
+  Alembic head so the API model and database schema are aligned.
+
+## 2026-09-15T23:34:06Z
+
+- [development] Corrected `api/.env.development` to use the local frontend
+  origin and development environment, with all OTP controls disabled.
+
+## 2026-09-15T23:19:08Z
+
+- [docs] Added an explicit root agent rule requiring product and UX changes
+  to update their relevant unit document, or create and register one from the
+  documentation template when no unit document exists.
+
+## 2026-09-15T23:19:08Z
+
+- [docs] Documented the shared post-like unavailable state, its privacy-safe
+  copy, route-level and authenticated-shell placement, and non-disclosure
+  behavior in the Posts unit and design contracts.
+
+## 2026-09-15T23:14:48Z
+
+- [web] Replaced the 404-styled unavailable-post route screens with a shared,
+  post-like unavailable state that explains private, deleted, and inaccessible
+  posts without exposing a technical error code.
+
 ## 2026-09-15T23:00:01Z
 
 - [docs] Added the trailing slash to the Product units navigation and index
@@ -3610,3 +3742,8 @@ _Last updated: 2026-09-10_
 
 - [maintenance] Force-synchronized the experimental `development` branch
   with `staging`; local and remote development now point to the staging tip.
+## 2026-09-16T02:55:00Z
+
+- [web] Added accent-color hover, focus, and press feedback to all post action
+  controls, including the Share and More header utilities, and updated the
+  shared design/feed contracts.

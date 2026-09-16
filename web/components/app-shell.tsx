@@ -140,6 +140,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const notificationCountRef = useRef<number | null>(null);
   const notificationToastIds = useRef(new Set<string>());
   const notificationReadIds = useRef(new Set<string>());
+  const notificationReadMutationCount = useRef(0);
   useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
   useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
   useEffect(() => setMessagesTab(initialMessagesTab), [initialMessagesTab]);
@@ -417,6 +418,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     if (!session) return;
     const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
     return transport.subscribe((count) => {
+      if (notificationReadMutationCount.current > 0) return;
       const previousCount = notificationCountRef.current;
       notificationCountRef.current = count;
       setUnreadNotificationCount(count);
@@ -433,7 +435,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           });
           page.items.filter((item) => item.read).forEach((item) => notificationReadIds.current.add(item.id));
           if (activeScreenRef.current === 'notifications') {
-            setNotifications(page.items.map(mapApiNotification));
+            setNotifications(mapNotificationPage(page.items));
           }
         })
         .catch(() => undefined);
@@ -489,7 +491,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     listNotifications(session.accessToken, { limit: 40 })
       .then((page) => {
         page.items.forEach((item) => notificationToastIds.current.add(item.id));
-        const notificationItems = page.items.map(mapApiNotification);
+        const notificationItems = mapNotificationPage(page.items);
         setNotifications(notificationItems);
       })
       .catch(() => {
@@ -712,6 +714,14 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     };
   }
 
+  function mapNotificationPage(items: ApiNotification[]): NotificationItem[] {
+    return items.map((item) => {
+      if (item.read) notificationReadIds.current.add(item.id);
+      const mapped = mapApiNotification(item);
+      return notificationReadIds.current.has(item.id) ? { ...mapped, unread: false, tone: 'sage', actions: undefined } : mapped;
+    });
+  }
+
   function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string, payload: Record<string, unknown>) {
     switch (type) {
       case 'login_security':
@@ -884,31 +894,40 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     const notification = notifications.find((item) => item.id === notificationId);
     if (!notification?.unread) return;
     notificationReadIds.current.add(notificationId);
+    notificationReadMutationCount.current += 1;
+    notificationCountRef.current = Math.max(0, (notificationCountRef.current ?? unreadNotificationCount) - 1);
     setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: false, tone: 'sage' } : item));
     setUnreadNotificationCount((current) => Math.max(0, current - 1));
-    void markNotificationRead(session.accessToken, notificationId).catch(() => {
-      notificationReadIds.current.delete(notificationId);
-      setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: true, tone: 'mint' } : item));
-      getUnreadNotificationCount(session.accessToken)
-        .then((response) => setUnreadNotificationCount(response.count))
-        .catch(() => undefined);
-    });
+    void markNotificationRead(session.accessToken, notificationId)
+      .catch(() => {
+        notificationReadIds.current.delete(notificationId);
+        setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: true, tone: 'mint' } : item));
+        getUnreadNotificationCount(session.accessToken)
+          .then((response) => setUnreadNotificationCount(response.count))
+          .catch(() => undefined);
+      })
+      .finally(() => { notificationReadMutationCount.current = Math.max(0, notificationReadMutationCount.current - 1); });
   }
 
   function handleMarkAllNotificationsRead() {
     const session = loadAuthSession();
     if (!session) return;
+    const markedIds = notifications.filter((item) => item.unread).map((item) => item.id);
+    markedIds.forEach((id) => notificationReadIds.current.add(id));
+    notificationReadMutationCount.current += 1;
+    notificationCountRef.current = 0;
     setNotifications((current) => current.map((item) => ({ ...item, unread: false, tone: 'sage' })));
     setUnreadNotificationCount(0);
     void markAllNotificationsRead(session.accessToken).catch(() => {
       addToast('Could not mark notifications as read.');
+      markedIds.forEach((id) => notificationReadIds.current.delete(id));
       listNotifications(session.accessToken, { limit: 40 })
-        .then((page) => setNotifications(page.items.map(mapApiNotification)))
+        .then((page) => setNotifications(mapNotificationPage(page.items)))
         .catch(() => undefined);
       getUnreadNotificationCount(session.accessToken)
         .then((response) => setUnreadNotificationCount(response.count))
         .catch(() => undefined);
-    });
+    }).finally(() => { notificationReadMutationCount.current = Math.max(0, notificationReadMutationCount.current - 1); });
   }
 
   async function handleNotificationAction(notificationId: string, action: 'accept-follow' | 'reject-follow' | 'accept-chat' | 'reject-chat', targetId: string) {

@@ -47,7 +47,7 @@ async def user_posts(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> FeedPageResponse:
-    return await get_user_posts(session, current_user, username, cursor, limit)
+    return await get_user_posts(session, current_user, username, limit=limit, cursor=cursor)
 
 
 @router.get("/{username}/replies", response_model=FeedPageResponse)
@@ -58,4 +58,4 @@ async def user_replies(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> FeedPageResponse:
-    return await get_user_replies(session, current_user, username, cursor, limit)
+    return await get_user_replies(session, current_user, username, limit=limit, cursor=cursor)
