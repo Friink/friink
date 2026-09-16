@@ -55,6 +55,11 @@ contract rather than repeated here.
   tabs, important links, primary actions, indicators, and focus treatment.
 - Post actions use the current accent color on hover, keyboard focus, and
   press; persistent Like and Save states also retain the accent color.
+- Signup password and username guidance uses full-width left alignment;
+  satisfied password requirements and a valid username rule use the current
+  accent color.
+- Profile connection actions that include a label use the standard text-button
+  layout; icon-only Message and More controls retain `.icon-button` geometry.
 - Ink and muted gray establish the text hierarchy.
 - Paper and background colors distinguish surfaces from the application
   canvas.

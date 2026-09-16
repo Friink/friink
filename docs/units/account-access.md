@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-12T16:25:00Z  
+**Last edited:** 2026-09-16T03:45:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -140,6 +140,11 @@ With verification enabled, signup is email → six-character code → password a
 profile details → account completion and authenticated setup. Resending a code
 invalidates the previous code. Invalid, expired, or over-attempt codes show
 recoverable feedback without creating an account.
+
+The password step shows a left-aligned checklist whose satisfied requirements
+use the accent color. The profile step presents username guidance with the same
+left alignment and accent feedback when the 2–32 character allowed-character
+rule is satisfied; server validation remains authoritative.
 
 If the email already belongs to an account, the browser remains on the email
 step with neutral copy. No signup reservation or signup OTP is created; a

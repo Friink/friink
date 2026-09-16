@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T01:32:00Z
+**Last edited:** 2026-09-16T04:00:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -50,6 +50,9 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-008:** Profile posts, replies, and connection counts load from
   author-scoped API requests; pagination arguments must preserve their named
   meaning so a profile never silently loses its content after the shell loads.
+- **PROFILE-R-009:** Other-user connection actions that include a label use the
+  standard text-button layout so the icon and label remain on one line. Message
+  and More remain icon-only controls.
 
 ## UX and flows
 

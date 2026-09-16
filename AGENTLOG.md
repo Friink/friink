@@ -1,5 +1,50 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-16T04:15:00Z — Prepare web-only release for development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reconcile documentation for the session’s UI changes and
+  push development and staging without a database update.
+- Changes Made: Added the signup criteria feedback clarification to the active
+  Rules registry, confirmed the Profiles and Account Access unit documents and
+  design contracts cover the session changes, and prepared the web-only
+  release for both branches.
+- Files: `docs/rules.md`, `docs/units/account-access.md`,
+  `docs/units/profiles.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`, plus the
+  corresponding web implementation files.
+- Verification Status: Targeted checks pending; no migration gate required
+  because no database schema or API changes were made in this session.
+
+## 2026-09-16T04:00:00Z — Fix profile connection action layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the labeled profile action rendering as a stacked
+  icon-only button.
+- Changes Made: Removed `.icon-button` from the API-driven connection action,
+  added a shared one-line profile connection action class, and kept Message and
+  More as icon-only controls. Updated Profiles, Rules, and design contracts.
+- Files: `web/components/profile-screen.tsx`, `web/app/globals.css`,
+  `docs/units/profiles.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted checks pending.
+
+## 2026-09-16T03:45:00Z — Normalize signup criteria feedback
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make signup password and username criteria align and use
+  consistent state coloring.
+- Changes Made: Added full-width left alignment to both helper surfaces and
+  accent-colored the username guidance once the complete 2–32 character rule
+  is met. Updated account-access and shared design documentation.
+- Files: `web/components/login-screen.tsx`, `web/app/globals.css`,
+  `docs/units/account-access.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed.
+
 ## 2026-09-16T03:35:00Z — Push verified release to development and staging
 
 - Agent: Codex

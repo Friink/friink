@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-16T03:25:00Z
+**Last edited:** 2026-09-16T04:15:00Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -438,6 +438,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
 
 - **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Passwords are limited to 72 UTF-8 bytes to match the current bcrypt storage format. Usernames must be 2-32 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form. Display names are optional, trimmed, and limited to 124 characters.
+- **Edge cases:** Signup presents password requirements and username guidance as full-width, left-aligned helper content. Satisfied password requirements and a username meeting the complete 2–32 character allowed-character rule use the current accent color; these are client-side guidance only and server validation remains authoritative.
 
 ### AUTH-R-019 — Security Events And Login Notifications Are Durable And Idempotent
 
@@ -928,6 +929,22 @@ missing evidence can be filled in.
   author-scoped API using their named meanings. A profile route must not show a
   loaded shell while silently losing its content because pagination arguments
   were reordered.
+
+### PROFILE-R-009 — Profile Connection Labels Use Text-Button Geometry
+
+- **Status:** Active
+- **Effective:** 2026-09-16T04:00:00Z
+- **Related units:** [profiles](units/profiles.md), [connections](units/connections.md)
+- **Source:** [profiles unit](units/profiles.md), [design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/profile-screen.tsx`, `web/app/globals.css`
+
+- **What:** Other-user profile connection actions with labels use the standard
+  text-button layout and keep their icon and label on one line. Icon-only
+  Message and More controls retain the shared icon-button geometry.
+- **Edge cases:** The connection action remains API-state-driven and may show
+  `Follow`, `Following`, or `Cancel request`; its label must not be forced into
+  an icon-only grid layout.
 
 ### POST-R-008 — Reply Creation Rechecks Parent Visibility
 

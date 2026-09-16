@@ -141,7 +141,7 @@ export function ProfileScreen({
               <>
                 {action && (
                   <button
-                    className="button-secondary icon-button"
+                    className="button-secondary profile-connection-action"
                     type="button"
                     onClick={action.onClick}
                     disabled={connectionActionBusy}

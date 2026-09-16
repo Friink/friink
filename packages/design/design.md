@@ -353,7 +353,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   6. Profile Feed / Empty State.
 - **Variants & Action Rules**:
   - **Self-Profile Variant** (`isOwnProfile = true`): Renders the **Edit** action button (`.profile-action-edit`, icon `fa-pen-to-square` + text "Edit", right-aligned) and routes to Settings > Profile.
-  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the **Compose / Send Message** icon button (shared `.button-secondary.icon-button`, icon `fa-paper-plane`, right-aligned) and routes to `/{username}/chat` when activated.
+  - **Other-User / Dummy Profile Variant** (`isOwnProfile = false`): Renders the connection action as `.button-secondary.profile-connection-action` with icon and label on one line; Message and More remain compact `.button-secondary.icon-button` controls, and Message routes to `/{username}/chat` when activated.
   - *These are the only two variants.*
 - **State Invariant**: Sidebar navigation highlight ONLY tracks the signed-in user's profile (`sidebarActiveScreen`). When browsing another user's dummy profile via `/[username]`, the sidebar profile navigation item must NOT be highlighted.
 - **Props Contract**:
@@ -462,6 +462,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### 10. Form Inputs & Username Prefix Pattern (`InputField`, `account-screens.tsx`)
 - **Username Prefix Rule**: In username fields (login, signup, and settings), the `@` prefix is rendered as an explicit inline/prefixed element outside the entered text (with dedicated left padding `2.6rem`), **NEVER** overlapping typed characters.
 - **Signup Identity Guidance**: Signup visibly explains the username rule: 2–32 characters using letters, numbers, `.`, `_`, and `-`. The optional display-name field accepts up to 124 characters; leading and trailing whitespace is normalized away before submission.
+- **Signup Criteria Feedback**: Password requirements and username guidance are full-width, left-aligned helper content. Satisfied password requirements and a username that meets the complete 2–32 character allowed-character rule use the current accent color; server-side validation remains authoritative.
 - **Single-Line Inputs**: Height `2.5rem` to `3rem`, corner radius strictly `8px` (`border-radius: 8px !important`).
 - **In-App Button System** (`Button`):
   - The app has two action styles: `primary` (`.button-primary`) for the main action and `secondary` (`.button-secondary`) for supporting, reversible, or cancel actions. Both use `3rem` minimum height, `0.75rem 1.25rem` padding, `8px` radius, shared typography, focus, disabled, and loading behavior.

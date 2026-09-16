@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-16T04:15:00Z
+
+- [release/docs] Recorded the signup criteria and profile-action fixes in the
+  active Rules registry, then prepared the web-only changes for development and
+  staging. No database migration is required for this release.
+
+
+## 2026-09-16T04:00:00Z
+
+- [web] Fixed profile connection actions so labeled controls such as Follow
+  use one-line text-button geometry instead of icon-only grid sizing. Message
+  and More remain icon-only controls.
+
+
+## 2026-09-16T03:45:00Z
+
+- [web] Aligned signup username guidance with password criteria and added
+  accent feedback when the complete username rule is satisfied. Updated the
+  account-access and shared design contracts.
+
+
 ## 2026-09-16T03:35:00Z
 
 - [release] Pushed the verified implementation and documentation release to
