@@ -51,7 +51,7 @@ export function ConnectionsScreen({
             {incomingRequests.map((request) => (
               <ListRow
                 key={`incoming-${request.id}`}
-                title={<ProfileCard name={request.name} handle={request.handle} tone="mint" initials={request.initials} href={profileHref(request.handle)} />}
+                title={<ProfileCard name={request.name} handle={request.handle} tone="mint" initials={request.initials} href={profileHref(request.handle)} showProfessionalBadge={request.showProfessionalBadge} />}
                 subtitle="Requested to follow you"
                 trailing={
                   <span className="connection-request-actions">
@@ -79,7 +79,7 @@ export function ConnectionsScreen({
             {outgoingRequests.map((request) => (
               <ListRow
                 key={`outgoing-${request.id}`}
-                title={<ProfileCard name={request.name} handle={request.handle} tone="sage" initials={request.initials} href={profileHref(request.handle)} />}
+                title={<ProfileCard name={request.name} handle={request.handle} tone="sage" initials={request.initials} href={profileHref(request.handle)} showProfessionalBadge={request.showProfessionalBadge} />}
                 subtitle="Request sent"
                 trailing={
                   <button
@@ -99,7 +99,7 @@ export function ConnectionsScreen({
           visibleConnections.map((connection) => (
             <ListRow
               key={connection.id}
-              title={<ProfileCard name={connection.name} handle={connection.handle} tone={connection.tone} initials={connection.initials} href={profileHref(connection.handle)} />}
+              title={<ProfileCard name={connection.name} handle={connection.handle} tone={connection.tone} initials={connection.initials} href={profileHref(connection.handle)} showProfessionalBadge={connection.showProfessionalBadge} />}
               trailing={
                 activeFilter === 'followers' && onRemoveFollower ? (
                   <button

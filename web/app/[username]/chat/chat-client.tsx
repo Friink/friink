@@ -187,7 +187,7 @@ export function ChatClient({ username }: ChatClientProps) {
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <ProfileCard href={`/${encodeURIComponent(participant?.username || username)}/posts`} name={displayName} handle={handle} imageUrl={participant?.profile_picture_url} />
+          <ProfileCard href={`/${encodeURIComponent(participant?.username || username)}/posts`} name={displayName} handle={handle} imageUrl={participant?.profile_picture_url} showProfessionalBadge={participant?.show_professional_badge} />
           {context?.status === 'pending' && conversation && conversation.requester_id !== user.id ? <button className="button-primary chat-accept-button" type="button" onClick={handleAcceptRequest}>Accept request</button> : null}
         </div>
 

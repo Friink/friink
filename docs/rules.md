@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-12T22:20:39Z  
+**Last edited:** 2026-09-16T20:03:49Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -184,6 +184,18 @@ missing evidence can be filled in.
 - **What:** Post detail URLs use the author username, an on-the-fly slug from the first eight content words capped at 64 characters, and an 8-character random mixed-case alphanumeric `public_id`. Empty slugs omit the slug text.
 - **Edge cases:** The username and slug are cosmetic; the trailing `public_id` is authoritative for lookup. The UUID primary key and all UUID foreign-key relationships remain unchanged. Existing rows receive IDs through the Alembic backfill migration.
 
+### WEB-R-015 — Functional TopBar Preview Preserves Existing Navigation
+
+- **Status:** Active preview
+- **Effective:** 2026-09-16T20:37:01Z
+- **Related units:** [feed](units/feed.md), [profiles](units/profiles.md), [settings](units/settings.md), [staff-admin](units/staff-admin.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`
+
+- **What:** The signed-in app renders a functional shared `TopBar` preview. It uses the side-drawer surface, keeps the Home-linked compact mark and centered current title visible in every mode, and provides Home's sidebar toggle/Search/Chat/Notifications plus contextual history-aware Back and the existing `ActionMenu` using the same shell state and route handlers.
+- **Edge cases:** The preview overlays the existing Header and NavigationBar; neither existing component is removed or replaced. Tabs remain unchanged, and all preview actions preserve the established destinations and semantics until the prototype is accepted.
+
 ### WEB-R-014 — Quoted Posts Link To Their Original
 
 - **Status:** Active
@@ -203,7 +215,7 @@ missing evidence can be filled in.
 - **Related units:** [posts](units/posts.md), [saved-items](units/saved-items.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `api/app/models/post.py`, `api/app/models/user.py`, `api/app/services/reactions.py`, `api/app/routers/posts.py`, `api/app/routers/users.py`, `api/app/services/posts.py`, `web/components/feed-post.tsx`, `web/components/post-likes-modal.tsx`, `web/components/profile-screen.tsx`, `web/components/saved-screen.tsx`, `web/components/account-screens.tsx`, `docs/like-and-star.md`
+- **File(s):** `api/app/models/post.py`, `api/app/models/user.py`, `api/app/services/reactions.py`, `api/app/routers/posts.py`, `api/app/routers/users.py`, `api/app/services/posts.py`, `web/components/feed-post.tsx`, `web/components/post-likes-modal.tsx`, `web/components/profile-screen.tsx`, `web/components/saved-screen.tsx`, `web/components/account-screens.tsx`, `docs/archives/like-and-star.md`
 
 - **What:** Signed-in users may Like/Unlike and Save/Unsave visible posts, replies, and quotes. Each user can have at most one Like and one Save per content object at a time. Like and Save counts are public aggregates for that content object; viewer-specific active state is returned only to an authenticated viewer.
 - **Edge cases:** Database unique constraints and a post row lock make retries and concurrent toggles idempotent. Self-Likes do not notify the owner. A confirmed Like by another user creates one in-app owner notification; Unlike and all Save operations are silent. Deleted, private, blocked, or otherwise inaccessible content cannot be reacted to and is omitted from the user's Liked/Saved lists. Direct unavailable post URLs render the neutral unavailable state.
@@ -242,10 +254,10 @@ missing evidence can be filled in.
 - **Related units:** [staff-admin](units/staff-admin.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `docs/auth-and-session.md`, `packages/design/design.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`, `web/components/modal.tsx`
+- **File(s):** `docs/archives/auth-and-session.md`, `packages/design/design.md`, `web/components/side-drawer.tsx`, `web/components/control-panel-screen.tsx`, `web/components/modal.tsx`
 
 - **What:** Staff users may hold multiple roles. Effective control-panel access is the union of permissions from all assigned roles plus additive per-user grants. The only initially seeded role is `superadmin`; additional roles are created when needed.
-- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. The panel uses one drawer entry with `Overview`, `Staff`, `Users`, `Security & Sessions`, `Audit Log`, and `Public site` tabs. `Users` is the only functional section in the current rollout; the other sections are explicit placeholders. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected.
+- **Edge cases:** A user with `is_staff = true` but no roles sees the Control panel entry and a no-access empty state. The panel uses one drawer entry with `Overview`, `Staff`, `Users`, `Security & Sessions`, `Audit Log`, and `Public site` tabs. `Users` is the only functional section in the current rollout; the other sections are explicit placeholders. Tabs and actions are shown only when the current effective permission allows them. Missing or expired privileged access opens the shared staff-verification modal; closing it returns to the prior screen while the ordinary Friink session stays active. Turning `is_staff` off removes staff access immediately and revokes privileged staff sessions; ordinary Friink access is unaffected. Permission definitions, role ownership, and role-to-permission assignments are database-backed and must not be hardcoded in application logic. Superadmin effective permissions are resolved dynamically from the database permission catalog.
 
 ### AUTH-R-003 — Authentication Incident Operations Are Protected And Idempotent
 
@@ -253,7 +265,7 @@ missing evidence can be filled in.
 - **Effective:** 2026-09-12T00:00:00Z
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** API/operations
-- **File(s):** `api/app/routers/auth_operations.py`, `api/app/services/session_service.py`, `api/app/services/staff.py`, `api/app/services/security_events.py`, `docs/auth-incident-response.md`
+- **File(s):** `api/app/routers/auth_operations.py`, `api/app/services/session_service.py`, `api/app/services/staff.py`, `api/app/services/security_events.py`, `docs/archives/auth-incident-response.md`
 
 - **What:** Authorized authentication-incident operators use the protected internal auth-operations path with the dedicated `AUTH_OPERATIONS_INTERNAL_TOKEN`; authentication rows are not edited manually. Operations require explicit confirmation, a unique `Idempotency-Key`, a recorded reason, operator/scope/result evidence, and the smallest safe applicable scope.
 - **Edge cases:** Retrying an operation with the same idempotency key returns the original result. Per-user revocation invalidates refresh sessions, recognized devices, and issued access tokens through the security epoch. Compromised staff accounts additionally lose staff access, account access is locked, privileged sessions are revoked, and the operation does not depend on the compromised administrator's session. Platform-wide revocation is reserved for confirmed platform-level incidents. The implementation records the operation's target, scope, reason, and result, but does not record a human operator identity. Secrets, passwords, OTPs, raw tokens, JWT secrets, private IP data, and other sensitive authentication material must never be placed in logs, tickets, or operator messages.
@@ -265,10 +277,10 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `docs/forget-password.md`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `web/app/reset-password/page.tsx`
+- **File(s):** `docs/archives/forget-password.md`, `api/app/services/password_reset.py`, `api/app/routers/auth.py`, `web/app/reset-password/page.tsx`
 
 - **What:** Password recovery accepts an account email, sends a single-use reset link with a 30-minute expiry, stores only a token hash, and revokes refresh-token families after successful reset. Usernames alone cannot authorize recovery.
-- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. A newer reset request invalidates older unused reset links. After the reset token is committed, the API directly attempts email delivery and swallows delivery failures so the neutral response remains unchanged; this is not a durable reset-email outbox. Successful reset revokes active privileged Control Panel sessions as well as ordinary refresh-token families and remembered device credentials. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/forget-password.md`.
+- **Edge cases:** Existing and non-existing emails receive the same generic response; no reset token is returned by the API. Ordinary user-requested recovery may reuse the current password. A reset link issued for suspicious failed-login activity must use a password different from the current password; this is enforced server-side from the durable token purpose. Authenticated password changes must also differ from the current password. A newer reset request invalidates older unused reset links. After the reset token is committed, the API directly attempts email delivery and swallows delivery failures so the neutral response remains unchanged; this is not a durable reset-email outbox. Successful reset revokes active privileged Control Panel sessions as well as ordinary refresh-token families and remembered device credentials. The reset UI must distinguish valid, expired, used, invalid, and successful-link states without exposing account existence or raw tokens. `OTP_ENABLED=false` does not disable this separate email-token flow. The complete copy, delivery, and reset-page contract lives in `docs/archives/forget-password.md`.
 
 ### AUTH-R-005 — Subscription Entitlements Use One Server-Resolved Assignment
 
@@ -289,7 +301,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [settings](units/settings.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/auth-and-session.md`
+- **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/archives/auth-and-session.md`
 
 - **What:** Settings > Account shows a read-only `Joined` field using the account’s server-side creation timestamp. The web client formats the value for the user’s locale and time zone and never derives it from the browser clock.
 - **Edge cases:** The field is display-only and is unavailable if the API returns an invalid timestamp. It uses the existing authenticated user response; no separate account-history value is created.
@@ -301,10 +313,10 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [settings](units/settings.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `api/app/models/user.py`, `api/app/models/signup_reservation.py`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/updated-account-info.md`
+- **File(s):** `api/app/models/user.py`, `api/app/models/signup_reservation.py`, `api/app/routers/auth.py`, `api/app/services/auth.py`, `api/app/schemas/auth.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `docs/archives/updated-account-info.md`
 
 - **What:** Settings > Account shows a read-only `Region` field containing the province/state-level country-region signal available when the account is created. The server stores a coarse ISO 3166-2-style code and never stores the raw IP for this feature.
-- **Edge cases:** If the trusted deployment geolocation signal is unavailable, Region displays `Unavailable`. Existing accounts are not inferred or backfilled, and the existing user-entered profile `location` field remains separate. Onboarding may also collect optional user-entered `Location` and private `How I use Friink` values (`For professional networking` or `For personal connection`); both can be edited later and have no effect on access, billing, recommendations, ranking, or other business rules.
+- **Edge cases:** If the trusted deployment geolocation signal is unavailable, Region displays `Unavailable`. Existing accounts are not inferred or backfilled, and the existing user-entered profile `location` field remains separate. Onboarding may also collect optional user-entered `Location` and private `How I use Friink` values (`For professional networking` or `For personal connection`); both can be edited later. The professional-networking value controls availability of the profile-badge preference but does not grant access, billing, recommendations, ranking, professional status, or directory eligibility.
 
 ### AUTH-R-008 — Authoritative Web Session And Refresh Model
 
@@ -325,7 +337,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
-- **File(s):** `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/auth-and-session.md`
+- **File(s):** `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/archives/auth-and-session.md`
 
 - **What:** A client or network timeout while completing OTP verification is ambiguous because the API may already have committed the authenticated session. The shared web login handler may make one refresh-cookie recovery attempt before displaying an error, then continues the normal authenticated redirect if recovery succeeds.
 - **Edge cases:** This applies equally to standalone login and in-app Add account. Invalid or expired OTP responses retain their normal errors; recovery must not loop, clear the active account, or infer account identity from the email address. Only an explicitly confirmed terminal session result may clear local auth.
@@ -337,11 +349,11 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `docs/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`
+- **File(s):** `docs/archives/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`
 
 - **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile. The account-switcher menu remains available with the current account and `Add account`, and switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
 - **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared server-side security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only. Server-side account data remains isolated, but the web browser currently uses origin-global `friink-auth-session`, `friink-active-account-slot`, refresh-coordination storage, refresh-lock coordination, and `BroadcastChannel('friink-auth-session')` state rather than account-slot namespaces; cross-account/tab state collisions remain possible. OTP completion for another account must preserve an existing `friink_device_id`; it must not silently replace the browser device identity and hide prior slots.
-- **Compatibility:** This is an additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Mobile-specific requirements are deferred in `docs/auth-and-session-mobile.md`.
+- **Compatibility:** This is an additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Mobile-specific requirements are deferred in `docs/archives/auth-and-session-mobile.md`.
 
 ### AUTH-R-011 — Login Route Is Signed-Out Only
 
@@ -362,7 +374,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `docs/auth-and-session.md`, `api/app/routers/auth.py`, `web/lib/auth.ts`
+- **File(s):** `docs/archives/auth-and-session.md`, `api/app/routers/auth.py`, `web/lib/auth.ts`
 
 - **What:** A new-device login submits credentials once, then completes exactly one verification path: the emailed four-minute OTP or approval from an existing signed-in session.
 - **Security boundary:** Approval requests show only coarse device details and Approve/Deny actions; existing sessions never display the plaintext email OTP. The OTP is single-use, hashed, attempt-limited, rate-limited, and bound to the intended login/device.
@@ -374,7 +386,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
-- **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/auth-and-session.md`
+- **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/archives/auth-and-session.md`
 
 - **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
 - **Edge cases:** The selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A normal successful switch updates the in-memory app shell and remounts it for the new user without a browser-level reload; removing the active account may reload the browser after automatically switching to the most recently used remaining account.
@@ -410,7 +422,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/auth-and-session.md`
+- **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/archives/auth-and-session.md`
 
 - **What:** When email-first signup receives an email already registered to Friink, the API creates no signup reservation or signup OTP. It sends a separate single-use, 15-minute sign-in link to the registered address while the web flow stays on the email step with neutral copy.
 - **Security boundary:** The browser response must not say that the email is registered or offer account-specific recovery text. The link is delivered only to the address on file, uses the normal session path, and delivery failure does not change the neutral response. Unknown-email login remains generic and never auto-creates an account.
@@ -438,6 +450,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/schemas/auth.py`, `web/components/login-screen.tsx`, `api/tests/test_validation.py`
 
 - **What:** Passwords must be at least 8 characters, contain no whitespace, and include at least one uppercase letter, lowercase letter, number, and special character. Passwords are limited to 72 UTF-8 bytes to match the current bcrypt storage format. Usernames must be 2-32 characters and may contain only letters, numbers, `.`, `_`, and `-` with no spaces. Username identity is case-insensitive: accepted usernames are canonicalized to lowercase for storage and routing, while the handle is displayed in that canonical form. Display names are optional, trimmed, and limited to 124 characters.
+- **Edge cases:** Signup presents password requirements and username guidance as full-width, left-aligned helper content. Satisfied password requirements and a username meeting the complete 2–32 character allowed-character rule use the current accent color; these are client-side guidance only and server validation remains authoritative.
 
 ### AUTH-R-019 — Security Events And Login Notifications Are Durable And Idempotent
 
@@ -532,7 +545,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** All
-- **File(s):** `api/app/services/auth.py`, `api/app/routers/auth.py`, `packages/design/design.md`, `docs/auth-and-session.md`
+- **File(s):** `api/app/services/auth.py`, `api/app/routers/auth.py`, `packages/design/design.md`, `docs/archives/auth-and-session.md`
 
 - **What:** Username changes require no step-up authentication. Released usernames, including high-profile usernames, are immediately available with no cooldown. Full account locks show exactly `Your account is locked. Contact support.`; progressive cooldowns show a distinct tier-specific retry message and must never use the full-lock copy.
 
@@ -684,6 +697,18 @@ missing evidence can be filled in.
 
 - **What:** The web client stores only safe authenticated account metadata in `localStorage` under `friink-auth-session`; the short-lived access token remains in memory and the refresh credential remains an HTTP-only cookie. Logout clears the stored metadata and the current in-memory session.
 - **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions. Planned multiple-account support may store safe summaries for more than one account, but must not store access/refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or device secrets in browser-readable storage.
+
+### AUTH-R-040 — Session Restoration Has Explicit Recovery UX
+
+- **Status:** Active
+- **Effective:** 2026-09-16T20:03:49Z
+- **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `web/app/[username]/profile-client.tsx`
+
+- **What:** Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered. The shell metadata is presentation-only; authenticated API effects and actions require a successful in-memory refresh. Terminal refresh failures redirect to login, while recoverable failures return to the explicit recovery state with an in-place retry.
+- **Edge cases:** Terminal refresh failures redirect to login, while network and other recoverable failures remain on the recovery surface. Refresh-token rotation and server-side validation remain authoritative.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
@@ -874,7 +899,7 @@ missing evidence can be filled in.
 - **Effective:** 2026-09-12T00:00:00Z
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** All
-- **File(s):** `api/app/services/posts.py`, `api/app/routers/posts.py`, `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`, `web/app/globals.css`, `docs/posts.md`
+- **File(s):** `api/app/services/posts.py`, `api/app/routers/posts.py`, `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`, `web/app/globals.css`, `docs/archives/posts.md`
 
 - **What:** A reply is a complete post object with its own author, ID, canonical URL, visibility, reactions, and descendants. Top-level replies belong directly under the root post; nested replies remain attached to their true parent. Standalone replies are excluded from the main feed, but a reply may be shown inside a Quote when deliberately referenced.
 - **Edge cases:** Logical nesting has no fixed depth limit. Branches can be collapsed and expanded independently, and large branches load through explicit `View replies` or `Open thread` controls. Reply order is chronological within each branch.
@@ -886,7 +911,7 @@ missing evidence can be filled in.
 - **Related units:** [posts](units/posts.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
-- **File(s):** `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`, `web/app/globals.css`, `docs/posts.md`
+- **File(s):** `web/components/feed-post.tsx`, `web/components/post-detail-screen.tsx`, `web/app/globals.css`, `docs/archives/posts.md`
 
 - **What:** The first three visual reply levels use progressive indentation and a subtle connector rail. Visual indentation is capped after level three; deeper replies reuse the capped indentation and show parent context such as `Replying to @username`.
 - **Edge cases:** Opening a deep reply makes that reply local level zero in focused view. Its descendants display relative depth, while the root and relevant ancestor chain remain available as compact navigable context. A focused reply view highlights the selected reply, shows its direct replies, and provides `View full conversation` back to the root thread.
@@ -915,6 +940,71 @@ missing evidence can be filled in.
 - **What:** A private author's posts are visible only to the author and accepted followers. Public-author posts are visible without an accepted-follow check.
 - **Edge cases:** Unauthorized or unauthenticated post detail and reply-list access resolves as `404`-equivalent `Post not found.` for protected posts.
 - **Related rules:** Reply Creation Rechecks Parent Visibility; Quote Cards Hide Protected Content
+
+### PROFILE-R-008 — Profile Content Requests Preserve Pagination Semantics
+
+- **Status:** Active
+- **Effective:** 2026-09-16T01:32:00Z
+- **Related units:** [profiles](units/profiles.md), [feed](units/feed.md)
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/users.py`, `api/app/services/posts.py`, `web/app/[username]/profile-client.tsx`, `web/lib/auth.ts`
+
+- **What:** Profile posts and replies pass `limit` and `cursor` to the
+  author-scoped API using their named meanings. A profile route must not show a
+  loaded shell while silently losing its content because pagination arguments
+  were reordered.
+
+### PROFILE-R-009 — Profile Connection Labels Use Text-Button Geometry
+
+- **Status:** Active
+- **Effective:** 2026-09-16T04:00:00Z
+- **Related units:** [profiles](units/profiles.md), [connections](units/connections.md)
+- **Source:** [profiles unit](units/profiles.md), [design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/profile-screen.tsx`, `web/app/globals.css`
+
+- **What:** Other-user profile connection actions with labels use the standard
+  text-button layout and keep their icon and label on one line. Icon-only
+  Message and More controls retain the shared icon-button geometry.
+- **Edge cases:** The connection action remains API-state-driven and may show
+  `Follow`, `Following`, or `Cancel request`; its label must not be forced into
+  an icon-only grid layout.
+
+### PROFILE-R-010 — Profile Moderation Uses Contextual Navigation
+
+- **Status:** Active
+- **Effective:** 2026-09-16T04:30:00Z
+- **Related units:** [profiles](units/profiles.md), [blocking](units/blocking.md)
+- **Source:** [profiles unit](units/profiles.md), [design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/components/navigationbar.tsx`
+
+- **What:** Other-user profile moderation actions are exposed through the
+  shell-owned contextual NavigationBar overflow menu. Selecting Block opens
+  the shared confirmation modal for the viewed profile.
+- **Edge cases:** Block is not rendered as a detached menu in the profile
+  action row. Self profiles do not receive the other-user Block menu item.
+
+### PROFILE-R-012 — Professional Badge Visibility Is User-Controlled
+
+- **Status:** Active
+- **Effective:** 2026-09-16T21:51:28Z
+- **Related units:** [profiles](units/profiles.md), [settings](units/settings.md)
+- **Platform:** Web/API
+- **Source:** Current implementation
+- **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260917_0049_professional_badge.py`, `web/components/account-screens.tsx`, `web/components/profile-card.tsx`, `web/components/profile-screen.tsx`, `web/lib/auth.ts`, `web/app/globals.css`
+
+- **What:** A user may enable `Show you are a professional on Profile` only
+  when their private `How I use Friink` preference is `For professional
+  networking`. The public profile then renders a `Professional` badge
+  immediately next to the displayed name. The preference is off by default.
+- **Edge cases:** Selecting `For personal connection` hides the setting and
+  clears the stored badge visibility. The API rejects attempts to enable the
+  badge without the professional-networking preference. Badge visibility does
+  not award professional status, verify credentials, grant directory access,
+  or change subscription entitlements. The same effective value is returned
+  for data-backed profile-card surfaces so the badge remains consistent
+  wherever that user is represented.
 
 ### POST-R-008 — Reply Creation Rechecks Parent Visibility
 
@@ -1000,6 +1090,24 @@ missing evidence can be filled in.
 - **What:** Clicking a non-interactive area of a web post card opens the canonical post detail page. `Show more...` appears only when the body text exceeds four visible lines and expands that card in place instead of navigating.
 - **Edge cases:** Profile links, reply/quote/like/share, Save, overflow, and the `Show more...` button keep their own click behavior and do not trigger card navigation.
 
+### POST-R-015 — Post Utility Controls Use Plain Accent States
+
+- **Status:** Active
+- **Effective:** 2026-09-16T03:15:00Z
+- **Related units:** [feed](units/feed.md), [posts](units/posts.md)
+- **Source:** [feed unit](units/feed.md), [design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/feed-post.tsx`, `web/app/globals.css`
+
+- **What:** FeedPost Share and More utilities use compact, transparent,
+  borderless icon-control geometry rather than standard button dimensions. They
+  sit in a Share-then-More pair at the right content inset with a 12px gap and
+  use the current accent color on hover, focus, and press.
+- **Edge cases:** The utilities have no decorative border or outline and do not
+  inherit the shared `.icon-button` minimum dimensions. The lower Comment,
+  Quote, Like, and Save actions use the same accent interaction states; Like
+  and Save retain the accent color while active.
+
 ## Notifications
 
 ### NOTIF-R-001 — In-App Notifications Are Fetchable And Readable
@@ -1012,7 +1120,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/models/notification.py`, `api/app/services/notifications.py`, `api/app/routers/notifications.py`, `web/lib/auth.ts`, `web/components/notifications-screen.tsx`
 
 - **What:** Authenticated users can fetch a paginated notification feed, fetch an unread count, mark one notification read, or mark all their notifications read. The web Notifications screen provides `All` and `Security` views plus an unread-only filter and an explicit mark-all action.
-- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The bell shows a green dot when unread count is positive, displays the actual count up to `99+`, and shows unread items only, up to four initially with scrolling for more. With zero unread notifications it shows the shared `Nothing to show.` state; read notifications never populate the dropdown. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Opening the bell or selecting a dropdown item does not mark anything read. Opening the Notifications screen does not mark every item read; a notification becomes read only when it is meaningfully visible in the full list or through explicit mark-all. Dropdown activation, destination navigation, and inline action completion do not replace the full-list read rule. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. Informational notifications navigate to their canonical destinations, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Unknown notification types render safely with generic API/client-provided copy and must not cause unsafe navigation. Failed refreshes retain the last known list/count and failed actions preserve the item with recoverable feedback. Marking another user's notification read returns `404`. See `docs/notifications.md` for the complete contract.
+- **Edge cases:** Notification feed pages default to 20 items and clamp to a maximum of 100. The bell shows a green dot when unread count is positive, displays the actual count up to `99+`, and shows unread items only, up to four initially with scrolling for more. With zero unread notifications it shows the shared `Nothing to show.` state; read notifications never populate the dropdown. The web app polls the unread count every 4 seconds through a transport boundary, pauses polling while hidden, resumes immediately on focus/visibility recovery, and refreshes the full list while the Notifications screen is open. Opening the bell or selecting a dropdown item does not mark anything read. Opening the Notifications screen does not mark every item read; a notification becomes read only when it is meaningfully visible in the full list or through explicit mark-all. Dropdown activation, destination navigation, and inline action completion do not replace the full-list read rule. Existing unread items establish a silent baseline; a toast is reserved for a genuinely new important notification and the same notification cannot repeatedly trigger it. While a read mutation is pending, stale count/list poll responses must not restore the bell dot or reclassify that item as unread. Informational notifications navigate to their canonical destinations, while pending private follow and chat requests expose inline Accept/Decline actions in both notification surfaces. Unknown notification types render safely with generic API/client-provided copy and must not cause unsafe navigation. Failed refreshes retain the last known list/count and failed actions preserve the item with recoverable feedback. Marking another user's notification read returns `404`. See `docs/archives/notifications.md` for the complete contract.
 
 ### NOTIF-R-002 — Follow Notifications
 
@@ -1182,7 +1290,7 @@ missing evidence can be filled in.
 - **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
 - **Edge cases:** This page does not create subscriptions, process payments, or grant paid entitlements. The displayed plan benefits and prices are marketing content and must be updated with the subscription implementation before paid launch.
 
-### CLIENT-R-010 — Subscription Settings Starts As A Plan Summary
+### CLIENT-R-010 — Subscription Settings Shows The Server-Resolved Plan
 
 - **Status:** Active
 - **Effective:** 2026-09-01T00:00:00Z
@@ -1191,7 +1299,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/globals.css`
 
-- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing a static Friink Free plan summary and linking to the public `/subscriptions` comparison page. It does not yet resolve the user's server-side effective entitlement.
+- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the server-resolved effective plan, status, expiry (or no expiration), and a link to the public `/subscriptions` comparison page. Billing and self-service plan changes are not active.
 - **Edge cases:** The summary is presentation-only even though the API entitlement foundation exists; this tab does not process upgrades, payments, cancellations, or paid access.
 
 ### CLIENT-R-011 — Landing Newsletter Uses Zoho Form Submission
@@ -1215,7 +1323,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/models/notification.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0016_add_chat_requests_and_settings.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`
 
 - **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
-- **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription checkout/billing remains future work; blocking and profile access enforcement are governed by their active rules. See `docs/chat-behavior.md`.
+- **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription checkout/billing remains future work; blocking and profile access enforcement are governed by their active rules. See `docs/archives/chat-behavior.md`.
 
 ### CLIENT-R-013 — Chat Read Receipts Use Per-User Cursors
 
@@ -1224,7 +1332,7 @@ missing evidence can be filled in.
 - **Related units:** [chat](units/chat.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `docs/read-receipts.md`
+- **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `docs/archives/read-receipts.md`
 
 - **What:** Chat exposes sent, delivered, and read states. A visible app-level inbox sync or the full conversation endpoint records delivery; the visible conversation advances the viewer's read cursor through an idempotent endpoint. Polling returns receipt metadata even without new messages, so tick state can change on the existing 4-second cycle.
 - **Edge cases:** Unread counts include only incoming messages; a user's own outgoing messages are never unread for that user. Counts appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. A visible inbox sync marks discovered incoming messages delivered, but only viewport visibility/scroll advances read state. Read cursors advance monotonically across earlier messages and receipt/unread state synchronizes across refreshes, devices, and browser tabs. Mute and archive do not change receipt state. Blocked conversations do not advance or expose delivery/read receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled; disabling the setting hides both participants' read state while delivery remains visible. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
@@ -1236,7 +1344,7 @@ missing evidence can be filled in.
 - **Related units:** [chat](units/chat.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/components/screens.tsx`, `web/lib/auth.ts`, `docs/chat-behavior.md`
+- **File(s):** `web/components/screens.tsx`, `web/lib/auth.ts`, `docs/archives/chat-behavior.md`
 
 - **What:** The `/chats` conversation-list screen refreshes `GET /chat/conversations` every 4 seconds while visible. Each response refreshes previews, latest-activity ordering, unread counts, unread styling, and the row state for the currently selected All, Muted, Requests, or Archived tab.
 - **Edge cases:** Polling pauses without requests or timer rescheduling while the document is hidden, resumes immediately on visibility or focus recovery, prevents overlapping requests, and cleans up its timer and listeners on unmount. The server remains authoritative for filtering and unread counts; no database migration or separate unread-count endpoint is required.
@@ -1320,7 +1428,7 @@ missing evidence can be filled in.
 - **Related units:** [connections](units/connections.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** API/infrastructure
-- **File(s):** `api/app/db.py`, `api/app/config.py`, `api/.env.example`, `README.md`, `docs/auth-and-session.md`
+- **File(s):** `api/app/db.py`, `api/app/config.py`, `api/.env.example`, `README.md`, `docs/archives/auth-and-session.md`
 
 - **What:** Database connection management must remain portable across Neon and the planned Ubuntu deployment. Pool behavior is configured by environment, not by platform-specific application branches. The default is a small SQLAlchemy pool (3 base connections plus 2 overflow connections, with pre-ping, LIFO reuse, recycling, and a bounded checkout timeout); pooling can be disabled explicitly when a runtime requires short-lived connections.
 - **Edge cases:** Neon Free has scale-to-zero and connection limits, so a small pool must not be treated as a promise to keep the database warm. Ubuntu values may be increased only after accounting for API worker count and PostgreSQL `max_connections`; total connections across workers and processes are the controlling limit. The local post-pooling sample improved switch completion to approximately 1.0–1.7 seconds, but account-list refresh still reached approximately 12 seconds; continue treating refresh latency as a separate investigation.
@@ -1365,7 +1473,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [account-lifecycle](units/account-lifecycle.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** All
-- **File(s):** `docs/account-lifecycle.md`, `docs/auth-and-session.md`
+- **File(s):** `docs/archives/account-lifecycle.md`, `docs/archives/auth-and-session.md`
 
 - **What:** Accounts may be `active`, `deactivated`, `pending_deletion`, or `deleted`. Deactivation requires current-password confirmation only; deletion requires current-password confirmation plus OTP when the API OTP master switch is enabled. Reactivation requires valid credentials plus fresh OTP when that switch is enabled and creates only one new session; prior sessions and remembered device credentials are not restored. The product UI is owner-only, while staff retain protected backend recovery capability.
 - **Edge cases:** Deactivation revokes all sessions and refresh families and immediately rejects access for the inactive account. The account's email and username remain reserved until permanent deletion; the account is removed from directories/search, standard notifications are suppressed, and it cannot send or receive new messages. Existing chats remain readable and read-only, and retained identity renders as `Friink User` with the real username and default avatar. Deletion is cancellable for 32 days, including the final hour before the deletion transaction, then removes public/user-generated content while retaining restricted UUID tombstones, identity history, required billing/security records, and chats as `Account Deleted`.
@@ -1391,7 +1499,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [connections](units/connections.md), [blocking](units/blocking.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `docs/blocking.md`, `api/app/services/blocking.py`, `api/app/routers/users.py`, `api/app/services/chat.py`
+- **File(s):** `docs/archives/blocking.md`, `api/app/services/blocking.py`, `api/app/routers/users.py`, `api/app/services/chat.py`
 
 - **What:** A signed-in user can block another user from that user's profile overflow menu regardless of follow state, chat state, or subscription tier. Blocking removes accepted and pending follow relationships in both directions transactionally. Unblocking never restores them. Both users lose profile access, follow access, and message sending, while existing chats remain readable and read-only.
 - **Edge cases:** Blocking is confirmed in the shared modal. Pending chat requests remain in Requests but become read-only; a blocked pending request freezes its requester-message count and does not reset or extend the eight-message cap. Existing notifications and messages are retained, and blocking creates no notification. The blocked-people settings action provides case-insensitive database-backed search, opaque-cursor loading, and confirmed unblocking. Blocked-list profile cards remain clickable but resolve to the neutral `Profile unavailable.` state. Direct profile URLs behave the same way. Block access checks are bilateral and server-authoritative; self-blocking is rejected.
@@ -1403,7 +1511,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
-- **File(s):** `web/components/login-screen.tsx`, `docs/auth-and-session.md`
+- **File(s):** `web/components/login-screen.tsx`, `docs/archives/auth-and-session.md`
 
 - **What:** The login screen may offer emailed OTP and existing-session approval for the same challenge, but once OTP entry begins, approval-status polling must stop. A late approval status cannot overwrite OTP validation, submission, or successful navigation.
 - **Edge cases:** Editing the OTP clears stale approval messaging. Polling must not run during OTP submission. The backend remains authoritative for whether the submitted OTP is valid or expired.
@@ -1427,7 +1535,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** API/Web
-- **File(s):** `docs/auth-and-session.md`, `docs/latency.md`, `api/tests/`
+- **File(s):** `docs/archives/auth-and-session.md`, `docs/archives/latency.md`, `api/tests/`
 
 - **What:** A successful single-browser OTP redirect verifies the normal challenge flow only. It is not evidence that concurrent OTP, approval, or duplicate completion requests were serialized correctly.
 - **Edge cases:** Documentation and release notes must distinguish normal-flow staging evidence from direct API status assertions and backend concurrency tests. The concurrency gate remains open until those tests exist and pass.
@@ -1503,6 +1611,8 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [feed](units/feed.md) | FEED-R-004 | Home restores reading position where the current web contract |
 | [feed](units/feed.md) | FEED-R-005 | Profile feeds use the viewed author's scoped collection, not |
 | [feed](units/feed.md) | FEED-R-006 | Feed failures preserve usable content and expose retry rather |
+| [feed](units/feed.md) | FEED-R-007 | The shared post action row anchors its four actions from the left |
+| [feed](units/feed.md) | FEED-R-008 | Post action controls change to the current accent color on hover |
 | [media](units/media.md) | MEDIA-R-001 | Post images remain local until submit; up to eight JPEG images |
 | [media](units/media.md) | MEDIA-R-002 | Post preparation targets a 1024px maximum longest edge, |
 | [media](units/media.md) | MEDIA-R-003 | Profile pictures accept JPG/JPEG, PNG, and WebP, require a |
@@ -1531,6 +1641,11 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [profiles](units/profiles.md) | PROFILE-R-005 | Public profile tabs include posts, replies, and likes only |
 | [profiles](units/profiles.md) | PROFILE-R-006 | Empty About text shows no visitor-facing placeholder; the |
 | [profiles](units/profiles.md) | PROFILE-R-007 | Profile pictures are optional and retain the last |
+| [profiles](units/profiles.md) | PROFILE-R-008 | Profile content requests preserve the API pagination contract. |
+| [profiles](units/profiles.md) | PROFILE-R-009 | Other-user connection labels use text-button geometry. |
+| [profiles](units/profiles.md) | PROFILE-R-010 | Profile moderation uses the contextual navigation overflow. |
+| [profiles](units/profiles.md) | PROFILE-R-011 | Profile bootstrap exposes restoration and retry states. |
+| [profiles](units/profiles.md) | PROFILE-R-012 | Professional badge visibility is user-controlled and appears next to the displayed name. |
 | [saved-items](units/saved-items.md) | SAVED-R-001 | Saves are private to the saving user and have no actor list. |
 | [saved-items](units/saved-items.md) | SAVED-R-002 | Deleted, private, blocked, or inaccessible content is omitted |
 | [saved-items](units/saved-items.md) | SAVED-R-003 | One user has at most one active Save per content object. |
@@ -1542,6 +1657,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [settings](units/settings.md) | SETTINGS-R-005 | Sessions are listed using server-derived metadata and |
 | [settings](units/settings.md) | SETTINGS-R-006 | Appearance and accent preferences are device-local; |
 | [settings](units/settings.md) | SETTINGS-R-007 | Successful saves provide clear success feedback. |
+| [settings](units/settings.md) | SETTINGS-R-008 | Professional badge setting is conditional on the professional-networking preference. |
 | [staff-admin](units/staff-admin.md) | STAFF-R-001 | `is_staff` controls discoverability only; it does not |
 | [staff-admin](units/staff-admin.md) | STAFF-R-002 | Effective permissions are the union of assigned role |
 | [staff-admin](units/staff-admin.md) | STAFF-R-003 | The server authorizes every protected operation regardless of |

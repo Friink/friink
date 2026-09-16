@@ -25,9 +25,10 @@ type ProfileCardProps = {
   date?: string;
   href?: string;
   imageUrl?: string | null;
+  showProfessionalBadge?: boolean;
 };
 
-export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl }: ProfileCardProps) {
+export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl, showProfessionalBadge = false }: ProfileCardProps) {
   const resolvedImageUrl = imageUrl || DEFAULT_PROFILE_IMAGE;
   const content = (
     <div className="profile-card">
@@ -35,7 +36,10 @@ export function ProfileCard({ name, handle, tone = 'mint', initials, date, href,
         <img src={resolvedImageUrl} alt="" />
       </span>
       <div className="profile-card-info">
-        <strong>{name}</strong>
+        <span className="profile-card-name-row">
+          <strong>{name}</strong>
+          {showProfessionalBadge ? <span className="professional-profile-badge" title="Professional" aria-label="Professional">Professional</span> : null}
+        </span>
         <span className="profile-card-handle">{handle}</span>
         {date && <span className="profile-card-date">{date}</span>}
       </div>

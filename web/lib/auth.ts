@@ -13,6 +13,7 @@ export type AuthUser = {
   accountRegion: string | null;
   location: string | null;
   useIntent: 'professional' | 'personal' | null;
+  showProfessionalBadge: boolean;
   profilePictureUrl: string | null;
   profilePictureUpdatedAt: string | null;
   isPrivate: boolean;
@@ -31,7 +32,7 @@ export type AuthSession = {
   accountSlot?: string;
 };
 
-export type AccountSummary = { accountSlot: string; username: string; displayName: string | null; profilePictureUrl: string | null; active: boolean; available: boolean; lastUsedAt: string };
+export type AccountSummary = { accountSlot: string; username: string; displayName: string | null; profilePictureUrl: string | null; active: boolean; available: boolean; lastUsedAt: string; showProfessionalBadge: boolean };
 export type PendingLoginApproval = { challengeId: string; deviceLabel: string; browser: string | null; createdAt: string; expiresAt: string };
 
 export type LoginChallenge = {
@@ -83,6 +84,7 @@ type ApiUser = {
   account_region: string | null;
   location: string | null;
   use_intent: 'professional' | 'personal' | null;
+  show_professional_badge: boolean;
   updated_at: string;
   profile_picture_url: string | null;
   profile_picture_updated_at: string | null;
@@ -97,6 +99,7 @@ type ApiPublicUser = {
   profile_picture_updated_at: string | null;
   is_private: boolean;
   likes_visible: boolean;
+  show_professional_badge: boolean;
 };
 
 export async function requestPasswordReset(email: string): Promise<void> {
@@ -108,15 +111,33 @@ export async function confirmPasswordReset(token: string, newPassword: string): 
 }
 
 export type StaffRole = { key: string; display_name: string; system: boolean; permissions: string[] };
-export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; permissions: string[] };
+export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; lifecycle_status: 'active' | 'deactivated' | 'pending_deletion' | 'deleted'; deletion_deadline: string | null; permissions: string[] };
+export type SubscriptionSummary = { plan_code: string; plan_name: string; expires_at: string | null; status: 'active' | 'expired' | 'revoked'; assignment_status: 'active' | 'expired' | 'revoked' | null; assignment_id: string | null };
+export type SubscriptionAssignment = SubscriptionSummary & { user_id: string; starts_at: string | null; reason: string | null; created_at: string | null; revoked_at: string | null };
 export async function staffStepUp(accessToken: string, password: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/step-up', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ password }), skipAuthRefresh: true });
 }
 export async function staffMe(accessToken: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
 }
-export async function listStaffUsers(accessToken: string): Promise<StaffUser[]> {
-  return requestApi('/staff/users', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+export async function listStaffUsers(accessToken: string, query = ''): Promise<StaffUser[]> {
+  const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+  return requestApi(`/staff/users${suffix}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listSubscriptionAssignments(accessToken: string, publicId: string): Promise<SubscriptionAssignment[]> {
+  return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/assignments`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listSubscriptionPlans(accessToken: string): Promise<Array<{ code: string; name: string; description: string; active: boolean }>> {
+  return requestApi('/subscriptions/admin/plans', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function grantSubscription(accessToken: string, publicId: string, payload: { plan_code: string; duration_days?: number; expires_at?: string; reason: string }): Promise<SubscriptionAssignment> {
+  return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/grant`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(payload), skipAuthRefresh: true });
+}
+export async function revokeSubscription(accessToken: string, publicId: string, reason: string): Promise<SubscriptionAssignment> {
+  return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/revoke`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ reason }), skipAuthRefresh: true });
+}
+export async function getMySubscription(accessToken: string): Promise<SubscriptionSummary> {
+  return requestApi('/subscriptions/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
 }
 export async function listStaffRoles(accessToken: string): Promise<StaffRole[]> {
   return requestApi('/staff/roles', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
@@ -125,9 +146,9 @@ export async function staffLogout(accessToken: string): Promise<void> {
   await requestApi('/staff/logout', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
 }
 
-export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string };
+export type BlockedUser = { id: string; username: string; displayName: string; profilePictureUrl: string | null; blockedAt: string; showProfessionalBadge: boolean };
 export type BlockedUserPage = { items: BlockedUser[]; next_cursor: string | null };
-type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null; blocked_at: string }>; next_cursor: string | null };
+type ApiBlockedUserPage = { items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null; blocked_at: string; show_professional_badge: boolean }>; next_cursor: string | null };
 
 type ApiTokenResponse = {
   access_token: string;
@@ -191,6 +212,7 @@ export function createDemoSession(overrides: Partial<AuthUser> = {}): AuthSessio
     accountRegion: null,
     location: null,
     useIntent: null,
+    showProfessionalBadge: false,
     profilePictureUrl: null,
     profilePictureUpdatedAt: null,
     isPrivate: false,
@@ -403,6 +425,20 @@ export function loadAuthSession(): AuthSession | null {
   if (typeof window === 'undefined') return null;
   installAuthCoordinationListener();
   return inMemoryAuthSession;
+}
+
+export function loadCachedAuthUser(): AuthUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { user?: Partial<AuthUser> };
+    const user = parsed.user;
+    if (!user || typeof user.id !== 'string' || typeof user.name !== 'string' || typeof user.email !== 'string' || typeof user.username !== 'string') return null;
+    return user as AuthUser;
+  } catch {
+    return null;
+  }
 }
 
 export function loadPersistedAuthSession(): AuthSession | null {
@@ -748,7 +784,7 @@ function refreshErrorFromState(state: RefreshCoordinationState): AuthApiError {
 
 export async function updateCurrentUser(
   accessToken: string,
-  input: { username?: string; email?: string; displayName?: string; about?: string; location?: string; useIntent?: 'professional' | 'personal' | null; dateOfBirth?: string; isPrivate?: boolean; likesVisible?: boolean },
+  input: { username?: string; email?: string; displayName?: string; about?: string; location?: string; useIntent?: 'professional' | 'personal' | null; showProfessionalBadge?: boolean; dateOfBirth?: string; isPrivate?: boolean; likesVisible?: boolean },
 ): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'PATCH',
@@ -763,6 +799,7 @@ export async function updateCurrentUser(
       about: input.about,
       location: input.location,
       use_intent: input.useIntent,
+      show_professional_badge: input.showProfessionalBadge,
       date_of_birth: input.dateOfBirth,
       is_private: input.isPrivate,
       likes_visible: input.likesVisible,
@@ -813,8 +850,8 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
 
 export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
   const activeSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
-  const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
-  const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at }));
+  const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string; show_professional_badge: boolean }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
+  const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at, showProfessionalBadge: item.show_professional_badge ?? false }));
   const currentUser = loadPersistedAuthSession()?.user;
   const currentAccount = currentUser
     ? accounts.find((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())
@@ -834,6 +871,7 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
       profilePictureUrl: currentUser.profilePictureUrl,
       active: true,
       available: true,
+      showProfessionalBadge: currentUser.showProfessionalBadge,
       lastUsedAt: '',
     }, ...accounts.map((account) => ({ ...account, active: false }))];
   }
@@ -898,7 +936,7 @@ export async function updateProfileSetup(accessToken: string, input: { step: 1 |
   return mapApiUser(response);
 }
 
-export async function getPublicUser(username: string, accessToken?: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'likesVisible' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
+export async function getPublicUser(username: string, accessToken?: string): Promise<Pick<AuthUser, 'id' | 'name' | 'username' | 'about' | 'isPrivate' | 'likesVisible' | 'showProfessionalBadge' | 'profilePictureUrl' | 'profilePictureUpdatedAt'>> {
   const response = await requestApi<ApiPublicUser>(`/auth/users/${encodeURIComponent(username)}`, {
     method: 'GET',
     ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
@@ -911,6 +949,7 @@ export async function getPublicUser(username: string, accessToken?: string): Pro
     about: response.about ?? '',
     isPrivate: response.is_private,
     likesVisible: response.likes_visible,
+    showProfessionalBadge: response.show_professional_badge ?? false,
     profilePictureUrl: response.profile_picture_url,
     profilePictureUpdatedAt: response.profile_picture_updated_at,
   };
@@ -928,7 +967,7 @@ export async function listBlockedUsers(accessToken: string, query = '', cursor?:
   const params = new URLSearchParams({ query, limit: '24' });
   if (cursor) params.set('cursor', cursor);
   const response = await requestApi<ApiBlockedUserPage>(`/users/blocked?${params.toString()}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
-  return { items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url, blockedAt: item.blocked_at })), next_cursor: response.next_cursor };
+  return { items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url, blockedAt: item.blocked_at, showProfessionalBadge: item.show_professional_badge ?? false })), next_cursor: response.next_cursor };
 }
 
 export type ProfilePictureUpload = {
@@ -1068,9 +1107,11 @@ export type ApiPost = {
     media_count: number;
     media: { url: string }[];
     unavailable: boolean;
+    show_professional_badge: boolean;
   } | null;
   created_at: string;
   updated_at: string;
+  show_professional_badge: boolean;
 };
 
 export type ApiFeedPage = {
@@ -1099,6 +1140,7 @@ export type LikeActor = {
   username: string;
   displayName: string;
   profilePictureUrl: string | null;
+  showProfessionalBadge: boolean;
 };
 
 export type LikeActorPage = {
@@ -1126,9 +1168,9 @@ export async function setPostSave(accessToken: string, postId: string, saved: bo
 export async function listPostLikes(accessToken: string, postId: string, input: { query?: string; cursor?: string | null; limit?: number } = {}): Promise<LikeActorPage> {
   const params = new URLSearchParams({ query: input.query ?? '', limit: String(input.limit ?? 24) });
   if (input.cursor) params.set('cursor', input.cursor);
-  const response = await authenticatedRequest<{ items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null }>; next_cursor: string | null; has_more: boolean }>(accessToken, `/posts/${encodeURIComponent(postId)}/likes?${params.toString()}`);
+  const response = await authenticatedRequest<{ items: Array<{ id: string; username: string; display_name: string | null; profile_picture_url: string | null; show_professional_badge: boolean }>; next_cursor: string | null; has_more: boolean }>(accessToken, `/posts/${encodeURIComponent(postId)}/likes?${params.toString()}`);
   return {
-    items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url })),
+    items: response.items.map((item) => ({ id: item.id, username: item.username, displayName: item.display_name || item.username, profilePictureUrl: item.profile_picture_url, showProfessionalBadge: item.show_professional_badge ?? false })),
     next_cursor: response.next_cursor,
     has_more: response.has_more,
   };
@@ -1162,6 +1204,7 @@ export type ApiConnectionUser = {
   id: string;
   username: string;
   is_private: boolean;
+  show_professional_badge: boolean;
 };
 
 export type ApiFollowRequest = {
@@ -1189,6 +1232,7 @@ export type ApiChatUser = {
   username: string;
   display_name: string | null;
   profile_picture_url: string | null;
+  show_professional_badge: boolean;
 };
 
 export type ApiConversation = {
@@ -1214,6 +1258,7 @@ export type ApiChatContext = {
     username: string;
     display_name: string | null;
     profile_picture_url: string | null;
+    show_professional_badge: boolean;
   };
   can_send: boolean;
   composer_placeholder: string;
@@ -1253,6 +1298,7 @@ export type ApiNotification = {
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;
+  actor_show_professional_badge: boolean;
 };
 
 export type ApiNotificationPage = {
@@ -1724,15 +1770,17 @@ export async function markAllNotificationsRead(accessToken: string): Promise<voi
   });
 }
 
-export async function listFollowers(username: string): Promise<ApiConnectionList> {
+export async function listFollowers(username: string, accessToken?: string): Promise<ApiConnectionList> {
   return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/followers`, {
     method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
   });
 }
 
-export async function listFollowing(username: string): Promise<ApiConnectionList> {
+export async function listFollowing(username: string, accessToken?: string): Promise<ApiConnectionList> {
   return requestApi<ApiConnectionList>(`/connections/users/${encodeURIComponent(username)}/following`, {
     method: 'GET',
+    ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' as const } : {}),
   });
 }
 
@@ -1855,6 +1903,7 @@ function mapApiUser(user: ApiUser): AuthUser {
     accountRegion: user.account_region,
     location: user.location,
     useIntent: user.use_intent,
+    showProfessionalBadge: user.show_professional_badge ?? false,
     profilePictureUrl: user.profile_picture_url,
     profilePictureUpdatedAt: user.profile_picture_updated_at,
     isPrivate: user.is_private,

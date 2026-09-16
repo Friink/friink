@@ -219,7 +219,7 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
               <span className="profile-setup-step-icon"><i className="fa-regular fa-image" aria-hidden="true" /></span>
               <div><h3>Profile picture</h3><p>Choose an optional picture so people can recognize you.</p></div>
             </div>
-            <div className="profile-setup-profile-card"><ProfileCard name={user.name || user.username} handle={`@${user.username}`} tone="mint" imageUrl={user.profilePictureUrl} /></div>
+            <div className="profile-setup-profile-card"><ProfileCard name={user.name || user.username} handle={`@${user.username}`} tone="mint" imageUrl={user.profilePictureUrl} showProfessionalBadge={user.showProfessionalBadge} /></div>
             <div className="profile-setup-picture-preview">
               {user.profilePictureUrl ? <img src={user.profilePictureUrl} alt="Current profile picture" /> : <i className="fa-regular fa-user" aria-hidden="true" />}
             </div>

@@ -1,15 +1,16 @@
 from datetime import UTC, datetime
-from fastapi import APIRouter, Cookie, Depends, Response
-from sqlalchemy import select
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from app.db import get_session
 from app.models.user import User
-from app.models.staff import StaffPermission, StaffRole, PrivilegedStaffSession, user_roles
+from app.models.staff import StaffPermission, StaffRole, UserPermissionGrant, PrivilegedStaffSession, user_roles
 from app.models.auth_session import AuthSession
 from app.models.security_event import SecurityEvent
+from app.config import Settings, get_settings
 from app.routers.auth import get_current_user
 from app.schemas.staff import StepUpRequest, RoleCreate, RoleUpdate, AssignmentRequest, ReasonRequest, GrantRequest, StaffStatusRequest, StaffMe, RoleResponse, StaffUserResponse, AuditResponse
-from app.services.staff import permissions_for, require_privileged, audit, start_privileged, revoke_staff_sessions, effective_role_payload, PERMISSIONS
+from app.services.staff import permissions_for, require_privileged, audit, start_privileged, revoke_staff_sessions, effective_role_payload
 from app.services.session_service import revoke_all_user_sessions
 
 router = APIRouter(prefix="/staff", tags=["staff"]); STAFF_COOKIE = "friink_staff_session"
@@ -19,8 +20,11 @@ def target(session, public_id):
     return user
 
 @router.post("/step-up", response_model=StaffMe)
-async def step_up(payload: StepUpRequest, response: Response, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    token, row = start_privileged(session, current_user, payload.password); response.set_cookie(STAFF_COOKIE, token, httponly=True, secure=True, samesite="none", max_age=28800, path="/"); return StaffMe(permissions=sorted(permissions_for(session, current_user)), privileged_expires_at=row.expires_at)
+async def step_up(payload: StepUpRequest, response: Response, current_user: User = Depends(get_current_user), session: Session = Depends(get_session), settings: Settings = Depends(get_settings)):
+    token, row = start_privileged(session, current_user, payload.password)
+    local = settings.environment.lower() in {"development", "test"}
+    response.set_cookie(STAFF_COOKIE, token, httponly=True, secure=not local, samesite="lax" if local else "none", max_age=28800, path="/")
+    return StaffMe(permissions=sorted(permissions_for(session, current_user)), privileged_expires_at=row.expires_at)
 
 @router.post("/logout", status_code=204)
 async def logout(response: Response, current_user: User = Depends(get_current_user), token: str | None = Cookie(default=None, alias=STAFF_COOKIE), session: Session = Depends(get_session)):
@@ -54,8 +58,14 @@ async def update_role(role_key: str,payload: RoleUpdate,current_user: User=Depen
     audit(session,current_user,"role_updated",{"role":role.key},privileged); session.commit(); return RoleResponse(**effective_role_payload(role))
 
 @router.get("/users", response_model=list[StaffUserResponse])
-async def users(current_user: User=Depends(get_current_user),token: str|None=Cookie(default=None,alias=STAFF_COOKIE),session: Session=Depends(get_session)):
-    require_privileged(session,current_user,token,"users.view"); return [StaffUserResponse(id=u.public_id,username=u.username,display_name=u.display_name,email=u.email,is_staff=u.is_staff,account_locked=u.account_locked,permissions=sorted(permissions_for(session,u))) for u in session.execute(select(User).order_by(User.username).limit(100)).scalars()]
+async def users(q: str | None = Query(default=None, max_length=320), current_user: User=Depends(get_current_user),token: str|None=Cookie(default=None,alias=STAFF_COOKIE),session: Session=Depends(get_session)):
+    require_privileged(session,current_user,token,"users.view")
+    statement = select(User).order_by(User.username).limit(20)
+    query = q.strip() if q else ""
+    if query:
+        pattern = f"%{query.casefold()}%"
+        statement = statement.where(or_(User.username_key.ilike(pattern), User.email.ilike(pattern), User.display_name.ilike(pattern)))
+    return [StaffUserResponse(id=u.public_id,username=u.username,display_name=u.display_name,email=u.email,is_staff=u.is_staff,account_locked=u.account_locked,lifecycle_status=u.lifecycle_status,deletion_deadline=u.deletion_deadline,permissions=sorted(permissions_for(session,u))) for u in session.execute(statement).scalars()]
 
 @router.post("/users/{public_id}/roles", response_model=StaffUserResponse)
 async def assign_role(public_id: str,payload: AssignmentRequest,current_user: User=Depends(get_current_user),token: str|None=Cookie(default=None,alias=STAFF_COOKIE),session: Session=Depends(get_session)):

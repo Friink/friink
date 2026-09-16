@@ -24,6 +24,8 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
   const router = useRouter();
   const [conversations, setConversations] = useState<ApiConversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -37,7 +39,12 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
       busy = true;
       try {
         const nextConversations = await listConversations(session.accessToken);
-        if (!stopped) setConversations(nextConversations);
+        if (!stopped) {
+          setConversations(nextConversations);
+          setLoadError(null);
+        }
+      } catch (error) {
+        if (!stopped) setLoadError(error instanceof Error ? error.message : 'Could not load chats.');
       } finally {
         busy = false;
         if (!stopped) setLoading(false);
@@ -66,7 +73,7 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
       document.removeEventListener('visibilitychange', resume);
       window.removeEventListener('focus', resume);
     };
-  }, []);
+  }, [retryVersion]);
 
   const visibleConversations = conversations.filter((conversation) => {
     if (activeTab === 'muted') return conversation.muted;
@@ -93,12 +100,19 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
     <PageSurface className="messages-screen" variant="list">
       <div className="message-list">
         {loading && <div className="home-feed-message">Loading chats...</div>}
-        {!loading && visibleConversations.map((conversation) => (
+        {!loading && loadError && (
+          <div className="home-feed-message chat-load-error" role="alert">
+            <p>Couldn’t load your chats.</p>
+            <span>{loadError}</span>
+            <button className="button-secondary" type="button" onClick={() => { setLoading(true); setRetryVersion((current) => current + 1); }}>Try again</button>
+          </div>
+        )}
+        {!loading && !loadError && visibleConversations.map((conversation) => (
           <ListRow
             key={conversation.id}
             avatar={
               <Link className="message-row-profile" href={`/${conversation.participant.username}`} aria-label={`Open ${conversation.participant.display_name || conversation.participant.username} profile`}>
-                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} />
+                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} showProfessionalBadge={conversation.participant.show_professional_badge} />
               </Link>
             }
             title={
@@ -121,7 +135,7 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
             ariaLabel={`Open chat with ${conversation.participant.display_name || conversation.participant.username}`}
           />
         ))}
-        {!loading && visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
+        {!loading && !loadError && visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
       </div>
     </PageSurface>
   );

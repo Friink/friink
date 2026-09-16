@@ -6,7 +6,7 @@ permalinks.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-15T23:19:08Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -43,19 +43,30 @@ owns selection and ordering; [Media](./media.md) owns upload mechanics.
   object. Like identity visibility follows privacy rules; Saves have no actor list.
 - **POSTS-R-008:** A post card's non-interactive area navigates to detail;
   controls, profile links, mentions, and quoted-post links retain their targets.
+- **POSTS-R-009:** Unavailable post details use a calm post-like unavailable
+  state rather than a technical 404 presentation. The state explains that the
+  post may be private, deleted, or no longer visible and provides a `Go home`
+  action. Authenticated client-side failures retain the app shell; route-level
+  failures use the same card in a lightweight page wrapper.
 
 ## UX and flows
 
 The composer supports text, replies, quotes, and submit-time image attachments.
 Feed and detail cards show author identity, body, quoted content, expansion,
 replies, Like, and Save actions. Loading, unavailable, private, empty, and
-error states remain explicit.
+error states remain explicit. A missing, deleted, private, or inaccessible
+direct post URL renders a post-like unavailable card without exposing a
+technical error code; the canonical post URL still redirects when the post is
+otherwise accessible.
 
 ## Technical contract
 
 Post routes and schemas live in `api/app/routers/posts.py` and
-`api/app/schemas/posts.py`; shared UI uses `FeedPost`, `PostDetailScreen`, and
-the composer. Deletion removes associated media before marking the post deleted.
+`api/app/schemas/posts.py`; shared UI uses `FeedPost`, `PostDetailScreen`, the
+composer, and `PostUnavailableState`. Deletion removes associated media before
+marking the post deleted. The API continues to return a privacy-preserving
+404-equivalent for posts the viewer cannot access; the web maps that response
+to the unavailable-post state.
 
 ## Acceptance criteria
 

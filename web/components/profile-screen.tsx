@@ -7,9 +7,6 @@ import { FeedPost } from '@/components/feed-post';
 import { Tabs } from '@/components/tabs';
 import type { AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
-import { ActionMenu } from '@/components/action-menu';
-import { Modal } from '@/components/modal';
-import { blockUser, loadAuthSession } from '@/lib/auth';
 
 type ProfileScreenProps = {
   user: AuthUser;
@@ -28,7 +25,6 @@ type ProfileScreenProps = {
   onReactionError?: (message: string) => void;
   onEditProfile?: () => void;
   onMessage?: () => void;
-  onBlocked?: () => void;
   connectionState?: 'self' | 'none' | 'requested' | 'following';
   connectionActionBusy?: boolean;
   onFollow?: () => void;
@@ -76,7 +72,6 @@ export function ProfileScreen({
   onReactionError,
   onEditProfile,
   onMessage,
-  onBlocked,
   connectionState = isOwnProfile ? 'self' : 'none',
   connectionActionBusy = false,
   onFollow,
@@ -87,11 +82,7 @@ export function ProfileScreen({
 }: ProfileScreenProps) {
   const connectionsBasePath = profileConnectionsBasePath ?? `/${encodeURIComponent(user.username)}/connections`;
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmBlock, setConfirmBlock] = useState(false);
-  const [blockBusy, setBlockBusy] = useState(false);
   const likesLoadMoreRef = useRef<HTMLDivElement | null>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setActiveTab(initialTab), [initialTab]);
   useEffect(() => {
     if (activeTab !== 'likes' || !likedPostsHasMore || likedPostsLoading || !likesLoadMoreRef.current || !onLoadMoreLikedPosts) return;
@@ -114,6 +105,7 @@ export function ProfileScreen({
             tone="mint"
             initials={getInitials(user.name)}
             imageUrl={user.profilePictureUrl}
+            showProfessionalBadge={user.showProfessionalBadge}
           />
         </div>
 
@@ -141,7 +133,7 @@ export function ProfileScreen({
               <>
                 {action && (
                   <button
-                    className="button-secondary icon-button"
+                    className="button-secondary profile-connection-action"
                     type="button"
                     onClick={action.onClick}
                     disabled={connectionActionBusy}
@@ -154,15 +146,11 @@ export function ProfileScreen({
                 <button className="button-secondary icon-button" type="button" aria-label="Message user" onClick={onMessage}>
                   <i className="fa-regular fa-paper-plane" aria-hidden="true" />
                 </button>
-                <button ref={menuButtonRef} className="button-secondary icon-button" type="button" aria-label="More profile options" onClick={() => setMenuOpen((value) => !value)}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /></button>
-                <ActionMenu open={menuOpen} anchorRef={menuButtonRef} onClose={() => setMenuOpen(false)} items={[{ label: 'Block user', icon: 'fa-ban', onClick: () => setConfirmBlock(true) }]} />
               </>
             )}
           </div>
         </div>
       </section>
-
-      {confirmBlock && <Modal title="Block user" onClose={() => !blockBusy && setConfirmBlock(false)} actions={<><button className="button-secondary" type="button" onClick={() => setConfirmBlock(false)} disabled={blockBusy}>Cancel</button><button className="button-primary" type="button" disabled={blockBusy} onClick={async () => { const session = loadAuthSession(); if (!session) return; setBlockBusy(true); try { await blockUser(session.accessToken, user.username); onBlocked?.(); } finally { setBlockBusy(false); setConfirmBlock(false); } }}> {blockBusy ? 'Blocking…' : 'Block user'} </button></>}><p>They will not be able to view your profile or message you. Follow relationships will be removed and existing chats will become read-only.</p></Modal>}
 
       <Tabs
         tabs={visibleProfileTabs}

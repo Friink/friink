@@ -301,8 +301,20 @@ async def update_current_user(session: Session, user: User, data: UpdateCurrentU
         user.location = data.location.strip() or None
         changed = True
 
+    next_use_intent = data.use_intent if data.use_intent is not None else user.use_intent
+    if data.show_professional_badge and next_use_intent != "professional":
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Professional badge requires professional networking preference.")
     if data.use_intent is not None and data.use_intent != user.use_intent:
         user.use_intent = data.use_intent
+        changed = True
+
+    if data.show_professional_badge is not None:
+        next_badge_value = data.show_professional_badge and next_use_intent == "professional"
+        if next_badge_value != user.show_professional_badge:
+            user.show_professional_badge = next_badge_value
+            changed = True
+    elif data.use_intent == "personal" and user.show_professional_badge:
+        user.show_professional_badge = False
         changed = True
 
     if data.date_of_birth is not None and data.date_of_birth != user.date_of_birth:

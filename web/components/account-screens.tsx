@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getMySubscription, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval, type SubscriptionSummary } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -93,6 +93,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [displayName, setDisplayName] = useState(user.name);
   const [about, setAbout] = useState(user.about);
   const [useIntentDraft, setUseIntentDraft] = useState(user.useIntent);
+  const [professionalBadgeDraft, setProfessionalBadgeDraft] = useState(user.useIntent === 'professional' && user.showProfessionalBadge);
   const [dateOfBirth, setDateOfBirth] = useState(user.dateOfBirth);
   const [isPrivate, setIsPrivate] = useState(user.isPrivate);
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
@@ -152,6 +153,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [sessionsError, setSessionsError] = useState('');
   const [sessionsBusyId, setSessionsBusyId] = useState<string | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<PendingLoginApproval[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState('');
   const [lifecyclePassword, setLifecyclePassword] = useState('');
   const [deletionToken, setDeletionToken] = useState('');
   const [deletionOtp, setDeletionOtp] = useState('');
@@ -165,6 +168,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setDisplayName(user.name);
     setAbout(user.about);
     setUseIntentDraft(user.useIntent);
+    setProfessionalBadgeDraft(user.useIntent === 'professional' && user.showProfessionalBadge);
     setDateOfBirth(user.dateOfBirth);
     setIsPrivate(user.isPrivate);
     setPrivacyDraft(user.isPrivate);
@@ -186,7 +190,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     setShowConfirmPassword(false);
     setShowPasswordCriteria(false);
     setPasswordStatus('');
-  }, [user.username, user.email, user.name, user.about, user.useIntent, user.dateOfBirth, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
+  }, [user.username, user.email, user.name, user.about, user.useIntent, user.showProfessionalBadge, user.dateOfBirth, user.isPrivate, user.likesVisible, user.profilePictureUrl, appearance, accentColor]);
 
   useEffect(() => {
     if (activeTab !== 'account') return;
@@ -213,6 +217,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       .catch(() => { if (!cancelled) onToast?.('Could not load read-receipt preference.'); });
     return () => { cancelled = true; };
   }, [activeTab, onToast]);
+
+  useEffect(() => {
+    if (activeTab !== 'subscription') return;
+    const session = loadAuthSession();
+    if (!session) return;
+    let cancelled = false;
+    getMySubscription(session.accessToken)
+      .then((value) => { if (!cancelled) setSubscription(value); })
+      .catch((error) => { if (!cancelled) setSubscriptionError(error instanceof Error ? error.message : 'Could not load your plan.'); });
+    return () => { cancelled = true; };
+  }, [activeTab]);
 
   async function loadBlocked(reset = false) {
     const session = loadAuthSession();
@@ -256,7 +271,8 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const canUpdateAppearance = appearanceDraft !== appearance;
   const isAccentColorValid = /^#[0-9A-Fa-f]{6}$/.test(accentColorDraft);
   const canUpdateAccentColor = isAccentColorValid && accentColorDraft.toLowerCase() !== accentColor.toLowerCase();
-  const canUpdateUseIntent = useIntentDraft !== user.useIntent && useIntentDraft !== null && !isUpdatingUseIntent;
+  const hasProfessionalSettingChanged = professionalBadgeDraft !== (user.useIntent === 'professional' && user.showProfessionalBadge);
+  const canUpdateUseIntent = (useIntentDraft !== user.useIntent || hasProfessionalSettingChanged) && useIntentDraft !== null && !isUpdatingUseIntent;
   const canUpdatePrivacy = privacyDraft !== user.isPrivate && !isUpdatingPrivacy;
   const canUpdateDirectMessages = directMessagesDraft !== directMessagesSaved;
   const canUpdateMentions = mentionsDraft !== mentionsSaved;
@@ -579,15 +595,17 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     }
     setIsUpdatingUseIntent(true);
     try {
-      const updatedUser = await updateCurrentUser(session.accessToken, { useIntent: useIntentDraft });
+      const updatedUser = await updateCurrentUser(session.accessToken, { useIntent: useIntentDraft, showProfessionalBadge: useIntentDraft === 'professional' && professionalBadgeDraft });
       const updatedSession = { ...session, user: { ...session.user, ...updatedUser } };
       saveAuthSession(updatedSession);
       onUserChange?.(updatedSession.user);
       setUseIntentDraft(updatedSession.user.useIntent);
+      setProfessionalBadgeDraft(updatedSession.user.useIntent === 'professional' && updatedSession.user.showProfessionalBadge);
       onToast?.('Friink preference updated.', 'success');
     } catch (error) {
       onToast?.(error instanceof AuthApiError || error instanceof Error ? error.message : 'Could not update your Friink preference.');
       setUseIntentDraft(user.useIntent);
+      setProfessionalBadgeDraft(user.useIntent === 'professional' && user.showProfessionalBadge);
     } finally {
       setIsUpdatingUseIntent(false);
     }
@@ -859,12 +877,21 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             >
               <label className="settings-field">
                 <span className="settings-field-label">Your preference</span>
-                <select className="settings-select" value={useIntentDraft ?? ''} onChange={(event) => setUseIntentDraft(event.target.value === 'professional' || event.target.value === 'personal' ? event.target.value : null)} aria-label="How I use Friink">
+                <select className="settings-select" value={useIntentDraft ?? ''} onChange={(event) => { const nextValue = event.target.value === 'professional' || event.target.value === 'personal' ? event.target.value : null; setUseIntentDraft(nextValue); if (nextValue !== 'professional') setProfessionalBadgeDraft(false); }} aria-label="How I use Friink">
                   <option value="">Choose an option</option>
                   <option value="professional">For professional networking</option>
                   <option value="personal">For personal connection</option>
                 </select>
               </label>
+              {useIntentDraft === 'professional' ? (
+                <label className="professional-badge-setting">
+                  <input type="checkbox" checked={professionalBadgeDraft} onChange={(event) => setProfessionalBadgeDraft(event.target.checked)} />
+                  <span>
+                    <strong>Show you are a professional on Profile</strong>
+                    <small>Your badge appears next to your displayed name.</small>
+                  </span>
+                </label>
+              ) : null}
             </SettingsRow>
 
           </div>
@@ -1063,8 +1090,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               trailing={<Link className="button-secondary icon-button settings-subscription-link" href="/subscriptions" aria-label="View plans" title="View plans"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></Link>}
             >
               <div className="settings-plan-summary">
-                <strong>Friink Free</strong>
-                <span>Free · Never expires</span>
+                <strong>{subscription?.plan_name ?? 'Loading plan…'}</strong>
+                <span>{subscription ? `${subscription.plan_code.replace('friink_', '').replace('_', ' ')} · ${subscription.expires_at ? `Access until ${formatSessionDate(subscription.expires_at)}` : 'No expiration'}` : 'Checking your current access.'}</span>
+                {subscription?.status === 'expired' ? <small role="status">Your paid access expired and your account is on Friink Free.</small> : null}
+                {subscriptionError ? <small className="settings-field-message" role="alert">{subscriptionError}</small> : null}
               </div>
             </SettingsRow>
           </div>
@@ -1265,7 +1294,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
           </div>
         </div>
       )}
-      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="icon-button" type="button" aria-label={`Unblock ${item.displayName}`} title={`Unblock ${item.displayName}`} onClick={() => setUnblockTarget(item)}><i className="fa-solid fa-unlock" aria-hidden="true" /></button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
+      {blockedOpen && <Modal title="Blocked people" onClose={() => setBlockedOpen(false)}><input className="settings-field-input" value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search blocked people" aria-label="Search blocked people" />{blockedUsers.length === 0 && !blockedLoading ? <p>Not found.</p> : blockedUsers.map((item) => <ListRow key={item.id} avatar={<ProfileCard href={`/${encodeURIComponent(item.username)}/posts`} name={item.displayName} handle={`@${item.username}`} tone="mint" initials={item.displayName.slice(0, 2).toUpperCase()} imageUrl={item.profilePictureUrl} showProfessionalBadge={item.showProfessionalBadge} />} title={item.displayName} subtitle={`@${item.username}`} trailing={<button className="icon-button" type="button" aria-label={`Unblock ${item.displayName}`} title={`Unblock ${item.displayName}`} onClick={() => setUnblockTarget(item)}><i className="fa-solid fa-unlock" aria-hidden="true" /></button>} />)}{blockedCursor && <div ref={blockedLoadMoreRef} aria-live="polite">{blockedLoading ? 'Loading…' : null}</div>}{unblockTarget && <Modal title="Unblock user" onClose={() => setUnblockTarget(null)} actions={<><button className="button-secondary" type="button" onClick={() => setUnblockTarget(null)}>Cancel</button><button className="button-primary" type="button" onClick={async () => { const session = loadAuthSession(); if (!session) return; await unblockUser(session.accessToken, unblockTarget.username); setBlockedUsers((items) => items.filter((item) => item.id !== unblockTarget.id)); setUnblockTarget(null); }}>Unblock</button></>}><p>Unblocking does not restore follows or previous access.</p></Modal>}</Modal>}
     </PageSurface>
   );
 }

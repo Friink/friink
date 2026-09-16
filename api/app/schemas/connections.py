@@ -21,6 +21,7 @@ class ConnectionUserResponse(BaseModel):
     id: str
     username: str
     is_private: bool = False
+    show_professional_badge: bool = False
 
 
 class FollowRequestResponse(BaseModel):

@@ -136,7 +136,7 @@ export function Tabs({ tabs, activeId, onChange, ariaLabel = 'Quick tabs', class
           <i className="fa-solid fa-chevron-left" aria-hidden="true" />
         </button>
       ) : null}
-      {scrollState.hasOverflow ? (
+      {scrollState.hasOverflow && scrollState.canScrollRight ? (
         <button className="tabs__arrow tabs__arrow-right" type="button" onClick={() => scrollOneTab('next')} aria-label="Scroll tabs right" disabled={!scrollState.canScrollRight}>
           <i className="fa-solid fa-chevron-right" aria-hidden="true" />
         </button>

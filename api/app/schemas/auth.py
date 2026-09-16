@@ -185,6 +185,7 @@ class UpdateCurrentUserRequest(BaseModel):
     about: str | None = Field(default=None, max_length=256)
     location: str | None = Field(default=None, max_length=255)
     use_intent: Literal["professional", "personal"] | None = None
+    show_professional_badge: bool | None = None
     date_of_birth: date | None = None
     is_private: bool | None = None
     likes_visible: bool | None = None
@@ -266,6 +267,7 @@ class UserResponse(BaseModel):
     location: str | None
     account_region: str | None
     use_intent: Literal["professional", "personal"] | None
+    show_professional_badge: bool
     created_at: datetime
     updated_at: datetime
 
@@ -281,6 +283,7 @@ class PublicUserResponse(BaseModel):
     profile_picture_updated_at: datetime | None
     is_private: bool
     likes_visible: bool
+    show_professional_badge: bool
 
     model_config = {"from_attributes": True}
 
@@ -306,6 +309,7 @@ class AccountSummaryResponse(BaseModel):
     active: bool
     available: bool = True
     last_used_at: datetime
+    show_professional_badge: bool = False
 
 
 class AccountSwitchRequest(BaseModel):

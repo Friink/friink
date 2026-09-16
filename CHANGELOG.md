@@ -1,5 +1,436 @@
 # Changelog
 
+## 2026-09-17T00:00:00Z
+
+- [web/design] Added a shared CSS scrollbar treatment for the platform while
+  preserving native scrolling and accessibility behavior.
+
+## 2026-09-17T00:00:00Z
+
+- [web/notifications] Limited the visible TopBar notification dropdown to
+  eight rendered rows; additional unread notifications remain available by
+  scrolling the list.
+
+## 2026-09-17T00:00:00Z
+
+- [web/auth-ux] Fixed a hydration regression in optimistic session bootstrap
+  by deferring browser-only cached-user hydration until after mount.
+
+## 2026-09-17T00:00:00Z
+
+- [web/notifications] Fixed the active notification dropdown’s constrained
+  layout so its list scrolls inside the available viewport space while the
+  footer remains visible; geometry now also tracks top-bar reflow.
+
+## 2026-09-17T00:00:00Z
+
+- [web/auth-ux] Added frontend-only optimistic session bootstrap. The app can
+  mount from safe cached user metadata while the existing HttpOnly-cookie
+  refresh runs, without treating cached metadata as authentication.
+
+## 2026-09-17T00:00:00Z
+
+- [web/notifications] Made the TopBar notification dropdown calculate its
+  maximum height from its actual rendered top edge instead of a fixed top-bar
+  height token, keeping the scrollable list within the available viewport.
+
+## 2026-09-16T22:42:00Z
+
+- [web/navigation] Constrained the search suggestions dropdown to the active
+  search bar width so it cannot extend beyond the search control.
+
+## 2026-09-16T22:38:00Z
+
+- [web/notifications] Made the active TopBar notification dropdown responsive
+  to viewport width and height; long unread lists now scroll inside a viewport-
+  bounded menu while keeping the footer visible.
+
+## 2026-09-16T22:34:00Z
+
+- [web/feed] Removed the refresh control's duplicate horizontal inset so it
+  aligns with the feed body and floating composer without changing the shared
+  content-column width.
+
+## 2026-09-16T22:30:18Z
+
+- [diagnosis] Investigated missing older posts. The professional badge change
+  only adds an additive response field and does not alter post filtering,
+  ordering, or pagination. The local API session was invalid and the current
+  database contains only one active post total for `muflah`.
+
+## 2026-09-16T22:26:59Z
+
+- [web/navigation] Restored search expansion/submission, chat unread dots, and
+  the notification unread dropdown inside the newer TopBar visual treatment.
+- [docs/navigation] Updated the navigation, discovery, and design contracts
+  to describe the active TopBar behavior.
+
+## 2026-09-16T22:09:49Z
+
+- [web/api] Completed migration `20260917_0049` and propagated the professional
+  badge through data-backed profile cards across posts, quoted posts, likes,
+  connections, chat, notifications, blocked users, and account surfaces.
+- [data] Audited the live schema: the user badge column is present and the
+  migration is current; professional entitlement keys remain separate from
+  badge visibility.
+
+## 2026-09-16T21:55:52Z
+
+- [web/api] Implemented the professional profile badge preference. Users can
+  enable `Show you are a professional on Profile` for professional networking;
+  the server persists the choice and public profiles render the `Professional`
+  badge next to the displayed name.
+
+## 2026-09-16T21:40:52Z
+
+- [docs/settings] Specified that the opt-in professional badge appears next
+  to the user's displayed name on their public profile.
+
+## 2026-09-16T21:38:35Z
+
+- [docs/settings] Documented the planned conditional professional-profile
+  badge setting under General > How I use Friink, including its opt-in,
+  hidden-by-default, and non-entitlement behavior.
+
+## 2026-09-16T21:40:00Z
+
+- [web/ui] Positioned shared tab scroll arrows flush against the tab-strip
+  edges so they no longer show an inset gap.
+
+## 2026-09-16T21:30:00Z
+
+- [web/ui] Fixed shared tab scroll arrows: the right arrow now disappears at
+  the end of the strip, and arrow controls fit within the tab bar.
+
+## 2026-09-16T21:18:38Z
+
+- [web/design] Hid the legacy Header and NavigationBar for TopBar evaluation
+  without deleting or unmounting either component; removed their reserved
+  layout gap.
+
+## 2026-09-16T21:20:00Z
+
+- [web/design] Updated shared profile-picture avatar borders to use the
+  current accent color consistently across themes.
+
+## 2026-09-16T21:14:24Z
+
+- [web/chat] Added a recoverable chat-list error state so conversation API
+  timeouts no longer surface as an uncaught Next.js runtime overlay.
+
+## 2026-09-16T21:02:00Z
+
+- [web/design] Kept the compact Home-linked logo and centered title visible in
+  every TopBar preview mode and matched its surface to the side drawer.
+
+## 2026-09-16T20:57:55Z
+
+- [web/design] Made the TopBar preview functional in both home and
+  contextual modes while retaining the existing Header and NavigationBar.
+  Contextual Back and ActionMenu now use AppShell state and callbacks.
+
+## 2026-09-16T20:55:00Z
+
+- [web/design] Reduced the visible TopBar mark to `1.5rem` while preserving
+  its `2.5rem` accessible hit area; documented the planned Back/title/Action
+  Menu contextual layout.
+
+## 2026-09-16T20:50:00Z
+
+- [web/design] Changed the TopBar preview from the full wordmark to the
+  compact theme-aware Friink mark.
+
+## 2026-09-16T20:45:00Z
+
+- [web/design] Removed the redundant centered `FRIINK` label from the TopBar
+  preview so the context area shows only the current screen title.
+
+## 2026-09-16T20:40:00Z
+
+- [web/design] Made the TopBar preview logo theme-aware: light surfaces use
+  `logoFullBlack.svg` and dark surfaces use `logoFullWhite.svg`.
+
+## 2026-09-16T20:37:01Z
+
+- [web/design] Added a functional unified `TopBar` preview over the existing
+  Header with consistent context, menu, Search, Chat, and Notifications areas.
+
+## 2026-09-16T20:30:00Z
+
+- [web/design] Removed the visible side outline from the shared content box;
+  layout depth now comes from spacing and surface contrast rather than lines.
+
+## 2026-09-16T20:26:17Z
+
+- [web] Removed browser-default underlines from shared primary and secondary
+  button links, including session recovery actions.
+
+## 2026-09-16T20:23:41Z
+
+- [web/design] Applied a shared visual polish pass: slightly larger type,
+  improved line-height and action spacing, subtle content-panel depth, calmer
+  feed hover treatment, clearer profile-tab hierarchy, and consistent motion.
+
+## 2026-09-16T20:03:49Z
+
+- [web] Replaced blank profile/session bootstrap states with an explicit
+  restoration screen and in-place retry for recoverable API failures.
+
+## 2026-09-16T04:30:00Z
+
+- [web] Moved the other-user profile Block action into the shell-owned
+  contextual NavigationBar overflow menu and removed the detached profile-row
+  menu.
+
+
+## 2026-09-16T04:15:00Z
+
+- [release/docs] Recorded the signup criteria and profile-action fixes in the
+  active Rules registry, then prepared the web-only changes for development and
+  staging. No database migration is required for this release.
+
+
+## 2026-09-16T04:00:00Z
+
+- [web] Fixed profile connection actions so labeled controls such as Follow
+  use one-line text-button geometry instead of icon-only grid sizing. Message
+  and More remain icon-only controls.
+
+
+## 2026-09-16T03:45:00Z
+
+- [web] Aligned signup username guidance with password criteria and added
+  accent feedback when the complete username rule is satisfied. Updated the
+  account-access and shared design contracts.
+
+
+## 2026-09-16T03:35:00Z
+
+- [release] Pushed the verified implementation and documentation release to
+  both `development` and `staging`. The staging Alembic migration gate applied
+  the current schema and reported no pending operations.
+
+
+## 2026-09-16T03:25:00Z
+
+- [docs] Reconciled the active Rules registry with the borderless FeedPost
+  Share/More utility contract and its Feed/design documentation.
+
+
+## 2026-09-16T03:15:00Z
+
+- [web] Removed the visible focus/hover outline from the plain FeedPost
+  Share/More icon controls so they no longer resemble bordered buttons.
+
+
+## 2026-09-16T03:05:00Z
+
+- [web] Tightened the FeedPost header utility pair: removed the extra reserved
+  right padding, restored the documented 12px gap, and reset inherited
+  standard-button minimum dimensions from the plain Share/More controls.
+
+
+## 2026-09-16T02:40:00Z
+
+- [web] Fixed notification read-state races: stale polling cannot restore the
+  bell dot or reclassify locally read notifications as new while read actions
+  settle. Updated notification rules and unit documentation.
+
+## 2026-09-16T02:18:00Z
+
+- [web] Corrected the FeedPost header utility pair to Share then More, with
+  shared vertical centering and a 12px gap inside the content inset.
+
+## 2026-09-16T02:02:00Z
+
+- [web/design] Added the shared 8px gap for icon-and-text primary and secondary
+  buttons, excluding icon-only controls, and documented the global contract.
+
+## 2026-09-16T01:48:00Z
+
+- [web] Refined shared post controls so the four bottom actions span from the
+  content edges, and reordered the header utilities to overflow then share with
+  a 12px gap.
+
+## 2026-09-16T01:32:00Z
+
+- [web/api] Fixed profile post/reply loading by passing pagination arguments to
+  the API with their correct names. Profile feeds now load author-scoped posts
+  instead of receiving a server error. Updated the shared FeedPost action row
+  to use the full content width with even spacing and refined the post-header
+  utility spacing. Documented the profile and feed contracts.
+
+## 2026-09-16T01:18:28Z
+
+- [subscriptions] Added the first manual-plan-management UX slice: live staff
+  user search, lifecycle-aware user detail/history, plan adjustment with
+  preset/custom/no-expiry options, renewal extension, revoke, and a
+  server-resolved Settings summary. Enforced inactive-account mutation
+  boundaries and fixed local development staff-cookie behavior. Updated the
+  subscription, Settings, Staff Admin, and active rules documentation.
+
+## 2026-09-16T00:55:00Z
+
+- [web] Fixed the feed prepend path to preserve scroll position after new posts
+  without calling `flushSync` inside a React lifecycle effect.
+
+## 2026-09-16T00:49:02Z
+
+- [api] Replaced the hardcoded superadmin permission set with database-backed
+  permission resolution, added subscription and professional-status permissions,
+  and authorized subscription administration through `subscriptions.manage`.
+
+## 2026-09-16T00:40:27Z
+
+- [docs] Made the database-backed role and permission architecture explicit:
+  permission definitions, role ownership, and assignments must not be
+  hardcoded, and recorded the current superadmin shortcut as a migration gap.
+
+## 2026-09-16T00:32:10Z
+
+- [docs] Documented the agreed subscription UX across Subscriptions, Staff
+  Admin, Settings, Account Lifecycle, and the shared design contracts,
+  including manual assignment, expiry, notifications, professional status,
+  profile-badge preferences, and planned billing boundaries.
+
+## 2026-09-16T00:20:47Z
+
+- [docs] Expanded the Subscriptions unit with the Free, Pro, and Pro+ plan
+  definitions, manual-admin assignment behavior, and explicit future-billing
+  boundaries.
+
+## 2026-09-16T00:10:23Z
+
+- [development] Assigned the existing `superadmin` role to the development
+  `admin@friink.com` account.
+
+## 2026-09-16T00:04:27Z
+
+- [development] Provisioned the reserved staff admin account
+  `admin@friink.com` / `@admin` in the development database using the guarded
+  bootstrap command and the user-provided initial password.
+
+## 2026-09-15T23:49:03Z
+
+- [web] Added the shared accessible `Beta` badge and applied it only to the
+  account-switcher header while that feature continues to stabilize.
+
+## 2026-09-15T23:43:02Z
+
+- [development] Migrated the isolated development database to the current
+  Alembic head so the API model and database schema are aligned.
+
+## 2026-09-15T23:34:06Z
+
+- [development] Corrected `api/.env.development` to use the local frontend
+  origin and development environment, with all OTP controls disabled.
+
+## 2026-09-15T23:19:08Z
+
+- [docs] Added an explicit root agent rule requiring product and UX changes
+  to update their relevant unit document, or create and register one from the
+  documentation template when no unit document exists.
+
+## 2026-09-15T23:19:08Z
+
+- [docs] Documented the shared post-like unavailable state, its privacy-safe
+  copy, route-level and authenticated-shell placement, and non-disclosure
+  behavior in the Posts unit and design contracts.
+
+## 2026-09-15T23:14:48Z
+
+- [web] Replaced the 404-styled unavailable-post route screens with a shared,
+  post-like unavailable state that explains private, deleted, and inaccessible
+  posts without exposing a technical error code.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Added the trailing slash to the Product units navigation and index
+  breadcrumb to make its directory nature explicit: `/units/`.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Removed the `/` breadcrumb from the virtual Home introduction;
+  breadcrumbs now appear only for documentation paths and unit indexes.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Fixed the new inline viewer home so the empty Home route renders the
+  short introduction instead of falling through to an empty-path fetch.
+
+## 2026-09-15T23:00:01Z
+
+- [docs] Simplified the documentation viewer home to a short inline
+  introduction, removed `README.md` from viewer navigation and search, and
+  deleted the redundant `docs/home.md` file.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Changed the documentation viewer header Home and logo links to use
+  `#doc=home.md`, preventing the implementation filename `index.html` from
+  appearing in the URL.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Replaced leaked virtual breadcrumb/index hash identifiers with the
+  semantic virtual paths `/` and `/units`.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Adjusted directory-style index links so hover and focus change only
+  font color; removed the filled hover background to keep the treatment theme
+  neutral in dark mode.
+
+## 2026-09-15T22:49:24Z
+
+- [docs] Replaced the Documentation and Product units index prose and bullet
+  lists with plain directory-style links showing their exact source paths.
+
+## 2026-09-15T22:42:50Z
+
+- [docs] Simplified documentation breadcrumbs to show only the exact current
+  source path, removing hardcoded Home and section prefixes.
+
+## 2026-09-15T22:42:50Z
+
+- [docs] Aligned sidebar section labels and breadcrumb parent labels with the
+  documentation hierarchy: the root documentation section is `/` and Product
+  units is `/units`.
+
+## 2026-09-15T22:42:50Z
+
+- [docs] Restored the muted breadcrumb text color for the current document
+  path so it matches the older breadcrumb treatment while retaining the exact
+  source-path labels.
+
+## 2026-09-15T22:39:25Z
+
+- [docs] Updated documentation viewer breadcrumbs to show the exact source
+  paths, including `/home.md`, `/rules.md`, and `/units/<name>.md`, while
+  preserving the existing static hash-based navigation.
+
+## 2026-09-15T22:05:46Z
+
+- [docs] Fixed the documentation viewer's navigation grouping after adding
+  Deployment: core documents are now classified by their `units/` path instead
+  of a hardcoded positional slice, so Notes and future core documents remain
+  under Documentation.
+
+## 2026-09-15T22:02:00Z
+
+- [docs] Added `docs/deployment.md` as the canonical active deployment guide
+  for environment flow, Alembic migration gates, release checks, and
+  configuration boundaries. Replaced duplicated current-head guidance with
+  links, synchronized agent guidance and the documentation viewer, and aligned
+  the staging OTP policy.
+
+## 2026-09-15T21:56:09Z
+
+- [docs] Restored `docs/home.md` as the documentation viewer's Home content
+  and synchronized the current documentation references with their archived
+  locations. Corrected the API environment notes, migration-head reference,
+  archive index links, and mobile-auth archive pointer.
+
 ## 2026-09-14T23:07:16Z
 
 - [api] Replaced the generic root `Hello, World!` response with a minimal
@@ -3423,3 +3854,107 @@ _Last updated: 2026-09-10_
   flagged for review.
 - Updated `RULES.md` so those four rules now describe the current
   implementation, including the known browser-state isolation limitation.
+
+## 2026-09-15T20:07:54Z
+
+- [maintenance] Removed 165 empty `api/pytest-cache-files-*` temporary
+  folders left by local test tooling or synchronization artifacts. No API
+  source, tests, or runtime environment files were changed.
+
+## 2026-09-15T20:21:17Z
+
+- [docs] Rewrote the root README as a concise developer entry point covering
+  repository layout, prerequisites, local setup, common commands, deployment,
+  documentation, and development conventions. Moved detailed architecture,
+  product behavior, and operational guidance behind links to their canonical
+  documents.
+
+## 2026-09-15T20:25:35Z
+
+- [docs] Removed the duplicated technology-stack section from the legacy block
+  in `AGENTS.md`; stack details remain owned by `docs/stack.md`.
+
+## 2026-09-15T20:31:18Z
+
+- [docs] Replaced the duplicated legacy project-documentation inventory in
+  `AGENTS.md` with a pointer to `docs/README.md` and `docs/AGENTS.md`.
+
+## 2026-09-15T20:36:05Z
+
+- [docs] Replaced the duplicated web-architecture details in `AGENTS.md` with
+  a pointer to `docs/architecture.md`, preserving the agent-facing styling
+  and code-boundary rules at the top of the file.
+
+## 2026-09-15T20:37:17Z
+
+- [docs] Removed references to the deleted `localhost/localhost.ps1` helper
+  from `AGENTS.md`, `README.md`, and `docs/stack.md`.
+
+## 2026-09-15T20:40:42Z
+
+- [docs] Moved the unit-document template from `docs/template.md` to
+  `docs/units/template.md` and updated active documentation references.
+
+## 2026-09-15T20:45:45Z
+
+- [docs] Removed only the redundant duplicated agent-guidance section from
+  the old block in `AGENTS.md`; the remaining old-block content was preserved.
+
+## 2026-09-15T20:49:06Z
+
+- [docs] Removed the old `Local Development` and `Deployment` sections from
+  `AGENTS.md`. Kept the branch workflow in the top verification guidance and
+  confirmed setup/release details remain in the README and canonical docs.
+
+## 2026-09-15T20:53:53Z
+
+- [docs] Reformatted `AGENTS.md` into a consistent Markdown structure,
+  normalized line wrapping and spacing, and clarified the retained legacy
+  auth/session note without changing its intended guidance.
+
+## 2026-09-15T20:55:50Z
+
+- [docs] Moved the retained auth/session note to `docs/notes.md`, removed it
+  from `AGENTS.md`, and added it to the documentation map and viewer registry.
+
+## 2026-09-15T20:59:15Z
+
+- [docs] Updated the embedded documentation home copy in `docs/index.html`
+  so the fallback and rendered home views describe the current documentation
+  structure, including Notes, and use the current edit timestamp.
+
+## 2026-09-15T21:02:52Z
+
+- [docs] Moved the documentation Home content into `docs/home.md` and updated
+  the viewer to load it as Markdown through the normal document route.
+
+## 2026-09-15T21:04:10Z
+
+- [docs] Removed Home from the documentation viewer sidebar and search while
+  retaining `docs/home.md` as the content loaded by the header Home button.
+
+## 2026-09-15T21:09:43Z
+
+- [docs] Removed the obsolete one-time documentation-migration rule from
+  `AGENTS.md`.
+
+## 2026-09-15T21:13:59Z
+
+- [docs] Expanded `AGENTS.md` with concise routing guidance for the full set
+  of canonical product, engineering, testing, design, unit, and archive docs.
+
+## 2026-09-15T21:34:35Z
+
+- [docs] Removed the nonexistent `localhost/` directory from the README
+  layout and updated the documented Alembic head in `docs/stack.md` from
+  `20260911_0046` to `20260911_0047`.
+
+## 2026-09-15T21:39:37Z
+
+- [maintenance] Force-synchronized the experimental `development` branch
+  with `staging`; local and remote development now point to the staging tip.
+## 2026-09-16T02:55:00Z
+
+- [web] Added accent-color hover, focus, and press feedback to all post action
+  controls, including the Share and More header utilities, and updated the
+  shared design/feed contracts.

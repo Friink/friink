@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
+from datetime import datetime
 class StepUpRequest(BaseModel): password: str = Field(min_length=1)
 class RoleCreate(BaseModel):
     key: str = Field(pattern=r"^[a-z][a-z0-9_]{1,63}$"); display_name: str = Field(min_length=1, max_length=120); permissions: set[str] = set()
@@ -10,5 +11,5 @@ class GrantRequest(BaseModel): permission: str = Field(min_length=3, max_length=
 class StaffStatusRequest(BaseModel): enabled: bool
 class StaffMe(BaseModel): permissions: list[str]; privileged_expires_at: datetime
 class RoleResponse(BaseModel): key: str; display_name: str; system: bool; permissions: list[str]
-class StaffUserResponse(BaseModel): id: str; username: str; display_name: str | None; email: str; is_staff: bool; account_locked: bool; permissions: list[str]
+class StaffUserResponse(BaseModel): id: str; username: str; display_name: str | None; email: str; is_staff: bool; account_locked: bool; permissions: list[str]; lifecycle_status: str = "active"; deletion_deadline: datetime | None = None
 class AuditResponse(BaseModel): event_type: str; payload: dict; created_at: datetime

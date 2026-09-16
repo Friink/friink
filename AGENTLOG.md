@@ -1,5 +1,935 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T00:00:00Z — Add shared CSS scrollbar treatment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply a consistent Friink scrollbar design using platform CSS rather than a custom JavaScript scrollbar.
+- Changes Made: Added global thin rounded scrollbar styling with accent hover treatment and native scrolling preserved; documented the design contract.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Limit notification dropdown to eight visible rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show no more than eight notification rows before the dropdown list scrolls.
+- Changes Made: Measure the ninth rendered row and use that boundary as the list max-height, preserving responsive viewport bounds and the visible footer.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`, `docs/units/notifications.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Fix cached session hydration mismatch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the hydration error introduced by optimistic session bootstrap.
+- Changes Made: Removed browser-only session/cache reads from initial state initializers and moved cached-user hydration into the post-mount effect; preserved the existing server-authoritative refresh flow.
+- Files: `web/components/app-shell-route.tsx`, release logs.
+- Verification Status: Targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Optimistic frontend session bootstrap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Avoid showing the full session-restoration screen on every refresh without changing auth or session behavior.
+- Changes Made: Added safe cached-user metadata hydration, mounted the shell during the existing background refresh, remounted after a real session is restored, and preserved the existing recovery path on refresh failure.
+- Files: `web/lib/auth.ts`, `web/components/app-shell-route.tsx`, `docs/units/account-access.md`, `docs/rules.md`, release logs.
+- Verification Status: Targeted TypeScript validation and diff checks pending.
+
+## 2026-09-17T00:00:00Z — Stabilize responsive notification dropdown layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the notification dropdown still overflowing or clipping at the viewport edge.
+- Changes Made: Converted the active dropdown to a flex column with a constrained scrolling list and non-scrolling footer; added ResizeObserver-based geometry updates for top-bar reflow.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`, release logs.
+- Verification Status: Browser-control visual inspection was unavailable because the browser request-header policy failed twice; targeted TypeScript and diff validation pending.
+
+## 2026-09-17T00:00:00Z — Bound notification dropdown to actual viewport space
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make notification dropdown height responsive to its real position below the top bar.
+- Changes Made: Added runtime geometry measurement for the rendered dropdown top edge and used that value in the viewport max-height calculation; retained list scrolling for overflow.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`, `docs/units/notifications.md`, `packages/design/design.md`, release logs.
+- Verification Status: TypeScript and CSS changes reviewed; targeted diff validation pending.
+
+## 2026-09-16T22:42:00Z — Align search dropdown width
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the search suggestions dropdown no wider than the search bar.
+- Changes Made: Replaced the active preview search dropdown's independent width with `width: 100%` and `max-width: 100%`, inheriting the search wrapper width.
+- Files: `web/app/globals.css`, release logs.
+- Verification Status: CSS change is scoped to the TopBar search dropdown.
+
+## 2026-09-16T22:38:00Z — Bound notification dropdown to viewport
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the TopBar notification dropdown responsive and scrollable when it exceeds the viewport.
+- Changes Made: Applied viewport-aware width and dynamic-height limits to the active TopBar dropdown; constrained overflow to the notification list so the footer remains visible. Updated the notifications unit contract.
+- Files: `web/app/globals.css`, `docs/units/notifications.md`, release logs.
+- Verification Status: CSS change is scoped to the active TopBar notification dropdown; no full suite run per repository guidance.
+
+## 2026-09-16T22:34:00Z — Align Home feed refresh control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the Check for new posts control with the feed body and floating bar.
+- Changes Made: Removed the refresh control's extra horizontal width subtraction and inline margins; preserved the shared content column unchanged. Added the feed alignment rule to the feed unit document.
+- Files: `web/app/globals.css`, `docs/units/feed.md`, release logs.
+- Verification Status: CSS change is limited to `.home-feed-refresh`; no full suite run per repository guidance.
+
+## 2026-09-16T22:30:18Z — Diagnose missing older posts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Research why older posts were no longer visible after the professional badge work.
+- Changes Made: Diagnosis only; no product code changed. Compared the badge diff with post loading paths, inspected API logs and live database contents.
+- Verification Status: Badge changes are additive only. API logs showed repeated `TOKEN_SIGNATURE_MISMATCH` failures followed by refresh `401`; the configured local database currently contains one active post total for `muflah` and no older records to display.
+
+## 2026-09-16T22:26:59Z — Restore TopBar interactions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the previous search box, unread dots, and notification dropdown while keeping the newer TopBar appearance.
+- Changes Made: Moved the legacy Header interaction behavior into the visible `TopBar`, including expandable search suggestions and submission, chat unread indicator, and unread notification dropdown. Wired notification data into TopBar and updated navigation/discovery/design documentation.
+- Files: `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`, `docs/units/navigation.md`, `docs/units/discovery.md`, `packages/design/design.md`, release logs.
+- Verification Status: TypeScript compilation passed. Live browser verification was blocked by the existing local session/API mismatch after the API process restart; the TopBar code path is type-checked and uses the existing notification/message state.
+
+## 2026-09-16T22:09:49Z — Complete migration and propagate professional badge
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the professional badge migration, show the badge in every data-backed profile card, and report professional database checks.
+- Changes Made: Added the badge field to identity response contracts and mappings for posts, quoted posts, likes, connections, chat, notifications, blocked users, remembered accounts, and shared profile-card surfaces. Updated profile documentation and active rules.
+- Verification Status: Migration applied successfully; Alembic reports no pending operations. TypeScript compilation, Python compilation, and `git diff --check` passed. Live schema audit found two persisted user controls (`use_intent`, `show_professional_badge`), two professional plan-entitlement keys, one `professional_status.manage` permission, and no business-rule CHECK constraint for professional status.
+
+## 2026-09-16T21:55:52Z — Implement professional profile badge
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the professional-networking setting and profile badge.
+- Changes Made: Added the persisted `show_professional_badge` user field and migration; made the API enforce that it is available only for professional networking and clears it when switching to personal connection; added the conditional Settings checkbox and shared styling; exposed the effective public-profile value and rendered the `Professional` badge next to the displayed name; added focused service tests and updated active rules/docs.
+- Files: `api/alembic/versions/20260917_0049_professional_badge.py`, `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/tests/test_auth_updates.py`, `web/lib/auth.ts`, `web/components/account-screens.tsx`, `web/components/profile-card.tsx`, `web/components/profile-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`, documentation and release logs.
+- Verification Status: Python compilation and TypeScript compilation passed. Existing repository-wide ESLint errors remain; the targeted pytest process is affected by the Windows SQLite cleanup hook (`WinError 32`) after test execution.
+
+## 2026-09-16T21:40:52Z — Specify professional badge placement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify that the professional badge appears next to the user's name.
+- Changes Made: Documented adjacent-to-displayed-name placement across Settings, subscriptions, and shared design contracts while preserving conditional visibility and non-entitlement behavior.
+- Files: `docs/units/settings.md`, `docs/units/subscriptions.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-16T21:38:35Z — Document conditional professional profile badge
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document a General setting that lets professional-networking users show or hide a professional badge on their profile.
+- Changes Made: Added the planned conditional setting, exact user-facing label, hidden-by-default behavior, and the boundary that badge visibility does not award status or paid access. Aligned subscription and shared design contracts.
+- Files: `docs/units/settings.md`, `docs/units/subscriptions.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Markdown/link-oriented diff review and `git diff --check` passed.
+
+## 2026-09-16T21:40:00Z — Flush tab arrows to strip edges
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the gap between tab scroll arrows and the bar corners.
+- Changes Made: Set the shared left and right tab-arrow offsets to zero and
+  documented the edge-aligned interaction contract.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-16T21:30:00Z — Fix tab scroll arrow state and sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the end-of-strip arrow and keep tab arrows inside the bar.
+- Changes Made: Rendered the right arrow only when `canScrollRight` is true;
+  reduced the shared arrow control to fit the tab-bar height and removed the
+  expanding shadow that caused it to extend outside the bar. Updated Feed and
+  design-system documentation.
+- Files: `web/components/tabs.tsx`, `web/app/globals.css`,
+  `docs/units/feed.md`, `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed.
+
+## 2026-09-16T21:18:38Z — Hide legacy Header and NavigationBar for preview
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the old Header and NavigationBar without deleting them.
+- Changes Made: Added shared CSS to hide the legacy components while keeping
+  them mounted for rollback, and removed the old navigation gap from the shell
+  layout. Updated navigation and design documentation.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Localhost `/home/explore` returned HTTP 200 and `git diff --check` passed.
+
+## 2026-09-16T21:20:00Z — Theme-consistent profile avatar borders
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make profile-picture borders match the application theme.
+- Changes Made: Changed the shared `.user-avatar` border from foreground ink
+  to the accent token, keeping one consistent themed treatment in light and
+  dark modes. Updated the Profiles and design-system documentation.
+- Files: `web/app/globals.css`, `docs/units/profiles.md`,
+  `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed.
+
+## 2026-09-16T21:14:24Z — Recover from chat-list transport failures
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the chat timeout failure if it required a fix.
+- Changes Made: Caught conversation-list transport errors in `MessagesScreen`,
+  preserved existing chat data, and added a visible retry state instead of
+  allowing the error to reach the Next.js runtime overlay. Updated the Chat
+  unit contract and release records.
+- Files: `web/components/screens.tsx`, `web/app/globals.css`,
+  `docs/units/chat.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, `/chats` localhost route, and `git diff --check` passed.
+
+## 2026-09-16T21:02:00Z — Keep TopBar identity visible in every mode
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match the TopBar background to the drawer, always show the
+  Home-linked logo, and keep the home action-menu question open for UX review.
+- Changes Made: Applied drawer surface tokens to the preview, kept the compact
+  logo and centered title in both home and contextual modes, and documented the
+  behavior. No existing shell component was removed.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost route checks, and `git diff --check` passed.
+
+## 2026-09-16T20:57:55Z — Make TopBar preview functional without removal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the TopBar functional, but keep the existing components
+  in place for evaluation.
+- Changes Made: Added home-mode sidebar/search/chat/notification behavior and
+  contextual Back and ActionMenu behavior using AppShell callbacks. Kept the
+  existing Header, NavigationBar, and Tabs rendered. Added the Navigation unit
+  document and registered it in the documentation index.
+- Files: `web/components/top-bar.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `docs/units/navigation.md`, `docs/index.html`,
+  `docs/design-system.md`, `docs/rules.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost route checks, and `git diff --check` passed. The notifications request briefly exceeded the 10-second probe timeout but subsequently returned HTTP 200; no application error was observed.
+
+## 2026-09-16T20:55:00Z — Reduce TopBar mark size
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the compact TopBar logo smaller and explain how Back
+  and Action Menu will join the title.
+- Changes Made: Reduced the visible mark while preserving the control hit area;
+  documented the final contextual TopBar composition as Back + title + actions
+  in one bar.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:50:00Z — Use compact TopBar logo
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the small logo instead of the full logo in the header.
+- Changes Made: Switched the TopBar preview to the compact black/white mark
+  variants and kept the existing theme-aware asset selection.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:45:00Z — Remove redundant TopBar brand label
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the centered FRIINK label over the screen name.
+- Changes Made: Removed the redundant context eyebrow from the TopBar preview;
+  the logo remains the sole brand mark and the current screen title stays
+  centered. Updated the design and release records.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:40:00Z — Theme-aware TopBar logo
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use white logo on dark theme and dark logo on light theme.
+- Changes Made: Added both full-logo variants to the TopBar preview and used
+  explicit app theme and system-theme selectors to display the correct asset.
+  Updated the design contracts and release records.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:37:01Z — Add unified TopBar preview
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prototype a consistent top bar over the existing Header.
+- Changes Made: Added the functional shared `TopBar` component, mounted it over
+  the current signed-in Header, and added a modern preview treatment with
+  leading navigation, contextual title, Search, Chat, and Notifications.
+  Updated the active design and rules documentation.
+- Files: `web/components/top-bar.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`,
+  `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost route, and `git diff --check`
+  passed; browser preview automation was unavailable.
+
+## 2026-09-16T20:30:00Z — Remove content-box side lines
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the visible lines on either side of the content box.
+- Changes Made: Removed the shared `ContentBox` outline/frame shadow and updated
+  the design contracts and release records.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted checks pending.
+
+## 2026-09-16T20:26:17Z — Remove underlines from button links
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Button-like links must not show underlines.
+- Changes Made: Added the no-underline rule to the shared primary and
+  secondary button primitives and updated the design contracts and logs.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:23:41Z — Shared visual polish pass
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the application look and feel more modern.
+- Changes Made: Increased the shared type scale modestly, added readable body
+  line-height and restrained motion, improved feed action spacing and hover
+  treatment, strengthened profile-tab hierarchy, and added quiet content-panel
+  depth. Updated the design contracts and release records.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript and localhost route checks passed; browser
+  automation preview was unavailable because the browser request-header policy
+  could not be loaded.
+
+## 2026-09-16T20:03:49Z — Fix blank session restoration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Explain and fix repeated reloads needed before the local app
+  loaded.
+- Changes Made: Added a shared session restoration/recovery surface, added an
+  in-place retry for recoverable failures, and applied it to profile and shell
+  route bootstrap. Updated the active access, profile, and business-rule docs.
+- Files: `web/components/session-recovery-screen.tsx`,
+  `web/components/app-shell-route.tsx`, `web/app/[username]/profile-client.tsx`,
+  `docs/units/account-access.md`, `docs/units/profiles.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec --offline tsc -- --noEmit`, HTTP checks for
+  frontend/API, and `git diff --check` passed.
+
+## 2026-09-16T04:30:00Z — Move profile Block to contextual menu
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Put the profile Block action in the contextual tabs/navigation
+  overflow menu instead of the middle of the profile action row.
+- Changes Made: Routed the other-user Block item through the shell-owned
+  NavigationBar menu, moved its confirmation modal and API call to the shell,
+  and removed the detached ProfileScreen ActionMenu. Updated Profiles, Rules,
+  and shared design contracts.
+- Files: `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`,
+  `docs/units/profiles.md`, `docs/rules.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec tsc -- --noEmit` and `git diff --check` passed.
+
+## 2026-09-16T04:15:00Z — Prepare web-only release for development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reconcile documentation for the session’s UI changes and
+  push development and staging without a database update.
+- Changes Made: Added the signup criteria feedback clarification to the active
+  Rules registry, confirmed the Profiles and Account Access unit documents and
+  design contracts cover the session changes, and prepared the web-only
+  release for both branches.
+- Files: `docs/rules.md`, `docs/units/account-access.md`,
+  `docs/units/profiles.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`, plus the
+  corresponding web implementation files.
+- Verification Status: Targeted checks pending; no migration gate required
+  because no database schema or API changes were made in this session.
+
+## 2026-09-16T04:00:00Z — Fix profile connection action layout
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the labeled profile action rendering as a stacked
+  icon-only button.
+- Changes Made: Removed `.icon-button` from the API-driven connection action,
+  added a shared one-line profile connection action class, and kept Message and
+  More as icon-only controls. Updated Profiles, Rules, and design contracts.
+- Files: `web/components/profile-screen.tsx`, `web/app/globals.css`,
+  `docs/units/profiles.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted checks pending.
+
+## 2026-09-16T03:45:00Z — Normalize signup criteria feedback
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make signup password and username criteria align and use
+  consistent state coloring.
+- Changes Made: Added full-width left alignment to both helper surfaces and
+  accent-colored the username guidance once the complete 2–32 character rule
+  is met. Updated account-access and shared design documentation.
+- Files: `web/components/login-screen.tsx`, `web/app/globals.css`,
+  `docs/units/account-access.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed.
+
+## 2026-09-16T03:35:00Z — Push verified release to development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the current verified work to development and staging,
+  resolving staging database dependencies with its environment connector.
+- Changes Made: Committed the accumulated implementation and documentation as
+  `abaa406`, pushed it to `origin/development` and `origin/staging`, and ran
+  the staging migration gate from `api/.env.staging`. Migration `20260916_0048`
+  applied successfully and `alembic check` reported no pending operations.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; remote branches and staging database
+  updated.
+- Verification Status: Both remote branches resolve to the tested release;
+  staging migration gate passed.
+
+## 2026-09-16T02:40:00Z — Fix notification read-state races
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent the notification bell dot and read items from
+  reappearing after notifications are read.
+- Changes Made: Preserved locally confirmed read IDs across list refreshes,
+  cleared stale notification actions, synchronized the unread-count reference
+  during individual and bulk reads, and paused count polling while read
+  mutations are pending. Updated active notification rules and unit docs.
+- Files: `web/components/app-shell.tsx`, `docs/rules.md`,
+  `docs/units/notifications.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed. Targeted
+  app-shell lint retains the component's existing set-state-in-effect errors
+  and dependency warnings.
+
+## 2026-09-16T02:18:00Z — Align FeedPost header utility pair
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the Share/More order and align the pair in the post
+  header.
+- Changes Made: Restored Share then More DOM order, vertically centered the
+  shared utility cluster against the profile heading, and retained the 12px
+  inter-control gap within the content inset. Updated the Feed unit rule and
+  task logs.
+- Files: `web/components/feed-post.tsx`, `web/app/globals.css`,
+  `docs/units/feed.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed. The
+  authenticated localhost render confirms each post presents Share followed by
+  Post options in the aligned header pair.
+
+## 2026-09-16T02:02:00Z — Add shared icon-and-text button spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the missing spacing between icons and labels in shared
+  buttons.
+- Changes Made: Added one shared CSS contract applying an 8px gap to primary
+  and secondary buttons while excluding icon-only `.icon-button` controls.
+  Updated the product and implementation design documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed.
+
+## 2026-09-16T01:48:00Z — Refine post action edge spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Spread post actions from edge to edge and place the share
+  utility immediately to the right of the overflow utility.
+- Changes Made: Updated the shared FeedPost header order to overflow then share,
+  set their gap to 12px, and changed the shared bottom action row from centered
+  equal columns to edge-anchored distribution across the content width.
+  Updated the Feed unit contract and task logs.
+- Files: `web/components/feed-post.tsx`, `web/app/globals.css`,
+  `docs/units/feed.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed. The existing
+  FeedPost lint error remains isolated to its pre-existing state-sync effect.
+  The authenticated localhost Home render shows each post with `Post options`
+  followed by `Share post`, and the updated action row is present across the
+  post content width.
+
+## 2026-09-16T01:32:00Z — Fix profile loading and post action spacing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the uneven FeedPost action row, refine post-header
+  utility spacing, and repair profile posts and connection counts loading.
+- Changes Made: Corrected `/users/{username}/posts` and `/replies` service
+  calls to pass `limit` and `cursor` by name, preventing the profile-post 500.
+  Made the shared post action row distribute its four actions evenly across
+  the content width and adjusted header utility padding/gap. Added Profile and
+  Feed unit rules for the repaired API/layout contracts.
+- Files: `api/app/routers/users.py`, `web/app/globals.css`,
+  `docs/units/profiles.md`, `docs/units/feed.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Real localhost verification now returns HTTP 200 for
+  profile posts, replies, followers, and following; the repaired profile UI
+  rendered the post and resolved the statistics when an authenticated tab was
+  used. TypeScript, Python compilation, and `git diff --check` passed. Targeted
+  lint retains pre-existing set-state-in-effect findings in profile/feed
+  components.
+
+## 2026-09-16T01:18:28Z — Implement manual subscription UX slice
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Begin the documented subscription UX implementation and test
+  it according to repository guidelines.
+- Changes Made: Added staff live search and lifecycle-aware subscription
+  management UI, server-resolved user subscription summaries, assignment
+  history, preset/custom/no-expiry plan adjustment, renewal extension, and
+  revoke behavior. Added API validation preventing plan changes for inactive
+  or pending-deletion users. Local development staff step-up cookies now work
+  over HTTP. Updated subscription, Settings, Staff Admin, and active Rules
+  documentation to distinguish shipped behavior from planned notifications,
+  professional-status workflow, and profile badges.
+- Files: `api/app/routers/staff.py`, `api/app/services/subscriptions.py`,
+  `api/tests/test_subscriptions.py`, `web/components/control-panel-screen.tsx`,
+  `web/components/account-screens.tsx`, `web/lib/auth.ts`,
+  `docs/units/subscriptions.md`, `docs/units/settings.md`,
+  `docs/units/staff-admin.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, Python compilation, and `git diff --check`
+  passed. Focused subscription/staff tests reached 9 passing assertions; the
+  Windows pytest session teardown returned a file-lock error after assertions
+  completed. Real localhost login and staff step-up returned HTTP 200, and
+  `/subscriptions/admin/plans` returned HTTP 200 with 3 plans. Targeted lint
+  passed for the changed control-panel/auth files; account-screens retains two
+  pre-existing set-state-in-effect errors and six warnings.
+
+## 2026-09-16T00:55:00Z — Fix feed prepend lifecycle warning
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the React `flushSync` lifecycle warning triggered when
+  creating a post and prepending it to Home.
+- Changes Made: Removed `flushSync` from `HomeScreen.applyPrepend`; scroll
+  compensation now runs in the existing layout effect after feed state commits.
+  Documented the lifecycle-safe update contract for Feed.
+- Files: `web/components/home-screen.tsx`, `docs/units/feed.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `flushSync` is removed from `HomeScreen`; `git diff --check`
+  passed. Targeted ESLint still reports three pre-existing set-state-in-effect
+  errors and five dependency warnings elsewhere in `home-screen.tsx`.
+
+## 2026-09-16T00:49:02Z — Align staff authorization with database permissions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the implementation so permissions are database-backed and
+  subscription access is delegated through permissions rather than hardcoded
+  superadmin checks.
+- Changes Made: Resolved superadmin permissions dynamically from the database
+  catalog, added migration `20260916_0048` for subscription and professional-
+  status permissions, changed subscription endpoints to require
+  `subscriptions.manage`, and added focused regression coverage.
+- Files: `api/app/services/staff.py`, `api/app/routers/staff.py`,
+  `api/app/routers/subscriptions.py`,
+  `api/alembic/versions/20260916_0048_staff_subscription_permissions.py`,
+  `api/tests/test_subscriptions.py`, `docs/rules.md`,
+  `docs/units/staff-admin.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused role/subscription tests passed 7/7; real admin
+  step-up returned database-backed permissions and `/subscriptions/admin/plans`
+  returned HTTP 200 with 3 plans; migration applied successfully.
+
+## 2026-09-16T00:40:27Z — Clarify database-backed permission architecture
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the documentation first to explicitly prohibit
+  hardcoded permission and role assignments.
+- Changes Made: Added the permission architecture contract to Staff Admin and
+  the active staff rule, including database-backed permissions, delegated
+  subscription/professional-status permissions, and the current implementation
+  gap requiring migration.
+- Files: `docs/units/staff-admin.md`, `docs/rules.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; referenced Staff Admin and
+  Rules documents exist and no viewer index update was required.
+
+## 2026-09-16T00:32:10Z — Document subscription UX contract
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fully document the agreed manual subscription-management
+  and user-facing entitlement UX.
+- Changes Made: Documented cross-unit UX for user search, lifecycle-aware
+  staff actions, plan adjustment and renewal, expiry/revocation, notifications,
+  professional status, profile badges, and future billing boundaries. Kept
+  planned behavior separate from active implementation-backed rules.
+- Files: `docs/units/subscriptions.md`, `docs/units/staff-admin.md`,
+  `docs/units/settings.md`, `docs/units/account-lifecycle.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; affected unit links resolve,
+  and no `docs/index.html` update was required because no document was added,
+  renamed, moved, archived, or removed.
+
+## 2026-09-16T00:20:47Z — Document subscription plan definitions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the supplied Free, Pro, and Pro+ plan definitions
+  while distinguishing planned billing from current manual assignment.
+- Changes Made: Expanded the Subscriptions unit with the plan capability matrix,
+  planned prices and nonpayment rules, current superadmin manual assignment,
+  expiration feedback expectations, and billing limitations.
+- Files: `docs/units/subscriptions.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; existing relative unit links
+  remain valid and no index update was required because no document was added,
+  renamed, moved, archived, or removed.
+
+## 2026-09-16T00:10:23Z — Assign development admin superadmin role
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Give the already-created development admin account the
+  superadmin role.
+- Changes Made: Added the existing `superadmin` role association for
+  `admin@friink.com` in the development database.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; development database role assignment
+  created.
+- Verification Status: Read-only query confirmed the account has the
+  `superadmin` role.
+
+## 2026-09-16T00:04:27Z — Provision development admin account
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create the reserved admin account in the development database.
+- Changes Made: Ran the guarded `bootstrap_admin` command against the development
+  database connector using process-local `test` target overrides required by the
+  script's local-environment guard. No environment files were edited.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; development database record created.
+- Verification Status: Read-only query confirmed `admin@friink.com` is present,
+  `username=admin`, `is_staff=true`, and `setup_completed=true`.
+
+## 2026-09-15T23:49:03Z — Add account-switcher beta disclosure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a Beta badge for the account switcher only.
+- Changes Made: Added the shared `BetaBadge` component and semantic styling;
+  rendered it beside `Switch Account` in the account-switcher header. Documented
+  that Beta is informational and does not change permissions or behavior, while
+  planned features retain their existing treatments.
+- Files: `web/components/design/beta-badge.tsx`,
+  `web/components/side-drawer.tsx`, `web/app/globals.css`,
+  `docs/units/account-access.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The new badge component passed targeted ESLint and
+  `git diff --check` passed. The combined lint command still reports three
+  pre-existing `no-html-link-for-pages` errors at `side-drawer.tsx:311`.
+
+## 2026-09-15T23:43:02Z — Migrate development database
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Confirm the development and staging database connectors and
+  update the development database to fix the API schema mismatch.
+- Changes Made: Verified that `.env.development` and `.env.staging` use
+  different Neon connectors. Applied migrations `20260911_0045` through
+  `20260911_0047` to the development database, including `users.account_region`,
+  and ran the migration gate.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; database schema updated through the
+  migration chain.
+- Verification Status: `alembic check` reported no pending operations; a real
+  `POST /auth/password-reset/start` request returned HTTP 202 with the neutral
+  response shape.
+
+## 2026-09-15T23:34:06Z — Correct local API environment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct the copied development environment file and start the
+  local API with OTP disabled.
+- Changes Made: Updated `api/.env.development` from staging identity values to
+  `ENVIRONMENT=development` and `FRONTEND_URL=http://localhost:3000`; disabled
+  `OTP_ENABLED`, `SIGNUP_OTP_ENABLED`, and `LOGIN_RISK_OTP_ENABLED`. Started
+  Uvicorn with that file explicitly.
+- Files: `api/.env.development`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: API startup completed and `GET /health` returned HTTP
+  200 with `{"status":"ok"}`.
+
+## 2026-09-15T23:19:08Z — Clarify unit-document requirement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a clear root-agent instruction requiring relevant unit
+  documentation updates or creation and registration when absent.
+- Changes Made: Added an explicit documentation workflow rule to `AGENTS.md`.
+  It requires same-change updates to the relevant unit document and directs
+  agents to use the documentation guidance and template when creating a new
+  unit, including registering it in `docs/index.html`.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-15T23:19:08Z — Document unavailable post UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documentation to match the new post-like unavailable
+  state for private, deleted, or invalid post URLs.
+- Changes Made: Updated the Posts unit, product design system, and design
+  implementation contract with the shared component, privacy-safe copy,
+  route-level behavior, and authenticated-shell behavior.
+- Files: `docs/units/posts.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation references resolve, and `git diff --check` passed.
+
+## 2026-09-15T23:14:48Z — Improve unavailable post UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the 404-styled page shown for private or invalid post
+  URLs with a post-like unavailable state.
+- Changes Made: Added a shared `PostUnavailableState` component and reused it
+  in both dynamic post route not-found screens and client-side post failures.
+  Added calm card styling and neutral copy covering private, deleted, and
+  inaccessible posts.
+- Files: `web/components/post-unavailable-state.tsx`, post route not-found and
+  client files, `web/app/globals.css`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted ESLint check passed.
+
+## 2026-09-15T23:00:01Z — Mark Product units as a directory
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use directory-style notation for the Product units
+  navigation path.
+- Changes Made: The sidebar and Product units index breadcrumb now display
+  `/units/`; the underlying static route remains `#doc=/units`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T23:00:01Z — Hide Home breadcrumb
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the root slash breadcrumb from the virtual Home
+  introduction because Home is not a directory.
+- Changes Made: Home now clears and hides the breadcrumb navigation; actual
+  documentation and unit paths continue to show their exact breadcrumb path.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T23:00:01Z — Fix inline viewer home rendering
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Repair the documentation viewer Home page after removing
+  `home.md`.
+- Changes Made: Added the missing early return so the empty Home route renders
+  the short inline introduction rather than fetching `index.html`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T23:00:01Z — Simplify documentation viewer home
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant README viewer entry and replace the
+  deleted Home Markdown page with a minimal inline introduction.
+- Changes Made: Removed `README.md` from the viewer registry, deleted
+  `docs/home.md`, and made the default index home render only `Friink
+  Documentation` and `Click on a file from navigation to open.`. The existing
+  static hash routing remains in place.
+- Files: `docs/index.html`, `docs/README.md`, `docs/home.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Keep index filename out of Home URLs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent clicking the documentation viewer Home control from
+  adding `index.html` to the URL.
+- Changes Made: Header Home and Friink logo links now target `#doc=home.md`,
+  using the existing static viewer route for Home.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Replace virtual hash identifiers
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove `__documentation__` and `__units__` from viewer URLs.
+- Changes Made: Virtual Documentation and Product units routes now use `/` and
+  `/units` in the existing hash-based navigation.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Remove directory-list hover backgrounds
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make directory-style documentation links respect dark theme
+  colors without using a full hover background.
+- Changes Made: Directory-list hover and focus states now change only the
+  font color to the theme accent and use a transparent background.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:49:24Z — Use directory-style documentation indexes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove explanatory index text and bullets from the viewer's
+  Documentation and Product units pages.
+- Changes Made: Both index views now render unbulleted clickable paths such as
+  `/testing.md` and `/units/account-access.md`, with shared directory-list
+  styling and no introductory headings or prose.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:42:50Z — Remove hardcoded breadcrumb prefixes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the hardcoded Home and Product units breadcrumb
+  segments shown before documentation source paths.
+- Changes Made: Breadcrumbs now render only the exact current path, including
+  `/home.md`, `/`, `/units`, `/testing.md`, and `/units/account-access.md`.
+  Existing static hash-based navigation remains unchanged.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:42:50Z — Align documentation section paths
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show the exact root and Product units directory paths in
+  the documentation sidebar and breadcrumb hierarchy.
+- Changes Made: Sidebar section labels now show `/` and `/units`; breadcrumb
+  parent labels use the same exact paths. Existing hash-based navigation and
+  document filenames remain unchanged.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:42:50Z — Restore muted breadcrumb color
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match the breadcrumb current-path color to the older muted
+  visual treatment shown in the reference screenshots.
+- Changes Made: Changed only `.breadcrumbs [aria-current="page"]` from the
+  bright text token to the shared muted token. Exact source-path labels remain
+  unchanged.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:39:25Z — Show exact source paths in breadcrumbs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make documentation breadcrumbs display the exact directory
+  and filename for each rendered document.
+- Changes Made: Updated only the breadcrumb labels in `docs/index.html` so
+  Home shows `/home.md`, root documents show paths such as `/testing.md`, and
+  unit documents show paths such as `/units/profiles.md`. Existing static
+  hash-based routing was preserved.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and the embedded viewer
+  JavaScript passed a Node syntax parse.
+
+## 2026-09-15T22:05:46Z — Fix documentation navigation grouping
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct Notes appearing under Product units after adding the
+  deployment document to the viewer.
+- Changes Made: Replaced the viewer's hardcoded core/unit positional split with
+  path-based classification using the `units/` prefix.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the registry now classifies all non-unit
+  documents as Documentation regardless of ordering; `git diff --check`
+  remains clean.
+
+## 2026-09-15T22:02:00Z — Centralize deployment guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Consolidate active deployment and migration guidance while
+  preserving changelog and agent-log history.
+- Changes Made: Added `docs/deployment.md` as the canonical deployment guide;
+  removed duplicated current migration-head values from stack and testing docs;
+  linked the deployment guide from README, API README, agent guidance, docs
+  navigation, and the design contract; and aligned the OTP policy so
+  development may disable OTP while staging and production keep it enabled.
+- Files: `docs/deployment.md`, `README.md`, `api/README.md`, `docs/README.md`,
+  `docs/stack.md`, `docs/testing.md`, `AGENTS.md`, `docs/AGENTS.md`,
+  `packages/design/design.md`, `docs/index.html`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Confirmed the deployment guide references the existing
+  Vercel migration gate and script, checked all new documentation paths, and
+  passed `git diff --check`.
+
+## 2026-09-15T21:56:09Z — Repair documentation archive references and environment notes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check documentation integrity and repair confirmed stale or
+  misplaced references while preserving historical archives.
+- Changes Made: Updated current rule references to point to archived feature
+  contracts, corrected the archive index's repository-relative links, moved the
+  mobile-auth note to its archived location, corrected the documented Alembic
+  head to `20260911_0047`, and clarified development/staging/production OTP
+  switch expectations. Confirmed the existing `docs/home.md` file and added
+  the missing changelog record for its restoration.
+- Files: `docs/rules.md`, `docs/archives/index.md`, `docs/notes.md`,
+  `docs/testing.md`, `api/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Read-only reference checks confirmed the corrected
+  paths, current migration head, 30-day refresh-token setting, and environment
+  notes. The future-dated archive was left unchanged as historical material.
+
 ## 2026-09-14T23:07:16Z — Standardize public API health responses
 
 - Agent: Codex
@@ -951,6 +1881,30 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   Updated the root README and existing documentation references.
 - Files: `docs/index.md`, `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: `git diff --check` passed.
+
+## 2026-09-15T20:21:17Z — Rewrite root README
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clean up the root README into a standard repository entry
+  point.
+- Changes Made: Replaced the mixed overview/status/runbook document with a
+  concise README covering layout, prerequisites, quick start, commands,
+  deployment summary, documentation links, and development conventions.
+- Files: `README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: All local README links resolve; `git diff --check`
+  passed for `README.md`.
+
+## 2026-09-15T20:07:54Z — Remove pytest cache artifacts
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the extra `api/pytest-cache-files-*` folders.
+- Changes Made: Deleted exactly 165 top-level empty pytest-cache artifact
+  folders under `api/`; verified that zero matching folders remain.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Target paths were constrained to `api/`; removal
+  completed successfully with 0 matching folders remaining.
 
 ## 2026-09-12 — Audit implementation changes against active rules
 
@@ -10477,3 +11431,264 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   inaccessible private quote presentation with the implemented behavior.
 - Files: `RULES.md`, `AGENTLOG.md`, `CHANGELOG.md`.
 - Verification Status: `git diff --check` passed.
+
+## 2026-09-15T20:25:35Z — Remove duplicated stack section from AGENTS.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the old stack section from `AGENTS.md` because
+  `docs/stack.md` is the canonical source.
+- Changes Made: Deleted only the legacy `## Stack` heading and its stack
+  details, preserving the user's other concurrent `AGENTS.md` edits.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old block no longer contains `## Stack`.
+
+## 2026-09-15T20:31:18Z — Simplify AGENTS.md documentation pointer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the duplicated project-documentation section in
+  `AGENTS.md` with a pointer to the dedicated docs guidance.
+- Changes Made: Removed the stale documentation inventory and added concise
+  links to `docs/README.md` and `docs/AGENTS.md`.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the replacement links exist.
+
+## 2026-09-15T20:36:05Z — Simplify AGENTS.md architecture guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the duplicated current web-app architecture block
+  with a pointer to the canonical architecture document.
+- Changes Made: Removed the legacy web-architecture details and added a
+  pointer to `docs/architecture.md`; retained the top product and code
+  boundaries as agent-specific guidance.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the architecture pointer exists and the
+  product/code-boundary section remains intact.
+
+## 2026-09-15T20:37:17Z — Remove deleted local setup helper references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the broken `localhost/localhost.ps1` reference.
+- Changes Made: Removed the deleted helper reference from the legacy agent
+  block, the root README, and the stack documentation.
+- Files: `AGENTS.md`, `README.md`, `docs/stack.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Confirmed no remaining repository references to
+  `localhost/localhost.ps1`.
+
+## 2026-09-15T20:40:42Z — Move unit template into docs/units
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move `docs/template.md` to `docs/units/template.md` and
+  update all references.
+- Changes Made: Moved the unit template and updated `AGENTS.md`,
+  `docs/AGENTS.md`, `docs/README.md`, `docs/testing.md`, and the archived
+  migration guide. Historical changelog and agentlog references were retained.
+- Files: `docs/units/template.md`, `AGENTS.md`, `docs/AGENTS.md`,
+  `docs/README.md`, `docs/testing.md`, `docs/archives/migration.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old path is absent from active repository
+  content; the new file exists and changed-document diff checks pass.
+
+## 2026-09-15T20:45:45Z — Remove redundant old-block agent guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Delete only the duplicated agent-guidance copy from the old
+  block in `AGENTS.md`.
+- Changes Made: Removed the old `## For AI Agents — Keep Documentation Current`
+  section and preserved all other old-block sections.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the old-block project and pointer sections
+  remain present.
+
+## 2026-09-15T20:49:06Z — Remove duplicated local and deployment sections
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove detailed local-development and deployment sections
+  from `AGENTS.md` while retaining agent-specific branch guidance.
+- Changes Made: Deleted both old sections, moved the concise development/
+  staging/production branch workflow into the top verification section, and
+  confirmed the detailed content remains in `README.md`, `docs/stack.md`, and
+  `docs/architecture.md`.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed no `Local Development` or `Deployment`
+  sections remain in `AGENTS.md`; targeted diff check passed.
+
+## 2026-09-15T20:53:53Z — Reformat AGENTS.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reformat the user's edited `AGENTS.md` and summarize its
+  resulting instructions.
+- Changes Made: Normalized Markdown headings, spacing, line wrapping, and the
+  legacy auth/session note while preserving the file's substantive guidance.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed for `AGENTS.md`.
+
+## 2026-09-15T20:55:50Z — Move auth/session note to docs/notes.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the retained auth/session note out of `AGENTS.md` and
+  add it to the documentation viewer.
+- Changes Made: Created `docs/notes.md`, removed the note from `AGENTS.md`,
+  added it to `docs/README.md`, and registered it in `docs/index.html`,
+  including the core-document search grouping.
+- Files: `docs/notes.md`, `AGENTS.md`, `docs/README.md`, `docs/index.html`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the new file exists, the old AGENTS section
+  is gone, and targeted documentation diff checks pass.
+
+## 2026-09-15T20:59:15Z — Update documentation viewer home copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the embedded documentation home copy in
+  `docs/index.html`.
+- Changes Made: Updated both the initial HTML fallback and JavaScript home
+  content to describe the current docs structure, added Notes to the overview,
+  and refreshed the edit timestamp.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Refreshed the live viewer and confirmed the new
+  overview text is visible; targeted diff check passed.
+
+## 2026-09-15T21:02:52Z — Move documentation home to home.md
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the embedded documentation Home section to
+  `docs/home.md`.
+- Changes Made: Created `docs/home.md`, registered it as the Home document,
+  removed the embedded `HOME_CONTENT` copy, and updated the viewer to fetch and
+  render Home through the Markdown document loader. Updated the documentation
+  README link and core-document grouping.
+- Files: `docs/home.md`, `docs/index.html`, `docs/README.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Refreshed the live viewer and confirmed the Markdown
+  Home page displays the `Start here` section; targeted diff checks passed.
+
+## 2026-09-15T21:04:10Z — Keep Home in header only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove Home from the documentation viewer sidebar because
+  it is already available in the header.
+- Changes Made: Removed `home.md` from the viewer registry and restored the
+  core/unit navigation split while keeping the header Home route backed by
+  `docs/home.md`.
+- Files: `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed Home is absent from sidebar text, the header
+  Home button remains present, and the Home content still loads.
+
+## 2026-09-15T21:09:43Z — Remove obsolete migration rule
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the one-time documentation-migration restriction
+  from `AGENTS.md`.
+- Changes Made: Deleted only the obsolete rule prohibiting application-code
+  changes during documentation migration.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the targeted rule is absent and the
+  `AGENTS.md` diff check passes.
+
+## 2026-09-15T21:13:59Z — Expand documentation routing guidance
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Expand the narrow reference section in `AGENTS.md` to cover
+  the full documentation set.
+- Changes Made: Replaced the two-file reference section with routing guidance
+  for the documentation map, rules, stack, architecture, testing, design,
+  product units, archives, and documentation-agent instructions.
+- Files: `AGENTS.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed every referenced path exists and the targeted
+  `AGENTS.md` diff check passes.
+
+## 2026-09-15T21:34:35Z — Correct README and stack references
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the two stale references found in staging documentation.
+- Changes Made: Removed the nonexistent `localhost/` directory from the README
+  layout and changed the documented Alembic head in `docs/stack.md` to
+  `20260911_0047`.
+- Files: `README.md`, `docs/stack.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed no `localhost/` layout entry remains and the
+  stack document matches the latest migration file.
+
+## 2026-09-15T21:39:37Z — Force staging into development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Force the experimental `staging` branch into `development`
+  without creating a backup branch.
+- Changes Made: Updated the local `development` ref and force-pushed
+  `staging` to `origin/development` using `--force-with-lease`.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Before logging, `staging`, local `development`, and
+  `origin/development` all resolved to `80e7da5`.
+## 2026-09-16T02:55:00Z — Add post action interaction states
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make comment, quote, like, save, share, and overflow post
+  actions change color when active or hovered.
+- Changes Made: Added shared accent-color hover, keyboard-focus, and press
+  states for post actions; preserved persistent active coloring for Like and
+  Save; synchronized feed and design documentation.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed. The
+  authenticated localhost render confirms the six post-action controls are
+  present with Share then Post options in the header pair.
+
+## 2026-09-16T03:05:00Z — Correct FeedPost header utility geometry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move the Share/More pair to the true right inset, bring the
+  icons closer together, and remove inherited standard-button sizing.
+- Changes Made: Removed the extra heading right padding, set the pair gap to
+  the documented 12px, and explicitly reset `.icon-button` minimum dimensions
+  for these plain icon controls. Updated the Feed and implementation design
+  contracts.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed. The
+  local browser still exposes the Share and Post options controls in the
+  expected header order.
+
+## 2026-09-16T03:15:00Z — Remove FeedPost utility outlines
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the remaining visible borders around the Share and
+  More post utilities.
+- Changes Made: Removed the accent outline from hover and keyboard-focus state;
+  the controls remain borderless and continue to change color on interaction.
+  Synchronized the Feed and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript and `git diff --check` passed.
+
+## 2026-09-16T03:25:00Z — Reconcile post-control documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the applicable agent log, changelog, active rules,
+  and unit documentation for the FeedPost utility-control fix.
+- Changes Made: Added `POST-R-015` to the active Rules registry, linked its
+  implementation and Feed unit contract, updated the design-system timestamp,
+  and confirmed existing Feed unit and project logs describe the change.
+- Files: `docs/rules.md`, `docs/design-system.md`, `docs/units/feed.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Required documentation paths exist, `POST-R-015` and
+  Feed traceability entries are present, and `git diff --check` passes.

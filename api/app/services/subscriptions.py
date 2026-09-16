@@ -62,17 +62,27 @@ def _audit(session: Session, actor: User, kind: str, assignment: SubscriptionAss
         payload={"kind": kind, "target_user": assignment.user_id.hex, "assignment_id": str(assignment.id), "plan": assignment.plan.code, "reason": reason, "replaced_assignment_id": str(replaced_id) if replaced_id else None},
     )
 
-def grant(session: Session, actor: User, user: User, plan_code: str, duration_days: int | None, reason: str) -> SubscriptionAssignment:
+def grant(session: Session, actor: User, user: User, plan_code: str, duration_days: int | None, reason: str, expires_at: datetime | None = None) -> SubscriptionAssignment:
+    if user.lifecycle_status != "active":
+        raise HTTPException(409, "Plan changes are unavailable while this account is inactive.")
     if duration_days is not None and not 1 <= duration_days <= 3650:
         raise HTTPException(422, "duration_days must be between 1 and 3650.")
     plan = session.execute(select(Plan).where(Plan.code == plan_code, Plan.active.is_(True))).scalar_one_or_none()
     if plan is None:
         raise HTTPException(422, "Plan is not assignable.")
     now = utc_now()
+    if expires_at is not None:
+        expires_at = _aware(expires_at)
+        if expires_at <= now:
+            raise HTTPException(422, "expires_at must be in the future.")
     prior = active_assignment(session, user, now)
     if prior:
         prior.status = "revoked"; prior.revoked_at = now; prior.revoked_by_user_id = actor.id
-    assignment = SubscriptionAssignment(user_id=user.id, plan_id=plan.id, starts_at=now, expires_at=now + timedelta(days=duration_days) if duration_days is not None else None, status="active", granted_by_user_id=actor.id, reason=reason)
+    if expires_at is None and duration_days is not None:
+        expires_at = now + timedelta(days=duration_days)
+        if prior and prior.plan_id == plan.id and prior.expires_at is not None:
+            expires_at = _aware(prior.expires_at) + timedelta(days=duration_days)
+    assignment = SubscriptionAssignment(user_id=user.id, plan_id=plan.id, starts_at=now, expires_at=expires_at, status="active", granted_by_user_id=actor.id, reason=reason)
     session.add(assignment)
     session.flush()
     replaced_id = prior.id if prior else None
@@ -84,6 +94,8 @@ def grant(session: Session, actor: User, user: User, plan_code: str, duration_da
     return assignment
 
 def revoke(session: Session, actor: User, user: User, reason: str) -> SubscriptionAssignment:
+    if user.lifecycle_status != "active":
+        raise HTTPException(409, "Plan changes are unavailable while this account is inactive.")
     assignment = active_assignment(session, user)
     if assignment is None:
         raise HTTPException(404, "No active subscription assignment.")

@@ -8,6 +8,7 @@ import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
 import { SavedScreen } from '@/components/saved-screen';
 import { Header } from '@/components/header';
 import { NavigationBar } from '@/components/navigationbar';
+import { TopBar } from '@/components/top-bar';
 import type { ActionMenuItem } from '@/components/action-menu';
 // legacy TabBar removed
 import { Tabs } from './tabs';
@@ -22,6 +23,7 @@ import { ControlPanelScreen, type ControlPanelTab } from '@/components/control-p
 import { SideDrawer } from '@/components/side-drawer';
 import { ToastStack, type ToastInput, type ToastMessage } from '@/components/toast-stack';
 import { ProfileSetupWizard } from '@/components/profile-setup-wizard';
+import { Modal } from '@/components/modal';
 import { getPostPath } from '@/lib/post-path';
 import { PollingNotificationTransport } from '@/lib/notification-transport';
 import { initialConnections, initialPosts, type Connection, type ConnectionRequest, type Post, type Screen } from '@/lib/data';
@@ -29,6 +31,7 @@ import {
   acceptFollowRequest,
   cancelFollowRequest,
   createPost,
+  blockUser,
   getConnectionStatus,
   listFollowers,
   listFollowing,
@@ -117,6 +120,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [profileConnectionState, setProfileConnectionState] = useState<'self' | 'none' | 'requested' | 'following'>(profileUser ? 'none' : 'self');
   const [profileConnectionRequestId, setProfileConnectionRequestId] = useState<string | null>(null);
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
+  const [profileBlockOpen, setProfileBlockOpen] = useState(false);
+  const [profileBlockBusy, setProfileBlockBusy] = useState(false);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -140,6 +145,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const notificationCountRef = useRef<number | null>(null);
   const notificationToastIds = useRef(new Set<string>());
   const notificationReadIds = useRef(new Set<string>());
+  const notificationReadMutationCount = useRef(0);
   useEffect(() => setHomeFilter(initialHomeFilter), [initialHomeFilter]);
   useEffect(() => setConnectionsFilter(initialConnectionsFilter), [initialConnectionsFilter]);
   useEffect(() => setMessagesTab(initialMessagesTab), [initialMessagesTab]);
@@ -181,6 +187,18 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       disabled: unreadNotificationCount === 0,
     },
   ];
+  const profileMenuItems: ActionMenuItem[] = profileUser ? [
+    {
+      label: 'Block user',
+      icon: 'fa-ban',
+      onClick: () => setProfileBlockOpen(true),
+    },
+  ] : [];
+  const navigationMenuItems = activeScreen === 'profile' && profileUser
+    ? profileMenuItems
+    : activeScreen === 'notifications'
+      ? notificationMenuItems
+      : [];
 
   useEffect(() => {
     const updateBackAvailability = () => {
@@ -417,6 +435,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     if (!session) return;
     const transport = new PollingNotificationTransport(() => loadAuthSession()?.accessToken ?? session.accessToken);
     return transport.subscribe((count) => {
+      if (notificationReadMutationCount.current > 0) return;
       const previousCount = notificationCountRef.current;
       notificationCountRef.current = count;
       setUnreadNotificationCount(count);
@@ -433,7 +452,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           });
           page.items.filter((item) => item.read).forEach((item) => notificationReadIds.current.add(item.id));
           if (activeScreenRef.current === 'notifications') {
-            setNotifications(page.items.map(mapApiNotification));
+            setNotifications(mapNotificationPage(page.items));
           }
         })
         .catch(() => undefined);
@@ -489,7 +508,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     listNotifications(session.accessToken, { limit: 40 })
       .then((page) => {
         page.items.forEach((item) => notificationToastIds.current.add(item.id));
-        const notificationItems = page.items.map(mapApiNotification);
+        const notificationItems = mapNotificationPage(page.items);
         setNotifications(notificationItems);
       })
       .catch(() => {
@@ -626,6 +645,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       handle: `@${post.author_username}`,
       initials: getInitials(post.author_display_name || post.author_username),
       imageUrl: post.profile_picture_url,
+      showProfessionalBadge: post.show_professional_badge,
       tone: 'mint',
       createdAt: post.created_at,
       text: post.content,
@@ -651,6 +671,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
             mediaCount: post.quoted_post.media_count,
             media: post.quoted_post.media.map((item) => item.url),
             unavailable: post.quoted_post.unavailable,
+            showProfessionalBadge: post.quoted_post.show_professional_badge,
           }
         : null,
     };
@@ -665,6 +686,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       initials: getInitials(connectionUser.username),
       status: 'pending',
       createdAt: request.created_at,
+      showProfessionalBadge: connectionUser.show_professional_badge,
     };
   }
 
@@ -699,6 +721,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
       initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
+      showProfessionalBadge: notification.actor_show_professional_badge,
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
       href: notificationHref,
@@ -710,6 +733,14 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         { label: 'Decline', onClick: () => void handleNotificationAction(notification.id, 'reject-chat', conversationId), busy: notificationActionBusyId === notification.id },
       ] : undefined,
     };
+  }
+
+  function mapNotificationPage(items: ApiNotification[]): NotificationItem[] {
+    return items.map((item) => {
+      if (item.read) notificationReadIds.current.add(item.id);
+      const mapped = mapApiNotification(item);
+      return notificationReadIds.current.has(item.id) ? { ...mapped, unread: false, tone: 'sage', actions: undefined } : mapped;
+    });
   }
 
   function getNotificationText(type: ApiNotification['type'], requesterUsername: string | null, recipientUsername: string | null, actorName: string, actorHandle: string, payload: Record<string, unknown>) {
@@ -753,6 +784,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       tone: connectionUser.is_private ? 'sage' : 'mint',
       relationship,
       status: 'connected' as const,
+      showProfessionalBadge: connectionUser.show_professional_badge,
     };
   }
 
@@ -884,31 +916,40 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     const notification = notifications.find((item) => item.id === notificationId);
     if (!notification?.unread) return;
     notificationReadIds.current.add(notificationId);
+    notificationReadMutationCount.current += 1;
+    notificationCountRef.current = Math.max(0, (notificationCountRef.current ?? unreadNotificationCount) - 1);
     setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: false, tone: 'sage' } : item));
     setUnreadNotificationCount((current) => Math.max(0, current - 1));
-    void markNotificationRead(session.accessToken, notificationId).catch(() => {
-      notificationReadIds.current.delete(notificationId);
-      setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: true, tone: 'mint' } : item));
-      getUnreadNotificationCount(session.accessToken)
-        .then((response) => setUnreadNotificationCount(response.count))
-        .catch(() => undefined);
-    });
+    void markNotificationRead(session.accessToken, notificationId)
+      .catch(() => {
+        notificationReadIds.current.delete(notificationId);
+        setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, unread: true, tone: 'mint' } : item));
+        getUnreadNotificationCount(session.accessToken)
+          .then((response) => setUnreadNotificationCount(response.count))
+          .catch(() => undefined);
+      })
+      .finally(() => { notificationReadMutationCount.current = Math.max(0, notificationReadMutationCount.current - 1); });
   }
 
   function handleMarkAllNotificationsRead() {
     const session = loadAuthSession();
     if (!session) return;
+    const markedIds = notifications.filter((item) => item.unread).map((item) => item.id);
+    markedIds.forEach((id) => notificationReadIds.current.add(id));
+    notificationReadMutationCount.current += 1;
+    notificationCountRef.current = 0;
     setNotifications((current) => current.map((item) => ({ ...item, unread: false, tone: 'sage' })));
     setUnreadNotificationCount(0);
     void markAllNotificationsRead(session.accessToken).catch(() => {
       addToast('Could not mark notifications as read.');
+      markedIds.forEach((id) => notificationReadIds.current.delete(id));
       listNotifications(session.accessToken, { limit: 40 })
-        .then((page) => setNotifications(page.items.map(mapApiNotification)))
+        .then((page) => setNotifications(mapNotificationPage(page.items)))
         .catch(() => undefined);
       getUnreadNotificationCount(session.accessToken)
         .then((response) => setUnreadNotificationCount(response.count))
         .catch(() => undefined);
-    });
+    }).finally(() => { notificationReadMutationCount.current = Math.max(0, notificationReadMutationCount.current - 1); });
   }
 
   async function handleNotificationAction(notificationId: string, action: 'accept-follow' | 'reject-follow' | 'accept-chat' | 'reject-chat', targetId: string) {
@@ -975,6 +1016,20 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onAccountChange={onUserChange}
         />
 
+        <TopBar
+          title={getPageTitle(activeScreen)}
+          isHome={activeScreen === 'home'}
+          sidebarCollapsed={sidebarCollapsed}
+          notificationCount={unreadNotificationCount}
+          notifications={notifications}
+          hasUnreadMessages={hasUnreadMessages}
+          backDisabled={!canGoBack}
+          menuItems={navigationMenuItems}
+          onNavigate={navigateTo}
+          onBack={() => router.back()}
+          onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
+        />
+
           <Header
           onNavigate={navigateTo}
           sidebarCollapsed={sidebarCollapsed}
@@ -990,7 +1045,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
               title={getPageTitle(activeScreen)}
               onBack={() => router.back()}
               backDisabled={!canGoBack}
-              menuItems={activeScreen === 'notifications' ? notificationMenuItems : undefined}
+              menuItems={navigationMenuItems}
             />
           </div>
 
@@ -1101,7 +1156,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onReactionError={(message) => addToast(message)}
                       onEditProfile={openProfileSettings}
                       onMessage={() => router.push(`/${encodeURIComponent((profileUser ?? user).username)}/chat`)}
-                      onBlocked={() => router.refresh()}
                       initialTab={profileTab}
                       onTabChange={onProfileTabChange}
                       connectionState={profileConnectionState}
@@ -1149,6 +1203,40 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 </>
               )}
             </ContentBox>
+            {profileBlockOpen && profileUser && (
+              <Modal
+                title="Block user"
+                onClose={() => !profileBlockBusy && setProfileBlockOpen(false)}
+                actions={(
+                  <>
+                    <button className="button-secondary" type="button" onClick={() => setProfileBlockOpen(false)} disabled={profileBlockBusy}>Cancel</button>
+                    <button
+                      className="button-primary"
+                      type="button"
+                      disabled={profileBlockBusy}
+                      onClick={async () => {
+                        const session = loadAuthSession();
+                        if (!session) return;
+                        setProfileBlockBusy(true);
+                        try {
+                          await blockUser(session.accessToken, profileUser.username);
+                          setProfileBlockOpen(false);
+                          router.refresh();
+                        } catch (error) {
+                          addToast(error instanceof Error ? error.message : 'Could not block user.');
+                        } finally {
+                          setProfileBlockBusy(false);
+                        }
+                      }}
+                    >
+                      {profileBlockBusy ? 'Blocking…' : 'Block user'}
+                    </button>
+                  </>
+                )}
+              >
+                <p>They will not be able to view your profile or message you. Follow relationships will be removed and existing chats will become read-only.</p>
+              </Modal>
+            )}
           </div>
         </section>
 
@@ -1180,6 +1268,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                   initials: composeContext.post.initials,
                   tone: composeContext.post.tone,
                   imageUrl: composeContext.post.imageUrl,
+                  showProfessionalBadge: composeContext.post.showProfessionalBadge,
                   text: composeContext.post.text,
                   mediaCount: 0,
                 } : null}

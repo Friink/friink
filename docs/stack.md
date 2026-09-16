@@ -47,14 +47,12 @@ npm --prefix web run dev
 # See api/.env.example for required environment variables.
 ```
 
-`localhost/localhost.ps1` is available for local environment setup.
-
 The `development` branch is the local-work branch below `staging`. Its ignored
 `api/.env.development` file may copy staging variable names, but must point to
 an isolated development database and must never contain production credentials.
 The development database must be migrated to the current Alembic head before
-local auth/session rehearsals; the current repository migration head is
-`20260911_0046`.
+local auth/session rehearsals. See the [deployment guide](deployment.md) for
+the migration gate and release workflow.
 
 ## Verification tools
 

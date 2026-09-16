@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-12T16:25:00Z  
+**Last edited:** 2026-09-16T20:03:49Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -141,6 +141,11 @@ profile details → account completion and authenticated setup. Resending a code
 invalidates the previous code. Invalid, expired, or over-attempt codes show
 recoverable feedback without creating an account.
 
+The password step shows a left-aligned checklist whose satisfied requirements
+use the accent color. The profile step presents username guidance with the same
+left alignment and accent feedback when the 2–32 character allowed-character
+rule is satisfied; server validation remains authoritative.
+
 If the email already belongs to an account, the browser remains on the email
 step with neutral copy. No signup reservation or signup OTP is created; a
 separate single-use sign-in link may be sent to the registered address.
@@ -249,6 +254,13 @@ Network, timeout, CORS, 403, 5xx, malformed-response, and other recoverable
 failures do not clear local session state. Only an explicit terminal refresh
 response clears local state and redirects to `/login`.
 
+On a full browser reload, the client may use the previously stored safe user
+metadata to mount the application shell immediately while the refresh-cookie
+exchange runs in the background. This cached metadata is presentation-only:
+authenticated API effects and actions still wait for the in-memory access token
+created by a successful refresh. A failed refresh returns to the existing
+recovery surface.
+
 #### Business rules and contract
 
 - **ACCESS-R-014:** Access tokens use the current 30-minute implementation
@@ -309,6 +321,10 @@ Selecting a remembered account shows a spinner, disables competing account
 actions, validates the slot, and updates the shell in place. Removing or
 logging out the active account selects the most-recent remaining valid account,
 or returns to the public site when none remain.
+
+The account switcher header includes an accessible `Beta` badge. This is a
+disclosure that the account-switching experience is still being stabilized; it
+does not change account limits, authorization, session behavior, or access.
 
 #### Business rules and contract
 

@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-12  
+**Last edited:** 2026-09-16T20:57:55Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -53,6 +53,20 @@ contract rather than repeated here.
 
 - The primary brand color is green and is used for active states, selected
   tabs, important links, primary actions, indicators, and focus treatment.
+- Scrollable tab strips hide the right scroll affordance at the end of the
+  strip, and their arrow controls remain contained within the tab-bar height
+  and flush with the strip edges.
+- Post actions use the current accent color on hover, keyboard focus, and
+  press; persistent Like and Save states also retain the accent color.
+- Signup password and username guidance uses full-width left alignment;
+  satisfied password requirements and a valid username rule use the current
+  accent color.
+- Profile connection actions that include a label use the standard text-button
+  layout; icon-only Message and More controls retain `.icon-button` geometry.
+- Shared profile-picture avatars use the current accent color for their border
+  in both light and dark themes.
+- Profile moderation actions use the shell-owned contextual NavigationBar
+  overflow menu rather than a detached menu in the profile action row.
 - Ink and muted gray establish the text hierarchy.
 - Paper and background colors distinguish surfaces from the application
   canvas.
@@ -70,6 +84,8 @@ contract rather than repeated here.
   content.
 - Typography should establish hierarchy through size, weight, and spacing
   before relying on color.
+- The signed-in web app uses a slightly more generous shared scale (`12px`
+  small, `14px` supporting, `16px` body) and readable `1.5` body line-height.
 
 ### Shape
 
@@ -85,6 +101,9 @@ contract rather than repeated here.
 - Prefer thin dividers and spacing to separate related content.
 - Use bordered surfaces and restrained shadows for floating or layered
   content, not for every individual list item.
+- Feed posts remain flat list items, with a subtle surface shift on hover;
+  shared content panels should not add visible side lines or outlines solely
+  to establish depth.
 - Settings, chat, notifications, and directory rows should share a calm
   divider-based rhythm.
 
@@ -116,10 +135,28 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Use addressable links for stable destinations so browser history, status
   previews, middle-click, and open-in-new-tab behavior remain available.
 - Use the shared navigation bar and tabs for subpages and addressable sections.
+- The unified `TopBar` preview uses one consistent leading/context/actions
+  structure across signed-in surfaces, uses the same surface as the side
+  drawer, and keeps the compact Friink mark visible in every mode. The mark
+  always links Home and the page title stays centered. The existing Header and
+  NavigationBar remain mounted but are hidden during preview evaluation. Home exposes the sidebar toggle, compact
+  theme-aware mark, Search, Chat, and Notifications. Contextual screens add a
+  history-aware Back control and the existing ActionMenu. Its
+  preview controls must preserve existing route destinations and action
+  semantics until the replacement is accepted.
 - Use the shared floating bar for persistent contextual actions such as post
   composition.
 
 ## Interaction patterns
+
+### Scrollbar treatment
+
+The web platform uses native scrolling with a shared CSS scrollbar treatment.
+Scrollable surfaces use a thin rounded thumb blended from the active accent and
+line colors, with the accent color on hover and transparent tracks. The styling
+must preserve native wheel, keyboard, touch, accessibility, and reduced-motion
+behavior; JavaScript scrollbar replacements are not part of the platform design
+system.
 
 ### Actions
 
@@ -157,6 +194,35 @@ what action can populate the surface.
   existence through copy or visual details.
 - Retry should be explicit when retrying is useful.
 
+Direct post URLs that resolve to a missing, deleted, private, or otherwise
+inaccessible post use a post-like unavailable state rather than the generic
+404-styled error surface. The state uses calm explanatory copy and a `Go home`
+action; it must not expose technical error codes or reveal whether a protected
+post exists.
+
+### Beta disclosure
+
+Use a small visible `Beta` badge when an otherwise available feature is still
+being stabilized. The badge is informational only and must not change feature
+permissions or behavior. Features not yet available use the existing
+`Coming soon` or planned treatment.
+
+### Subscription status and entitlement disclosure
+
+Subscription surfaces use explicit plan and lifecycle labels: `Free`, `Pro`, or
+`Pro+` for the effective plan, and `Active`, `Expired`, or `Revoked` for the
+assignment state. Indefinite access is labeled `No expiration`. Manual admin
+access is described as granted or activated access, never as a purchase.
+Public plan and professional badges are opt-in and hidden by default. The
+professional-badge preference is conditionally revealed under the General
+`How I use Friink` setting only for `For professional networking`; it is not
+shown for `For personal connection`. When enabled, the badge sits immediately
+next to the user's displayed name on the public profile. The preference
+changes profile display only and must not imply professional verification,
+directory eligibility, or paid access. Expiry and revocation messaging must
+explain the resulting
+return to Free without implying a payment event when billing is unavailable.
+
 ### Feedback
 
 Use inline feedback when it belongs to a specific control or flow. Use shared
@@ -178,6 +244,11 @@ Before creating a new pattern:
 Feature units own what a component means in context. This document owns the
 shared design language. The implementation details and component contracts are
 in [`packages/design/design.md`](../packages/design/design.md).
+
+Icon-and-text primary and secondary buttons use a consistent 8px inline gap;
+icon-only `.icon-button` controls remain compact and are excluded. Button-like
+links use the same shared primitives and never display browser-default
+underlines.
 
 ## Accessibility
 

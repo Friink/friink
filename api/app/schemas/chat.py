@@ -17,6 +17,7 @@ class ChatUserResponse(BaseModel):
     username: str
     display_name: str | None
     profile_picture_url: str | None
+    show_professional_badge: bool = False
 
 
 class MessageResponse(BaseModel):

@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T02:55:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -34,12 +34,32 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
   a client-side filter over the global feed.
 - **FEED-R-006:** Feed failures preserve usable content and expose retry rather
   than inventing content or clearing the active session.
+- **FEED-R-007:** The shared post action row anchors its four actions from the
+  left content edge to the right content edge. The post-header utilities form
+  one vertically centered, right-aligned pair in Share-then-More order with a
+  12px touch-safe gap, within the shared content inset. These utilities use
+  their own compact, borderless icon-control geometry rather than the shared
+  standard-button minimum dimensions, with no decorative border or outline.
+- **FEED-R-008:** Post action controls change to the current accent color on
+  hover, keyboard focus, and press. Like and Save retain the accent color while
+  active; their counts remain muted except while the associated control is
+  being interacted with.
+- **FEED-R-009:** Scrollable tab strips show the right arrow only while more
+  content remains to the right; tab arrows must fit inside the tab bar without
+  extending beyond its bounds, and visible arrows sit flush against the bar's
+  left or right edge.
+- **FEED-R-010:** The Home feed refresh control spans the same content column as
+  the feed body and floating composer; it must not add a second horizontal
+  inset of its own.
 
 ## UX and flows
 
 The Home surface defaults to Explore and supports Following. Feed cards use the
 shared `FeedPost`; the floating composer is available on feed surfaces and is
 hidden on profiles. Empty, loading, refresh, and error states are explicit.
+When new posts are prepended after a refresh or post creation, the feed updates
+after the current React lifecycle and preserves the reader's scroll position
+without forcing a synchronous render from an effect.
 
 ## Technical contract
 

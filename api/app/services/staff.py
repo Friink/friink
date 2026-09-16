@@ -7,27 +7,20 @@ from app.models.staff import StaffPermission, StaffRole, UserPermissionGrant, Pr
 from app.models.user import User
 from app.models.security_event import SecurityEventType
 from app.services.security_events import record_security_event_safely
-PERMISSIONS = {"staff.access", "users.view", "users.lock", "users.unlock", "sessions.revoke", "roles.manage", "audit.view"}
 IDLE = timedelta(minutes=16)
 ABSOLUTE = timedelta(hours=8)
 
 def permissions_for(session: Session, user: User) -> set[str]:
     if not user.is_staff: return set()
     keys = session.execute(select(StaffRole.key).join(user_roles, user_roles.c.role_id == StaffRole.id).where(user_roles.c.user_id == user.id)).scalars().all()
-    if "superadmin" in keys: return set(PERMISSIONS)
+    if "superadmin" in keys:
+        return set(session.execute(select(StaffPermission.key)).scalars().all())
     inherited = session.execute(select(StaffPermission.key).join(StaffRole.permissions).join(user_roles, user_roles.c.role_id == StaffRole.id).where(user_roles.c.user_id == user.id)).scalars().all()
     direct = session.execute(select(StaffPermission.key).join(UserPermissionGrant, UserPermissionGrant.permission_id == StaffPermission.id).where(UserPermissionGrant.user_id == user.id)).scalars().all()
     return set(inherited) | set(direct)
 
 def require_staff(session: Session, user: User, permission: str) -> None:
     if permission not in permissions_for(session, user): raise HTTPException(status_code=403, detail="You are not authorized to perform this action.")
-
-def require_superadmin(session: Session, user: User, token: str | None) -> PrivilegedStaffSession:
-    privileged = require_privileged(session, user, token, "roles.manage")
-    is_superadmin = session.execute(select(StaffRole.id).join(user_roles, user_roles.c.role_id == StaffRole.id).where(user_roles.c.user_id == user.id, StaffRole.key == "superadmin")).scalar_one_or_none()
-    if is_superadmin is None:
-        raise HTTPException(status_code=403, detail="Only superadmins may manage subscriptions.")
-    return privileged
 
 def require_privileged(session: Session, user: User, token: str | None, permission: str) -> PrivilegedStaffSession:
     now = datetime.now(UTC)

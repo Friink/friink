@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T21:51:28Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -43,17 +43,41 @@ relationship, privacy, and blocking state.
   other-user actions resolve from authenticated connection status.
 - **PROFILE-R-005:** Public profile tabs include posts, replies, and likes only
   when the relevant visibility rules permit them.
+- **PROFILE-R-006:** Shared profile-picture avatars use the app accent color
+  for their border in both light and dark themes; the border must not invert
+  with the foreground text color.
 - **PROFILE-R-006:** Empty About text shows no visitor-facing placeholder; the
   owner sees `Add about in settings.`.
 - **PROFILE-R-007:** Profile pictures are optional and retain the last
   server-confirmed image until a complete upload succeeds.
+- **PROFILE-R-008:** Profile posts, replies, and connection counts load from
+  author-scoped API requests; pagination arguments must preserve their named
+  meaning so a profile never silently loses its content after the shell loads.
+- **PROFILE-R-009:** Other-user connection actions that include a label use the
+  standard text-button layout so the icon and label remain on one line. Message
+  and More remain icon-only controls.
+- **PROFILE-R-010:** Other-user profile moderation actions are exposed through
+  the shell-owned contextual NavigationBar menu; Block is not rendered as a
+  detached action-row menu.
+- **PROFILE-R-011:** Profile bootstrap shows an explicit session-restoration
+  state and a retry action for recoverable API failures; it never leaves the
+  profile as a blank surface while authentication is being restored.
+- **PROFILE-R-012:** When the owner enables the professional-profile badge
+  preference, the public profile renders `Professional` immediately next to
+  the displayed name. The badge is omitted otherwise.
 
 ## UX and flows
 
 Profile pages show identity, About, follower/following statistics, actions,
 and Posts/Replies tabs. Loading and unavailable states are explicit. A self
 profile offers Edit; another profile may offer Message or connection actions.
-Profile content uses author-scoped routes and visibility rules.
+The shared profile-card identity name row may include the opt-in `Professional`
+badge next to the displayed name. Data-backed profile cards reuse the same
+visibility value across profiles, posts, quoted posts, connections, chat,
+notifications, likes, blocked users, and remembered-account surfaces.
+The contextual NavigationBar overflow menu exposes Block for another user and
+opens the shared confirmation modal. Profile content uses author-scoped routes
+and visibility rules.
 
 ## Technical contract
 

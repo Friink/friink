@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
-import { clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { AuthApiError, clearAuthSession, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -19,7 +20,7 @@ function mapApiPost(post: ApiPost): Post {
   return {
     id: post.id, publicId: post.public_id, slug: post.slug, kind: post.kind, parentPostId: post.parent_post_id,
     name: post.author_display_name || post.author_username, handle: `@${post.author_username}`,
-    initials: getInitials(post.author_display_name || post.author_username), imageUrl: post.profile_picture_url,
+    initials: getInitials(post.author_display_name || post.author_username), imageUrl: post.profile_picture_url, showProfessionalBadge: post.show_professional_badge,
     tone: 'mint', createdAt: post.created_at, text: post.content, connectionType: 'following', isConnection: true,
     isSaved: post.saved ?? false, isLiked: post.liked ?? false, replies: post.reply_count, quotes: post.quote_count,
     likeCount: post.like_count ?? 0, savedCount: post.saved_count ?? 0, reactions: 0, media: post.media.map((item) => item.url),
@@ -30,6 +31,7 @@ function mapApiPost(post: ApiPost): Post {
       authorUsername: post.quoted_post.author_username,
       authorDisplayName: post.quoted_post.author_display_name,
       imageUrl: post.quoted_post.profile_picture_url,
+      showProfessionalBadge: post.quoted_post.show_professional_badge,
       content: post.quoted_post.content,
       mediaCount: post.quoted_post.media_count,
       media: post.quoted_post.media.map((item) => item.url),
@@ -50,11 +52,15 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
   const [likedHasMore, setLikedHasMore] = useState(false);
   const [likedLoading, setLikedLoading] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
+  const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
+  const [authRetry, setAuthRetry] = useState(0);
 
   useEffect(() => {
     const session = loadAuthSession();
     if (session) {
       setUser(session.user);
+      setAuthCheckComplete(true);
       return;
     }
 
@@ -64,16 +70,25 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
         if (!active) return;
         saveAuthSession(restoredSession);
         setUser(restoredSession.user);
+        setSessionError(null);
+        setAuthCheckComplete(true);
       })
       .catch((error) => {
         if (!active) return;
-        if (isTerminalRefreshFailure(error)) router.replace('/login');
+        setAuthCheckComplete(true);
+        if (isTerminalRefreshFailure(error)) {
+          const deliberateSecurityRevocation = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY';
+          setSessionError(deliberateSecurityRevocation ? 'security' : 'expired');
+          router.replace(deliberateSecurityRevocation ? '/login?reason=security-revocation' : '/login');
+        } else {
+          setSessionError('offline');
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [authRetry, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -104,6 +119,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
           about: publicUser.about,
           isPrivate: publicUser.isPrivate,
           likesVisible: publicUser.likesVisible,
+          showProfessionalBadge: publicUser.showProfessionalBadge,
           profilePictureUrl: publicUser.profilePictureUrl,
           profilePictureUpdatedAt: publicUser.profilePictureUpdatedAt,
           email: `${publicUser.username}@friink.local`,
@@ -187,10 +203,12 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     if (!user) return;
 
     let active = true;
+    const session = loadAuthSession();
+    if (!session) return;
     const profileHandle = username || user.username;
     setProfileStats(null);
 
-    Promise.all([listFollowers(profileHandle), listFollowing(profileHandle)])
+    Promise.all([listFollowers(profileHandle, session.accessToken), listFollowing(profileHandle, session.accessToken)])
       .then(([followers, following]) => {
         if (!active) return;
         setProfileStats({ followers: followers.count, following: following.count });
@@ -209,7 +227,10 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     router.replace('/');
   }
 
-  if (!user) return null;
+  if (!user) {
+    if (!authCheckComplete) return <SessionRecoveryScreen status="loading" />;
+    return <SessionRecoveryScreen status={sessionError ?? 'offline'} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} />;
+  }
 
   const profileHandle = username || user.username;
   const isOwnProfile = profileHandle.toLowerCase() === user.username.toLowerCase();

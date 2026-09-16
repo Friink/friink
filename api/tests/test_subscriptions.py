@@ -13,7 +13,7 @@ from app.models.subscription import Plan, SubscriptionAssignment
 from app.models.user import User
 from app.services.security import hash_password
 from app.services.subscriptions import effective_plan, effective_status, grant, has_entitlement, revoke
-from app.services.staff import require_superadmin
+from app.services.staff import require_privileged, permissions_for
 from fastapi import HTTPException
 
 
@@ -45,8 +45,8 @@ def setup(session):
     session.add_all([free, pro, plus]); session.flush()
     admin = make_user("admin", staff=True); user = make_user("subscriber")
     role = StaffRole(key=f"superadmin_{uuid.uuid4().hex[:8]}", display_name=f"Superadmin {uuid.uuid4().hex[:8]}")
-    # The service boundary recognizes the established system role key.
-    role.key = "superadmin"; role.permissions = [StaffPermission(key="roles.manage", display_name="Manage roles")]
+    # Superadmin receives the database permission catalog dynamically.
+    role.key = "superadmin"; role.permissions = [StaffPermission(key="subscriptions.manage", display_name="Manage subscriptions")]
     session.add_all([admin, user, role]); session.flush(); session.execute(user_roles.insert().values(user_id=admin.id, role_id=role.id))
     token = "staff-token"; session.add(PrivilegedStaffSession(user_id=admin.id, token_hash=PrivilegedStaffSession.hash_token(token), expires_at=datetime.now(UTC) + timedelta(hours=1))); session.commit()
     return admin, user, token
@@ -77,7 +77,29 @@ def test_indefinite_revocation_replacement_and_audit(session, monkeypatch):
     assert "subscription_replaced" in kinds and "subscription_revoked" in kinds
 
 
-def test_free_fallback_and_unauthorized_staff_boundary(session):
+def test_same_plan_renewal_extends_active_expiry(session, monkeypatch):
+    admin, user, _ = setup(session)
+    clock = datetime(2030, 1, 1, tzinfo=UTC); monkeypatch.setattr("app.services.subscriptions.utc_now", lambda: clock)
+    first = grant(session, admin, user, "friink_pro", 30, "initial access")
+    second = grant(session, admin, user, "friink_pro", 30, "renewal")
+    assert first.status == "revoked"
+    assert second.starts_at == clock
+    assert second.expires_at == clock + timedelta(days=60)
+
+
+def test_inactive_users_cannot_be_changed(session):
+    admin, user, _ = setup(session)
+    user.lifecycle_status = "pending_deletion"
+    session.commit()
+    with pytest.raises(HTTPException) as grant_error:
+        grant(session, admin, user, "friink_pro", 30, "should fail")
+    assert grant_error.value.status_code == 409
+    with pytest.raises(HTTPException) as revoke_error:
+        revoke(session, admin, user, "should fail")
+    assert revoke_error.value.status_code == 409
+
+
+def test_free_fallback_and_permission_staff_boundary(session):
     admin, user, _ = setup(session)
     assert effective_plan(user, session).code == "friink_free"
     staff = make_user("support", staff=True)
@@ -85,11 +107,18 @@ def test_free_fallback_and_unauthorized_staff_boundary(session):
     staff_session = PrivilegedStaffSession(user_id=staff.id, token_hash=PrivilegedStaffSession.hash_token("support-token"), expires_at=datetime.now(UTC) + timedelta(hours=1))
     session.add(staff_session); session.commit()
     with pytest.raises(HTTPException) as error:
-        require_superadmin(session, staff, "support-token")
+        require_privileged(session, staff, "support-token", "subscriptions.manage")
     assert error.value.status_code == 403
+
+
+def test_superadmin_resolves_all_database_permissions(session):
+    admin, _, _ = setup(session)
+    extra = StaffPermission(key="professional_status.manage", display_name="Manage professional status")
+    session.add(extra); session.commit()
+    assert "professional_status.manage" in permissions_for(session, admin)
 
 
 def test_invalid_duration_and_client_expiry_are_rejected():
     from app.schemas.subscriptions import SubscriptionGrantRequest
     with pytest.raises(ValueError): SubscriptionGrantRequest(plan_code="friink_pro", duration_days=-1, reason="x")
-    with pytest.raises(ValueError): SubscriptionGrantRequest(plan_code="friink_pro", reason="x", expires_at="2030-01-01")
+    with pytest.raises(ValueError): SubscriptionGrantRequest(plan_code="friink_pro", duration_days=30, reason="x", expires_at="2030-01-01")

@@ -460,6 +460,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         quoted_post=serialize_quoted_post(post.quoted_post, post.quoted_post_id, viewer=viewer, session=session),
         created_at=post.created_at,
         updated_at=post.updated_at,
+        show_professional_badge=post.user.show_professional_badge,
     )
 
 
@@ -473,6 +474,7 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
             author_display_name=None,
             content="Original post unavailable.",
             unavailable=True,
+            show_professional_badge=False,
         )
     if quoted_post.user and quoted_post.user.is_private and (not session or not can_view_post(session, viewer, quoted_post)):
         return QuotedPostResponse(
@@ -483,6 +485,7 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
             author_display_name=None,
             content="Content not available",
             unavailable=True,
+            show_professional_badge=False,
         )
     return QuotedPostResponse(
         id=quoted_post.id,
@@ -495,4 +498,5 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         media_count=quoted_post.media_count,
         media=[PostMediaResponse(url=item.url) for item in quoted_post.media if item.url],
         unavailable=False,
+        show_professional_badge=quoted_post.user.show_professional_badge,
     )

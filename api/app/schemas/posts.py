@@ -85,6 +85,7 @@ class QuotedPostResponse(BaseModel):
     media_count: int = 0
     media: list["PostMediaResponse"] = []
     unavailable: bool = False
+    show_professional_badge: bool = False
 
 
 class PostMediaResponse(BaseModel):
@@ -114,6 +115,7 @@ class PostResponse(BaseModel):
     quoted_post: QuotedPostResponse | None
     created_at: datetime
     updated_at: datetime
+    show_professional_badge: bool = False
 
 
 class FeedPageResponse(BaseModel):
@@ -142,6 +144,7 @@ class LikeActorResponse(BaseModel):
     username: str
     display_name: str | None = None
     profile_picture_url: str | None = None
+    show_professional_badge: bool = False
 
 
 class LikeActorPageResponse(BaseModel):

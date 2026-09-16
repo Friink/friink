@@ -83,6 +83,7 @@ export function PostLikesModal({ postId, onClose }: PostLikesModalProps) {
                 handle={`@${actor.username}`}
                 tone="mint"
                 imageUrl={actor.profilePictureUrl}
+                showProfessionalBadge={actor.showProfessionalBadge}
               />
             )}
           />

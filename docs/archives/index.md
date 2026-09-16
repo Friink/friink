@@ -8,15 +8,15 @@ that matches the kind of question you are answering.
 
 | Need | Source | Owns |
 | --- | --- | --- |
-| Active business rules | [`RULES.md`](../RULES.md) | Product, privacy, authorization, and platform behavior |
-| Visual and component rules | [`packages/design/design.md`](../packages/design/design.md) | Layout, tokens, interaction presentation, and reusable UI contracts |
+| Active business rules | [`rules.md`](../rules.md) | Product, privacy, authorization, and platform behavior |
+| Visual and component rules | [`packages/design/design.md`](../../packages/design/design.md) | Layout, tokens, interaction presentation, and reusable UI contracts |
 | Feature behavior | Feature contract in this directory | End-to-end product behavior and acceptance criteria |
 | Architecture | Architecture document in this directory | System boundaries, data flow, and technical design |
 | Verification evidence | Verification/audit document in this directory | Test results, staging evidence, and known limitations |
-| History | [`CHANGELOG.md`](../CHANGELOG.md), [`AGENTLOG.md`](../AGENTLOG.md) | What changed and when; not the current product contract |
+| History | [`CHANGELOG.md`](../../CHANGELOG.md), [`AGENTLOG.md`](../../AGENTLOG.md) | What changed and when; not the current product contract |
 
 When documents conflict, prefer the most specific active contract, then
-`RULES.md` for business behavior and `packages/design/design.md` for visual
+`rules.md` for business behavior and `packages/design/design.md` for visual
 behavior. Historical logs explain how a decision changed but do not override an
 active contract.
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
+import { PostUnavailableState } from '@/components/post-unavailable-state';
 import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
@@ -36,6 +37,7 @@ function mapApiPost(post: ApiPost): Post {
     handle: `@${post.author_username}`,
     initials: getInitials(post.author_display_name || post.author_username),
     imageUrl: post.profile_picture_url,
+    showProfessionalBadge: post.show_professional_badge,
     tone: 'mint',
     createdAt: post.created_at,
     text: post.content,
@@ -57,6 +59,7 @@ function mapApiPost(post: ApiPost): Post {
           authorUsername: post.quoted_post.author_username,
           authorDisplayName: post.quoted_post.author_display_name,
           imageUrl: post.quoted_post.profile_picture_url,
+          showProfessionalBadge: post.quoted_post.show_professional_badge,
           content: post.quoted_post.content,
           mediaCount: post.quoted_post.media_count,
           unavailable: post.quoted_post.unavailable,
@@ -162,10 +165,7 @@ export function PostClient({ postId }: PostClientProps) {
   if (!post) {
     return postUnavailable ? (
       <AppShell user={user} onLogout={handleLogout} initialScreen="home" showTabs={false} showFloatingBar={false}>
-        <section className="post-unavailable" aria-live="polite">
-          <h1>Post unavailable</h1>
-          <p>This post may have been deleted or is no longer visible to you.</p>
-        </section>
+        <PostUnavailableState />
       </AppShell>
     ) : null;
   }
@@ -198,6 +198,8 @@ export function PostClient({ postId }: PostClientProps) {
             handle: composeContext.post.handle,
             initials: composeContext.post.initials,
             tone: composeContext.post.tone,
+            imageUrl: composeContext.post.imageUrl,
+            showProfessionalBadge: composeContext.post.showProfessionalBadge,
             text: composeContext.post.text,
             mediaCount: 0,
           }}

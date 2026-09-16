@@ -7,7 +7,7 @@ release.
 
 **Status:** Active  
 **Last edited:** 2026-09-13T00:05:14Z  
-**Related:** [`template.md`](template.md), [`rules.md`](rules.md), and the
+**Related:** [`template.md`](units/template.md), [`rules.md`](rules.md), and the
 relevant documents in [`units/`](units/)
 
 ## Testing principles
@@ -79,8 +79,8 @@ Use the affected unit document's UX flows and acceptance criteria to verify:
 ### Deployment and environment verification
 
 Before acceptance testing, apply and verify the current Alembic migration head
-for the target environment. The current repository migration head is
-`20260911_0046`.
+for the target environment. Follow the migration gate in the
+[deployment guide](deployment.md).
 
 Use isolated development data for local testing. Never use production
 credentials or a production database for local or destructive rehearsals.

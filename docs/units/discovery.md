@@ -35,14 +35,14 @@ future boundary remains undecided.
 
 ## UX and flows
 
-The header offers inline text-only suggestions and routes submitted queries to
+The signed-in TopBar offers inline text-only suggestions and routes submitted queries to
 `/search/{query}`. Search results use shared `PageSurface`, `ListRow`, and
 identity blocks. `/directory` exists as a navigation destination but currently
 renders a placeholder surface.
 
 ## Technical contract
 
-Search routes and rendering exist in `web/app/search` and the shared header;
+Search routes and rendering exist in `web/app/search` and the signed-in TopBar;
 the current Directory screen has no real API-backed discovery contract.
 
 ## Acceptance criteria

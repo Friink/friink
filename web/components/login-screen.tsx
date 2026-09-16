@@ -36,6 +36,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, pr
   const [loginOtp, setLoginOtp] = useState('');
   const [loginChallengeToken, setLoginChallengeToken] = useState('');
   const [progressiveFlowToken, setProgressiveFlowToken] = useState('');
+  const usernameCriteriaMet = username.length >= 2 && username.length <= 32 && USERNAME_PATTERN.test(username);
   const [lifecycleStatus, setLifecycleStatus] = useState<'deactivated' | 'pending_deletion' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginCooldownUntil, setLoginCooldownUntil] = useState<number | null>(null);
@@ -671,7 +672,7 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, pr
               aria-describedby="signup-username-criteria"
               required
             />
-            <p className="username-criteria" id="signup-username-criteria">2–32 characters · letters, numbers, '.', '_', and '-'</p>
+            <p className={`username-criteria${usernameCriteriaMet ? ' met' : ''}`} id="signup-username-criteria">2–32 characters · letters, numbers, '.', '_', and '-'</p>
 
             <InputField
               label="Date of birth"
