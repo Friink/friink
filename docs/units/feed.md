@@ -44,6 +44,10 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
   hover, keyboard focus, and press. Like and Save retain the accent color while
   active; their counts remain muted except while the associated control is
   being interacted with.
+- **FEED-R-009:** Scrollable tab strips show the right arrow only while more
+  content remains to the right; tab arrows must fit inside the tab bar without
+  extending beyond its bounds, and visible arrows sit flush against the bar's
+  left or right edge.
 
 ## UX and flows
 

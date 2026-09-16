@@ -184,6 +184,18 @@ missing evidence can be filled in.
 - **What:** Post detail URLs use the author username, an on-the-fly slug from the first eight content words capped at 64 characters, and an 8-character random mixed-case alphanumeric `public_id`. Empty slugs omit the slug text.
 - **Edge cases:** The username and slug are cosmetic; the trailing `public_id` is authoritative for lookup. The UUID primary key and all UUID foreign-key relationships remain unchanged. Existing rows receive IDs through the Alembic backfill migration.
 
+### WEB-R-015 — Functional TopBar Preview Preserves Existing Navigation
+
+- **Status:** Active preview
+- **Effective:** 2026-09-16T20:37:01Z
+- **Related units:** [feed](units/feed.md), [profiles](units/profiles.md), [settings](units/settings.md), [staff-admin](units/staff-admin.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`
+
+- **What:** The signed-in app renders a functional shared `TopBar` preview. It uses the side-drawer surface, keeps the Home-linked compact mark and centered current title visible in every mode, and provides Home's sidebar toggle/Search/Chat/Notifications plus contextual history-aware Back and the existing `ActionMenu` using the same shell state and route handlers.
+- **Edge cases:** The preview overlays the existing Header and NavigationBar; neither existing component is removed or replaced. Tabs remain unchanged, and all preview actions preserve the established destinations and semantics until the prototype is accepted.
+
 ### WEB-R-014 — Quoted Posts Link To Their Original
 
 - **Status:** Active

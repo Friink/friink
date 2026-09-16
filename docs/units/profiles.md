@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T20:03:49Z
+**Last edited:** 2026-09-16T21:20:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -43,6 +43,9 @@ relationship, privacy, and blocking state.
   other-user actions resolve from authenticated connection status.
 - **PROFILE-R-005:** Public profile tabs include posts, replies, and likes only
   when the relevant visibility rules permit them.
+- **PROFILE-R-006:** Shared profile-picture avatars use the app accent color
+  for their border in both light and dark themes; the border must not invert
+  with the foreground text color.
 - **PROFILE-R-006:** Empty About text shows no visitor-facing placeholder; the
   owner sees `Add about in settings.`.
 - **PROFILE-R-007:** Profile pictures are optional and retain the last

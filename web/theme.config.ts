@@ -20,11 +20,11 @@ export const theme = {
     logo: "Georgia, 'Times New Roman', serif",
   },
   fontSizes: {
-    xs: '0.6875rem',
-    sm: '0.8125rem',
-    base: '0.9375rem',
-    lg: '1.125rem',
-    xl: '1.5625rem',
+    xs: '0.75rem',
+    sm: '0.875rem',
+    base: '1rem',
+    lg: '1.1875rem',
+    xl: '1.625rem',
   },
   spacing: {
     sidebarWidth: '256px',

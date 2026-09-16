@@ -1,5 +1,204 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-16T21:40:00Z — Flush tab arrows to strip edges
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the gap between tab scroll arrows and the bar corners.
+- Changes Made: Set the shared left and right tab-arrow offsets to zero and
+  documented the edge-aligned interaction contract.
+- Files: `web/app/globals.css`, `docs/units/feed.md`,
+  `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-16T21:30:00Z — Fix tab scroll arrow state and sizing
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the end-of-strip arrow and keep tab arrows inside the bar.
+- Changes Made: Rendered the right arrow only when `canScrollRight` is true;
+  reduced the shared arrow control to fit the tab-bar height and removed the
+  expanding shadow that caused it to extend outside the bar. Updated Feed and
+  design-system documentation.
+- Files: `web/components/tabs.tsx`, `web/app/globals.css`,
+  `docs/units/feed.md`, `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed.
+
+## 2026-09-16T21:18:38Z — Hide legacy Header and NavigationBar for preview
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the old Header and NavigationBar without deleting them.
+- Changes Made: Added shared CSS to hide the legacy components while keeping
+  them mounted for rollback, and removed the old navigation gap from the shell
+  layout. Updated navigation and design documentation.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Localhost `/home/explore` returned HTTP 200 and `git diff --check` passed.
+
+## 2026-09-16T21:20:00Z — Theme-consistent profile avatar borders
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make profile-picture borders match the application theme.
+- Changes Made: Changed the shared `.user-avatar` border from foreground ink
+  to the accent token, keeping one consistent themed treatment in light and
+  dark modes. Updated the Profiles and design-system documentation.
+- Files: `web/app/globals.css`, `docs/units/profiles.md`,
+  `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed.
+
+## 2026-09-16T21:14:24Z — Recover from chat-list transport failures
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the chat timeout failure if it required a fix.
+- Changes Made: Caught conversation-list transport errors in `MessagesScreen`,
+  preserved existing chat data, and added a visible retry state instead of
+  allowing the error to reach the Next.js runtime overlay. Updated the Chat
+  unit contract and release records.
+- Files: `web/components/screens.tsx`, `web/app/globals.css`,
+  `docs/units/chat.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, `/chats` localhost route, and `git diff --check` passed.
+
+## 2026-09-16T21:02:00Z — Keep TopBar identity visible in every mode
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match the TopBar background to the drawer, always show the
+  Home-linked logo, and keep the home action-menu question open for UX review.
+- Changes Made: Applied drawer surface tokens to the preview, kept the compact
+  logo and centered title in both home and contextual modes, and documented the
+  behavior. No existing shell component was removed.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost route checks, and `git diff --check` passed.
+
+## 2026-09-16T20:57:55Z — Make TopBar preview functional without removal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the TopBar functional, but keep the existing components
+  in place for evaluation.
+- Changes Made: Added home-mode sidebar/search/chat/notification behavior and
+  contextual Back and ActionMenu behavior using AppShell callbacks. Kept the
+  existing Header, NavigationBar, and Tabs rendered. Added the Navigation unit
+  document and registered it in the documentation index.
+- Files: `web/components/top-bar.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `docs/units/navigation.md`, `docs/index.html`,
+  `docs/design-system.md`, `docs/rules.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost route checks, and `git diff --check` passed. The notifications request briefly exceeded the 10-second probe timeout but subsequently returned HTTP 200; no application error was observed.
+
+## 2026-09-16T20:55:00Z — Reduce TopBar mark size
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the compact TopBar logo smaller and explain how Back
+  and Action Menu will join the title.
+- Changes Made: Reduced the visible mark while preserving the control hit area;
+  documented the final contextual TopBar composition as Back + title + actions
+  in one bar.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:50:00Z — Use compact TopBar logo
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the small logo instead of the full logo in the header.
+- Changes Made: Switched the TopBar preview to the compact black/white mark
+  variants and kept the existing theme-aware asset selection.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:45:00Z — Remove redundant TopBar brand label
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the centered FRIINK label over the screen name.
+- Changes Made: Removed the redundant context eyebrow from the TopBar preview;
+  the logo remains the sole brand mark and the current screen title stays
+  centered. Updated the design and release records.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/design-system.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:40:00Z — Theme-aware TopBar logo
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use white logo on dark theme and dark logo on light theme.
+- Changes Made: Added both full-logo variants to the TopBar preview and used
+  explicit app theme and system-theme selectors to display the correct asset.
+  Updated the design contracts and release records.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:37:01Z — Add unified TopBar preview
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prototype a consistent top bar over the existing Header.
+- Changes Made: Added the functional shared `TopBar` component, mounted it over
+  the current signed-in Header, and added a modern preview treatment with
+  leading navigation, contextual title, Search, Chat, and Notifications.
+  Updated the active design and rules documentation.
+- Files: `web/components/top-bar.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`,
+  `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost route, and `git diff --check`
+  passed; browser preview automation was unavailable.
+
+## 2026-09-16T20:30:00Z — Remove content-box side lines
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the visible lines on either side of the content box.
+- Changes Made: Removed the shared `ContentBox` outline/frame shadow and updated
+  the design contracts and release records.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted checks pending.
+
+## 2026-09-16T20:26:17Z — Remove underlines from button links
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Button-like links must not show underlines.
+- Changes Made: Added the no-underline rule to the shared primary and
+  secondary button primitives and updated the design contracts and logs.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, localhost HTTP, and `git diff --check`
+  passed.
+
+## 2026-09-16T20:23:41Z — Shared visual polish pass
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the application look and feel more modern.
+- Changes Made: Increased the shared type scale modestly, added readable body
+  line-height and restrained motion, improved feed action spacing and hover
+  treatment, strengthened profile-tab hierarchy, and added quiet content-panel
+  depth. Updated the design contracts and release records.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript and localhost route checks passed; browser
+  automation preview was unavailable because the browser request-header policy
+  could not be loaded.
+
 ## 2026-09-16T20:03:49Z — Fix blank session restoration
 
 - Agent: Codex

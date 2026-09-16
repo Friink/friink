@@ -8,6 +8,7 @@ import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
 import { SavedScreen } from '@/components/saved-screen';
 import { Header } from '@/components/header';
 import { NavigationBar } from '@/components/navigationbar';
+import { TopBar } from '@/components/top-bar';
 import type { ActionMenuItem } from '@/components/action-menu';
 // legacy TabBar removed
 import { Tabs } from './tabs';
@@ -1008,6 +1009,19 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
           onAccountChange={onUserChange}
+        />
+
+        <TopBar
+          title={getPageTitle(activeScreen)}
+          isHome={activeScreen === 'home'}
+          sidebarCollapsed={sidebarCollapsed}
+          notificationCount={unreadNotificationCount}
+          hasUnreadMessages={hasUnreadMessages}
+          backDisabled={!canGoBack}
+          menuItems={navigationMenuItems}
+          onNavigate={navigateTo}
+          onBack={() => router.back()}
+          onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
         />
 
           <Header

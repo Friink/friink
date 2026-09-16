@@ -1,5 +1,84 @@
 # Changelog
 
+## 2026-09-16T21:40:00Z
+
+- [web/ui] Positioned shared tab scroll arrows flush against the tab-strip
+  edges so they no longer show an inset gap.
+
+## 2026-09-16T21:30:00Z
+
+- [web/ui] Fixed shared tab scroll arrows: the right arrow now disappears at
+  the end of the strip, and arrow controls fit within the tab bar.
+
+## 2026-09-16T21:18:38Z
+
+- [web/design] Hid the legacy Header and NavigationBar for TopBar evaluation
+  without deleting or unmounting either component; removed their reserved
+  layout gap.
+
+## 2026-09-16T21:20:00Z
+
+- [web/design] Updated shared profile-picture avatar borders to use the
+  current accent color consistently across themes.
+
+## 2026-09-16T21:14:24Z
+
+- [web/chat] Added a recoverable chat-list error state so conversation API
+  timeouts no longer surface as an uncaught Next.js runtime overlay.
+
+## 2026-09-16T21:02:00Z
+
+- [web/design] Kept the compact Home-linked logo and centered title visible in
+  every TopBar preview mode and matched its surface to the side drawer.
+
+## 2026-09-16T20:57:55Z
+
+- [web/design] Made the TopBar preview functional in both home and
+  contextual modes while retaining the existing Header and NavigationBar.
+  Contextual Back and ActionMenu now use AppShell state and callbacks.
+
+## 2026-09-16T20:55:00Z
+
+- [web/design] Reduced the visible TopBar mark to `1.5rem` while preserving
+  its `2.5rem` accessible hit area; documented the planned Back/title/Action
+  Menu contextual layout.
+
+## 2026-09-16T20:50:00Z
+
+- [web/design] Changed the TopBar preview from the full wordmark to the
+  compact theme-aware Friink mark.
+
+## 2026-09-16T20:45:00Z
+
+- [web/design] Removed the redundant centered `FRIINK` label from the TopBar
+  preview so the context area shows only the current screen title.
+
+## 2026-09-16T20:40:00Z
+
+- [web/design] Made the TopBar preview logo theme-aware: light surfaces use
+  `logoFullBlack.svg` and dark surfaces use `logoFullWhite.svg`.
+
+## 2026-09-16T20:37:01Z
+
+- [web/design] Added a functional unified `TopBar` preview over the existing
+  Header with consistent context, menu, Search, Chat, and Notifications areas.
+
+## 2026-09-16T20:30:00Z
+
+- [web/design] Removed the visible side outline from the shared content box;
+  layout depth now comes from spacing and surface contrast rather than lines.
+
+## 2026-09-16T20:26:17Z
+
+- [web] Removed browser-default underlines from shared primary and secondary
+  button links, including session recovery actions.
+
+## 2026-09-16T20:23:41Z
+
+- [web/design] Applied a shared visual polish pass: slightly larger type,
+  improved line-height and action spacing, subtle content-panel depth, calmer
+  feed hover treatment, clearer profile-tab hierarchy, and consistent motion.
+
 ## 2026-09-16T20:03:49Z
 
 - [web] Replaced blank profile/session bootstrap states with an explicit

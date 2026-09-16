@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T21:14:24Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -38,6 +38,9 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   composer state.
 - **CHAT-R-007:** Blocked or no-longer-mutual chats remain readable but read-only
   where the active blocking contract requires it.
+- **CHAT-R-008:** Conversation-list transport failures render an in-app error
+  state with a retry action; they must not surface as an uncaught runtime
+  overlay or be mistaken for an empty chat list.
 
 ## UX and flows
 
@@ -61,6 +64,8 @@ mute and archive. Read operations use per-user cursors and server checks.
 - [ ] **CHAT-AC-004** Hidden-tab polling pauses and recovery refreshes state.
 - [ ] **CHAT-AC-005** Transport failure never invents a policy state.
 - [ ] **CHAT-AC-006** Blocking preserves required read-only history behavior.
+- [ ] **CHAT-AC-007** A conversation-list timeout or transport failure shows a
+  recoverable error state with Try again.
 
 ## Known limitations
 
