@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-16T03:35:00Z — Push verified release to development and staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Push the current verified work to development and staging,
+  resolving staging database dependencies with its environment connector.
+- Changes Made: Committed the accumulated implementation and documentation as
+  `abaa406`, pushed it to `origin/development` and `origin/staging`, and ran
+  the staging migration gate from `api/.env.staging`. Migration `20260916_0048`
+  applied successfully and `alembic check` reported no pending operations.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`; remote branches and staging database
+  updated.
+- Verification Status: Both remote branches resolve to the tested release;
+  staging migration gate passed.
+
 ## 2026-09-16T02:40:00Z — Fix notification read-state races
 
 - Agent: Codex

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-16T03:35:00Z
+
+- [release] Pushed the verified implementation and documentation release to
+  both `development` and `staging`. The staging Alembic migration gate applied
+  the current schema and reported no pending operations.
+
+
 ## 2026-09-16T03:25:00Z
 
 - [docs] Reconciled the active Rules registry with the borderless FeedPost
