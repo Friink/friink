@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T03:35:00Z — Implement PostgreSQL search
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement end-to-end PostgreSQL search for development and staging testing.
+- Changes Made: Added indexed PostgreSQL search for people, posts, conversations,
+  and permitted chat messages; added global/Messages API scopes and wired real
+  web search results. Applied migration `20260917_0051` to development and
+  staging.
+- Verification Status: Python and TypeScript checks passed; both migration
+  gates passed. Staging endpoint verification follows deployment.
+
 ## 2026-09-17T03:15:00Z — Migrate development and staging databases
 
 - Agent: Codex

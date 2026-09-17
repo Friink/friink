@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
 import { navItems } from '@/lib/data';
-import { acceptChatRequest, listConversations, loadAuthSession, updateChatSettings, type ApiConversation } from '@/lib/auth';
+import { acceptChatRequest, listConversations, loadAuthSession, searchContent, updateChatSettings, type ApiConversation, type ApiSearchResult } from '@/lib/auth';
 import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -148,52 +148,42 @@ function getSearchParam(value: string | string[] | undefined) {
 
 export function SearchScreen() {
   const params = useParams<{ query?: string | string[] }>();
+  const searchParams = useSearchParams();
   const query = getSearchParam(params?.query);
-  const normalizedQuery = query.trim().toLowerCase();
-  const fallbackResults = [
-    {
-      id: 'people-muflah',
-      type: 'People',
-      name: 'Muflah',
-      handle: '@muflah',
-      initials: 'M',
-      tone: 'mint' as const,
-      summary: 'Profile result',
-    },
-    {
-      id: 'posts-dark-mode',
-      type: 'Posts',
-      name: 'Muflah',
-      handle: '@muflah',
-      initials: 'M',
-      tone: 'sage' as const,
-      summary: 'The dark mode should be darker.',
-    },
-    {
-      id: 'posts-connections',
-      type: 'Posts',
-      name: 'Muflah',
-      handle: '@muflah',
-      initials: 'M',
-      tone: 'sun' as const,
-      summary: 'Bug: Connections page ALL tab is not showing all connections.',
-    },
-  ];
-  const results = normalizedQuery
-    ? fallbackResults.filter((result) => `${result.type} ${result.name} ${result.handle} ${result.summary}`.toLowerCase().includes(normalizedQuery))
-    : [];
+  const scope = searchParams.get('scope') === 'messages' ? 'messages' : 'global';
+  const [results, setResults] = useState<ApiSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!query || !session) {
+      setResults([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    let stopped = false;
+    setLoading(true);
+    setError(null);
+    searchContent(session.accessToken, query, scope)
+      .then((response) => { if (!stopped) setResults(response.items); })
+      .catch((requestError) => { if (!stopped) setError(requestError instanceof Error ? requestError.message : 'Could not search Friink.'); })
+      .finally(() => { if (!stopped) setLoading(false); });
+    return () => { stopped = true; };
+  }, [query, scope]);
 
   return (
     <PageSurface className="search-screen" variant="list">
       <div className="search-results-list">
         {query ? (
-          results.length > 0 ? (
+          loading ? <div className="home-feed-message">Searching Friink…</div> : error ? <div className="home-feed-message" role="alert">{error}</div> : results.length > 0 ? (
             results.map((result) => (
               <ListRow
                 key={result.id}
-                title={<ProfileCard name={result.name} handle={result.handle} initials={result.initials} tone={result.tone} href={`/${result.handle.replace('@', '')}`} />}
+                title={<ProfileCard name={result.name} handle={result.username ? `@${result.username}` : ''} initials={result.name.slice(0, 2).toUpperCase()} tone={result.type === 'post' ? 'sage' : result.type === 'conversation' ? 'sun' : 'mint'} imageUrl={result.profile_picture_url} href={result.href ?? undefined} />}
                 subtitle={result.summary}
-                meta={result.type}
+                meta={result.type === 'person' ? 'People' : result.type === 'post' ? 'Posts' : 'Conversations'}
                 className="search-result-row"
               />
             ))

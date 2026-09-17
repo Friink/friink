@@ -19,6 +19,7 @@ from app.routers.staff import router as staff_router
 from app.routers.subscriptions import router as subscriptions_router
 from app.routers.progressive_auth import router as progressive_auth_router
 from app.routers.professional_registration import router as professional_registration_router
+from app.routers.search import router as search_router
 
 settings = get_settings()
 logger = logging.getLogger("friink.auth")
@@ -64,6 +65,7 @@ app.include_router(staff_router)
 app.include_router(subscriptions_router)
 app.include_router(progressive_auth_router)
 app.include_router(professional_registration_router)
+app.include_router(search_router)
 
 
 @app.get("/")

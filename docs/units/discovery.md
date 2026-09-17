@@ -3,9 +3,9 @@
 Discovery helps users find people and content through search, the directory,
 and related public discovery surfaces.
 
-**Status:** Partial — search and directory API foundation exist; directory UI is next
+**Status:** Partial — PostgreSQL search is active; directory UI is next
 **Tier:** Standard  
-**Last edited:** 2026-09-17T02:15:00Z
+**Last edited:** 2026-09-17T03:35:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -82,13 +82,15 @@ Registered` badge state when applicable.
 
 ## Technical contract
 
-Search routes and rendering exist in `web/app/search` and the signed-in TopBar;
-the current Directory screen has no real API-backed discovery UI contract.
+Search routes and rendering exist in `web/app/search` and the signed-in TopBar.
+The API search endpoint is `/search` with `global` and `messages` scopes; it
+uses PostgreSQL trigram indexes and permission-aware queries. The current
+Directory screen has no real API-backed discovery UI contract.
 
 ## Acceptance criteria
 
-- [ ] **DISCOVERY-AC-001** Search suggestions remain text-only and bounded.
-- [ ] **DISCOVERY-AC-002** Search results use canonical profile/content links.
+- [x] **DISCOVERY-AC-001** Search suggestions remain text-only and bounded.
+- [x] **DISCOVERY-AC-002** Search results use canonical profile/content links.
 - [ ] **DISCOVERY-AC-003** Unavailable content is not synthesized.
 - [ ] **DISCOVERY-AC-004** Directory UI replaces the placeholder with the three
   requested tabs and responsive shared rows.
@@ -99,12 +101,13 @@ the current Directory screen has no real API-backed discovery UI contract.
 
 ## Open questions
 
-- Search provider and index rollout details will be finalized during backend
-  implementation; the product behavior above is already agreed.
+- Search suggestions will be connected to live result previews in a later UI
+  pass; full query search is API-backed now.
 - Initial ordering is randomized; location-aware ordering is a later enhancement
   using profile location with account-creation location as fallback.
 
 ## Current implementation status
 
-Search is implemented through the current web surface. Directory navigation
-exists, but its real data and backing behavior are not implemented.
+Search is implemented through the current web surface and PostgreSQL-backed
+API. Directory navigation exists, but its real data and backing behavior are
+not implemented.

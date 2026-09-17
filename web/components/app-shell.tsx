@@ -1079,6 +1079,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           isHome={activeScreen === 'home'}
           sidebarCollapsed={sidebarCollapsed}
           isSearchPage={activeScreen === 'search'}
+          searchScope={activeScreen === 'messages' ? 'messages' : 'global'}
           notificationCount={unreadNotificationCount}
           notifications={notifications}
           hasUnreadMessages={hasUnreadMessages}

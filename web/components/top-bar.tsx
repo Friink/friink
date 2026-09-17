@@ -16,6 +16,7 @@ type TopBarProps = {
   notifications?: NotificationItem[];
   isHome?: boolean;
   isSearchPage?: boolean;
+  searchScope?: 'global' | 'messages';
   backDisabled?: boolean;
   menuItems?: ActionMenuItem[];
   onNavigate: (screen: Screen) => void;
@@ -23,7 +24,7 @@ type TopBarProps = {
   onToggleSidebar: () => void;
 };
 
-export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
+export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, searchScope = 'global', backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
   const router = useRouter();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -97,7 +98,8 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
     const query = searchQuery.trim();
     if (!query) return;
     setSearchOpen(false);
-    router.push(`/search/${encodeURIComponent(query)}`);
+    const scopeSuffix = searchScope === 'messages' ? '?scope=messages' : '';
+    router.push(`/search/${encodeURIComponent(query)}${scopeSuffix}`);
   }
 
   const searchControl = (

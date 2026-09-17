@@ -1355,6 +1355,26 @@ export type ApiNotificationPage = {
   has_more: boolean;
 };
 
+export type ApiSearchResult = {
+  id: string;
+  type: 'person' | 'post' | 'conversation';
+  name: string;
+  username: string | null;
+  profile_picture_url: string | null;
+  summary: string;
+  href: string | null;
+  created_at: string | null;
+};
+
+export async function searchContent(accessToken: string, query: string, scope: 'global' | 'messages' = 'global', limit = 24): Promise<{ items: ApiSearchResult[]; has_more: boolean }> {
+  const params = new URLSearchParams({ query, scope, limit: String(limit) });
+  return requestApi(`/search?${params.toString()}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function listPosts(input: { cursor?: string; limit?: number; feed?: 'explore' | 'following' } = {}): Promise<ApiFeedPage> {
   const search = new URLSearchParams();
   if (input.cursor) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-17T03:35:00Z
+
+- [search] Added PostgreSQL-backed global and Messages search with trigram
+  indexes, permission-aware API queries, real web results, and development/
+  staging migration `20260917_0051`.
+
 ## 2026-09-17T03:15:00Z
 
 - [release] Applied and verified Alembic head `20260917_0050` on both the
