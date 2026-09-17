@@ -10,6 +10,7 @@ import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
   initialScreen?: Screen;
+  initialSearchQuery?: string;
   refreshCurrentUser?: boolean;
   connectionsUsername?: string;
   initialConnectionsFilter?: 'all' | 'followers' | 'following' | 'requests';
@@ -19,7 +20,7 @@ type AppShellRouteProps = {
   initialSavedSection?: 'posts' | 'profiles';
 };
 
-export function AppShellRoute({ initialScreen, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts' }: AppShellRouteProps) {
+export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurrentUser = false, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts' }: AppShellRouteProps) {
   const router = useRouter();
   // Keep the server and first client render identical. Browser-only cached
   // metadata is hydrated in the effect below after React has mounted.
@@ -147,5 +148,5 @@ export function AppShellRoute({ initialScreen, refreshCurrentUser = false, conne
     return <SessionRecoveryScreen status={sessionError ?? 'offline'} appearance={appearance} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} />;
   }
 
-  return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
+  return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
 }

@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { FeedPost } from '@/components/feed-post';
 import { PageSurface } from '@/components/page-surface';
-import { Tabs } from '@/components/tabs';
 import { listSavedPosts, loadAuthSession, type ApiPost } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
@@ -45,7 +43,6 @@ function mapApiPost(post: ApiPost): Post {
 }
 
 export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPostUpdated, onReactionError }: SavedScreenProps) {
-  const router = useRouter();
   const [savedPosts, setSavedPosts] = useState<Post[]>(posts.filter((post) => post.isSaved));
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -86,12 +83,6 @@ export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPost
 
   return (
     <PageSurface className="saved-feed" variant="list">
-      <Tabs
-        tabs={[{ id: 'posts', label: 'Posts' }, { id: 'profiles', label: 'Profiles' }]}
-        activeId={section}
-        onChange={(id) => router.push(`/saved/${id}`)}
-        ariaLabel="Saved sections"
-      />
       {section === 'posts' ? (
         <>
           <div className="saved-list">

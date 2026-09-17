@@ -1,35 +1,32 @@
 # Discovery
 
-Discovery helps users find people and content through search, the directory,
-and related public discovery surfaces.
+Discovery owns the professional directory and related public discovery
+surfaces. Cross-surface search belongs to [Search](./search.md).
 
-**Status:** Partial — search UI/API exist but end-to-end search is not currently passing; directory UI is next
+**Status:** Partial — directory UI is present; backing behavior is incomplete
 **Tier:** Standard  
-**Last edited:** 2026-09-17T19:17:54Z
+**Last edited:** 2026-09-17T19:27:34Z
 **Platforms:** Web and API
 
 ## Canonical ownership
 
-This document owns search, directory, and discovering people or content. It
-owns directory eligibility and listing presentation. Profile badge and
+This document owns the professional directory and its eligibility and listing
+presentation. Cross-surface search belongs to [Search](./search.md). Profile badge and
 credential presentation belongs to [Profiles](./profiles.md), while staff
 review decisions belong to [Staff Admin](./staff-admin.md).
 
 ## Related units
 
 - [Profiles](./profiles.md) — owns the profile shown after discovery.
+- [Search](./search.md) — owns cross-surface search, suggestions, and search permissions.
 - [Posts](./posts.md) — owns content shown in discovery results.
 - [Connections](./connections.md) — owns follow actions from people results.
 - [Subscriptions](./subscriptions.md) — owns the plan state used by directory eligibility.
 - [Staff Admin](./staff-admin.md) — owns registration review decisions consumed by the directory.
-- [Design System](../design-system.md) — owns shared search-result rows and surfaces.
+- [Design System](../design-system.md) — owns shared directory-row and surface contracts.
 
 ## Rules
 
-- **DISCOVERY-R-001:** Search suggestions and results use shared contextual and
-  list patterns and link to canonical people/content destinations.
-- **DISCOVERY-R-002:** Search results must not invent profile identities or
-  expose unavailable protected content.
 - **DISCOVERY-R-003:** The Directory UI uses three tabs: `All`,
   `Professionals`, and `Friink Registered`. `All` includes eligible members
   from either group.
@@ -45,9 +42,10 @@ review decisions belong to [Staff Admin](./staff-admin.md).
   automatically publish the profile. Listing remains an explicit, off-by-
   default user preference.
 - **DISCOVERY-R-007:** Each directory result uses the shared `ListRow`
-  component. The left side contains the profile card and About text; the right
-  side contains one registration-type column. A user may show both
-  `Professional` and `Friink Registered` labels in that column.
+  component. The left side contains the profile card, About text, and the
+  `Professional` and/or `Friink Registered` badges beside the name; the right
+  side contains contextual profile actions in this order: Chat, Follow or
+  Unfollow, and the More actions menu. These actions are icon-only controls.
 - **DISCOVERY-R-008:** The complete row links to the user's public profile and
   remains responsive; on narrow screens the secondary content may stack below
   the profile card.
@@ -58,44 +56,29 @@ review decisions belong to [Staff Admin](./staff-admin.md).
 - **DISCOVERY-R-010:** A user disappears from the directory immediately when
   listing is disabled, subscription access expires or is revoked, or active
   Friink registration is revoked and no professional intent remains.
-- **DISCOVERY-R-011:** Search suggestions are actionable: selecting a
-  suggestion opens the selected result or search context, while pressing Enter
-  opens the full search page for the typed query.
-- **DISCOVERY-R-012:** Home search is global across people, usernames, posts,
-  conversations, and hashtags. Search on another surface is contextual to
-  that surface; Messages searches permitted users, usernames, conversations,
-  and chat content.
-- **DISCOVERY-R-013:** Search results are permission-aware and API-backed.
-  Private profiles, conversations, and content must not be exposed to users
-  without access. Results use pagination, bounded result counts, and indexed
-  queries so the interface remains responsive as content grows.
 
 ## UX and flows
 
-The signed-in TopBar offers inline text-only suggestions and routes submitted queries to
-`/search/{query}`. Search results use shared `PageSurface`, `ListRow`, and
-identity blocks. `/directory` will use the same surface patterns, with the
-three tabs above and an empty state for each tab. The directory is a
-professional listing for now, not a category system. The API returns eligible
-professional profiles and includes the `Professional` and/or `Friink
-Registered` badge state when applicable.
+`/directory` uses shell-level shared `Tabs` for `All`, `Professionals`, and
+`Friink Registered`, then renders shared `PageSurface`, `ListRow`, and identity
+patterns inside the capped content box. Each row presents the profile card,
+About text, name-adjacent status badges, and right-side icon-only Chat,
+Follow/Unfollow, and More actions; rows link to the public profile and stack
+their secondary content on narrow screens. The current UI uses presentational
+preview entries until the API-backed directory is wired.
+The directory is a professional listing for now, not a category system.
 
 ## Technical contract
 
-Search routes and rendering exist in `web/app/search` and the signed-in TopBar.
-The API search endpoint is `/search` with `global` and `messages` scopes; it
-uses PostgreSQL trigram indexes and permission-aware queries. The current
-development testing state reports that the end-to-end search flow is not yet
-working, so search remains partial until an authenticated result request and
-the corresponding web flow pass. The current Directory screen has no real
-API-backed discovery UI contract.
+The current Directory screen is presentational only. The API-backed discovery
+contract is still pending: eligible/listed profiles, server-resolved status,
+privacy filtering, ordering, pagination, and removal after eligibility changes.
+Cross-surface search routes, rendering, and API behavior are documented in
+[Search](./search.md).
 
 ## Acceptance criteria
 
-- [ ] **DISCOVERY-AC-001** Search suggestions remain text-only and bounded.
-- [ ] **DISCOVERY-AC-002** Search results use canonical profile/content links.
-- [ ] **DISCOVERY-AC-003** Unavailable content is not synthesized.
-- [ ] **DISCOVERY-AC-004** Directory UI replaces the placeholder with the three
+- [x] **DISCOVERY-AC-004** Directory UI replaces the placeholder with the three
   requested tabs and responsive shared rows.
 - [x] **DISCOVERY-AC-005** Directory eligibility uses server-resolved
   subscription and professional/registration state.
@@ -104,24 +87,16 @@ API-backed discovery UI contract.
 
 ## Open questions
 
-- End-to-end search is currently failing in development testing and must be
-  resolved before the search acceptance criteria can be marked complete.
-- Search suggestions will be connected to live result previews in a later UI
-  pass after full query search is working.
 - Initial ordering is randomized; location-aware ordering is a later enhancement
   using profile location with account-creation location as fallback.
 
 ## Current implementation status
 
-Search UI and the PostgreSQL-backed API are present, but the end-to-end flow is
-currently not passing development testing. The implementation through
-`d9f6634` is present on staging; the later development-only generated build
-metadata commit `c248d5d` has not changed application source. Directory
-navigation exists, but its real data and backing behavior are not implemented.
+Directory navigation and the presentational UI exist, but its real data and
+backing behavior are not implemented. Search status is maintained in
+[Search](./search.md).
 
 ## Known limitations
 
-Authenticated search result behavior has not been confirmed as working in the
-current development build. Do not treat search as release-ready until a real
-authenticated request returns the expected response shape and the web result
-surface renders it.
+Directory data, server eligibility/listing enforcement, and API-backed loading
+remain incomplete. The UI currently uses preview entries.

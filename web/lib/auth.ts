@@ -1366,8 +1366,8 @@ export type ApiSearchResult = {
   created_at: string | null;
 };
 
-export async function searchContent(accessToken: string, query: string, scope: 'global' | 'messages' = 'global', limit = 24): Promise<{ items: ApiSearchResult[]; has_more: boolean }> {
-  const params = new URLSearchParams({ query, scope, limit: String(limit) });
+export async function searchContent(accessToken: string, query: string, scope: 'global' | 'messages' = 'global', limit = 24, kind: 'all' | 'person' | 'post' = 'all'): Promise<{ items: ApiSearchResult[]; has_more: boolean }> {
+  const params = new URLSearchParams({ query, scope, kind, limit: String(limit) });
   return requestApi(`/search?${params.toString()}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },

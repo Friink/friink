@@ -25,6 +25,7 @@ def _active_user_clause(user: User, *, public_only: bool = True):
 async def search(
     query: str = Query(min_length=1, max_length=120),
     scope: str = Query(default="global", pattern="^(global|messages)$"),
+    kind: str = Query(default="all", pattern="^(all|person|post)$"),
     limit: int = Query(default=24, ge=1, le=50),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -34,22 +35,26 @@ async def search(
     results: list[SearchResult] = []
 
     if scope == "global":
-        people = session.scalars(
-            select(User)
-            .where(_active_user_clause(current_user), or_(User.username.ilike(pattern), User.display_name.ilike(pattern), User.about.ilike(pattern)))
-            .order_by(User.username_key)
-            .limit(limit)
-        ).all()
-        results.extend(SearchResult(id=str(person.public_id), type="person", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=person.about or f"@{person.username}", href=f"/{person.username}") for person in people)
+        include_people = kind in {"all", "person"}
+        include_posts = kind in {"all", "post"}
+        if include_people:
+            people = session.scalars(
+                select(User)
+                .where(_active_user_clause(current_user), or_(User.username.ilike(pattern), User.display_name.ilike(pattern), User.about.ilike(pattern)))
+                .order_by(User.username_key)
+                .limit(limit)
+            ).all()
+            results.extend(SearchResult(id=str(person.public_id), type="person", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=person.about or f"@{person.username}", href=f"/{person.username}") for person in people)
 
-        posts = session.execute(
-            select(Post, User)
-            .join(User, User.id == Post.user_id)
-            .where(Post.deleted_at.is_(None), _active_user_clause(current_user), Post.content.ilike(pattern))
-            .order_by(Post.created_at.desc())
-            .limit(limit)
-        ).all()
-        results.extend(SearchResult(id=post.public_id, type="post", name=author.display_name or author.username, username=author.username, profile_picture_url=author.profile_picture_url, summary=post.content, href=f"/{author.username}/{post.public_id}", created_at=post.created_at) for post, author in posts)
+        if include_posts:
+            posts = session.execute(
+                select(Post, User)
+                .join(User, User.id == Post.user_id)
+                .where(Post.deleted_at.is_(None), _active_user_clause(current_user), Post.content.ilike(pattern))
+                .order_by(Post.created_at.desc())
+                .limit(limit)
+            ).all()
+            results.extend(SearchResult(id=post.public_id, type="post", name=author.display_name or author.username, username=author.username, profile_picture_url=author.profile_picture_url, summary=post.content, href=f"/{author.username}/{post.public_id}", created_at=post.created_at) for post, author in posts)
     else:
         participant = or_(Conversation.user_one_id == current_user.id, Conversation.user_two_id == current_user.id)
         other_participant = or_(and_(Conversation.user_one_id == current_user.id, User.id == Conversation.user_two_id), and_(Conversation.user_two_id == current_user.id, User.id == Conversation.user_one_id))

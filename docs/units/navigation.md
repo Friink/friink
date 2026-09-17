@@ -37,8 +37,8 @@ the established search, chat-unread, and notification interactions.
 - The current screen title remains centered except on the search route, where
   the search field occupies the middle header slot.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
-  expands into a text input with suggestions and routes submitted queries to
-  `/search/{query}`. Chat shows a dot when conversations are unread, and the
+  expands into a text input with bounded scope shortcuts and routes submitted
+  queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the
   notification bell shows a dot and opens the unread notification dropdown.
 - Contextual mode provides a history-aware Back control, the page title, and
   the shared Search control beside the existing three-dot ActionMenu populated
