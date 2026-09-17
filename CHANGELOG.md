@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-17T19:17:54Z
+
+- [docs] Reconciled Discovery, Rules, Profiles, and Subscriptions documentation
+  with the current implementation state. Search is now documented as partial
+  pending a passing authenticated end-to-end flow; stale planned/placeholder
+  references for registration and directory rules were corrected.
+
 ## 2026-09-17T02:33:52Z
 
 - [docs/search] Recorded that the PostgreSQL search implementation is committed

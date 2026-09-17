@@ -67,7 +67,7 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-012:** When the owner enables the professional-profile badge
   preference, the public profile renders `Professional` immediately next to
   the displayed name. The badge is omitted otherwise.
-- **PROFILE-R-013 (planned):** Friink registration is a separate staff-granted
+- **PROFILE-R-013:** Friink registration is a separate staff-granted
   status. An active registered profile shows a `Friink Registered` badge by
   default, and the owner may hide or show that badge from Settings.
 

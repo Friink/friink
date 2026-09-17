@@ -3,9 +3,9 @@
 Discovery helps users find people and content through search, the directory,
 and related public discovery surfaces.
 
-**Status:** Partial — PostgreSQL search is active; directory UI is next
+**Status:** Partial — search UI/API exist but end-to-end search is not currently passing; directory UI is next
 **Tier:** Standard  
-**Last edited:** 2026-09-17T02:33:52Z
+**Last edited:** 2026-09-17T19:17:54Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -85,12 +85,15 @@ Registered` badge state when applicable.
 Search routes and rendering exist in `web/app/search` and the signed-in TopBar.
 The API search endpoint is `/search` with `global` and `messages` scopes; it
 uses PostgreSQL trigram indexes and permission-aware queries. The current
-Directory screen has no real API-backed discovery UI contract.
+development testing state reports that the end-to-end search flow is not yet
+working, so search remains partial until an authenticated result request and
+the corresponding web flow pass. The current Directory screen has no real
+API-backed discovery UI contract.
 
 ## Acceptance criteria
 
-- [x] **DISCOVERY-AC-001** Search suggestions remain text-only and bounded.
-- [x] **DISCOVERY-AC-002** Search results use canonical profile/content links.
+- [ ] **DISCOVERY-AC-001** Search suggestions remain text-only and bounded.
+- [ ] **DISCOVERY-AC-002** Search results use canonical profile/content links.
 - [ ] **DISCOVERY-AC-003** Unavailable content is not synthesized.
 - [ ] **DISCOVERY-AC-004** Directory UI replaces the placeholder with the three
   requested tabs and responsive shared rows.
@@ -101,15 +104,24 @@ Directory screen has no real API-backed discovery UI contract.
 
 ## Open questions
 
+- End-to-end search is currently failing in development testing and must be
+  resolved before the search acceptance criteria can be marked complete.
 - Search suggestions will be connected to live result previews in a later UI
-  pass; full query search is API-backed now.
+  pass after full query search is working.
 - Initial ordering is randomized; location-aware ordering is a later enhancement
   using profile location with account-creation location as fallback.
 
 ## Current implementation status
 
-Search is implemented through the current web surface and PostgreSQL-backed
-API. The implementation is committed on both the `development` and `staging`
-branches; the staging API route is deployed and requires authentication.
-Directory navigation exists, but its real data and backing behavior are not
-implemented.
+Search UI and the PostgreSQL-backed API are present, but the end-to-end flow is
+currently not passing development testing. The implementation through
+`d9f6634` is present on staging; the later development-only generated build
+metadata commit `c248d5d` has not changed application source. Directory
+navigation exists, but its real data and backing behavior are not implemented.
+
+## Known limitations
+
+Authenticated search result behavior has not been confirmed as working in the
+current development build. Do not treat search as release-ready until a real
+authenticated request returns the expected response shape and the web result
+surface renders it.

@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T19:17:54Z — Reconcile documentation with current search status
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documents that were stale or inconsistent with the
+  current implementation and testing state.
+- Changes Made: Updated Discovery to mark search as partial until authenticated
+  end-to-end behavior passes; corrected the Rules registry and Profiles and
+  Subscriptions references that still described registration as planned or the
+  directory as an unimplemented rule.
+- Verification Status: Documentation-only change; Markdown diff checked. No
+  application code, database, or branch state changed.
+
 ## 2026-09-17T02:33:52Z — Document search release status
 
 - Agent: Codex
