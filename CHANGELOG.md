@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-18T00:45:00Z
+
+- [design] Made profile badges card-owned and conditional: `ProfileCard` now
+  renders only active icon-only Professional and Friink Registered badges,
+  with accessible hover labels for their meanings.
+
+## 2026-09-18T00:15:00Z
+
+- [discovery] Added Font Awesome icons to the shared profile badges:
+  `fa-briefcase` for Professional and `fa-shield-halved` for Friink
+  Registered. Both badges remain supported beside one profile name.
+
 ## 2026-09-17T21:11:18Z
 
 - [docs] Audited the session changes across the agent log, changelog, design

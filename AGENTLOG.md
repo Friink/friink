@@ -1,5 +1,30 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-18T00:45:00Z — Make profile badges card-owned and icon-only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move active badge presentation into ProfileCard and show
+  icon-only badges with hover labels.
+- Changes Made: Replaced generic badge arrays with explicit
+  `showProfessionalBadge` and `showRegisteredBadge` flags on `ProfileCard`;
+  rendered only active badges beside the name; and added accessible tooltip
+  labels for the Font Awesome icons.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
+## 2026-09-18T00:15:00Z — Add Font Awesome Directory badge icons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add recognizable Font Awesome icons to the Professional and
+  Friink Registered badges for local preview.
+- Changes Made: Added reusable icon-bearing `ProfileBadge` rendering through
+  `ProfileCard`, configured `fa-briefcase` and `fa-shield-halved`, and updated
+  the Discovery/design contracts.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
 ## 2026-09-17T21:11:18Z — Audit session documentation coverage
 
 - Agent: Codex
