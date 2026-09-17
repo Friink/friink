@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T21:51:28Z
+**Last edited:** 2026-09-16T23:44:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -22,6 +22,8 @@ content, and profile actions. Account credentials and lifecycle state belong to
 - [Connections](./connections.md) — owns follow state and profile connection actions.
 - [Posts](./posts.md) — owns post, reply, quote, and reaction semantics.
 - [Media](./media.md) — owns profile-picture processing and storage.
+- [Subscriptions](./subscriptions.md) — owns the subscription gate for directory visibility.
+- [Staff Admin](./staff-admin.md) — owns Friink registration review decisions.
 - [Design System](../design-system.md) — owns shared identity and surface patterns.
 
 ## Product definition
@@ -65,6 +67,9 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-012:** When the owner enables the professional-profile badge
   preference, the public profile renders `Professional` immediately next to
   the displayed name. The badge is omitted otherwise.
+- **PROFILE-R-013 (planned):** Friink registration is a separate staff-granted
+  status. An active registered profile shows a `Friink Registered` badge by
+  default, and the owner may hide or show that badge from Settings.
 
 ## UX and flows
 
@@ -78,6 +83,19 @@ notifications, likes, blocked users, and remembered-account surfaces.
 The contextual NavigationBar overflow menu exposes Block for another user and
 opens the shared confirmation modal. Profile content uses author-scoped routes
 and visibility rules.
+
+### Friink registration (user flow active)
+
+The owner profile Actions menu will open a registration modal collecting Institute
+and Credential ID. After submission, the action becomes read-only while the
+request is pending, with cancellation available. Rejected users may reapply
+immediately. Staff approval or revocation controls the `Friink Registered` badge;
+clicking or hovering the badge opens the approved institute and credential
+information. The application history and staff decision messages remain
+available to staff, while user-facing decisions are notified in-app and by
+email. The user API contracts are `GET/POST /professional-registration`,
+`POST /professional-registration/cancel`, and
+`PATCH /professional-registration/preferences`.
 
 ## Technical contract
 

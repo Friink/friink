@@ -843,7 +843,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
               icon={<span className="settings-icon"><i className="fa-solid fa-droplet" aria-hidden="true" /></span>}
               title="Accent color"
               subtitle="Choose the accent color used inside the app."
-              className="settings-row settings-row-expanded"
+              className="settings-row settings-row-expanded settings-row-accent-color"
               save={{ disabled: !canUpdateAccentColor, busy: false, onClick: () => onAccentColorChange(accentColorDraft.toLowerCase()), label: 'Update color' }}
             >
               <div className="accent-color-control">

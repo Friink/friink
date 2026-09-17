@@ -51,6 +51,11 @@ full list with tabs, filters, read tracking, actions, loading, empty, and retry
 states. Security notifications use the shield treatment and may link to
 session review.
 
+Registration submissions and staff decisions are rendered as Friink
+notifications in the in-app list and top-bar dropdown. They explain pending,
+approved, declined, and revoked outcomes; a declined request can be submitted
+again immediately.
+
 ## Technical contract
 
 API endpoints are in `api/app/routers/notifications.py`; records and outbox

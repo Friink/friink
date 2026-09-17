@@ -44,6 +44,9 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
   getUnreadNotificationCount,
+  getProfessionalRegistration,
+  submitProfessionalRegistration,
+  cancelProfessionalRegistration,
   listPosts,
   loadAuthSession,
   rejectFollowRequest,
@@ -55,6 +58,7 @@ import {
   type ApiNotification,
   type ApiPost,
   type AuthUser,
+  type ProfessionalRegistration,
 } from '@/lib/auth';
 
 type AppShellProps = {
@@ -122,6 +126,12 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [profileBlockOpen, setProfileBlockOpen] = useState(false);
   const [profileBlockBusy, setProfileBlockBusy] = useState(false);
+  const [professionalRegistration, setProfessionalRegistration] = useState<ProfessionalRegistration | null>(null);
+  const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
+  const [registrationInstitute, setRegistrationInstitute] = useState('');
+  const [registrationCredentialId, setRegistrationCredentialId] = useState('');
+  const [registrationBusy, setRegistrationBusy] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -152,6 +162,14 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   useEffect(() => setSettingsTab(initialSettingsTab), [initialSettingsTab]);
   useEffect(() => { activeScreenRef.current = activeScreen; }, [activeScreen]);
   useEffect(() => setProfileLikedPosts(profileLikedPostsProp ?? []), [profileLikedPostsProp]);
+  useEffect(() => {
+    if (activeScreen !== 'profile' || profileUser) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    getProfessionalRegistration(session.accessToken)
+      .then(setProfessionalRegistration)
+      .catch(() => setProfessionalRegistration(null));
+  }, [activeScreen, profileUser]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
   const connectionsTabs = !viewingOtherConnections
@@ -187,14 +205,46 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       disabled: unreadNotificationCount === 0,
     },
   ];
+  const handleCancelProfessionalRegistration = async () => {
+    const session = loadAuthSession();
+    if (!session) return;
+    setRegistrationBusy(true);
+    try {
+      setProfessionalRegistration(await cancelProfessionalRegistration(session.accessToken));
+      addToast('Registration request cancelled.');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not cancel the registration request.');
+    } finally {
+      setRegistrationBusy(false);
+    }
+  };
   const profileMenuItems: ActionMenuItem[] = profileUser ? [
     {
       label: 'Block user',
       icon: 'fa-ban',
       onClick: () => setProfileBlockOpen(true),
     },
-  ] : [];
-  const navigationMenuItems = activeScreen === 'profile' && profileUser
+  ] : [
+    professionalRegistration?.status === 'pending' ? {
+      label: 'Registration request pending',
+      icon: 'fa-hourglass-half',
+      disabled: true,
+      trailingIcon: 'fa-xmark',
+      trailingAriaLabel: 'Cancel registration request',
+      trailingAction: () => void handleCancelProfessionalRegistration(),
+      trailingDisabled: registrationBusy,
+    } : {
+      label: 'Apply for Friink Registration',
+      icon: 'fa-id-card',
+      onClick: () => {
+        setRegistrationError(null);
+        setRegistrationInstitute(professionalRegistration?.institute ?? '');
+        setRegistrationCredentialId(professionalRegistration?.credential_id ?? '');
+        setRegistrationModalOpen(true);
+      },
+    },
+  ];
+  const navigationMenuItems = activeScreen === 'profile'
     ? profileMenuItems
     : activeScreen === 'notifications'
       ? notificationMenuItems
@@ -715,9 +765,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       : undefined;
     return {
       id: notification.id,
-      kind: notification.type === 'login_security' ? 'login' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
-      name: notification.type === 'login_security' ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
-      handle: `@${notification.type === 'login_security' ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
+      kind: notification.type === 'login_security' ? 'login' : notification.type.startsWith('professional_registration_') ? 'service' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      name: notification.type === 'login_security' || notification.type.startsWith('professional_registration_') ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
+      handle: `@${notification.type === 'login_security' || notification.type.startsWith('professional_registration_') ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
       initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
@@ -769,6 +819,14 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return `${actorName} sent you a message.`;
       case 'chat_request_accepted':
         return `${actorName} accepted your chat request.`;
+      case 'professional_registration_submitted':
+        return 'Your Friink Registration request was submitted and is pending staff review.';
+      case 'professional_registration_approved':
+        return 'Your Friink Registration request was approved. You can now show your registered badge.';
+      case 'professional_registration_rejected':
+        return typeof payload.message === 'string' && payload.message ? `Your Friink Registration request was declined: ${payload.message}` : 'Your Friink Registration request was declined. You may apply again.';
+      case 'professional_registration_revoked':
+        return typeof payload.message === 'string' && payload.message ? `Your Friink Registration was revoked: ${payload.message}` : 'Your Friink Registration was revoked by Friink staff.';
       case 'request_accepted':
       default:
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';
@@ -1020,6 +1078,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           title={getPageTitle(activeScreen)}
           isHome={activeScreen === 'home'}
           sidebarCollapsed={sidebarCollapsed}
+          isSearchPage={activeScreen === 'search'}
           notificationCount={unreadNotificationCount}
           notifications={notifications}
           hasUnreadMessages={hasUnreadMessages}
@@ -1110,6 +1169,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                   { id: 'overview', label: 'Overview' },
                   { id: 'staff', label: 'Staff' },
                   { id: 'users', label: 'Users' },
+                  { id: 'professional-registration', label: 'Professional Registration' },
                   { id: 'security', label: 'Security & Sessions' },
                   { id: 'audit', label: 'Audit Log' },
                   { id: 'public-site', label: 'Public site' },
@@ -1203,6 +1263,52 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 </>
               )}
             </ContentBox>
+            {registrationModalOpen && (
+              <Modal
+                title="Apply for Friink Registration"
+                onClose={() => !registrationBusy && setRegistrationModalOpen(false)}
+                actions={(
+                  <>
+                    <button className="button-secondary" type="button" onClick={() => setRegistrationModalOpen(false)} disabled={registrationBusy}>Cancel</button>
+                    <button
+                      className="button-primary"
+                      type="button"
+                      disabled={registrationBusy}
+                      onClick={async () => {
+                        const institute = registrationInstitute.trim();
+                        const credentialId = registrationCredentialId.trim();
+                        if (!institute || !credentialId) {
+                          setRegistrationError('Institute and Credential ID are required.');
+                          return;
+                        }
+                        const session = loadAuthSession();
+                        if (!session) return;
+                        setRegistrationBusy(true);
+                        setRegistrationError(null);
+                        try {
+                          setProfessionalRegistration(await submitProfessionalRegistration(session.accessToken, { institute, credential_id: credentialId }));
+                          setRegistrationModalOpen(false);
+                          addToast('Registration request submitted.');
+                        } catch (error) {
+                          setRegistrationError(error instanceof Error ? error.message : 'Could not submit the registration request.');
+                        } finally {
+                          setRegistrationBusy(false);
+                        }
+                      }}
+                    >
+                      {registrationBusy ? 'Submitting…' : 'Submit application'}
+                    </button>
+                  </>
+                )}
+              >
+                <p>Share the institute and credential ID you want Friink staff to review.</p>
+                <label className="settings-field-label" htmlFor="registration-institute">Institute</label>
+                <input id="registration-institute" className="settings-field-input" value={registrationInstitute} onChange={(event) => setRegistrationInstitute(event.target.value)} autoComplete="organization" />
+                <label className="settings-field-label" htmlFor="registration-credential-id">Credential ID</label>
+                <input id="registration-credential-id" className="settings-field-input" value={registrationCredentialId} onChange={(event) => setRegistrationCredentialId(event.target.value)} autoComplete="off" />
+                {registrationError ? <p className="form-error" role="alert">{registrationError}</p> : null}
+              </Modal>
+            )}
             {profileBlockOpen && profileUser && (
               <Modal
                 title="Block user"

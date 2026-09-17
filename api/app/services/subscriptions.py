@@ -12,13 +12,13 @@ from app.models.user import User
 
 FREE_CODE = "friink_free"
 ENTITLEMENTS = (
-    "message_requests", "profile_views", "longer_posts", "professional_registration",
+    "message_requests", "profile_views", "longer_posts",
     "professional_directory", "analytics", "profile_boost", "reduced_ads",
 )
 PLAN_ENTITLEMENTS = {
     FREE_CODE: set(),
-    "friink_pro": {"message_requests", "profile_views", "longer_posts", "professional_registration", "professional_directory"},
-    "friink_pro_plus": {"message_requests", "profile_views", "longer_posts", "professional_registration", "professional_directory", "analytics", "profile_boost", "reduced_ads"},
+    "friink_pro": {"message_requests", "profile_views", "longer_posts", "professional_directory"},
+    "friink_pro_plus": {"message_requests", "profile_views", "longer_posts", "professional_directory", "analytics", "profile_boost", "reduced_ads"},
 }
 
 def utc_now() -> datetime:

@@ -114,6 +114,46 @@ export type StaffRole = { key: string; display_name: string; system: boolean; pe
 export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; lifecycle_status: 'active' | 'deactivated' | 'pending_deletion' | 'deleted'; deletion_deadline: string | null; permissions: string[] };
 export type SubscriptionSummary = { plan_code: string; plan_name: string; expires_at: string | null; status: 'active' | 'expired' | 'revoked'; assignment_status: 'active' | 'expired' | 'revoked' | null; assignment_id: string | null };
 export type SubscriptionAssignment = SubscriptionSummary & { user_id: string; starts_at: string | null; reason: string | null; created_at: string | null; revoked_at: string | null };
+export type ProfessionalRegistration = {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  email: string | null;
+  profile_picture_url: string | null;
+  id: string | null;
+  status: 'pending' | 'registered' | 'rejected' | 'cancelled' | 'revoked' | null;
+  institute: string | null;
+  credential_id: string | null;
+  decision_message: string | null;
+  show_registered_badge: boolean;
+  show_in_directory: boolean;
+  professional: boolean;
+  directory_eligible: boolean;
+  created_at: string | null;
+  decided_at: string | null;
+};
+export async function getProfessionalRegistration(accessToken: string): Promise<ProfessionalRegistration> {
+  return requestApi<ProfessionalRegistration>('/professional-registration', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+export async function submitProfessionalRegistration(accessToken: string, payload: { institute: string; credential_id: string }): Promise<ProfessionalRegistration> {
+  return requestApi<ProfessionalRegistration>('/professional-registration', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify(payload),
+  });
+}
+export async function cancelProfessionalRegistration(accessToken: string): Promise<ProfessionalRegistration> {
+  return requestApi<ProfessionalRegistration>('/professional-registration/cancel', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
 export async function staffStepUp(accessToken: string, password: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/step-up', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ password }), skipAuthRefresh: true });
 }
@@ -123,6 +163,14 @@ export async function staffMe(accessToken: string): Promise<{ permissions: strin
 export async function listStaffUsers(accessToken: string, query = ''): Promise<StaffUser[]> {
   const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
   return requestApi(`/staff/users${suffix}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function listProfessionalRegistrations(accessToken: string, status = 'pending', query = ''): Promise<ProfessionalRegistration[]> {
+  const params = new URLSearchParams({ status });
+  if (query.trim()) params.set('q', query.trim());
+  return requestApi(`/staff/professional-registrations?${params.toString()}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export async function decideProfessionalRegistration(accessToken: string, registrationId: string, action: 'approve' | 'reject' | 'revoke', message?: string): Promise<ProfessionalRegistration> {
+  return requestApi(`/staff/professional-registrations/${encodeURIComponent(registrationId)}/decision`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ action, message: message?.trim() || null }), skipAuthRefresh: true });
 }
 export async function listSubscriptionAssignments(accessToken: string, publicId: string): Promise<SubscriptionAssignment[]> {
   return requestApi(`/subscriptions/admin/users/${encodeURIComponent(publicId)}/assignments`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
@@ -1294,7 +1342,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security' | 'professional_registration_submitted' | 'professional_registration_approved' | 'professional_registration_rejected' | 'professional_registration_revoked';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;

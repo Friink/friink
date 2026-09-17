@@ -5,7 +5,7 @@ requests, and the visibility and access consequences of those relationships.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-16T23:44:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -59,4 +59,4 @@ not infer relationship state from cached profile identity.
 
 ## Known limitations
 
-Professional verification and PMDC status are not part of Connections.
+Professional registration and PMDC status are not part of Connections.

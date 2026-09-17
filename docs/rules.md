@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-16T20:03:49Z
+**Last edited:** 2026-09-17T00:30:00Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -1001,7 +1001,7 @@ missing evidence can be filled in.
 - **Edge cases:** Selecting `For personal connection` hides the setting and
   clears the stored badge visibility. The API rejects attempts to enable the
   badge without the professional-networking preference. Badge visibility does
-  not award professional status, verify credentials, grant directory access,
+  not award professional status, register credentials, grant directory access,
   or change subscription entitlements. The same effective value is returned
   for data-backed profile-card surfaces so the badge remains consistent
   wherever that user is represented.
@@ -1604,7 +1604,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [discovery](units/discovery.md) | DISCOVERY-R-001 | Search suggestions and results use shared contextual and |
 | [discovery](units/discovery.md) | DISCOVERY-R-002 | Search results must not invent profile identities or |
 | [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory route is currently a placeholder with no |
-| [discovery](units/discovery.md) | DISCOVERY-R-004 | Professional verification and PMDC status are out of |
+| [discovery](units/discovery.md) | DISCOVERY-R-004 | Professional registration and PMDC status are planned |
 | [feed](units/feed.md) | FEED-R-001 | Home has Explore and Following tabs; Explore is the default. |
 | [feed](units/feed.md) | FEED-R-002 | Following contains posts strictly from accounts the viewer |
 | [feed](units/feed.md) | FEED-R-003 | Feed pagination and updates use server-authoritative cursors |

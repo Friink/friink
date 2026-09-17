@@ -1,5 +1,126 @@
 # Changelog
 
+## 2026-09-17T03:05:00Z
+
+- [docs/search] Confirmed that search is owned by the Discovery unit and
+  recorded its global/contextual scope, Messages search scope, actionable
+  suggestions, permission boundaries, and indexed/paginated performance rules.
+
+## 2026-09-17T02:55:00Z
+
+- [web/navigation] Expanded the opened mobile search surface to the viewport
+  gutters without changing desktop sizing or the search-route layout.
+
+## 2026-09-17T02:45:00Z
+
+- [docs/search] Recorded search ownership and requirements in Discovery and
+  Navigation: global Home search, contextual surface search, actionable
+  suggestions, Enter-to-results behavior, permission-aware indexed results,
+  and Messages search scope.
+
+## 2026-09-17T02:35:00Z
+
+- [web/navigation] Made the shared search control available beside the Actions
+  menu on contextual screens and expanded it across the search route between
+  Back and Actions.
+
+## 2026-09-17T02:25:00Z
+
+- [dev] Started the local API with `api/.env.development` and the local web
+  client on port 3000 using Webpack compatibility mode.
+
+## 2026-09-17T02:15:00Z
+
+- [docs/discovery] Documented the planned directory tabs, shared profile-row
+  layout, combined registration labels, empty states, random initial ordering,
+  and future profile-location/account-location fallback.
+
+## 2026-09-17T02:05:00Z
+
+- [web/registration] Added the owner-profile Actions menu application flow,
+  Institute and Credential ID modal, pending/cancel state, and user-facing
+  registration notification copy.
+
+## 2026-09-17T01:50:00Z
+
+- [web/design] Darkened the shared dark-theme scrollbar thumb and hover state
+  while leaving the light-theme scrollbar unchanged.
+
+## 2026-09-17T01:35:00Z
+
+- [web/control-panel] Added the Professional Registration staff tab using
+  reusable profile-card and list-row components, oldest-first request rows,
+  search across registration fields, status filters, profile links, and
+  confirmation modals for approval, rejection, and revocation.
+
+## 2026-09-17T01:15:00Z
+
+- [docs/professional-directory] Corrected UX and business-rule documentation:
+  registered badges may be hidden, the directory is currently a professional
+  listing without categories, registration is independent of subscription,
+  and registration email notifications use the existing configured delivery path.
+
+## 2026-09-17T01:00:00Z
+
+- [web/settings] Strengthened the shared CSS hide rule for the retained Accent
+  color component so later settings-row layout rules cannot re-display it.
+
+## 2026-09-17T00:50:00Z
+
+- [web/notifications] Softened unread notification rows to a muted neutral
+  theme surface and added consistent vertical spacing in the dropdown.
+
+## 2026-09-17T00:40:00Z
+
+- [web/design] Set shared profile-card picture borders to white in light theme
+  and `#111111` in dark theme, matching the dark background without accent color.
+
+## 2026-09-17T00:30:00Z
+
+- [api/professional-registration] Added the development-only backend foundation for self-declared professional status, staff-managed Friink registration, registration preferences, directory eligibility, and in-app/email status notifications. Applied migration `20260917_0050` to the development DB; registration application is no longer a subscription entitlement.
+
+## 2026-09-16T23:44:00Z
+
+- [docs/product] Replaced professional verification terminology with
+  registration terminology across current product and design documentation;
+  the planned staff-managed status is now `Friink Registered`.
+
+## 2026-09-16T23:31:51Z
+
+- [web/feed] Reverted the previous in-place post-feed update after it caused
+  newly created posts to appear immediately at the top instead of following the
+  existing feed loading behavior.
+
+## 2026-09-16T23:26:25Z
+
+- [web/feed] Kept Home mounted after publishing a normal post so the
+  server-confirmed post appears in place without a full route reload or feed
+  loading blink; non-Home posting still returns to canonical Home Explore with
+  scroll preservation.
+
+## 2026-09-16T23:23:27Z
+
+- [docs/product] Documented the approved Friink verification direction: any
+  user may apply with Institute and Credential ID, staff can approve/reject/
+  revoke with decision messages, and Pro/Pro+ gates directory visibility
+  rather than application submission.
+
+## 2026-09-16T23:07:25Z
+
+- [web/design] Replaced the accent-colored scrollbar thumb and hover state
+  with muted-neutral theme-aware colors for light and dark surfaces.
+
+## 2026-09-16T23:05:59Z
+
+- [web/settings] Hid the Accent color row from General settings without
+  removing its component, local preference state, or app-shell accent behavior.
+
+## 2026-09-16T23:03:34Z
+
+- [web/navigation] Removed the TopBar preview's centered `76rem` inner cap;
+  the shared top-bar rail now fills the viewport while retaining its edge
+  padding and existing action alignment.
+
 ## 2026-09-17T00:00:00Z
 
 - [release] Applied migration `20260917_0049` and verified Alembic head/check

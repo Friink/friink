@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-16T20:57:55Z
+**Last edited:** 2026-09-16T23:44:00Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -72,9 +72,15 @@ contract rather than repeated here.
   canvas.
 - Danger colors are reserved for errors, destructive actions, and warnings.
 - The in-app accent may be device-local, but public marketing surfaces retain
-  the fixed Friink brand color.
+  the fixed Friink brand color. The implemented Accent color setting is
+  currently hidden from the General settings UI until it is intentionally
+  re-exposed.
 - Every light-theme surface and foreground must have an intentional dark-theme
   equivalent with sufficient contrast.
+- Profile-picture borders use white in the light theme and `#111111` in the
+  dark theme so the border blends with the surrounding dark background.
+- Notification dropdown rows use a muted neutral unread surface rather than
+  the brand accent, with a small consistent gap between rows.
 
 ### Typography
 
@@ -138,12 +144,16 @@ The exact widths, heights, breakpoints, and token names are defined in
 - The unified `TopBar` preview uses one consistent leading/context/actions
   structure across signed-in surfaces, uses the same surface as the side
   drawer, and keeps the compact Friink mark visible in every mode. The mark
-  always links Home and the page title stays centered. The existing Header and
+  always links Home except on the search route, where the search field occupies
+  the middle slot between Back and Actions. The page title stays centered on
+  other routes. The existing Header and
   NavigationBar remain mounted but are hidden during preview evaluation. Home exposes the sidebar toggle, compact
   theme-aware mark, Search, Chat, and Notifications. Contextual screens add a
   history-aware Back control and the existing ActionMenu. Its
   preview controls must preserve existing route destinations and action
-  semantics until the replacement is accepted.
+  semantics until the replacement is accepted. The top-bar inner rail is
+  full-viewport width with only the shared edge padding; it must not use a
+  centered max-width cap that creates empty horizontal rails on wide screens.
 - Use the shared floating bar for persistent contextual actions such as post
   composition.
 
@@ -152,11 +162,13 @@ The exact widths, heights, breakpoints, and token names are defined in
 ### Scrollbar treatment
 
 The web platform uses native scrolling with a shared CSS scrollbar treatment.
-Scrollable surfaces use a thin rounded thumb blended from the active accent and
-line colors, with the accent color on hover and transparent tracks. The styling
-must preserve native wheel, keyboard, touch, accessibility, and reduced-motion
-behavior; JavaScript scrollbar replacements are not part of the platform design
-system.
+Scrollable surfaces use a thin rounded muted-neutral thumb blended from the
+theme's muted and line colors, with a slightly stronger neutral hover state and
+transparent tracks. The scrollbar must not use the brand/accent color. The
+styling must preserve native wheel, keyboard, touch, accessibility, and
+reduced-motion behavior; JavaScript scrollbar replacements are not part of the
+platform design system. In dark theme, the thumb uses a darker neutral (`#666666`)
+with `#7a7a7a` on hover so it remains visible without appearing washed out.
 
 ### Actions
 
@@ -213,12 +225,14 @@ Subscription surfaces use explicit plan and lifecycle labels: `Free`, `Pro`, or
 `Pro+` for the effective plan, and `Active`, `Expired`, or `Revoked` for the
 assignment state. Indefinite access is labeled `No expiration`. Manual admin
 access is described as granted or activated access, never as a purchase.
-Public plan and professional badges are opt-in and hidden by default. The
+The self-declared `Professional` badge is opt-in and hidden by default. The
+staff-controlled `Friink Registered` badge is shown while registration is
+active and cannot be hidden. The
 professional-badge preference is conditionally revealed under the General
 `How I use Friink` setting only for `For professional networking`; it is not
 shown for `For personal connection`. When enabled, the badge sits immediately
 next to the user's displayed name on the public profile. The preference
-changes profile display only and must not imply professional verification,
+changes profile display only and must not imply Friink registration,
 directory eligibility, or paid access. Expiry and revocation messaging must
 explain the resulting
 return to Free without implying a payment event when billing is unavailable.

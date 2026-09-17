@@ -10,6 +10,7 @@ export type ActionMenuItem = {
   imageUrl?: string | null;
   trailingIcon?: string;
   trailingAction?: () => void;
+  trailingDisabled?: boolean;
   trailingAriaLabel?: string;
   href?: string;
   onClick?: () => void;
@@ -139,10 +140,10 @@ export function ActionMenu({ open, items = defaultMenuItems, header, ariaLabel =
               className="action-menu-item-trailing-action"
               type="button"
               aria-label={item.trailingAriaLabel || item.label}
-              disabled={item.disabled}
+              disabled={item.trailingDisabled ?? item.disabled}
               onClick={(event) => {
                 event.stopPropagation();
-                if (!item.disabled) item.trailingAction?.();
+                if (!(item.trailingDisabled ?? item.disabled)) item.trailingAction?.();
                 onClose?.();
               }}
             >

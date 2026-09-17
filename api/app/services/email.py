@@ -85,6 +85,28 @@ class EmailService:
     async def send_registration_successful(self, user: User) -> None:
         return None
 
+    async def send_professional_registration_update(self, user: User, event: str, message: str | None = None) -> None:
+        if not self.settings.resend_api_key:
+            return
+        from_address = self._from_address("security")
+        if self.settings.resend_from_name.strip():
+            from_address = f"{self.settings.resend_from_name.strip()} <{from_address}>"
+        labels = {
+            "professional_registration_submitted": ("Registration request received", "We received your Friink registration request."),
+            "professional_registration_approved": ("Your Friink registration is approved", "Your Friink registration has been approved."),
+            "professional_registration_rejected": ("Update on your Friink registration", "Your Friink registration request needs changes before it can be accepted."),
+            "professional_registration_revoked": ("Your Friink registration was revoked", "Your Friink registration is no longer active."),
+        }
+        subject, intro = labels[event]
+        detail = f"<p>{escape(message)}</p>" if message else ""
+        payload = {"from": from_address, "to": [user.email], "subject": subject, "html": f"<p>{escape(intro)}</p>{detail}<p>Open Friink to view the current status.</p>"}
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {self.settings.resend_api_key}"}, json=payload)
+                response.raise_for_status()
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("professional_registration_email_failed error=%s", type(exc).__name__)
+
     async def send_password_reset(self, email: str, reset_url: str) -> None:
         if not self.settings.resend_api_key:
             raise EmailDeliveryError("Email delivery is not configured.")
