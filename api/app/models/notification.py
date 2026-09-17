@@ -22,6 +22,10 @@ class NotificationType(str, enum.Enum):
     chat_request_received = "chat_request_received"
     chat_message = "chat_message"
     chat_request_accepted = "chat_request_accepted"
+    professional_registration_submitted = "professional_registration_submitted"
+    professional_registration_approved = "professional_registration_approved"
+    professional_registration_rejected = "professional_registration_rejected"
+    professional_registration_revoked = "professional_registration_revoked"
 
 
 class Notification(Base):

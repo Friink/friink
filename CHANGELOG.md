@@ -1,5 +1,296 @@
 # Changelog
 
+## 2026-09-17T21:11:18Z
+
+- [docs] Audited the session changes across the agent log, changelog, design
+  contracts, active rules, and affected unit documents; confirmed the current
+  documentation set is synchronized with the implemented work.
+
+## 2026-09-17T21:09:14Z
+
+- [operations] Brought the Production database from `20260917_0049` to the
+  repository head `20260917_0051` by applying the existing `0050` and `0051`
+  migrations. The deployment migration gate completed with no schema drift.
+
+## 2026-09-17T23:15:00Z
+
+- [design] Corrected shared Tabs label alignment by using symmetric vertical
+  padding so active and inactive labels are centered within their hit areas.
+
+## 2026-09-17T23:00:00Z
+
+- [design] Restored the shared Tabs active text color to the configurable
+  accent color so it matches the active underline.
+
+## 2026-09-17T22:45:00Z
+
+- [design] Restored the subtle full-width bottom rule on the shared Tabs
+  component while retaining the accent-driven animated active-tab underline.
+
+## 2026-09-17T22:30:00Z
+
+- [design] Updated the shared Tabs active underline to use the configurable
+  accent color while retaining theme-aware black/white active text.
+
+## 2026-09-17T22:15:00Z
+
+- [design] Made the shared Tabs active label and sliding underline black in
+  light theme and white in dark theme, including system-dark mode.
+
+## 2026-09-17T22:00:00Z
+
+- [design] Restored the shared Tabs sliding active-tab underline while keeping
+  the full-width component bottom rule removed.
+
+## 2026-09-17T21:45:00Z
+
+- [discovery] Reused the shared profile badge treatment beside directory
+  names and changed Chat, Follow/Unfollow, and More to borderless icon-only
+  controls matching post-card actions.
+
+## 2026-09-17T21:30:00Z
+
+- [design] Corrected the shared Tabs treatment: restored the active-tab
+  underline, removed the full-width component bottom rule, and removed the
+  selected-tab background fill.
+
+## 2026-09-17T21:15:00Z
+
+- [discovery] Refined the Directory UI: removed the redundant heading copy,
+  moved status badges into the row middle, and added right-side Chat,
+  Follow/Unfollow, and More actions in the documented order.
+
+## 2026-09-17T21:00:00Z
+
+- [design] Updated the global Tabs treatment to remove the selected-tab
+  underline and sliding indicator, using accent text with a soft background
+  for the active state instead.
+
+## 2026-09-17T20:50:00Z
+
+- [discovery] Implemented the Directory UI-only slice: shell-level All,
+  Professionals, and Friink Registered tabs; responsive shared result rows;
+  profile links; About text; and registration-status presentation. Backend
+  eligibility, listing, and real directory data remain pending.
+
+## 2026-09-17T20:40:00Z
+
+- [search] Moved the Search scope tabs to the application shell so they span
+  the full main panel while search results remain inside the capped content
+  box.
+
+## 2026-09-17T20:35:05Z
+
+- [saved] Moved the Saved `Posts`/`Profiles` tab strip to the application
+  shell so it spans the full main panel while saved content remains capped.
+
+## 2026-09-17T20:30:10Z
+
+- [search] Replaced bespoke search scope buttons with the shared `Tabs`
+  component and removed duplicate search-only styling.
+
+## 2026-09-17T20:26:40Z
+
+- [search] Fixed the Search route header so its persistent query field no
+  longer forces the optional suggestions dropdown open.
+
+## 2026-09-17T20:20:18Z
+
+- [search] Fixed the Search route header so its persistent query field no
+  longer forces the optional suggestions dropdown open.
+
+## 2026-09-17T20:20:18Z
+
+- [search] Fixed dynamic search-route query propagation so submitted queries
+  render the real Search surface and hydrate the input instead of falling back
+  to the no-query placeholder.
+
+## 2026-09-17T20:12:00Z
+
+- [search] Added the MVP scope-control UX with All/People/Posts/Messages
+  controls, URL-persisted selection, and API-side People/Posts filtering.
+  Existing shared result rows and PostgreSQL search remain in use.
+
+## 2026-09-17T20:00:36Z
+
+- [docs/search] Recorded the rationale for the simple Search MVP in the Search
+  unit and `docs/notes.md`: use PostgreSQL and existing permission data for
+  People, Posts, and permitted Messages now, while preserving an API boundary
+  for a future dedicated provider if measured scale requires it.
+
+## 2026-09-17T19:58:08Z
+
+- [docs/search] Defined the agreed MVP boundary: PostgreSQL-backed People,
+  Posts, and Messages search with simple scope shortcuts, reliable query/result
+  states, and basic pagination. Moved hashtags, global conversations, live
+  personalized suggestions, highlighting, advanced ranking, analytics, and
+  personalization to Planned.
+
+## 2026-09-17T19:32:21Z
+
+- [docs/search] Clarified that Search is a cross-cutting unit spanning people,
+  posts, messages, conversations, and hashtags; Discovery remains focused on
+  the professional directory.
+
+## 2026-09-17T19:27:34Z
+
+- [docs/search] Reassigned cross-surface search to a dedicated Search unit.
+  Discovery now owns the professional directory and links to Search for
+  people, posts, messages, conversations, and hashtag search behavior.
+
+## 2026-09-17T19:27:34Z
+
+- [docs/search] Documented the search gap-closure plan in the existing
+  Discovery unit. Confirmed that a new Search unit is unnecessary because
+  Discovery already owns search scope, UX, API behavior, acceptance criteria,
+  limitations, and verification evidence.
+
+## 2026-09-17T19:17:54Z
+
+- [docs] Reconciled Discovery, Rules, Profiles, and Subscriptions documentation
+  with the current implementation state. Search is now documented as partial
+  pending a passing authenticated end-to-end flow; stale planned/placeholder
+  references for registration and directory rules were corrected.
+
+## 2026-09-17T02:33:52Z
+
+- [docs/search] Recorded that the PostgreSQL search implementation is committed
+  and pushed to both `development` and `staging`; staging route smoke testing
+  confirms the authenticated `/search` endpoint is deployed.
+
+## 2026-09-17T03:35:00Z
+
+- [search] Added PostgreSQL-backed global and Messages search with trigram
+  indexes, permission-aware API queries, real web results, and development/
+  staging migration `20260917_0051`.
+
+## 2026-09-17T03:15:00Z
+
+- [release] Applied and verified Alembic head `20260917_0050` on both the
+  development and staging databases. Pushed commit `102bd9b` to both matching
+  remote branches; production was not changed.
+
+## 2026-09-17T03:05:00Z
+
+- [docs/search] Confirmed that search is owned by the Discovery unit and
+  recorded its global/contextual scope, Messages search scope, actionable
+  suggestions, permission boundaries, and indexed/paginated performance rules.
+
+## 2026-09-17T02:55:00Z
+
+- [web/navigation] Expanded the opened mobile search surface to the viewport
+  gutters without changing desktop sizing or the search-route layout.
+
+## 2026-09-17T02:45:00Z
+
+- [docs/search] Recorded search ownership and requirements in Discovery and
+  Navigation: global Home search, contextual surface search, actionable
+  suggestions, Enter-to-results behavior, permission-aware indexed results,
+  and Messages search scope.
+
+## 2026-09-17T02:35:00Z
+
+- [web/navigation] Made the shared search control available beside the Actions
+  menu on contextual screens and expanded it across the search route between
+  Back and Actions.
+
+## 2026-09-17T02:25:00Z
+
+- [dev] Started the local API with `api/.env.development` and the local web
+  client on port 3000 using Webpack compatibility mode.
+
+## 2026-09-17T02:15:00Z
+
+- [docs/discovery] Documented the planned directory tabs, shared profile-row
+  layout, combined registration labels, empty states, random initial ordering,
+  and future profile-location/account-location fallback.
+
+## 2026-09-17T02:05:00Z
+
+- [web/registration] Added the owner-profile Actions menu application flow,
+  Institute and Credential ID modal, pending/cancel state, and user-facing
+  registration notification copy.
+
+## 2026-09-17T01:50:00Z
+
+- [web/design] Darkened the shared dark-theme scrollbar thumb and hover state
+  while leaving the light-theme scrollbar unchanged.
+
+## 2026-09-17T01:35:00Z
+
+- [web/control-panel] Added the Professional Registration staff tab using
+  reusable profile-card and list-row components, oldest-first request rows,
+  search across registration fields, status filters, profile links, and
+  confirmation modals for approval, rejection, and revocation.
+
+## 2026-09-17T01:15:00Z
+
+- [docs/professional-directory] Corrected UX and business-rule documentation:
+  registered badges may be hidden, the directory is currently a professional
+  listing without categories, registration is independent of subscription,
+  and registration email notifications use the existing configured delivery path.
+
+## 2026-09-17T01:00:00Z
+
+- [web/settings] Strengthened the shared CSS hide rule for the retained Accent
+  color component so later settings-row layout rules cannot re-display it.
+
+## 2026-09-17T00:50:00Z
+
+- [web/notifications] Softened unread notification rows to a muted neutral
+  theme surface and added consistent vertical spacing in the dropdown.
+
+## 2026-09-17T00:40:00Z
+
+- [web/design] Set shared profile-card picture borders to white in light theme
+  and `#111111` in dark theme, matching the dark background without accent color.
+
+## 2026-09-17T00:30:00Z
+
+- [api/professional-registration] Added the development-only backend foundation for self-declared professional status, staff-managed Friink registration, registration preferences, directory eligibility, and in-app/email status notifications. Applied migration `20260917_0050` to the development DB; registration application is no longer a subscription entitlement.
+
+## 2026-09-16T23:44:00Z
+
+- [docs/product] Replaced professional verification terminology with
+  registration terminology across current product and design documentation;
+  the planned staff-managed status is now `Friink Registered`.
+
+## 2026-09-16T23:31:51Z
+
+- [web/feed] Reverted the previous in-place post-feed update after it caused
+  newly created posts to appear immediately at the top instead of following the
+  existing feed loading behavior.
+
+## 2026-09-16T23:26:25Z
+
+- [web/feed] Kept Home mounted after publishing a normal post so the
+  server-confirmed post appears in place without a full route reload or feed
+  loading blink; non-Home posting still returns to canonical Home Explore with
+  scroll preservation.
+
+## 2026-09-16T23:23:27Z
+
+- [docs/product] Documented the approved Friink verification direction: any
+  user may apply with Institute and Credential ID, staff can approve/reject/
+  revoke with decision messages, and Pro/Pro+ gates directory visibility
+  rather than application submission.
+
+## 2026-09-16T23:07:25Z
+
+- [web/design] Replaced the accent-colored scrollbar thumb and hover state
+  with muted-neutral theme-aware colors for light and dark surfaces.
+
+## 2026-09-16T23:05:59Z
+
+- [web/settings] Hid the Accent color row from General settings without
+  removing its component, local preference state, or app-shell accent behavior.
+
+## 2026-09-16T23:03:34Z
+
+- [web/navigation] Removed the TopBar preview's centered `76rem` inner cap;
+  the shared top-bar rail now fills the viewport while retaining its edge
+  padding and existing action alignment.
+
 ## 2026-09-17T00:00:00Z
 
 - [release] Applied migration `20260917_0049` and verified Alembic head/check

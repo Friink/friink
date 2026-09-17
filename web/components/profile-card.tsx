@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { ProfileBadge } from '@/components/profile-badge';
 
 export const DEFAULT_PROFILE_IMAGE = '/media/profile.jpg';
 
@@ -26,10 +27,12 @@ type ProfileCardProps = {
   href?: string;
   imageUrl?: string | null;
   showProfessionalBadge?: boolean;
+  badges?: string[];
 };
 
-export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl, showProfessionalBadge = false }: ProfileCardProps) {
+export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl, showProfessionalBadge = false, badges = [] }: ProfileCardProps) {
   const resolvedImageUrl = imageUrl || DEFAULT_PROFILE_IMAGE;
+  const visibleBadges = showProfessionalBadge ? ['Professional', ...badges.filter((badge) => badge !== 'Professional')] : badges;
   const content = (
     <div className="profile-card">
       <span className={`profile-card-avatar user-avatar avatar-${tone} profile-card-avatar-image`}>
@@ -38,7 +41,7 @@ export function ProfileCard({ name, handle, tone = 'mint', initials, date, href,
       <div className="profile-card-info">
         <span className="profile-card-name-row">
           <strong>{name}</strong>
-          {showProfessionalBadge ? <span className="professional-profile-badge" title="Professional" aria-label="Professional">Professional</span> : null}
+          {visibleBadges.map((badge) => <ProfileBadge key={badge} label={badge} />)}
         </span>
         <span className="profile-card-handle">{handle}</span>
         {date && <span className="profile-card-date">{date}</span>}

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
+import { ActionMenu } from '@/components/action-menu';
 import { navItems } from '@/lib/data';
-import { acceptChatRequest, listConversations, loadAuthSession, updateChatSettings, type ApiConversation } from '@/lib/auth';
+import { acceptChatRequest, listConversations, loadAuthSession, searchContent, updateChatSettings, type ApiConversation, type ApiSearchResult } from '@/lib/auth';
 import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -19,6 +20,7 @@ export function QuestionsScreen() {
 }
 
 type MessagesTab = 'all' | 'muted' | 'requests' | 'archived';
+export type DirectoryTab = 'all' | 'professionals' | 'registered';
 
 export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
   const router = useRouter();
@@ -146,54 +148,47 @@ function getSearchParam(value: string | string[] | undefined) {
   return raw ? decodeURIComponent(raw) : '';
 }
 
-export function SearchScreen() {
+export function SearchScreen({ initialQuery }: { initialQuery?: string }) {
   const params = useParams<{ query?: string | string[] }>();
-  const query = getSearchParam(params?.query);
-  const normalizedQuery = query.trim().toLowerCase();
-  const fallbackResults = [
-    {
-      id: 'people-muflah',
-      type: 'People',
-      name: 'Muflah',
-      handle: '@muflah',
-      initials: 'M',
-      tone: 'mint' as const,
-      summary: 'Profile result',
-    },
-    {
-      id: 'posts-dark-mode',
-      type: 'Posts',
-      name: 'Muflah',
-      handle: '@muflah',
-      initials: 'M',
-      tone: 'sage' as const,
-      summary: 'The dark mode should be darker.',
-    },
-    {
-      id: 'posts-connections',
-      type: 'Posts',
-      name: 'Muflah',
-      handle: '@muflah',
-      initials: 'M',
-      tone: 'sun' as const,
-      summary: 'Bug: Connections page ALL tab is not showing all connections.',
-    },
-  ];
-  const results = normalizedQuery
-    ? fallbackResults.filter((result) => `${result.type} ${result.name} ${result.handle} ${result.summary}`.toLowerCase().includes(normalizedQuery))
-    : [];
+  const searchParams = useSearchParams();
+  const query = initialQuery ?? getSearchParam(params?.query);
+  const filterParam = searchParams.get('filter');
+  const filter: 'all' | 'people' | 'posts' | 'messages' = filterParam === 'people' || filterParam === 'posts' || filterParam === 'messages' ? filterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';
+  const scope = filter === 'messages' ? 'messages' : 'global';
+  const kind = filter === 'people' ? 'person' : filter === 'posts' ? 'post' : 'all';
+  const [results, setResults] = useState<ApiSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const session = loadAuthSession();
+    if (!query || !session) {
+      setResults([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    let stopped = false;
+    setLoading(true);
+    setError(null);
+    searchContent(session.accessToken, query, scope, 24, kind)
+      .then((response) => { if (!stopped) setResults(response.items); })
+      .catch((requestError) => { if (!stopped) setError(requestError instanceof Error ? requestError.message : 'Could not search Friink.'); })
+      .finally(() => { if (!stopped) setLoading(false); });
+    return () => { stopped = true; };
+  }, [query, scope, kind]);
 
   return (
     <PageSurface className="search-screen" variant="list">
       <div className="search-results-list">
         {query ? (
-          results.length > 0 ? (
+          loading ? <div className="home-feed-message">Searching Friink…</div> : error ? <div className="home-feed-message" role="alert">{error}</div> : results.length > 0 ? (
             results.map((result) => (
               <ListRow
                 key={result.id}
-                title={<ProfileCard name={result.name} handle={result.handle} initials={result.initials} tone={result.tone} href={`/${result.handle.replace('@', '')}`} />}
+                title={<ProfileCard name={result.name} handle={result.username ? `@${result.username}` : ''} initials={result.name.slice(0, 2).toUpperCase()} tone={result.type === 'post' ? 'sage' : result.type === 'conversation' ? 'sun' : 'mint'} imageUrl={result.profile_picture_url} href={result.href ?? undefined} />}
                 subtitle={result.summary}
-                meta={result.type}
+                meta={result.type === 'person' ? 'People' : result.type === 'post' ? 'Posts' : 'Conversations'}
                 className="search-result-row"
               />
             ))
@@ -220,8 +215,75 @@ export function CalendarScreen() {
   return <><ScreenHeading eyebrow="Make time" title="Calendar" copy="A gentle view of the moments you have planned." /><div className="calendar-top"><button className="icon-button" aria-label="Previous month">‹</button><strong>August 2026</strong><button className="icon-button" aria-label="Next month">›</button></div><div className="calendar-grid">{['S','M','T','W','T','F','S'].map((day, index) => <span className="calendar-weekday" key={`${day}-${index}`}>{day}</span>)}{Array.from({ length: 31 }, (_, index) => <span className={`calendar-day${[5, 11, 17, 22].includes(index + 1) ? ' has-event' : ''}${index + 1 === 11 ? ' today' : ''}`} key={index}>{index + 1}</span>)}</div><div className="section-heading"><h2>Coming up</h2><button className="button-primary">＋ Add event</button></div><div className="event-list"><ListRow avatar={<span className="event-date">17<span>MON</span></span>} title="Sunday market" subtitle="10:00 AM · With Maya" trailing={<span className="event-dot coral-dot" />} className="event-row" /><ListRow avatar={<span className="event-date">22<span>SAT</span></span>} title="Dinner at Luma" subtitle="7:30 PM · With your circle" trailing={<span className="event-dot green-dot" />} className="event-row" /></div></>;
 }
 
-export function DirectoryScreen() {
-  return <><ScreenHeading eyebrow="Your people" title="Directory" copy="Everyone you care about, easy to find." /><div className="message-search">⌕ <span>Search your directory</span></div><div className="directory-section"><p className="directory-label">A · 2 people</p><ListRow avatar={<ProfileCard name="Alex Morgan" handle="@alexmorgan" tone="mint" initials="AM" />} title="Alex Morgan" subtitle="You · 34 connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /><ListRow avatar={<ProfileCard name="Alina Ross" handle="@alinaross" tone="coral" initials="AL" />} title="Alina Ross" subtitle="12 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div><div className="directory-section"><p className="directory-label">J · 1 person</p><ListRow avatar={<ProfileCard name="Jon Bell" handle="@jonbell" tone="sage" initials="JB" />} title="Jon Bell" subtitle="8 shared connections" trailing={<button className="icon-button" type="button">···</button>} className="directory-row" /></div></>;
+const directoryEntries = [
+  { username: 'alexmorgan', name: 'Alex Morgan', about: 'Counsellor helping people make space for change.', tone: 'mint', initials: 'AM', professional: true, registered: false },
+  { username: 'alinaross', name: 'Alina Ross', about: 'Psychologist focused on accessible mental-health care.', tone: 'coral', initials: 'AR', professional: true, registered: true },
+  { username: 'jonbell', name: 'Jon Bell', about: 'Mental-wellness educator and community facilitator.', tone: 'sage', initials: 'JB', professional: false, registered: true },
+];
+
+type DirectoryEntry = typeof directoryEntries[number];
+
+function DirectoryResultRow({ entry }: { entry: DirectoryEntry }) {
+  const router = useRouter();
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [following, setFollowing] = useState(entry.username === 'alinaross');
+
+  return (
+    <div className="directory-result">
+      <ListRow
+        title={<ProfileCard name={entry.name} handle={`@${entry.username}`} tone={entry.tone} initials={entry.initials} badges={[...(entry.professional ? ['Professional'] : []), ...(entry.registered ? ['Friink Registered'] : [])]} />}
+        subtitle={entry.about}
+        trailing={(
+          <span className="directory-profile-actions" onClick={(event) => event.stopPropagation()}>
+            <button className="icon-button directory-icon-action" type="button" aria-label={`Chat with ${entry.name}`} title="Chat" onClick={() => router.push(`/${entry.username}/chat`)}>
+              <i className="fa-regular fa-paper-plane" aria-hidden="true" />
+            </button>
+            <button className="icon-button directory-icon-action" type="button" aria-label={following ? `Unfollow ${entry.name}` : `Follow ${entry.name}`} title={following ? 'Unfollow' : 'Follow'} aria-pressed={following} onClick={() => setFollowing((current) => !current)}>
+              <i className={`fa-solid ${following ? 'fa-user-check' : 'fa-user-plus'}`} aria-hidden="true" />
+            </button>
+            <button className="icon-button directory-icon-action directory-more-action" type="button" aria-label={`More actions for ${entry.name}`} title="More actions" ref={menuButtonRef} onClick={() => setMenuOpen(true)}>
+              <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
+            </button>
+          </span>
+        )}
+        onClick={() => router.push(`/${entry.username}`)}
+        ariaLabel={`Open ${entry.name} profile`}
+        className="directory-row"
+      />
+      <ActionMenu
+        open={menuOpen}
+        anchorRef={menuButtonRef}
+        ariaLabel={`${entry.name} profile actions`}
+        onClose={() => setMenuOpen(false)}
+        items={[
+          { label: 'Share profile', icon: 'fa-share-nodes', onClick: () => setMenuOpen(false) },
+          { label: 'Copy profile link', icon: 'fa-link', onClick: () => setMenuOpen(false) },
+          { label: 'Report profile', icon: 'fa-flag', onClick: () => setMenuOpen(false) },
+        ]}
+      />
+    </div>
+  );
+}
+
+export function DirectoryScreen({ tab = 'all' }: { tab?: DirectoryTab }) {
+  const entries = directoryEntries.filter((entry) => tab === 'professionals' ? entry.professional : tab === 'registered' ? entry.registered : true);
+
+  return (
+    <PageSurface className="directory-screen" variant="list">
+      <div className="directory-list">
+        {entries.length > 0 ? entries.map((entry) => (
+          <DirectoryResultRow key={entry.username} entry={entry} />
+        )) : (
+          <div className="connections-empty directory-empty">
+            <i className="fa-solid fa-address-book" aria-hidden="true" />
+            <p>No directory members yet.</p>
+            <span>Try another directory view later.</span>
+          </div>
+        )}
+      </div>
+    </PageSurface>
+  );
 }
 
 export function ScreenForNav({ activeNav }: { activeNav: string }) {

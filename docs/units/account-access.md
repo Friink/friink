@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-16T20:03:49Z
+**Last edited:** 2026-09-16T23:44:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -65,7 +65,7 @@ existence.
 
 - Account lifecycle transitions; see [Account Lifecycle](./account-lifecycle.md).
 - Account linking, merged identities, or shared security state.
-- Billing, subscription entitlement, or professional verification.
+- Billing, subscription entitlement, or professional registration.
 - Public display of IP addresses, device fingerprints, tokens, hashes, or UUIDs.
 - Mobile secure-storage implementation before a mobile client exists.
 

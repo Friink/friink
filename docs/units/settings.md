@@ -5,7 +5,7 @@ account credentials, privacy, sessions, and subscription visibility.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T21:51:28Z
+**Last edited:** 2026-09-16T23:44:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -42,8 +42,10 @@ save/result state, and accessible controls.
   failed save reverts to the last confirmed value.
 - **SETTINGS-R-005:** Sessions are listed using server-derived metadata and
   never expose raw tokens, hashes, IPs, or internal UUIDs.
-- **SETTINGS-R-006:** Appearance and accent preferences are device-local;
-  public marketing surfaces are not changed by the in-app accent.
+- **SETTINGS-R-006:** Appearance and the retained accent preference are
+  device-local; public marketing surfaces are not changed by the in-app
+  accent. The Accent color row is currently hidden from General while its
+  component and local application behavior remain implemented.
 - **SETTINGS-R-007:** Successful saves provide clear success feedback.
 - **SETTINGS-R-008:** General shows the professional-profile badge preference
   only when `How I use Friink` is `For professional networking`; the saved
@@ -54,6 +56,10 @@ save/result state, and accessible controls.
 Settings uses divider-bounded rows rather than isolated cards. Editable fields
 show their action in a consistent action rail. Loading, validation, success,
 failure, and retry states remain attached to the setting being changed.
+
+The Accent color row remains implemented but is force-hidden from the
+General settings UI. Hiding it does not remove the component, local preference,
+or app-shell accent application path.
 
 ### Professional profile badge
 
@@ -66,10 +72,25 @@ hidden or unavailable while `For personal connection` is selected.
 When enabled, the user's public profile may display the professional badge
 immediately next to their displayed name; when disabled, it must not display
 it. This preference controls badge visibility only. It does not award
-professional status, verify credentials,
+professional status, register credentials,
 grant directory access, or change subscription entitlements. The badge remains
 hidden by default, and saving either preference uses the normal Settings save
 feedback and failure-recovery behavior.
+
+### Friink registration (user flow active)
+
+Any user may apply for Friink registration through `POST /professional-registration`; an active subscription is not
+required to submit an application. The application is opened from the user's
+own profile Actions menu and collects exactly two fields: Institute and
+Credential ID. After submission, the action becomes a read-only `Registration
+request pending` state, with a `Cancel request` action still available.
+
+Submission, approval, rejection, and revocation notify the user
+in both the app and by email. A rejected user may reapply immediately, and the
+rejection message remains available to explain what should be corrected. The
+API response exposes `professional` from `use_intent == "professional"`, the
+current registration status, `show_registered_badge`, `show_in_directory`, and
+computed `directory_eligible`.
 
 ### Subscription visibility (current rollout)
 

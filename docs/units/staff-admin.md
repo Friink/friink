@@ -6,7 +6,7 @@ audit information.
 
 **Status:** Partial — staff discovery, bootstrap, roles, and user controls are implemented; several sections are placeholders  
 **Tier:** Full  
-**Last edited:** 2026-09-16T01:18:28Z
+**Last edited:** 2026-09-16T23:44:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -20,6 +20,8 @@ account access remains defined by [Account Access](./account-access.md).
 - [Account Lifecycle](./account-lifecycle.md) — user lifecycle actions exposed to staff.
 - [Notifications](./notifications.md) — security/audit notifications.
 - [Subscriptions](./subscriptions.md) — administrative plan assignments.
+- [Profiles](./profiles.md) — presents the staff-controlled registration result.
+- [Discovery](./discovery.md) — consumes registration and subscription state for directory eligibility.
 - [Design System](../design-system.md) — shared panel, modal, and table patterns.
 
 ## Product definition
@@ -88,6 +90,23 @@ server-side, and create redacted audit events. User-facing copy describes the
 result as access being granted or changed; staff-facing copy identifies it as
 manual plan assignment. The flow must never imply that a payment occurred.
 
+### Friink registration review (API and Control Panel UI active)
+
+Staff with a dedicated professional-registration permission can review user
+applications containing Institute and Credential ID. Each application keeps an
+immutable history of submissions and decisions and supports `Pending`,
+`Approved`, `Rejected`, `Cancelled`, and `Revoked` states. Rejections require a
+message explaining what the user should correct; users may reapply immediately.
+Revocation requires a reason and removes the active `Friink Registered` status.
+
+Submission, approval, rejection, and revocation events notify the user in-app
+and by email. Staff can view prior applications and decision messages. The
+Control Panel exposes a separate Professional Registration tab with oldest-first
+pending requests, all-status filtering, field search, profile links, and
+confirmation modals for staff decisions. The review workflow is separate from subscription administration;
+subscription status only controls whether an otherwise eligible profile appears
+in the directory.
+
 ## Technical contract
 
 Routes are in `api/app/routers/staff.py` and related auth-operation routers;
@@ -105,8 +124,9 @@ privileged sessions, and audit records are server-backed.
 
 ## Known limitations
 
-The full staff dashboard, moderation requirements, professional-status workflow,
-and some control-panel sections remain to be specified and implemented. The
+The full staff dashboard, moderation requirements, registration history detail,
+and some control-panel sections remain to be implemented. The
 subscription and professional-status permission records now exist in the
-database catalog; the corresponding professional-status workflow remains
+database catalog; the corresponding registration review API is now available,
+while the staff dashboard remains
 planned.

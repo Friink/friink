@@ -1,5 +1,372 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T21:11:18Z — Audit session documentation coverage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify that all requested documentation surfaces reflect the
+  work completed in this session.
+- Changes Made: Confirmed updates across `AGENTLOG.md`, `CHANGELOG.md`,
+  `packages/design/design.md`, `docs/design-system.md`, `docs/rules.md`, and
+  the affected `docs/units/` documents, including the new Search unit.
+- Verification Status: Documentation coverage audit completed; no missing
+  documentation surface identified.
+
+## 2026-09-17T21:09:14Z — Catch Production up to migration head
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the pending migrations to Production and verify all
+  database heads.
+- Changes Made: Ran the repository migration gate against Production, applying
+  `20260917_0050` and `20260917_0051`; the subsequent Alembic drift check
+  reported no new upgrade operations.
+- Verification Status: Development, Staging, and Production independently
+  report `20260917_0051 (head)`.
+
+## 2026-09-17T23:15:00Z — Center shared Tabs labels
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the apparent active-tab label alignment issue.
+- Changes Made: Replaced asymmetric Tabs vertical padding with symmetric
+  padding so flex centering is exact while preserving the existing tab height,
+  underline, and transition behavior.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T23:00:00Z — Restore the Tabs active text color
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the active tab font color to its original treatment.
+- Changes Made: Restored active tab text to `var(--color-accent)`, removed the
+  temporary theme-specific black/white text variable, and kept the accent
+  underline and full-width component rule.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T22:45:00Z — Restore the Tabs component underline
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the full-width Tabs component underline.
+- Changes Made: Restored the shared `.tabs` bottom rule while retaining the
+  animated active-tab underline and configurable accent color. Updated the
+  design contracts.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T22:30:00Z — Drive the Tabs underline from the accent setting
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the active Tabs underline use the configurable accent
+  color while preserving theme-aware active text.
+- Changes Made: Changed `.tabs__indicator` to use `var(--color-accent)` and
+  updated the product and implementation design contracts.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T22:15:00Z — Set theme-aware active Tabs color
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use black active tab text/underline in light theme and white
+  in dark theme.
+- Changes Made: Added a shared Tabs active-color variable with explicit light,
+  dark, and system-dark values; applied it to both selected text and the
+  sliding underline; updated the design contracts.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T22:00:00Z — Restore the Tabs sliding underline
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Restore the smooth active-tab underline transition without
+  restoring the full-width Tabs component underline.
+- Changes Made: Restored the shared `.tabs__indicator` geometry and transition,
+  removed the duplicate active-button border, and kept the Tabs container
+  borderless. Updated the shared design contracts.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T21:45:00Z — Align Directory badges and icon actions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use name-adjacent shared badges and post-card-style icon
+  actions in Directory rows.
+- Changes Made: Added reusable `ProfileBadge` rendering through `ProfileCard`,
+  allowed multiple badges per profile, and changed Directory Chat,
+  Follow/Unfollow, and More controls to borderless icon-only actions.
+  Updated Discovery and design contracts.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
+## 2026-09-17T21:30:00Z — Correct Tabs underline treatment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the active-tab underline while removing the full-width
+  Tabs component underline and selected background fill.
+- Changes Made: Restored the active tab border, removed the `.tabs` bottom
+  border, kept the indicator hidden, and removed the active background fill.
+  Updated the shared design contracts.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T21:15:00Z — Refine Directory row actions and copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove redundant Directory copy and refine row badge/action
+  placement.
+- Changes Made: Removed the Directory eyebrow/title/intro block, added a shared
+  `ListRow` middle slot for status badges, and added right-side Chat,
+  Follow/Unfollow, and More actions using the shared `ActionMenu`.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
+## 2026-09-17T21:00:00Z — Remove the shared Tabs underline
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Modernize the global Tabs visual treatment by removing its
+  underline.
+- Changes Made: Removed the selected-tab border and sliding indicator from the
+  shared Tabs CSS, retained accent text, added a soft accent selected state,
+  and updated the product and implementation design contracts.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-17T20:50:00Z — Implement Directory UI only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the documented Directory UI while leaving backend
+  work pending.
+- Changes Made: Added shell-level Directory tabs, URL-backed tab selection,
+  responsive shared ListRow/ProfileCard results, About text, status labels,
+  public-profile navigation, and an empty state. Updated Discovery and design
+  documentation to distinguish the presentational preview from pending API
+  behavior.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
+## 2026-09-17T20:40:00Z — Make Search tabs span the main panel
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Search scope tabs being constrained by the content box
+  and clarify the design-guideline ownership.
+- Changes Made: Moved Search scope `Tabs` from `SearchScreen` into the
+  shell-level tab region, preserving URL-backed filtering. Updated the Search
+  unit and implementation design contract to make the layout boundary explicit.
+- Verification Status: Web TypeScript check, Search route HTTP 200 smoke check,
+  and `git diff --check` passed.
+
+## 2026-09-17T20:35:05Z — Make Saved tabs span the main panel
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Saved screen tabs being constrained by the content box.
+- Changes Made: Moved the Saved `Posts`/`Profiles` `Tabs` from `SavedScreen`
+  into the shell-level tab region used by Home and other sections. Kept saved
+  feed content inside the shared capped content box and updated the Saved and
+  design contracts.
+- Verification Status: Web TypeScript check, Saved route HTTP 200 smoke check,
+  and `git diff --check` passed.
+
+## 2026-09-17T20:30:10Z — Reuse the shared Tabs component for Search scopes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Correct Search scope controls to follow the repository's
+  shared-component guidance.
+- Changes Made: Updated `SearchScreen` to use the shared `Tabs` component for
+  All, People, Posts, and Messages; removed bespoke search filter CSS; updated
+  the Search unit and design contract.
+- Verification Status: `git diff --check` passed. TypeScript check was run from
+  the web workspace after dependency path resolution.
+
+## 2026-09-17T19:17:54Z — Reconcile documentation with current search status
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documents that were stale or inconsistent with the
+  current implementation and testing state.
+- Changes Made: Updated Discovery to mark search as partial until authenticated
+  end-to-end behavior passes; corrected the Rules registry and Profiles and
+  Subscriptions references that still described registration as planned or the
+  directory as an unimplemented rule.
+- Verification Status: Documentation-only change; Markdown diff checked. No
+  application code, database, or branch state changed.
+
+## 2026-09-17T02:33:52Z — Document search release status
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the documentation after the search implementation was
+  committed and promoted for staging testing.
+- Changes Made: Updated the Discovery unit and release history to record that
+  the same search commit is present on `development` and `staging`, and that
+  the deployed staging endpoint responds as an authenticated route.
+- Verification Status: Documentation links and Markdown structure reviewed;
+  no application code or database state changed.
+
+## 2026-09-17T03:35:00Z — Implement PostgreSQL search
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement end-to-end PostgreSQL search for development and staging testing.
+- Changes Made: Added indexed PostgreSQL search for people, posts, conversations,
+  and permitted chat messages; added global/Messages API scopes and wired real
+  web search results. Applied migration `20260917_0051` to development and
+  staging.
+- Verification Status: Python and TypeScript checks passed; both migration
+  gates passed. Staging endpoint verification follows deployment.
+
+## 2026-09-17T03:15:00Z — Migrate development and staging databases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update development and staging databases and push the latest code to both branches.
+- Changes Made: Confirmed development at `20260917_0050`, upgraded staging from
+  `20260917_0049` to `20260917_0050`, verified both with `alembic check`, and
+  pushed commit `102bd9b` to `origin/development` and `origin/staging`.
+- Verification Status: Both migration gates passed; production was not touched.
+
+## 2026-09-17T03:05:00Z — Confirm search documentation ownership
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Identify where search requirements belong and save them.
+- Changes Made: Confirmed Discovery as the search source of truth and clarified
+  that only provider/index rollout details remain open.
+- Verification Status: Documentation reviewed.
+
+## 2026-09-17T02:55:00Z — Expand mobile search surface
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make mobile search use the available viewport width while preserving desktop behavior.
+- Changes Made: Added a mobile-only fixed search surface with viewport gutters;
+  search-route Back-to-Actions behavior remains unchanged. Updated design docs.
+- Verification Status: TypeScript check passed; local search page returned HTTP 200.
+
+## 2026-09-17T02:45:00Z — Document search requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Identify the search documentation location and save the requirements.
+- Changes Made: Updated Discovery and Navigation with search ownership, global
+  versus contextual scope, suggestion and Enter behavior, Messages scope,
+  privacy rules, and indexed/paginated performance requirements.
+- Verification Status: Documentation diff reviewed.
+
+## 2026-09-17T02:35:00Z — Add search control to all signed-in screens
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make search available beside Actions and expand it on the search route.
+- Changes Made: Updated shared TopBar structure, responsive CSS, and design
+  contracts; preserved the existing query submission behavior.
+- Verification Status: TypeScript check passed; search route returned HTTP 200.
+
+## 2026-09-17T02:25:00Z — Start local development environment
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run Friink locally with the development environment file.
+- Changes Made: Started the API with `api/.env.development` and the web client
+  on localhost:3000 using Webpack compatibility mode.
+- Verification Status: Web root returned 200 and API health returned 200.
+
+## 2026-09-17T02:15:00Z — Document directory UX requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the agreed directory UX and location ordering direction.
+- Changes Made: Documented All/Professionals/Friink Registered tabs, shared rows
+  with About text, same-column labels, empty states, eligibility distinction,
+  immediate removal, random ordering, and future location fallback.
+- Verification Status: Documentation diff reviewed; no implementation performed.
+
+## 2026-09-17T02:05:00Z — Implement user registration flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the user-side registration application flow.
+- Changes Made: Added owner-profile Actions menu entry, two-field application
+  modal, pending/cancel state, registration notification mapping, and docs.
+- Verification Status: TypeScript check passed; targeted ESLint has existing
+  hook errors and image warnings.
+
+## 2026-09-16T23:44:00Z — Rename professional verification terminology to registration
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update documentation to use registration terminology and avoid the rejected professional-status wording.
+- Changes Made: Renamed the planned professional workflow, status, staff permission wording, badge label, and directory references to registration language; preserved unrelated account/email verification terminology.
+- Files: `docs/design-system.md`, `docs/rules.md`, `docs/units/account-access.md`, `docs/units/connections.md`, `docs/units/settings.md`, `docs/units/profiles.md`, `docs/units/discovery.md`, `docs/units/subscriptions.md`, `docs/units/staff-admin.md`, release logs.
+- Verification Status: Cross-document terminology search confirmed the professional workflow uses registration language; `git diff --check` passed.
+
+## 2026-09-17T00:30:00Z — Add professional registration backend APIs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed professional declaration, Friink registration, badge, directory, staff decision, and notification rules on the development branch using only the development database.
+- Changes Made: Added registration history, user preferences, user apply/status/cancel/preferences APIs, public directory eligibility, staff decisions, registration notifications/email hooks, and removed the old subscription gate for registration applications. Rejection permits immediate reapplication; approval enables the registered badge; revocation immediately disables the badge and directory listing.
+- Verification Status: Focused registration, subscription, and staff tests passed; development Alembic head is `20260917_0050` with no pending operations; live directory and unauthenticated registration API checks returned expected responses.
+
+## 2026-09-16T23:31:51Z — Revert in-place post prepend behavior
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Revert the latest feed loading change because it pushed newly created posts directly to the top.
+- Changes Made: Restored the prior post-submit navigation path (`/home`) and removed the newly added in-place feed contract from the Feed unit document.
+- Files: `web/components/app-shell.tsx`, `docs/units/feed.md`, release logs.
+- Verification Status: `git diff --check` passed. Targeted ESLint reached the file but reports 10 existing `react-hooks/set-state-in-effect` errors and 2 dependency warnings outside this change.
+
+## 2026-09-16T23:26:25Z — Keep Home feed mounted after post creation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Stop the Home feed from blinking/reloading after every post and document the frontend-only fix.
+- Changes Made: Removed the forced `/home` navigation when Home is already mounted; the existing local server-confirmed prepend remains visible and background polling reconciles the feed. Non-Home posting still returns to `/home/explore` with scroll preservation. Added the feed rule and UX contract.
+- Files: `web/components/app-shell.tsx`, `docs/units/feed.md`, release logs.
+- Verification Status: Targeted ESLint for `web/components/app-shell.tsx` and `git diff --check` passed.
+
+## 2026-09-16T23:23:27Z — Document Friink verification and directory eligibility direction
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the product documentation for staff-managed Friink verification and subscription-gated directory visibility.
+- Changes Made: Documented user applications with Institute and Credential ID, pending/cancel/reapply behavior, in-app and email notifications, staff approval/rejection/revocation, decision history, the separate `Friink Verified` badge, and the Pro/Pro+ directory gate. Kept the direction explicitly planned and did not change active implementation rules.
+- Files: `docs/units/settings.md`, `docs/units/profiles.md`, `docs/units/discovery.md`, `docs/units/subscriptions.md`, `docs/units/staff-admin.md`, release logs.
+- Verification Status: Cross-unit links and `git diff --check` passed.
+
+## 2026-09-16T23:07:25Z — Neutralize scrollbar colors
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the ugly brand-colored scrollbar with muted scrollbars for light and dark themes.
+- Changes Made: Changed the shared native scrollbar thumb and hover colors from accent-based to theme-aware muted/line blends; kept thin sizing, rounded shape, transparent track, and native scrolling. Updated the design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted CSS inspection confirmed neutral theme-aware colors; `git diff --check` passed.
+
+## 2026-09-16T23:05:59Z — Hide Accent color setting from General UI
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the Accent color setting from the UI without deleting its component.
+- Changes Made: Added a semantic settings-row class and shared CSS `display: none` rule; preserved the component, local preference state, and app-shell accent application path. Updated Settings and design contracts to record the hidden state.
+- Files: `web/components/account-screens.tsx`, `web/app/globals.css`, `docs/units/settings.md`, `docs/design-system.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted implementation inspection confirmed the class is on the Accent row; `git diff --check` passed.
+
+## 2026-09-16T23:03:34Z — Remove wide-screen TopBar side rails
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the empty horizontal space at both ends of the signed-in TopBar on wide screens.
+- Changes Made: Removed the centered `76rem` max-width behavior from the shared TopBar inner rail; preserved the existing grid, edge padding, and action hit areas. Updated the product and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, release logs.
+- Verification Status: Targeted CSS inspection and `git diff --check` passed.
+
 ## 2026-09-17T00:00:00Z — Migrate and promote all environments
 
 - Agent: Codex
@@ -11701,3 +12068,190 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Required documentation paths exist, `POST-R-015` and
   Feed traceability entries are present, and `git diff --check` passes.
+
+## 2026-09-17T00:40:00Z — Theme profile-picture borders
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use dark profile-picture borders in dark theme and white borders in light theme.
+- Changes Made: Added shared profile-card image border styling with white light-theme and `#111111` dark/system-dark treatment; preserved the existing avatar component and image behavior. Updated design documentation and release logs.
+- Verification Status: Targeted CSS inspection and `git diff --check` passed.
+
+## 2026-09-17T00:50:00Z — Soften notification dropdown rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the saturated green notification dropdown surface and improve spacing.
+- Changes Made: Replaced the unread row accent-soft background with a muted neutral theme blend and added a consistent vertical gap and inner padding to the shared TopBar notification list. Responsive height and scrolling remain unchanged.
+- Verification Status: Targeted CSS inspection and `git diff --check` passed.
+
+## 2026-09-17T01:00:00Z — Keep Accent color hidden after reset
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Hide the retained Accent color settings component from the General tab.
+- Changes Made: Strengthened the semantic `.settings-row-accent-color` rule to `display: none !important` so shared settings-row layout rules cannot re-display the mounted component. Updated the Settings contract and logs.
+- Verification Status: Targeted CSS inspection and `git diff --check` passed.
+
+## 2026-09-17T01:15:00Z — Clarify registration and directory UX rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve documented UX gaps and clarify registration email delivery.
+- Changes Made: Documented that owners may hide the Friink Registered badge, the current directory is a professional listing without categories, registration is independent of subscription and nonpayment, and registration emails use the existing Resend path when configured while in-app notifications remain available.
+- Verification Status: Related unit documentation updated and `git diff --check` passed.
+
+## 2026-09-17T01:35:00Z — Build Professional Registration Control Panel UI
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Create the staff Control Panel UI first for professional registration using reusable components.
+- Changes Made: Added a dedicated Professional Registration tab, reusable `ListRow` and `ProfileCard` request rows, oldest-first queue loading, search across username/email/institute/credential ID, status filters, profile links, and confirmation modals with required messages for rejection and revocation. Added frontend API clients and expanded the staff endpoint to support status/search filters. Documented the active UI boundary and remaining history-detail work.
+- Verification Status: Direct ESLint on changed TypeScript files and `tsc --noEmit` passed; `git diff --check` passed.
+
+## 2026-09-17T01:50:00Z — Darken dark-theme scrollbar
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the scrollbar more visible in dark theme without changing the light theme.
+- Changes Made: Added shared dark-theme and system-dark overrides using `#666666` for the thumb and `#7a7a7a` on hover; preserved native scrolling and the existing light-theme treatment. Updated design contracts and logs.
+- Verification Status: Targeted CSS inspection and `git diff --check` passed.
+
+## 2026-09-17T19:27:34Z — Document search gap-closure plan
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document what it will take to close the current search gaps
+  and determine whether a new unit document is needed.
+- Changes Made: Kept search under the existing Discovery unit, documented why
+  a separate Search unit would duplicate ownership, added the staged closure
+  plan, new search acceptance criteria, limitations, and a verification record.
+  Left `docs/rules.md` unchanged because the gap-closure work is not yet
+  implemented behavior.
+- Files: `docs/units/discovery.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the existing Discovery ownership and related
+  links; `git diff --check` passed.
+## 2026-09-17T19:27:34Z — Split Search from Discovery ownership
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reconsider whether search needs its own unit because it spans
+  messages, people, posts, conversations, and hashtags.
+- Changes Made: Created `docs/units/search.md` with cross-surface ownership,
+  rules, acceptance criteria, closure plan, limitations, and verification
+  evidence. Narrowed Discovery to the professional directory, updated its
+  links and criteria, and registered Search in `docs/index.html`.
+- Files: `docs/units/search.md`, `docs/units/discovery.md`, `docs/index.html`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Checked ownership links and document registry; targeted
+  `git diff --check` passed.
+## 2026-09-17T19:32:21Z — Clarify cross-cutting Search ownership
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reconsider the unit boundary because search spans multiple
+  product areas.
+- Changes Made: Confirmed and documented Search as a dedicated cross-cutting
+  unit for people, posts, messages, conversations, and hashtags. Kept the
+  professional directory in Discovery, removed dangling search ownership from
+  Discovery, registered Search in the documentation viewer, and kept the
+  incomplete target behavior out of active `docs/rules.md`.
+- Files: `docs/units/search.md`, `docs/units/discovery.md`, `docs/index.html`,
+  `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Checked unit links and registry; `git diff --check`
+  passed.
+## 2026-09-17T19:58:08Z — Define Search MVP documentation boundary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep Search simple for MVP on PostgreSQL, document the
+  agreed scope, and move deferred work to Planned before implementation.
+- Changes Made: Updated the Search unit to define MVP People, Posts, and
+  Messages search, simple scope shortcuts, basic pagination, permission
+  boundaries, and release gates. Moved global conversations, hashtags, live
+  personalized suggestions, highlighting, advanced ranking, analytics, and
+  personalization to Planned. Updated Navigation wording and preserved active
+  rules as implementation-backed only.
+- Files: `docs/units/search.md`, `docs/units/navigation.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Checked the MVP/deferred wording and document links;
+  `git diff --check` passed.
+## 2026-09-17T20:00:36Z — Record Search MVP rationale
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record why Search is intentionally simple for MVP and why
+  PostgreSQL is the chosen backend.
+- Changes Made: Added an MVP decision-rationale section to the Search unit and
+  a durable Search MVP decision note to `docs/notes.md`. Documented the
+  People/Posts/permitted-Messages scope, PostgreSQL and `pg_trgm` choice, the
+  API replacement boundary, and the deliberately Planned follow-up features.
+- Files: `docs/units/search.md`, `docs/notes.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the rationale matches the current MVP scope;
+  `git diff --check` passed.
+## 2026-09-17T20:12:00Z — Implement MVP Search scope controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed MVP Search UX with simple filters for
+  All, People, Posts, and Messages.
+- Changes Made: Added URL-backed scope controls to `SearchScreen`, extended
+  `GET /search` with a validated People/Posts kind filter, updated the client
+  API wrapper, and added shared semantic CSS for the controls. Updated the
+  Search unit and project documentation to record the implemented MVP slice.
+- Files: `api/app/routers/search.py`, `web/lib/auth.ts`,
+  `web/components/screens.tsx`, `web/app/globals.css`,
+  `docs/units/search.md`, `docs/units/navigation.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: API Python compilation and web TypeScript check passed.
+  Targeted ESLint still reports the pre-existing synchronous SearchScreen
+  state-reset violation at `web/components/screens.tsx:164`; no full suite run.
+## 2026-09-17T20:20:18Z — Fix Search route rendering
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the reported failure where Home search navigated to
+  a dummy Search page.
+- Changes Made: Passed the dynamic route query explicitly from
+  `web/app/search/[query]/page.tsx` through `AppShellRoute` and `AppShell` to
+  `SearchScreen` and `TopBar`. The real query now drives result loading and
+  hydrates the search input.
+- Files: `web/app/search/[query]/page.tsx`,
+  `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/screens.tsx`, `web/components/top-bar.tsx`,
+  `docs/units/search.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web route `/search/muflah` returned HTTP 200, the
+  unauthenticated Search API boundary returned 401 as expected, TypeScript and
+  `git diff --check` passed. Authenticated browser result rendering remains
+  pending because the browser inspector is unavailable and no shell token is
+  present.
+## 2026-09-17T20:20:18Z — Separate Search field and dropdown visibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose why the Search suggestions dropdown remains open on
+  the search results screen.
+- Changes Made: Changed `TopBar` so `isSearchPage` keeps only the search field
+  persistent; the `ContextualDropdown` now renders only while `searchOpen` is
+  true. Updated Search, product design, implementation design, and project logs
+  to record the interaction contract.
+- Files: `web/components/top-bar.tsx`, `docs/units/search.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` pass; the local dev
+  server should hot-reload the changed component.
+## 2026-09-17T20:26:40Z — Separate Search field and dropdown visibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose why the Search suggestions dropdown remains open on
+  the search results screen.
+- Changes Made: Changed `TopBar` so `isSearchPage` keeps only the search field
+  persistent; the `ContextualDropdown` now renders only while `searchOpen` is
+  true. Updated Search, product design, implementation design, and project logs
+  to record the interaction contract.
+- Files: `web/components/top-bar.tsx`, `docs/units/search.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` pass; the local dev
+  server should hot-reload the changed component.

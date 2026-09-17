@@ -1,10 +1,11 @@
 import { ListRow } from '@/components/list-row';
 import { Modal } from '@/components/modal';
 import { PageSurface } from '@/components/page-surface';
+import { ProfileCard } from '@/components/profile-card';
 import { useEffect, useState } from 'react';
-import { grantSubscription, listStaffUsers, listSubscriptionAssignments, listSubscriptionPlans, revokeSubscription, staffMe, staffStepUp, type AuthSession, type StaffUser, type SubscriptionAssignment } from '@/lib/auth';
+import { decideProfessionalRegistration, grantSubscription, listProfessionalRegistrations, listStaffUsers, listSubscriptionAssignments, listSubscriptionPlans, revokeSubscription, staffMe, staffStepUp, type AuthSession, type ProfessionalRegistration, type StaffUser, type SubscriptionAssignment } from '@/lib/auth';
 
-export type ControlPanelTab = 'overview' | 'staff' | 'users' | 'security' | 'audit' | 'public-site';
+export type ControlPanelTab = 'overview' | 'staff' | 'users' | 'professional-registration' | 'security' | 'audit' | 'public-site';
 
 const tabContent: Record<ControlPanelTab, { title: string; items: Array<{ icon: string; title: string; description: string; meta: string }> }> = {
   overview: {
@@ -23,6 +24,10 @@ const tabContent: Record<ControlPanelTab, { title: string; items: Array<{ icon: 
       { icon: 'fa-solid fa-key', title: 'Access assignments', description: 'Review each user’s role and direct permission grants.', meta: 'Planned' },
     ],
   },
+  'professional-registration': {
+    title: 'Professional Registration',
+    items: [],
+  },
   security: {
     title: 'Security & sessions',
     items: [{ icon: 'fa-solid fa-shield-halved', title: 'Security & sessions', description: 'Privileged sessions, account locks, and session revocation will be managed here.', meta: 'Placeholder' }],
@@ -40,6 +45,53 @@ const tabContent: Record<ControlPanelTab, { title: string; items: Array<{ icon: 
 function formatDate(value: string | null) {
   if (!value) return 'No expiration';
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
+}
+
+function ProfessionalRegistrationAdmin({ accessToken, canManage }: { accessToken: string; canManage: boolean }) {
+  const [status, setStatus] = useState<'pending' | 'registered' | 'rejected' | 'cancelled' | 'revoked' | 'all'>('pending');
+  const [query, setQuery] = useState('');
+  const [rows, setRows] = useState<ProfessionalRegistration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selected, setSelected] = useState<ProfessionalRegistration | null>(null);
+  const [action, setAction] = useState<'approve' | 'reject' | 'revoke' | null>(null);
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    setLoading(true); setError('');
+    try { setRows(await listProfessionalRegistrations(accessToken, status, query)); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Could not load registration requests.'); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { if (canManage) void load(); }, [accessToken, canManage, status, query]);
+
+  async function submitDecision() {
+    if (!selected || !action || (action !== 'approve' && !message.trim()) || busy) return;
+    setBusy(true); setError('');
+    try { await decideProfessionalRegistration(accessToken, selected.id!, action, message); setAction(null); setSelected(null); setMessage(''); await load(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Could not save the registration decision.'); }
+    finally { setBusy(false); }
+  }
+
+  const visibleRows = rows.filter((row) => status === 'all' || row.status === status);
+  return <div className="professional-registration-admin">
+    <div className="professional-registration-toolbar">
+      <label className="settings-field-label" htmlFor="professional-registration-search">Search registrations</label>
+      <input id="professional-registration-search" className="settings-field-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Username, email, institute, or credential ID" autoComplete="off" />
+      <label className="settings-field-label" htmlFor="professional-registration-status">Status</label>
+      <select id="professional-registration-status" className="settings-field-input" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
+        {['pending', 'registered', 'rejected', 'cancelled', 'revoked', 'all'].map((value) => <option key={value} value={value}>{value === 'all' ? 'All statuses' : value.charAt(0).toUpperCase() + value.slice(1)}</option>)}
+      </select>
+    </div>
+    {loading ? <p className="settings-field-message" role="status">Loading registration requests…</p> : null}
+    {!loading && visibleRows.length === 0 ? <p className="settings-field-message">No registration requests found.</p> : null}
+    <div className="professional-registration-list" aria-live="polite">
+      {visibleRows.map((row) => <ListRow key={row.id} avatar={<ProfileCard href={`/${encodeURIComponent(row.username)}/posts`} name={row.display_name || row.username} handle={`@${row.username}`} imageUrl={row.profile_picture_url} />} title={<span>{row.institute} · {row.credential_id}</span>} subtitle={`${row.email || 'No email'} · ${row.status}`} meta={row.created_at ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.created_at)) : 'Date unavailable'} trailing={row.status === 'pending' ? <span className="professional-registration-actions"><button className="button-primary" type="button" onClick={() => { setSelected(row); setAction('approve'); }}>Approve</button><button className="button-secondary" type="button" onClick={() => { setSelected(row); setAction('reject'); }}>Reject</button></span> : row.status === 'registered' ? <button className="button-secondary" type="button" onClick={() => { setSelected(row); setAction('revoke'); }}>Revoke</button> : null} className="settings-row settings-row-expanded professional-registration-row" />)}
+    </div>
+    {error ? <p className="settings-field-message" role="alert">{error}</p> : null}
+    {selected && action ? <Modal title={`${action.charAt(0).toUpperCase() + action.slice(1)} registration`} onClose={() => { if (!busy) { setSelected(null); setAction(null); setMessage(''); } }} closeLabel="Close registration decision" actions={<><button className="button-secondary" type="button" onClick={() => { setSelected(null); setAction(null); setMessage(''); }} disabled={busy}>Cancel</button><button className="button-primary" type="button" onClick={() => void submitDecision()} disabled={busy || (action !== 'approve' && !message.trim())}>{busy ? 'Saving…' : `Confirm ${action}`}</button></>}><p className="settings-field-message">This decision takes effect immediately for the user.</p>{action !== 'approve' ? <><label className="settings-field-label" htmlFor="registration-decision-message">Message</label><textarea id="registration-decision-message" className="settings-field-input" value={message} onChange={(event) => setMessage(event.target.value)} placeholder={action === 'reject' ? 'Explain what the user should correct.' : 'Explain why registration is being revoked.'} rows={4} autoFocus /></> : <p className="settings-field-message">Approve {selected.display_name || selected.username} as a Friink Registered professional?</p>}</Modal> : null}
+  </div>;
 }
 
 function SubscriptionAdmin({ accessToken, users, canManage }: { accessToken: string; users: StaffUser[]; canManage: boolean }) {
@@ -141,6 +193,7 @@ export function ControlPanelScreen({ activeTab = 'overview', session }: { active
       <div className="settings-panel">
         <div className="settings-section" role="tabpanel" id={`control-panel-${activeTab}`} aria-label={content.title}>
           {activeTab === 'users' && allowed('users.view') && session ? <SubscriptionAdmin accessToken={session.accessToken} users={users} canManage={allowed('subscriptions.manage')} /> : null}
+          {activeTab === 'professional-registration' && allowed('professional_registration.manage') && session ? <ProfessionalRegistrationAdmin accessToken={session.accessToken} canManage /> : null}
           {(activeTab === 'overview' || activeTab === 'staff' || activeTab === 'security' || activeTab === 'audit' || activeTab === 'public-site') ? content.items.map((item) => (
             <ListRow
               key={item.title}

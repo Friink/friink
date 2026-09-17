@@ -5,7 +5,7 @@ the boundary between informational plans and future billing.
 
 **Status:** Partial — informational plans, server-resolved summaries, and manual staff assignment are active; billing is not active
 **Tier:** Standard  
-**Last edited:** 2026-09-16T01:18:28Z
+**Last edited:** 2026-09-16T23:44:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -36,12 +36,12 @@ Pro includes everything in Free, plus:
 1. Message requests.
 2. Profile view count.
 3. Longer posts up to 512 characters.
-4. Optional professional registration request.
-5. Directory listing for registered professionals.
+4. Directory visibility for eligible professional profiles.
 
 The planned commercial price is USD 4 per month after the first month. Planned
 billing rules revoke Pro after 8 days of nonpayment. Professional registration
-is a separate status and is planned to revoke after 64 days of nonpayment.
+is independent of subscription and is never revoked because a subscription
+expires or is cancelled.
 
 ### Friink Pro+
 
@@ -107,19 +107,25 @@ separate confirmed action and immediately returns the effective plan to Free.
 The user-facing state uses `Active`, `Expired`, and `Revoked`; staff also see
 the full immutable assignment history and audit details.
 
-Professional status is independently modeled in the planned staff workflow and
-may be awarded to any active user, including a Free user, with its own 64-day
-expiry. The professional directory requires both professional status and Pro
-or Pro+ access. A user may opt in from Settings to show a professional badge
-immediately next to their displayed name on their profile only when `How I use
-Friink` is set to `For professional networking`; plan badges are also opt-in
-and default to hidden. This
-profile-display preference does not award professional status or grant any
-subscription entitlement.
+Professional registration is independently modeled in the staff
+workflow. Any user may apply without a subscription by submitting Institute
+and Credential ID. Staff may approve, reject with a message, or revoke an
+approved registration. A rejected user may reapply immediately. The active
+directory gate is Pro or Pro+ plus either a self-declared professional intent
+or active Friink registration. Free users may apply and may show profile
+badges, but they are not listed in the directory. Subscription expiry or
+revocation removes directory visibility without automatically changing the
+profile's self-declared or registration state.
+
+The self-declared `Professional` badge remains an opt-in profile-display
+preference controlled by `How I use Friink`. `Friink Registered` is a separate
+staff-controlled badge and remains visible while registration is active.
+Clicking or hovering the registered badge may show the approved Institute and
+Credential ID.
 
 Grant, change, expiry, and revoke events have an in-app and email notification
-contract; delivery remains planned. Email delivery failure must not roll back
-the entitlement. The
+contract. The existing email delivery path is used when configured, and email
+delivery failure must not roll back the entitlement. The
 planned expiry reminders are sent once at 7 days before expiry, 1 day before
 expiry, and at expiry. Until payment integration exists, these are manual
 assignment lifecycle notifications rather than billing or renewal notices.
@@ -142,4 +148,6 @@ Payments, checkout, recurring billing, cancellation, automatic renewal,
 nonpayment enforcement, and customer self-service are not implemented. The
 current Settings subscription summary is connected to the server-resolved
 entitlement. Public plan cards remain informational, and the final capability
-matrix, notifications, and professional-status workflow remain planned.
+matrix and billing notifications remain planned. Professional registration is
+documented and implemented independently of subscription access; subscription
+status only participates in directory eligibility.

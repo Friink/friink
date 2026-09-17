@@ -35,6 +35,8 @@ class User(Base):
     account_region: Mapped[str | None] = mapped_column(String(32), nullable=True)
     use_intent: Mapped[str | None] = mapped_column(String(24), nullable=True)
     show_professional_badge: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    show_registered_badge: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    show_in_directory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     is_staff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false", index=True)
     subscription_tier: Mapped[str] = mapped_column(String(32), nullable=False, default="free", server_default="free", index=True)

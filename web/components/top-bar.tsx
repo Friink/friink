@@ -15,6 +15,9 @@ type TopBarProps = {
   hasUnreadMessages?: boolean;
   notifications?: NotificationItem[];
   isHome?: boolean;
+  isSearchPage?: boolean;
+  initialSearchQuery?: string;
+  searchScope?: 'global' | 'messages';
   backDisabled?: boolean;
   menuItems?: ActionMenuItem[];
   onNavigate: (screen: Screen) => void;
@@ -22,7 +25,7 @@ type TopBarProps = {
   onToggleSidebar: () => void;
 };
 
-export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
+export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, initialSearchQuery = '', searchScope = 'global', backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
   const router = useRouter();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -30,11 +33,15 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const unreadNotifications = notifications.filter((notification) => notification.unread);
   const suggestions = searchQuery.trim()
     ? [`Posts matching "${searchQuery.trim()}"`, `People matching "${searchQuery.trim()}"`]
     : ['Search people', 'Search posts', 'Search conversations', 'Search hashtags'];
+
+  useEffect(() => {
+    if (isSearchPage) setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery, isSearchPage]);
 
   useEffect(() => {
     if (!searchOpen && !notificationsOpen) return;
@@ -96,11 +103,29 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
     const query = searchQuery.trim();
     if (!query) return;
     setSearchOpen(false);
-    router.push(`/search/${encodeURIComponent(query)}`);
+    const scopeSuffix = searchScope === 'messages' ? '?scope=messages' : '';
+    router.push(`/search/${encodeURIComponent(query)}${scopeSuffix}`);
   }
 
+  const searchControl = (
+    <div className={`topbar-preview-search${searchOpen || isSearchPage ? ' is-open' : ''}`} ref={searchRef}>
+      {searchOpen || isSearchPage ? (
+        <form className="topbar-preview-search-panel" onSubmit={submitSearch} role="search">
+          <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search" aria-label="Search Friink" autoFocus={isSearchPage} />
+          <button className="topbar-preview-search-button" type="submit" aria-label="Submit search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /></button>
+          {!isSearchPage ? <button className="topbar-preview-search-button" type="button" onClick={() => { setSearchOpen(false); setSearchQuery(''); }} aria-label="Close search"><i className="fa-solid fa-xmark" aria-hidden="true" /></button> : null}
+        </form>
+      ) : (
+        <button className="topbar-preview-action" type="button" onClick={() => { setSearchOpen(true); setNotificationsOpen(false); }} aria-label="Search" title="Search">
+          <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+        </button>
+      )}
+      {searchOpen ? <ContextualDropdown className="topbar-preview-search-dropdown" role="listbox" ariaLabel="Search suggestions" items={suggestions.map((suggestion) => <button key={suggestion} type="button" role="option" onClick={() => submitSearch()}><span>{suggestion}</span></button>)} footer={<button className="topbar-notification-all" type="button" onClick={() => { setSearchOpen(false); onNavigate('search'); }}>Open Search</button>} /> : null}
+    </div>
+  );
+
   return (
-    <header className={`topbar-preview${isHome ? '' : ' topbar-preview-contextual'}`} aria-label="Unified application top bar">
+    <header className={`topbar-preview${isHome ? '' : ' topbar-preview-contextual'}${isSearchPage ? ' topbar-preview-search-route' : ''}`} aria-label="Unified application top bar">
       <div className="topbar-preview-inner">
         <div className={`topbar-preview-leading${isHome ? '' : ' topbar-preview-contextual-leading'}`}>
           {isHome ? (
@@ -112,30 +137,17 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
               <i className="fa-solid fa-arrow-left" aria-hidden="true" />
             </button>
           )}
-          <a className="topbar-preview-logo" href="/home" aria-label="Go to Home">
+          {!isSearchPage ? <a className="topbar-preview-logo" href="/home" aria-label="Go to Home">
             <img className="topbar-preview-logo-light" src="/brand/logoBlack.svg" alt="Friink" />
             <img className="topbar-preview-logo-dark" src="/brand/logoWhite.svg" alt="" aria-hidden="true" />
-          </a>
+          </a> : null}
         </div>
 
-        <div className="topbar-preview-context" aria-live="polite"><strong>{title}</strong></div>
+        <div className="topbar-preview-context" aria-live="polite">{isSearchPage ? searchControl : <strong>{title}</strong>}</div>
 
         {isHome ? (
           <nav className="topbar-preview-actions" aria-label="Global actions">
-            <div className={`topbar-preview-search${searchOpen ? ' is-open' : ''}`} ref={searchRef}>
-              {searchOpen ? (
-                <form className="topbar-preview-search-panel" onSubmit={submitSearch} role="search">
-                  <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search" aria-label="Search Friink" autoFocus />
-                  <button className="topbar-preview-search-button" type="submit" aria-label="Submit search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /></button>
-                  <button className="topbar-preview-search-button" type="button" onClick={() => { setSearchOpen(false); setSearchQuery(''); }} aria-label="Close search"><i className="fa-solid fa-xmark" aria-hidden="true" /></button>
-                </form>
-              ) : (
-                <button className="topbar-preview-action" type="button" onClick={() => { setSearchOpen(true); setNotificationsOpen(false); }} aria-label="Search" title="Search">
-                  <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-                </button>
-              )}
-              {searchOpen ? <ContextualDropdown className="topbar-preview-search-dropdown" role="listbox" ariaLabel="Search suggestions" items={suggestions.map((suggestion) => <button key={suggestion} type="button" role="option" onClick={() => submitSearch()}><span>{suggestion}</span></button>)} footer={<button className="topbar-notification-all" type="button" onClick={() => { setSearchOpen(false); onNavigate('search'); }}>Open Search</button>} /> : null}
-            </div>
+            {searchControl}
             <a className="topbar-preview-action" href="/chats" onClick={(event) => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onNavigate('messages'); }} aria-label={hasUnreadMessages ? 'Chat, new message' : 'Chat'} title="Chat">
               <i className="fa-regular fa-envelope" aria-hidden="true" />
               {hasUnreadMessages ? <span className="topbar-preview-dot" aria-hidden="true" /> : null}
@@ -150,6 +162,7 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
           </nav>
         ) : (
           <div className="topbar-preview-contextual-actions">
+            {!isSearchPage ? searchControl : null}
             <button ref={menuButtonRef} className="topbar-preview-action" type="button" onClick={() => setMenuOpen((open) => !open)} aria-label="More options" aria-expanded={menuOpen} title="More options">
               <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
             </button>

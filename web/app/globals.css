@@ -44,12 +44,12 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   touch-action: pan-y;
-  scrollbar-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-line)) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-muted) 58%, var(--color-line)) transparent;
   scrollbar-width: thin;
 }
 
 * {
-  scrollbar-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-line)) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-muted) 58%, var(--color-line)) transparent;
   scrollbar-width: thin;
 }
 
@@ -65,13 +65,45 @@ body {
 *::-webkit-scrollbar-thumb {
   border: 0.2rem solid transparent;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-accent) 70%, var(--color-line));
+  background: color-mix(in srgb, var(--color-muted) 58%, var(--color-line));
   background-clip: padding-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
+  background: color-mix(in srgb, var(--color-muted) 78%, var(--color-line));
   background-clip: padding-box;
+}
+
+body:has(.app-shell[data-theme='dark']),
+body:has(.app-shell[data-theme='dark']) * {
+  scrollbar-color: #666666 transparent;
+}
+
+body:has(.app-shell[data-theme='dark']) *::-webkit-scrollbar-thumb {
+  background: #666666;
+  background-clip: padding-box;
+}
+
+body:has(.app-shell[data-theme='dark']) *::-webkit-scrollbar-thumb:hover {
+  background: #7a7a7a;
+  background-clip: padding-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:has(.app-shell[data-theme='system']),
+  body:has(.app-shell[data-theme='system']) * {
+    scrollbar-color: #666666 transparent;
+  }
+
+  body:has(.app-shell[data-theme='system']) *::-webkit-scrollbar-thumb {
+    background: #666666;
+    background-clip: padding-box;
+  }
+
+  body:has(.app-shell[data-theme='system']) *::-webkit-scrollbar-thumb:hover {
+    background: #7a7a7a;
+    background-clip: padding-box;
+  }
 }
 
 body {
@@ -344,6 +376,10 @@ textarea {
   place-items: center;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+.profile-card-avatar-image {
+  border-color: #ffffff;
 }
 
 .profile-card-info {
@@ -1233,6 +1269,10 @@ textarea {
   --color-accent-background: color-mix(in srgb, var(--color-accent) 12%, var(--color-paper));
 }
 
+.app-shell[data-theme='dark'] .profile-card-avatar-image {
+  border-color: #111111;
+}
+
 @media (prefers-color-scheme: dark) {
   .app-shell[data-theme='system'] {
     --color-background: #111111;
@@ -1243,6 +1283,10 @@ textarea {
     --color-chrome: #111111;
     --color-accent-soft: color-mix(in srgb, var(--color-accent) 30%, var(--color-paper));
     --color-accent-background: color-mix(in srgb, var(--color-accent) 12%, var(--color-paper));
+  }
+
+  .app-shell[data-theme='system'] .profile-card-avatar-image {
+    border-color: #111111;
   }
 }
 
@@ -2246,7 +2290,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .topbar-notification-item.is-unread {
-  background: var(--color-accent-soft);
+  background: color-mix(in srgb, var(--color-muted) 12%, var(--color-paper));
 }
 
 .topbar-notification-item time {
@@ -2402,6 +2446,12 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   min-height: 0;
   padding-top: 0.875rem;
   padding-bottom: 0.875rem;
+}
+
+/* Keep the accent-color setting implemented for future re-exposure without
+   presenting it in the current General settings UI. */
+.settings-row-accent-color {
+  display: none !important;
 }
 
 .settings-row:hover,
@@ -2576,6 +2626,58 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .subscription-assignment-history small {
   color: var(--color-muted);
+}
+
+.professional-registration-admin {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.professional-registration-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.professional-registration-toolbar .settings-field-label {
+  grid-row: 1;
+}
+
+.professional-registration-toolbar .settings-field-input {
+  min-width: 0;
+}
+
+.professional-registration-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.professional-registration-row {
+  min-width: 0;
+}
+
+.professional-registration-row .list-row-avatar {
+  min-width: 0;
+}
+
+.professional-registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+@media (max-width: 620px) {
+  .professional-registration-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .professional-registration-toolbar .settings-field-label {
+    grid-row: auto;
+  }
 }
 
 .profile-picture-upload {
@@ -3098,7 +3200,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   align-items: center;
   justify-content: center;
   height: var(--space-top-tabs-height);
-  padding: 0.42rem 0.7rem 0.32rem;
+  padding: 0 0.7rem;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -3112,7 +3214,8 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .tabs__pill[aria-selected="true"] {
   color: var(--color-accent);
-  border-bottom: 1px solid var(--color-accent);
+  border-bottom: 0;
+  background: transparent;
 }
 
 .tabs__indicator {
@@ -4658,10 +4761,14 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  width: min(100%, 76rem);
+  width: 100%;
   height: 100%;
-  margin: 0 auto;
   padding: 0 1rem;
+}
+
+.topbar-preview-search-route .topbar-preview-inner {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.5rem;
 }
 
 .topbar-preview-leading,
@@ -4685,6 +4792,17 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .topbar-preview-search.is-open {
   width: min(18rem, calc(100vw - 7.75rem));
+}
+
+.topbar-preview-search-route .topbar-preview-context {
+  display: flex;
+  justify-content: stretch;
+  min-width: 0;
+}
+
+.topbar-preview-search-route .topbar-preview-search,
+.topbar-preview-search-route .topbar-preview-search-panel {
+  width: 100%;
 }
 
 .topbar-preview-search-panel {
@@ -4765,6 +4883,8 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .topbar-preview-notification-dropdown .contextual-dropdown-list {
   flex: 1 1 auto;
+  gap: 0.35rem;
+  padding: 0.5rem;
   min-height: 0;
   max-height: var(--topbar-notification-visible-height, none);
   overflow-y: auto;
@@ -5231,6 +5351,71 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .saved-feed {
   width: 100%;
+}
+
+.directory-screen {
+  width: 100%;
+}
+
+.directory-list {
+  display: grid;
+}
+
+.directory-row {
+  align-items: flex-start;
+}
+
+.directory-row .profile-card {
+  min-width: 0;
+}
+
+.directory-row .list-row-subtitle {
+  max-width: 34rem;
+  white-space: normal;
+}
+
+.directory-profile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.directory-icon-action {
+  display: inline-grid;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: var(--color-muted);
+  background: transparent;
+  font-size: 0.95rem;
+}
+
+.directory-icon-action:hover,
+.directory-icon-action:focus-visible,
+.directory-icon-action:active {
+  color: var(--color-accent);
+  background: transparent;
+}
+
+.directory-empty {
+  min-height: 12rem;
+}
+
+@media (max-width: 560px) {
+  .directory-row {
+    align-items: flex-start;
+  }
+
+  .directory-profile-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 .saved-list {
@@ -5887,6 +6072,20 @@ input[type="search"]:focus {
 }
 
 @media (max-width: 767px) {
+  .topbar-preview:not(.topbar-preview-search-route) .topbar-preview-search.is-open {
+    position: fixed;
+    top: calc((var(--space-topbar-height) - 2.5rem) / 2);
+    right: 0.5rem;
+    left: 0.5rem;
+    z-index: 60;
+    width: auto;
+  }
+
+  .topbar-preview:not(.topbar-preview-search-route) .topbar-preview-search.is-open .topbar-preview-search-panel,
+  .topbar-preview:not(.topbar-preview-search-route) .topbar-preview-search.is-open .topbar-preview-search-dropdown {
+    width: 100%;
+  }
+
   .main-content {
     padding-bottom: calc(var(--space-floating-bar-height) + 1rem);
   }

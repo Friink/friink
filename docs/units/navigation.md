@@ -31,16 +31,19 @@ the established search, chat-unread, and notification interactions.
 
 ## UX and interaction
 
-- Every mode keeps the compact theme-aware Friink mark in the leading area;
-  activating it goes to Home. Home adds the sidebar toggle, while contextual
-  screens add Back beside the mark.
-- The current screen title remains centered in every mode.
+- Signed-in screens keep the compact theme-aware Friink mark in the leading
+  area, except the search route where Back and the search field use the
+  available header space. Activating the mark goes to Home.
+- The current screen title remains centered except on the search route, where
+  the search field occupies the middle header slot.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
-  expands into a text input with suggestions and routes submitted queries to
-  `/search/{query}`. Chat shows a dot when conversations are unread, and the
+  expands into a text input with bounded scope shortcuts and routes submitted
+  queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the
   notification bell shows a dot and opens the unread notification dropdown.
 - Contextual mode provides a history-aware Back control, the page title, and
-  the existing three-dot ActionMenu populated by shell-owned menu items.
+  the shared Search control beside the existing three-dot ActionMenu populated
+  by shell-owned menu items. The search route keeps Back and ActionMenu while
+  expanding Search between them.
 - All controls use the existing navigation callbacks and server-authoritative
   unread state. The legacy Header remains mounted but visually hidden for
   rollback safety; NavigationBar and Tabs remain rendered and functional.
@@ -56,6 +59,9 @@ the established search, chat-unread, and notification interactions.
 - **NAV-R-004:** The preview TopBar uses the same surface token as the side
   drawer: `--color-paper` in light mode and the shell's `--color-chrome`
   override in dark mode.
+- **NAV-R-005:** Search is available on every signed-in screen except that the
+  search route displays the search field persistently. Home search is global;
+  other screens may provide contextual search behavior.
 
 ## Acceptance criteria
 
