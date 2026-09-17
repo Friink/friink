@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T02:33:52Z — Document search release status
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the documentation after the search implementation was
+  committed and promoted for staging testing.
+- Changes Made: Updated the Discovery unit and release history to record that
+  the same search commit is present on `development` and `staging`, and that
+  the deployed staging endpoint responds as an authenticated route.
+- Verification Status: Documentation links and Markdown structure reviewed;
+  no application code or database state changed.
+
 ## 2026-09-17T03:35:00Z — Implement PostgreSQL search
 
 - Agent: Codex

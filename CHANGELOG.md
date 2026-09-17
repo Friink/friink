@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-17T02:33:52Z
+
+- [docs/search] Recorded that the PostgreSQL search implementation is committed
+  and pushed to both `development` and `staging`; staging route smoke testing
+  confirms the authenticated `/search` endpoint is deployed.
+
 ## 2026-09-17T03:35:00Z
 
 - [search] Added PostgreSQL-backed global and Messages search with trigram

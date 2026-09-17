@@ -5,7 +5,7 @@ and related public discovery surfaces.
 
 **Status:** Partial — PostgreSQL search is active; directory UI is next
 **Tier:** Standard  
-**Last edited:** 2026-09-17T03:35:00Z
+**Last edited:** 2026-09-17T02:33:52Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -109,5 +109,7 @@ Directory screen has no real API-backed discovery UI contract.
 ## Current implementation status
 
 Search is implemented through the current web surface and PostgreSQL-backed
-API. Directory navigation exists, but its real data and backing behavior are
-not implemented.
+API. The implementation is committed on both the `development` and `staging`
+branches; the staging API route is deployed and requires authentication.
+Directory navigation exists, but its real data and backing behavior are not
+implemented.
