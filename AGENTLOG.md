@@ -1,5 +1,15 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-17T03:15:00Z — Migrate development and staging databases
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update development and staging databases and push the latest code to both branches.
+- Changes Made: Confirmed development at `20260917_0050`, upgraded staging from
+  `20260917_0049` to `20260917_0050`, verified both with `alembic check`, and
+  pushed commit `102bd9b` to `origin/development` and `origin/staging`.
+- Verification Status: Both migration gates passed; production was not touched.
+
 ## 2026-09-17T03:05:00Z — Confirm search documentation ownership
 
 - Agent: Codex

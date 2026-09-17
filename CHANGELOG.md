@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-17T03:15:00Z
+
+- [release] Applied and verified Alembic head `20260917_0050` on both the
+  development and staging databases. Pushed commit `102bd9b` to both matching
+  remote branches; production was not changed.
+
 ## 2026-09-17T03:05:00Z
 
 - [docs/search] Confirmed that search is owned by the Discovery unit and
