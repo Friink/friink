@@ -1603,8 +1603,8 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [connections](units/connections.md) | CONNECTIONS-R-007 | Connection actions resolve from authenticated API |
 | [discovery](units/discovery.md) | DISCOVERY-R-001 | Search suggestions and results use shared contextual and |
 | [discovery](units/discovery.md) | DISCOVERY-R-002 | Search results must not invent profile identities or |
-| [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory route is currently a placeholder with no |
-| [discovery](units/discovery.md) | DISCOVERY-R-004 | Professional registration and PMDC status are planned |
+| [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory UI uses All, Professionals, and Friink Registered tabs; the |
+| [discovery](units/discovery.md) | DISCOVERY-R-004 | Friink registration and credential review are staff-owned API workflows; |
 | [feed](units/feed.md) | FEED-R-001 | Home has Explore and Following tabs; Explore is the default. |
 | [feed](units/feed.md) | FEED-R-002 | Following contains posts strictly from accounts the viewer |
 | [feed](units/feed.md) | FEED-R-003 | Feed pagination and updates use server-authoritative cursors |

@@ -148,4 +148,6 @@ Payments, checkout, recurring billing, cancellation, automatic renewal,
 nonpayment enforcement, and customer self-service are not implemented. The
 current Settings subscription summary is connected to the server-resolved
 entitlement. Public plan cards remain informational, and the final capability
-matrix, notifications, and professional-status workflow remain planned.
+matrix and billing notifications remain planned. Professional registration is
+documented and implemented independently of subscription access; subscription
+status only participates in directory eligibility.
