@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-18T21:34:02Z
+
+- [docs] Completed the documentation audit for the profile drawer navigation
+  fix. Added the neutral other-profile drawer state to the design-system
+  guidance and clarified the isolated Neon PostgreSQL target used by local
+  development; existing rules, design contracts, and unit documentation remain
+  linked and unchanged in ownership.
+
+## 2026-09-18T21:27:55Z
+
+- [navigation] Corrected shared drawer state so other-user profile routes have
+  no active drawer item, while the signed-in user's own profile still activates
+  Profile.
+
+## 2026-09-18T21:26:00Z
+
+- [docs] Added `WEB-R-017` and `NAV-R-006` to make the profile drawer
+  highlight invariant discoverable in the active rules and navigation unit.
+
+## 2026-09-18T01:15:00Z
+
+- [navigation] Stopped browsing another user's profile from incorrectly
+  highlighting the Home drawer item. Profile navigation now reflects the
+  active profile route, leaving no drawer item highlighted for other-user
+  profiles as documented.
+
 ## 2026-09-18T00:45:00Z
 
 - [design] Made profile badges card-owned and conditional: `ProfileCard` now

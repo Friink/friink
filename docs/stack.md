@@ -50,6 +50,9 @@ npm --prefix web run dev
 The `development` branch is the local-work branch below `staging`. Its ignored
 `api/.env.development` file may copy staging variable names, but must point to
 an isolated development database and must never contain production credentials.
+The current local API configuration uses the isolated development PostgreSQL
+database on Neon through `DATABASE_URL`; the exact host and credentials remain
+environment-local and are intentionally not documented here.
 The development database must be migrated to the current Alembic head before
 local auth/session rehearsals. See the [deployment guide](deployment.md) for
 the migration gate and release workflow.

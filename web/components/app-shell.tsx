@@ -172,7 +172,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       .then(setProfessionalRegistration)
       .catch(() => setProfessionalRegistration(null));
   }, [activeScreen, profileUser]);
-  const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
+  const sidebarActiveScreen: Screen | null = activeScreen === 'profile' && profileUser
+    ? null
+    : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
   const searchFilterParam = searchParams.get('filter');
   const searchFilter: 'all' | 'people' | 'posts' | 'messages' = searchFilterParam === 'people' || searchFilterParam === 'posts' || searchFilterParam === 'messages' ? searchFilterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';

@@ -233,6 +233,18 @@ missing evidence can be filled in.
 - **What:** The signed-in Saved area uses `/saved/posts` for the user's private saved-post feed and `/saved/profiles` as the reserved future profile-saving surface. `/saved` and legacy `/starred` redirect to `/saved/posts`. The `/saved/profiles` view remains a placeholder until profile saving is implemented.
 - **Interaction:** Each post has one Save/Unsave control: the star in the lower counted action row. The redundant header star is not rendered. The adjacent Save count is display-only because Save actors are private.
 
+### WEB-R-017 — Sidebar Highlight Tracks Only Owned Profile Navigation
+
+- **Status:** Active
+- **Effective:** 2026-09-18T21:26:00Z
+- **Related units:** [navigation](units/navigation.md), [profiles](units/profiles.md)
+- **Source:** [Design implementation contract](../packages/design/design.md)
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/app/[username]/profile-client.tsx`
+
+- **What:** The signed-in drawer highlights the Profile destination only while viewing the signed-in user's own profile. Home and Profile must not be shown as active while browsing another user's profile route.
+- **Edge cases:** The other-user profile remains fully navigable and may expose its own contextual actions, but it does not inherit the Home highlight from the route used to reach it. The active drawer state is derived from the current shell screen, not from the previous page.
+
 ## Authentication & Accounts
 
 ### AUTH-R-001 — Staff Discovery Is Separate From Ordinary User Features
