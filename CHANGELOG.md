@@ -1,5 +1,150 @@
 # Changelog
 
+## 2026-09-17T21:11:18Z
+
+- [docs] Audited the session changes across the agent log, changelog, design
+  contracts, active rules, and affected unit documents; confirmed the current
+  documentation set is synchronized with the implemented work.
+
+## 2026-09-17T21:09:14Z
+
+- [operations] Brought the Production database from `20260917_0049` to the
+  repository head `20260917_0051` by applying the existing `0050` and `0051`
+  migrations. The deployment migration gate completed with no schema drift.
+
+## 2026-09-17T23:15:00Z
+
+- [design] Corrected shared Tabs label alignment by using symmetric vertical
+  padding so active and inactive labels are centered within their hit areas.
+
+## 2026-09-17T23:00:00Z
+
+- [design] Restored the shared Tabs active text color to the configurable
+  accent color so it matches the active underline.
+
+## 2026-09-17T22:45:00Z
+
+- [design] Restored the subtle full-width bottom rule on the shared Tabs
+  component while retaining the accent-driven animated active-tab underline.
+
+## 2026-09-17T22:30:00Z
+
+- [design] Updated the shared Tabs active underline to use the configurable
+  accent color while retaining theme-aware black/white active text.
+
+## 2026-09-17T22:15:00Z
+
+- [design] Made the shared Tabs active label and sliding underline black in
+  light theme and white in dark theme, including system-dark mode.
+
+## 2026-09-17T22:00:00Z
+
+- [design] Restored the shared Tabs sliding active-tab underline while keeping
+  the full-width component bottom rule removed.
+
+## 2026-09-17T21:45:00Z
+
+- [discovery] Reused the shared profile badge treatment beside directory
+  names and changed Chat, Follow/Unfollow, and More to borderless icon-only
+  controls matching post-card actions.
+
+## 2026-09-17T21:30:00Z
+
+- [design] Corrected the shared Tabs treatment: restored the active-tab
+  underline, removed the full-width component bottom rule, and removed the
+  selected-tab background fill.
+
+## 2026-09-17T21:15:00Z
+
+- [discovery] Refined the Directory UI: removed the redundant heading copy,
+  moved status badges into the row middle, and added right-side Chat,
+  Follow/Unfollow, and More actions in the documented order.
+
+## 2026-09-17T21:00:00Z
+
+- [design] Updated the global Tabs treatment to remove the selected-tab
+  underline and sliding indicator, using accent text with a soft background
+  for the active state instead.
+
+## 2026-09-17T20:50:00Z
+
+- [discovery] Implemented the Directory UI-only slice: shell-level All,
+  Professionals, and Friink Registered tabs; responsive shared result rows;
+  profile links; About text; and registration-status presentation. Backend
+  eligibility, listing, and real directory data remain pending.
+
+## 2026-09-17T20:40:00Z
+
+- [search] Moved the Search scope tabs to the application shell so they span
+  the full main panel while search results remain inside the capped content
+  box.
+
+## 2026-09-17T20:35:05Z
+
+- [saved] Moved the Saved `Posts`/`Profiles` tab strip to the application
+  shell so it spans the full main panel while saved content remains capped.
+
+## 2026-09-17T20:30:10Z
+
+- [search] Replaced bespoke search scope buttons with the shared `Tabs`
+  component and removed duplicate search-only styling.
+
+## 2026-09-17T20:26:40Z
+
+- [search] Fixed the Search route header so its persistent query field no
+  longer forces the optional suggestions dropdown open.
+
+## 2026-09-17T20:20:18Z
+
+- [search] Fixed the Search route header so its persistent query field no
+  longer forces the optional suggestions dropdown open.
+
+## 2026-09-17T20:20:18Z
+
+- [search] Fixed dynamic search-route query propagation so submitted queries
+  render the real Search surface and hydrate the input instead of falling back
+  to the no-query placeholder.
+
+## 2026-09-17T20:12:00Z
+
+- [search] Added the MVP scope-control UX with All/People/Posts/Messages
+  controls, URL-persisted selection, and API-side People/Posts filtering.
+  Existing shared result rows and PostgreSQL search remain in use.
+
+## 2026-09-17T20:00:36Z
+
+- [docs/search] Recorded the rationale for the simple Search MVP in the Search
+  unit and `docs/notes.md`: use PostgreSQL and existing permission data for
+  People, Posts, and permitted Messages now, while preserving an API boundary
+  for a future dedicated provider if measured scale requires it.
+
+## 2026-09-17T19:58:08Z
+
+- [docs/search] Defined the agreed MVP boundary: PostgreSQL-backed People,
+  Posts, and Messages search with simple scope shortcuts, reliable query/result
+  states, and basic pagination. Moved hashtags, global conversations, live
+  personalized suggestions, highlighting, advanced ranking, analytics, and
+  personalization to Planned.
+
+## 2026-09-17T19:32:21Z
+
+- [docs/search] Clarified that Search is a cross-cutting unit spanning people,
+  posts, messages, conversations, and hashtags; Discovery remains focused on
+  the professional directory.
+
+## 2026-09-17T19:27:34Z
+
+- [docs/search] Reassigned cross-surface search to a dedicated Search unit.
+  Discovery now owns the professional directory and links to Search for
+  people, posts, messages, conversations, and hashtag search behavior.
+
+## 2026-09-17T19:27:34Z
+
+- [docs/search] Documented the search gap-closure plan in the existing
+  Discovery unit. Confirmed that a new Search unit is unnecessary because
+  Discovery already owns search scope, UX, API behavior, acceptance criteria,
+  limitations, and verification evidence.
+
 ## 2026-09-17T19:17:54Z
 
 - [docs] Reconciled Discovery, Rules, Profiles, and Subscriptions documentation

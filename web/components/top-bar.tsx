@@ -16,6 +16,7 @@ type TopBarProps = {
   notifications?: NotificationItem[];
   isHome?: boolean;
   isSearchPage?: boolean;
+  initialSearchQuery?: string;
   searchScope?: 'global' | 'messages';
   backDisabled?: boolean;
   menuItems?: ActionMenuItem[];
@@ -24,7 +25,7 @@ type TopBarProps = {
   onToggleSidebar: () => void;
 };
 
-export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, searchScope = 'global', backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
+export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, initialSearchQuery = '', searchScope = 'global', backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
   const router = useRouter();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -32,11 +33,15 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const unreadNotifications = notifications.filter((notification) => notification.unread);
   const suggestions = searchQuery.trim()
     ? [`Posts matching "${searchQuery.trim()}"`, `People matching "${searchQuery.trim()}"`]
     : ['Search people', 'Search posts', 'Search conversations', 'Search hashtags'];
+
+  useEffect(() => {
+    if (isSearchPage) setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery, isSearchPage]);
 
   useEffect(() => {
     if (!searchOpen && !notificationsOpen) return;
@@ -115,7 +120,7 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
           <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
         </button>
       )}
-      {searchOpen || isSearchPage ? <ContextualDropdown className="topbar-preview-search-dropdown" role="listbox" ariaLabel="Search suggestions" items={suggestions.map((suggestion) => <button key={suggestion} type="button" role="option" onClick={() => submitSearch()}><span>{suggestion}</span></button>)} footer={<button className="topbar-notification-all" type="button" onClick={() => { if (!isSearchPage) setSearchOpen(false); onNavigate('search'); }}>Open Search</button>} /> : null}
+      {searchOpen ? <ContextualDropdown className="topbar-preview-search-dropdown" role="listbox" ariaLabel="Search suggestions" items={suggestions.map((suggestion) => <button key={suggestion} type="button" role="option" onClick={() => submitSearch()}><span>{suggestion}</span></button>)} footer={<button className="topbar-notification-all" type="button" onClick={() => { setSearchOpen(false); onNavigate('search'); }}>Open Search</button>} /> : null}
     </div>
   );
 

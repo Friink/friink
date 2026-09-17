@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
 import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
@@ -17,7 +17,7 @@ import { HomeScreen } from '@/components/home-screen';
 import { Composer } from '@/components/composer';
 import { FloatingBar } from '@/components/floating-bar';
 import { NotificationsScreen, type NotificationItem } from '@/components/notifications-screen';
-import { DirectoryScreen, MessagesScreen } from '@/components/screens';
+import { DirectoryScreen, MessagesScreen, type DirectoryTab } from '@/components/screens';
 import { SearchScreen } from '@/components/screens';
 import { ControlPanelScreen, type ControlPanelTab } from '@/components/control-panel-screen';
 import { SideDrawer } from '@/components/side-drawer';
@@ -66,6 +66,7 @@ type AppShellProps = {
   onLogout: () => void;
   logoutError?: string | null;
   initialScreen?: Screen;
+  initialSearchQuery?: string;
   profileUser?: AuthUser;
   profilePosts?: Post[];
   profileReplies?: Post[];
@@ -108,9 +109,10 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', profileUser, profilePosts, profileReplies = [], children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', initialSearchQuery, profileUser, profilePosts, profileReplies = [], children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [accentColor, setAccentColor] = useState('#33aa55');
@@ -172,6 +174,10 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   }, [activeScreen, profileUser]);
   const sidebarActiveScreen: Screen = profileUser && activeScreen === 'profile' ? 'home' : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
+  const searchFilterParam = searchParams.get('filter');
+  const searchFilter: 'all' | 'people' | 'posts' | 'messages' = searchFilterParam === 'people' || searchFilterParam === 'posts' || searchFilterParam === 'messages' ? searchFilterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';
+  const directoryTabParam = searchParams.get('tab');
+  const directoryTab: DirectoryTab = directoryTabParam === 'professionals' || directoryTabParam === 'registered' ? directoryTabParam : 'all';
   const connectionsTabs = !viewingOtherConnections
     ? [
         { id: 'all', label: 'All' },
@@ -1079,6 +1085,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           isHome={activeScreen === 'home'}
           sidebarCollapsed={sidebarCollapsed}
           isSearchPage={activeScreen === 'search'}
+          initialSearchQuery={initialSearchQuery}
           searchScope={activeScreen === 'messages' ? 'messages' : 'global'}
           notificationCount={unreadNotificationCount}
           notifications={notifications}
@@ -1180,6 +1187,35 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 ariaLabel="Control panel sections"
               />
             )}
+            {showTabs !== false && activeScreen === 'saved' && (
+              <Tabs
+                tabs={[{ id: 'posts', label: 'Posts' }, { id: 'profiles', label: 'Profiles' }]}
+                activeId={initialSavedSection}
+                onChange={(id) => router.push(`/saved/${id}`)}
+                ariaLabel="Saved sections"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'search' && (
+              <Tabs
+                tabs={[{ id: 'all', label: 'All' }, { id: 'people', label: 'People' }, { id: 'posts', label: 'Posts' }, { id: 'messages', label: 'Messages' }]}
+                activeId={searchFilter}
+                onChange={(id) => {
+                  if (!initialSearchQuery) return;
+                  const nextFilter = id as 'all' | 'people' | 'posts' | 'messages';
+                  const suffix = nextFilter === 'all' ? '' : `?filter=${nextFilter}`;
+                  router.replace(`/search/${encodeURIComponent(initialSearchQuery)}${suffix}`);
+                }}
+                ariaLabel="Search scope"
+              />
+            )}
+            {showTabs !== false && activeScreen === 'directory' && (
+              <Tabs
+                tabs={[{ id: 'all', label: 'All' }, { id: 'professionals', label: 'Professionals' }, { id: 'registered', label: 'Friink Registered' }]}
+                activeId={directoryTab}
+                onChange={(id) => router.replace(`/directory?tab=${id as DirectoryTab}`)}
+                ariaLabel="Directory sections"
+              />
+            )}
             <ContentBox>
               {children ? (
                 children
@@ -1242,8 +1278,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                     />
                   )}
                   {activeScreen === 'saved' && <SavedScreen section={initialSavedSection} posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
-                  {activeScreen === 'directory' && <DirectoryScreen />}
-                  {activeScreen === 'search' && <SearchScreen />}
+                  {activeScreen === 'directory' && <DirectoryScreen tab={directoryTab} />}
+                  {activeScreen === 'search' && <SearchScreen initialQuery={initialSearchQuery} />}
                   {activeScreen === 'notifications' && <NotificationsScreen notifications={visibleNotifications} onMarkRead={handleMarkNotificationRead} emptyMessage={notificationsUnreadOnly ? 'No unread notifications.' : notificationsTab === 'security' ? 'No security notifications yet.' : 'No notifications yet.'} />}
                   {activeScreen === 'settings' && (
                     <SettingsScreen

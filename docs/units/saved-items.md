@@ -24,7 +24,9 @@ the Save reaction itself.
 The canonical saved-post route is `/saved/posts`. `/saved` and legacy
 `/starred` redirect there. Saved posts use the filled brand star. Save counts
 are display-only because Save actors are private. `/saved/profiles` remains a
-placeholder for future profile saving.
+placeholder for future profile saving. The Saved `Posts`/`Profiles` tabs are
+owned by the application shell so the tab strip spans the main panel; saved
+feed content remains inside the shared capped content box.
 
 ## Business rules
 

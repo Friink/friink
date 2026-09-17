@@ -7,6 +7,7 @@ type ListRowProps = {
   title: ReactNode;
   subtitle?: ReactNode;
   meta?: ReactNode;
+  middle?: ReactNode;
   trailing?: ReactNode;
   children?: ReactNode;
   onClick?: () => void;
@@ -15,7 +16,7 @@ type ListRowProps = {
   className?: string;
 };
 
-export function ListRow({ avatar, title, subtitle, meta, trailing, children, onClick, ariaLabel, unread = false, className = '' }: ListRowProps) {
+export function ListRow({ avatar, title, subtitle, meta, middle, trailing, children, onClick, ariaLabel, unread = false, className = '' }: ListRowProps) {
   const rowClassName = `list-row${unread ? ' list-row-unread' : ''}${className ? ` ${className}` : ''}`;
   const renderedTitle = typeof title === 'string' || typeof title === 'number' ? <strong>{title}</strong> : title;
   const content = (
@@ -29,6 +30,7 @@ export function ListRow({ avatar, title, subtitle, meta, trailing, children, onC
         {subtitle ? <span className="list-row-subtitle">{subtitle}</span> : null}
         {children ? <span className="list-row-body">{children}</span> : null}
       </span>
+      {middle ? <span className="list-row-middle">{middle}</span> : null}
       {trailing ? <span className="list-row-trailing">{trailing}</span> : null}
     </>
   );

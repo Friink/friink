@@ -3200,7 +3200,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   align-items: center;
   justify-content: center;
   height: var(--space-top-tabs-height);
-  padding: 0.42rem 0.7rem 0.32rem;
+  padding: 0 0.7rem;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -3214,7 +3214,8 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .tabs__pill[aria-selected="true"] {
   color: var(--color-accent);
-  border-bottom: 1px solid var(--color-accent);
+  border-bottom: 0;
+  background: transparent;
 }
 
 .tabs__indicator {
@@ -5350,6 +5351,71 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .saved-feed {
   width: 100%;
+}
+
+.directory-screen {
+  width: 100%;
+}
+
+.directory-list {
+  display: grid;
+}
+
+.directory-row {
+  align-items: flex-start;
+}
+
+.directory-row .profile-card {
+  min-width: 0;
+}
+
+.directory-row .list-row-subtitle {
+  max-width: 34rem;
+  white-space: normal;
+}
+
+.directory-profile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.directory-icon-action {
+  display: inline-grid;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: var(--color-muted);
+  background: transparent;
+  font-size: 0.95rem;
+}
+
+.directory-icon-action:hover,
+.directory-icon-action:focus-visible,
+.directory-icon-action:active {
+  color: var(--color-accent);
+  background: transparent;
+}
+
+.directory-empty {
+  min-height: 12rem;
+}
+
+@media (max-width: 560px) {
+  .directory-row {
+    align-items: flex-start;
+  }
+
+  .directory-profile-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 .saved-list {

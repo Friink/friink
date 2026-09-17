@@ -56,6 +56,9 @@ contract rather than repeated here.
 - Scrollable tab strips hide the right scroll affordance at the end of the
   strip, and their arrow controls remain contained within the tab-bar height
   and flush with the strip edges.
+- Selected tabs use the user-configurable accent color for both text and the
+  smoothly moving active-tab underline. The shared tab container also renders
+  a subtle full-width bottom rule, but selected tabs have no background fill.
 - Post actions use the current accent color on hover, keyboard focus, and
   press; persistent Like and Save states also retain the accent color.
 - Signup password and username guidance uses full-width left alignment;
@@ -154,6 +157,9 @@ The exact widths, heights, breakpoints, and token names are defined in
   semantics until the replacement is accepted. The top-bar inner rail is
   full-viewport width with only the shared edge padding; it must not use a
   centered max-width cap that creates empty horizontal rails on wide screens.
+- The persistent Search field on `/search/{query}` does not force the optional
+  suggestions dropdown open; dropdown visibility is controlled separately from
+  the field's route visibility.
 - Use the shared floating bar for persistent contextual actions such as post
   composition.
 
