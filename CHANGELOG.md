@@ -2,6 +2,11 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [chat] Fixed the conversation-list response crash by passing the peer
+  receipt cursor when computing the latest outgoing message state.
+
+## 2026-09-21T00:00:00Z
+
 - [rules/chat] Clarified that tab-owned chat states—Muted, Requests, and
   Archived—must appear only in their dedicated tabs, not as repeated row
   metadata.
