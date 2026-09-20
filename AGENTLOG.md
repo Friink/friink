@@ -14,7 +14,7 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Model: GPT-5
 - Prompt Summary: Keep the direct-chat profile card visible while retaining page-level scrolling.
 - Changes Made: Made the direct-chat participant header sticky below the global top bar and synchronized the chat/design documentation and logs.
-- Verification Status: Targeted TypeScript and diff checks pending.
+- Verification Status: Targeted TypeScript and diff checks passed.
 
 ## 2026-09-21T00:00:00Z — Document subscription UX decisions and flows
 
@@ -23,6 +23,14 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Prompt Summary: Document the recommended manual-subscription UX and explain the resulting staff and user flows.
 - Changes Made: Added a planned subscription UX contract and flows for grant/change, renewal, return to Free, expiry, notifications, paid-feature gating, and staff/user visibility; updated the product design guidance, changelog, and agent log.
 - Verification Status: Documentation consistency and diff checks passed.
+
+## 2026-09-21T00:00:00Z — Add subscription plan-change review summary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Deliver the least complicated subscription UX slice for this session.
+- Changes Made: Added an inline review summary to the Control Panel plan-adjustment modal and synchronized the subscription unit, changelog, and agent log.
+- Verification Status: Targeted TypeScript and diff checks pending.
 
 ## 2026-09-21T00:00:00Z — Fix chat conversation-list response crash
 

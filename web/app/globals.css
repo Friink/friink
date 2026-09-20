@@ -2674,6 +2674,28 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   text-transform: capitalize;
 }
 
+.subscription-change-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background: var(--color-accent-background);
+  font-size: var(--text-xs);
+}
+
+.subscription-change-summary strong {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+
+.subscription-change-summary b {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
 .subscription-assignment-history {
   padding-top: 0.75rem;
   border-top: 1px solid var(--color-line);

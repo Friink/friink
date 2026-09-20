@@ -140,7 +140,8 @@ assignment lifecycle notifications rather than billing or renewal notices.
 ### Recommended UX contract (planned)
 
 The following decisions define the intended experience for the manual process.
-They are product UX decisions, not yet fully implemented behavior.
+The plan-change confirmation summary is implemented; notifications, reminders,
+and the remaining paid-feature surfaces remain planned.
 
 - Manual access must never be described as a purchase, payment, upgrade, or
   renewal. Use `Grant access`, `Change access`, and `Return to Free`.

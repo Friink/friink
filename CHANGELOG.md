@@ -2,6 +2,12 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [control-panel/subscriptions] Added a plan-change review summary showing the
+  selected user, plan, duration, current assignment, and replacement effect
+  before manual access is confirmed.
+
+## 2026-09-21T00:00:00Z
+
 - [docs/subscriptions] Documented the planned manual-subscription UX:
   confirmation summaries, staff/user visibility, lifecycle notifications,
   expiry behavior, paid-feature gating, and end-to-end staff and user flows.
