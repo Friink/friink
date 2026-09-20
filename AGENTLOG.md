@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Move direct chat scrolling to the page
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the direct chat scrollbar apply to the whole page rather than only the message list.
+- Changes Made: Removed the chat-only fixed-height/hidden overflow shell override, restored normal document flow for chat messages, removed the nested message scroll container, and changed read visibility observation to use the viewport.
+- Verification Status: TypeScript, documentation, and diff checks passed. Authenticated browser visual verification was unavailable because the local session redirected to login.
+
 ## 2026-09-21T00:00:00Z — Fix chat conversation-list response crash
 
 - Agent: Codex

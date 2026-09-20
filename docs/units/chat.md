@@ -44,6 +44,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 - **CHAT-R-009:** Conversation rows render identity once and use the secondary
   line for conversation state; Muted and Archived remain represented by their
   dedicated tabs rather than row labels.
+- **CHAT-R-010:** Direct conversation pages use the document viewport as their
+  vertical scroll surface. The participant header, message history, and page
+  content must not create a nested message-only scrollbar; the fixed composer
+  remains clear of the final messages.
 
 ## UX and flows
 
@@ -58,6 +62,9 @@ Conversations use `/{username}/chat`. The composer communicates policy states
 such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
+The direct conversation page scrolls as one document, so the participant
+header and message history share the browser/app scrollbar rather than placing
+scrolling inside the message list.
 
 ## Technical contract
 
