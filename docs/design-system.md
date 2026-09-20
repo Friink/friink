@@ -144,6 +144,9 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Use addressable links for stable destinations so browser history, status
   previews, middle-click, and open-in-new-tab behavior remain available.
 - Use the shared navigation bar and tabs for subpages and addressable sections.
+- Drawer active state follows the destination being represented: Profile is
+  active only for the signed-in user's own profile. When browsing another
+  user's profile, neither Home nor Profile is highlighted.
 - The unified `TopBar` preview uses one consistent leading/context/actions
   structure across signed-in surfaces, uses the same surface as the side
   drawer, and keeps the compact Friink mark visible in every mode. The mark

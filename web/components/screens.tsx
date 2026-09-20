@@ -232,7 +232,7 @@ function DirectoryResultRow({ entry }: { entry: DirectoryEntry }) {
   return (
     <div className="directory-result">
       <ListRow
-        title={<ProfileCard name={entry.name} handle={`@${entry.username}`} tone={entry.tone} initials={entry.initials} badges={[...(entry.professional ? ['Professional'] : []), ...(entry.registered ? ['Friink Registered'] : [])]} />}
+        title={<ProfileCard name={entry.name} handle={`@${entry.username}`} tone={entry.tone} initials={entry.initials} showProfessionalBadge={entry.professional} showRegisteredBadge={entry.registered} />}
         subtitle={entry.about}
         trailing={(
           <span className="directory-profile-actions" onClick={(event) => event.stopPropagation()}>
