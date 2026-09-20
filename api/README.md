@@ -11,7 +11,11 @@ py -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Create a local `.env` file when database access is needed:
+Use the matching environment file for the target environment: `.env` for
+production, `.env.staging` for staging, and `.env.development` for
+development. Keep credentials in these ignored files only.
+
+For a local API process, load the development file explicitly:
 
 ```env
 DATABASE_URL=
@@ -46,8 +50,11 @@ ACCOUNT_LIFECYCLE_INTERNAL_TOKEN=
 ## Run
 
 ```powershell
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --env-file .env.development
 ```
+
+Local development must use `.env.development` explicitly. A bare Uvicorn
+command loads the default `.env` file, which is reserved for production.
 
 Open `http://127.0.0.1:8000/` and it should return a minimal service response:
 

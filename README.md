@@ -49,8 +49,10 @@ py -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Copy `api/.env.example` to a local environment file and set the values needed
-for the work you are doing. Never commit secrets or production credentials.
+Use the matching environment file for the target environment: `.env` for
+production, `.env.staging` for staging, and `.env.development` for
+development. Environment files are ignored and must never be committed with
+secrets or production credentials.
 
 Start the web client from the repository root:
 
@@ -58,13 +60,20 @@ Start the web client from the repository root:
 npm run dev
 ```
 
+Next.js automatically loads `web/.env.development` for this development
+command.
+
 Start the API in a second terminal:
 
 ```powershell
 cd api
 .\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --env-file .env.development
 ```
+
+The API command explicitly loads `api/.env.development`; do not omit the
+`--env-file` option because the default `.env` file is the production
+configuration.
 
 The web client runs on `http://localhost:3000` and the API runs on
 `http://127.0.0.1:8000`. The API root returns a service identity response;
@@ -99,7 +108,7 @@ Friink deploys as two independent Vercel projects:
 - `web/` deploys the Next.js client and uses `NEXT_PUBLIC_API_BASE_URL` for the
   API origin.
 - `api/` deploys the FastAPI service through `api/api/index.py` and requires the
-  server-side variables documented in `api/.env.example`.
+  server-side variables documented by the matching API environment file.
 
 The API deployment runs the migration gate defined in `api/vercel.json`.
 Deployment environments, migration gates, and release flow are documented in
