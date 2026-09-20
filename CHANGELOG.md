@@ -2,6 +2,46 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [subscriptions] Removed the redundant paid-plans availability note from the
+  authenticated Subscription tab; individual `Coming soon` actions remain.
+
+## 2026-09-21T00:00:00Z
+
+- [subscriptions] Refined Free, Pro, and Pro+ plan copy from the PRD across
+  the authenticated settings comparison and public plans page. Added the
+  correct mutual-chat, professional-use, 512-character, directory, analytics,
+  feed-boost, reduced-ads, and introductory-pricing details.
+
+## 2026-09-21T00:00:00Z
+
+- [settings/subscriptions] Simplified the Subscription tab by reducing the
+  current-plan row to name, price, and access status, while leaving feature
+  details in the plan rows. Removed the standalone Plans header/link row.
+
+## 2026-09-21T00:00:00Z
+
+- [settings/subscriptions] Added an authenticated plan comparison to the
+  Subscription tab. The server-resolved current plan remains at the top, while
+  Free, Pro, and Pro+ use the shared settings-row treatment; paid actions stay
+  disabled as `Coming soon` until billing is active.
+
+## 2026-09-21T00:00:00Z
+
+- [settings] Reordered Settings tabs to General, Profile, Privacy & Safety,
+  Account, and Subscription.
+
+## 2026-09-21T00:00:00Z
+
+- [settings] Reordered Account rows so email, password, sessions, and login
+  requests come before passive account metadata and lifecycle actions.
+
+## 2026-09-21T00:00:00Z
+
+- [settings] Reordered Privacy & Safety rows into visibility, communication,
+  and safety groups without changing the page structure or setting behavior.
+
+## 2026-09-21T00:00:00Z
+
 - [profiles] Promoted profile Edit, Follow/Unfollow, and Message actions to the
   primary button treatment while preserving the Message button's compact
   icon-only geometry.

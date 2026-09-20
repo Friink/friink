@@ -22,11 +22,12 @@ preferences and account controls. Underlying authentication belongs to
 - [Profiles](./profiles.md) — editable public identity and profile picture.
 - [Chat](./chat.md) — read-receipt preference.
 - [Blocking](./blocking.md) — blocked-people management.
-- [Subscriptions](./subscriptions.md) — current plan summary.
+- [Subscriptions](./subscriptions.md) — current plan and available-plan comparison.
 
 ## Product definition
 
-Settings is organized into General, Profile, Account, and Privacy & Safety.
+Settings tabs are ordered General, Profile, Privacy & Safety, Account, and
+Subscription.
 Each setting has a clear description, local or server-backed state, a visible
 save/result state, and accessible controls.
 
@@ -56,6 +57,10 @@ save/result state, and accessible controls.
 Settings uses divider-bounded rows rather than isolated cards. Editable fields
 show their action in a consistent action rail. Loading, validation, success,
 failure, and retry states remain attached to the setting being changed.
+Privacy & Safety presents visibility controls first, communication preferences
+next, and blocked-people management last as the safety section.
+Account presents editable identity and security actions first, account metadata
+after those actions, and deactivation/deletion last as lifecycle controls.
 
 The Accent color row remains implemented but is force-hidden from the
 General settings UI. Hiding it does not remove the component, local preference,
@@ -95,10 +100,11 @@ computed `directory_eligible`.
 ### Subscription visibility (current rollout)
 
 The Subscription tab shows the server-resolved plan (`Free`, `Pro`, or
-`Pro+`), status (`Active`, `Expired`, or `Revoked`), and access-until date.
-Indefinite access is shown as `No expiration`. A user sees recent plan changes
-and receives clear in-app and email feedback when access is granted, changed,
-expires, or is revoked. Expiry reminders are planned for 7 days and 1 day
+`Pro+`), status (`Active`, `Expired`, or `Revoked`), and access-until date,
+followed by an in-settings comparison of Free, Pro, and Pro+. Indefinite access
+is shown as `No expiration`. A user sees recent plan changes and receives clear
+in-app and email feedback when access is granted, changed, expires, or is
+revoked. Expiry reminders are planned for 7 days and 1 day
 before expiry, followed by an expiry notice.
 
 Users may independently opt in to show a plan badge and, when eligible, a

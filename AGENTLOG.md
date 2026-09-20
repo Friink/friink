@@ -1,5 +1,35 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Reorder Settings tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reorder Settings tabs for a more natural user flow.
+- Changes Made: Ordered the Settings tabs as General, Profile, Privacy &
+  Safety, Account, and Subscription. Updated the Settings unit documentation.
+- Verification Status: Targeted TypeScript, diff, and local Settings route checks pending.
+
+## 2026-09-21T00:00:00Z — Reorder Account settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rearrange every Account setting into a clearer order.
+- Changes Made: Ordered Account rows as email, password, sessions, login
+  requests, joined/region metadata, deactivation, and deletion. Preserved all
+  existing controls and lifecycle behavior. Updated the Settings unit.
+- Verification Status: Targeted TypeScript, diff, and local Account route checks pending.
+
+## 2026-09-21T00:00:00Z — Reorder Privacy & Safety settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rearrange every Privacy & Safety setting into a clearer order.
+- Changes Made: Ordered the existing rows as profile visibility, Likes
+  visibility, direct messages, read receipts, mentions, and blocked people.
+  Preserved the existing row structure, controls, save behavior, and safety
+  actions. Updated the Settings unit documentation.
+- Verification Status: Targeted TypeScript, diff, and local Settings route checks pending.
+
 ## 2026-09-21T00:00:00Z — Promote profile actions to primary buttons
 
 - Agent: Codex
@@ -12381,3 +12411,62 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `AGENTLOG.md`.
 - Verification Status: TypeScript and `git diff --check` pass; the local dev
   server should hot-reload the changed component.
+## 2026-09-21T00:00:00Z — Add plan comparison to Subscription settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the plan comparison directly to the Subscription screen
+  using Friink's existing design language.
+- Changes Made: Added the server-resolved current-plan summary followed by
+  divider-bounded Free, Pro, and Pro+ settings rows. Reused shared settings
+  icons and primary/secondary button treatments; paid actions remain disabled
+  as `Coming soon` until billing is implemented. Updated subscription,
+  settings, and design contracts.
+- Files: `web/components/account-screens.tsx`, `web/app/globals.css`,
+  `docs/units/subscriptions.md`, `docs/units/settings.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript check, `git diff --check`, and local browser
+  verification passed for `/settings/subscription`.
+
+## 2026-09-21T00:00:00Z — Simplify Subscription hierarchy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the standalone Plans row and avoid repeating current
+  plan details.
+- Changes Made: Reduced the current-plan summary to name, price, and access
+  status; kept full features in the Free, Pro, and Pro+ settings rows; removed
+  the intermediate Plans heading and Learn more link. Updated the subscription
+  design contracts and logs.
+- Files: `web/components/account-screens.tsx`, `web/app/globals.css`,
+  `docs/units/subscriptions.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript, `git diff --check`, and local browser
+  verification passed for `/settings/subscription`; the standalone Plans row
+  is absent and the plan rows remain visible.
+
+## 2026-09-21T00:00:00Z — Refine subscription plan copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Upgrade subscription copy using the canonical PRD content.
+- Changes Made: Rewrote Free, Pro, and Pro+ descriptions and features across
+  the authenticated settings comparison and public plans page. Preserved the
+  PRD's mutual-chat, professional-use, character-limit, directory, analytics,
+  boost, reduced-ads, and introductory-pricing details. Synchronized the
+  subscription unit document.
+- Files: `web/components/account-screens.tsx`,
+  `web/app/subscriptions/page.tsx`, `docs/units/subscriptions.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, `git diff --check`, and local browser copy
+  verification passed for `/settings/subscription`.
+
+## 2026-09-21T00:00:00Z — Remove redundant subscription note
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the paid-plans availability note from Settings.
+- Changes Made: Deleted the redundant note from the authenticated Subscription
+  tab while preserving the `Coming soon` states and public plans-page note.
+- Files: `web/components/account-screens.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local browser verification and `git diff --check` passed.

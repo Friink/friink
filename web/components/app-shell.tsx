@@ -1164,9 +1164,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 tabs={[
                   { id: 'general', label: 'General' },
                   { id: 'profile', label: 'Profile' },
+                  { id: 'privacy', label: 'Privacy & Safety' },
                   { id: 'account', label: 'Account' },
                   { id: 'subscription', label: 'Subscription' },
-                  { id: 'privacy', label: 'Privacy & Safety' },
                 ]}
                 activeId={settingsTab}
                 onChange={(id) => handleSettingsTabChange(id as 'general' | 'profile' | 'account' | 'subscription' | 'privacy')}
