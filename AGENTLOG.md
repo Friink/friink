@@ -8,6 +8,14 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Changes Made: Removed the chat-only fixed-height/hidden overflow shell override, restored normal document flow for chat messages, removed the nested message scroll container, and changed read visibility observation to use the viewport.
 - Verification Status: TypeScript, documentation, and diff checks passed. Authenticated browser visual verification was unavailable because the local session redirected to login.
 
+## 2026-09-21T00:00:00Z — Keep direct chat participant header visible
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep the direct-chat profile card visible while retaining page-level scrolling.
+- Changes Made: Made the direct-chat participant header sticky below the global top bar and synchronized the chat/design documentation and logs.
+- Verification Status: Targeted TypeScript and diff checks pending.
+
 ## 2026-09-21T00:00:00Z — Fix chat conversation-list response crash
 
 - Agent: Codex
