@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Fix chat conversation-list response crash
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix staging chat loading failure after the chat-row UI change.
+- Changes Made: Passed the peer receipt cursor into `_receipt_status()` while building conversation-list responses; updated the changelog.
+- Verification Status: Targeted API regression, TypeScript, Python compilation, and diff checks passed. Staging acceptance remains pending deployment.
+
+## 2026-09-21T00:00:00Z — Clarify tab-owned chat states
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the rule that states with dedicated chat tabs are not repeated elsewhere.
+- Changes Made: Updated `CLIENT-R-014A` in `docs/rules.md` to explicitly cover Muted, Requests, and Archived; added the corresponding changelog entry.
+- Verification Status: Documentation consistency check and `git diff --check` passed.
+
 ## 2026-09-21T00:00:00Z — Fix chat list row hierarchy and controls
 
 - Agent: Codex
