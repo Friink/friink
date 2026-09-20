@@ -46,7 +46,8 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   dedicated tabs rather than row labels.
 - **CHAT-R-010:** Direct conversation pages use the document viewport as their
   vertical scroll surface. The participant header, message history, and page
-  content must not create a nested message-only scrollbar; the fixed composer
+  content must not create a nested message-only scrollbar. The participant
+  header remains sticky below the global top bar, and the fixed composer
   remains clear of the final messages.
 
 ## UX and flows
@@ -64,7 +65,8 @@ messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
 The direct conversation page scrolls as one document, so the participant
 header and message history share the browser/app scrollbar rather than placing
-scrolling inside the message list.
+scrolling inside the message list. The participant card stays pinned below the
+global top bar while the conversation is scrolled.
 
 ## Technical contract
 

@@ -189,8 +189,9 @@ platform design system. In dark theme, the thumb uses a darker neutral (`#666666
 with `#7a7a7a` on hover so it remains visible without appearing washed out.
 Direct conversation pages use this document-level scroll surface for the
 participant header and message history; they must not introduce a nested
-message-only scrollbar. The fixed contextual composer remains clear of the
-last message through shared page spacing.
+message-only scrollbar. The participant header remains sticky below the global
+top bar, and the fixed contextual composer remains clear of the last message
+through shared page spacing.
 
 ### Actions
 

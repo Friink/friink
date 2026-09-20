@@ -2,6 +2,11 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [chat] Kept the direct-chat participant header sticky below the global top
+  bar while preserving page-level conversation scrolling.
+
+## 2026-09-21T00:00:00Z
+
 - [chat] Moved direct conversation scrolling to the page viewport so the
   participant header and message history no longer use a nested message-only
   scrollbar; viewport-based read visibility is preserved.

@@ -4070,7 +4070,9 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 }
 
 .chat-header {
-  position: relative;
+  position: sticky;
+  top: var(--space-topbar-height);
+  z-index: 4;
   flex: 0 0 auto;
   min-height: var(--space-topbar-height);
   margin: 0;
