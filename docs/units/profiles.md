@@ -55,9 +55,10 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-008:** Profile posts, replies, and connection counts load from
   author-scoped API requests; pagination arguments must preserve their named
   meaning so a profile never silently loses its content after the shell loads.
-- **PROFILE-R-009:** Other-user connection actions that include a label use the
-  standard text-button layout so the icon and label remain on one line. Message
-  and More remain icon-only controls.
+- **PROFILE-R-009:** Profile Edit, Follow/Unfollow, and Message actions use the
+  primary button treatment. Other-user connection actions that include a label
+  use the standard text-button layout so the icon and label remain on one line;
+  Message remains an icon-only control with primary styling.
 - **PROFILE-R-010:** Other-user profile moderation actions are exposed through
   the shell-owned contextual NavigationBar menu; Block is not rendered as a
   detached action-row menu.

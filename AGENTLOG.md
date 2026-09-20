@@ -1,5 +1,57 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Promote profile actions to primary buttons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make profile Edit, Follow/Unfollow, and Message actions primary.
+- Changes Made: Switched the three actions in `ProfileScreen` to the primary
+  semantic class. Added a profile-scoped primary icon-button treatment so
+  Message remains compact without being overridden by the neutral utility
+  styling. Updated profile and design contracts, changelog, and agent log.
+- Verification Status: Targeted TypeScript and diff checks pending.
+
+## 2026-09-21T00:00:00Z — Simplify shared primary and secondary button treatments
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make primary buttons solid accent and secondary buttons translucent.
+- Changes Made: Updated the shared button primitives in `web/app/globals.css`;
+  primary remains solid accent and secondary now uses a translucent accent
+  surface with accent text and an accent-weighted border. Left contextual post
+  actions and icon-only utility controls unchanged. Updated the design-system
+  contracts and project changelog.
+- Verification Status: Targeted CSS/documentation diff verification pending.
+
+## 2026-09-21T00:00:00Z — Prevent blank public-page loads during refresh failures
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate repeated production, staging, and local page-load failures.
+- Changes Made: Made the public route guard render immediately while session
+  restoration runs in the background; successful restoration still redirects to
+  the authenticated app. Pointed the ignored local web development environment
+  at `http://localhost:8000` instead of the hosted development API. Updated the
+  account-access unit and changelog.
+- Verification Status: Local API health returned HTTP 200, local web returned
+  HTTP 200, and targeted TypeScript and diff checks are pending.
+
+## 2026-09-18T16:45:00Z — Document local environment selection
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify which environment files are used when loading the product locally.
+- Changes Made: Documented automatic Next.js loading of `web/.env.development` and explicit Uvicorn loading of `api/.env.development`; warned that a bare API launch loads the production `.env` file.
+- Verification Status: Documentation references reviewed and `git diff --check` passed.
+
+## 2026-09-18T16:39:19Z — Align environment files across projects
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep matching production, staging, and development environment files in both the web and API projects.
+- Changes Made: Added `web/.env`, `web/.env.staging`, and `web/.env.development`; removed `web/.env.local` and the obsolete tracked `api/.env.example`; updated the development API frontend origin and environment documentation to use the requested domain mapping.
+- Verification Status: Confirmed exactly three `.env*` files in each project, checked non-secret endpoint mappings, and reviewed documentation references.
+
 ## 2026-09-18T21:34:02Z — Complete documentation audit
 
 - Agent: Codex

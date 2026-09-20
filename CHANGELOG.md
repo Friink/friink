@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-09-21T00:00:00Z
+
+- [profiles] Promoted profile Edit, Follow/Unfollow, and Message actions to the
+  primary button treatment while preserving the Message button's compact
+  icon-only geometry.
+
+## 2026-09-21T00:00:00Z
+
+- [design] Simplified shared action-button treatments: primary buttons use a
+  solid accent surface, while secondary buttons use a translucent accent
+  surface with accent text. Contextual post actions and icon-only utility
+  controls remain unchanged.
+
+## 2026-09-21T00:00:00Z
+
+- [reliability] Fixed blank public-page loads during slow or unavailable
+  session refreshes by rendering public entry pages immediately and redirecting
+  only after a successful refresh. Local development now points the web client
+  at the local API on `http://localhost:8000`.
+
+## 2026-09-18T16:45:00Z
+
+- [docs] Clarified that local web development uses Next.js's automatic
+  `web/.env.development` loading and local API development must explicitly
+  pass `api/.env.development` to Uvicorn so the production `.env` file is
+  never selected accidentally.
+
+## 2026-09-18T16:39:19Z
+
+- [operations] Aligned the web and API environment-file layout to three
+  environment-specific files: production `.env`, staging `.env.staging`, and
+  development `.env.development`. Removed the obsolete local/template files
+  and mapped the web/API origins to their corresponding Friink domains.
+
 ## 2026-09-18T21:34:02Z
 
 - [docs] Completed the documentation audit for the profile drawer navigation

@@ -261,6 +261,11 @@ authenticated API effects and actions still wait for the in-memory access token
 created by a successful refresh. A failed refresh returns to the existing
 recovery surface.
 
+Public entry pages render immediately while their optional refresh-cookie
+check runs in the background. A successful refresh may redirect an already
+authenticated visitor to the app, but a network, timeout, CORS, server, or
+terminal refresh failure must not leave the public page blank.
+
 #### Business rules and contract
 
 - **ACCESS-R-014:** Access tokens use the current 30-minute implementation
