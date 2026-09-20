@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { isTerminalRefreshFailure, loadAuthSession, refreshAuthSession } from '@/lib/auth';
+import { loadAuthSession, refreshAuthSession } from '@/lib/auth';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -10,28 +10,25 @@ type PublicRouteGuardProps = {
 
 export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
     const session = loadAuthSession();
 
     if (session) {
       router.replace('/home');
-      return () => { cancelled = true; };
+      return;
     }
 
     refreshAuthSession()
       .then(() => {
-        if (!cancelled) router.replace('/home');
+        router.replace('/home');
       })
-      .catch((error) => {
-        if (!cancelled && isTerminalRefreshFailure(error)) setChecked(true);
+      .catch(() => {
+        // The public page remains usable when refresh is unavailable or the
+        // existing refresh cookie is terminally invalid. Only a successful
+        // refresh should redirect a signed-out visitor to the app.
       });
-
-    return () => { cancelled = true; };
   }, [router]);
 
-  if (!checked) return null;
   return <>{children}</>;
 }

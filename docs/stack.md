@@ -32,24 +32,33 @@ planned or undecided items are marked explicitly.
 
 - Two separate Vercel projects are used: `web/` for the Next.js client and `api/` for the API entrypoint at `api/api/index.py`.
 - The web deployment receives `NEXT_PUBLIC_API_BASE_URL`; it does not receive `DATABASE_URL`.
-- The API deployment requires `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL`, and the other variables listed in `api/.env.example`.
+- The API deployment requires `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL`, and the other variables in the matching environment file.
 - There is no root `vercel.json`; each project is configured independently in the Vercel dashboard.
 - Staging uses `staging.friink.com` and `staging-api.friink.com`.
 - Production uses `friink.com`.
+- Environment files are aligned across both projects: `.env` targets
+  `friink.com`/`api.friink.com`, `.env.staging` targets
+  `staging.friink.com`/`staging-api.friink.com`, and `.env.development` targets
+  `development.friink.com`/`development-api.friink.com`.
 
 ## Local development
 
 ```text
 # Web (Next.js) — runs on :3000
 npm --prefix web run dev
+# Next.js automatically loads web/.env.development for this command.
 
 # API (FastAPI) — runs on :8000
-# See api/.env.example for required environment variables.
+uvicorn app.main:app --reload --env-file api/.env.development
+# Local API development must explicitly load api/.env.development.
 ```
 
 The `development` branch is the local-work branch below `staging`. Its ignored
 `api/.env.development` file may copy staging variable names, but must point to
 an isolated development database and must never contain production credentials.
+The current local API configuration uses the isolated development PostgreSQL
+database on Neon through `DATABASE_URL`; the exact host and credentials remain
+environment-local and are intentionally not documented here.
 The development database must be migrated to the current Alembic head before
 local auth/session rehearsals. See the [deployment guide](deployment.md) for
 the migration gate and release workflow.

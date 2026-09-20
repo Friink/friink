@@ -10,7 +10,7 @@ import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSe
 
 type SideDrawerProps = {
   user: AuthUser;
-  activeScreen: Screen;
+  activeScreen: Screen | null;
   collapsed: boolean;
   onNavigate: (screen: Screen) => void;
   onToggleCollapsed: () => void;

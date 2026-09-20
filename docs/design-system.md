@@ -144,6 +144,9 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Use addressable links for stable destinations so browser history, status
   previews, middle-click, and open-in-new-tab behavior remain available.
 - Use the shared navigation bar and tabs for subpages and addressable sections.
+- Drawer active state follows the destination being represented: Profile is
+  active only for the signed-in user's own profile. When browsing another
+  user's profile, neither Home nor Profile is highlighted.
 - The unified `TopBar` preview uses one consistent leading/context/actions
   structure across signed-in surfaces, uses the same surface as the side
   drawer, and keeps the compact Friink mark visible in every mode. The mark
@@ -180,6 +183,10 @@ with `#7a7a7a` on hover so it remains visible without appearing washed out.
 
 - Each surface should have one visually clear primary action.
 - Secondary actions should remain available without competing with completion.
+- Shared primary buttons use a solid accent surface with contrasting text;
+  shared secondary buttons use a translucent accent surface with accent text.
+  This semantic treatment is independent of whether the button contains text,
+  text and an icon, or only an icon.
 - Icon-only controls require accessible labels and tooltips where appropriate.
 - Destructive actions require explicit confirmation and explain consequences.
 

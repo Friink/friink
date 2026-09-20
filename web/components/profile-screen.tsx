@@ -125,7 +125,7 @@ export function ProfileScreen({
 
           <div className="profile-actions">
             {isOwnProfile ? (
-              <button className="button-secondary profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
+              <button className="button-primary profile-action-edit" type="button" aria-label="Edit profile" onClick={onEditProfile}>
                 <i className="fa-regular fa-pen-to-square" aria-hidden="true" />
                 <span>Edit</span>
               </button>
@@ -133,7 +133,7 @@ export function ProfileScreen({
               <>
                 {action && (
                   <button
-                    className="button-secondary profile-connection-action"
+                    className="button-primary profile-connection-action"
                     type="button"
                     onClick={action.onClick}
                     disabled={connectionActionBusy}
@@ -143,7 +143,7 @@ export function ProfileScreen({
                     <span>{connectionActionBusy ? 'Updating' : action.label}</span>
                   </button>
                 )}
-                <button className="button-secondary icon-button" type="button" aria-label="Message user" onClick={onMessage}>
+                <button className="button-primary icon-button" type="button" aria-label="Message user" onClick={onMessage}>
                   <i className="fa-regular fa-paper-plane" aria-hidden="true" />
                 </button>
               </>

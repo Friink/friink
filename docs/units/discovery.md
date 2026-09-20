@@ -44,8 +44,12 @@ review decisions belong to [Staff Admin](./staff-admin.md).
 - **DISCOVERY-R-007:** Each directory result uses the shared `ListRow`
   component. The left side contains the profile card, About text, and the
   `Professional` and/or `Friink Registered` badges beside the name; the right
-  side contains contextual profile actions in this order: Chat, Follow or
-  Unfollow, and the More actions menu. These actions are icon-only controls.
+side contains contextual profile actions in this order: Chat, Follow or
+Unfollow, and the More actions menu. These actions are icon-only controls.
+The `ProfileCard` renders only active badges beside the name. The Professional
+badge uses the icon-only `fa-briefcase` with a `Professional` hover label; the
+Friink Registered badge uses icon-only `fa-shield-halved` with a `Friink
+Registered` hover label.
 - **DISCOVERY-R-008:** The complete row links to the user's public profile and
   remains responsive; on narrow screens the secondary content may stack below
   the profile card.

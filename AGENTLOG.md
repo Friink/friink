@@ -1,5 +1,131 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Promote profile actions to primary buttons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make profile Edit, Follow/Unfollow, and Message actions primary.
+- Changes Made: Switched the three actions in `ProfileScreen` to the primary
+  semantic class. Added a profile-scoped primary icon-button treatment so
+  Message remains compact without being overridden by the neutral utility
+  styling. Updated profile and design contracts, changelog, and agent log.
+- Verification Status: Targeted TypeScript and diff checks pending.
+
+## 2026-09-21T00:00:00Z — Simplify shared primary and secondary button treatments
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make primary buttons solid accent and secondary buttons translucent.
+- Changes Made: Updated the shared button primitives in `web/app/globals.css`;
+  primary remains solid accent and secondary now uses a translucent accent
+  surface with accent text and an accent-weighted border. Left contextual post
+  actions and icon-only utility controls unchanged. Updated the design-system
+  contracts and project changelog.
+- Verification Status: Targeted CSS/documentation diff verification pending.
+
+## 2026-09-21T00:00:00Z — Prevent blank public-page loads during refresh failures
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate repeated production, staging, and local page-load failures.
+- Changes Made: Made the public route guard render immediately while session
+  restoration runs in the background; successful restoration still redirects to
+  the authenticated app. Pointed the ignored local web development environment
+  at `http://localhost:8000` instead of the hosted development API. Updated the
+  account-access unit and changelog.
+- Verification Status: Local API health returned HTTP 200, local web returned
+  HTTP 200, and targeted TypeScript and diff checks are pending.
+
+## 2026-09-18T16:45:00Z — Document local environment selection
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Clarify which environment files are used when loading the product locally.
+- Changes Made: Documented automatic Next.js loading of `web/.env.development` and explicit Uvicorn loading of `api/.env.development`; warned that a bare API launch loads the production `.env` file.
+- Verification Status: Documentation references reviewed and `git diff --check` passed.
+
+## 2026-09-18T16:39:19Z — Align environment files across projects
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep matching production, staging, and development environment files in both the web and API projects.
+- Changes Made: Added `web/.env`, `web/.env.staging`, and `web/.env.development`; removed `web/.env.local` and the obsolete tracked `api/.env.example`; updated the development API frontend origin and environment documentation to use the requested domain mapping.
+- Verification Status: Confirmed exactly three `.env*` files in each project, checked non-secret endpoint mappings, and reviewed documentation references.
+
+## 2026-09-18T21:34:02Z — Complete documentation audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update all relevant documentation before ending the session.
+- Changes Made: Confirmed the navigation rule, unit document, and design
+  implementation contract are aligned; added the other-profile neutral drawer
+  state to `docs/design-system.md` and documented the isolated local Neon
+  PostgreSQL target in `docs/stack.md`. No new unit document or index update was
+  needed.
+- Verification Status: Targeted documentation link/file checks and
+  `git diff --check` passed.
+
+## 2026-09-18T21:27:55Z — Keep other-user profiles neutral in drawer state
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the Profile drawer icon activating for every profile.
+- Changes Made: Updated the shared `SideDrawer` contract to accept a neutral
+  active state and made `AppShell` pass that state for other-user profiles.
+  The signed-in user's own profile continues to highlight Profile.
+- Verification Status: Web TypeScript check and `git diff --check` passed.
+
+## 2026-09-18T21:26:00Z — Reconcile profile drawer rule documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Explain why the latest navigation behavior was not reflected in
+  the active rules.
+- Changes Made: Added active rule `WEB-R-017` to `docs/rules.md` and linked it
+  to `NAV-R-006` and `NAV-AC-006` in `docs/units/navigation.md`. The rule
+  records that only the signed-in user's own profile activates Profile; another
+  user's profile activates neither Home nor Profile.
+- Verification Status: Targeted documentation link/file checks and
+  `git diff --check` passed.
+
+## 2026-09-18T01:15:00Z — Correct drawer highlight on profile navigation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent Home from remaining active when navigating from Home
+  to a profile.
+- Changes Made: Removed the profile-to-Home active-screen fallback in
+  `AppShell`. Own profiles now highlight Profile; other-user profiles leave
+  the drawer without a false Home or Profile highlight, matching the existing
+  design contract.
+- Verification Status: Web TypeScript check, Home route HTTP 200 smoke check,
+  and `git diff --check` passed.
+
+## 2026-09-18T00:45:00Z — Make profile badges card-owned and icon-only
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Move active badge presentation into ProfileCard and show
+  icon-only badges with hover labels.
+- Changes Made: Replaced generic badge arrays with explicit
+  `showProfessionalBadge` and `showRegisteredBadge` flags on `ProfileCard`;
+  rendered only active badges beside the name; and added accessible tooltip
+  labels for the Font Awesome icons.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
+## 2026-09-18T00:15:00Z — Add Font Awesome Directory badge icons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add recognizable Font Awesome icons to the Professional and
+  Friink Registered badges for local preview.
+- Changes Made: Added reusable icon-bearing `ProfileBadge` rendering through
+  `ProfileCard`, configured `fa-briefcase` and `fa-shield-halved`, and updated
+  the Discovery/design contracts.
+- Verification Status: Web TypeScript check, Directory route HTTP 200 smoke
+  check, and `git diff --check` passed.
+
 ## 2026-09-17T21:11:18Z — Audit session documentation coverage
 
 - Agent: Codex

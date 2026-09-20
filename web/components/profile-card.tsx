@@ -27,12 +27,15 @@ type ProfileCardProps = {
   href?: string;
   imageUrl?: string | null;
   showProfessionalBadge?: boolean;
-  badges?: string[];
+  showRegisteredBadge?: boolean;
 };
 
-export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl, showProfessionalBadge = false, badges = [] }: ProfileCardProps) {
+export function ProfileCard({ name, handle, tone = 'mint', initials, date, href, imageUrl, showProfessionalBadge = false, showRegisteredBadge = false }: ProfileCardProps) {
   const resolvedImageUrl = imageUrl || DEFAULT_PROFILE_IMAGE;
-  const visibleBadges = showProfessionalBadge ? ['Professional', ...badges.filter((badge) => badge !== 'Professional')] : badges;
+  const visibleBadges = [
+    ...(showProfessionalBadge ? [{ label: 'Professional', icon: 'fa-briefcase' }] : []),
+    ...(showRegisteredBadge ? [{ label: 'Friink Registered', icon: 'fa-shield-halved' }] : []),
+  ];
   const content = (
     <div className="profile-card">
       <span className={`profile-card-avatar user-avatar avatar-${tone} profile-card-avatar-image`}>
@@ -41,7 +44,7 @@ export function ProfileCard({ name, handle, tone = 'mint', initials, date, href,
       <div className="profile-card-info">
         <span className="profile-card-name-row">
           <strong>{name}</strong>
-          {visibleBadges.map((badge) => <ProfileBadge key={badge} label={badge} />)}
+          {visibleBadges.map((badge) => <ProfileBadge key={badge.label} label={badge.label} icon={badge.icon} />)}
         </span>
         <span className="profile-card-handle">{handle}</span>
         {date && <span className="profile-card-date">{date}</span>}

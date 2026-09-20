@@ -59,6 +59,11 @@ Production rollout is a separate release gate from staging acceptance.
   `NEXT_PUBLIC_API_BASE_URL`.
 - The API project owns `DATABASE_URL`, authentication secrets, environment
   flags, email settings, and storage credentials.
+- Both projects use matching `.env`, `.env.staging`, and `.env.development`
+  files for production, staging, and development respectively.
+- Local web development loads `web/.env.development` through Next.js. Local
+  API development must pass `--env-file .env.development` to Uvicorn; a bare
+  API launch loads `.env`, the production configuration.
 - `OTP_ENABLED` is off for development and on for staging and production.
 - Never commit environment files or secrets.
 

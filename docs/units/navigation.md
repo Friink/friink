@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-16T21:18:38Z
+**Last edited:** 2026-09-18T21:26:00Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -62,6 +62,10 @@ the established search, chat-unread, and notification interactions.
 - **NAV-R-005:** Search is available on every signed-in screen except that the
   search route displays the search field persistently. Home search is global;
   other screens may provide contextual search behavior.
+- **NAV-R-006:** The drawer highlights Profile only for the signed-in user's
+  own profile. Viewing another user's profile leaves both Home and Profile
+  inactive; it must not inherit the highlight from the previous screen. See
+  [WEB-R-017](../rules.md#web-r-017--sidebar-highlight-tracks-only-owned-profile-navigation).
 
 ## Acceptance criteria
 
@@ -73,6 +77,9 @@ the established search, chat-unread, and notification interactions.
 - [ ] **NAV-AC-004** Light/dark logo variants remain readable and accessible.
 - [ ] **NAV-AC-005** Legacy Header is hidden without being
   deleted, and the TopBar does not leave a reserved navigation gap.
+- [ ] **NAV-AC-006** Opening another user's profile does not leave Home or
+  Profile highlighted in the drawer; opening the signed-in user's profile
+  highlights Profile.
 
 ## Verification checklist
 
