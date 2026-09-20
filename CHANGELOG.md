@@ -2,6 +2,12 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [chat] Moved direct conversation scrolling to the page viewport so the
+  participant header and message history no longer use a nested message-only
+  scrollbar; viewport-based read visibility is preserved.
+
+## 2026-09-21T00:00:00Z
+
 - [chat] Fixed the conversation-list response crash by passing the peer
   receipt cursor when computing the latest outgoing message state.
 

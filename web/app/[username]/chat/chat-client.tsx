@@ -82,8 +82,6 @@ export function ChatClient({ username }: ChatClientProps) {
     if (!conversation?.id || !messages.length || initiallyScrolledConversationRef.current === conversation.id) return;
     initiallyScrolledConversationRef.current = conversation.id;
     const frame = window.requestAnimationFrame(() => {
-      const element = document.querySelector<HTMLElement>('.chat-messages');
-      if (element) element.scrollTop = element.scrollHeight;
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
     });
     return () => window.cancelAnimationFrame(frame);
@@ -107,7 +105,7 @@ export function ChatClient({ username }: ChatClientProps) {
       lastReadMessageRef.current = furthestVisibleIncoming.id;
       setReceiptState((current) => ({ ...current, lastReadMessageId: furthestVisibleIncoming!.id, unreadCount: Math.max(0, current.unreadCount - messages.filter((message, index) => index > currentIndex && index <= visibleIndex && message.sender_id !== user.id).length), firstUnreadMessageId: messages.find((message, index) => index > visibleIndex && message.sender_id !== user.id)?.id || null }));
       void new PollingChatTransport(session.accessToken).markRead(conversation.id, furthestVisibleIncoming.id).catch(() => undefined);
-    }, { root: container, threshold: 0.6 });
+    }, { threshold: 0.6 });
     container.querySelectorAll('[data-message-id]').forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, [chatAccessDenied, conversation?.id, messages, user]);

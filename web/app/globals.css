@@ -1511,14 +1511,6 @@ textarea {
   touch-action: pan-y;
 }
 
-/* Chat owns the scroll region so its participant header never moves with messages. */
-.main-panel:has(.chat-screen) {
-  box-sizing: border-box;
-  height: 100vh;
-  min-height: 100vh;
-  overflow: hidden;
-}
-
 .topbar {
   position: fixed;
   top: 0;
@@ -4071,9 +4063,8 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .chat-screen {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  min-height: calc(100vh - var(--space-topbar-height));
+  overflow: visible;
   padding-bottom: 0;
   padding-top: 0;
 }
@@ -4120,12 +4111,9 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .chat-messages {
   display: block;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
+  overflow: visible;
   gap: 0.75rem;
   padding: 1rem 0 calc(var(--space-floating-bar-height) + max(1rem, env(safe-area-inset-bottom)) + 0.5rem);
-  scroll-padding-bottom: calc(var(--space-floating-bar-height) + max(1rem, env(safe-area-inset-bottom)) + 0.5rem);
 }
 
 .chat-date {
