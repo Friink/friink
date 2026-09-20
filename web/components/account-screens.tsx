@@ -39,6 +39,38 @@ type SettingsRowProps = {
   save?: { disabled: boolean; busy: boolean; onClick: () => void; label: string };
 };
 
+const subscriptionPlans = [
+  {
+    code: 'friink_free',
+    name: 'Friink Free',
+    price: 'Free',
+    description: 'Everything you need to connect and create.',
+    features: ['Unlimited posts, replies, and quotes', 'Chat with mutual followers', 'Use Friink as a professional'],
+  },
+  {
+    code: 'friink_pro',
+    name: 'Friink Pro',
+    price: 'USD 4 / month after the first month',
+    description: 'More room for your voice, work, and connections.',
+    features: ['Everything in Free', 'Message requests', 'Profile view count', 'Posts up to 512 characters', 'Directory listing for registered professionals'],
+  },
+  {
+    code: 'friink_pro_plus',
+    name: 'Friink Pro+',
+    price: 'USD 8 / month · 1 month free for Pro users',
+    description: 'A fuller view of your presence on Friink.',
+    features: ['Everything in Pro', 'Profile and post analytics', 'Profile boost for the feed', 'Fewer ads'],
+  },
+] as const;
+
+function findSubscriptionPlan(code: string | undefined) {
+  return subscriptionPlans.find((plan) => plan.code === code);
+}
+
+function formatSubscriptionStatus(status: SubscriptionSummary['status']) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 function SettingsRow({ icon, title, subtitle, children, className = 'settings-row settings-row-expanded', trailing, save }: SettingsRowProps) {
   const saveControl = save ? <SaveTickButton disabled={save.disabled} busy={save.busy} onClick={save.onClick} label={save.label} /> : null;
   return (
@@ -902,24 +934,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
         <div className="settings-panel">
           <div className="settings-section">
             <SettingsRow
-              icon={<span className="settings-icon"><i className="fa-solid fa-calendar-check" aria-hidden="true" /></span>}
-              title="Joined"
-              subtitle="The date and time this account was created."
-              className="settings-row settings-row-expanded"
-            >
-              <output className="settings-readonly-value" aria-label="Joined">{formatAccountDate(user.createdAt)}</output>
-            </SettingsRow>
-
-            <SettingsRow
-              icon={<span className="settings-icon"><i className="fa-solid fa-location-dot" aria-hidden="true" /></span>}
-              title="Region"
-              subtitle="The province or state associated with account creation."
-              className="settings-row settings-row-expanded"
-            >
-              <output className="settings-readonly-value" aria-label="Region">{user.accountRegion ?? 'Unavailable'}</output>
-            </SettingsRow>
-
-            <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-envelope" aria-hidden="true" /></span>}
               title="Email"
               subtitle="Update the email address for this account."
@@ -1056,6 +1070,24 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             </SettingsRow> : null}
 
             <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-calendar-check" aria-hidden="true" /></span>}
+              title="Joined"
+              subtitle="The date and time this account was created."
+              className="settings-row settings-row-expanded"
+            >
+              <output className="settings-readonly-value" aria-label="Joined">{formatAccountDate(user.createdAt)}</output>
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-location-dot" aria-hidden="true" /></span>}
+              title="Region"
+              subtitle="The province or state associated with account creation."
+              className="settings-row settings-row-expanded"
+            >
+              <output className="settings-readonly-value" aria-label="Region">{user.accountRegion ?? 'Unavailable'}</output>
+            </SettingsRow>
+
+            <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-pause" aria-hidden="true" /></span>}
               title="Deactivate account"
               subtitle="Temporarily hide your account. You can return and reactivate it with a verified login."
@@ -1085,17 +1117,36 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-crown" aria-hidden="true" /></span>}
               title="Current plan"
-              subtitle="Your Friink plan and subscription options."
+              subtitle="Your active Friink plan and access status."
               className="settings-row settings-row-expanded"
-              trailing={<Link className="button-secondary icon-button settings-subscription-link" href="/subscriptions" aria-label="View plans" title="View plans"><i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></Link>}
             >
               <div className="settings-plan-summary">
                 <strong>{subscription?.plan_name ?? 'Loading plan…'}</strong>
-                <span>{subscription ? `${subscription.plan_code.replace('friink_', '').replace('_', ' ')} · ${subscription.expires_at ? `Access until ${formatSessionDate(subscription.expires_at)}` : 'No expiration'}` : 'Checking your current access.'}</span>
+                <span>{subscription ? `${findSubscriptionPlan(subscription.plan_code)?.price ?? 'Price unavailable'} · ${formatSubscriptionStatus(subscription.status)} · ${subscription.expires_at ? `Access until ${formatSessionDate(subscription.expires_at)}` : 'No expiration'}` : 'Checking your current access.'}</span>
                 {subscription?.status === 'expired' ? <small role="status">Your paid access expired and your account is on Friink Free.</small> : null}
                 {subscriptionError ? <small className="settings-field-message" role="alert">{subscriptionError}</small> : null}
               </div>
             </SettingsRow>
+          </div>
+          <div className="settings-section settings-plan-options" aria-label="Available plans">
+            {subscriptionPlans.map((plan) => {
+              const isCurrent = subscription?.plan_code === plan.code;
+              const isFree = plan.code === 'friink_free';
+              return (
+                <SettingsRow
+                  key={plan.code}
+                  icon={<span className={`settings-icon ${isCurrent ? 'settings-icon-active' : ''}`}><i className={`fa-solid ${isFree ? 'fa-leaf' : plan.code === 'friink_pro' ? 'fa-star' : 'fa-gem'}`} aria-hidden="true" /></span>}
+                  title={<span className="settings-plan-title">{plan.name}{isCurrent ? <span className="settings-plan-current">Current</span> : null}</span>}
+                  subtitle={`${plan.price} · ${plan.description}`}
+                  className="settings-row settings-row-expanded settings-plan-option"
+                  trailing={isCurrent ? <button className="button-secondary" type="button" disabled>Current plan</button> : <button className="button-primary" type="button" disabled>{isFree ? 'Available' : 'Coming soon'}</button>}
+                >
+                  <ul className="settings-plan-features">
+                    {plan.features.map((feature) => <li key={feature}><i className="fa-solid fa-check" aria-hidden="true" />{feature}</li>)}
+                  </ul>
+                </SettingsRow>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1245,16 +1296,6 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             </SettingsRow>
 
             <SettingsRow
-              icon={<span className="settings-icon"><i className="fa-solid fa-check-double" aria-hidden="true" /></span>}
-              title="Read receipts"
-              subtitle="Show when messages have been read. This setting is mutual with the other person."
-              className="settings-row"
-              trailing={<SaveTickButton disabled={!canUpdateReadReceipts} busy={isUpdatingReadReceipts} onClick={handleReadReceiptsUpdate} label="Update read receipts" />}
-            >
-              <SettingsToggle value={readReceiptsDraft} onChange={setReadReceiptsDraft} disabled={isUpdatingReadReceipts} />
-            </SettingsRow>
-
-            <SettingsRow
               icon={<span className="settings-icon"><i className="fa-regular fa-heart" aria-hidden="true" /></span>}
               title="Show my Likes"
               subtitle="Let signed-in people see your liked posts and identify you in Like lists. Like counts remain public when this is off."
@@ -1275,12 +1316,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             </SettingsRow>
 
             <SettingsRow
-              icon={<span className="settings-icon"><i className="fa-solid fa-ban" aria-hidden="true" /></span>}
-              title="Blocked people"
-              subtitle="Review and unblock people you have blocked."
+              icon={<span className="settings-icon"><i className="fa-solid fa-check-double" aria-hidden="true" /></span>}
+              title="Read receipts"
+              subtitle="Show when messages have been read. This setting is mutual with the other person."
               className="settings-row"
-              trailing={<button className="icon-button" type="button" aria-label="View blocked people" title="View blocked people" onClick={() => setBlockedOpen(true)}><i className="fa-solid fa-eye" aria-hidden="true" /></button>}
-            />
+              trailing={<SaveTickButton disabled={!canUpdateReadReceipts} busy={isUpdatingReadReceipts} onClick={handleReadReceiptsUpdate} label="Update read receipts" />}
+            >
+              <SettingsToggle value={readReceiptsDraft} onChange={setReadReceiptsDraft} disabled={isUpdatingReadReceipts} />
+            </SettingsRow>
 
             <SettingsRow
               icon={<span className="settings-icon"><i className="fa-solid fa-at" aria-hidden="true" /></span>}
@@ -1291,6 +1334,14 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
             >
               <SettingsToggle value={mentionsDraft} onChange={setMentionsDraft} />
             </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-solid fa-ban" aria-hidden="true" /></span>}
+              title="Blocked people"
+              subtitle="Review and unblock people you have blocked."
+              className="settings-row"
+              trailing={<button className="icon-button" type="button" aria-label="View blocked people" title="View blocked people" onClick={() => setBlockedOpen(true)}><i className="fa-solid fa-eye" aria-hidden="true" /></button>}
+            />
           </div>
         </div>
       )}

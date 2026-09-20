@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 };
 
 const plans = [
-  { name: 'Friink Free', price: 'Free', description: 'A calm place to stay connected.', features: ['Never expires', 'Unlimited posts, replies, and quotes', 'Message your connections'], action: 'Start free', featured: false },
-  { name: 'Friink Pro', price: 'USD 4', cadence: '/month', description: 'More room for your voice and your work.', features: ['Everything in Free', 'Message requests to non-connections', 'Profile boost and profile views', 'Posts, replies, and quotes up to 512 characters', 'Optional professional verification'], featured: true },
-  { name: 'Friink Pro+', price: 'USD 8', cadence: '/month', description: 'A fuller view of your presence on Friink.', features: ['Everything in Pro', 'Pro badge', 'Profile and post analytics'], featured: false },
+  { name: 'Friink Free', price: 'Free', description: 'Everything you need to connect and create.', features: ['Never expires', 'Unlimited posts, replies, and quotes', 'Chat with mutual followers', 'Use Friink as a professional'], action: 'Start free', featured: false },
+  { name: 'Friink Pro', price: 'USD 4', cadence: '/month after the first month', description: 'More room for your voice, work, and connections.', features: ['Everything in Free', 'Message requests', 'Profile view count', 'Posts up to 512 characters', 'Directory listing for registered professionals'], featured: true },
+  { name: 'Friink Pro+', price: 'USD 8', cadence: '/month · 1 month free for Pro users', description: 'A fuller view of your presence on Friink.', features: ['Everything in Pro', 'Profile and post analytics', 'Profile boost for the feed', 'Fewer ads'], featured: false },
 ];
 
 export default function SubscriptionsPage() {

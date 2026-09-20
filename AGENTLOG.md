@@ -1,5 +1,43 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Fix chat list row hierarchy and controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove duplicate identity content from chat rows and simplify contextual controls.
+- Changes Made: Replaced the nested chat-row ProfileCard with an avatar-only link; added API-backed latest-message sender and receipt metadata; rendered unread/request and sent/delivered/seen state on the secondary line; made mute/archive controls borderless with accent hover/focus/active treatments; updated chat/design documentation and active rules.
+- Verification Status: TypeScript, Python compilation, and diff checks passed. Local web/API health returned HTTP 200, but the available local browser session remained stuck on authentication restore; the targeted chat pytest run was blocked by a Windows temporary SQLite file-lock cleanup error.
+
+## 2026-09-21T00:00:00Z — Reorder Settings tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reorder Settings tabs for a more natural user flow.
+- Changes Made: Ordered the Settings tabs as General, Profile, Privacy &
+  Safety, Account, and Subscription. Updated the Settings unit documentation.
+- Verification Status: Targeted TypeScript, diff, and local Settings route checks pending.
+
+## 2026-09-21T00:00:00Z — Reorder Account settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rearrange every Account setting into a clearer order.
+- Changes Made: Ordered Account rows as email, password, sessions, login
+  requests, joined/region metadata, deactivation, and deletion. Preserved all
+  existing controls and lifecycle behavior. Updated the Settings unit.
+- Verification Status: Targeted TypeScript, diff, and local Account route checks pending.
+
+## 2026-09-21T00:00:00Z — Reorder Privacy & Safety settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Rearrange every Privacy & Safety setting into a clearer order.
+- Changes Made: Ordered the existing rows as profile visibility, Likes
+  visibility, direct messages, read receipts, mentions, and blocked people.
+  Preserved the existing row structure, controls, save behavior, and safety
+  actions. Updated the Settings unit documentation.
+- Verification Status: Targeted TypeScript, diff, and local Settings route checks pending.
+
 ## 2026-09-21T00:00:00Z — Promote profile actions to primary buttons
 
 - Agent: Codex
@@ -12381,3 +12419,112 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `AGENTLOG.md`.
 - Verification Status: TypeScript and `git diff --check` pass; the local dev
   server should hot-reload the changed component.
+## 2026-09-21T00:00:00Z — Add plan comparison to Subscription settings
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the plan comparison directly to the Subscription screen
+  using Friink's existing design language.
+- Changes Made: Added the server-resolved current-plan summary followed by
+  divider-bounded Free, Pro, and Pro+ settings rows. Reused shared settings
+  icons and primary/secondary button treatments; paid actions remain disabled
+  as `Coming soon` until billing is implemented. Updated subscription,
+  settings, and design contracts.
+- Files: `web/components/account-screens.tsx`, `web/app/globals.css`,
+  `docs/units/subscriptions.md`, `docs/units/settings.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript check, `git diff --check`, and local browser
+  verification passed for `/settings/subscription`.
+
+## 2026-09-21T00:00:00Z — Simplify Subscription hierarchy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the standalone Plans row and avoid repeating current
+  plan details.
+- Changes Made: Reduced the current-plan summary to name, price, and access
+  status; kept full features in the Free, Pro, and Pro+ settings rows; removed
+  the intermediate Plans heading and Learn more link. Updated the subscription
+  design contracts and logs.
+- Files: `web/components/account-screens.tsx`, `web/app/globals.css`,
+  `docs/units/subscriptions.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript, `git diff --check`, and local browser
+  verification passed for `/settings/subscription`; the standalone Plans row
+  is absent and the plan rows remain visible.
+
+## 2026-09-21T00:00:00Z — Refine subscription plan copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Upgrade subscription copy using the canonical PRD content.
+- Changes Made: Rewrote Free, Pro, and Pro+ descriptions and features across
+  the authenticated settings comparison and public plans page. Preserved the
+  PRD's mutual-chat, professional-use, character-limit, directory, analytics,
+  boost, reduced-ads, and introductory-pricing details. Synchronized the
+  subscription unit document.
+- Files: `web/components/account-screens.tsx`,
+  `web/app/subscriptions/page.tsx`, `docs/units/subscriptions.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, `git diff --check`, and local browser copy
+  verification passed for `/settings/subscription`.
+
+## 2026-09-21T00:00:00Z — Remove redundant subscription note
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the paid-plans availability note from Settings.
+- Changes Made: Deleted the redundant note from the authenticated Subscription
+  tab while preserving the `Coming soon` states and public plans-page note.
+- Files: `web/components/account-screens.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Local browser verification and `git diff --check` passed.
+
+## 2026-09-21T00:00:00Z — Synchronize active rules with session UI work
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/rules.md` for the changes made during this
+  session.
+- Changes Made: Updated the active settings presentation rule with shared
+  primary/secondary button semantics, Settings tab and row ordering, and the
+  authenticated Subscription comparison contract. Added the PRD-aligned plan
+  benefits, current-plan summary behavior, disabled paid actions, and the
+  removal of the redundant authenticated availability note.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Rule text and traceability reviewed; `git diff --check`
+  passed.
+
+## 2026-09-21T00:00:00Z — Add presentation-only search refinement modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a funnel icon between the search bar and ActionMenu that
+  opens a combined sort/filter modal, with UI and documentation only.
+- Changes Made: Added the search-route funnel control and shared Modal with
+  local Sort by and Date selectors, Reset, and Apply actions. No URL, API, or
+  result behavior was changed. Updated the Search unit and design-system docs.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/units/search.md`, `docs/design-system.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed. Local browser
+  interaction was blocked because the existing development session showed the
+  app's session-restore failure state instead of the search route.
+
+## 2026-09-21T00:00:00Z — Implement search sort and date refinement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the Search unit document, implement sort/filter, test,
+  and hand back a ready local flow.
+- Changes Made: Added URL-backed sort and date parameters to the web search
+  client and API. Added relevance/newest/oldest ordering, preset and custom
+  inclusive date bounds for Posts and Messages, scope-aware modal controls,
+  URL preservation across scope changes, and active-filter indication. Updated
+  the Search unit, design system, active rules, changelog, and agent log.
+- Files: `api/app/routers/search.py`, `web/lib/auth.ts`,
+  `web/components/screens.tsx`, `web/components/app-shell.tsx`,
+  `web/components/top-bar.tsx`, `web/app/globals.css`, `docs/units/search.md`,
+  `docs/design-system.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, Python compilation, authenticated local
+  browser acceptance, API boundary validation, and `git diff --check` passed.
+  Staging acceptance and automated search coverage remain pending.

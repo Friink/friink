@@ -46,6 +46,8 @@ class ConversationResponse(BaseModel):
     id: uuid.UUID
     participant: ChatUserResponse
     preview: str | None
+    preview_sender_id: str | None = None
+    preview_receipt_status: str | None = None
     updated_at: datetime
     unread: bool = False
     status: str = "accepted"

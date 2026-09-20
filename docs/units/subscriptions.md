@@ -16,7 +16,7 @@ Chat may consume the server-resolved entitlement for its paid request policy.
 ## Related units
 
 - [Chat](./chat.md) — consumes paid-tier request eligibility.
-- [Settings](./settings.md) — shows the current plan and links to plans.
+- [Settings](./settings.md) — shows the current plan and compares available plans.
 - [Staff Admin](./staff-admin.md) — owns current administrative assignments.
 - [Design System](../design-system.md) — owns public plan-card presentation.
 
@@ -27,16 +27,18 @@ Chat may consume the server-resolved entitlement for its paid request policy.
 Free is the default plan and includes:
 
 1. Unlimited posts, replies, and quotes.
-2. Chat with mutual followers.
+2. Chat (mutual followers).
+3. Use Friink as a professional.
 
 ### Friink Pro
 
 Pro includes everything in Free, plus:
 
-1. Message requests.
-2. Profile view count.
-3. Longer posts up to 512 characters.
-4. Directory visibility for eligible professional profiles.
+1. Everything in Friink Free.
+2. Message requests.
+3. Profile view count.
+4. Longer posts up to 512 characters.
+5. Directory listing for registered professionals.
 
 The planned commercial price is USD 4 per month after the first month. Planned
 billing rules revoke Pro after 8 days of nonpayment. Professional registration
@@ -47,9 +49,10 @@ expires or is cancelled.
 
 Pro+ includes everything in Pro, plus:
 
-1. Profile and post analytics.
-2. Profile boost for the feed.
-3. Fewer ads.
+1. Everything in Pro.
+2. Profile and post analytics.
+3. Profile boost for the feed.
+4. Fewer ads.
 
 The planned commercial price is USD 8 per month. The planned launch offer is
 one month free for Pro users, and planned billing rules revoke Pro+ after 8
@@ -64,8 +67,9 @@ integration remain unavailable.
 - **SUBS-R-001:** Public plans are informational until billing exists.
 - **SUBS-R-002:** Entitlements are resolved server-side from one assignment;
   clients must not self-declare paid access.
-- **SUBS-R-003:** Settings shows the current `Friink Free` plan and a View plans
-  link while paid billing is inactive.
+- **SUBS-R-003:** Settings shows the current server-resolved plan first, then
+  compares Free, Pro, and Pro+ in the same Subscription tab while paid billing
+  is inactive.
 - **SUBS-R-004:** Paid plan cards show non-action `Coming soon` states until
   billing is implemented; Free links to login as appropriate.
 - **SUBS-R-005:** Subscription status must not bypass account, connection,
@@ -74,8 +78,11 @@ integration remain unavailable.
 ## UX and flows
 
 The public `/subscriptions` surface compares Friink Free, Pro, and Pro+. The
-Settings Subscription tab summarizes the current plan. No checkout, payment,
-or self-service billing flow is active.
+Settings Subscription tab shows a compact current-plan summary first, then
+repeats the plan comparison in the authenticated settings context. The summary
+contains the plan name, price, and access status; plan rows contain the feature
+details and available action state. No checkout, payment, or self-service
+billing flow is active.
 
 Until billing exists, a superadmin may manually promote a user from Free to Pro
 or Pro+, change Pro and Pro+ assignments, or return a paid assignment to Free.
@@ -146,8 +153,9 @@ administrative assignment behavior. Billing provider integration is not present.
 
 Payments, checkout, recurring billing, cancellation, automatic renewal,
 nonpayment enforcement, and customer self-service are not implemented. The
-current Settings subscription summary is connected to the server-resolved
-entitlement. Public plan cards remain informational, and the final capability
-matrix and billing notifications remain planned. Professional registration is
+current Settings subscription summary and plan comparison are connected to the
+server-resolved entitlement only for current-plan state; public and settings
+plan actions remain informational. The final capability matrix and billing
+notifications remain planned. Professional registration is
 documented and implemented independently of subscription access; subscription
 status only participates in directory eligibility.

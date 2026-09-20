@@ -162,10 +162,13 @@ def _conversation_response(session: Session, conversation: Conversation, viewer:
     setting = _get_setting(session, conversation.id, viewer.id)
     latest = conversation.messages[-1] if conversation.messages else None
     unread_count, _, _, _ = _receipt_summary(session, conversation, viewer)
+    latest_sender = session.get(User, latest.sender_id) if latest else None
     return ConversationResponse(
         id=conversation.id,
         participant=ChatUserResponse(id=participant.public_id, username=participant.username, display_name=participant.display_name, profile_picture_url=profile_picture_url_for(participant), show_professional_badge=participant.show_professional_badge),
         preview=latest.content if latest else None,
+        preview_sender_id=latest_sender.public_id if latest_sender else None,
+        preview_receipt_status=_receipt_status(session, conversation, latest, viewer) if latest else None,
         updated_at=conversation.updated_at,
         status=conversation.status.value,
         unread=unread_count > 0,
