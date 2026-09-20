@@ -156,12 +156,24 @@ export function SearchScreen({ initialQuery }: { initialQuery?: string }) {
   const filter: 'all' | 'people' | 'posts' | 'messages' = filterParam === 'people' || filterParam === 'posts' || filterParam === 'messages' ? filterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';
   const scope = filter === 'messages' ? 'messages' : 'global';
   const kind = filter === 'people' ? 'person' : filter === 'posts' ? 'post' : 'all';
+  const sortParam = searchParams.get('sort');
+  const sort: 'relevance' | 'newest' | 'oldest' = sortParam === 'newest' || sortParam === 'oldest' ? sortParam : 'relevance';
+  const dateParam = searchParams.get('date');
+  const date: 'any' | 'day' | 'week' | 'month' | 'custom' = dateParam === 'day' || dateParam === 'week' || dateParam === 'month' || dateParam === 'custom' ? dateParam : 'any';
+  const dateFrom = searchParams.get('date_from') || undefined;
+  const dateTo = searchParams.get('date_to') || undefined;
   const [results, setResults] = useState<ApiSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const session = loadAuthSession();
+    if (date === 'custom' && (!dateFrom || !dateTo || dateFrom > dateTo)) {
+      setResults([]);
+      setError('Choose a valid date range.');
+      setLoading(false);
+      return;
+    }
     if (!query || !session) {
       setResults([]);
       setError(null);
@@ -171,12 +183,12 @@ export function SearchScreen({ initialQuery }: { initialQuery?: string }) {
     let stopped = false;
     setLoading(true);
     setError(null);
-    searchContent(session.accessToken, query, scope, 24, kind)
+    searchContent(session.accessToken, query, scope, 24, kind, { sort, date, dateFrom, dateTo })
       .then((response) => { if (!stopped) setResults(response.items); })
       .catch((requestError) => { if (!stopped) setError(requestError instanceof Error ? requestError.message : 'Could not search Friink.'); })
       .finally(() => { if (!stopped) setLoading(false); });
     return () => { stopped = true; };
-  }, [query, scope, kind]);
+  }, [date, dateFrom, dateTo, kind, query, scope, sort]);
 
   return (
     <PageSurface className="search-screen" variant="list">

@@ -12470,3 +12470,53 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   tab while preserving the `Coming soon` states and public plans-page note.
 - Files: `web/components/account-screens.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
 - Verification Status: Local browser verification and `git diff --check` passed.
+
+## 2026-09-21T00:00:00Z — Synchronize active rules with session UI work
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/rules.md` for the changes made during this
+  session.
+- Changes Made: Updated the active settings presentation rule with shared
+  primary/secondary button semantics, Settings tab and row ordering, and the
+  authenticated Subscription comparison contract. Added the PRD-aligned plan
+  benefits, current-plan summary behavior, disabled paid actions, and the
+  removal of the redundant authenticated availability note.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Rule text and traceability reviewed; `git diff --check`
+  passed.
+
+## 2026-09-21T00:00:00Z — Add presentation-only search refinement modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a funnel icon between the search bar and ActionMenu that
+  opens a combined sort/filter modal, with UI and documentation only.
+- Changes Made: Added the search-route funnel control and shared Modal with
+  local Sort by and Date selectors, Reset, and Apply actions. No URL, API, or
+  result behavior was changed. Updated the Search unit and design-system docs.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/units/search.md`, `docs/design-system.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript and `git diff --check` passed. Local browser
+  interaction was blocked because the existing development session showed the
+  app's session-restore failure state instead of the search route.
+
+## 2026-09-21T00:00:00Z — Implement search sort and date refinement
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the Search unit document, implement sort/filter, test,
+  and hand back a ready local flow.
+- Changes Made: Added URL-backed sort and date parameters to the web search
+  client and API. Added relevance/newest/oldest ordering, preset and custom
+  inclusive date bounds for Posts and Messages, scope-aware modal controls,
+  URL preservation across scope changes, and active-filter indication. Updated
+  the Search unit, design system, active rules, changelog, and agent log.
+- Files: `api/app/routers/search.py`, `web/lib/auth.ts`,
+  `web/components/screens.tsx`, `web/components/app-shell.tsx`,
+  `web/components/top-bar.tsx`, `web/app/globals.css`, `docs/units/search.md`,
+  `docs/design-system.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: TypeScript, Python compilation, authenticated local
+  browser acceptance, API boundary validation, and `git diff --check` passed.
+  Staging acceptance and automated search coverage remain pending.

@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-17T00:30:00Z
+**Last edited:** 2026-09-21T00:00:00Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -244,6 +244,18 @@ missing evidence can be filled in.
 
 - **What:** The signed-in drawer highlights the Profile destination only while viewing the signed-in user's own profile. Home and Profile must not be shown as active while browsing another user's profile route.
 - **Edge cases:** The other-user profile remains fully navigable and may expose its own contextual actions, but it does not inherit the Home highlight from the route used to reach it. The active drawer state is derived from the current shell screen, not from the previous page.
+
+### WEB-R-018 — Search Refinements Are URL-Backed And Scope-Aware
+
+- **Status:** Active
+- **Effective:** 2026-09-21T00:00:00Z
+- **Related units:** [search](units/search.md), [navigation](units/navigation.md)
+- **Source:** [search unit](units/search.md), [design system](design-system.md)
+- **Platform:** Web/API
+- **File(s):** `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/components/screens.tsx`, `web/lib/auth.ts`, `api/app/routers/search.py`, `web/app/globals.css`
+
+- **What:** The search route places a funnel control between the query field and contextual ActionMenu. It opens one shared sort/filter modal. Sort state is URL-backed and supports Most relevant, Newest, and Oldest; People remains relevance-only. Date state is URL-backed and supports Any time, preset ranges, and inclusive custom bounds for Posts and Messages. Applying a refinement reloads results and the funnel shows an accent indicator when a non-default refinement is active.
+- **Edge cases:** Date controls are hidden for People and ignored outside supported result types. Custom ranges require both bounds and reject a start date later than the end date. Reset returns to Most relevant and Any time. Search authorization and visibility remain server-authoritative.
 
 ## Authentication & Accounts
 
@@ -643,7 +655,7 @@ missing evidence can be filled in.
 
 - **What:** Web settings that update account/profile fields call the current-user API and show a success toast after saving. Profile/account fields use icon-only tick save buttons. The Private Profile toggle saves immediately through the API when toggled.
 - **Edge cases:** If an API-backed save fails, the UI reverts to the last known saved value. Theme and privacy changes require an explicit tick confirmation. Direct Messages and Mentions currently use client-side draft/save controls until corresponding backend settings exist.
-- **Presentation:** Each expanded setting shows its title and summary once; its input/control body must not repeat the setting title as a second visible label, while retaining an accessible control name. Every settings row uses a left setting icon, a shrinkable middle setting body, and a right-side action rail; right-side save and action controls are square icon-only controls with accessible labels/tooltips.
+- **Presentation:** Each expanded setting shows its title and summary once; its input/control body must not repeat the setting title as a second visible label, while retaining an accessible control name. Every settings row uses a left setting icon, a shrinkable middle setting body, and a right-side action rail; right-side save and action controls are square icon-only controls with accessible labels/tooltips. Settings tabs are ordered General, Profile, Privacy & Safety, Account, and Subscription; Privacy & Safety groups visibility, communication, and safety controls, while Account places identity/security before metadata and lifecycle actions. Shared primary buttons use a solid accent surface, shared secondary buttons use a translucent accent surface with accent text, and this semantic treatment is independent of whether a button contains text, text plus an icon, or only an icon; contextual post actions retain their specialized treatment.
 
 ### AUTH-R-034 — Empty About Is Owner-Only Prompt
 
@@ -1304,17 +1316,17 @@ missing evidence can be filled in.
 - **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
 - **Edge cases:** This page does not create subscriptions, process payments, or grant paid entitlements. The displayed plan benefits and prices are marketing content and must be updated with the subscription implementation before paid launch.
 
-### CLIENT-R-010 — Subscription Settings Shows The Server-Resolved Plan
+### CLIENT-R-010 — Subscription Settings Shows The Server-Resolved Plan And Available Plans
 
 - **Status:** Active
 - **Effective:** 2026-09-01T00:00:00Z
 - **Related units:** [subscriptions](units/subscriptions.md), [settings](units/settings.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/globals.css`
+- **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/globals.css`
 
-- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the server-resolved effective plan, status, expiry (or no expiration), and a link to the public `/subscriptions` comparison page. Billing and self-service plan changes are not active.
-- **Edge cases:** The summary is presentation-only even though the API entitlement foundation exists; this tab does not process upgrades, payments, cancellations, or paid access.
+- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the server-resolved effective plan's name, price, status, and expiry (or no expiration), followed by divider-bounded Free, Pro, and Pro+ plan rows. The active plan is marked `Current`; paid plan actions display disabled `Coming soon` states while billing is inactive. Plan rows present the implemented PRD benefits: Free includes unlimited posts/replies/quotes, mutual-follower chat, and professional use; Pro adds message requests, profile view count, 512-character posts, and directory listing for registered professionals; Pro+ adds profile/post analytics, feed profile boost, and fewer ads. Billing and self-service plan changes are not active.
+- **Edge cases:** The comparison is presentation-only even though the API entitlement foundation exists; this tab does not process upgrades, payments, cancellations, or paid access. The authenticated screen does not repeat the public availability note because each paid row already communicates `Coming soon`.
 
 ### CLIENT-R-011 — Landing Newsletter Uses Zoho Form Submission
 
@@ -1658,11 +1670,12 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [profiles](units/profiles.md) | PROFILE-R-010 | Profile moderation uses the contextual navigation overflow. |
 | [profiles](units/profiles.md) | PROFILE-R-011 | Profile bootstrap exposes restoration and retry states. |
 | [profiles](units/profiles.md) | PROFILE-R-012 | Professional badge visibility is user-controlled and appears next to the displayed name. |
+| [search](units/search.md) | WEB-R-018 | Search sort and date refinements are URL-backed and scope-aware. |
 | [saved-items](units/saved-items.md) | SAVED-R-001 | Saves are private to the saving user and have no actor list. |
 | [saved-items](units/saved-items.md) | SAVED-R-002 | Deleted, private, blocked, or inaccessible content is omitted |
 | [saved-items](units/saved-items.md) | SAVED-R-003 | One user has at most one active Save per content object. |
 | [saved-items](units/saved-items.md) | SAVED-R-004 | Saved-post navigation uses `/saved/posts`; legacy roots redirect. |
-| [settings](units/settings.md) | SETTINGS-R-001 | Settings uses addressable tabs: `/settings/general`, |
+| [settings](units/settings.md) | SETTINGS-R-001 | Settings uses ordered addressable tabs: General, Profile, |
 | [settings](units/settings.md) | SETTINGS-R-002 | Profile fields Name, Username, About, and private Date of |
 | [settings](units/settings.md) | SETTINGS-R-003 | Username availability is a hint; API/database validation |
 | [settings](units/settings.md) | SETTINGS-R-004 | Privacy changes use draft values and save explicitly; a |
@@ -1679,7 +1692,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [staff-admin](units/staff-admin.md) | STAFF-R-007 | Staff sessions have a separate privileged timeout and can be |
 | [subscriptions](units/subscriptions.md) | SUBS-R-001 | Public plans are informational until billing exists. |
 | [subscriptions](units/subscriptions.md) | SUBS-R-002 | Entitlements are resolved server-side from one assignment; |
-| [subscriptions](units/subscriptions.md) | SUBS-R-003 | Settings shows the current `Friink Free` plan and a View plans |
+| [subscriptions](units/subscriptions.md) | SUBS-R-003 | Settings shows a compact server-resolved current plan and compares |
 | [subscriptions](units/subscriptions.md) | SUBS-R-004 | Paid plan cards show non-action `Coming soon` states until |
 | [subscriptions](units/subscriptions.md) | SUBS-R-005 | Subscription status must not bypass account, connection, |
 

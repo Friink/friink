@@ -66,6 +66,10 @@ contract rather than repeated here.
   accent color.
 - Profile connection actions that include a label use the standard text-button
   layout; icon-only Message and More controls retain `.icon-button` geometry.
+- Search-route refinement uses a funnel icon between the query field and the
+  contextual ActionMenu. The funnel opens one shared modal that groups sorting
+  and date filtering. Applying changes URL-backed state, reloads results, and
+  shows an accent indicator while a non-default refinement is active.
 - Shared profile-picture avatars use the current accent color for their border
   in both light and dark themes.
 - Profile moderation actions use the shell-owned contextual NavigationBar

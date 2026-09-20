@@ -2,6 +2,26 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [search] Implemented URL-backed sort and date refinement. Posts and Messages
+  support relevance/newest/oldest sorting plus preset or custom inclusive date
+  ranges; People remains relevance-only. The funnel modal now applies changes
+  to the API-backed search request.
+
+## 2026-09-21T00:00:00Z
+
+- [search] Added a search-route funnel control between the query field and
+  ActionMenu. It opens a shared Sort and filter modal with sort and date
+  controls as a presentation-only UI; search behavior and API contracts are
+  unchanged.
+
+## 2026-09-21T00:00:00Z
+
+- [docs/rules] Synchronized the active rulebook with this session's UI work:
+  shared primary/secondary button semantics, ordered and regrouped Settings
+  navigation, and the authenticated Subscription plan comparison and copy.
+
+## 2026-09-21T00:00:00Z
+
 - [subscriptions] Removed the redundant paid-plans availability note from the
   authenticated Subscription tab; individual `Coming soon` actions remain.
 

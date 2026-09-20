@@ -1088,6 +1088,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           sidebarCollapsed={sidebarCollapsed}
           isSearchPage={activeScreen === 'search'}
           initialSearchQuery={initialSearchQuery}
+          searchFilter={searchFilter}
           searchScope={activeScreen === 'messages' ? 'messages' : 'global'}
           notificationCount={unreadNotificationCount}
           notifications={notifications}
@@ -1204,7 +1205,20 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 onChange={(id) => {
                   if (!initialSearchQuery) return;
                   const nextFilter = id as 'all' | 'people' | 'posts' | 'messages';
-                  const suffix = nextFilter === 'all' ? '' : `?filter=${nextFilter}`;
+                  const nextParams = new URLSearchParams(searchParams.toString());
+                  if (nextFilter === 'all') nextParams.delete('filter');
+                  else nextParams.set('filter', nextFilter);
+                  if (nextFilter === 'people') {
+                    nextParams.delete('sort');
+                    nextParams.delete('date');
+                    nextParams.delete('date_from');
+                    nextParams.delete('date_to');
+                  } else if (nextFilter === 'all') {
+                    nextParams.delete('date');
+                    nextParams.delete('date_from');
+                    nextParams.delete('date_to');
+                  }
+                  const suffix = nextParams.toString() ? `?${nextParams.toString()}` : '';
                   router.replace(`/search/${encodeURIComponent(initialSearchQuery)}${suffix}`);
                 }}
                 ariaLabel="Search scope"
