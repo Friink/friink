@@ -963,9 +963,11 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/profile-screen.tsx`, `web/app/globals.css`
 
-- **What:** Other-user profile connection actions with labels use the standard
-  text-button layout and keep their icon and label on one line. Icon-only
-  Message and More controls retain the shared icon-button geometry.
+- **What:** Profile Edit, Follow/Unfollow, and Message actions use the primary
+  button treatment. Other-user profile connection actions with labels use the
+  standard text-button layout and keep their icon and label on one line.
+  Icon-only Message and More controls retain the shared icon-button geometry;
+  Message keeps the primary semantic treatment while More remains neutral.
 - **Edge cases:** The connection action remains API-state-driven and may show
   `Follow`, `Following`, or `Cancel request`; its label must not be forced into
   an icon-only grid layout.
@@ -1428,7 +1430,7 @@ missing evidence can be filled in.
 - **Related units:** [connections](units/connections.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** API/infrastructure
-- **File(s):** `api/app/db.py`, `api/app/config.py`, `api/.env.example`, `README.md`, `docs/archives/auth-and-session.md`
+- **File(s):** `api/app/db.py`, `api/app/config.py`, the environment-specific API files, `README.md`, `docs/archives/auth-and-session.md`
 
 - **What:** Database connection management must remain portable across Neon and the planned Ubuntu deployment. Pool behavior is configured by environment, not by platform-specific application branches. The default is a small SQLAlchemy pool (3 base connections plus 2 overflow connections, with pre-ping, LIFO reuse, recycling, and a bounded checkout timeout); pooling can be disabled explicitly when a runtime requires short-lived connections.
 - **Edge cases:** Neon Free has scale-to-zero and connection limits, so a small pool must not be treated as a promise to keep the database warm. Ubuntu values may be increased only after accounting for API worker count and PostgreSQL `max_connections`; total connections across workers and processes are the controlling limit. The local post-pooling sample improved switch completion to approximately 1.0–1.7 seconds, but account-list refresh still reached approximately 12 seconds; continue treating refresh latency as a separate investigation.
@@ -1449,7 +1451,7 @@ missing evidence can be filled in.
 - **Effective:** 2026-09-08T22:33:11Z
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** All
-- **File(s):** `README.md`, `api/.env.example`, `api/alembic/`
+- **File(s):** `README.md`, the environment-specific API files, `api/alembic/`
 
 - **What:** The `development` branch is the local implementation and rehearsal
 - **Do not:** Commit `.env.development`, `.env.staging`, or secrets. Do not use
@@ -1487,7 +1489,7 @@ missing evidence can be filled in.
 - **Effective:** 2026-09-06T23:30:00Z
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** API
-- **File(s):** `api/app/config.py`, `api/app/services/email.py`, `api/.env.example`
+- **File(s):** `api/app/config.py`, `api/app/services/email.py`, the environment-specific API files
 
 - **What:** The API configures one verified `RESEND_FROM_DOMAIN` and generates sender addresses centrally by message purpose: `noreply` for OTP, `hello` for welcome messages, and `security` for security messages. `RESEND_API_KEY` remains server-side only.
 - **Edge cases:** The domain must be verified in Resend, sender aliases must not be repeated across environment variables or email methods, and the full sender address must never be supplied by the frontend. Staging and production configure their own provider credentials and verified sender domain.

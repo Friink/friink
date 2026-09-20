@@ -1,5 +1,77 @@
 # Changelog
 
+## 2026-09-21T00:00:00Z
+
+- [profiles] Promoted profile Edit, Follow/Unfollow, and Message actions to the
+  primary button treatment while preserving the Message button's compact
+  icon-only geometry.
+
+## 2026-09-21T00:00:00Z
+
+- [design] Simplified shared action-button treatments: primary buttons use a
+  solid accent surface, while secondary buttons use a translucent accent
+  surface with accent text. Contextual post actions and icon-only utility
+  controls remain unchanged.
+
+## 2026-09-21T00:00:00Z
+
+- [reliability] Fixed blank public-page loads during slow or unavailable
+  session refreshes by rendering public entry pages immediately and redirecting
+  only after a successful refresh. Local development now points the web client
+  at the local API on `http://localhost:8000`.
+
+## 2026-09-18T16:45:00Z
+
+- [docs] Clarified that local web development uses Next.js's automatic
+  `web/.env.development` loading and local API development must explicitly
+  pass `api/.env.development` to Uvicorn so the production `.env` file is
+  never selected accidentally.
+
+## 2026-09-18T16:39:19Z
+
+- [operations] Aligned the web and API environment-file layout to three
+  environment-specific files: production `.env`, staging `.env.staging`, and
+  development `.env.development`. Removed the obsolete local/template files
+  and mapped the web/API origins to their corresponding Friink domains.
+
+## 2026-09-18T21:34:02Z
+
+- [docs] Completed the documentation audit for the profile drawer navigation
+  fix. Added the neutral other-profile drawer state to the design-system
+  guidance and clarified the isolated Neon PostgreSQL target used by local
+  development; existing rules, design contracts, and unit documentation remain
+  linked and unchanged in ownership.
+
+## 2026-09-18T21:27:55Z
+
+- [navigation] Corrected shared drawer state so other-user profile routes have
+  no active drawer item, while the signed-in user's own profile still activates
+  Profile.
+
+## 2026-09-18T21:26:00Z
+
+- [docs] Added `WEB-R-017` and `NAV-R-006` to make the profile drawer
+  highlight invariant discoverable in the active rules and navigation unit.
+
+## 2026-09-18T01:15:00Z
+
+- [navigation] Stopped browsing another user's profile from incorrectly
+  highlighting the Home drawer item. Profile navigation now reflects the
+  active profile route, leaving no drawer item highlighted for other-user
+  profiles as documented.
+
+## 2026-09-18T00:45:00Z
+
+- [design] Made profile badges card-owned and conditional: `ProfileCard` now
+  renders only active icon-only Professional and Friink Registered badges,
+  with accessible hover labels for their meanings.
+
+## 2026-09-18T00:15:00Z
+
+- [discovery] Added Font Awesome icons to the shared profile badges:
+  `fa-briefcase` for Professional and `fa-shield-halved` for Friink
+  Registered. Both badges remain supported beside one profile name.
+
 ## 2026-09-17T21:11:18Z
 
 - [docs] Audited the session changes across the agent log, changelog, design

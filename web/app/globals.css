@@ -726,9 +726,9 @@ textarea {
 }
 
 .button-secondary {
-  border-color: var(--color-line);
-  color: var(--color-ink);
-  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-line));
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .button-primary:hover,
@@ -4731,6 +4731,19 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .profile-action-edit {
   padding-inline: 1rem;
+}
+
+.profile-actions > .button-primary.icon-button {
+  border-color: var(--color-accent);
+  color: var(--color-paper);
+  background: var(--color-accent);
+}
+
+.profile-actions > .button-primary.icon-button:hover,
+.profile-actions > .button-primary.icon-button:focus-visible {
+  border-color: var(--color-accent);
+  color: var(--color-paper);
+  background: var(--color-accent);
 }
 
 .profile-connection-action {

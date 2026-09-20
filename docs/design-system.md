@@ -180,6 +180,10 @@ with `#7a7a7a` on hover so it remains visible without appearing washed out.
 
 - Each surface should have one visually clear primary action.
 - Secondary actions should remain available without competing with completion.
+- Shared primary buttons use a solid accent surface with contrasting text;
+  shared secondary buttons use a translucent accent surface with accent text.
+  This semantic treatment is independent of whether the button contains text,
+  text and an icon, or only an icon.
 - Icon-only controls require accessible labels and tooltips where appropriate.
 - Destructive actions require explicit confirmation and explain consequences.
 
