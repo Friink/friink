@@ -70,6 +70,11 @@ contract rather than repeated here.
   contextual ActionMenu. The funnel opens one shared modal that groups sorting
   and date filtering. Applying changes URL-backed state, reloads results, and
   shows an accent indicator while a non-default refinement is active.
+- Chat list rows show the participant's avatar and display name once. Their
+  secondary line communicates unread count or latest-message receipt state;
+  Muted and Archived are reserved for their dedicated tabs. Mute and archive
+  row actions are borderless contextual icon controls with accent hover,
+  focus, and active treatments.
 - Shared profile-picture avatars use the current accent color for their border
   in both light and dark themes.
 - Profile moderation actions use the shell-owned contextual NavigationBar

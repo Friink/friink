@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { ProfileCard } from '@/components/profile-card';
+import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
 import { ActionMenu } from '@/components/action-menu';
 import { navItems } from '@/lib/data';
 import { acceptChatRequest, listConversations, loadAuthSession, searchContent, updateChatSettings, type ApiConversation, type ApiSearchResult } from '@/lib/auth';
@@ -21,6 +21,23 @@ export function QuestionsScreen() {
 
 type MessagesTab = 'all' | 'muted' | 'requests' | 'archived';
 export type DirectoryTab = 'all' | 'professionals' | 'registered';
+
+function getConversationStatus(conversation: ApiConversation, currentUserId: string | undefined) {
+  if (conversation.unread_count > 0) {
+    return `${conversation.unread_count} new message${conversation.unread_count === 1 ? '' : 's'}`;
+  }
+  if (conversation.status === 'pending' && conversation.requester_id !== currentUserId) {
+    return 'New message';
+  }
+  if (conversation.preview_sender_id === currentUserId && conversation.preview_receipt_status) {
+    return conversation.preview_receipt_status === 'read'
+      ? 'Seen'
+      : conversation.preview_receipt_status === 'delivered'
+        ? 'Delivered'
+        : 'Sent';
+  }
+  return conversation.preview || 'No messages yet';
+}
 
 export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
   const router = useRouter();
@@ -114,7 +131,9 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
             key={conversation.id}
             avatar={
               <Link className="message-row-profile" href={`/${conversation.participant.username}`} aria-label={`Open ${conversation.participant.display_name || conversation.participant.username} profile`}>
-                <ProfileCard name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} showProfessionalBadge={conversation.participant.show_professional_badge} />
+                <span className="profile-card-avatar user-avatar avatar-mint profile-card-avatar-image">
+                  <img src={conversation.participant.profile_picture_url || DEFAULT_PROFILE_IMAGE} alt="" />
+                </span>
               </Link>
             }
             title={
@@ -122,14 +141,13 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
                 {conversation.participant.display_name || conversation.participant.username}
               </Link>
             }
-            subtitle={conversation.preview}
+            subtitle={getConversationStatus(conversation, loadAuthSession()?.user.id)}
             meta={formatRelativeTime(conversation.updated_at)}
             trailing={
               <span className="chat-row-actions">
                 {conversation.status === 'pending' && conversation.requester_id !== loadAuthSession()?.user.id ? <button className="text-link" type="button" onClick={(event) => { event.stopPropagation(); acceptRequest(conversation).catch(() => undefined); }}>Accept</button> : null}
-                <button className="icon-button" type="button" aria-label={conversation.muted ? 'Unmute chat' : 'Mute chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { muted: !conversation.muted }).catch(() => undefined); }}><i className={`fa-solid ${conversation.muted ? 'fa-bell' : 'fa-bell-slash'}`} aria-hidden="true" /></button>
-                <button className="icon-button" type="button" aria-label={conversation.archived ? 'Unarchive chat' : 'Archive chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { archived: !conversation.archived }).catch(() => undefined); }}><i className={`fa-solid ${conversation.archived ? 'fa-box-open' : 'fa-box-archive'}`} aria-hidden="true" /></button>
-                {conversation.unread_count > 0 ? <span className="unread-count-pill" aria-label={`${conversation.unread_count} unread message${conversation.unread_count === 1 ? '' : 's'}`}>{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span> : null}
+                <button className="icon-button chat-row-action" type="button" aria-label={conversation.muted ? 'Unmute chat' : 'Mute chat'} aria-pressed={conversation.muted} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { muted: !conversation.muted }).catch(() => undefined); }}><i className={`fa-solid ${conversation.muted ? 'fa-bell' : 'fa-bell-slash'}`} aria-hidden="true" /></button>
+                <button className="icon-button chat-row-action" type="button" aria-label={conversation.archived ? 'Unarchive chat' : 'Archive chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { archived: !conversation.archived }).catch(() => undefined); }}><i className={`fa-solid ${conversation.archived ? 'fa-box-open' : 'fa-box-archive'}`} aria-hidden="true" /></button>
               </span>
             }
             unread={conversation.unread}

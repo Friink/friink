@@ -1361,7 +1361,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0017_add_chat_read_receipts.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`, `web/app/globals.css`, `docs/archives/read-receipts.md`
 
 - **What:** Chat exposes sent, delivered, and read states. A visible app-level inbox sync or the full conversation endpoint records delivery; the visible conversation advances the viewer's read cursor through an idempotent endpoint. Polling returns receipt metadata even without new messages, so tick state can change on the existing 4-second cycle.
-- **Edge cases:** Unread counts include only incoming messages; a user's own outgoing messages are never unread for that user. Counts appear as row pills plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. A visible inbox sync marks discovered incoming messages delivered, but only viewport visibility/scroll advances read state. Read cursors advance monotonically across earlier messages and receipt/unread state synchronizes across refreshes, devices, and browser tabs. Mute and archive do not change receipt state. Blocked conversations do not advance or expose delivery/read receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled; disabling the setting hides both participants' read state while delivery remains visible. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
+- **Edge cases:** Unread counts include only incoming messages; a user's own outgoing messages are never unread for that user. Counts appear in the conversation-row state line plus an in-conversation unread separator. Pending requests use the same receipt rules without treating read as acceptance. A visible inbox sync marks discovered incoming messages delivered, but only viewport visibility/scroll advances read state. Read cursors advance monotonically across earlier messages and receipt/unread state synchronizes across refreshes, devices, and browser tabs. Mute and archive do not change receipt state. Blocked conversations do not advance or expose delivery/read receipts while the block is active. Read receipts use mutual privacy: both users must have the preference enabled; disabling the setting hides both participants' read state while delivery remains visible. The preference is persisted and editable in Settings > Privacy. Chat messages are limited to 2,048 Unicode characters.
 
 ### CLIENT-R-014 — Chat List Refreshes Through Visibility-Aware Polling
 
@@ -1374,6 +1374,17 @@ missing evidence can be filled in.
 
 - **What:** The `/chats` conversation-list screen refreshes `GET /chat/conversations` every 4 seconds while visible. Each response refreshes previews, latest-activity ordering, unread counts, unread styling, and the row state for the currently selected All, Muted, Requests, or Archived tab.
 - **Edge cases:** Polling pauses without requests or timer rescheduling while the document is hidden, resumes immediately on visibility or focus recovery, prevents overlapping requests, and cleans up its timer and listeners on unmount. The server remains authoritative for filtering and unread counts; no database migration or separate unread-count endpoint is required.
+
+### CLIENT-R-014A — Chat Rows Separate Identity From Conversation State
+
+- **Status:** Active
+- **Effective:** 2026-09-21T00:00:00Z
+- **Related units:** [chat](units/chat.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** Web/API
+- **File(s):** `api/app/schemas/chat.py`, `api/app/services/chat.py`, `web/lib/auth.ts`, `web/components/screens.tsx`, `web/app/globals.css`
+
+- **What:** Conversation rows render an avatar-only profile link and one display-name title. The secondary line shows an unread count or `New message`, the latest outgoing message's `Sent`, `Delivered`, or `Seen` state, or the latest incoming preview. States with dedicated tabs—Muted, Requests, and Archived—are represented by those tabs only and must not be repeated as row metadata elsewhere. Mute and archive actions are borderless contextual icon controls with accent hover, focus, and active treatments.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 
@@ -1620,6 +1631,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [chat](units/chat.md) | CHAT-R-005 | Visible-app polling is adaptive and pauses while hidden; |
 | [chat](units/chat.md) | CHAT-R-006 | Transport failure must remain distinct from policy-disabled |
 | [chat](units/chat.md) | CHAT-R-007 | Blocked or no-longer-mutual chats remain readable but read-only |
+| [chat](units/chat.md) | CHAT-R-009 | Conversation rows render identity once and use the secondary |
 | [connections](units/connections.md) | CONNECTIONS-R-001 | Relationships are directional; accepted rows count as |
 | [connections](units/connections.md) | CONNECTIONS-R-002 | Public accounts accept follows immediately. |
 | [connections](units/connections.md) | CONNECTIONS-R-003 | Private accounts require pending requests and expose a |

@@ -4796,6 +4796,26 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   padding-inline: 1rem;
 }
 
+.chat-row-action {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.chat-row-action:hover,
+.chat-row-action:focus-visible,
+.chat-row-action[aria-pressed='true'] {
+  border: 0;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  outline: none;
+}
+
 .profile-actions > .button-primary.icon-button {
   border-color: var(--color-accent);
   color: var(--color-paper);

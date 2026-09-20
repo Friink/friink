@@ -1287,6 +1287,8 @@ export type ApiConversation = {
   id: string;
   participant: ApiChatUser;
   preview: string | null;
+  preview_sender_id: string | null;
+  preview_receipt_status: 'sent' | 'delivered' | 'read' | null;
   updated_at: string;
   unread: boolean;
   status: 'pending' | 'accepted' | 'blocked' | string;

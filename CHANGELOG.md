@@ -2,6 +2,19 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [rules/chat] Clarified that tab-owned chat states—Muted, Requests, and
+  Archived—must appear only in their dedicated tabs, not as repeated row
+  metadata.
+
+## 2026-09-21T00:00:00Z
+
+- [chat] Fixed conversation-row hierarchy by removing the duplicated profile
+  identity, adding unread/receipt state copy, and making mute/archive actions
+  borderless with accent hover and active states. Muted and Archived remain
+  represented by their dedicated tabs.
+
+## 2026-09-21T00:00:00Z
+
 - [search] Implemented URL-backed sort and date refinement. Posts and Messages
   support relevance/newest/oldest sorting plus preset or custom inclusive date
   ranges; People remains relevance-only. The funnel modal now applies changes

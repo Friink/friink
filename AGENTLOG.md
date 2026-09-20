@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Fix chat list row hierarchy and controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove duplicate identity content from chat rows and simplify contextual controls.
+- Changes Made: Replaced the nested chat-row ProfileCard with an avatar-only link; added API-backed latest-message sender and receipt metadata; rendered unread/request and sent/delivered/seen state on the secondary line; made mute/archive controls borderless with accent hover/focus/active treatments; updated chat/design documentation and active rules.
+- Verification Status: TypeScript, Python compilation, and diff checks passed. Local web/API health returned HTTP 200, but the available local browser session remained stuck on authentication restore; the targeted chat pytest run was blocked by a Windows temporary SQLite file-lock cleanup error.
+
 ## 2026-09-21T00:00:00Z — Reorder Settings tabs
 
 - Agent: Codex
