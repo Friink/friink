@@ -2,6 +2,12 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [docs/subscriptions] Documented the planned manual-subscription UX:
+  confirmation summaries, staff/user visibility, lifecycle notifications,
+  expiry behavior, paid-feature gating, and end-to-end staff and user flows.
+
+## 2026-09-21T00:00:00Z
+
 - [chat] Kept the direct-chat participant header sticky below the global top
   bar while preserving page-level conversation scrolling.
 
