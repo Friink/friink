@@ -3,7 +3,7 @@
 Subscriptions describes Friink plans, current entitlement presentation, and
 the boundary between informational plans and future billing.
 
-**Status:** Partial — informational plans, server-resolved summaries, and manual staff assignment are active; billing is not active
+**Status:** Partial — informational plans, server-resolved summaries, manual staff assignment, and server entitlement enforcement are active; billing is not active
 **Tier:** Standard  
 **Last edited:** 2026-09-21T00:00:00Z
 **Platforms:** Web and API
@@ -61,6 +61,12 @@ days of nonpayment.
 Pricing, introductory offers, automatic renewal, and nonpayment revocation are
 future billing behavior. They are not active while billing and payment
 integration remain unavailable.
+
+The API enforces the `message_requests` entitlement for non-mutual chat
+requests and the `longer_posts` entitlement for post content above the Free
+256-character limit. The professional-directory gate also resolves from the
+server entitlement contract. The remaining Pro/Pro+ entitlement keys are
+declared for future feature APIs and do not yet have domain surfaces.
 
 ## Rules
 
@@ -140,8 +146,8 @@ assignment lifecycle notifications rather than billing or renewal notices.
 ### Recommended UX contract (planned)
 
 The following decisions define the intended experience for the manual process.
-The plan-change confirmation summary is implemented; notifications, reminders,
-and the remaining paid-feature surfaces remain planned.
+The plan-change confirmation summary is implemented; lifecycle notifications,
+reminders, and the remaining paid-feature surfaces remain planned.
 
 - Manual access must never be described as a purchase, payment, upgrade, or
   renewal. Use `Grant access`, `Change access`, and `Return to Free`.

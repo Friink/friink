@@ -2,6 +2,13 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [subscriptions/backend] Wired non-mutual chat requests and long-post
+  validation to server-resolved entitlements. Subscription responses now
+  expose active entitlement keys; updated chat/subscription documentation and
+  targeted tests.
+
+## 2026-09-21T00:00:00Z
+
 - [rules/design] Removed the profile-setup JSX inline style, corrected the
   server-resolved subscription wording, aligned private-post quote behavior,
   assigned a unique TopBar rule ID, and marked the superseded auth-refresh

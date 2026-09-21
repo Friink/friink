@@ -903,8 +903,8 @@ missing evidence can be filled in.
 - **Platform:** All
 - **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/components/app-shell.tsx`, `web/components/composer.tsx`
 
-- **What:** Backend post content is capped at 512 characters. Normal posts and replies require non-blank content; quote posts may be created without typed quote text when `quoted_post_id` is present. The web floating post composer also applies a frontend-only 256-character entry limit and displays an `x/256` counter.
-- **Edge cases:** Media-only posts are allowed when the payload contains confirmed post-media items, and media is limited to 8 items. The frontend's 256-character composer limit is stricter than the backend's 512-character API maximum.
+- **What:** Backend post content is capped at 512 characters. Free users are limited to 256 characters; the server-resolved `longer_posts` entitlement permits up to 512 characters. Normal posts and replies require non-blank content; quote posts may be created without typed quote text when `quoted_post_id` is present. The web floating post composer also applies a frontend-only 256-character entry limit and displays an `x/256` counter.
+- **Edge cases:** Media-only posts are allowed when the payload contains confirmed post-media items, and media is limited to 8 items. The API remains authoritative when a client submits more than the Free limit, and rejects the request unless the server-resolved `longer_posts` entitlement is active.
 
 ### POST-R-003 — Create Payload Must Match Post Kind
 
@@ -1349,7 +1349,7 @@ missing evidence can be filled in.
 - **Platform:** Web/API
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/models/notification.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0016_add_chat_requests_and_settings.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`
 
-- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
+- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A user with the server-resolved `message_requests` entitlement may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
 - **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription checkout/billing remains future work; blocking and profile access enforcement are governed by their active rules. See `docs/archives/chat-behavior.md`.
 
 ### CLIENT-R-013 — Chat Read Receipts Use Per-User Cursors
@@ -1637,7 +1637,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [blocking](units/blocking.md) | BLOCK-R-006 | Blocking creates no notification and self-blocking is rejected. |
 | [blocking](units/blocking.md) | BLOCK-R-007 | Server-side checks are authoritative for direct URLs and API |
 | [chat](units/chat.md) | CHAT-R-001 | Mutual accepted follows enable ordinary direct chat. |
-| [chat](units/chat.md) | CHAT-R-002 | A paid-tier user may initiate a non-mutual request subject to |
+| [chat](units/chat.md) | CHAT-R-002 | A user with the server-resolved message_requests entitlement may initiate a non-mutual request. |
 | [chat](units/chat.md) | CHAT-R-003 | Pending requests appear in Requests; accepted conversations |
 | [chat](units/chat.md) | CHAT-R-004 | Read receipts are tracked per user with server-authoritative |
 | [chat](units/chat.md) | CHAT-R-005 | Visible-app polling is adaptive and pauses while hidden; |

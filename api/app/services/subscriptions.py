@@ -43,10 +43,25 @@ def effective_plan(user: User, session: Session) -> Plan:
     return session.execute(select(Plan).where(Plan.code == FREE_CODE)).scalar_one()
 
 def has_entitlement(user: User, key: str, session: Session) -> bool:
+    if key not in ENTITLEMENTS:
+        return False
     assignment = active_assignment(session, user)
     if assignment is None:
         return False
     return session.execute(select(PlanEntitlement).where(PlanEntitlement.plan_id == assignment.plan_id, PlanEntitlement.entitlement_key == key)).scalar_one_or_none() is not None
+
+
+def entitlements_for(user: User, session: Session) -> list[str]:
+    assignment = active_assignment(session, user)
+    if assignment is None:
+        return []
+    return sorted(
+        row.entitlement_key
+        for row in session.execute(
+            select(PlanEntitlement).where(PlanEntitlement.plan_id == assignment.plan_id)
+        ).scalars()
+        if row.entitlement_key in ENTITLEMENTS
+    )
 
 def effective_status(assignment: SubscriptionAssignment, now: datetime | None = None) -> str:
     if assignment.status == "revoked":

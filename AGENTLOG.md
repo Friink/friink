@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Enforce server subscription entitlements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the non-billing subscription backend while leaving
+  UI work deferred.
+- Changes Made: Added active entitlement keys to the subscription response,
+  replaced the legacy chat tier check with `message_requests`, enforced the
+  `longer_posts` entitlement for content above 256 characters, updated chat
+  and subscription unit contracts, and migrated targeted tests to real plan
+  assignments.
+- Verification Status: Targeted subscription/chat/post/blocking tests pass
+  (34 passed across the focused runs). Full API suite: 155 passed and 5
+  unrelated pre-existing failures remain in auth test doubles, SQLite audit
+  locking/isolation, and one overlong test username.
+
 ## 2026-09-21T00:00:00Z — Align rules and shared profile-setup styling
 
 - Agent: Codex

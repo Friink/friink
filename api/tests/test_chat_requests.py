@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
 
@@ -6,6 +7,7 @@ from api.index import app
 from app.db import get_session_factory
 from app.models.chat import UserBlock
 from app.models.user import User
+from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignment
 
 
 def _signup(client: TestClient, suffix: str) -> tuple[uuid.UUID, str, str]:
@@ -42,13 +44,26 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
             assert recipient
             requester_public_id = requester.public_id
             recipient_public_id = recipient.public_id
-            requester.subscription_tier = "pro"
+            pro = session.execute(select(Plan).where(Plan.code == "friink_pro")).scalar_one_or_none()
+            if pro is None:
+                pro = Plan(code="friink_pro", name="Friink Pro", description="Professional and communication features")
+                session.add(pro)
+                session.flush()
+            entitlement = session.execute(select(PlanEntitlement).where(PlanEntitlement.plan_id == pro.id, PlanEntitlement.entitlement_key == "message_requests")).scalar_one_or_none()
+            if entitlement is None:
+                session.add(PlanEntitlement(plan_id=pro.id, entitlement_key="message_requests"))
+            session.add(SubscriptionAssignment(user_id=requester.id, plan_id=pro.id, starts_at=datetime.now(UTC), status="active", granted_by_user_id=requester.id, reason="chat test"))
             session.commit()
 
         requester_access = _access(client, requester_email)
         recipient_access = _access(client, recipient_email)
         requester_headers = {"Authorization": f"Bearer {requester_access}"}
         recipient_headers = {"Authorization": f"Bearer {recipient_access}"}
+
+        subscription_response = client.get("/subscriptions/me", headers=requester_headers)
+        assert subscription_response.status_code == 200, subscription_response.text
+        assert subscription_response.json()["plan_code"] == "friink_pro"
+        assert subscription_response.json()["entitlements"] == ["message_requests"]
 
         new_context = client.post(f"/chat/conversations/with/{recipient_username}", headers=requester_headers)
         assert new_context.status_code == 200

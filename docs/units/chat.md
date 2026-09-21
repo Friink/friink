@@ -26,8 +26,9 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 ## Rules
 
 - **CHAT-R-001:** Mutual accepted follows enable ordinary direct chat.
-- **CHAT-R-002:** A paid-tier user may initiate a non-mutual request subject to
-  the requester message cap; the receiver must accept or reply as specified.
+- **CHAT-R-002:** A user with the server-resolved `message_requests`
+  entitlement may initiate a non-mutual request subject to the requester
+  message cap; the receiver must accept or reply as specified.
 - **CHAT-R-003:** Pending requests appear in Requests; accepted conversations
   appear in All; mute and archive affect placement/notifications, not ownership.
 - **CHAT-R-004:** Read receipts are tracked per user with server-authoritative
@@ -77,7 +78,8 @@ mute and archive. Read operations use per-user cursors and server checks.
 ## Acceptance criteria
 
 - [ ] **CHAT-AC-001** Ordinary access requires mutual accepted follows.
-- [ ] **CHAT-AC-002** Request and paid-tier message limits are enforced server-side.
+- [x] **CHAT-AC-002** Request and paid-tier message limits are enforced
+  server-side from the subscription entitlement contract.
 - [ ] **CHAT-AC-003** Delivered and read states remain distinct.
 - [ ] **CHAT-AC-004** Hidden-tab polling pauses and recovery refreshes state.
 - [ ] **CHAT-AC-005** Transport failure never invents a policy state.

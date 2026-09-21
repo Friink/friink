@@ -25,6 +25,7 @@ class SubscriptionResponse(BaseModel):
     status: str
     assignment_id: str | None
     assignment_status: str | None = None
+    entitlements: list[str] = Field(default_factory=list)
 
 class SubscriptionAssignmentResponse(SubscriptionResponse):
     user_id: str

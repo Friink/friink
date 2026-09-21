@@ -145,6 +145,24 @@ def test_post_content_accepts_512_characters() -> None:
     assert CreatePostRequest(content="x" * 512).content == "x" * 512
 
 
+@pytest.mark.asyncio
+async def test_free_users_cannot_create_posts_over_256_characters(monkeypatch: pytest.MonkeyPatch) -> None:
+    user = User(
+        id=uuid.uuid4(),
+        email="free@example.com",
+        username="free",
+        password_hash="hash",
+        date_of_birth=date(2000, 1, 1),
+    )
+
+    monkeypatch.setattr("app.services.posts.has_entitlement", lambda *_args: False)
+
+    with pytest.raises(HTTPException) as error:
+        await create_post(object(), user, CreatePostRequest(content="x" * 257))
+
+    assert error.value.status_code == 403
+
+
 def test_extract_mentioned_usernames_deduplicates_valid_mentions() -> None:
     assert extract_mentioned_usernames("Hi @areeba, @areeba and (@muflah). email@domain.com") == ["areeba", "muflah"]
 
