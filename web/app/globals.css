@@ -4106,19 +4106,17 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .chat-screen {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  height: calc(100vh - var(--space-topbar-height));
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  min-height: calc(100vh - var(--space-topbar-height));
+  overflow: visible;
   padding-bottom: 0;
-  padding-top: 0;
+  padding-top: var(--space-topbar-height);
 }
 
 .chat-header {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: var(--space-topbar-height);
+  left: var(--space-content-inset-inline);
+  right: var(--space-content-inset-inline);
   z-index: 4;
   flex: 0 0 auto;
   min-height: var(--space-topbar-height);
@@ -4126,8 +4124,15 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   padding: 0 var(--space-content-inset-inline);
   border-bottom: 1px solid var(--color-line);
   box-sizing: border-box;
-  width: 100%;
+  width: auto;
   background: var(--color-paper);
+}
+
+@media (min-width: 768px) {
+  .chat-header {
+    left: calc(var(--desktop-sidebar-width) + max(var(--space-content-inset-inline), (100vw - var(--desktop-sidebar-width) - var(--space-content-col)) / 2));
+    right: max(var(--space-content-inset-inline), (100vw - var(--desktop-sidebar-width) - var(--space-content-col)) / 2);
+  }
 }
 
 .chat-contact-link {

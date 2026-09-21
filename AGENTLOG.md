@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T00:00:00Z — Make chat header fixed with document scrolling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the inner chat scrollbar and keep only messages
+  moving while the participant header remains fixed below the global bar.
+- Changes Made: Restored document-level scrolling, fixed the participant
+  header to the centered content rail, restored document-based initial scroll
+  and read visibility, and synchronized the chat/design rules and logs.
+- Verification Status: `npx tsc --noEmit --incremental false`,
+  `npm run build -- --webpack`, and `git diff --check` passed. The build used
+  the existing WASM fallback because the installed native SWC binary is not a
+  valid Win32 application. Browser visual verification was limited because
+  the local browser session was not authenticated for the chat route.
+
 ## 2026-09-22T00:00:00Z — Fix direct-chat sticky header scrolling
 
 - Agent: Codex
