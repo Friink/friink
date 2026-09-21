@@ -2,6 +2,11 @@
 
 ## 2026-09-22T00:00:00Z
 
+- [chat] Removed the nested chat scrollbar and fixed the participant header
+  below the global top bar while messages use the document scrollbar.
+- [docs/design] Synchronized the chat scroll contract with the fixed-header,
+  document-scroll implementation.
+
 - [chat] Fixed direct-chat scrolling so the centered chat column owns one
   contained native scrollbar and the participant header remains sticky without
   widening the content surface.
