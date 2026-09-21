@@ -1389,7 +1389,7 @@ missing evidence can be filled in.
 
 - **What:** Conversation rows render an avatar-only profile link and one display-name title. The secondary line shows an unread count or `New message`, the latest outgoing message's `Sent`, `Delivered`, or `Seen` state, or the latest incoming preview. States with dedicated tabs—Muted, Requests, and Archived—are represented by those tabs only and must not be repeated as row metadata elsewhere. Mute and archive actions are borderless contextual icon controls with accent hover, focus, and active treatments.
 
-### CLIENT-R-014B — Direct Chat Uses Page-Level Scrolling
+### CLIENT-R-014B — Direct Chat Uses Contained Column Scrolling
 
 - **Status:** Active
 - **Effective:** 2026-09-21T00:00:00Z
@@ -1398,7 +1398,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/[username]/chat/chat-client.tsx`, `web/app/globals.css`, `web/components/app-shell.tsx`
 
-- **What:** Username-scoped conversation pages use the document viewport as their vertical scroll surface. The participant header remains sticky below the global top bar while the message history shares the page scrollbar; the message list must not create a nested scroll container. The fixed contextual composer remains clear of the final message through shared page spacing, and read-state visibility uses the viewport.
+- **What:** Username-scoped conversation pages use the centered `ContentBox` chat column as one contained native vertical scroll surface. The participant header remains sticky at the top of that column below the global top bar while the message history shares the column scrollbar; the message list must not create a separate nested scroll container or widen beyond the shared content cap. The fixed contextual composer remains clear of the final message through shared page spacing, and read-state visibility uses the chat scroll surface.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 

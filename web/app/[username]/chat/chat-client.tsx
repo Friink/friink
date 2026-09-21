@@ -81,16 +81,19 @@ export function ChatClient({ username }: ChatClientProps) {
   useEffect(() => {
     if (!conversation?.id || !messages.length || initiallyScrolledConversationRef.current === conversation.id) return;
     initiallyScrolledConversationRef.current = conversation.id;
+    const scrollSurface = document.querySelector<HTMLElement>('.chat-screen');
+    if (!scrollSurface) return;
     const frame = window.requestAnimationFrame(() => {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
+      scrollSurface.scrollTo({ top: scrollSurface.scrollHeight, behavior: 'auto' });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [conversation?.id, messages.length]);
 
   useEffect(() => {
+    const scrollSurface = document.querySelector<HTMLElement>('.chat-screen');
     const container = document.querySelector('.chat-messages');
     const session = loadAuthSession();
-    if (!container || !conversation || !user || !session || !messages.length || chatAccessDenied) return;
+    if (!scrollSurface || !container || !conversation || !user || !session || !messages.length || chatAccessDenied) return;
     const observer = new IntersectionObserver((entries) => {
       let furthestVisibleIncoming: ApiMessage | null = null;
       for (const entry of entries) {
@@ -105,7 +108,7 @@ export function ChatClient({ username }: ChatClientProps) {
       lastReadMessageRef.current = furthestVisibleIncoming.id;
       setReceiptState((current) => ({ ...current, lastReadMessageId: furthestVisibleIncoming!.id, unreadCount: Math.max(0, current.unreadCount - messages.filter((message, index) => index > currentIndex && index <= visibleIndex && message.sender_id !== user.id).length), firstUnreadMessageId: messages.find((message, index) => index > visibleIndex && message.sender_id !== user.id)?.id || null }));
       void new PollingChatTransport(session.accessToken).markRead(conversation.id, furthestVisibleIncoming.id).catch(() => undefined);
-    }, { threshold: 0.6 });
+    }, { root: scrollSurface, threshold: 0.6 });
     container.querySelectorAll('[data-message-id]').forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, [chatAccessDenied, conversation?.id, messages, user]);

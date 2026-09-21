@@ -45,11 +45,11 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 - **CHAT-R-009:** Conversation rows render identity once and use the secondary
   line for conversation state; Muted and Archived remain represented by their
   dedicated tabs rather than row labels.
-- **CHAT-R-010:** Direct conversation pages use the document viewport as their
-  vertical scroll surface. The participant header, message history, and page
-  content must not create a nested message-only scrollbar. The participant
-  header remains sticky below the global top bar, and the fixed composer
-  remains clear of the final messages.
+- **CHAT-R-010:** Direct conversation pages use the centered chat content
+  column as a contained native vertical scroll surface. The participant
+  header remains sticky at the top of that column, the message list does not
+  create a separate message-only scrollbar, and the shared content-width cap
+  remains intact. The fixed composer remains clear of the final messages.
 
 ## UX and flows
 
@@ -64,10 +64,11 @@ Conversations use `/{username}/chat`. The composer communicates policy states
 such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
-The direct conversation page scrolls as one document, so the participant
-header and message history share the browser/app scrollbar rather than placing
-scrolling inside the message list. The participant card stays pinned below the
-global top bar while the conversation is scrolled.
+The direct conversation page scrolls within its centered chat content column,
+so the participant header and message history share one native scrollbar while
+the message list does not become its own scroll surface. The participant card
+stays pinned to the top of that column, below the global top bar, while the
+conversation is scrolled. The shared content-width cap is preserved.
 
 ## Technical contract
 
