@@ -40,3 +40,66 @@ conversation search, hashtag search, live personalized suggestions, typo
 tolerance, match highlighting, advanced ranking, analytics, personalization,
 and a dedicated search service. Revisit those decisions using measured query
 latency, dataset size, usage patterns, and user feedback—not speculation.
+
+## UI/UX consistency audit backlog
+
+**Recorded:** 2026-09-21T00:00:00Z
+**Status:** Audit backlog; no product behavior is changed by this note.
+
+The following gaps were identified against [`docs/design-system.md`](design-system.md)
+and [`packages/design/design.md`](../packages/design/design.md). They are
+recommendations for future cleanup, not active implementation rules.
+
+1. **Button hover and active states.** Shared primary and secondary buttons
+   currently establish the surface treatment but do not always communicate a
+   sufficiently distinct hover or pressed state. Primary buttons should deepen
+   the solid accent surface; secondary buttons should strengthen their
+   translucent accent surface; both need a clear active/pressed treatment.
+2. **Subscription status language.** Settings and Control Panel surfaces use
+   different capitalization and labels for equivalent states, such as
+   `Active`, `active`, `Expired`, `Revoked`, and `Free default`. Normalize the
+   vocabulary and capitalization across member and staff views.
+3. **Disabled subscription actions.** Current-plan, available, and coming-soon
+   states are presented as disabled buttons in some places. Use non-interactive
+   status badges or labels when there is no action, reserving buttons for an
+   operation the user can perform.
+4. **Actionable-row hover behavior.** Generic list rows provide a hover surface,
+   while settings rows intentionally remain transparent. Decide whether
+   actionable settings and administrative rows need a shared, subtle hover
+   affordance and document the exception when they do not.
+5. **Icon-only control variants.** The platform mixes bordered neutral utility
+   controls, borderless contextual controls, and compact accent controls. Define
+   explicit icon-button variants so the difference is intentional rather than
+   route-specific.
+6. **Control Panel discoverability and copy.** Some Control Panel descriptions
+   still describe subscription or professional-registration capabilities as
+   planned even though related staff workflows are present. Align visible copy
+   and documentation with the actual capability and its remaining release gate.
+7. **Subscription administration terminology.** Staff actions use labels such as
+   `Adjust plan`, while the clearer workflow vocabulary is `Grant access`,
+   `Change access`, and `Return to Free`. Normalize action names and retain
+   explicit manual-access/non-payment language.
+8. **Status styling.** Subscription, registration, and lifecycle states are not
+   consistently represented as status labels or badges, and raw capitalization
+   varies. Use restrained status treatments with text always carrying the
+   meaning; color should not be the only signal.
+9. **Auth/session recovery surface.** The local Control Panel can show a session
+   recovery message in a standalone-looking surface rather than the normal app
+   shell. Keep recovery messaging, spacing, and button treatment consistent with
+   the shared shell where possible. This is an operational UX concern, not a
+   request to change authentication behavior.
+
+### Intentional contextual exceptions
+
+The following should remain contextual exceptions unless a later audit shows a
+specific usability problem: public subscription marketing cards, FeedPost
+Share/More controls, the compact profile Message control, and chat mute/archive
+controls. Their distinct treatment is acceptable when it reflects their
+compact, contextual, or destructive/utility role.
+
+### Recommended order of work
+
+Start with shared button hover/active behavior, then normalize subscription
+status language and actions, align Control Panel copy, formalize icon-button
+variants, and finally revisit actionable-row hover behavior. This sequence
+reduces the most visible inconsistency without requiring a broad redesign.

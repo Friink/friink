@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Record UI/UX consistency audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Put the identified platform UI/UX gaps in `docs/notes.md`.
+- Changes Made: Added the audit backlog, intentional contextual exceptions, and
+  recommended prioritization. No product behavior was changed.
+- Verification Status: Markdown link-target checks and `git diff --check` passed.
+
 ## 2026-09-21T00:00:00Z — Move direct chat scrolling to the page
 
 - Agent: Codex

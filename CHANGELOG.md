@@ -2,6 +2,13 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [docs/notes] Recorded the UI/UX consistency audit backlog, intentional
+  contextual exceptions, and recommended cleanup order across buttons,
+  subscription states, Control Panel surfaces, rows, icon controls, and
+  recovery messaging.
+
+## 2026-09-21T00:00:00Z
+
 - [control-panel/subscriptions] Added a plan-change review summary showing the
   selected user, plan, duration, current assignment, and replacement effect
   before manual access is confirmed.
