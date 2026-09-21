@@ -209,7 +209,7 @@ export function ProfileSetupWizard({ user, onUserChange, onToast }: ProfileSetup
           <span className="profile-setup-eyebrow">Make it yours</span>
           <p className="profile-setup-progress">Step {step} of 3</p>
           <div className="profile-setup-progress-track" role="progressbar" aria-label={`Profile setup progress: step ${step} of 3`} aria-valuemin={1} aria-valuemax={3} aria-valuenow={step}>
-            <span style={{ width: `${step * 33.3333}%` }} />
+            <span className={`profile-setup-progress-fill profile-setup-progress-fill-step-${step}`} />
           </div>
           <p className="profile-setup-intro-copy">A couple of small details help people recognize you around Friink.</p>
         </div>

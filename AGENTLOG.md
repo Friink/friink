@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Align rules and shared profile-setup styling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the audited rule/code and documentation gaps without
+  changing the established private-post quote UX.
+- Changes Made: Replaced the profile setup progress JSX inline style with
+  shared CSS classes; corrected the server-resolved subscription wording,
+  private-post quote rule, TopBar rule ID, session-persistence file references,
+  and superseded auth-refresh history entry.
+- Verification Status: Targeted static checks and `git diff --check` passed.
+
 ## 2026-09-21T00:00:00Z — Record UI/UX consistency audit
 
 - Agent: Codex

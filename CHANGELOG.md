@@ -2,6 +2,13 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [rules/design] Removed the profile-setup JSX inline style, corrected the
+  server-resolved subscription wording, aligned private-post quote behavior,
+  assigned a unique TopBar rule ID, and marked the superseded auth-refresh
+  rule in the rule history.
+
+## 2026-09-21T00:00:00Z
+
 - [docs/notes] Recorded the UI/UX consistency audit backlog, intentional
   contextual exceptions, and recommended cleanup order across buttons,
   subscription states, Control Panel surfaces, rows, icon controls, and

@@ -6,7 +6,7 @@ permalinks.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-15T23:19:08Z
+**Last edited:** 2026-09-21T00:00:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -35,8 +35,9 @@ owns selection and ordering; [Media](./media.md) owns upload mechanics.
   indentation remains capped for readability.
 - **POSTS-R-004:** Private post visibility is enforced server-side, including
   when viewing, replying, or quoting.
-- **POSTS-R-005:** Private posts cannot be quoted; unavailable quoted originals
-  render a non-clickable unavailable block.
+- **POSTS-R-005:** Visible private posts may be quoted by authorized viewers;
+  existing quotes remain when an account becomes private, and unavailable
+  quoted originals render a non-clickable unavailable block.
 - **POSTS-R-006:** Canonical post URLs use author username plus authoritative
   public post ID; cosmetic slug text is not the lookup key.
 - **POSTS-R-007:** Likes and Saves are unique durable reactions per user/content
