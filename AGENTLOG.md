@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T00:00:00Z — Align rules with profile badge styling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/rules.md` to match the shared profile badge
+  styling fix.
+- Changes Made: Expanded `PROFILE-R-012` implementation references and
+  recorded the accent-colored compact pill contract for both profile badges,
+  including the side drawer.
+- Verification Status: `git diff --check` passed.
+
 ## 2026-09-22T00:00:00Z — Restore shared profile badge styling in drawer
 
 - Agent: Codex

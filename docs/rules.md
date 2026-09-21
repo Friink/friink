@@ -1018,7 +1018,7 @@ missing evidence can be filled in.
 - **Related units:** [profiles](units/profiles.md), [settings](units/settings.md)
 - **Platform:** Web/API
 - **Source:** Current implementation
-- **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260917_0049_professional_badge.py`, `web/components/account-screens.tsx`, `web/components/profile-card.tsx`, `web/components/profile-screen.tsx`, `web/lib/auth.ts`, `web/app/globals.css`
+- **File(s):** `api/app/models/user.py`, `api/app/schemas/auth.py`, `api/app/services/auth.py`, `api/app/routers/auth.py`, `api/alembic/versions/20260917_0049_professional_badge.py`, `web/components/account-screens.tsx`, `web/components/profile-card.tsx`, `web/components/profile-badge.tsx`, `web/components/profile-screen.tsx`, `web/components/side-drawer.tsx`, `web/lib/auth.ts`, `web/app/globals.css`
 
 - **What:** A user may enable `Show you are a professional on Profile` only
   when their private `How I use Friink` preference is `For professional
@@ -1030,7 +1030,9 @@ missing evidence can be filled in.
   not award professional status, register credentials, grant directory access,
   or change subscription entitlements. The same effective value is returned
   for data-backed profile-card surfaces so the badge remains consistent
-  wherever that user is represented.
+  wherever that user is represented. Professional and Friink Registered use
+  the shared accent-colored compact pill treatment, including in the side
+  drawer; both remain icon-only with accessible labels.
 
 ### POST-R-008 — Reply Creation Rechecks Parent Visibility
 
@@ -1693,7 +1695,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [profiles](units/profiles.md) | PROFILE-R-009 | Other-user connection labels use text-button geometry. |
 | [profiles](units/profiles.md) | PROFILE-R-010 | Profile moderation uses the contextual navigation overflow. |
 | [profiles](units/profiles.md) | PROFILE-R-011 | Profile bootstrap exposes restoration and retry states. |
-| [profiles](units/profiles.md) | PROFILE-R-012 | Professional badge visibility is user-controlled and appears next to the displayed name. |
+| [profiles](units/profiles.md) | PROFILE-R-012 | Professional badge visibility is user-controlled; shared profile badges use the accent-colored compact pill treatment. |
 | [search](units/search.md) | WEB-R-018 | Search sort and date refinements are URL-backed and scope-aware. |
 | [saved-items](units/saved-items.md) | SAVED-R-001 | Saves are private to the saving user and have no actor list. |
 | [saved-items](units/saved-items.md) | SAVED-R-002 | Deleted, private, blocked, or inaccessible content is omitted |

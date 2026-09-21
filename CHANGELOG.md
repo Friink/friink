@@ -2,6 +2,9 @@
 
 ## 2026-09-22T00:00:00Z
 
+- [docs/rules] Recorded the shared accent-colored compact pill contract for
+  Professional and Friink Registered profile badges, including the side drawer.
+
 - [profile-badges] Restored the shared accent-colored compact pill treatment
   inside the side drawer so Professional and Friink Registered badges retain
   consistent geometry and color.
