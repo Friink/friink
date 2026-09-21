@@ -2,6 +2,12 @@
 
 ## 2026-09-22T00:00:00Z
 
+- [chat] Fixed direct-chat scrolling so the centered chat column owns one
+  contained native scrollbar and the participant header remains sticky without
+  widening the content surface.
+- [docs/design] Synchronized chat scroll rules across the implementation,
+  design contracts, and product documentation.
+
 - [docs/rules] Recorded the shared accent-colored compact pill contract for
   Professional and Friink Registered profile badges, including the side drawer.
 

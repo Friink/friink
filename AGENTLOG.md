@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T00:00:00Z — Fix direct-chat sticky header scrolling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the chat header scrolling out of view while preserving
+  the centered content width.
+- Changes Made: Made `.chat-screen` the contained native scroll surface, moved
+  sticky positioning to the top of that surface, and synchronized chat/design
+  rules and release logs.
+- Verification Status: `npx tsc --noEmit --incremental false`,
+  `npm run build -- --webpack`, and `git diff --check` passed. The build used
+  the existing WASM fallback because the installed native SWC binary is not a
+  valid Win32 application.
+
 ## 2026-09-22T00:00:00Z — Align rules with profile badge styling
 
 - Agent: Codex
