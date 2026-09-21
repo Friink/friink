@@ -1,6 +1,7 @@
-from datetime import datetime, timezone
+from datetime import date as date_type
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
@@ -27,11 +28,31 @@ async def search(
     scope: str = Query(default="global", pattern="^(global|messages)$"),
     kind: str = Query(default="all", pattern="^(all|person|post)$"),
     limit: int = Query(default=24, ge=1, le=50),
+    sort: str = Query(default="relevance", pattern="^(relevance|newest|oldest)$"),
+    date: str = Query(default="any", pattern="^(any|day|week|month|custom)$"),
+    date_from: date_type | None = Query(default=None),
+    date_to: date_type | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> SearchResponse:
     term = query.strip()
     pattern = f"%{term}%"
+    if date == "custom" and (date_from is None or date_to is None):
+        raise HTTPException(status_code=422, detail="Custom date filtering requires both date_from and date_to.")
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must not be later than date_to.")
+    now = datetime.now(timezone.utc)
+    if date == "day":
+        date_start, date_end = now - timedelta(days=1), None
+    elif date == "week":
+        date_start, date_end = now - timedelta(days=7), None
+    elif date == "month":
+        date_start, date_end = now - timedelta(days=30), None
+    elif date == "custom":
+        date_start = datetime.combine(date_from, datetime.min.time(), tzinfo=timezone.utc)
+        date_end = datetime.combine(date_to + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+    else:
+        date_start, date_end = None, None
     results: list[SearchResult] = []
 
     if scope == "global":
@@ -47,10 +68,15 @@ async def search(
             results.extend(SearchResult(id=str(person.public_id), type="person", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=person.about or f"@{person.username}", href=f"/{person.username}") for person in people)
 
         if include_posts:
+            post_filters = [Post.deleted_at.is_(None), _active_user_clause(current_user), Post.content.ilike(pattern)]
+            if date_start is not None:
+                post_filters.append(Post.created_at >= date_start)
+            if date_end is not None:
+                post_filters.append(Post.created_at < date_end)
             posts = session.execute(
                 select(Post, User)
                 .join(User, User.id == Post.user_id)
-                .where(Post.deleted_at.is_(None), _active_user_clause(current_user), Post.content.ilike(pattern))
+                .where(*post_filters)
                 .order_by(Post.created_at.desc())
                 .limit(limit)
             ).all()
@@ -58,24 +84,40 @@ async def search(
     else:
         participant = or_(Conversation.user_one_id == current_user.id, Conversation.user_two_id == current_user.id)
         other_participant = or_(and_(Conversation.user_one_id == current_user.id, User.id == Conversation.user_two_id), and_(Conversation.user_two_id == current_user.id, User.id == Conversation.user_one_id))
+        conversation_filters = [participant, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False), or_(User.username.ilike(pattern), User.display_name.ilike(pattern))]
+        if date_start is not None:
+            conversation_filters.append(Conversation.updated_at >= date_start)
+        if date_end is not None:
+            conversation_filters.append(Conversation.updated_at < date_end)
         conversations = session.execute(
             select(Conversation, User)
             .join(User, other_participant)
-            .where(participant, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False), or_(User.username.ilike(pattern), User.display_name.ilike(pattern)))
+            .where(*conversation_filters)
             .order_by(Conversation.updated_at.desc())
             .limit(limit)
         ).all()
         results.extend(SearchResult(id=str(conversation.id), type="conversation", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=f"Chat with {person.display_name or person.username}", href=f"/{person.username}/chat", created_at=conversation.updated_at) for conversation, person in conversations)
 
+        message_filters = [participant, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False), Message.content.ilike(pattern)]
+        if date_start is not None:
+            message_filters.append(Message.created_at >= date_start)
+        if date_end is not None:
+            message_filters.append(Message.created_at < date_end)
         messages = session.execute(
             select(Message, Conversation, User)
             .join(Conversation, Conversation.id == Message.conversation_id)
             .join(User, other_participant)
-            .where(participant, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False), Message.content.ilike(pattern))
+            .where(*message_filters)
             .order_by(Message.created_at.desc())
             .limit(limit)
         ).all()
         results.extend(SearchResult(id=str(message.id), type="conversation", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=message.content, href=f"/{person.username}/chat", created_at=message.created_at) for message, _, person in messages)
 
-    results.sort(key=lambda item: item.created_at or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    if sort == "oldest":
+        results.sort(key=lambda item: item.created_at or datetime.max.replace(tzinfo=timezone.utc))
+    elif sort == "relevance":
+        normalized_term = term.casefold()
+        results.sort(key=lambda item: (0 if item.name.casefold() == normalized_term else 1, 0 if item.username and item.username.casefold() == normalized_term else 1, 0 if normalized_term in item.name.casefold() else 1, -(item.created_at.timestamp() if item.created_at else 0)))
+    else:
+        results.sort(key=lambda item: item.created_at or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return SearchResponse(items=results[:limit], has_more=len(results) > limit)

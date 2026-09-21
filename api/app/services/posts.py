@@ -18,6 +18,7 @@ from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageRe
 from app.services.session_ops import commit, refresh, rollback
 from app.services.auth import get_user_by_username
 from app.services.post_slug import generate_post_slug
+from app.services.subscriptions import has_entitlement
 from app.services.post_ids import generate_public_id
 from app.services.notifications import create_notification
 from app.services.profile_media import profile_picture_url_for
@@ -111,6 +112,8 @@ def post_load_options():
 
 
 async def create_post(session: Session, user: User, data: CreatePostRequest) -> Post:
+    if len(data.content) > 256 and not has_entitlement(user, "longer_posts", session):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="A paid plan is required for posts longer than 256 characters.")
     quoted_post: Post | None = None
     if data.quoted_post_id:
         quoted_post = session.get(Post, data.quoted_post_id)
@@ -460,7 +463,7 @@ def serialize_post(post: Post, viewer: User | None = None, session: Session | No
         quoted_post=serialize_quoted_post(post.quoted_post, post.quoted_post_id, viewer=viewer, session=session),
         created_at=post.created_at,
         updated_at=post.updated_at,
-        show_professional_badge=post.user.show_professional_badge,
+        show_professional_badge=bool(post.user.show_professional_badge),
     )
 
 
@@ -498,5 +501,5 @@ def serialize_quoted_post(quoted_post: Post | None, quoted_post_id: uuid.UUID | 
         media_count=quoted_post.media_count,
         media=[PostMediaResponse(url=item.url) for item in quoted_post.media if item.url],
         unavailable=False,
-        show_professional_badge=quoted_post.user.show_professional_badge,
+        show_professional_badge=bool(quoted_post.user.show_professional_badge),
     )

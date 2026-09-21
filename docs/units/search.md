@@ -6,7 +6,7 @@ permission-aware results.
 
 **Status:** Partial  
 **Tier:** Standard  
-**Last edited:** 2026-09-17T20:20:18Z  
+**Last edited:** 2026-09-21T00:00:00Z
 **Platforms:** Web and API  
 **Canonical sources:** [Rules](../rules.md), [Testing](../testing.md),
 `api/app/routers/search.py`, `web/components/top-bar.tsx`, and
@@ -143,8 +143,15 @@ shortcuts, and navigation to full results or canonical destinations.
 #### UX and surfaces
 
 The TopBar exposes Search on signed-in screens. The search route keeps the query
-field available without forcing its suggestions dropdown open. Scope shortcuts
-are text-only and bounded; Enter opens `/search/{query}`. Search scope controls use
+field available without forcing its suggestions dropdown open and places a
+funnel icon between the query field and the contextual ActionMenu. Activating
+the funnel opens the shared `Modal` with combined Sort by and Date controls.
+Applying the modal updates the URL and reloads results; the funnel shows an
+accent indicator while a non-default refinement is active. Sort supports Most
+relevant, Newest, and Oldest for Posts and Messages; People keeps Most relevant
+only. Date filtering supports Any time, the past 24 hours, 7 days, 30 days,
+and a custom inclusive date range for Posts and Messages. Scope shortcuts are
+text-only and bounded; Enter opens `/search/{query}`. Search scope controls use
 the shared `Tabs` component at the application-shell level, so the strip spans
 the main panel while result content remains inside the shared capped content
 box.
@@ -175,23 +182,31 @@ shows an error state with retry behavior.
 
 #### State behavior
 
-Idle, open, loading, success, empty, error, and dismissed states are required.
+Idle, open, loading, success, empty, error, retry, and dismissed states are
+required. Changing the query, scope, sort, or date range resets the result
+request and applies the new URL-backed search state.
 
 #### Data requirements
 
-The client stores only the active query, scope, suggestion state, and current
-result request. It must discard stale responses after a query change.
+The client stores the active query, scope, sort, date preset, optional custom
+date bounds, suggestion state, and current result request. It must discard
+stale responses after any search-state change.
 
 #### API and service contract
 
 MVP shortcuts do not require a separate suggestions endpoint. Full results use
-`GET /search` with `query`, `scope`, and bounded `limit` parameters.
+`GET /search` with `query`, `scope`, `kind`, bounded `limit`, `sort`, `date`,
+and optional `date_from`/`date_to` parameters. `sort` accepts `relevance`,
+`newest`, or `oldest`; `date` accepts `any`, `day`, `week`, `month`, or
+`custom`. Custom dates require both inclusive ISO date bounds, and the API
+rejects a range whose start is after its end.
 
 #### Frontend contract
 
-Use shared TopBar, ContextualDropdown, PageSurface, ListRow, and identity
-components. Initialize the result-page field from the URL and preserve query
-and scope during navigation.
+Use shared TopBar, ContextualDropdown, Modal, PageSurface, ListRow, and identity
+components. Initialize the result-page field and refinement controls from the
+URL, preserve query, scope, sort, and date state during navigation, and keep
+the modal accessible through labeled native controls.
 
 #### Backend contract
 
@@ -203,12 +218,17 @@ The server validates the query and scope and authorizes every result.
   from full-query Enter navigation.
 - [ ] **SEARCH-AC-002** The authenticated search route renders loading, success,
   empty, error, and retry states.
+- [x] **SEARCH-AC-007** Sort and date controls update the URL and reload results
+  without losing the active query or scope.
+- [x] **SEARCH-AC-008** People hides date filtering, Posts and Messages support
+  preset/custom date ranges, and invalid custom ranges are rejected safely.
 
 #### Test scenarios
 
 - [ ] Happy path and Enter submission
 - [ ] Empty query and empty results
 - [ ] Error, retry, and stale-request behavior
+- [ ] Sort changes, date presets, custom date ranges, reset, and URL refresh
 - [ ] Keyboard access, focus, and responsive layout
 
 #### Verification
@@ -252,11 +272,15 @@ indexes are introduced by migration `20260917_0051_search_indexes.py`.
 
 #### API and service contract
 
-`GET /search` currently accepts `query`, `scope=global|messages`, `kind=all|person|post`,
-and `limit=1..50`, returning `items` and `has_more`. The Search surface now
-exposes URL-backed All/People/Posts/Messages scope controls; MVP completion adds
-a stable opaque cursor or equivalent basic “Load more” contract. Global conversation and
-hashtag search, live suggestions, and advanced ranking are planned later.
+`GET /search` accepts `query`, `scope=global|messages`,
+`kind=all|person|post`, `limit=1..50`, `sort=relevance|newest|oldest`,
+`date=any|day|week|month|custom`, and optional `date_from`/`date_to`, returning
+`items` and `has_more`. The Search surface exposes URL-backed
+All/People/Posts/Messages scope controls and URL-backed refinement state. Date
+filters apply to Posts and Messages; People results remain unfiltered by date.
+MVP completion adds a stable opaque cursor or equivalent basic “Load more”
+contract. Global conversation and hashtag search, live suggestions, and
+advanced ranking are planned later.
 
 #### Frontend contract
 
@@ -279,6 +303,9 @@ and test isolation across users.
   canonical links, and duplicate-free client loading.
 - [ ] **SEARCH-AC-006** API tests cover MVP scopes, permissions, limits, ordering,
   pagination, and response shape.
+- [ ] **SEARCH-AC-007** API responses honor supported sort and date parameters,
+  including inclusive custom date bounds.
+- [ ] **SEARCH-AC-008** Invalid custom date ranges return a safe validation error.
 
 #### Test scenarios
 
@@ -341,15 +368,34 @@ an MVP dependency.
 | SEARCH-AC-004 | Permission isolation | API tests with multiple accounts | Planned |
 | SEARCH-AC-005 | Basic stable pagination | API and browser tests | Planned |
 | SEARCH-AC-006 | Search regression coverage | `api/tests/` search tests | Planned |
+| SEARCH-AC-007 | Sort/date API behavior | Authenticated browser request and URL verification | Verified locally |
+| SEARCH-AC-008 | Invalid custom range | Browser validation and API boundary check | Verified locally |
 
 ### Test matrix
 
 | Area | Scenario | Expected result | Verification |
 |---|---|---|---|
 | UX | Submit, suggest, empty, error, retry | Correct state and navigation | Browser |
+| UX | Sort/filter modal and URL state | Refinements persist and reload results | Browser |
 | API | Global and Messages query | Documented response shape | Request/response |
 | Security | Private, blocked, and chat isolation | No unauthorized results | Automated/manual |
 | Data | Indexes and cursor ordering | Bounded, stable pages | Database/API |
+
+### Current verification record
+
+**2026-09-21 — local development**
+
+- TypeScript check passed with `npx tsc --noEmit --incremental false`.
+- Python compilation passed for `api/app/routers/search.py`.
+- Authenticated browser verification passed for the Posts scope: the funnel
+  opens the modal, preset date filtering updates the URL, newest sorting
+  updates the URL, and custom date bounds load without a search error.
+- Authenticated browser verification passed for People: the Date control is
+  hidden and unsupported sort state is cleared when switching scope.
+- Invalid custom ranges show `Choose a valid date range.` before a request is
+  sent; the unauthenticated API boundary continues to return `401` with the
+  expected `{"detail":"Not authenticated"}` response.
+- Staging acceptance and automated search coverage remain pending.
 
 ### Release gates
 
@@ -376,16 +422,18 @@ data migration is currently required.
 Implemented: signed-in TopBar entry points, `/search` and `/search/[query]`
 routes, explicit route-to-shell query propagation, hydrated result-page input,
 API client, result surface, global/Messages API scopes, URL-backed
-All/People/Posts/Messages controls, API-side People/Posts filtering, permission
-filters, and PostgreSQL trigram indexes. Partial: authenticated E2E proof, MVP
-scope verification, pagination, and automated search coverage.
+All/People/Posts/Messages controls, URL-backed sort/date refinements, API-side
+People/Posts filtering, preset/custom date filtering, permission filters, and
+PostgreSQL trigram indexes. Partial: authenticated E2E proof, MVP scope
+verification, pagination, and automated search coverage.
 
 ## Known limitations
 
 The MVP intentionally does not include global conversation search, hashtag
 search, live personalized suggestions, highlighting, typo tolerance, advanced
-ranking, analytics, or personalization. These are planned extensions, not MVP
-release blockers.
+relevance ranking, analytics, or personalization. The current Most relevant
+mode is a deterministic basic relevance ordering, not a personalized ranking
+system. These remain planned extensions, not MVP release blockers.
 
 ## Open questions
 
@@ -429,3 +477,6 @@ These items are intentionally deferred and are not MVP release blockers:
 - 2026-09-17 — Kept the persistent result-page search field separate from the
   optional suggestions dropdown so `/search/{query}` does not open suggestions
   automatically.
+- 2026-09-21 — Implemented URL-backed Most relevant/Newest/Oldest sorting and
+  preset/custom date filtering for Posts and Messages through the shared
+  search refinement modal; People remains relevance-only.

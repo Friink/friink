@@ -1,5 +1,136 @@
 # Changelog
 
+## 2026-09-22T00:00:00Z
+
+- [docs/rules] Recorded the shared accent-colored compact pill contract for
+  Professional and Friink Registered profile badges, including the side drawer.
+
+- [profile-badges] Restored the shared accent-colored compact pill treatment
+  inside the side drawer so Professional and Friink Registered badges retain
+  consistent geometry and color.
+
+## 2026-09-21T00:00:00Z
+
+- [subscriptions/backend] Wired non-mutual chat requests and long-post
+  validation to server-resolved entitlements. Subscription responses now
+  expose active entitlement keys; updated chat/subscription documentation and
+  targeted tests.
+
+## 2026-09-21T00:00:00Z
+
+- [rules/design] Removed the profile-setup JSX inline style, corrected the
+  server-resolved subscription wording, aligned private-post quote behavior,
+  assigned a unique TopBar rule ID, and marked the superseded auth-refresh
+  rule in the rule history.
+
+## 2026-09-21T00:00:00Z
+
+- [docs/notes] Recorded the UI/UX consistency audit backlog, intentional
+  contextual exceptions, and recommended cleanup order across buttons,
+  subscription states, Control Panel surfaces, rows, icon controls, and
+  recovery messaging.
+
+## 2026-09-21T00:00:00Z
+
+- [control-panel/subscriptions] Added a plan-change review summary showing the
+  selected user, plan, duration, current assignment, and replacement effect
+  before manual access is confirmed.
+
+## 2026-09-21T00:00:00Z
+
+- [docs/subscriptions] Documented the planned manual-subscription UX:
+  confirmation summaries, staff/user visibility, lifecycle notifications,
+  expiry behavior, paid-feature gating, and end-to-end staff and user flows.
+
+## 2026-09-21T00:00:00Z
+
+- [chat] Kept the direct-chat participant header sticky below the global top
+  bar while preserving page-level conversation scrolling.
+
+## 2026-09-21T00:00:00Z
+
+- [chat] Moved direct conversation scrolling to the page viewport so the
+  participant header and message history no longer use a nested message-only
+  scrollbar; viewport-based read visibility is preserved.
+
+## 2026-09-21T00:00:00Z
+
+- [chat] Fixed the conversation-list response crash by passing the peer
+  receipt cursor when computing the latest outgoing message state.
+
+## 2026-09-21T00:00:00Z
+
+- [rules/chat] Clarified that tab-owned chat states—Muted, Requests, and
+  Archived—must appear only in their dedicated tabs, not as repeated row
+  metadata.
+
+## 2026-09-21T00:00:00Z
+
+- [chat] Fixed conversation-row hierarchy by removing the duplicated profile
+  identity, adding unread/receipt state copy, and making mute/archive actions
+  borderless with accent hover and active states. Muted and Archived remain
+  represented by their dedicated tabs.
+
+## 2026-09-21T00:00:00Z
+
+- [search] Implemented URL-backed sort and date refinement. Posts and Messages
+  support relevance/newest/oldest sorting plus preset or custom inclusive date
+  ranges; People remains relevance-only. The funnel modal now applies changes
+  to the API-backed search request.
+
+## 2026-09-21T00:00:00Z
+
+- [search] Added a search-route funnel control between the query field and
+  ActionMenu. It opens a shared Sort and filter modal with sort and date
+  controls as a presentation-only UI; search behavior and API contracts are
+  unchanged.
+
+## 2026-09-21T00:00:00Z
+
+- [docs/rules] Synchronized the active rulebook with this session's UI work:
+  shared primary/secondary button semantics, ordered and regrouped Settings
+  navigation, and the authenticated Subscription plan comparison and copy.
+
+## 2026-09-21T00:00:00Z
+
+- [subscriptions] Removed the redundant paid-plans availability note from the
+  authenticated Subscription tab; individual `Coming soon` actions remain.
+
+## 2026-09-21T00:00:00Z
+
+- [subscriptions] Refined Free, Pro, and Pro+ plan copy from the PRD across
+  the authenticated settings comparison and public plans page. Added the
+  correct mutual-chat, professional-use, 512-character, directory, analytics,
+  feed-boost, reduced-ads, and introductory-pricing details.
+
+## 2026-09-21T00:00:00Z
+
+- [settings/subscriptions] Simplified the Subscription tab by reducing the
+  current-plan row to name, price, and access status, while leaving feature
+  details in the plan rows. Removed the standalone Plans header/link row.
+
+## 2026-09-21T00:00:00Z
+
+- [settings/subscriptions] Added an authenticated plan comparison to the
+  Subscription tab. The server-resolved current plan remains at the top, while
+  Free, Pro, and Pro+ use the shared settings-row treatment; paid actions stay
+  disabled as `Coming soon` until billing is active.
+
+## 2026-09-21T00:00:00Z
+
+- [settings] Reordered Settings tabs to General, Profile, Privacy & Safety,
+  Account, and Subscription.
+
+## 2026-09-21T00:00:00Z
+
+- [settings] Reordered Account rows so email, password, sessions, and login
+  requests come before passive account metadata and lifecycle actions.
+
+## 2026-09-21T00:00:00Z
+
+- [settings] Reordered Privacy & Safety rows into visibility, communication,
+  and safety groups without changing the page structure or setting behavior.
+
 ## 2026-09-21T00:00:00Z
 
 - [profiles] Promoted profile Edit, Follow/Unfollow, and Message actions to the

@@ -66,6 +66,15 @@ contract rather than repeated here.
   accent color.
 - Profile connection actions that include a label use the standard text-button
   layout; icon-only Message and More controls retain `.icon-button` geometry.
+- Search-route refinement uses a funnel icon between the query field and the
+  contextual ActionMenu. The funnel opens one shared modal that groups sorting
+  and date filtering. Applying changes URL-backed state, reloads results, and
+  shows an accent indicator while a non-default refinement is active.
+- Chat list rows show the participant's avatar and display name once. Their
+  secondary line communicates unread count or latest-message receipt state;
+  Muted and Archived are reserved for their dedicated tabs. Mute and archive
+  row actions are borderless contextual icon controls with accent hover,
+  focus, and active treatments.
 - Shared profile-picture avatars use the current accent color for their border
   in both light and dark themes.
 - Profile moderation actions use the shell-owned contextual NavigationBar
@@ -178,6 +187,11 @@ styling must preserve native wheel, keyboard, touch, accessibility, and
 reduced-motion behavior; JavaScript scrollbar replacements are not part of the
 platform design system. In dark theme, the thumb uses a darker neutral (`#666666`)
 with `#7a7a7a` on hover so it remains visible without appearing washed out.
+Direct conversation pages use this document-level scroll surface for the
+participant header and message history; they must not introduce a nested
+message-only scrollbar. The participant header remains sticky below the global
+top bar, and the fixed contextual composer remains clear of the last message
+through shared page spacing.
 
 ### Actions
 
@@ -249,6 +263,16 @@ changes profile display only and must not imply Friink registration,
 directory eligibility, or paid access. Expiry and revocation messaging must
 explain the resulting
 return to Free without implying a payment event when billing is unavailable.
+Both profile badges use the shared accent-colored compact pill treatment,
+including inside the side drawer, and remain icon-only with accessible labels.
+
+The planned manual-access flow uses calm confirmation summaries, `Grant
+access`, `Change access`, and `Return to Free` language, in-app status
+feedback, and optional email mirrors. Staff see assignment history and audit
+reasons; users see their effective plan, status, expiry, and concise
+change feedback. Paid-only states remain contextual and
+server-entitlement-driven; while billing is unavailable, the plan comparison
+is the only surface that uses `Coming soon` for unimplemented paid actions.
 
 ### Feedback
 

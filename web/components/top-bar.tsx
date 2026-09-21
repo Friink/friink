@@ -6,7 +6,8 @@ import type { Screen } from '@/lib/data';
 import { ContextualDropdown } from '@/components/contextual-dropdown';
 import type { NotificationItem } from '@/components/notifications-screen';
 import { formatRelativeTime } from '@/lib/time';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Modal } from '@/components/modal';
 
 type TopBarProps = {
   title: string;
@@ -17,6 +18,7 @@ type TopBarProps = {
   isHome?: boolean;
   isSearchPage?: boolean;
   initialSearchQuery?: string;
+  searchFilter?: 'all' | 'people' | 'posts' | 'messages';
   searchScope?: 'global' | 'messages';
   backDisabled?: boolean;
   menuItems?: ActionMenuItem[];
@@ -25,12 +27,19 @@ type TopBarProps = {
   onToggleSidebar: () => void;
 };
 
-export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, initialSearchQuery = '', searchScope = 'global', backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
+export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnreadMessages = false, notifications = [], isHome = false, isSearchPage = false, initialSearchQuery = '', searchFilter = 'all', searchScope = 'global', backDisabled = false, menuItems = [], onNavigate, onBack, onToggleSidebar }: TopBarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const currentSearchParams = useSearchParams();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
+  const [searchSort, setSearchSort] = useState('relevance');
+  const [searchDate, setSearchDate] = useState('any');
+  const [searchDateFrom, setSearchDateFrom] = useState('');
+  const [searchDateTo, setSearchDateTo] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
@@ -42,6 +51,16 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
   useEffect(() => {
     if (isSearchPage) setSearchQuery(initialSearchQuery);
   }, [initialSearchQuery, isSearchPage]);
+
+  useEffect(() => {
+    if (!isSearchPage) return;
+    const sort = currentSearchParams.get('sort');
+    const date = currentSearchParams.get('date');
+    setSearchSort(searchFilter === 'people' ? 'relevance' : sort === 'newest' || sort === 'oldest' ? sort : 'relevance');
+    setSearchDate(searchFilter === 'posts' || searchFilter === 'messages' ? date === 'day' || date === 'week' || date === 'month' || date === 'custom' ? date : 'any' : 'any');
+    setSearchDateFrom(currentSearchParams.get('date_from') ?? '');
+    setSearchDateTo(currentSearchParams.get('date_to') ?? '');
+  }, [currentSearchParams, isSearchPage, searchFilter]);
 
   useEffect(() => {
     if (!searchOpen && !notificationsOpen) return;
@@ -124,6 +143,62 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
     </div>
   );
 
+  const dateFilterAvailable = searchFilter === 'posts' || searchFilter === 'messages';
+  const searchFiltersActive = searchSort !== 'relevance' || (dateFilterAvailable && searchDate !== 'any');
+  const applySearchFilters = () => {
+    const nextParams = new URLSearchParams(currentSearchParams.toString());
+    if (searchSort === 'relevance' || searchFilter === 'people') nextParams.delete('sort');
+    else nextParams.set('sort', searchSort);
+    if (!dateFilterAvailable || searchDate === 'any') {
+      nextParams.delete('date');
+      nextParams.delete('date_from');
+      nextParams.delete('date_to');
+    } else {
+      nextParams.set('date', searchDate);
+      if (searchDate === 'custom') {
+        nextParams.set('date_from', searchDateFrom);
+        nextParams.set('date_to', searchDateTo);
+      } else {
+        nextParams.delete('date_from');
+        nextParams.delete('date_to');
+      }
+    }
+    const suffix = nextParams.toString() ? `?${nextParams.toString()}` : '';
+    router.replace(`${pathname}${suffix}`, { scroll: false });
+    setSearchFiltersOpen(false);
+  };
+
+  const searchFiltersModal = searchFiltersOpen ? (
+    <Modal
+      title="Sort and filter"
+      closeLabel="Close sort and filter"
+      onClose={() => setSearchFiltersOpen(false)}
+      className="search-filters-modal"
+      actions={<><button className="button-secondary" type="button" onClick={() => { setSearchSort('relevance'); setSearchDate('any'); setSearchDateFrom(''); setSearchDateTo(''); }}>Reset</button><button className="button-primary" type="button" onClick={applySearchFilters} disabled={searchDate === 'custom' && (!searchDateFrom || !searchDateTo || searchDateFrom > searchDateTo)}>Apply</button></>}
+    >
+      <div className="search-filters-form">
+        <div className="search-filter-group">
+          <label className="settings-field-label" htmlFor="search-sort">Sort by</label>
+          <select id="search-sort" className="settings-field-input" value={searchSort} onChange={(event) => setSearchSort(event.target.value)}>
+            <option value="relevance">Most relevant</option>
+            {searchFilter !== 'people' ? <><option value="newest">Newest</option><option value="oldest">Oldest</option></> : null}
+          </select>
+        </div>
+        {dateFilterAvailable ? <div className="search-filter-group">
+          <label className="settings-field-label" htmlFor="search-date">Date</label>
+          <select id="search-date" className="settings-field-input" value={searchDate} onChange={(event) => setSearchDate(event.target.value)}>
+            <option value="any">Any time</option>
+            <option value="day">Past 24 hours</option>
+            <option value="week">Past 7 days</option>
+            <option value="month">Past 30 days</option>
+            <option value="custom">Custom range</option>
+          </select>
+          {searchDate === 'custom' ? <div className="search-filter-date-range"><div><label className="settings-field-label" htmlFor="search-date-from">From</label><input id="search-date-from" className="settings-field-input" type="date" value={searchDateFrom} onChange={(event) => setSearchDateFrom(event.target.value)} /></div><div><label className="settings-field-label" htmlFor="search-date-to">To</label><input id="search-date-to" className="settings-field-input" type="date" min={searchDateFrom || undefined} value={searchDateTo} onChange={(event) => setSearchDateTo(event.target.value)} /></div></div> : null}
+        </div> : null}
+      </div>
+    </Modal>
+  ) : null;
+
   return (
     <header className={`topbar-preview${isHome ? '' : ' topbar-preview-contextual'}${isSearchPage ? ' topbar-preview-search-route' : ''}`} aria-label="Unified application top bar">
       <div className="topbar-preview-inner">
@@ -163,6 +238,10 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
         ) : (
           <div className="topbar-preview-contextual-actions">
             {!isSearchPage ? searchControl : null}
+            {isSearchPage ? <button className="topbar-preview-action" type="button" onClick={() => { setSearchFiltersOpen(true); setMenuOpen(false); }} aria-label="Sort and filter search results" aria-haspopup="dialog" aria-expanded={searchFiltersOpen} title="Sort and filter">
+              <i className="fa-solid fa-filter" aria-hidden="true" />
+              {searchFiltersActive ? <span className="topbar-preview-dot" aria-hidden="true" /> : null}
+            </button> : null}
             <button ref={menuButtonRef} className="topbar-preview-action" type="button" onClick={() => setMenuOpen((open) => !open)} aria-label="More options" aria-expanded={menuOpen} title="More options">
               <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
             </button>
@@ -170,6 +249,7 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, hasUnre
           </div>
         )}
       </div>
+      {searchFiltersModal}
     </header>
   );
 }

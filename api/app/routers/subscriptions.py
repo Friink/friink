@@ -8,7 +8,7 @@ from app.models.user import User
 from app.routers.auth import get_current_user
 from app.schemas.subscriptions import PlanResponse, SubscriptionAssignmentResponse, SubscriptionGrantRequest, SubscriptionResponse, SubscriptionRevokeRequest
 from app.services.staff import require_privileged
-from app.services.subscriptions import effective_plan, effective_status, grant, revoke
+from app.services.subscriptions import effective_plan, effective_status, entitlements_for, grant, revoke
 from app.routers.staff import STAFF_COOKIE, target
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
@@ -18,7 +18,7 @@ def _read(user: User, session: Session) -> SubscriptionResponse:
     assignments = session.execute(select(SubscriptionAssignment).where(SubscriptionAssignment.user_id == user.id).order_by(SubscriptionAssignment.created_at.desc())).scalars().all()
     assignment = next((a for a in assignments if effective_status(a) == "active"), None)
     latest = assignments[0] if assignments else None
-    return SubscriptionResponse(plan_code=plan.code, plan_name=plan.name, expires_at=assignment.expires_at if assignment else None, status=effective_status(latest) if latest and assignment is None else "active", assignment_id=str(assignment.id) if assignment else None, assignment_status=effective_status(latest) if latest else None)
+    return SubscriptionResponse(plan_code=plan.code, plan_name=plan.name, expires_at=assignment.expires_at if assignment else None, status=effective_status(latest) if latest and assignment is None else "active", assignment_id=str(assignment.id) if assignment else None, assignment_status=effective_status(latest) if latest else None, entitlements=entitlements_for(user, session))
 
 @router.get("/me", response_model=SubscriptionResponse)
 async def me(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):

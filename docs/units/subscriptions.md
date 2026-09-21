@@ -3,9 +3,9 @@
 Subscriptions describes Friink plans, current entitlement presentation, and
 the boundary between informational plans and future billing.
 
-**Status:** Partial — informational plans, server-resolved summaries, and manual staff assignment are active; billing is not active
+**Status:** Partial — informational plans, server-resolved summaries, manual staff assignment, and server entitlement enforcement are active; billing is not active
 **Tier:** Standard  
-**Last edited:** 2026-09-16T23:44:00Z
+**Last edited:** 2026-09-21T00:00:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -16,7 +16,7 @@ Chat may consume the server-resolved entitlement for its paid request policy.
 ## Related units
 
 - [Chat](./chat.md) — consumes paid-tier request eligibility.
-- [Settings](./settings.md) — shows the current plan and links to plans.
+- [Settings](./settings.md) — shows the current plan and compares available plans.
 - [Staff Admin](./staff-admin.md) — owns current administrative assignments.
 - [Design System](../design-system.md) — owns public plan-card presentation.
 
@@ -27,16 +27,18 @@ Chat may consume the server-resolved entitlement for its paid request policy.
 Free is the default plan and includes:
 
 1. Unlimited posts, replies, and quotes.
-2. Chat with mutual followers.
+2. Chat (mutual followers).
+3. Use Friink as a professional.
 
 ### Friink Pro
 
 Pro includes everything in Free, plus:
 
-1. Message requests.
-2. Profile view count.
-3. Longer posts up to 512 characters.
-4. Directory visibility for eligible professional profiles.
+1. Everything in Friink Free.
+2. Message requests.
+3. Profile view count.
+4. Longer posts up to 512 characters.
+5. Directory listing for registered professionals.
 
 The planned commercial price is USD 4 per month after the first month. Planned
 billing rules revoke Pro after 8 days of nonpayment. Professional registration
@@ -47,9 +49,10 @@ expires or is cancelled.
 
 Pro+ includes everything in Pro, plus:
 
-1. Profile and post analytics.
-2. Profile boost for the feed.
-3. Fewer ads.
+1. Everything in Pro.
+2. Profile and post analytics.
+3. Profile boost for the feed.
+4. Fewer ads.
 
 The planned commercial price is USD 8 per month. The planned launch offer is
 one month free for Pro users, and planned billing rules revoke Pro+ after 8
@@ -59,13 +62,20 @@ Pricing, introductory offers, automatic renewal, and nonpayment revocation are
 future billing behavior. They are not active while billing and payment
 integration remain unavailable.
 
+The API enforces the `message_requests` entitlement for non-mutual chat
+requests and the `longer_posts` entitlement for post content above the Free
+256-character limit. The professional-directory gate also resolves from the
+server entitlement contract. The remaining Pro/Pro+ entitlement keys are
+declared for future feature APIs and do not yet have domain surfaces.
+
 ## Rules
 
 - **SUBS-R-001:** Public plans are informational until billing exists.
 - **SUBS-R-002:** Entitlements are resolved server-side from one assignment;
   clients must not self-declare paid access.
-- **SUBS-R-003:** Settings shows the current `Friink Free` plan and a View plans
-  link while paid billing is inactive.
+- **SUBS-R-003:** Settings shows the current server-resolved plan first, then
+  compares Free, Pro, and Pro+ in the same Subscription tab while paid billing
+  is inactive.
 - **SUBS-R-004:** Paid plan cards show non-action `Coming soon` states until
   billing is implemented; Free links to login as appropriate.
 - **SUBS-R-005:** Subscription status must not bypass account, connection,
@@ -74,8 +84,11 @@ integration remain unavailable.
 ## UX and flows
 
 The public `/subscriptions` surface compares Friink Free, Pro, and Pro+. The
-Settings Subscription tab summarizes the current plan. No checkout, payment,
-or self-service billing flow is active.
+Settings Subscription tab shows a compact current-plan summary first, then
+repeats the plan comparison in the authenticated settings context. The summary
+contains the plan name, price, and access status; plan rows contain the feature
+details and available action state. No checkout, payment, or self-service
+billing flow is active.
 
 Until billing exists, a superadmin may manually promote a user from Free to Pro
 or Pro+, change Pro and Pro+ assignments, or return a paid assignment to Free.
@@ -130,6 +143,89 @@ planned expiry reminders are sent once at 7 days before expiry, 1 day before
 expiry, and at expiry. Until payment integration exists, these are manual
 assignment lifecycle notifications rather than billing or renewal notices.
 
+### Recommended UX contract (planned)
+
+The following decisions define the intended experience for the manual process.
+The plan-change confirmation summary is implemented; lifecycle notifications,
+reminders, and the remaining paid-feature surfaces remain planned.
+
+- Manual access must never be described as a purchase, payment, upgrade, or
+  renewal. Use `Grant access`, `Change access`, and `Return to Free`.
+- Every staff plan mutation requires a confirmation summary showing the user,
+  resulting plan, effective date, expiry or `No expiration`, and what happens
+  to the current assignment. Replacing an active assignment must explicitly
+  say that the old assignment ends immediately.
+- Users receive calm in-app feedback for every grant, change, revocation, and
+  expiration. Email mirrors those events when email delivery is configured.
+  Internal staff reasons are not exposed by default.
+- Expiry reminders are sent at 7 days, 1 day, and expiration. Before billing
+  exists, expired users are directed to support or an administrator rather
+  than to a payment or checkout action.
+- The Settings view always leads with the effective current plan. After paid
+  access ends, it shows Friink Free and may include a quiet note identifying
+  the previous plan and end date; expired or revoked paid plans must not look
+  active.
+- Paid features should not be scattered through the product as fake upgrade
+  funnels while billing is unavailable. `Coming soon` belongs in the plan
+  comparison until a feature is actually implemented. Once a paid feature is
+  active, an unavailable Free-state affordance may explain `Available with
+  Friink Pro` or `Available with Friink Pro+` in context.
+- Staff see the complete assignment history and audit reasons. Users see the
+  effective plan, access status, expiry, and concise recent-change feedback,
+  not the internal assignment timeline.
+- Every paid feature, including message requests, must resolve access from
+  the server entitlement contract. Client plan names and legacy tier fields
+  must not decide feature access.
+
+### Planned flows
+
+#### Staff grants or changes access
+
+1. Staff opens Control Panel → Users and searches by username or email.
+2. Staff opens the user and reviews the current effective plan and history.
+3. Staff chooses `Adjust plan`, selects Free, Pro, or Pro+, and chooses a
+   duration, custom expiry, or `No expiration`.
+4. Staff enters a reason and reviews the confirmation summary.
+5. The system replaces any active assignment atomically, records the audit
+   event, and shows a success state describing manual access.
+6. The user receives the corresponding in-app notification and email when
+   configured.
+
+#### Staff renews access
+
+1. Staff opens an active assignment and chooses the same plan in `Adjust plan`.
+2. Staff chooses a duration and enters a reason.
+3. The summary explains that the duration extends from the existing expiry.
+4. The system saves the new effective expiry and records the replacement and
+   renewal history.
+
+#### Staff returns a user to Free
+
+1. Staff chooses `Return to Free` from an active paid assignment.
+2. A separate confirmation asks for a reason and states that paid access ends
+   immediately.
+3. The system revokes the assignment, resolves the user to Friink Free, and
+   records the audit event.
+4. The user sees the Free state and receives a revocation notification.
+
+#### Access approaches or reaches expiry
+
+1. The system sends the planned 7-day and 1-day reminders.
+2. At expiry, the effective plan resolves to Friink Free without requiring a
+   background billing job.
+3. Settings shows Free plus a quiet previous-access note, if available.
+4. The user receives an expiration notification with support/admin guidance;
+   no checkout action is shown.
+
+#### User encounters a paid-only feature
+
+1. If the feature is not yet implemented, the user does not encounter a
+   scattered upgrade prompt; the plan comparison says `Coming soon`.
+2. If the feature is implemented but unavailable to Free, the local surface
+   explains the required plan and preserves a useful read-only or empty state.
+3. The API makes the final entitlement decision and the UI reflects the
+   server response.
+
 ## Technical contract
 
 Subscription routes, schemas, models, and services provide current plan and
@@ -146,8 +242,9 @@ administrative assignment behavior. Billing provider integration is not present.
 
 Payments, checkout, recurring billing, cancellation, automatic renewal,
 nonpayment enforcement, and customer self-service are not implemented. The
-current Settings subscription summary is connected to the server-resolved
-entitlement. Public plan cards remain informational, and the final capability
-matrix and billing notifications remain planned. Professional registration is
+current Settings subscription summary and plan comparison are connected to the
+server-resolved entitlement only for current-plan state; public and settings
+plan actions remain informational. The final capability matrix and billing
+notifications remain planned. Professional registration is
 documented and implemented independently of subscription access; subscription
 status only participates in directory eligibility.

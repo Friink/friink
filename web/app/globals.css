@@ -402,7 +402,7 @@ textarea {
   min-width: 0;
 }
 
-.professional-profile-badge {
+.profile-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -416,6 +416,15 @@ textarea {
   letter-spacing: 0.02em;
   line-height: 1;
   white-space: nowrap;
+}
+
+/* The drawer's identity text rule targets every span; restore the shared
+   badge contract for both Professional and Friink Registered badges. */
+.sidebar-profile .profile-card-name-row .profile-badge {
+  display: inline-flex;
+  margin-top: 0;
+  color: var(--color-accent);
+  font-size: 0.65rem;
 }
 
 .profile-card-handle {
@@ -1511,14 +1520,6 @@ textarea {
   touch-action: pan-y;
 }
 
-/* Chat owns the scroll region so its participant header never moves with messages. */
-.main-panel:has(.chat-screen) {
-  box-sizing: border-box;
-  height: 100vh;
-  min-height: 100vh;
-  overflow: hidden;
-}
-
 .topbar {
   position: fixed;
   top: 0;
@@ -2568,6 +2569,68 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   font-size: var(--text-xs);
 }
 
+.settings-plan-options {
+  margin-top: 0;
+}
+
+.settings-plan-option {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.settings-plan-option:last-of-type {
+  border-bottom: 0;
+}
+
+.settings-icon-active {
+  border-color: color-mix(in srgb, var(--color-accent) 60%, var(--color-line));
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-paper));
+}
+
+.settings-plan-title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.settings-plan-current {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.settings-plan-features {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  list-style: none;
+}
+
+.settings-plan-features li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.settings-plan-features i {
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+}
+
+.settings-plans-note {
+  margin: 0;
+  padding: 0.9rem 1rem 1rem;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
 .subscription-admin {
   display: grid;
   gap: 0.75rem;
@@ -2618,6 +2681,28 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   font-size: var(--text-xs);
   font-weight: 700;
   text-transform: capitalize;
+}
+
+.subscription-change-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background: var(--color-accent-background);
+  font-size: var(--text-xs);
+}
+
+.subscription-change-summary strong {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+
+.subscription-change-summary b {
+  color: var(--color-ink);
+  font-weight: 700;
 }
 
 .subscription-assignment-history {
@@ -2853,6 +2938,18 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   border-radius: inherit;
   background: var(--color-accent);
   transition: width 180ms ease;
+}
+
+.profile-setup-progress-fill-step-1 {
+  width: 33.3333%;
+}
+
+.profile-setup-progress-fill-step-2 {
+  width: 66.6667%;
+}
+
+.profile-setup-progress-fill-step-3 {
+  width: 100%;
 }
 
 .profile-setup-intro-copy {
@@ -4009,15 +4106,16 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .chat-screen {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  min-height: calc(100vh - var(--space-topbar-height));
+  overflow: visible;
   padding-bottom: 0;
   padding-top: 0;
 }
 
 .chat-header {
-  position: relative;
+  position: sticky;
+  top: var(--space-topbar-height);
+  z-index: 4;
   flex: 0 0 auto;
   min-height: var(--space-topbar-height);
   margin: 0;
@@ -4058,12 +4156,9 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .chat-messages {
   display: block;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
+  overflow: visible;
   gap: 0.75rem;
   padding: 1rem 0 calc(var(--space-floating-bar-height) + max(1rem, env(safe-area-inset-bottom)) + 0.5rem);
-  scroll-padding-bottom: calc(var(--space-floating-bar-height) + max(1rem, env(safe-area-inset-bottom)) + 0.5rem);
 }
 
 .chat-date {
@@ -4734,6 +4829,26 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   padding-inline: 1rem;
 }
 
+.chat-row-action {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.chat-row-action:hover,
+.chat-row-action:focus-visible,
+.chat-row-action[aria-pressed='true'] {
+  border: 0;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  outline: none;
+}
+
 .profile-actions > .button-primary.icon-button {
   border-color: var(--color-accent);
   color: var(--color-paper);
@@ -5023,6 +5138,22 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .topbar-preview-contextual-actions {
   justify-content: flex-end;
+}
+
+.search-filters-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.search-filter-group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.search-filter-date-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
 .topbar-preview-dot {

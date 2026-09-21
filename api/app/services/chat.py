@@ -13,15 +13,16 @@ from app.schemas.chat import ChatContextResponse, ChatReadResponse, ChatUserResp
 from app.services.auth import get_user_by_username
 from app.services.notifications import create_notification
 from app.services.profile_media import profile_picture_url_for
+from app.services.subscriptions import has_entitlement
 from app.services.session_ops import commit, refresh
 
 MAX_PENDING_REQUEST_MESSAGES = 8
 MESSAGE_PAGE_SIZE = 50
 
 
-def can_initiate_chat_request(user: User) -> bool:
-    """Subscription boundary; billing will populate subscription_tier later."""
-    return getattr(user, "subscription_tier", "free") in {"pro", "pro_plus"}
+def can_initiate_chat_request(session: Session, user: User) -> bool:
+    """Only the server-resolved message-request entitlement grants access."""
+    return has_entitlement(user, "message_requests", session)
 
 
 async def _has_mutual_connection(session: Session, user: User, other: User) -> bool:
@@ -142,7 +143,7 @@ def _composer_state(session: Session, conversation: Conversation | None, user: U
     if conversation and conversation.status == ConversationStatus.declined:
         return False, "Chat unavailable.", "declined"
     if conversation is None:
-        if can_initiate_chat_request(user):
+        if can_initiate_chat_request(session, user):
             return True, "Write a message...", "new_request"
         return False, "Chat unavailable.", "unavailable"
     if conversation.status == ConversationStatus.pending:
@@ -162,10 +163,14 @@ def _conversation_response(session: Session, conversation: Conversation, viewer:
     setting = _get_setting(session, conversation.id, viewer.id)
     latest = conversation.messages[-1] if conversation.messages else None
     unread_count, _, _, _ = _receipt_summary(session, conversation, viewer)
+    _, peer_setting = _receipt_cursors(session, conversation, viewer)
+    latest_sender = session.get(User, latest.sender_id) if latest else None
     return ConversationResponse(
         id=conversation.id,
         participant=ChatUserResponse(id=participant.public_id, username=participant.username, display_name=participant.display_name, profile_picture_url=profile_picture_url_for(participant), show_professional_badge=participant.show_professional_badge),
         preview=latest.content if latest else None,
+        preview_sender_id=latest_sender.public_id if latest_sender else None,
+        preview_receipt_status=_receipt_status(session, conversation, latest, viewer, peer_setting) if latest else None,
         updated_at=conversation.updated_at,
         status=conversation.status.value,
         unread=unread_count > 0,
@@ -304,7 +309,7 @@ async def send_message_to_user(session: Session, user: User, username: str, cont
     if not conversation:
         if _is_blocked(session, user, other):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chat unavailable.")
-        if not mutual and not can_initiate_chat_request(user):
+        if not mutual and not can_initiate_chat_request(session, user):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="A paid plan is required to start a chat request.")
         conversation = Conversation(user_one_id=user_one_id, user_two_id=user_two_id, status=ConversationStatus.accepted if mutual else ConversationStatus.pending, requester_id=None if mutual else user.id)
         session.add(conversation)
