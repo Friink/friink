@@ -264,6 +264,14 @@ directory eligibility, or paid access. Expiry and revocation messaging must
 explain the resulting
 return to Free without implying a payment event when billing is unavailable.
 
+The planned manual-access flow uses calm confirmation summaries, `Grant
+access`, `Change access`, and `Return to Free` language, in-app status
+feedback, and optional email mirrors. Staff see assignment history and audit
+reasons; users see their effective plan, status, expiry, and concise
+change feedback. Paid-only states remain contextual and
+server-entitlement-driven; while billing is unavailable, the plan comparison
+is the only surface that uses `Coming soon` for unimplemented paid actions.
+
 ### Feedback
 
 Use inline feedback when it belongs to a specific control or flow. Use shared

@@ -2,6 +2,39 @@
 
 ## 2026-09-21T00:00:00Z
 
+- [subscriptions/backend] Wired non-mutual chat requests and long-post
+  validation to server-resolved entitlements. Subscription responses now
+  expose active entitlement keys; updated chat/subscription documentation and
+  targeted tests.
+
+## 2026-09-21T00:00:00Z
+
+- [rules/design] Removed the profile-setup JSX inline style, corrected the
+  server-resolved subscription wording, aligned private-post quote behavior,
+  assigned a unique TopBar rule ID, and marked the superseded auth-refresh
+  rule in the rule history.
+
+## 2026-09-21T00:00:00Z
+
+- [docs/notes] Recorded the UI/UX consistency audit backlog, intentional
+  contextual exceptions, and recommended cleanup order across buttons,
+  subscription states, Control Panel surfaces, rows, icon controls, and
+  recovery messaging.
+
+## 2026-09-21T00:00:00Z
+
+- [control-panel/subscriptions] Added a plan-change review summary showing the
+  selected user, plan, duration, current assignment, and replacement effect
+  before manual access is confirmed.
+
+## 2026-09-21T00:00:00Z
+
+- [docs/subscriptions] Documented the planned manual-subscription UX:
+  confirmation summaries, staff/user visibility, lifecycle notifications,
+  expiry behavior, paid-feature gating, and end-to-end staff and user flows.
+
+## 2026-09-21T00:00:00Z
+
 - [chat] Kept the direct-chat participant header sticky below the global top
   bar while preserving page-level conversation scrolling.
 

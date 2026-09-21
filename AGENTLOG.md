@@ -1,5 +1,42 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-21T00:00:00Z — Enforce server subscription entitlements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete the non-billing subscription backend while leaving
+  UI work deferred.
+- Changes Made: Added active entitlement keys to the subscription response,
+  replaced the legacy chat tier check with `message_requests`, enforced the
+  `longer_posts` entitlement for content above 256 characters, updated chat
+  and subscription unit contracts, and migrated targeted tests to real plan
+  assignments.
+- Verification Status: Targeted subscription/chat/post/blocking tests pass
+  (34 passed across the focused runs). Full API suite: 155 passed and 5
+  unrelated pre-existing failures remain in auth test doubles, SQLite audit
+  locking/isolation, and one overlong test username.
+
+## 2026-09-21T00:00:00Z — Align rules and shared profile-setup styling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the audited rule/code and documentation gaps without
+  changing the established private-post quote UX.
+- Changes Made: Replaced the profile setup progress JSX inline style with
+  shared CSS classes; corrected the server-resolved subscription wording,
+  private-post quote rule, TopBar rule ID, session-persistence file references,
+  and superseded auth-refresh history entry.
+- Verification Status: Targeted static checks and `git diff --check` passed.
+
+## 2026-09-21T00:00:00Z — Record UI/UX consistency audit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Put the identified platform UI/UX gaps in `docs/notes.md`.
+- Changes Made: Added the audit backlog, intentional contextual exceptions, and
+  recommended prioritization. No product behavior was changed.
+- Verification Status: Markdown link-target checks and `git diff --check` passed.
+
 ## 2026-09-21T00:00:00Z — Move direct chat scrolling to the page
 
 - Agent: Codex
@@ -14,6 +51,22 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Model: GPT-5
 - Prompt Summary: Keep the direct-chat profile card visible while retaining page-level scrolling.
 - Changes Made: Made the direct-chat participant header sticky below the global top bar and synchronized the chat/design documentation and logs.
+- Verification Status: Targeted TypeScript and diff checks passed.
+
+## 2026-09-21T00:00:00Z — Document subscription UX decisions and flows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the recommended manual-subscription UX and explain the resulting staff and user flows.
+- Changes Made: Added a planned subscription UX contract and flows for grant/change, renewal, return to Free, expiry, notifications, paid-feature gating, and staff/user visibility; updated the product design guidance, changelog, and agent log.
+- Verification Status: Documentation consistency and diff checks passed.
+
+## 2026-09-21T00:00:00Z — Add subscription plan-change review summary
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Deliver the least complicated subscription UX slice for this session.
+- Changes Made: Added an inline review summary to the Control Panel plan-adjustment modal and synchronized the subscription unit, changelog, and agent log.
 - Verification Status: Targeted TypeScript and diff checks pending.
 
 ## 2026-09-21T00:00:00Z — Fix chat conversation-list response crash

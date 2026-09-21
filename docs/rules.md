@@ -184,7 +184,7 @@ missing evidence can be filled in.
 - **What:** Post detail URLs use the author username, an on-the-fly slug from the first eight content words capped at 64 characters, and an 8-character random mixed-case alphanumeric `public_id`. Empty slugs omit the slug text.
 - **Edge cases:** The username and slug are cosmetic; the trailing `public_id` is authoritative for lookup. The UUID primary key and all UUID foreign-key relationships remain unchanged. Existing rows receive IDs through the Alembic backfill migration.
 
-### WEB-R-015 — Functional TopBar Preview Preserves Existing Navigation
+### WEB-R-019 — Functional TopBar Preview Preserves Existing Navigation
 
 - **Status:** Active preview
 - **Effective:** 2026-09-16T20:37:01Z
@@ -316,7 +316,7 @@ missing evidence can be filled in.
 - **File(s):** `api/app/models/subscription.py`, `api/app/services/subscriptions.py`, `api/app/routers/subscriptions.py`, `api/alembic/versions/20260910_0042_subscriptions.py`
 
 - **What:** The API owns the stable entitlement keys for Friink Free, Pro, and Pro+ and resolves a user's effective plan through at most one current manual assignment. Free is the default and includes core participation; Pro and Pro+ add only application-defined capabilities. Feature boundaries check server-resolved entitlements rather than plan-name or client boolean checks. A missing, expired, or revoked assignment falls back to Free; expiry is checked against server UTC at read time.
-- **Edge cases:** Superadmins may grant an active Free, Pro, or Pro+ assignment for 1–3650 days or indefinitely, or revoke it, with a required reason. A new grant replaces the user's current effective assignment and preserves history. Fixed assignments transition from active to expired by effective server-time calculation; indefinite assignments remain active until revoked. Existing content and login sessions remain valid when paid access expires, while new paid-only actions are rejected. Admin assignment reads compute `active`, `expired`, or `revoked` from the same effective-state check rather than trusting the stored status column. The API exposes the effective plan for future user-facing entitlement display, but the current Settings summary remains a static Free-plan presentation and cannot grant or self-activate paid access. No checkout, payment, billing, scheduler, or background expiry process exists.
+- **Edge cases:** Superadmins may grant an active Free, Pro, or Pro+ assignment for 1–3650 days or indefinitely, or revoke it, with a required reason. A new grant replaces the user's current effective assignment and preserves history. Fixed assignments transition from active to expired by effective server-time calculation; indefinite assignments remain active until revoked. Existing content and login sessions remain valid when paid access expires, while new paid-only actions are rejected. Admin assignment reads compute `active`, `expired`, or `revoked` from the same effective-state check rather than trusting the stored status column. The API and authenticated Settings surface expose the server-resolved effective plan, while plan actions remain informational and cannot grant or self-activate paid access. No checkout, payment, billing, scheduler, or background expiry process exists.
 
 ### AUTH-R-006 — Account Settings Show Server-Created Joined Date
 
@@ -611,7 +611,7 @@ missing evidence can be filled in.
 
 ### AUTH-R-030 — Web Auth Refresh Is Silent For Expired Access Tokens
 
-- **Status:** Active
+- **Status:** Superseded by AUTH-R-008
 - **Effective:** 2026-08-29T12:23:00Z
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
@@ -717,7 +717,7 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/lib/auth.ts`, `web/app/landing-auth-redirect.tsx`, `web/components/login-screen.tsx`
+- **File(s):** `web/lib/auth.ts`, `web/components/public-header.tsx`, `web/app/login/login-client.tsx`
 
 - **What:** The web client stores only safe authenticated account metadata in `localStorage` under `friink-auth-session`; the short-lived access token remains in memory and the refresh credential remains an HTTP-only cookie. Logout clears the stored metadata and the current in-memory session.
 - **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions. Planned multiple-account support may store safe summaries for more than one account, but must not store access/refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or device secrets in browser-readable storage.
@@ -903,8 +903,8 @@ missing evidence can be filled in.
 - **Platform:** All
 - **File(s):** `api/app/schemas/posts.py`, `api/app/services/posts.py`, `web/components/app-shell.tsx`, `web/components/composer.tsx`
 
-- **What:** Backend post content is capped at 512 characters. Normal posts and replies require non-blank content; quote posts may be created without typed quote text when `quoted_post_id` is present. The web floating post composer also applies a frontend-only 256-character entry limit and displays an `x/256` counter.
-- **Edge cases:** Media-only posts are allowed when the payload contains confirmed post-media items, and media is limited to 8 items. The frontend's 256-character composer limit is stricter than the backend's 512-character API maximum.
+- **What:** Backend post content is capped at 512 characters. Free users are limited to 256 characters; the server-resolved `longer_posts` entitlement permits up to 512 characters. Normal posts and replies require non-blank content; quote posts may be created without typed quote text when `quoted_post_id` is present. The web floating post composer also applies a frontend-only 256-character entry limit and displays an `x/256` counter.
+- **Edge cases:** Media-only posts are allowed when the payload contains confirmed post-media items, and media is limited to 8 items. The API remains authoritative when a client submits more than the Free limit, and rejects the request unless the server-resolved `longer_posts` entitlement is active.
 
 ### POST-R-003 — Create Payload Must Match Post Kind
 
@@ -1044,7 +1044,7 @@ missing evidence can be filled in.
 - **What:** A user cannot reply to a post unless the API confirms that user can view the parent post.
 - **Related rules:** Private Post Visibility Is Enforced Server-Side
 
-### POST-R-009 — Private Posts Cannot Be Quoted
+### POST-R-009 — Visible Private Posts May Be Quoted
 
 - **Status:** Active
 - **Effective:** 2026-08-29T13:10:00Z
@@ -1053,7 +1053,8 @@ missing evidence can be filled in.
 - **Platform:** All
 - **File(s):** `api/app/services/posts.py`, `api/tests/test_posts.py`
 
-- **What:** Deprecated. A Quote may reference any visible post or reply, including content owned by a private account when the quoting user is authorized to view it.
+- **What:** A Quote may reference any visible post or reply, including content owned by a private account when the quoting user is authorized to view it.
+- **Edge cases:** Existing quotes remain when an account becomes private. Viewers who retain access see the embedded original; viewers without access see the quote post with the embedded original marked unavailable. New quotes are rejected unless the quoting user can currently view the original.
 
 ### POST-R-010 — Quote Cards Hide Protected Content
 
@@ -1348,7 +1349,7 @@ missing evidence can be filled in.
 - **Platform:** Web/API
 - **File(s):** `api/app/models/chat.py`, `api/app/models/user.py`, `api/app/models/notification.py`, `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `api/alembic/versions/20260902_0016_add_chat_requests_and_settings.py`, `web/lib/auth.ts`, `web/lib/chat-transport.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/screens.tsx`
 
-- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A paid-tier user may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
+- **What:** Chat uses authenticated REST endpoints for conversation discovery, conversation creation, message history, message sending, request acceptance, per-user settings, read-cursor updates, and the persisted read-receipt privacy preference. Mutual accepted follows enable immediate chat. A user with the server-resolved `message_requests` entitlement may initiate a non-mutual request with a maximum of eight requester-authored messages while pending; the receiver accepts by button or reply, and a reply automatically unlocks two-way chat. Active conversations and the `/chats` conversation list poll every 4 seconds through guarded transport/state loops; both pause while the document is hidden and resume immediately on focus/visibility recovery.
 - **Edge cases:** Pending requests appear in Requests for both participants and move to All Chats only after acceptance; declined requests leave Requests and are unavailable. The receiver's pending composer says `Reply to accept.`; the requester is disabled after eight messages with `Request pending.`; free non-mutual users are disabled with a generic placeholder; blocked or no-longer-mutual accepted chats are read-only with `Chat unavailable.`. Message history is incremental and cursor-based, messages are deduplicated by server ID, server timestamps determine ordering, and sends include a client message ID. Mute suppresses chat notifications for that user while preserving the current tab; archive moves the chat to Archived and implies mute, with explicit mute surviving unarchive. The composer must not be disabled merely because transport or history loading failed. Subscription checkout/billing remains future work; blocking and profile access enforcement are governed by their active rules. See `docs/archives/chat-behavior.md`.
 
 ### CLIENT-R-013 — Chat Read Receipts Use Per-User Cursors
@@ -1636,7 +1637,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [blocking](units/blocking.md) | BLOCK-R-006 | Blocking creates no notification and self-blocking is rejected. |
 | [blocking](units/blocking.md) | BLOCK-R-007 | Server-side checks are authoritative for direct URLs and API |
 | [chat](units/chat.md) | CHAT-R-001 | Mutual accepted follows enable ordinary direct chat. |
-| [chat](units/chat.md) | CHAT-R-002 | A paid-tier user may initiate a non-mutual request subject to |
+| [chat](units/chat.md) | CHAT-R-002 | A user with the server-resolved message_requests entitlement may initiate a non-mutual request. |
 | [chat](units/chat.md) | CHAT-R-003 | Pending requests appear in Requests; accepted conversations |
 | [chat](units/chat.md) | CHAT-R-004 | Read receipts are tracked per user with server-authoritative |
 | [chat](units/chat.md) | CHAT-R-005 | Visible-app polling is adaptive and pauses while hidden; |
@@ -1677,7 +1678,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [posts](units/posts.md) | POSTS-R-002 | Post content and media limits are enforced by client hints |
 | [posts](units/posts.md) | POSTS-R-003 | Replies preserve their nested conversation tree while visual |
 | [posts](units/posts.md) | POSTS-R-004 | Private post visibility is enforced server-side, including |
-| [posts](units/posts.md) | POSTS-R-005 | Private posts cannot be quoted; unavailable quoted originals |
+| [posts](units/posts.md) | POSTS-R-005 | Visible private posts may be quoted by authorized viewers; unavailable quoted originals |
 | [posts](units/posts.md) | POSTS-R-006 | Canonical post URLs use author username plus authoritative |
 | [posts](units/posts.md) | POSTS-R-007 | Likes and Saves are unique durable reactions per user/content |
 | [posts](units/posts.md) | POSTS-R-008 | A post card's non-interactive area navigates to detail; |
@@ -1725,7 +1726,7 @@ This section is limited to decisions that were deferred, superseded, or retired 
 
 | ID | Status | Decision | Recorded |
 |---|---|---|---|
-| — | None recorded | No active rule has been marked deferred, superseded, or retired in the current rules history. | — |
+| AUTH-R-030 | Superseded by AUTH-R-008 | The former proactive web access-token refresh contract was replaced by reactive refresh after `TOKEN_EXPIRED`, coordinated across tabs. | 2026-09-21T00:00:00Z |
 
 ## Maintenance
 

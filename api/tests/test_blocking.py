@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
@@ -6,6 +7,7 @@ from sqlalchemy import delete, select
 from api.index import app
 from app.db import get_session_factory
 from app.models.connection import FollowRequest, FollowRequestStatus
+from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignment
 from app.models.user import User
 
 
@@ -63,7 +65,14 @@ def test_blocked_pending_request_freezes_count_and_unblock_does_not_extend_cap()
         with get_session_factory()() as session:
             requester = session.get(User, requester_id)
             assert requester
-            requester.subscription_tier = "pro"
+            plan = session.execute(select(Plan).where(Plan.code == "friink_pro")).scalar_one_or_none()
+            if plan is None:
+                plan = Plan(code="friink_pro", name="Friink Pro", description="Professional and communication features")
+                session.add(plan)
+                session.flush()
+            if session.execute(select(PlanEntitlement).where(PlanEntitlement.plan_id == plan.id, PlanEntitlement.entitlement_key == "message_requests")).scalar_one_or_none() is None:
+                session.add(PlanEntitlement(plan_id=plan.id, entitlement_key="message_requests"))
+            session.add(SubscriptionAssignment(user_id=requester.id, plan_id=plan.id, starts_at=datetime.now(UTC), status="active", granted_by_user_id=requester.id, reason="blocking test"))
             session.commit()
         requester_access = client.post("/auth/login", json={"email": requester_email, "password": "Strong-pass9!"}).json()["access_token"]
         recipient_access = client.post("/auth/login", json={"email": recipient_email, "password": "Strong-pass9!"}).json()["access_token"]

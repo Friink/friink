@@ -3,9 +3,9 @@
 Subscriptions describes Friink plans, current entitlement presentation, and
 the boundary between informational plans and future billing.
 
-**Status:** Partial — informational plans, server-resolved summaries, and manual staff assignment are active; billing is not active
+**Status:** Partial — informational plans, server-resolved summaries, manual staff assignment, and server entitlement enforcement are active; billing is not active
 **Tier:** Standard  
-**Last edited:** 2026-09-16T23:44:00Z
+**Last edited:** 2026-09-21T00:00:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -61,6 +61,12 @@ days of nonpayment.
 Pricing, introductory offers, automatic renewal, and nonpayment revocation are
 future billing behavior. They are not active while billing and payment
 integration remain unavailable.
+
+The API enforces the `message_requests` entitlement for non-mutual chat
+requests and the `longer_posts` entitlement for post content above the Free
+256-character limit. The professional-directory gate also resolves from the
+server entitlement contract. The remaining Pro/Pro+ entitlement keys are
+declared for future feature APIs and do not yet have domain surfaces.
 
 ## Rules
 
@@ -136,6 +142,89 @@ delivery failure must not roll back the entitlement. The
 planned expiry reminders are sent once at 7 days before expiry, 1 day before
 expiry, and at expiry. Until payment integration exists, these are manual
 assignment lifecycle notifications rather than billing or renewal notices.
+
+### Recommended UX contract (planned)
+
+The following decisions define the intended experience for the manual process.
+The plan-change confirmation summary is implemented; lifecycle notifications,
+reminders, and the remaining paid-feature surfaces remain planned.
+
+- Manual access must never be described as a purchase, payment, upgrade, or
+  renewal. Use `Grant access`, `Change access`, and `Return to Free`.
+- Every staff plan mutation requires a confirmation summary showing the user,
+  resulting plan, effective date, expiry or `No expiration`, and what happens
+  to the current assignment. Replacing an active assignment must explicitly
+  say that the old assignment ends immediately.
+- Users receive calm in-app feedback for every grant, change, revocation, and
+  expiration. Email mirrors those events when email delivery is configured.
+  Internal staff reasons are not exposed by default.
+- Expiry reminders are sent at 7 days, 1 day, and expiration. Before billing
+  exists, expired users are directed to support or an administrator rather
+  than to a payment or checkout action.
+- The Settings view always leads with the effective current plan. After paid
+  access ends, it shows Friink Free and may include a quiet note identifying
+  the previous plan and end date; expired or revoked paid plans must not look
+  active.
+- Paid features should not be scattered through the product as fake upgrade
+  funnels while billing is unavailable. `Coming soon` belongs in the plan
+  comparison until a feature is actually implemented. Once a paid feature is
+  active, an unavailable Free-state affordance may explain `Available with
+  Friink Pro` or `Available with Friink Pro+` in context.
+- Staff see the complete assignment history and audit reasons. Users see the
+  effective plan, access status, expiry, and concise recent-change feedback,
+  not the internal assignment timeline.
+- Every paid feature, including message requests, must resolve access from
+  the server entitlement contract. Client plan names and legacy tier fields
+  must not decide feature access.
+
+### Planned flows
+
+#### Staff grants or changes access
+
+1. Staff opens Control Panel → Users and searches by username or email.
+2. Staff opens the user and reviews the current effective plan and history.
+3. Staff chooses `Adjust plan`, selects Free, Pro, or Pro+, and chooses a
+   duration, custom expiry, or `No expiration`.
+4. Staff enters a reason and reviews the confirmation summary.
+5. The system replaces any active assignment atomically, records the audit
+   event, and shows a success state describing manual access.
+6. The user receives the corresponding in-app notification and email when
+   configured.
+
+#### Staff renews access
+
+1. Staff opens an active assignment and chooses the same plan in `Adjust plan`.
+2. Staff chooses a duration and enters a reason.
+3. The summary explains that the duration extends from the existing expiry.
+4. The system saves the new effective expiry and records the replacement and
+   renewal history.
+
+#### Staff returns a user to Free
+
+1. Staff chooses `Return to Free` from an active paid assignment.
+2. A separate confirmation asks for a reason and states that paid access ends
+   immediately.
+3. The system revokes the assignment, resolves the user to Friink Free, and
+   records the audit event.
+4. The user sees the Free state and receives a revocation notification.
+
+#### Access approaches or reaches expiry
+
+1. The system sends the planned 7-day and 1-day reminders.
+2. At expiry, the effective plan resolves to Friink Free without requiring a
+   background billing job.
+3. Settings shows Free plus a quiet previous-access note, if available.
+4. The user receives an expiration notification with support/admin guidance;
+   no checkout action is shown.
+
+#### User encounters a paid-only feature
+
+1. If the feature is not yet implemented, the user does not encounter a
+   scattered upgrade prompt; the plan comparison says `Coming soon`.
+2. If the feature is implemented but unavailable to Free, the local surface
+   explains the required plan and preserves a useful read-only or empty state.
+3. The API makes the final entitlement decision and the UI reflects the
+   server response.
 
 ## Technical contract
 

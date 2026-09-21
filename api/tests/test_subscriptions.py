@@ -12,7 +12,7 @@ from app.models.staff import PrivilegedStaffSession, StaffPermission, StaffRole,
 from app.models.subscription import Plan, SubscriptionAssignment
 from app.models.user import User
 from app.services.security import hash_password
-from app.services.subscriptions import effective_plan, effective_status, grant, has_entitlement, revoke
+from app.services.subscriptions import effective_plan, effective_status, entitlements_for, grant, has_entitlement, revoke
 from app.services.staff import require_privileged, permissions_for
 from fastapi import HTTPException
 
@@ -58,9 +58,12 @@ def test_subscription_lifecycle_and_deterministic_expiry(session, monkeypatch):
     assignment = grant(session, admin, user, "friink_pro", 2, "founding access")
     assert effective_plan(user, session).code == "friink_pro"
     assert has_entitlement(user, "message_requests", session)
+    assert entitlements_for(user, session) == ["message_requests"]
+    assert not has_entitlement(user, "unknown", session)
     monkeypatch.setattr("app.services.subscriptions.utc_now", lambda: clock + timedelta(days=2))
     assert effective_plan(user, session).code == "friink_free"
     assert not has_entitlement(user, "message_requests", session)
+    assert entitlements_for(user, session) == []
     assert effective_status(assignment) == "expired"
 
 
