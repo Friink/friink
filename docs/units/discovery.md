@@ -49,7 +49,9 @@ Unfollow, and the More actions menu. These actions are icon-only controls.
 The `ProfileCard` renders only active badges beside the name. The Professional
 badge uses the icon-only `fa-briefcase` with a `Professional` hover label; the
 Friink Registered badge uses icon-only `fa-shield-halved` with a `Friink
-Registered` hover label.
+Registered` hover label. Both use the shared accent-colored compact pill
+treatment wherever the reusable `ProfileCard` appears, including the side
+drawer.
 - **DISCOVERY-R-008:** The complete row links to the user's public profile and
   remains responsive; on narrow screens the secondary content may stack below
   the profile card.

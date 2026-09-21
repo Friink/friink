@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T00:00:00Z — Restore shared profile badge styling in drawer
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Professional badge accent color and pill geometry in the
+  side drawer and keep the reusable treatment ready for Friink Registered.
+- Changes Made: Renamed the shared badge class to `profile-badge` and added a
+  scoped drawer override for the shared display, margin, accent color, and
+  typography contract; synchronized design and discovery documentation.
+- Verification Status: Targeted web typecheck/build pending.
+
 ## 2026-09-21T00:00:00Z — Enforce server subscription entitlements
 
 - Agent: Codex

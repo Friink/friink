@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-22T00:00:00Z
+
+- [profile-badges] Restored the shared accent-colored compact pill treatment
+  inside the side drawer so Professional and Friink Registered badges retain
+  consistent geometry and color.
+
 ## 2026-09-21T00:00:00Z
 
 - [subscriptions/backend] Wired non-mutual chat requests and long-post

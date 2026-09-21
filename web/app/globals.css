@@ -402,7 +402,7 @@ textarea {
   min-width: 0;
 }
 
-.professional-profile-badge {
+.profile-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -416,6 +416,15 @@ textarea {
   letter-spacing: 0.02em;
   line-height: 1;
   white-space: nowrap;
+}
+
+/* The drawer's identity text rule targets every span; restore the shared
+   badge contract for both Professional and Friink Registered badges. */
+.sidebar-profile .profile-card-name-row .profile-badge {
+  display: inline-flex;
+  margin-top: 0;
+  color: var(--color-accent);
+  font-size: 0.65rem;
 }
 
 .profile-card-handle {

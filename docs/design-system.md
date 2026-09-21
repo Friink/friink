@@ -263,6 +263,8 @@ changes profile display only and must not imply Friink registration,
 directory eligibility, or paid access. Expiry and revocation messaging must
 explain the resulting
 return to Free without implying a payment event when billing is unavailable.
+Both profile badges use the shared accent-colored compact pill treatment,
+including inside the side drawer, and remain icon-only with accessible labels.
 
 The planned manual-access flow uses calm confirmation summaries, `Grant
 access`, `Change access`, and `Return to Free` language, in-app status
