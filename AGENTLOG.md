@@ -1,5 +1,28 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T12:00:08Z — Make public session detection explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the public landing route leaving an existing session
+  ambiguous across fresh tabs.
+- Changes Made: Added explicit loading, signed-out, and retryable transient
+  failure states to `PublicRouteGuard`; synchronized BUG-AUTH-002, account
+  access documentation, and active auth/navigation rules.
+- Verification Status: `npm --prefix web run lint`, `npx tsc --noEmit --incremental false` from `web/`, and `git diff --check` passed. Staging and production browser acceptance remain pending.
+
+## 2026-09-22T11:55:05Z — Record public-route session inconsistency
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Report the public landing page failing to consistently reveal
+  an existing session in a fresh tab while `/home` restores it.
+- Changes Made: Added BUG-AUTH-002 to `docs/bugs.md` with reproduction,
+  confirmed root cause, open diagnostics, proposed fix, and verification scope;
+  updated the changelog. No product code changed.
+- Verification Status: Markdown structure reviewed and `git diff --check`
+  passed.
+
 ## 2026-09-22T11:19:27Z — Restore session on individual chat refresh
 
 - Agent: Codex

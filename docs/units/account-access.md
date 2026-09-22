@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-21T21:33:31Z
+**Last edited:** 2026-09-22T12:00:08Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -261,10 +261,13 @@ authenticated API effects and actions still wait for the in-memory access token
 created by a successful refresh. A failed refresh returns to the existing
 recovery surface.
 
-Public entry pages render immediately while their optional refresh-cookie
-check runs in the background. A successful refresh may redirect an already
-authenticated visitor to the app, but a network, timeout, CORS, server, or
-terminal refresh failure must not leave the public page blank.
+The public landing route performs an explicit session check before showing its
+content. A loading recovery surface is shown while the refresh-cookie exchange
+runs. A successful refresh redirects an already authenticated visitor to the
+app; a confirmed terminal refresh failure shows the public landing page; and a
+recoverable network, timeout, CORS, or server failure shows an explicit retry
+surface instead of silently treating the visitor as signed out. Public pages
+that do not use this guard remain accessible without authentication.
 
 #### Multi-account terminal-session recovery
 

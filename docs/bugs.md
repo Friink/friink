@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-22T11:11:46Z
+**Last edited:** 2026-09-22T11:55:05Z
 
 ## Instructions for agents
 
@@ -73,6 +73,91 @@ Copy this template for a new defect and replace every placeholder:
 ```
 
 ## Defect entries
+
+## BUG-AUTH-002 — Public landing page does not consistently reveal an existing session
+
+- **Status:** Resolved
+- **Reported/updated:** 2026-09-22T12:00:08Z
+- **Affected area:** Public landing route `/`, `PublicRouteGuard`, refresh-session recovery
+- **Environment:** Local, staging, and production; new browser tab after an authenticated session
+- **Severity:** medium
+
+### Bug summary
+
+After closing the original tab and opening the public URL in a new tab, the
+landing page can remain visible without showing evidence of the existing login.
+Entering `/home` manually then restores the session and opens the authenticated
+application.
+
+### Reproduction
+
+1. Sign in to Friink in one browser tab.
+2. Close the tab and open a new tab at the public site root `/`.
+3. Observe that the public landing page remains visible.
+4. Change the URL to `/home` and observe that the authenticated Home screen loads.
+
+### Expected behavior
+
+The public route should consistently determine whether a valid session exists.
+If the session is valid, it should navigate to `/home`; if the user is truly
+signed out, it should remain on the public landing page without an ambiguous
+session-detection gap.
+
+### Actual behavior
+
+The public page renders first and starts refresh recovery asynchronously. If
+that refresh fails, times out, encounters a transient coordination/network
+problem, or does not complete as expected, `PublicRouteGuard` silently keeps
+the landing page visible. A direct visit to `/home` performs its own recovery
+and can succeed, making the session appear inconsistent across routes.
+
+### Root cause
+
+- **Confirmed:** A new tab has no in-memory access session. `PublicRouteGuard`
+  calls `refreshAuthSession()` after rendering the public page and suppresses
+  every refresh error without exposing the recovery state.
+- **Confirmed:** `/home` uses `AppShellRoute`, which has a separate session
+  recovery path and does not silently treat the same failure as a normal public
+  state.
+- **Open questions:** The exact staging/local trigger must be confirmed from
+  the browser Network panel: refresh success (`200`), terminal auth failure
+  (`401`), or network/CORS/coordination failure.
+
+### Proposed fix
+
+Implemented an explicit session-checking state in the public route. It now
+shows a loading recovery surface while checking, redirects after a successful
+refresh, renders the public landing page only after a terminal signed-out
+result, and shows a retryable recovery surface for transient failures.
+
+Non-goals: change refresh-token storage, make the public landing page require
+authentication, or alter `/home` authorization behavior.
+
+### Tests and verification
+
+- **Required:** Open `/` in a fresh tab with a valid refresh cookie and verify
+  navigation to `/home`; repeat with no session and verify the public page
+  remains; simulate refresh `401` and network failure; verify `/home` behavior
+  remains unchanged; test local, staging, and production-equivalent origins.
+- **Completed:** `npm --prefix web run lint`, `npx tsc --noEmit --incremental false`
+  from `web/`, and `git diff --check` passed. Staging and production browser
+  acceptance remain pending.
+
+### Noteworthy
+
+This was separate from BUG-CHAT-001. The chat defect was caused by an individual
+chat route skipping session restoration; this defect concerns the public route
+silently accepting refresh failure and presenting no session state. The public
+site and API use an httpOnly refresh cookie, while the access session is held in
+browser memory after recovery. Public landing content now waits for the session
+check, so a transient error is visible and retryable.
+
+### Related documentation and implementation
+
+- [Auth/chat defect register](bugs.md)
+- [`PublicRouteGuard`](../web/components/public-route-guard.tsx)
+- [`AppShellRoute`](../web/components/app-shell-route.tsx)
+- [`Auth session helpers`](../web/lib/auth.ts)
 
 ## BUG-CHAT-001 — Individual chat refresh redirects to login
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-22T12:00:08Z
+
+- [auth/public-routing] Added explicit session-checking UX to the public
+  landing route: loading while checking, Home redirect on success, public
+  content for confirmed signed-out visitors, and retryable recovery on
+  transient failures.
+- [docs/auth] Marked BUG-AUTH-002 resolved and synchronized account-access and
+  active auth/navigation rules.
+
+## 2026-09-22T11:55:05Z
+
+- [docs/bugs] Added BUG-AUTH-002 for inconsistent public-route session
+  detection across fresh tabs, including confirmed behavior, open diagnostics,
+  proposed fix, and verification requirements.
+
 ## 2026-09-22T11:19:27Z
 
 - [chat] Restored the authenticated session before loading an individual chat

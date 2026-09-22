@@ -729,10 +729,10 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered. The shell metadata is presentation-only; authenticated API effects and actions require a successful in-memory refresh. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
-- **Edge cases:** Network and other recoverable failures remain on the explicit recovery surface. Refresh-token rotation and server-side validation remain authoritative. A failed slot is skipped without clearing other remembered-account summaries, and stale or delayed cross-tab state from another slot cannot replace the active slot.
+- **What:** Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered. The shell metadata is presentation-only; authenticated API effects and actions require a successful in-memory refresh. The public landing route also shows an explicit loading recovery surface while checking for an existing session, redirects after a successful refresh, shows the public page after a confirmed terminal signed-out result, and offers retry on recoverable failures. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
+- **Edge cases:** Network and other recoverable failures remain on the explicit recovery surface instead of being silently treated as signed out. Refresh-token rotation and server-side validation remain authoritative. A failed slot is skipped without clearing other remembered-account summaries, and stale or delayed cross-tab state from another slot cannot replace the active slot.
 - **Verification:** Local targeted account-slot tests, TypeScript checks, and the webpack production build pass; staging browser acceptance remains a release gate.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
@@ -1272,7 +1272,7 @@ missing evidence can be filled in.
 - **What:** Web API calls use `NEXT_PUBLIC_API_BASE_URL` when configured. Localhost browsing falls back to `http://localhost:8000`. Deployed browser contexts without an API origin throw a configuration error instead of silently calling localhost.
 - **Edge cases:** If the configured origin is `https://staging-api.friink.com` and a network-level fetch fails for a safe read (`GET`, `HEAD`, or `OPTIONS`), the client retries `https://api.friink.com`. Mutations are never retried across origins because replaying them could duplicate or misroute user data.
 
-### CLIENT-R-006 — Public Pages Remain Accessible To Authenticated Users
+### CLIENT-R-006 — Public Pages Use Explicit Session Routing
 
 - **Status:** Active
 - **Effective:** 2026-09-01T00:00:00Z
@@ -1281,8 +1281,8 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/lib/auth.ts`
 
-- **What:** The public landing page and `/subscriptions` remain accessible when a user has a persisted non-demo auth session; authenticated visitors are not forcibly redirected to `/home`.
-- **Edge cases:** The shared public `Header` reflects the session state and provides app navigation without replacing the public page. Demo sessions are not treated as signed-in public sessions.
+- **What:** The public landing page checks for an existing non-demo session before rendering its content. A successful refresh routes authenticated visitors to `/home`; confirmed signed-out visitors may remain on the landing page. `/subscriptions` remains accessible without authentication.
+- **Edge cases:** The landing route shows explicit loading and recoverable-error states during session checking; it does not silently treat network, timeout, CORS, or server failures as signed out. Demo sessions are not treated as signed-in public sessions.
 
 ### CLIENT-R-007 — Public Header Uses Signed-In Account Menu
 
