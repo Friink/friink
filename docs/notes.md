@@ -11,11 +11,43 @@ Current auth/session scope: Phases 1–3 are closed, Phase 4 is closed for the
 current web/API-focused release, Phase 5a–5d staff discovery, bootstrap, roles,
 privileged sessions, and administrative security are implemented and verified
 on staging, and Phase 6 operations are implemented with final operational
-rehearsals still open. Production rollout remains a separate release gate.
+rehearsals still open. Staging is the authoritative release gate when it is
+production-parity; production receives the verified artifact and gets smoke
+checks only.
 
 Mobile authentication and session requirements are preserved in the historical
 archive at `docs/archives/auth-and-session-mobile.md` and remain deferred until
 a mobile client exists.
+
+## Add-account limit mismatch after refresh
+
+**Recorded:** 2026-09-21T21:44:25Z
+**Status:** Fixed locally; staging acceptance pending.
+
+On staging, the active browser can show only one remembered account, but the
+Add account flow can report `Remove an account before adding another.` after
+the session has been refreshed repeatedly. That message is emitted when the
+API considers the browser's device-scoped remembered-account slots full.
+
+Multiple refreshes should rotate the existing slot's refresh credential and
+must not create additional account slots. The suspected causes are a stale or
+mismatched long-lived `friink_device_id`, a staging override of
+`MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, or an account-list refresh race that
+leaves the UI showing an incomplete list. The account list and availability
+responses must be compared for the same browser/device before changing the
+slot logic:
+
+- `GET /auth/accounts` — returned remembered slots and account summaries.
+- `GET /auth/accounts/add-availability` — server `allowed` result.
+- The final `POST /auth/login` from the Add account flow — status and error
+  response.
+
+Check the staging account-slot logs alongside those responses. Do not treat
+the browser's visible account count as authoritative until the device cookie
+and server slot count agree. The local fix excludes slots whose auth session
+has been revoked or whose account is no longer active, repairs a stale slot
+link during account discovery, and adds a regression request/response test.
+Staging verification remains open.
 
 ## Search MVP decision
 

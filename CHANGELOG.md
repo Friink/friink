@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-09-22T00:08:28Z
+
+- [docs/workflow] Added a clearly marked draft workflow covering work types,
+  statuses, side states, staging-based definition of done, reopening, and
+  production smoke checks.
+- [docs/bugs] Added a placeholder defect-register document and linked both
+  new documents in the documentation README and viewer.
+
+## 2026-09-21T23:59:54Z
+
+- [docs/testing] Made production-parity staging the authoritative acceptance
+  gate, clarified the definition of done, and limited production verification
+  to smoke checks after promoting the exact staging-verified artifact.
+- [docs/deployment] Updated the active release flow and retained the former
+  full production-gate workflow as legacy history; synchronized architecture
+  and notes with the same staging-gate policy.
+
+## 2026-09-21T23:21:14Z
+
+- [auth/session] Implemented stale remembered-slot capacity handling,
+  slot-scoped web session coordination, terminal-session fallback across
+  remembered accounts, and recent-account login preselection. Added targeted
+  local API regression coverage and synchronized account-access rules/status;
+  staging browser acceptance remains pending.
+
+## 2026-09-21T22:02:08Z
+
+- [docs/account-access] Added the staged development plan for the add-account
+  limit mismatch, terminal-session recovery, and per-slot client-state
+  isolation, including ordering, verification, and migration expectations.
+
+## 2026-09-21T21:44:25Z
+
+- [docs/notes] Recorded the open staging bug where Add account can report a
+  remembered-account limit despite the browser showing one account after
+  repeated refreshes, including the required API and log comparison.
+
+## 2026-09-21T21:33:31Z
+
+- [docs/account-access] Documented the planned multi-account terminal-session
+  recovery flow, per-slot client-state isolation, recent-account login
+  preselection, credential/challenge boundaries, and expected no-schema-change
+  path. Active rules remain unchanged until implementation and verification.
+
 ## 2026-09-22T00:00:00Z
 
 - [chat] Removed the nested chat scrollbar and fixed the participant header

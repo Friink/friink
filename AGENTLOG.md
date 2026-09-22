@@ -1,5 +1,31 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T00:08:28Z — Add draft workflow and bugs placeholder
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the proposed work workflow and reserve a future
+  defect register.
+- Changes Made: Added `docs/workflow.md` as an explicitly non-authoritative
+  draft, added `docs/bugs.md` as a placeholder, and synchronized the docs
+  README and viewer navigation.
+- Verification Status: Markdown links and document registry reviewed;
+  `git diff --check` pending.
+
+## 2026-09-21T23:59:54Z — Make staging the authoritative release gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Establish production-parity staging acceptance as the active
+  testing workflow and define production verification as post-promotion smoke
+  checks only.
+- Changes Made: Updated `docs/testing.md`, `docs/deployment.md`,
+  `docs/architecture.md`, `docs/notes.md`, and the account-access release
+  gates; preserved the former full production-gate workflow as legacy history
+  and recorded the definition of done.
+- Verification Status: Documentation links and Markdown structure reviewed;
+  `git diff --check` pending.
+
 ## 2026-09-22T00:00:00Z — Make chat header fixed with document scrolling
 
 - Agent: Codex
@@ -12664,3 +12690,74 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification Status: TypeScript, Python compilation, authenticated local
   browser acceptance, API boundary validation, and `git diff --check` passed.
   Staging acceptance and automated search coverage remain pending.
+## 2026-09-21T21:33:31Z — Document planned multi-account session recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the proposed fix for remembered-account recovery
+  when the active session terminates.
+- Changes Made: Updated `docs/units/account-access.md` with the planned
+  most-recent-slot refresh fallback, per-slot client coordination boundary,
+  login preselection behavior, credential and OTP requirements, planned
+  acceptance criteria, test scenarios, implementation status, and migration
+  expectation. Kept `docs/rules.md` unchanged because the behavior is not yet
+  implemented or verified.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation instructions and affected unit reviewed;
+  `git diff --check` passed; targeted rule and traceability review passed.
+
+## 2026-09-21T21:44:25Z — Record add-account limit mismatch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the staging bug where Add account reports a full
+  remembered-account limit although the browser shows one account.
+- Changes Made: Added an open implementation note describing the observed
+  mismatch, the fact that refreshes must not create slots, suspected device,
+  configuration, and UI-refresh causes, and the API responses and logs needed
+  for confirmation. No code or active rule changes were made.
+- Files: `docs/notes.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` and
+  targeted link review passed.
+
+## 2026-09-21T22:02:08Z — Document auth/session development plan
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the three-workstream auth/session development plan
+  in the account-access unit.
+- Changes Made: Added the staged plan for diagnosing the Add account limit
+  mismatch, implementing terminal-session recovery, isolating multi-account
+  client state, targeted verification, release ordering, and the expected
+  no-schema-change path. Linked the existing open bug note and kept active
+  rules unchanged.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` and
+  targeted link review pending.
+
+## 2026-09-21T23:21:14Z — Implement auth/session recovery workstreams
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Develop the documented auth/session plan, compare it with
+  the docs, and test locally.
+- Changes Made: Fixed remembered-slot capacity counting so revoked sessions
+  and inactive accounts do not block Add account; repaired stale current-slot
+  backfill; added a targeted API regression test; implemented slot-scoped safe
+  session metadata, remembered-account summaries, refresh coordination, locks,
+  and cross-tab filtering; added terminal refresh fallback across remembered
+  slots and recent-account login preselection; synchronized active auth rules,
+  the account-access unit, and the staging verification note.
+- Files: `api/app/services/account_slots.py`, `api/app/routers/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `web/components/app-shell-route.tsx`, `web/app/login/login-client.tsx`,
+  `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`,
+  `web/app/posts/[postId]/post-client.tsx`,
+  `web/app/[username]/[postId]/post-client.tsx`, `docs/rules.md`,
+  `docs/units/account-access.md`, `docs/notes.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Targeted account tests passed their assertions (pytest
+  cleanup hit a pre-existing Python 3.14 SQLite file-lock error); API files
+  compiled; TypeScript passed; the webpack production build passed; local
+  browser/API servers could not bind because Windows returned WinError 10013;
+  staging acceptance remains pending.
