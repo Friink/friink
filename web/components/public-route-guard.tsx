@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession } from '@/lib/auth';
+import { isTerminalRefreshFailure, loadAuthSession, restoreAuthSessionForEntry } from '@/lib/auth';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 
 type PublicRouteGuardProps = {
@@ -19,17 +19,9 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
 
     async function checkSession() {
       setCheckState('loading');
-      const session = loadAuthSession();
-
-      if (session) {
-        router.replace('/home');
-        return;
-      }
-
       try {
-        const restoredSession = await refreshAuthSession();
+        await restoreAuthSessionForEntry();
         if (!active) return;
-        saveAuthSession(restoredSession);
         router.replace('/home');
       } catch (error) {
         if (!active) return;
@@ -42,6 +34,15 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
       active = false;
     };
   }, [retryVersion, router]);
+
+  useEffect(() => {
+    function handleSessionUpdate() {
+      if (loadAuthSession()) router.replace('/home');
+    }
+
+    window.addEventListener('friink-account-switched', handleSessionUpdate);
+    return () => window.removeEventListener('friink-account-switched', handleSessionUpdate);
+  }, [router]);
 
   if (checkState === 'loading') {
     return <SessionRecoveryScreen status="loading" />;

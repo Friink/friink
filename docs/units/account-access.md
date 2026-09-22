@@ -261,13 +261,14 @@ authenticated API effects and actions still wait for the in-memory access token
 created by a successful refresh. A failed refresh returns to the existing
 recovery surface.
 
-The public landing route performs an explicit session check before showing its
-content. A loading recovery surface is shown while the refresh-cookie exchange
-runs. A successful refresh redirects an already authenticated visitor to the
-app; a confirmed terminal refresh failure shows the public landing page; and a
-recoverable network, timeout, CORS, or server failure shows an explicit retry
-surface instead of silently treating the visitor as signed out. Public pages
-that do not use this guard remain accessible without authentication.
+The public landing route and authenticated app entry use the shared
+`restoreAuthSessionForEntry()` contract. A loading recovery surface is shown
+while the refresh-cookie exchange runs. A successful refresh redirects an
+already authenticated visitor to the app; a confirmed terminal refresh failure
+shows the public landing page; and a recoverable network, timeout, CORS, or
+server failure shows an explicit retry surface instead of silently treating the
+visitor as signed out. Public pages that do not use this guard remain
+accessible without authentication.
 
 #### Multi-account terminal-session recovery
 

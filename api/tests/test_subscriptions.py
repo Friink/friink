@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db import Base
 
 from app.models.security_event import SecurityEvent
+from app.models.notification import Notification, NotificationType
 from app.models.staff import PrivilegedStaffSession, StaffPermission, StaffRole, user_roles
 from app.models.subscription import Plan, SubscriptionAssignment
 from app.models.user import User
@@ -56,6 +57,10 @@ def test_subscription_lifecycle_and_deterministic_expiry(session, monkeypatch):
     admin, user, _ = setup(session)
     clock = datetime(2030, 1, 1, tzinfo=UTC); monkeypatch.setattr("app.services.subscriptions.utc_now", lambda: clock)
     assignment = grant(session, admin, user, "friink_pro", 2, "founding access")
+    notification = session.execute(select(Notification).where(Notification.recipient_user_id == user.id)).scalar_one()
+    assert notification.type == NotificationType.subscription_access_granted
+    assert notification.payload["plan_name"] == "Friink Pro"
+    assert notification.payload["indefinite"] is False
     assert effective_plan(user, session).code == "friink_pro"
     assert has_entitlement(user, "message_requests", session)
     assert entitlements_for(user, session) == ["message_requests"]
@@ -78,6 +83,8 @@ def test_indefinite_revocation_replacement_and_audit(session, monkeypatch):
     kinds = [event.payload["kind"] for event in session.execute(select(SecurityEvent).where(SecurityEvent.user_id == admin.id)).scalars()]
     assert kinds.count("subscription_granted") == 2
     assert "subscription_replaced" in kinds and "subscription_revoked" in kinds
+    notification_types = [row.type for row in session.execute(select(Notification).where(Notification.recipient_user_id == user.id).order_by(Notification.created_at)).scalars()]
+    assert notification_types == [NotificationType.subscription_access_granted, NotificationType.subscription_access_changed, NotificationType.subscription_access_revoked]
 
 
 def test_same_plan_renewal_extends_active_expiry(session, monkeypatch):

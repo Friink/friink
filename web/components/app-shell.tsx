@@ -766,19 +766,22 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
     const connectionId = typeof payload.connection_id === 'string' ? payload.connection_id : null;
     const conversationId = typeof payload.conversation_id === 'string' ? payload.conversation_id : null;
+    const isSubscriptionNotification = notification.type.startsWith('subscription_access_');
     const notificationHref = notification.type === 'login_security'
       ? (typeof payload.action_href === 'string' ? payload.action_href : '/settings')
+      : isSubscriptionNotification
+      ? (typeof payload.action_href === 'string' ? payload.action_href : '/settings/subscription')
       : (notification.type === 'mention' || notification.type === 'like') && postPublicId
       ? getPostPath(postAuthorUsername || actorHandle, postSlug, postPublicId)
       : undefined;
     return {
       id: notification.id,
-      kind: notification.type === 'login_security' ? 'login' : notification.type.startsWith('professional_registration_') ? 'service' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
-      name: notification.type === 'login_security' || notification.type.startsWith('professional_registration_') ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
-      handle: `@${notification.type === 'login_security' || notification.type.startsWith('professional_registration_') ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
+      kind: notification.type === 'login_security' ? 'login' : notification.type.startsWith('professional_registration_') || isSubscriptionNotification ? 'service' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      name: notification.type === 'login_security' || notification.type.startsWith('professional_registration_') || isSubscriptionNotification ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
+      handle: `@${notification.type === 'login_security' || notification.type.startsWith('professional_registration_') || isSubscriptionNotification ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
-      initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
+      initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : isSubscriptionNotification ? 'Friink' : actorName || actorHandle),
       showProfessionalBadge: notification.actor_show_professional_badge,
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
@@ -835,6 +838,12 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return typeof payload.message === 'string' && payload.message ? `Your Friink Registration request was declined: ${payload.message}` : 'Your Friink Registration request was declined. You may apply again.';
       case 'professional_registration_revoked':
         return typeof payload.message === 'string' && payload.message ? `Your Friink Registration was revoked: ${payload.message}` : 'Your Friink Registration was revoked by Friink staff.';
+      case 'subscription_access_granted':
+        return typeof payload.plan_name === 'string' ? `Friink staff granted you ${payload.plan_name} access${payload.indefinite ? ' with no expiration' : '.'}` : 'Friink staff granted you a new plan.';
+      case 'subscription_access_changed':
+        return typeof payload.plan_name === 'string' ? `Your Friink plan changed to ${payload.plan_name}${payload.indefinite ? ' with no expiration' : '.'}` : 'Your Friink plan was updated by staff.';
+      case 'subscription_access_revoked':
+        return typeof payload.plan_name === 'string' ? `Your ${payload.plan_name} access was ended by Friink staff. You are now on Friink Free.` : 'Your paid Friink access was ended. You are now on Friink Free.';
       case 'request_accepted':
       default:
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';

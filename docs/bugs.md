@@ -76,8 +76,8 @@ Copy this template for a new defect and replace every placeholder:
 
 ## BUG-AUTH-002 — Public landing page does not consistently reveal an existing session
 
-- **Status:** Resolved
-- **Reported/updated:** 2026-09-22T12:00:08Z
+- **Status:** In progress
+- **Reported/updated:** 2026-09-22T12:40:00Z
 - **Affected area:** Public landing route `/`, `PublicRouteGuard`, refresh-session recovery
 - **Environment:** Local, staging, and production; new browser tab after an authenticated session
 - **Severity:** medium
@@ -113,22 +113,22 @@ and can succeed, making the session appear inconsistent across routes.
 
 ### Root cause
 
-- **Confirmed:** A new tab has no in-memory access session. `PublicRouteGuard`
-  calls `refreshAuthSession()` after rendering the public page and suppresses
-  every refresh error without exposing the recovery state.
-- **Confirmed:** `/home` uses `AppShellRoute`, which has a separate session
-  recovery path and does not silently treat the same failure as a normal public
-  state.
-- **Open questions:** The exact staging/local trigger must be confirmed from
-  the browser Network panel: refresh success (`200`), terminal auth failure
-  (`401`), or network/CORS/coordination failure.
+- **Confirmed:** A new tab has no in-memory access session. The public route
+  and `/home` previously owned separate restoration branches, so they could
+  make different decisions about the same refresh-cookie session.
+- **Confirmed:** The previous fix improved the public loading/error state but
+  did not create a shared entry bootstrap contract; the reported behavior still
+  reproduces when the public route remains visible while `/home` restores.
+- **Open questions:** Staging still needs browser Network-panel confirmation
+  of whether the refresh request succeeds, returns terminal `401`, or fails
+  through CORS/network/coordination.
 
 ### Proposed fix
 
-Implemented an explicit session-checking state in the public route. It now
-shows a loading recovery surface while checking, redirects after a successful
-refresh, renders the public landing page only after a terminal signed-out
-result, and shows a retryable recovery surface for transient failures.
+The new fix centralizes entry restoration in `restoreAuthSessionForEntry()` so
+the public route and authenticated shell use the same in-memory-or-refresh
+contract. The public route also responds to cross-tab account restoration
+events and keeps the landing page behind the explicit loading/recovery gate.
 
 Non-goals: change refresh-token storage, make the public landing page require
 authentication, or alter `/home` authorization behavior.
@@ -139,18 +139,21 @@ authentication, or alter `/home` authorization behavior.
   navigation to `/home`; repeat with no session and verify the public page
   remains; simulate refresh `401` and network failure; verify `/home` behavior
   remains unchanged; test local, staging, and production-equivalent origins.
-- **Completed:** `npm --prefix web run lint`, `npx tsc --noEmit --incremental false`
-  from `web/`, and `git diff --check` passed. Staging and production browser
-  acceptance remain pending.
+- **Completed:** Documentation was updated before implementation. The local
+  Webpack app and FastAPI development server were run together; the public
+  route showed the loading recovery state, handled `POST /auth/refresh` with a
+  confirmed signed-out `401`, and then rendered the public page. Local
+  TypeScript and `git diff --check` passed. Authenticated local browser
+  acceptance and staging acceptance remain open because no local test
+  credentials were available.
 
 ### Noteworthy
 
 This was separate from BUG-CHAT-001. The chat defect was caused by an individual
-chat route skipping session restoration; this defect concerns the public route
-silently accepting refresh failure and presenting no session state. The public
-site and API use an httpOnly refresh cookie, while the access session is held in
-browser memory after recovery. Public landing content now waits for the session
-check, so a transient error is visible and retryable.
+chat route skipping session restoration; this defect concerns inconsistent
+entry-point restoration. The public site and API use an httpOnly refresh cookie,
+while the access session is held in browser memory after recovery. The shared
+entry helper is intended to keep `/` and `/home` on the same decision path.
 
 ### Related documentation and implementation
 

@@ -3,9 +3,9 @@
 Notifications communicates important activity, security events, follow
 requests, accepted requests, mentions, and other user-visible events.
 
-**Status:** Active  
+**Status:** Partial
 **Tier:** Standard  
-**Last edited:** 2026-09-16T02:32:00Z
+**Last edited:** 2026-09-22T12:33:44Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -39,6 +39,9 @@ meaning that causes a notification.
 - **NOTIFY-R-007:** Optimistic read state must survive notification-list
   refreshes while a read mutation settles; stale polling responses must not
   restore the bell dot or reclassify a read item as new.
+- **NOTIFY-R-008:** Manual subscription grant, change, and revoke operations
+  create a recipient-owned in-app notification that links to Subscription
+  settings; notification delivery does not roll back the access mutation.
 
 ## UX and flows
 
@@ -56,11 +59,65 @@ notifications in the in-app list and top-bar dropdown. They explain pending,
 approved, declined, and revoked outcomes; a declined request can be submitted
 again immediately.
 
+### External notification setup (planned)
+
+The platform-neutral setup UX is owned here even though external delivery is
+not implemented yet. A user may open `Settings > Notifications` and choose
+`Enable notifications`. Friink explains that this enables alerts when the app
+is closed, then requests browser/OS permission only after the user activates
+the control. On success, the setting shows `Notifications enabled on this
+device`. A contextual prompt may offer the same action after a user opens a
+chat or receives a meaningful notification, but it must provide `Not now` and
+must not repeatedly prompt after denial.
+
+The setting must represent at least these states: not enabled, enabled,
+blocked by browser/OS settings, unsupported, and temporarily unavailable.
+Blocked and unsupported states retain in-app notifications and explain the
+next available action. Users can disable external delivery from the same
+setting. Platform-specific prerequisites, such as installing a web app on a
+mobile home screen, belong behind this common flow and should not change its
+language or data model.
+
 ## Technical contract
 
 API endpoints are in `api/app/routers/notifications.py`; records and outbox
 behavior are represented by notification models and services. The web surface
 uses `notifications-screen.tsx` and the TopBar dropdown.
+
+### Planned Web Push requirements
+
+External delivery should use the standard Web Push protocol with VAPID, not a
+platform-specific Windows tray service. The browser supplies a subscription
+endpoint; the API sends an encrypted push through the browser/vendor push
+service, and a service worker displays the operating-system notification. The
+same backend contract should support desktop and mobile browsers, subject to
+each platform's permission and installation requirements.
+
+Required implementation pieces:
+
+- A secure-context service-worker registration and push handler in the web
+  client.
+- A user-gesture-gated permission and subscription flow exposed through the
+  shared notification settings UX.
+- Server-only VAPID private key and environment-specific public key/configuration;
+  secrets must not be committed.
+- A push-subscription persistence model associated with the authenticated user
+  and device/browser, with endpoint uniqueness, timestamps, active/revoked
+  state, and cleanup for expired subscriptions.
+- Create, replace, and revoke subscription API operations protected by the
+  existing authentication and CSRF protections.
+- A durable notification/outbox flow that sends push only after the source
+  notification commits; delivery failure must not roll back the source action.
+- Best-effort retries, deduplication by notification ID, and removal of
+  subscriptions rejected as expired or invalid by the push service.
+- Payloads limited to safe notification text and a canonical Friink target
+  route; they must not contain secrets, internal IDs, or sensitive account
+  existence information.
+- Service-worker click handling that focuses an existing Friink client or
+  opens the target route, then lets the app reconcile read state with the API.
+- Notification preferences for meaningful events such as direct messages,
+  mentions, connection requests, and security alerts. In-app notifications
+  remain the source of truth when external delivery is unavailable.
 
 ## Acceptance criteria
 
@@ -69,7 +126,31 @@ uses `notifications-screen.tsx` and the TopBar dropdown.
 - [ ] **NOTIFY-AC-003** Hidden documents pause polling and recover on focus.
 - [ ] **NOTIFY-AC-004** Security and activity views expose correct content.
 - [ ] **NOTIFY-AC-005** Event/delivery failure cannot alter the source action.
+- [ ] **NOTIFY-AC-006** A user can enable, disable, and recover external
+  notification delivery from the shared notification settings flow.
+- [ ] **NOTIFY-AC-007** A valid subscription is stored per authenticated
+  user/device and invalid subscriptions are retired safely.
+- [ ] **NOTIFY-AC-008** A committed notification can produce a Web Push alert
+  without requiring an open Friink page or live polling session.
+- [ ] **NOTIFY-AC-009** Clicking an external notification opens its canonical
+  Friink destination and reconciles read state through the API.
+- [ ] **NOTIFY-AC-010** Permission denial, unsupported browsers, expired
+  subscriptions, and delivery failures preserve the in-app notification path.
 
 ## Known limitations
 
 External email and push notification delivery are not active product channels.
+Manual subscription grant, change, and revoke events now use the active
+in-app notification channel; expiry reminders and expiry notifications remain
+planned.
+The requirements above are planned; no service worker, VAPID configuration,
+subscription persistence, or external-delivery API is implemented yet.
+
+## Open questions
+
+- Which Python Web Push library will be adopted for the FastAPI service?
+- Should notification preferences be stored with the notification settings
+  model or a dedicated delivery-preferences model?
+- Which notification types are enabled by default when a user opts in?
+- What queue/worker runtime will drain the notification outbox in each
+  environment?

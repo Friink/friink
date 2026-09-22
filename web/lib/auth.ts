@@ -644,6 +644,15 @@ export async function refreshAuthSession(): Promise<AuthSession> {
   return refreshPromise;
 }
 
+/** Restore the in-memory session required by any authenticated route entry. */
+export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
+  const currentSession = loadAuthSession();
+  if (currentSession) return currentSession;
+  const restoredSession = await refreshAuthSession();
+  saveAuthSession(restoredSession);
+  return restoredSession;
+}
+
 type RefreshCoordinationState = {
   operationId: string;
   ownerId: string;
@@ -1467,7 +1476,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security' | 'professional_registration_submitted' | 'professional_registration_approved' | 'professional_registration_rejected' | 'professional_registration_revoked';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security' | 'professional_registration_submitted' | 'professional_registration_approved' | 'professional_registration_rejected' | 'professional_registration_revoked' | 'subscription_access_granted' | 'subscription_access_changed' | 'subscription_access_revoked';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;

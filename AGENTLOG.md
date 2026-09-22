@@ -1,5 +1,59 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T13:25:23Z — Correct public session bootstrap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the session-routing defect documentation, fix the
+  public route so it recognizes an existing session consistently with `/home`,
+  and validate locally before reporting completion.
+- Changes Made: Reopened BUG-AUTH-002 because the previous public guard did not
+  share the authenticated entry path. Added `restoreAuthSessionForEntry()` and
+  reused it in `PublicRouteGuard` and `AppShellRoute`; the public guard now also
+  responds to cross-tab account restoration events. Synchronized the bug
+  register, account-access unit, active auth rule, changelog, and this log.
+- Verification Status: Local Webpack dev server and FastAPI development server
+  started successfully. The local public route showed the loading recovery
+  state, then correctly remained on the public landing page after the API
+  returned a confirmed signed-out result. TypeScript and `git diff --check`
+  passed. An authenticated local browser rehearsal could not be completed
+  without valid local credentials; repository lint still reports pre-existing
+  effect-hook errors in `AppShellRoute`.
+
+## 2026-09-22T12:33:44Z — Complete manual subscription notification flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Finish the staff plan-assignment flow end to end using the
+  existing UI and design system, including notifying the affected user.
+- Changes Made: Added subscription grant/change/revoke notification types and
+  the Alembic enum migration; subscription mutations now create durable,
+  recipient-owned in-app notifications with safe plan/expiry payloads and a
+  Subscription settings destination. Extended the existing notification
+  mapping and copy, added focused subscription notification assertions, and
+  synchronized active rules and unit documentation. Existing staff search,
+  adjustment, confirmation, settings summary, server entitlement, and expiry
+  behavior were reused rather than replaced.
+- Verification Status: Web TypeScript check passed; Python compilation,
+  `git diff --check`, and `npx eslint lib/auth.ts` passed. Focused subscription
+  coverage passed 7 tests using an in-memory test database. Repository-wide
+  lint remains blocked by pre-existing unrelated errors; the changed
+  `app-shell.tsx` file reports only its existing effect-hook errors.
+
+## 2026-09-22T12:20:04Z — Document Web Push requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record requirements for enabling external notifications from
+  Friink while keeping the UX platform-neutral.
+- Changes Made: Marked the notifications unit Partial and documented the
+  planned setup UX, Web Push/VAPID architecture, subscription persistence,
+  delivery guarantees, security constraints, acceptance criteria, limitations,
+  and open questions. Updated the technology stack to record the planned
+  delivery approach. No product code changed.
+- Verification Status: Reviewed documentation structure and source-of-truth
+  boundaries; `git diff --check` passed.
+
 ## 2026-09-22T12:00:08Z — Make public session detection explicit
 
 - Agent: Codex

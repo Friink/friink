@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-09-22T13:25:23Z
+
+- [auth/public-routing] Reopened and corrected BUG-AUTH-002 by centralizing
+  public and authenticated route entry on `restoreAuthSessionForEntry()` and
+  responding to cross-tab session restoration events.
+- [docs/auth] Updated the defect register, account-access contract, and active
+  session-restoration rule to distinguish the incomplete previous fix from the
+  shared bootstrap correction.
+
+## 2026-09-22T12:33:44Z
+
+- [subscriptions] Completed the manual plan-change notification path: staff
+  grants, changes, and returns to Free now create recipient-owned in-app
+  notifications linking to Subscription settings, with safe plan and expiry
+  copy rendered through the existing notification surfaces.
+- [api] Added the subscription notification enum migration and focused
+  lifecycle assertions; no external push delivery was introduced.
+- [docs/subscriptions] and [docs/notifications] synchronized the active
+  manual-access notification contract and remaining expiry-notification scope.
+
+## 2026-09-22T12:20:04Z
+
+- [docs/notifications] Documented the planned cross-platform Web Push
+  requirements, platform-neutral setup UX, subscription lifecycle, delivery
+  reliability, security boundaries, acceptance criteria, and open questions.
+- [docs/stack] Recorded standard Web Push with VAPID as the planned push
+  delivery approach; no runtime behavior changed.
+
 ## 2026-09-22T12:00:08Z
 
 - [auth/public-routing] Added explicit session-checking UX to the public

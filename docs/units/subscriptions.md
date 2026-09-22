@@ -5,7 +5,7 @@ the boundary between informational plans and future billing.
 
 **Status:** Partial — informational plans, server-resolved summaries, manual staff assignment, and server entitlement enforcement are active; billing is not active
 **Tier:** Standard  
-**Last edited:** 2026-09-21T00:00:00Z
+**Last edited:** 2026-09-22T12:33:44Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -95,7 +95,9 @@ or Pro+, change Pro and Pro+ assignments, or return a paid assignment to Free.
 Manual assignments require a plan, an optional expiration or no-expiration
 choice, and a reason; the effective plan remains server-resolved. Users should
 see their current plan and access expiration in Settings, with clear in-app
-feedback when access is granted, changed, expired, or revoked.
+feedback when access is granted, changed, expired, or revoked. Grant, change,
+and revoke mutations create a Friink notification linking to the Subscription
+settings tab.
 
 ### Manual-assignment UX (current rollout)
 
@@ -146,8 +148,9 @@ assignment lifecycle notifications rather than billing or renewal notices.
 ### Recommended UX contract (planned)
 
 The following decisions define the intended experience for the manual process.
-The plan-change confirmation summary is implemented; lifecycle notifications,
-reminders, and the remaining paid-feature surfaces remain planned.
+The plan-change confirmation summary and grant/change/revoke in-app
+notifications are implemented; expiry notifications, reminders, and the
+remaining paid-feature surfaces remain planned.
 
 - Manual access must never be described as a purchase, payment, upgrade, or
   renewal. Use `Grant access`, `Change access`, and `Return to Free`.
@@ -237,6 +240,8 @@ administrative assignment behavior. Billing provider integration is not present.
 - [ ] Current plan is server-resolved and displayed consistently.
 - [ ] Paid status cannot be fabricated by the client.
 - [ ] Chat entitlement checks remain server-authoritative.
+- [ ] Grant, change, and revoke operations create an in-app notification that
+  links the affected user to Subscription settings.
 
 ## Known limitations
 
