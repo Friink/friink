@@ -6,7 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
 import { PostUnavailableState } from '@/components/post-unavailable-state';
-import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, createPost, getLoginRecoveryPath, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 
@@ -117,7 +117,7 @@ export function PostClient({ postId }: PostClientProps) {
           void loadPost(restoredSession);
         })
         .catch((error) => {
-          if (active && isTerminalRefreshFailure(error)) router.replace('/login');
+          if (active && isTerminalRefreshFailure(error)) router.replace(getLoginRecoveryPath());
         });
     }
 

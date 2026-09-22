@@ -6,7 +6,7 @@ the common evidence required to consider a change tested and ready for
 release.
 
 **Status:** Active  
-**Last edited:** 2026-09-13T00:05:14Z  
+**Last edited:** 2026-09-21T23:59:54Z
 **Related:** [`template.md`](units/template.md), [`rules.md`](rules.md), and the
 relevant documents in [`units/`](units/)
 
@@ -84,8 +84,15 @@ for the target environment. Follow the migration gate in the
 
 Use isolated development data for local testing. Never use production
 credentials or a production database for local or destructive rehearsals.
-Staging is the environment for deployed acceptance testing; production rollout
-is a separate release gate.
+Staging is the authoritative deployed acceptance gate. It must be a
+production-parity environment: the same runtime, build/deployment topology,
+schema state, configuration shape, feature-flag behavior, and integration
+contracts as production. Staging data, credentials, secrets, and databases
+remain separate from production.
+
+Production receives the exact artifact that passed staging. Production is not
+a second feature-acceptance environment; after promotion, run only basic
+smoke checks for routing, startup, authentication, and critical availability.
 
 Verify deployment configuration when it is part of the change, including API
 origins, required environment variables, database connectivity, object
@@ -103,6 +110,16 @@ that merely renders a page or returns a successful response is insufficient if
 the criterion also requires authorization, persistence, notifications,
 privacy, or recovery behavior.
 
+## Definition of done
+
+A change is done when it has been validated on an environment that is
+identical to production in runtime and configuration behavior, while using
+separate non-production data and credentials. In practice, this means local
+implementation checks are complete and the deployed staging instance has
+passed the affected acceptance criteria and release gates. Promotion to
+production may then use the exact verified artifact; production smoke checks
+confirm deployment health but do not repeat staging acceptance.
+
 ## Release gates
 
 Before release, confirm the applicable gates:
@@ -111,14 +128,25 @@ Before release, confirm the applicable gates:
 - The web build and TypeScript checks pass when web code changed.
 - Changed endpoints have a real request/response check.
 - Database migrations are applied and verified in the target environment.
-- Acceptance criteria and relevant manual flows pass.
+- Acceptance criteria and relevant manual flows pass on production-parity
+  staging.
 - Security, privacy, account isolation, and permission behavior are verified.
 - Error, retry, empty, loading, and disabled states are covered where
   applicable.
 - No known implementation-versus-rule conflict is silently unresolved.
-- Deployment-specific configuration and integrations are verified when
-  applicable.
+- Deployment-specific configuration and integrations are verified on staging
+  when applicable.
 - Unit documentation, related links, and the documentation viewer are current.
+
+After promotion, perform only basic production smoke checks. Do not treat
+production smoke checks as a replacement for staging acceptance.
+
+### Legacy production-gate workflow
+
+Historically, this guide described production rollout as a separate full
+release gate requiring production checks equivalent to staging acceptance.
+That workflow is retained here for history but is superseded by the active
+staging-gate workflow above.
 
 ## Deferred verification
 

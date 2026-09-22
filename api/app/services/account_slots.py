@@ -43,7 +43,21 @@ def create_or_replace_slot(
         slot.last_used_at = datetime.now(UTC)
         raw_slot = str(slot.id)
         return raw_slot
-    device_slots = session.execute(select(AccountSessionSlot).where(AccountSessionSlot.device_hash == current_device_hash, AccountSessionSlot.revoked_at.is_(None))).scalars().all()
+    # Capacity must match the slots exposed by list_slots(). A slot record can
+    # outlive its auth session after session revocation; such a stale record is
+    # not a remembered account and must not block a new account from being
+    # added.
+    device_slots = session.execute(
+        select(AccountSessionSlot)
+        .join(AuthSession, AuthSession.id == AccountSessionSlot.auth_session_id)
+        .join(User, User.id == AccountSessionSlot.user_id)
+        .where(
+            AccountSessionSlot.device_hash == current_device_hash,
+            AccountSessionSlot.revoked_at.is_(None),
+            AuthSession.revoked_at.is_(None),
+            User.lifecycle_status == "active",
+        )
+    ).scalars().all()
     if len(device_slots) >= settings.max_remembered_accounts_per_device:
         if allow_over_limit:
             return None

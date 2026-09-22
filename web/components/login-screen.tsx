@@ -15,14 +15,15 @@ type LoginScreenProps = {
   onAuthenticated: (user: AuthUser) => void;
   mode?: 'page' | 'account-modal';
   initialMessage?: string;
+  initialIdentifier?: string;
   progressive?: boolean;
 };
 
 type AuthStep = 'login-email' | 'login-password' | 'login-otp' | 'forgot-password' | 'signup-email' | 'signup-password' | 'signup-profile' | 'signup-otp' | 'progressive-email' | 'progressive-continue';
 
-export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, progressive = false }: LoginScreenProps) {
+export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, initialIdentifier, progressive = false }: LoginScreenProps) {
   const [email, setEmail] = useState('');
-  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState(initialIdentifier ?? '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');

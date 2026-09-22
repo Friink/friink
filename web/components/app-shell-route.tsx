@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, clearAuthSession, getCurrentUser, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getCurrentUser, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -79,7 +79,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
             const deliberateSecurityRevocation = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY';
             setSessionError(deliberateSecurityRevocation ? 'security' : 'expired');
             setUser(null);
-            router.replace(deliberateSecurityRevocation ? '/login?reason=security-revocation' : '/login');
+            router.replace(getLoginRecoveryPath(deliberateSecurityRevocation ? 'security-revocation' : 'expired'));
           } else {
             setSessionError('offline');
             setUser(null);
@@ -115,9 +115,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         if (error instanceof AuthApiError && error.status === 401) {
           if (error.code === 'SESSION_REVOKED_SECURITY') {
             clearAuthSession();
-            router.replace('/login?reason=security-revocation');
+            router.replace(getLoginRecoveryPath('security-revocation'));
           } else if (!loadAuthSession()) {
-            router.replace('/login');
+            router.replace(getLoginRecoveryPath('expired'));
           }
         }
       });

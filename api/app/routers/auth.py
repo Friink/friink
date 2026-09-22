@@ -1146,13 +1146,17 @@ async def _ensure_current_account_slot(
 ) -> None:
     """Backfill a device slot for a pre-slot session before account discovery."""
     raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
-    if not raw_device or find_slot_for_user(session, current_user.id, raw_device):
+    if not raw_device:
         return
 
     raw_refresh = request.cookies.get(REFRESH_COOKIE_NAME)
     refresh_record = get_refresh_token(session, raw_refresh) if raw_refresh else None
     current_auth_session = session.get(AuthSession, refresh_record.session_id) if refresh_record and refresh_record.session_id else None
     if not refresh_record or refresh_record.user_id != current_user.id or not current_auth_session or current_auth_session.revoked_at is not None:
+        return
+
+    current_slot = find_slot_for_user(session, current_user.id, raw_device)
+    if current_slot and current_slot.auth_session_id == current_auth_session.id:
         return
 
     try:
