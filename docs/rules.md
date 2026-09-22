@@ -729,10 +729,10 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered. The shell metadata is presentation-only; authenticated API effects and actions require a successful in-memory refresh. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
-- **Edge cases:** Network and other recoverable failures remain on the explicit recovery surface. Refresh-token rotation and server-side validation remain authoritative. A failed slot is skipped without clearing other remembered-account summaries, and stale or delayed cross-tab state from another slot cannot replace the active slot.
+- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered; that metadata is presentation-only and authenticated API effects and actions require a successful in-memory refresh. The public landing route remains behind an explicit loading/recovery surface, redirects after a successful refresh, shows the public page only after a confirmed terminal signed-out result, responds to cross-tab session restoration, and offers retry on recoverable failures. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
+- **Edge cases:** Network and other recoverable failures remain on the explicit recovery surface instead of being silently treated as signed out. Refresh-token rotation and server-side validation remain authoritative. A failed slot is skipped without clearing other remembered-account summaries, and stale or delayed cross-tab state from another slot cannot replace the active slot.
 - **Verification:** Local targeted account-slot tests, TypeScript checks, and the webpack production build pass; staging browser acceptance remains a release gate.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
@@ -1211,6 +1211,18 @@ missing evidence can be filled in.
 - **What:** In post, reply, and quote composers, typing a valid `@username` followed by a space resolves that user and displays an editable inline token with their small profile picture and `@username`.
 - **Edge cases:** Unknown usernames remain ordinary text and cannot create mention notifications. Editing a resolved token unwraps it to ordinary text so mistakes can be corrected. In rendered posts, mentions remain compact clickable `@username` profile links without repeating the avatar.
 
+### NOTIF-R-007 — Manual Subscription Changes Notify The Recipient
+
+- **Status:** Active
+- **Effective:** 2026-09-22T12:33:44Z
+- **Related units:** [subscriptions](units/subscriptions.md), [notifications](units/notifications.md)
+- **Source:** [archived RULES.md](archives/RULES.md)
+- **Platform:** Web/API
+- **File(s):** `api/app/models/notification.py`, `api/app/services/subscriptions.py`, `api/alembic/versions/20260922_0052_subscription_notifications.py`, `web/components/app-shell.tsx`, `web/lib/auth.ts`
+
+- **What:** A staff grant, plan change, or return-to-Free mutation creates one unread in-app notification for the affected user. The notification identifies the resulting access state and links to the Subscription settings tab. The entitlement mutation remains successful if external delivery is unavailable; the in-app record is part of the mutation transaction.
+- **Edge cases:** Indefinite access is identified as having no expiration. Replacing an active assignment uses the changed-access notification; revocation identifies the previous plan and the resulting Friink Free state. Staff reasons are not exposed to the user. Notification read state remains governed by `NOTIF-R-001`.
+
 ## Web Navigation & Client Behavior
 
 ### CLIENT-R-001 — Profile Message Action Opens Direct Chat
@@ -1272,7 +1284,7 @@ missing evidence can be filled in.
 - **What:** Web API calls use `NEXT_PUBLIC_API_BASE_URL` when configured. Localhost browsing falls back to `http://localhost:8000`. Deployed browser contexts without an API origin throw a configuration error instead of silently calling localhost.
 - **Edge cases:** If the configured origin is `https://staging-api.friink.com` and a network-level fetch fails for a safe read (`GET`, `HEAD`, or `OPTIONS`), the client retries `https://api.friink.com`. Mutations are never retried across origins because replaying them could duplicate or misroute user data.
 
-### CLIENT-R-006 — Public Pages Remain Accessible To Authenticated Users
+### CLIENT-R-006 — Public Pages Use Explicit Session Routing
 
 - **Status:** Active
 - **Effective:** 2026-09-01T00:00:00Z
@@ -1281,8 +1293,8 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/lib/auth.ts`
 
-- **What:** The public landing page and `/subscriptions` remain accessible when a user has a persisted non-demo auth session; authenticated visitors are not forcibly redirected to `/home`.
-- **Edge cases:** The shared public `Header` reflects the session state and provides app navigation without replacing the public page. Demo sessions are not treated as signed-in public sessions.
+- **What:** The public landing page checks for an existing non-demo session before rendering its content. A successful refresh routes authenticated visitors to `/home`; confirmed signed-out visitors may remain on the landing page. `/subscriptions` remains accessible without authentication.
+- **Edge cases:** The landing route shows explicit loading and recoverable-error states during session checking; it does not silently treat network, timeout, CORS, or server failures as signed out. Demo sessions are not treated as signed-in public sessions.
 
 ### CLIENT-R-007 — Public Header Uses Signed-In Account Menu
 
@@ -1399,7 +1411,18 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/[username]/chat/chat-client.tsx`, `web/app/globals.css`, `web/components/app-shell.tsx`
 
-- **What:** Username-scoped conversation pages use the document viewport as their only vertical scroll surface for message history. The participant header remains fixed below the global top bar and aligned to the centered `ContentBox` chat column; the message list must not create a nested scroll container or widen beyond the shared content cap. The fixed contextual composer remains clear of the final message through shared page spacing, and read-state visibility uses the document viewport.
+- **What:** Username-scoped conversation pages use the document viewport as their only vertical scroll surface for message history. The participant header remains fixed below the global top bar and aligned to the centered `ContentBox` chat column; on desktop, its opaque background spans the full main panel so the message list cannot show through beside the capped column. The message list must not create a nested scroll container or widen beyond the shared content cap. Shared shell bottom padding does not compound the chat message-list reservation. The fixed contextual composer remains clear of the final message with a consistent 1rem gap across viewport sizes, and read-state visibility uses the document viewport.
+
+### CLIENT-R-014C — Direct Chat Restores Session On Refresh
+
+- **Status:** Active
+- **Effective:** 2026-09-22T11:19:27Z
+- **Related units:** [chat](units/chat.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** Web only
+- **File(s):** `web/app/[username]/chat/chat-client.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`
+
+- **What:** Username-scoped conversation pages restore the authenticated session through the shared refresh flow when a full browser refresh clears the in-memory access session. A successful refresh keeps the user on the requested conversation; terminal refresh failures route to login.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 
@@ -1647,6 +1670,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [chat](units/chat.md) | CHAT-R-006 | Transport failure must remain distinct from policy-disabled |
 | [chat](units/chat.md) | CHAT-R-007 | Blocked or no-longer-mutual chats remain readable but read-only |
 | [chat](units/chat.md) | CHAT-R-009 | Conversation rows render identity once and use the secondary |
+| [chat](units/chat.md) | CHAT-R-011 | Direct chats restore the session after a full browser refresh. |
 | [connections](units/connections.md) | CONNECTIONS-R-001 | Relationships are directional; accepted rows count as |
 | [connections](units/connections.md) | CONNECTIONS-R-002 | Public accounts accept follows immediately. |
 | [connections](units/connections.md) | CONNECTIONS-R-003 | Private accounts require pending requests and expose a |

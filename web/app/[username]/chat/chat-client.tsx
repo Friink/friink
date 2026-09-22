@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { ProfileCard } from '@/components/profile-card';
-import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, loadAuthSession, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 
@@ -40,18 +40,33 @@ export function ChatClient({ username }: ChatClientProps) {
   const initiallyScrolledConversationRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const session = loadAuthSession();
-    if (!session) {
-      router.replace('/login');
-      return;
-    }
-    setUser(session.user);
-    const transport = new PollingChatTransport(session.accessToken);
     let cancelled = false;
     let unsubscribe: () => void = () => undefined;
 
-    getChatContext(session.accessToken, username)
-      .then(async (nextContext) => {
+    async function loadConversation() {
+      let session = loadAuthSession();
+      if (!session) {
+        try {
+          session = await refreshAuthSession();
+          saveAuthSession(session);
+        } catch (nextError) {
+          if (cancelled) return;
+          if (isTerminalRefreshFailure(nextError)) {
+            const reason = nextError.code === 'SESSION_REVOKED_SECURITY' ? 'security-revocation' : 'expired';
+            router.replace(getLoginRecoveryPath(reason));
+          } else {
+            setError(nextError instanceof Error ? nextError.message : 'Could not restore your session.');
+          }
+          return;
+        }
+      }
+
+      if (cancelled) return;
+      setUser(session.user);
+      const transport = new PollingChatTransport(session.accessToken);
+
+      try {
+        const nextContext = await getChatContext(session.accessToken, username);
         if (cancelled) return;
         setContext(nextContext);
         if (!nextContext.conversation) return;
@@ -64,13 +79,15 @@ export function ChatClient({ username }: ChatClientProps) {
           setMessages((current) => mergeMessages(current, event.page.items));
           setReceiptState((current) => ({ ...current, unreadCount: event.page.unread_count, firstUnreadMessageId: event.page.first_unread_message_id, peerDeliveredMessageId: event.page.peer_delivered_message_id, peerReadMessageId: event.page.peer_read_message_id }));
         });
-      })
-      .catch((nextError) => {
+      } catch (nextError) {
         if (!cancelled) {
           setChatAccessDenied(nextError instanceof AuthApiError && nextError.status === 403);
           setError(nextError instanceof Error ? nextError.message : 'Could not load this conversation.');
         }
-      });
+      }
+    }
+
+    void loadConversation();
 
     return () => {
       cancelled = true;

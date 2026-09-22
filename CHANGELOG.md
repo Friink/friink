@@ -1,5 +1,76 @@
 # Changelog
 
+## 2026-09-22T13:25:23Z
+
+- [auth/public-routing] Reopened and corrected BUG-AUTH-002 by centralizing
+  public and authenticated route entry on `restoreAuthSessionForEntry()` and
+  responding to cross-tab session restoration events.
+- [docs/auth] Updated the defect register, account-access contract, and active
+  session-restoration rule to distinguish the incomplete previous fix from the
+  shared bootstrap correction.
+
+## 2026-09-22T12:33:44Z
+
+- [subscriptions] Completed the manual plan-change notification path: staff
+  grants, changes, and returns to Free now create recipient-owned in-app
+  notifications linking to Subscription settings, with safe plan and expiry
+  copy rendered through the existing notification surfaces.
+- [api] Added the subscription notification enum migration and focused
+  lifecycle assertions; no external push delivery was introduced.
+- [docs/subscriptions] and [docs/notifications] synchronized the active
+  manual-access notification contract and remaining expiry-notification scope.
+
+## 2026-09-22T12:20:04Z
+
+- [docs/notifications] Documented the planned cross-platform Web Push
+  requirements, platform-neutral setup UX, subscription lifecycle, delivery
+  reliability, security boundaries, acceptance criteria, and open questions.
+- [docs/stack] Recorded standard Web Push with VAPID as the planned push
+  delivery approach; no runtime behavior changed.
+
+## 2026-09-22T12:00:08Z
+
+- [auth/public-routing] Added explicit session-checking UX to the public
+  landing route: loading while checking, Home redirect on success, public
+  content for confirmed signed-out visitors, and retryable recovery on
+  transient failures.
+- [docs/auth] Marked BUG-AUTH-002 resolved and synchronized account-access and
+  active auth/navigation rules.
+
+## 2026-09-22T11:55:05Z
+
+- [docs/bugs] Added BUG-AUTH-002 for inconsistent public-route session
+  detection across fresh tabs, including confirmed behavior, open diagnostics,
+  proposed fix, and verification requirements.
+
+## 2026-09-22T11:19:27Z
+
+- [chat] Restored the authenticated session before loading an individual chat
+  after a full browser refresh; terminal refresh failures still route to login.
+- [docs/chat] Marked BUG-CHAT-001 resolved and documented the direct-chat
+  refresh-session contract and verification requirements.
+
+## 2026-09-22T11:11:46Z
+
+- [docs/bugs] Replaced the placeholder with a draft defect-register format,
+  agent instructions, and BUG-CHAT-001 documenting the individual-chat refresh
+  redirect defect; synchronized the docs README and viewer label.
+
+## 2026-09-22T10:46:15Z
+
+- [chat] Removed compounded shell bottom padding from direct conversations and
+  set a consistent 1rem gap between the final message and floating composer.
+- [docs/chat] Synchronized the chat spacing contract across active rules, unit
+  documentation, and shared design documentation.
+
+## 2026-09-22T10:38:57Z
+
+- [chat] Extended the fixed desktop chat-header surface across the main panel
+  while preserving participant alignment with the centered chat column, so
+  scrolling messages no longer show through at the capped column's side gaps.
+- [docs/chat] Synchronized the chat scroll and desktop header-surface contract
+  across the chat unit, active rules, and shared design contract.
+
 ## 2026-09-22T00:08:28Z
 
 - [docs/workflow] Added a clearly marked draft workflow covering work types,

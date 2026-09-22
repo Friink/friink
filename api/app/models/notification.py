@@ -26,6 +26,9 @@ class NotificationType(str, enum.Enum):
     professional_registration_approved = "professional_registration_approved"
     professional_registration_rejected = "professional_registration_rejected"
     professional_registration_revoked = "professional_registration_revoked"
+    subscription_access_granted = "subscription_access_granted"
+    subscription_access_changed = "subscription_access_changed"
+    subscription_access_revoked = "subscription_access_revoked"
 
 
 class Notification(Base):

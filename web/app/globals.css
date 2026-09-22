@@ -4130,8 +4130,9 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 @media (min-width: 768px) {
   .chat-header {
-    left: calc(var(--desktop-sidebar-width) + max(var(--space-content-inset-inline), (100vw - var(--desktop-sidebar-width) - var(--space-content-col)) / 2));
-    right: max(var(--space-content-inset-inline), (100vw - var(--desktop-sidebar-width) - var(--space-content-col)) / 2);
+    left: var(--desktop-sidebar-width);
+    right: 0;
+    padding-inline: max(var(--space-content-inset-inline), (100vw - var(--desktop-sidebar-width) - var(--space-content-col)) / 2);
   }
 }
 
@@ -4167,7 +4168,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   display: block;
   overflow: visible;
   gap: 0.75rem;
-  padding: 1rem 0 calc(var(--space-floating-bar-height) + max(1rem, env(safe-area-inset-bottom)) + 0.5rem);
+  padding: 1rem 0 calc(var(--space-floating-bar-height) + max(1rem, env(safe-area-inset-bottom)) + 1rem);
 }
 
 .chat-date {
@@ -6223,6 +6224,11 @@ input[type="search"]:focus {
 .main-content {
   padding-top: 0;
   padding-bottom: calc(var(--space-floating-bar-height) + 2rem);
+}
+
+.main-content:has(.chat-screen),
+.content-box:has(.chat-screen) {
+  padding-bottom: 0;
 }
 
 @media (max-width: 767px) {

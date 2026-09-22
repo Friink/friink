@@ -190,9 +190,11 @@ with `#7a7a7a` on hover so it remains visible without appearing washed out.
 Direct conversation pages use the document viewport as the only native scroll
 surface for the message history; they must not introduce a nested message-only
 scrollbar. The participant header remains fixed below the global top bar and
-aligned to the centered chat content column, the shared content width cap
-remains intact, and the fixed contextual composer remains clear of the last
-message through shared page spacing.
+aligned to the centered chat content column. On desktop, its opaque background
+spans the full main panel so messages cannot show through beside the capped
+column. The shared content width cap remains intact. Shared shell bottom
+padding must not compound the chat message-list reservation; the fixed
+contextual composer remains 1rem from the last message on every viewport.
 
 ### Actions
 

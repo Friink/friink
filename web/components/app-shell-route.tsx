@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, clearAuthSession, getCurrentUser, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, refreshAuthSession, saveAuthSession, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getCurrentUser, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, restoreAuthSessionForEntry, saveAuthSession, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -64,9 +64,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     if (!session) {
       const cachedUser = loadCachedAuthUser();
       if (cachedUser) setUser(cachedUser);
-      refreshAuthSession()
+      restoreAuthSessionForEntry()
         .then((restoredSession) => {
-          saveAuthSession(restoredSession);
           setUser(restoredSession.user);
           setSessionReady(true);
           setSessionError(null);
