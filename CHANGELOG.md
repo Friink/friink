@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-22T10:46:15Z
+
+- [chat] Removed compounded shell bottom padding from direct conversations and
+  set a consistent 1rem gap between the final message and floating composer.
+- [docs/chat] Synchronized the chat spacing contract across active rules, unit
+  documentation, and shared design documentation.
+
+## 2026-09-22T10:38:57Z
+
+- [chat] Extended the fixed desktop chat-header surface across the main panel
+  while preserving participant alignment with the centered chat column, so
+  scrolling messages no longer show through at the capped column's side gaps.
+- [docs/chat] Synchronized the chat scroll and desktop header-surface contract
+  across the chat unit, active rules, and shared design contract.
+
 ## 2026-09-22T00:08:28Z
 
 - [docs/workflow] Added a clearly marked draft workflow covering work types,

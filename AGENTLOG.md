@@ -1,5 +1,29 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T10:46:15Z — Reduce direct-chat composer gap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the excessive space after the final chat message
+  before the floating composer and keep the gap consistent across devices.
+- Changes Made: Removed shared shell bottom-padding duplication for chat screens
+  and set the message-list reservation to leave a consistent 1rem gap above
+  the floating composer; synchronized chat/design documentation and logs.
+- Verification Status: `npm --prefix web run lint` and `git diff --check`
+  passed.
+
+## 2026-09-22T10:38:57Z — Cover desktop chat-header side gaps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent messages from showing through beside the fixed chat
+  header while document scrolling on desktop.
+- Changes Made: Made the desktop chat-header background span the full main
+  panel and moved the horizontal padding to the centered content-column inset;
+  synchronized the chat unit, active rules, shared design contract, and logs.
+- Verification Status: `npm --prefix web run lint`, targeted CSS inspection,
+  and `git diff --check` passed.
+
 ## 2026-09-22T00:08:28Z — Add draft workflow and bugs placeholder
 
 - Agent: Codex

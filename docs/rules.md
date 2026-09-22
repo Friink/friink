@@ -1399,7 +1399,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/[username]/chat/chat-client.tsx`, `web/app/globals.css`, `web/components/app-shell.tsx`
 
-- **What:** Username-scoped conversation pages use the document viewport as their only vertical scroll surface for message history. The participant header remains fixed below the global top bar and aligned to the centered `ContentBox` chat column; the message list must not create a nested scroll container or widen beyond the shared content cap. The fixed contextual composer remains clear of the final message through shared page spacing, and read-state visibility uses the document viewport.
+- **What:** Username-scoped conversation pages use the document viewport as their only vertical scroll surface for message history. The participant header remains fixed below the global top bar and aligned to the centered `ContentBox` chat column; on desktop, its opaque background spans the full main panel so the message list cannot show through beside the capped column. The message list must not create a nested scroll container or widen beyond the shared content cap. Shared shell bottom padding does not compound the chat message-list reservation. The fixed contextual composer remains clear of the final message with a consistent 1rem gap across viewport sizes, and read-state visibility uses the document viewport.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 

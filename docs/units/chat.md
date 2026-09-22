@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-21T00:00:00Z
+**Last edited:** 2026-09-22T10:46:15Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -49,7 +49,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   only vertical scroll surface. The participant header is fixed below the
   global top bar and aligned to the centered chat content column; the message
   list does not create a nested scrollbar, and the shared content-width cap
-  remains intact. The fixed composer remains clear of the final messages.
+  remains intact. On desktop, the header surface covers the full main panel
+  while its participant content remains aligned to the centered chat column.
+  The fixed composer remains clear of the final messages with a consistent
+  1rem gap after the last message across viewport sizes.
 
 ## UX and flows
 
@@ -66,8 +69,12 @@ messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
 The direct conversation page uses the document scrollbar for the message
 history. The participant card remains fixed below the global top bar, aligned
-with the centered chat content column, while the conversation is scrolled. The
-shared content-width cap is preserved and no inner chat scrollbar is rendered.
+with the centered chat content column, while the conversation is scrolled. On
+desktop, the fixed header background spans the main panel so messages cannot
+show through beside the capped content column. The shared content-width cap is
+preserved and no inner chat scrollbar is rendered. Shared shell bottom padding
+is removed for this route so it does not compound the message-list reservation;
+the final message remains 1rem above the floating composer.
 
 ## Technical contract
 
