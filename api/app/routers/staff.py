@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from app.db import get_session
 from app.models.user import User
@@ -9,7 +9,7 @@ from app.models.auth_session import AuthSession
 from app.models.security_event import SecurityEvent
 from app.config import Settings, get_settings
 from app.routers.auth import get_current_user
-from app.schemas.staff import StepUpRequest, RoleCreate, RoleUpdate, AssignmentRequest, ReasonRequest, GrantRequest, StaffStatusRequest, StaffMe, RoleResponse, StaffUserResponse, AuditResponse
+from app.schemas.staff import StepUpRequest, RoleCreate, RoleUpdate, AssignmentRequest, ReasonRequest, GrantRequest, StaffStatusRequest, StaffMe, StaffOverviewResponse, RoleResponse, StaffUserResponse, AuditResponse
 from app.services.staff import permissions_for, require_privileged, audit, start_privileged, revoke_staff_sessions, effective_role_payload
 from app.services.session_service import revoke_all_user_sessions
 
@@ -36,6 +36,13 @@ async def logout(response: Response, current_user: User = Depends(get_current_us
 async def me(current_user: User = Depends(get_current_user), token: str | None = Cookie(default=None, alias=STAFF_COOKIE), session: Session = Depends(get_session)):
     row=require_privileged(session,current_user,token,"staff.access"); session.commit(); return StaffMe(permissions=sorted(permissions_for(session,current_user)),privileged_expires_at=row.expires_at)
 
+@router.get("/overview", response_model=StaffOverviewResponse)
+async def overview(current_user: User = Depends(get_current_user), token: str | None = Cookie(default=None, alias=STAFF_COOKIE), session: Session = Depends(get_session)):
+    require_privileged(session, current_user, token, "staff.access")
+    total_users = session.execute(select(func.count()).select_from(User)).scalar_one()
+    staff_users = session.execute(select(func.count()).select_from(User).where(User.is_staff.is_(True))).scalar_one()
+    return StaffOverviewResponse(total_users=total_users, staff_users=staff_users)
+
 @router.get("/roles", response_model=list[RoleResponse])
 async def roles(current_user: User=Depends(get_current_user), token: str|None=Cookie(default=None,alias=STAFF_COOKIE), session: Session=Depends(get_session)):
     require_privileged(session,current_user,token,"roles.manage"); return [RoleResponse(**effective_role_payload(r)) for r in session.execute(select(StaffRole).order_by(StaffRole.key)).scalars()]
@@ -61,7 +68,7 @@ async def update_role(role_key: str,payload: RoleUpdate,current_user: User=Depen
 async def users(q: str | None = Query(default=None, max_length=320), current_user: User=Depends(get_current_user),token: str|None=Cookie(default=None,alias=STAFF_COOKIE),session: Session=Depends(get_session)):
     require_privileged(session,current_user,token,"users.view")
     statement = select(User).order_by(User.username).limit(20)
-    query = q.strip() if q else ""
+    query = q.strip().lstrip("@").strip() if q else ""
     if query:
         pattern = f"%{query.casefold()}%"
         statement = statement.where(or_(User.username_key.ilike(pattern), User.email.ilike(pattern), User.display_name.ilike(pattern)))

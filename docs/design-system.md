@@ -122,6 +122,12 @@ contract rather than repeated here.
 - Feed posts remain flat list items, with a subtle surface shift on hover;
   shared content panels should not add visible side lines or outlines solely
   to establish depth.
+- Post media uses predictable layouts: one natural-ratio image, balanced
+  two-item grids, a larger lead image for three items, and a four-item grid
+  with a `+N` overflow indicator. Selecting media opens a dedicated full-screen
+  lightbox with contained sizing, accessible previous, next, close, counter,
+  and keyboard controls; tall images must not be cropped, and media never
+  autoplays audio.
 - Settings, chat, notifications, and directory rows should share a calm
   divider-based rhythm.
 

@@ -51,6 +51,7 @@ function mapApiPost(post: ApiPost): Post {
     likeCount: post.like_count ?? 0,
     savedCount: post.saved_count ?? 0,
     reactions: 0,
+    media: post.media.map((item) => item.url),
     quotedPost: post.quoted_post
       ? {
           id: post.quoted_post.id,
@@ -62,6 +63,7 @@ function mapApiPost(post: ApiPost): Post {
           showProfessionalBadge: post.quoted_post.show_professional_badge,
           content: post.quoted_post.content,
           mediaCount: post.quoted_post.media_count,
+          media: post.quoted_post.media.map((item) => item.url),
           unavailable: post.quoted_post.unavailable,
         }
       : null,

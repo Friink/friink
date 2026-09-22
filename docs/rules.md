@@ -1678,7 +1678,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [connections](units/connections.md) | CONNECTIONS-R-005 | Changing a private account to public auto-accepts |
 | [connections](units/connections.md) | CONNECTIONS-R-006 | Follow counts include accepted relationships only. |
 | [connections](units/connections.md) | CONNECTIONS-R-007 | Connection actions resolve from authenticated API |
-| [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory UI uses All, Professionals, and Friink Registered tabs; the |
+| [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory UI uses All and Friink Registered tabs; the |
 | [discovery](units/discovery.md) | DISCOVERY-R-004 | Friink registration and credential review are staff-owned API workflows; |
 | [feed](units/feed.md) | FEED-R-001 | Home has Explore and Following tabs; Explore is the default. |
 | [feed](units/feed.md) | FEED-R-002 | Following contains posts strictly from accounts the viewer |

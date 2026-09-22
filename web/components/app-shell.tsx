@@ -49,6 +49,7 @@ import {
   cancelProfessionalRegistration,
   listPosts,
   loadAuthSession,
+  staffLogout,
   rejectFollowRequest,
   removeConnection,
   removeFollower,
@@ -179,7 +180,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const searchFilterParam = searchParams.get('filter');
   const searchFilter: 'all' | 'people' | 'posts' | 'messages' = searchFilterParam === 'people' || searchFilterParam === 'posts' || searchFilterParam === 'messages' ? searchFilterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';
   const directoryTabParam = searchParams.get('tab');
-  const directoryTab: DirectoryTab = directoryTabParam === 'professionals' || directoryTabParam === 'registered' ? directoryTabParam : 'all';
+  const directoryTab: DirectoryTab = directoryTabParam === 'registered' ? 'registered' : 'all';
   const connectionsTabs = !viewingOtherConnections
     ? [
         { id: 'all', label: 'All' },
@@ -252,10 +253,25 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       },
     },
   ];
+  const controlPanelMenuItems: ActionMenuItem[] = [
+    {
+      label: 'End CP session',
+      icon: 'fa-right-from-bracket',
+      onClick: () => {
+        const currentSession = loadAuthSession();
+        if (!currentSession) return;
+        void staffLogout(currentSession.accessToken)
+          .catch(() => undefined)
+          .finally(() => router.push('/home'));
+      },
+    },
+  ];
   const navigationMenuItems = activeScreen === 'profile'
     ? profileMenuItems
     : activeScreen === 'notifications'
       ? notificationMenuItems
+      : activeScreen === 'control-panel'
+        ? controlPanelMenuItems
       : [];
 
   useEffect(() => {
@@ -1235,7 +1251,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
             )}
             {showTabs !== false && activeScreen === 'directory' && (
               <Tabs
-                tabs={[{ id: 'all', label: 'All' }, { id: 'professionals', label: 'Professionals' }, { id: 'registered', label: 'Friink Registered' }]}
+                tabs={[{ id: 'all', label: 'All' }, { id: 'registered', label: 'Friink Registered' }]}
                 activeId={directoryTab}
                 onChange={(id) => router.replace(`/directory?tab=${id as DirectoryTab}`)}
                 ariaLabel="Directory sections"

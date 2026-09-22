@@ -164,6 +164,10 @@ export async function staffStepUp(accessToken: string, password: string): Promis
 export async function staffMe(accessToken: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
 }
+export type StaffOverview = { total_users: number; staff_users: number };
+export async function getStaffOverview(accessToken: string): Promise<StaffOverview> {
+  return requestApi('/staff/overview', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
 export async function listStaffUsers(accessToken: string, query = ''): Promise<StaffUser[]> {
   const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
   return requestApi(`/staff/users${suffix}`, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
