@@ -1,5 +1,28 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-22T11:19:27Z — Restore session on individual chat refresh
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix individual chats redirecting to login after a browser
+  refresh.
+- Changes Made: Added shared refresh-session bootstrapping to `ChatClient`,
+  preserved terminal-auth login behavior, and synchronized BUG-CHAT-001, the
+  chat unit, active rules, changelog, and agent log.
+- Verification Status: `npm --prefix web run lint`, `npx tsc --noEmit --incremental false` from `web/`, and `git diff --check` passed. Staging browser refresh acceptance remains pending.
+
+## 2026-09-22T11:11:46Z — Start draft bug register
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the individual-chat refresh redirect bug and propose a
+  reusable bug-entry template for agent use.
+- Changes Made: Replaced the placeholder `docs/bugs.md` with draft agent
+  instructions, a complete entry template, and BUG-CHAT-001; synchronized the
+  documentation README, viewer registry label, changelog, and this log.
+- Verification Status: Markdown structure and referenced paths reviewed;
+  `git diff --check` passed. No product code changed.
+
 ## 2026-09-22T10:46:15Z — Reduce direct-chat composer gap
 
 - Agent: Codex

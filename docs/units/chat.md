@@ -53,6 +53,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   while its participant content remains aligned to the centered chat column.
   The fixed composer remains clear of the final messages with a consistent
   1rem gap after the last message across viewport sizes.
+- **CHAT-R-011:** Direct conversation pages restore the authenticated session
+  through the shared refresh flow when a full browser refresh clears the
+  in-memory access session. A terminal refresh failure routes to login; a
+  successful refresh keeps the user on the requested conversation.
 
 ## UX and flows
 
@@ -68,10 +72,12 @@ such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
 The direct conversation page uses the document scrollbar for the message
-history. The participant card remains fixed below the global top bar, aligned
-with the centered chat content column, while the conversation is scrolled. On
-desktop, the fixed header background spans the main panel so messages cannot
-show through beside the capped content column. The shared content-width cap is
+history. On a full browser refresh, the route restores the authenticated
+session through the shared refresh flow before loading the conversation. The
+participant card remains fixed below the global top bar, aligned with the
+centered chat content column, while the conversation is scrolled. On desktop,
+the fixed header background spans the main panel so messages cannot show
+through beside the capped content column. The shared content-width cap is
 preserved and no inner chat scrollbar is rendered. Shared shell bottom padding
 is removed for this route so it does not compound the message-list reservation;
 the final message remains 1rem above the floating composer.

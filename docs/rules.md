@@ -1401,6 +1401,17 @@ missing evidence can be filled in.
 
 - **What:** Username-scoped conversation pages use the document viewport as their only vertical scroll surface for message history. The participant header remains fixed below the global top bar and aligned to the centered `ContentBox` chat column; on desktop, its opaque background spans the full main panel so the message list cannot show through beside the capped column. The message list must not create a nested scroll container or widen beyond the shared content cap. Shared shell bottom padding does not compound the chat message-list reservation. The fixed contextual composer remains clear of the final message with a consistent 1rem gap across viewport sizes, and read-state visibility uses the document viewport.
 
+### CLIENT-R-014C — Direct Chat Restores Session On Refresh
+
+- **Status:** Active
+- **Effective:** 2026-09-22T11:19:27Z
+- **Related units:** [chat](units/chat.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** Web only
+- **File(s):** `web/app/[username]/chat/chat-client.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`
+
+- **What:** Username-scoped conversation pages restore the authenticated session through the shared refresh flow when a full browser refresh clears the in-memory access session. A successful refresh keeps the user on the requested conversation; terminal refresh failures route to login.
+
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 
 - **Status:** Active
@@ -1647,6 +1658,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [chat](units/chat.md) | CHAT-R-006 | Transport failure must remain distinct from policy-disabled |
 | [chat](units/chat.md) | CHAT-R-007 | Blocked or no-longer-mutual chats remain readable but read-only |
 | [chat](units/chat.md) | CHAT-R-009 | Conversation rows render identity once and use the secondary |
+| [chat](units/chat.md) | CHAT-R-011 | Direct chats restore the session after a full browser refresh. |
 | [connections](units/connections.md) | CONNECTIONS-R-001 | Relationships are directional; accepted rows count as |
 | [connections](units/connections.md) | CONNECTIONS-R-002 | Public accounts accept follows immediately. |
 | [connections](units/connections.md) | CONNECTIONS-R-003 | Private accounts require pending requests and expose a |

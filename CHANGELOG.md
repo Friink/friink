@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-22T11:19:27Z
+
+- [chat] Restored the authenticated session before loading an individual chat
+  after a full browser refresh; terminal refresh failures still route to login.
+- [docs/chat] Marked BUG-CHAT-001 resolved and documented the direct-chat
+  refresh-session contract and verification requirements.
+
+## 2026-09-22T11:11:46Z
+
+- [docs/bugs] Replaced the placeholder with a draft defect-register format,
+  agent instructions, and BUG-CHAT-001 documenting the individual-chat refresh
+  redirect defect; synchronized the docs README and viewer label.
+
 ## 2026-09-22T10:46:15Z
 
 - [chat] Removed compounded shell bottom padding from direct conversations and
