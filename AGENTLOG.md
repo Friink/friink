@@ -16,6 +16,14 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Changes Made: Recorded the release verification in the changelog and agent log. Confirmed that `development`, `staging`, and `main` have identical file trees and that each configured database is at the current Alembic head.
 - Verification Status: The migration gate upgraded and checked all three databases successfully; current revision verification returned the repository head for each environment.
 
+## 2026-09-23T02:06:46Z — Record deferred mobile chat-list design
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the proposed mobile chat-list simplification without implementing it yet.
+- Changes Made: Recorded the proposal to omit redundant usernames from conversation-list rows, preserving usernames in conversation headers and profile views. Updated the chat unit, active design contracts, deferred rule history, changelog, and agent log.
+- Verification Status: Documentation-only change; diff and Markdown structure checks pending.
+
 ## 2026-09-23T01:20:00Z — Add compressed chat image attachments
 
 - Agent: Codex

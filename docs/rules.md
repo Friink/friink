@@ -1814,6 +1814,7 @@ This section is limited to decisions that were deferred, superseded, or retired 
 | ID | Status | Decision | Recorded |
 |---|---|---|---|
 | AUTH-R-030 | Superseded by AUTH-R-008 | The former proactive web access-token refresh contract was replaced by reactive refresh after `TOKEN_EXPIRED`, coordinated across tabs. | 2026-09-21T00:00:00Z |
+| CHAT-R-013 | Deferred design proposal | Conversation-list rows may omit the redundant username, especially on narrow screens, to give the latest message more room; the username remains available in the conversation header and profile view. | 2026-09-23T02:06:46Z |
 
 ## Maintenance
 

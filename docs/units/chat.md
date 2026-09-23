@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T01:35:00Z
+**Last edited:** 2026-09-23T02:06:46Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -119,3 +119,8 @@ mute and archive. Read operations use per-user cursors and server checks.
 ## Known limitations
 
 Delivery is REST/polling-based; realtime push transport is not implemented.
+The current conversation-list rows still show the username as part of the
+full ProfileCard. A follow-up mobile-first refinement is proposed to omit the
+username from list rows, giving the latest message more room; usernames remain
+available in the conversation header and profile view. This proposal is not
+implemented yet.

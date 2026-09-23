@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T02:06:46Z
+- [docs/chat] Recorded the deferred mobile-first chat-list proposal to omit usernames from conversation rows while retaining them in conversation headers and profiles.
+
 ## 2026-09-23T01:56:17Z
 - [release/database] Applied and verified the current Alembic head in development, staging, and production; confirmed the three release branches contain identical file trees.
 

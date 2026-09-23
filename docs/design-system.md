@@ -75,7 +75,10 @@ contract rather than repeated here.
   shows a two-line latest message preview with ellipsis truncation, then the
   relative date and unread/receipt state. Muted and Archived are reserved for
   their dedicated tabs; Mute, Archive, and Block are provided through one
-  overflow action menu.
+  overflow action menu. A proposed follow-up mobile refinement will omit the
+  username from conversation-list rows so message previews have more room;
+  usernames remain available in the conversation header and profile view. The
+  proposal is not shipped yet.
 - Chat uses the shared multiline composer with the post-media image preparation
   preset, an eight-image attachment limit, and inline image rendering in
   message bubbles.
