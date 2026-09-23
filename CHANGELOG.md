@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T13:46:25Z
+- [docs/chat] Documented the planned ID-based conversation routes, `/chats/new`
+  one-to-one resolver flow, and five-deliverable group-ready backend plan.
+  Kept group creation explicitly planned and server-disabled until launch.
+
 ## 2026-09-23T12:49:11Z
 - [chat] Replaced messy attached-image rendering with a bounded responsive
   gallery supporting single-image containment, balanced multi-image tiles,

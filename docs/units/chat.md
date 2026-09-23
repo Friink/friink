@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T02:06:46Z
+**Last edited:** 2026-09-23T13:46:25Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -132,3 +132,72 @@ full ProfileCard. A follow-up mobile-first refinement is proposed to omit the
 username from list rows, giving the latest message more room; usernames remain
 available in the conversation header and profile view. This proposal is not
 implemented yet.
+
+## Planned evolution: ID-based conversations and group-ready backend
+
+This section records planned work only. It is not an active rule in
+[`docs/rules.md`](../rules.md) until the implementation and verification are
+complete.
+
+### Planned URL and compatibility model
+
+The canonical conversation route will be `/chats/{conversation_id}`, where
+`conversation_id` is the existing conversation UUID. The inbox remains
+`/chats`, and `/chats/new` will be the one-to-one conversation-starting flow.
+The current profile entry point `/{username}/chat` and the compatibility form
+`/chats/{username}` may both resolve the authenticated user and target username
+through one server-authoritative resolver, then redirect to the canonical
+conversation ID route. A bare `/{conversation_id}` will remain a profile
+namespace and will not be treated as a chat URL.
+
+### Planned `/chats/new` flow
+
+The first version remains one-to-one only. It opens a modal with one search
+field. The user searches for and selects one username, then chooses `Next`.
+The API evaluates the existing access rules before creating or returning a
+conversation:
+
+- Mutual accepted follows open an accepted conversation.
+- A user with the `message_requests` entitlement may start a pending request
+  subject to the existing requester message cap.
+- A receiver of a pending request sees the existing `Reply to accept.` state.
+- Free non-mutual users, blocked users, and unavailable conversations receive
+  the existing restricted or unavailable state.
+- If the direct conversation already exists, the flow redirects directly to
+  `/chats/{conversation_id}`.
+
+Selecting more than one username remains unavailable until group-chat rules
+and UX are explicitly launched. The server, not only the frontend, must reject
+group creation while the feature is disabled.
+
+### Planned backend foundation deliverables
+
+1. **Conversation membership schema:** Add `conversation_type` (`direct` or
+   `group`) and a `conversation_members` table containing conversation ID,
+   user ID, role, join/leave timestamps, and membership uniqueness. Backfill
+   existing direct conversations without changing their IDs. Retain the
+   current pair columns temporarily during compatibility migration.
+2. **Member-based authorization:** Refactor conversation access, message
+   sending, list queries, and direct-chat resolution around membership while
+   preserving the current mutual-follow, request, block, and paid-entitlement
+   rules for direct chats.
+3. **Disabled group capability:** Add server-side group creation and member
+   operations behind a `GROUP_CHAT_ENABLED=false` feature flag. The backend
+   must reject disabled group operations even if called directly.
+4. **Shared conversation behavior:** Make unread counts, read receipts,
+   mute/archive settings, notifications, polling, and media attachments
+   member-aware while keeping `/chats/{conversation_id}` as the common route
+   for direct and future group conversations.
+5. **Migration and release verification:** Rehearse the migration on isolated
+   development data, verify direct-chat regressions and authorization tests,
+   confirm the disabled group API behavior, then apply the staging migration
+   gate before any production promotion.
+
+### Planned migration constraints
+
+Conversation IDs remain stable through the membership migration. Existing
+one-to-one conversations are represented by exactly two active membership rows.
+The pair columns should not be removed until all reads, writes, authorization
+checks, notification fan-out, and administrative queries use membership rows.
+Production migration must follow the repository deployment gate and must keep
+staging and production databases separate.

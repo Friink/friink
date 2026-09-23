@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T13:46:25Z — Document group-ready chat evolution plan
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the planned conversation-ID, `/chats/new`, and
+  group-ready backend approach without implementing group chats.
+- Changes Made: Updated the Chat unit with the canonical ID route, username
+  compatibility resolver, one-to-one `/chats/new` flow, disabled group
+  capability boundary, membership migration strategy, and five backend
+  deliverables. Active rules were left unchanged because this is planned work.
+- Verification Status: Documentation-only change; structure and diff checks
+  pending.
+
 ## 2026-09-23T12:49:11Z — Improve chat attached-image gallery
 
 - Agent: Codex
