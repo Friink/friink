@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-23T01:10:05Z
+**Last edited:** 2026-09-23T01:20:00Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -1472,6 +1472,17 @@ missing evidence can be filled in.
 - **File(s):** `web/app/[username]/chat/chat-client.tsx`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`
 
 - **What:** Username-scoped conversation pages restore the authenticated session through the shared refresh flow when a full browser refresh clears the in-memory access session. A successful refresh keeps the user on the requested conversation; terminal refresh failures route to login.
+
+### CLIENT-R-014D — Chat Media Reuses Post Compression
+
+- **Status:** Active
+- **Effective:** 2026-09-23T01:20:00Z
+- **Related units:** [chat](units/chat.md), [media](units/media.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** Web/API
+- **File(s):** `web/lib/image-compression.ts`, `web/lib/auth.ts`, `web/app/[username]/chat/chat-client.tsx`, `api/app/routers/chat.py`, `api/app/models/chat.py`
+
+- **What:** Chat messages accept up to eight JPEG-normalized images using the post-media preparation target of a 1024px maximum longest edge and approximately 500KB per image. The API confirms authenticated chat-media keys before associating them with a message; text-only and media-only messages are valid.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 

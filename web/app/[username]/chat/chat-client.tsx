@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { ProfileCard } from '@/components/profile-card';
-import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 
@@ -127,33 +127,37 @@ export function ChatClient({ username }: ChatClientProps) {
     return () => observer.disconnect();
   }, [chatAccessDenied, conversation?.id, messages, user]);
 
-  async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
+  async function sendMessage(event: React.FormEvent<HTMLFormElement>, media: File[]) {
     event.preventDefault();
     const text = draft.trim();
     const session = loadAuthSession();
-    if (!text || !context?.can_send || !session || busy) return;
+    if ((!text && !media.length) || !context?.can_send || !session || busy) return;
 
     const clientMessageId = crypto.randomUUID();
+    const optimisticMediaUrls = media.map((file) => URL.createObjectURL(file));
     const optimisticMessage = conversation ? {
       id: `pending-${clientMessageId}`,
       conversation_id: conversation.id,
       sender_id: session.user.id,
       content: text,
       created_at: new Date().toISOString(),
+      media: optimisticMediaUrls.map((url) => ({ url })),
     } satisfies ApiMessage : null;
     if (optimisticMessage) setMessages((current) => mergeMessages(current, [optimisticMessage]));
     setDraft('');
     setBusy(true);
     try {
       const sent = conversation
-        ? await new PollingChatTransport(session.accessToken).send(conversation.id, text, clientMessageId)
-        : await sendMessageToUser(session.accessToken, username, text, clientMessageId);
+        ? await sendConversationMessage(session.accessToken, conversation.id, text, clientMessageId, media)
+        : await sendMessageToUser(session.accessToken, username, text, clientMessageId, media);
       if (optimisticMessage) setMessages((current) => mergeMessages(current.filter((message) => message.id !== optimisticMessage.id), [sent]));
+      optimisticMediaUrls.forEach((url) => URL.revokeObjectURL(url));
       const nextContext = await getChatContext(session.accessToken, username);
       setContext(nextContext);
       if (!optimisticMessage) setMessages((current) => mergeMessages(current, [sent]));
     } catch (nextError) {
       if (optimisticMessage) setMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
+      optimisticMediaUrls.forEach((url) => URL.revokeObjectURL(url));
       setError(nextError instanceof Error ? nextError.message : 'Could not send message.');
       setDraft(text);
     } finally {
@@ -198,7 +202,7 @@ export function ChatClient({ username }: ChatClientProps) {
       onLogout={handleLogout}
       initialScreen="messages"
       showTabs={false}
-      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} multiline enableMentions enableMedia={false} maxLength={CHAT_MESSAGE_MAX_LENGTH} showCount placeholder={context?.composer_placeholder || 'Write a message...'} disabled={!context?.can_send || chatAccessDenied} disabledPlaceholder={context?.composer_placeholder || 'Chat unavailable'} busy={busy} />}
+      floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} multiline enableMentions enableMedia mediaTargetLabel="message" maxLength={CHAT_MESSAGE_MAX_LENGTH} showCount placeholder={context?.composer_placeholder || 'Write a message...'} disabled={!context?.can_send || chatAccessDenied} disabledPlaceholder={context?.composer_placeholder || 'Chat unavailable'} busy={busy} />}
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
@@ -214,7 +218,10 @@ export function ChatClient({ username }: ChatClientProps) {
               {receiptState.firstUnreadMessageId === message.id ? <div className="chat-unread-divider" role="status">Unread messages</div> : null}
               <div className={`chat-bubble-row ${message.sender_id === user.id ? 'mine' : ''}`} data-message-id={message.id}>
                 <div className="chat-bubble">
-                  <p>{message.content}</p>
+                  {message.content ? <p>{message.content}</p> : null}
+                  {message.media.length ? <div className="chat-message-media" aria-label={`${message.media.length} attached image${message.media.length === 1 ? '' : 's'}`}>
+                    {message.media.map((item, index) => <img key={`${item.url}-${index}`} src={item.url} alt={`Attached image ${index + 1}`} />)}
+                  </div> : null}
                   <small>{formatRelativeTime(message.created_at)}{message.sender_id === user.id ? <span className={`chat-receipt chat-receipt-${getReceiptStatus(message)}`} aria-label={`${getReceiptStatus(message)} message`} title={`${getReceiptStatus(message)} message`}><span className="chat-receipt-mark">✓</span>{getReceiptStatus(message) !== 'sent' ? <span className="chat-receipt-mark chat-receipt-mark-second">✓</span> : null}</span> : null}</small>
                 </div>
               </div>

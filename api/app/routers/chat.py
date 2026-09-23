@@ -3,13 +3,47 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import get_session
 from app.models.user import User
 from app.routers.auth import get_current_user
-from app.schemas.chat import ChatContextResponse, ChatReadResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse, SendMessageRequest
+from app.schemas.chat import ChatContextResponse, ChatMediaCleanupRequest, ChatMediaConfirmRequest, ChatMediaConfirmResponse, ChatMediaUploadUrlItem, ChatMediaUploadUrlRequest, ChatMediaUploadUrlResponse, ChatReadResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse, SendMessageRequest
 from app.services.chat import accept_request, get_chat_context, list_conversations, list_messages, mark_messages_read, reject_request, send_message, send_message_to_user, set_conversation_setting, set_read_receipts_enabled
+from app.services.post_media import CHAT_MEDIA_PREFIX, PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.post("/media/upload-url", response_model=ChatMediaUploadUrlResponse)
+async def create_chat_media_upload_urls(payload: ChatMediaUploadUrlRequest, current_user: User = Depends(get_current_user)) -> ChatMediaUploadUrlResponse:
+    storage = PostMediaStorageService(get_settings())
+    try:
+        items = [storage.create_upload(current_user.id, CHAT_MEDIA_PREFIX) for _ in range(payload.count)]
+    except PostMediaStorageNotConfiguredError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Chat media storage is not configured.") from exc
+    return ChatMediaUploadUrlResponse(items=[ChatMediaUploadUrlItem(upload_url=item.upload_url, public_url=item.public_url, object_key=item.object_key) for item in items])
+
+
+@router.post("/media/confirm", response_model=ChatMediaConfirmResponse)
+async def confirm_chat_media_upload(payload: ChatMediaConfirmRequest, current_user: User = Depends(get_current_user)) -> ChatMediaConfirmResponse:
+    storage = PostMediaStorageService(get_settings())
+    try:
+        storage.confirm(payload.object_key, current_user.id, CHAT_MEDIA_PREFIX)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The chat-media object key is invalid.") from exc
+    except PostMediaStorageNotConfiguredError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Chat media storage is not configured.") from exc
+    return ChatMediaConfirmResponse(object_key=payload.object_key, public_url=storage.public_url(payload.object_key))
+
+
+@router.post("/media/cleanup", status_code=status.HTTP_204_NO_CONTENT)
+async def cleanup_chat_media_uploads(payload: ChatMediaCleanupRequest, current_user: User = Depends(get_current_user)) -> None:
+    storage = PostMediaStorageService(get_settings())
+    for object_key in payload.storage_keys:
+        try:
+            storage.delete(object_key, current_user.id, CHAT_MEDIA_PREFIX)
+        except (ValueError, PostMediaStorageNotConfiguredError, PostMediaObjectError) as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A chat-media object could not be removed.") from exc
 
 
 @router.patch("/preferences/read-receipts", response_model=ReadReceiptPreferenceResponse)
@@ -34,7 +68,14 @@ async def conversation_with_user(username: str, current_user: User = Depends(get
 
 @router.post("/conversations/with/{username}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def create_message_for_user(username: str, payload: SendMessageRequest, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> MessageResponse:
-    message, _ = await send_message_to_user(session, current_user, username, payload.content, payload.client_message_id)
+    storage = PostMediaStorageService(get_settings())
+    try:
+        media = [(item.storage_key, storage.public_url(item.storage_key)) for item in payload.media]
+        for item in payload.media:
+            storage.validate_key(item.storage_key, current_user.id, CHAT_MEDIA_PREFIX)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The chat-media object key is invalid.") from exc
+    message, _ = await send_message_to_user(session, current_user, username, payload.content, payload.client_message_id, media)
     return message
 
 
@@ -55,7 +96,14 @@ async def create_message(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ) -> MessageResponse:
-    return await send_message(session, current_user, conversation_id, payload.content, payload.client_message_id)
+    storage = PostMediaStorageService(get_settings())
+    try:
+        media = [(item.storage_key, storage.public_url(item.storage_key)) for item in payload.media]
+        for item in payload.media:
+            storage.validate_key(item.storage_key, current_user.id, CHAT_MEDIA_PREFIX)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The chat-media object key is invalid.") from exc
+    return await send_message(session, current_user, conversation_id, payload.content, payload.client_message_id, media)
 
 
 @router.post("/conversations/{conversation_id}/accept", response_model=ConversationResponse)

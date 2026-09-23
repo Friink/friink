@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-16T23:44:00Z
+**Last edited:** 2026-09-23T01:20:00Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -76,6 +76,9 @@ contract rather than repeated here.
   line. Muted and Archived are reserved for their dedicated tabs. Mute and
   archive row actions are borderless contextual icon controls with accent
   hover, focus, and active treatments.
+- Chat uses the shared multiline composer with the post-media image preparation
+  preset, an eight-image attachment limit, and inline image rendering in
+  message bubbles.
 - Shared profile-picture avatars use the current accent color for their border
   in both light and dark themes.
 - Profile moderation actions use the shell-owned contextual NavigationBar

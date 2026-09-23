@@ -7,7 +7,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.auth_challenge import LoginChallenge
 from app.models.auth_session import AuthSession
 from app.models.email_change import EmailChangeRequest
-from app.models.chat import Conversation, ConversationSetting, ConversationStatus, Message, UserBlock
+from app.models.chat import Conversation, ConversationSetting, ConversationStatus, Message, MessageMedia, UserBlock
 from app.models.user import User
 from app.models.identity_history import UserEmailHistory, UserUsernameHistory
 from app.models.reserved_username import ReservedUsername
@@ -23,4 +23,4 @@ from app.models.staff import StaffPermission, StaffRole, UserPermissionGrant, Pr
 from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignment
 from app.models.professional_registration import ProfessionalRegistration
 
-__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
+__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "MessageMedia", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
