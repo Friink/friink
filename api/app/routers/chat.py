@@ -8,7 +8,7 @@ from app.db import get_session
 from app.models.user import User
 from app.routers.auth import get_current_user
 from app.schemas.chat import ChatContextResponse, ChatMediaCleanupRequest, ChatMediaConfirmRequest, ChatMediaConfirmResponse, ChatMediaUploadUrlItem, ChatMediaUploadUrlRequest, ChatMediaUploadUrlResponse, ChatReadResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse, SendMessageRequest
-from app.services.chat import accept_request, get_chat_context, list_conversations, list_messages, mark_messages_read, reject_request, send_message, send_message_to_user, set_conversation_setting, set_read_receipts_enabled
+from app.services.chat import accept_request, get_chat_context, get_chat_context_by_id, list_conversations, list_messages, mark_messages_read, reject_request, send_message, send_message_to_user, set_conversation_setting, set_read_receipts_enabled
 from app.services.post_media import CHAT_MEDIA_PREFIX, PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -64,6 +64,11 @@ async def conversations(current_user: User = Depends(get_current_user), session:
 @router.post("/conversations/with/{username}", response_model=ChatContextResponse)
 async def conversation_with_user(username: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatContextResponse:
     return await get_chat_context(session, current_user, username)
+
+
+@router.get("/conversations/{conversation_id}", response_model=ChatContextResponse)
+async def conversation_by_id(conversation_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatContextResponse:
+    return await get_chat_context_by_id(session, current_user, conversation_id)
 
 
 @router.post("/conversations/with/{username}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)

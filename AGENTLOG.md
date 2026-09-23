@@ -1,5 +1,31 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T20:40:24Z — Implement Chat Phase 2 on development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement canonical chat routing and the conversation
+  resolver on the development branch.
+- Changes Made: Added the authorized ID-based conversation context endpoint,
+  canonical `/chats/{conversationId}` loading, username compatibility
+  redirects, `/chats/new` as the reserved Phase 3 entry point, and `/chat/new`
+  compatibility routing. Updated the active rules and Chat unit documents.
+- Verification Status: The targeted chat API test passed with the new
+  request/response assertion; TypeScript passed; targeted ESLint passed with
+  one existing hook-dependency warning; diff checks passed.
+
+## 2026-09-23T20:26:23Z — Resolve staging-to-main conflicts locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the conflicts preventing development-to-staging and
+  staging-to-main promotion, without pushing branches.
+- Changes Made: Merged local `main` into local `staging`, preserved the newer
+  staging Chat/release history and the main notification release entry, and
+  removed the two documentation conflict blocks.
+- Verification Status: No unresolved conflict markers remain and
+  `git diff --check` passes; the resolved staging merge is ready to commit.
+
 ## 2026-09-23T20:12:01Z — Apply chat membership migration to staging
 
 - Agent: Codex
@@ -25,7 +51,6 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   existing service behavior unchanged for the compatibility phase. Updated
   the Chat unit documentation.
 - Verification Status: Targeted migration and model checks pending.
-
 ## 2026-09-23T19:25:20Z — Synchronize development and staging Chat work
 
 - Agent: Codex

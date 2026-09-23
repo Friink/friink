@@ -1916,6 +1916,14 @@ export async function getChatContext(accessToken: string, username: string): Pro
   });
 }
 
+export async function getChatContextById(accessToken: string, conversationId: string): Promise<ApiChatContext> {
+  return requestApi<ApiChatContext>(`/chat/conversations/${encodeURIComponent(conversationId)}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
 export async function sendMessageToUser(accessToken: string, username: string, content: string, clientMessageId: string, media: File[] = []): Promise<ApiMessage> {
   return sendChatMessage(accessToken, `/chat/conversations/with/${encodeURIComponent(username)}/messages`, content, clientMessageId, media);
 }

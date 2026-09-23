@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T20:12:01Z
+**Last edited:** 2026-09-23T20:40:24Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -68,6 +68,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   image uses a contained frame, two to four images use balanced tiles, and
   larger attachments show four tiles with a `+N` overflow indicator. Selecting
   any tile opens the shared full-screen image viewer.
+- **CHAT-R-014:** Existing conversations use `/chats/{conversation_id}` as the
+  canonical web route. Username chat routes resolve through the authenticated
+  chat API and redirect to the conversation ID when a conversation exists;
+  bare `/{conversation_id}` remains a profile route.
 
 ## UX and flows
 
@@ -79,7 +83,11 @@ content with an ellipsis, followed by the message date/time and unread or
 receipt state. An overflow action menu provides Mute, Archive, and Block.
 Muted and Archived are also tab-level filters and are not repeated as row
 metadata.
-Conversations use `/{username}/chat`. The composer communicates policy states
+Conversations use `/chats/{conversation_id}`. The legacy `/{username}/chat`
+and `/chats/{username}` routes resolve through the authenticated chat API and
+redirect to the canonical ID route when a conversation exists; a username route
+remains available for a not-yet-created request conversation. `/chat` redirects
+to `/chats`, and `/chat/new` redirects to `/chats/new`. The composer communicates policy states
 such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
@@ -103,8 +111,11 @@ the final message remains 1rem above the floating composer.
 ## Technical contract
 
 REST endpoints live in `api/app/routers/chat.py`; the web transport uses
-`web/lib/chat-transport.ts` and adaptive polling. Conversation settings include
-mute and archive. Read operations use per-user cursors and server checks.
+`web/lib/chat-transport.ts` and adaptive polling. `GET
+/chat/conversations/{conversation_id}` loads an authorized canonical
+conversation context, while the existing username resolver preserves the
+current access and request rules. Conversation settings include mute and
+archive. Read operations use per-user cursors and server checks.
 
 ## Acceptance criteria
 
@@ -123,6 +134,9 @@ mute and archive. Read operations use per-user cursors and server checks.
 - [x] **CHAT-AC-009** Chat image attachments use the shared compression preset,
   enforce the eight-image limit, and remain associated with the authenticated
   message after upload.
+- [x] **CHAT-AC-010** Canonical conversation-ID loading is authorized by the
+  API, username aliases redirect when an ID exists, and `/chat` plus
+  `/chat/new` remain compatibility redirects.
 
 ## Known limitations
 
@@ -139,16 +153,18 @@ This section records implementation status and planned work. It is not an active
 [`docs/rules.md`](../rules.md) until the implementation and verification are
 complete.
 
-### Planned URL and compatibility model
+### Implemented URL and compatibility model
 
-The canonical conversation route will be `/chats/{conversation_id}`, where
+The canonical conversation route is `/chats/{conversation_id}`, where
 `conversation_id` is the existing conversation UUID. The inbox remains
-`/chats`, and `/chats/new` will be the one-to-one conversation-starting flow.
-The current profile entry point `/{username}/chat` and the compatibility form
-`/chats/{username}` may both resolve the authenticated user and target username
-through one server-authoritative resolver, then redirect to the canonical
-conversation ID route. A bare `/{conversation_id}` will remain a profile
-namespace and will not be treated as a chat URL.
+`/chats`, and `/chats/new` is reserved for the one-to-one
+conversation-starting flow implemented in the next UX phase. The profile entry
+point `/{username}/chat` and compatibility form `/chats/{username}` use the
+authenticated username resolver and redirect to the canonical conversation ID
+when an existing conversation is returned. If no conversation exists yet, the
+username route remains available so the existing request-on-first-message
+behavior is preserved. A bare `/{conversation_id}` remains a profile namespace
+and is not treated as a chat URL.
 
 ### Planned `/chats/new` flow
 
@@ -246,10 +262,10 @@ The work should be delivered in five bounded workstreams:
    conversation type and membership schema, backfill direct conversations,
    preserve IDs, and retain pair-column compatibility until all reads and
    writes have moved to membership data.
-2. **Canonical routing and resolver:** Add `/chats/{conversation_id}` and
-   `/chats/new`, preserve the username aliases, implement one server-side
-   direct-conversation resolver, and make `/chat`/`/chat/new` compatibility
-   redirects.
+2. **Canonical routing and resolver — complete on `development`:** Added
+   `/chats/{conversation_id}` and the reserved `/chats/new` route, preserved
+   username aliases with authenticated resolution, added the ID context API,
+   and made `/chat`/`/chat/new` compatibility redirects.
 3. **New-chat discovery UX:** Build the modal, two-character debounced search,
    scrollable profile-rich suggestions, single-person selection, immediate
    eligibility feedback, loading/empty/error states, account-switch reset,

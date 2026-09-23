@@ -213,6 +213,22 @@ async def get_chat_context(session: Session, user: User, username: str) -> ChatC
     return ChatContextResponse(conversation=None, participant=participant, can_send=can_send, composer_placeholder=placeholder, status=state)
 
 
+async def get_chat_context_by_id(session: Session, user: User, conversation_id: uuid.UUID) -> ChatContextResponse:
+    conversation = await _get_conversation(session, conversation_id, user)
+    response = _conversation_response(session, conversation, user)
+    setting = _get_setting(session, conversation.id, user.id)
+    return ChatContextResponse(
+        conversation=response,
+        participant=response.participant,
+        can_send=response.can_send,
+        composer_placeholder=response.composer_placeholder,
+        status=response.status,
+        requester_message_count=response.requester_message_count,
+        unread_count=response.unread_count,
+        last_read_message_id=setting.last_read_message_id if setting else None,
+    )
+
+
 async def list_conversations(session: Session, user: User) -> ConversationListResponse:
     conversations = session.execute(
         select(Conversation)
