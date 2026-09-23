@@ -78,6 +78,11 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         assert first.json()["sender_id"] == requester_public_id
         assert first.json()["sender_id"] != str(requester_id)
 
+        canonical_context = client.get(f"/chat/conversations/{conversation_id}", headers=requester_headers)
+        assert canonical_context.status_code == 200, canonical_context.text
+        assert canonical_context.json()["conversation"]["id"] == conversation_id
+        assert canonical_context.json()["participant"]["id"] == recipient_public_id
+
         rejected_length = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": "x" * 2049, "client_message_id": str(uuid.uuid4())})
         assert rejected_length.status_code == 422
 

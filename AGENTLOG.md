@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T20:40:24Z — Implement Chat Phase 2 on development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement canonical chat routing and the conversation
+  resolver on the development branch.
+- Changes Made: Added the authorized ID-based conversation context endpoint,
+  canonical `/chats/{conversationId}` loading, username compatibility
+  redirects, `/chats/new` as the reserved Phase 3 entry point, and `/chat/new`
+  compatibility routing. Updated the active rules and Chat unit documents.
+- Verification Status: The targeted chat API test passed with the new
+  request/response assertion; TypeScript passed; targeted ESLint passed with
+  one existing hook-dependency warning; diff checks passed.
+
 ## 2026-09-23T20:26:23Z — Resolve staging-to-main conflicts locally
 
 - Agent: Codex

@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-23T12:40:00Z
+**Last edited:** 2026-09-23T20:40:24Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -1483,6 +1483,18 @@ missing evidence can be filled in.
 - **File(s):** `web/lib/image-compression.ts`, `web/lib/auth.ts`, `web/app/[username]/chat/chat-client.tsx`, `web/components/chat-media-gallery.tsx`, `web/app/globals.css`, `api/app/routers/chat.py`, `api/app/models/chat.py`
 
 - **What:** Chat messages accept up to eight JPEG-normalized images using the post-media preparation target of a 1024px maximum longest edge and approximately 500KB per image. The API confirms authenticated chat-media keys before associating them with a message; text-only and media-only messages are valid. Attached images render in a bounded deterministic gallery: one image preserves its aspect ratio in a contained frame, two to four images use balanced tiles, and the fourth tile shows a `+N` overflow indicator. Selecting a tile opens the shared full-screen viewer with previous/next/close controls, keyboard navigation, and a counter.
+
+### CLIENT-R-014E — Chat Uses Canonical Conversation-ID Routes
+
+- **Status:** Active
+- **Effective:** 2026-09-23T20:40:24Z
+- **Related units:** [chat](units/chat.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/chat.py`, `api/app/services/chat.py`, `web/lib/auth.ts`, `web/app/chats/[conversationId]/page.tsx`, `web/app/chats/new/page.tsx`, `web/app/chat/new/page.tsx`, `web/app/[username]/chat/chat-client.tsx`
+
+- **What:** Existing conversations use `/chats/{conversation_id}` as the canonical web route, and the API authorizes `GET /chat/conversations/{conversation_id}` against the authenticated participant. `/{username}/chat` and `/chats/{username}` remain compatibility entry points and redirect to the canonical ID route when the username resolver returns an existing conversation. `/chat` redirects to `/chats`, `/chat/new` redirects to `/chats/new`, and bare `/{conversation_id}` remains in the profile namespace.
+- **Edge cases:** Username routes remain available when no conversation exists yet so request creation still follows the existing first-message policy. An unauthorized or unknown conversation ID is returned as not found by the API. The `/chats/new` route exists as the reserved entry point; its search and selection modal remains a later workstream.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 

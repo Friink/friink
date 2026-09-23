@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23T20:40:24Z
+- [chat/routing] Implemented Phase 2 on `development`: canonical
+  conversation-ID context loading, username compatibility redirects, the
+  `/chats/new` reserved route, and `/chat/new` compatibility routing. Added a
+  real API regression assertion and updated the active chat route contract.
+
 ## 2026-09-23T20:26:23Z
 - [release/branches] Resolved the local staging-to-main documentation
   conflicts while preserving both branch histories and preparing a clean
