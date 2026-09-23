@@ -71,6 +71,8 @@ is superseded by the staging-gate workflow above.
   `NEXT_PUBLIC_API_BASE_URL`.
 - The API project owns `DATABASE_URL`, authentication secrets, environment
   flags, email settings, and storage credentials.
+- `GROUP_CHAT_ENABLED` is an API-only feature flag and defaults to `false`;
+  keep it false until group-chat product approval and the full staging gate.
 - Both projects use matching `.env`, `.env.staging`, and `.env.development`
   files for production, staging, and development respectively.
 - Local web development loads `web/.env.development` through Next.js. Local

@@ -1,6 +1,5 @@
-import { AppShellRoute } from '@/components/app-shell-route';
+import { NewChatScreen } from '@/components/new-chat-screen';
 
-// The route is reserved in Phase 2. The one-person selection modal is Phase 3.
 export default function NewChatPage() {
-  return <AppShellRoute initialScreen="messages" />;
+  return <NewChatScreen />;
 }

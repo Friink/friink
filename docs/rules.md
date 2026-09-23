@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-23T20:40:24Z
+**Last edited:** 2026-09-23T22:00:31Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -756,7 +756,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered; that metadata is presentation-only and authenticated API effects and actions require a successful in-memory refresh. The public landing route remains behind an explicit loading/recovery surface, redirects after a successful refresh, shows the public page only after a confirmed terminal signed-out result, responds to cross-tab session restoration, and offers retry on recoverable failures. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
+- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While the refresh-cookie exchange runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered; that metadata is presentation-only and authenticated API effects and actions require a successful in-memory refresh. The public landing route remains behind an explicit loading/recovery surface, redirects after a successful refresh, shows the public page only after a confirmed terminal signed-out result, responds to cross-tab session restoration, and offers retry on recoverable failures. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
 - **Edge cases:** Network and other recoverable failures remain on the explicit recovery surface instead of being silently treated as signed out. Refresh-token rotation and server-side validation remain authoritative. A failed slot is skipped without clearing other remembered-account summaries, and stale or delayed cross-tab state from another slot cannot replace the active slot.
 - **Verification:** Local targeted account-slot tests, TypeScript checks, and the webpack production build pass; staging browser acceptance remains a release gate.
 
@@ -1494,7 +1494,31 @@ missing evidence can be filled in.
 - **File(s):** `api/app/routers/chat.py`, `api/app/services/chat.py`, `web/lib/auth.ts`, `web/app/chats/[conversationId]/page.tsx`, `web/app/chats/new/page.tsx`, `web/app/chat/new/page.tsx`, `web/app/[username]/chat/chat-client.tsx`
 
 - **What:** Existing conversations use `/chats/{conversation_id}` as the canonical web route, and the API authorizes `GET /chat/conversations/{conversation_id}` against the authenticated participant. `/{username}/chat` and `/chats/{username}` remain compatibility entry points and redirect to the canonical ID route when the username resolver returns an existing conversation. `/chat` redirects to `/chats`, `/chat/new` redirects to `/chats/new`, and bare `/{conversation_id}` remains in the profile namespace.
-- **Edge cases:** Username routes remain available when no conversation exists yet so request creation still follows the existing first-message policy. An unauthorized or unknown conversation ID is returned as not found by the API. The `/chats/new` route exists as the reserved entry point; its search and selection modal remains a later workstream.
+- **Edge cases:** Username routes remain available when no conversation exists yet so request creation still follows the existing first-message policy. An unauthorized or unknown conversation ID is returned as not found by the API. `/chats/new` hosts the one-person discovery modal; group selection remains unavailable.
+
+### CLIENT-R-014F — New Chat Discovery Uses Server-Filtered Suggestions
+
+- **Status:** Active
+- **Effective:** 2026-09-23T21:21:33Z
+- **Related units:** [chat](units/chat.md), [search](units/search.md), [connections](units/connections.md), [blocking](units/blocking.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/chat.py`, `api/app/services/chat.py`, `api/app/schemas/chat.py`, `web/app/chats/new/page.tsx`, `web/components/new-chat-screen.tsx`, `web/lib/auth.ts`, `web/app/globals.css`
+
+- **What:** `/chats/new` searches after two characters through `GET /chat/people`, matching active profiles by username or display name. The API excludes the viewer, blocked profiles, inactive/deleted profiles, and private profiles unless the viewer has an accepted follow relationship to them. Suggestions show profile picture, display name, and username. Selecting one person checks eligibility through the read-only `GET /chat/people/{username}/eligibility` endpoint; `Next` repeats that check and uses the authenticated chat resolver before navigation. Existing conversations use `/chats/{conversation_id}`, while a new eligible request continues through the username route until the first message creates its conversation.
+- **Edge cases:** Results are debounced and bounded to 20. Search loading, empty, and retryable error states are explicit. Ineligible or inaccessible identities use neutral unavailable copy. Account switching clears the query, results, selection, and validation state. Closing the modal returns to `/home`. Only one person can be selected; group creation remains unavailable.
+
+### CLIENT-R-014G — Chat Access And Shared Behavior Use Active Memberships
+
+- **Status:** Active
+- **Effective:** 2026-09-23T21:44:20Z
+- **Related units:** [chat](units/chat.md), [search](units/search.md), [blocking](units/blocking.md), [notifications](units/notifications.md)
+- **Source:** [chat unit](units/chat.md)
+- **Platform:** API
+- **File(s):** `api/app/models/chat.py`, `api/app/services/chat.py`, `api/app/routers/chat.py`, `api/app/routers/search.py`
+
+- **What:** Active `conversation_members` rows authorize conversation access and drive conversation lists, direct-chat resolution, message and media reads, read state, search visibility, and notification fan-out. New direct conversations create a membership row for each participant; legacy pair columns remain compatibility fields for direct chats. Group APIs and group reads require `GROUP_CHAT_ENABLED`, which defaults to false; group conversations are omitted from search while disabled.
+- **Edge cases:** Departed members lose conversation access. Group receipt state is `read` only after all active recipients read and `delivered` only after all active recipients receive the message. Per-member read-receipt preferences and mute/archive settings apply. Enabling group chat remains gated on product approval and migration/release verification.
 
 ### CLIENT-R-015 — Appearance And Sidebar Preferences Use Cookies
 

@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-22T12:00:08Z
+**Last edited:** 2026-09-23T22:00:31Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -262,8 +262,9 @@ created by a successful refresh. A failed refresh returns to the existing
 recovery surface.
 
 The public landing route and authenticated app entry use the shared
-`restoreAuthSessionForEntry()` contract. A loading recovery surface is shown
-while the refresh-cookie exchange runs. A successful refresh redirects an
+`restoreAuthSessionForEntry()` contract. While the refresh-cookie exchange
+runs, the loading recovery surface says “Reconnecting…” and “Just a moment
+while we get you back in.” A successful refresh redirects an
 already authenticated visitor to the app; a confirmed terminal refresh failure
 shows the public landing page; and a recoverable network, timeout, CORS, or
 server failure shows an explicit retry surface instead of silently treating the

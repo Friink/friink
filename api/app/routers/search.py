@@ -2,11 +2,12 @@ from datetime import date as date_type
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import and_, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, exists, or_, select
+from sqlalchemy.orm import Session, aliased
 
+from app.config import get_settings
 from app.db import get_session
-from app.models.chat import Conversation, Message
+from app.models.chat import Conversation, ConversationMember, ConversationType, Message
 from app.models.post import Post
 from app.models.user import User
 from app.routers.auth import get_current_user
@@ -82,9 +83,37 @@ async def search(
             ).all()
             results.extend(SearchResult(id=post.public_id, type="post", name=author.display_name or author.username, username=author.username, profile_picture_url=author.profile_picture_url, summary=post.content, href=f"/{author.username}/{post.public_id}", created_at=post.created_at) for post, author in posts)
     else:
-        participant = or_(Conversation.user_one_id == current_user.id, Conversation.user_two_id == current_user.id)
-        other_participant = or_(and_(Conversation.user_one_id == current_user.id, User.id == Conversation.user_two_id), and_(Conversation.user_two_id == current_user.id, User.id == Conversation.user_one_id))
-        conversation_filters = [participant, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False), or_(User.username.ilike(pattern), User.display_name.ilike(pattern))]
+        participant = exists().where(
+            ConversationMember.conversation_id == Conversation.id,
+            ConversationMember.user_id == current_user.id,
+            ConversationMember.left_at.is_(None),
+        )
+        other_user_id = (
+            select(ConversationMember.user_id)
+            .where(
+                ConversationMember.conversation_id == Conversation.id,
+                ConversationMember.user_id != current_user.id,
+                ConversationMember.left_at.is_(None),
+            )
+            .order_by(ConversationMember.joined_at, ConversationMember.user_id)
+            .limit(1)
+            .scalar_subquery()
+        )
+        other_participant = User.id == other_user_id
+        matching_member = aliased(ConversationMember)
+        matching_user = aliased(User)
+        matching_other = exists().where(
+            matching_member.conversation_id == Conversation.id,
+            matching_member.user_id != current_user.id,
+            matching_member.left_at.is_(None),
+            matching_user.id == matching_member.user_id,
+            matching_user.deleted_at.is_(None),
+            matching_user.lifecycle_status == "active",
+            or_(matching_user.username.ilike(pattern), matching_user.display_name.ilike(pattern)),
+        )
+        conversation_filters = [participant, matching_other, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False)]
+        if not get_settings().group_chat_enabled:
+            conversation_filters.append(Conversation.conversation_type == ConversationType.direct)
         if date_start is not None:
             conversation_filters.append(Conversation.updated_at >= date_start)
         if date_end is not None:
@@ -96,9 +125,11 @@ async def search(
             .order_by(Conversation.updated_at.desc())
             .limit(limit)
         ).all()
-        results.extend(SearchResult(id=str(conversation.id), type="conversation", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=f"Chat with {person.display_name or person.username}", href=f"/{person.username}/chat", created_at=conversation.updated_at) for conversation, person in conversations)
+        results.extend(SearchResult(id=str(conversation.id), type="conversation", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=f"Chat with {person.display_name or person.username}", href=f"/chats/{conversation.id}", created_at=conversation.updated_at) for conversation, person in conversations)
 
         message_filters = [participant, Conversation.status.in_(('accepted', 'pending')), _active_user_clause(current_user, public_only=False), Message.content.ilike(pattern)]
+        if not get_settings().group_chat_enabled:
+            message_filters.append(Conversation.conversation_type == ConversationType.direct)
         if date_start is not None:
             message_filters.append(Message.created_at >= date_start)
         if date_end is not None:
@@ -106,12 +137,12 @@ async def search(
         messages = session.execute(
             select(Message, Conversation, User)
             .join(Conversation, Conversation.id == Message.conversation_id)
-            .join(User, other_participant)
+            .join(User, User.id == Message.sender_id)
             .where(*message_filters)
             .order_by(Message.created_at.desc())
             .limit(limit)
         ).all()
-        results.extend(SearchResult(id=str(message.id), type="conversation", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=message.content, href=f"/{person.username}/chat", created_at=message.created_at) for message, _, person in messages)
+        results.extend(SearchResult(id=str(message.id), type="conversation", name=person.display_name or person.username, username=person.username, profile_picture_url=person.profile_picture_url, summary=message.content, href=f"/chats/{conversation.id}", created_at=message.created_at) for message, conversation, person in messages)
 
     if sort == "oldest":
         results.sort(key=lambda item: item.created_at or datetime.max.replace(tzinfo=timezone.utc))

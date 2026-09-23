@@ -1,5 +1,98 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T22:17:03Z — Apply latest chat migration to staging
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Migrate the staging database to the latest repository head.
+- Changes Made: Ran `api/scripts/migrate_before_deploy.py` with
+  `api/.env.staging`, applying `20260924_0058` to staging. Updated Chat unit
+  status to record the migration gate completion while leaving acceptance work
+  open. No production database or feature-flag state was changed.
+- Verification Status: The migration gate completed successfully;
+  `alembic check` reported no new upgrade operations, and a fresh
+  `alembic current` returned `20260924_0058 (head)`. Local API liveness and
+  frontend route checks passed. `/health/db` timed out on one probe but passed
+  on another; the staging connection has shown intermittent resets. Full
+  staging acceptance remains outstanding.
+
+## 2026-09-23T22:13:36Z — Refine shared tab label size
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Reduce the doubled shared Tabs label size to `0.8rem`.
+- Changes Made: Set `.tabs__pill` font size to `0.8rem`, preserved bold active
+  labels, and synchronized shared design documentation.
+- Verification Status: TypeScript, targeted ESLint, and `git diff --check`
+  passed. The local browser reports `12.8px` (`0.8rem`) labels, with the
+  selected tab at weight `700` and the unselected tab at `400`.
+
+## 2026-09-23T22:10:49Z — Enlarge shared tab labels and emphasize selection
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Double the shared Tabs font size and make the active tab
+  label bold.
+- Changes Made: Increased `.tabs__pill` from `0.64rem` to `1.28rem` and set
+  active tabs to weight 700. Updated the shared design system, implementation
+  contract, and Navigation unit.
+- Verification Status: TypeScript, targeted ESLint, and `git diff --check`
+  passed. The local browser reports `20.48px` (`1.28rem`) labels, with the
+  selected tab at weight `700` and the unselected tab at `400`.
+
+## 2026-09-23T22:00:31Z — Simplify session-restoration loading copy
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Improve the loading copy shown while Friink restores an
+  authenticated session.
+- Changes Made: Replaced the technical headline and supporting line with
+  “Reconnecting…” and “Just a moment while we get you back in.” Synchronized
+  Account Access, Profiles, and active session-recovery documentation.
+- Verification Status: The web TypeScript check and `git diff --check` pass.
+  Targeted ESLint reports seven existing `no-html-link-for-pages` violations
+  on the unchanged navigation anchors at lines 25 and 32 of
+  `session-recovery-screen.tsx`. No API or browser behavior changed.
+
+## 2026-09-23T21:44:20Z — Migrate chat policy and shared behavior on staging
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Implement chat workstream 4, policy and shared behavior migration.
+- Changes Made: Moved chat access, listing, direct resolution, message/media
+  reads, search visibility, read state, and notification fan-out to active
+  membership rows. Added membership-aware group receipts and API group
+  operations behind the disabled-by-default `GROUP_CHAT_ENABLED` flag. Added
+  migration `20260924_0058` to preserve legacy direct-pair compatibility while
+  allowing group rows, and updated Chat, Search, architecture, deployment, and
+  active policy documentation.
+- Verification Status: Changed API files and migration passed Python syntax
+  compilation; frontend TypeScript passed; `git diff --check` passed; Alembic
+  reports `20260924_0058` as the sole head. Direct requests to all four group
+  create/member endpoints returned 403 with the flag false and a stubbed DB
+  session. The migration has not been applied. Offline SQL generation is
+  blocked by a pre-existing data query in migration
+  `20260830_0009_add_public_id_to_posts.py`; DB-backed regression and staging
+  release verification remain for workstream 5.
+
+## 2026-09-23T21:21:33Z — Implement Chat new-person discovery on staging
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Implement the remaining new-chat discovery UX.
+- Changes Made: Replaced the `/chats/new` placeholder with a one-person
+  discovery modal, debounced two-character people search, identity-rich
+  suggestions, immediate and final server eligibility checks, neutral loading,
+  empty, unavailable, and retryable search states, and account-switch reset.
+  Added authenticated `GET /chat/people` and read-only
+  `GET /chat/people/{username}/eligibility` with active, block, and
+  private-profile visibility filters. Updated Chat and Search docs plus the
+  active rule.
+- Verification Status: TypeScript, targeted ESLint, Python syntax compilation,
+  and `git diff --check` passed. Direct people-search and eligibility requests
+  returned HTTP 200 with expected response shapes using a stubbed DB session.
+  Full test suite and live database-backed search behavior were not run.
+
 ## 2026-09-23T20:40:24Z — Implement Chat Phase 2 on development
 
 - Agent: Codex

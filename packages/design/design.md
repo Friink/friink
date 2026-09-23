@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-23T01:35:00Z
+**Last edited:** 2026-09-23T22:13:36Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
@@ -481,7 +481,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Accessibility**: The gallery exposes its image count through an accessible region label, each tile is an explicit button with position-aware accessible copy, the overflow tile announces the additional image count, and the lightbox uses a modal dialog label with accessible controls.
 ### 9. Tabs (`web/components/tabs.tsx`)
 - **Purpose**: Reusable tab bar with a clear selected state and horizontal overflow behavior.
-- **Layout**: Horizontal tab row (`.tabs__pill`, `role="tab"`) with selected text and active-tab underline both using the user-configurable `--color-accent`; the underline (`.tabs__indicator`) slides smoothly between tabs. The tab container has a subtle full-width bottom rule and selected tabs have no background fill. Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap. The tab row scrolls horizontally when its items exceed the available width, with the scrollbar hidden to preserve the sleek strip appearance.
+- **Layout**: Horizontal tab row (`.tabs__pill`, `role="tab"`) with selected text and active-tab underline both using the user-configurable `--color-accent`; selected text uses `font-weight: 700`. Tab labels use `0.8rem`; unselected labels remain `font-weight: 400`. The underline (`.tabs__indicator`) slides smoothly between tabs. The tab container has a subtle full-width bottom rule and selected tabs have no background fill. Top app tab strips are `1.98rem` tall and sit directly below `NavigationBar` without a gap. The tab row scrolls horizontally when its items exceed the available width, with the scrollbar hidden to preserve the sleek strip appearance.
 - **Props Contract**: `tabs?: Tab[]`, `activeId?: string`, `onChange?: (id: string) => void`, `ariaLabel?: string`, `className?: string`.
 - **Overflow Controls**: When tabs overflow at any viewport width, a right chevron appears at the edge and scrolls the strip forward by one tab per activation; it remains visible but disabled at the end. A left chevron appears only after the strip has moved away from its initial position and scrolls back one tab per activation; it disappears at the initial position. The controls are conditional, do not appear when all tabs fit, and work consistently on mobile, tablet, and desktop.
 - **Scroll Rule**: Touch, trackpad, mouse-wheel, and drag-based horizontal scrolling move the tab strip itself without changing the selected tab. Vertical page scrolling remains available.

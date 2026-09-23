@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-22T23:29:46Z
+**Last edited:** 2026-09-23T22:13:36Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -50,6 +50,9 @@ the established search, chat-unread, and notification interactions.
 - All controls use the existing navigation callbacks and server-authoritative
   unread state. The legacy Header remains mounted but visually hidden for
   rollback safety; NavigationBar and Tabs remain rendered and functional.
+- Shared tab labels use the design-system type size, and the active
+  label is bold. Tab selection, underline, and horizontal-overflow behavior
+  are unchanged.
 
 ## Business rules
 

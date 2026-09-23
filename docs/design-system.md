@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-23T01:35:00Z
+**Last edited:** 2026-09-23T22:13:36Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -57,8 +57,9 @@ contract rather than repeated here.
   strip, and their arrow controls remain contained within the tab-bar height
   and flush with the strip edges.
 - Selected tabs use the user-configurable accent color for both text and the
-  smoothly moving active-tab underline. The shared tab container also renders
-  a subtle full-width bottom rule, but selected tabs have no background fill.
+  smoothly moving active-tab underline, use bold text, and have a comfortably
+  readable label size. The shared tab container also renders a subtle
+  full-width bottom rule, but selected tabs have no background fill.
 - Post actions use the current accent color on hover, keyboard focus, and
   press; persistent Like and Save states also retain the accent color.
 - Signup password and username guidance uses full-width left alignment;

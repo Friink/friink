@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-09-12T22:10:13Z
+**Last edited:** 2026-09-23T21:44:20Z
 
 ## Repository and runtime boundaries
 
@@ -44,7 +44,7 @@ through `NEXT_PUBLIC_API_BASE_URL`.
 
 ## Feature transport and persistence
 
-- Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. Mutual accepted follows enable chat immediately; paid-tier users can initiate a non-mutual request with up to eight requester messages. Pending requests appear in Requests, accepted chats in All, and per-user mute/archive settings control notifications and placement. See [Chat](units/chat.md).
+- Chat uses REST-backed conversations and messages with a 4-second adaptive polling transport. Active `conversation_members` rows own access, lists, message/media reads, read state, and notification fan-out; the legacy pair columns remain for direct-chat compatibility. Mutual accepted follows enable direct chat immediately; paid-tier users can initiate a non-mutual request with up to eight requester messages. Group operations are API-gated by `GROUP_CHAT_ENABLED`, which defaults to false, and no group-creation UI is exposed. See [Chat](units/chat.md).
 - Notifications use a 4-second adaptive unread-count polling transport with visibility/focus recovery. The full list refreshes while Notifications is open. See [Notifications](units/notifications.md).
 - Post Likes and Saves are implemented with public aggregate counts, authenticated toggles, Like notifications, profile Likes, private Saved posts, and privacy-controlled Like identity visibility. See [Posts](units/posts.md) and [Saved items](units/saved-items.md).
 - Current post media uses a fixed `3:5` crop tool, submit-time R2 upload, a `3:4` frame for multi-image galleries, and natural-ratio display for single images. Final crop dimensions/aspect ratio are not currently persisted. See [Media](units/media.md).

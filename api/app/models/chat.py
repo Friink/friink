@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,13 +23,23 @@ class ConversationType(str, enum.Enum):
 class Conversation(Base):
     __tablename__ = "conversations"
     __table_args__ = (
-        UniqueConstraint("user_one_id", "user_two_id", name="uq_conversations_user_pair"),
-        CheckConstraint("user_one_id <> user_two_id", name="ck_conversations_not_self"),
+        Index(
+            "uq_conversations_direct_user_pair",
+            "user_one_id",
+            "user_two_id",
+            unique=True,
+            postgresql_where=text("conversation_type = 'direct'"),
+        ),
+        CheckConstraint(
+            "(conversation_type = 'direct' AND user_one_id IS NOT NULL AND user_two_id IS NOT NULL AND user_one_id <> user_two_id) OR "
+            "(conversation_type = 'group' AND user_one_id IS NULL AND user_two_id IS NULL)",
+            name="ck_conversations_type_pair_columns",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_one_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_two_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_one_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_two_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     conversation_type: Mapped[ConversationType] = mapped_column(
         Enum(ConversationType, name="conversation_type"),
         nullable=False,

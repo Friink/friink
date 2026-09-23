@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-23T22:17:03Z
+- [release/chat] Applied the chat compatibility migration to the staging
+  database using the repository migration gate. Alembic reports the staging
+  database at head, and `alembic check` detects no schema drift. Chat Phase 5
+  remains open for regression and staging acceptance verification.
+
+## 2026-09-23T22:13:36Z
+- [design/tabs] Adjusted the shared tab label size to `0.8rem` after visual
+  review; active labels remain bold. Updated the shared design contracts.
+
+## 2026-09-23T22:10:49Z
+- [design/tabs] Doubled shared tab-label type size from `0.64rem` to
+  `1.28rem` and made the active label bold. Updated the design system,
+  implementation contract, and Navigation unit.
+
+## 2026-09-23T22:00:31Z
+- [auth/ux] Changed the session-restoration loading copy to “Reconnecting…”
+  and “Just a moment while we get you back in.” Updated the Account Access
+  and Profiles unit docs and the active session-recovery rule.
+
+## 2026-09-23T21:44:20Z
+- [chat/membership] Implemented policy and shared conversation behavior on
+  the staging branch: active-membership authorization and lists, direct-chat
+  resolution, per-member receipts, group notification fan-out, member-aware
+  message/search access, and disabled-by-default group operations. Added the
+  direct-pair compatibility migration and synchronized active policy and unit
+  documentation. Verification/release remains open; migration `20260924_0058`
+  is not applied.
+
+## 2026-09-23T21:21:33Z
+- [chat/discovery] Implemented the one-person `/chats/new` flow on staging:
+  server-filtered people search, immediate and final eligibility checks,
+  account-switch reset, neutral states, and responsive modal behavior.
+  Updated Chat and Search unit docs and the active chat discovery rule.
+
 ## 2026-09-23T20:40:24Z
 - [chat/routing] Implemented Phase 2 on `development`: canonical
   conversation-ID context loading, username compatibility redirects, the

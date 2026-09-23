@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T20:40:24Z
+**Last edited:** 2026-09-23T22:17:03Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -18,6 +18,7 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 
 - [Connections](./connections.md) — mutual accepted follows enable ordinary chat.
 - [Blocking](./blocking.md) — blocking makes existing chats read-only.
+- [Search](./search.md) — owns global search visibility consumed by chat discovery.
 - [Notifications](./notifications.md) — consumes chat unread/request events.
 - [Settings](./settings.md) — exposes read-receipt preference.
 - [Subscriptions](./subscriptions.md) — contributes paid requester policy.
@@ -166,12 +167,16 @@ username route remains available so the existing request-on-first-message
 behavior is preserved. A bare `/{conversation_id}` remains a profile namespace
 and is not treated as a chat URL.
 
-### Planned `/chats/new` flow
+### `/chats/new` flow (implemented on staging)
 
 The first version remains one-to-one only. It opens a modal with one search
-field. The user searches for and selects one username, then chooses `Next`.
-The API evaluates the existing access rules before creating or returning a
-conversation:
+field. After two characters, a debounced chat-specific endpoint returns up to
+20 active, unblocked people matching username or display name. Public profiles
+are discoverable; a private profile appears only when the viewer has an
+accepted follow relationship to that profile. The user selects one person and
+receives immediate eligibility feedback from a read-only server check.
+`Next` repeats that check and then uses the chat resolver for the final
+authoritative decision. The API applies the existing access rules:
 
 - Mutual accepted follows open an accepted conversation.
 - A user with the `message_requests` entitlement may start a pending request
@@ -181,6 +186,13 @@ conversation:
   the existing restricted or unavailable state.
 - If the direct conversation already exists, the flow redirects directly to
   `/chats/{conversation_id}`.
+- A new request-eligible direct chat continues through the username route so
+  the conversation is created by the first message. A pending request receiver
+  can open the existing canonical conversation without accepting it merely by
+  selecting the person.
+- Search, empty, unavailable, and validation states remain neutral and
+  retryable. Switching accounts clears the query, result list, selection, and
+  eligibility result. Closing the modal returns to `/home`.
 
 Selecting more than one username remains unavailable until group-chat rules
 and UX are explicitly launched. The server, not only the frontend, must reject
@@ -229,30 +241,58 @@ group creation while the feature is disabled.
    backfilled with exactly two member rows without changing their IDs. The
    current pair columns remain in place for compatibility. This migration is
    applied to development and staging; production remains unchanged.
-2. **Member-based authorization:** Refactor conversation access, message
-   sending, list queries, and direct-chat resolution around membership while
-   preserving the current mutual-follow, request, block, and paid-entitlement
-   rules for direct chats.
-3. **Disabled group capability:** Add server-side group creation and member
-   operations behind a `GROUP_CHAT_ENABLED=false` feature flag. The backend
-   must reject disabled group operations even if called directly.
-4. **Shared conversation behavior:** Make unread counts, read receipts,
-   mute/archive settings, notifications, polling, and media attachments
-   member-aware while keeping `/chats/{conversation_id}` as the common route
-   for direct and future group conversations.
-5. **Migration and release verification:** Rehearse the migration on isolated
-   development data, verify direct-chat regressions and authorization tests,
-   confirm the disabled group API behavior, then apply the staging migration
-   gate before any production promotion.
+2. **Member-based authorization — implemented on the staging branch:** Move
+   conversation access, message sending, list queries, and direct-chat
+   resolution to membership while preserving direct-chat policy.
+3. **Disabled group capability — implemented on the staging branch:** Add
+   server-side group creation and member operations behind a feature flag that
+   defaults to false. The backend rejects disabled group operations directly.
+4. **Shared conversation behavior — implemented on the staging branch:** Make
+   unread counts, read receipts, mute/archive settings, notifications, polling,
+   and media access member-aware while keeping the canonical conversation route.
+5. **Migration and release verification — in progress:** The staging migration
+   gate is applied and `alembic check` passes at the repository head. Still
+   verify direct-chat regressions and authorization, the disabled group API,
+   and complete staging acceptance before any production promotion.
 
 ### Planned migration constraints
 
 Conversation IDs remain stable through the membership migration. Existing
 one-to-one conversations are represented by exactly two active membership rows.
-The pair columns should not be removed until all reads, writes, authorization
-checks, notification fan-out, and administrative queries use membership rows.
+The pair columns remain as compatibility fields for direct chats; group rows
+use null pair values. The follow-up migration replaces global pair uniqueness
+with a direct-only unique index and checks pair-column shape by conversation
+type. Authorization, conversation lists, direct resolution, message access,
+search, notification fan-out, and read state use active membership rows.
 Production migration must follow the repository deployment gate and must keep
 staging and production databases separate.
+
+### Membership-backed service behavior (implemented on the staging branch)
+
+- Existing direct conversations have two active membership rows from the
+  foundation backfill. Newly created direct conversations write both rows in
+  the same transaction.
+- Conversation-ID authorization and conversation lists require an active
+  membership row. A departed member loses access to the conversation and its
+  message/media history.
+- Unread and delivered/read cursors remain per member. Group receipt state is
+  `read` only after every active recipient has read the message and `delivered`
+  only after every active recipient has received it. Each member's setting and
+  read-receipt preference is respected.
+- Group notifications fan out to active members other than the sender and
+  respect each recipient's mute/archive setting. Message history and media are
+  returned only through membership-authorized conversation endpoints.
+- `GROUP_CHAT_ENABLED` defaults to `false`. While false, group creation,
+  member changes, group conversation reads, and group search are rejected or
+  omitted by the API. The web client does not expose group creation.
+- When enabled after the release gate, the API supports creation with a
+  creator and at least two invitees, adding members, removing/leaving, and role
+  changes. The creator starts as admin; admins manage members. If the last
+  admin leaves, the earliest active member becomes admin. Groups cannot include
+  inactive/deleted, blocked, or private profiles the actor cannot see. The
+  request bound is 100 total members.
+- Enabling group chat requires separate product approval and the migration/
+  release gate.
 
 ### Recommended implementation breakdown
 
@@ -266,15 +306,16 @@ The work should be delivered in five bounded workstreams:
    `/chats/{conversation_id}` and the reserved `/chats/new` route, preserved
    username aliases with authenticated resolution, added the ID context API,
    and made `/chat`/`/chat/new` compatibility redirects.
-3. **New-chat discovery UX:** Build the modal, two-character debounced search,
+3. **New-chat discovery UX — implemented on staging:** Build the modal, two-character debounced search,
    scrollable profile-rich suggestions, single-person selection, immediate
    eligibility feedback, loading/empty/error states, account-switch reset,
    close behavior, and keyboard/mobile accessibility.
-4. **Policy and shared behavior migration:** Move authorization, conversation
+4. **Policy and shared behavior migration — implemented on the staging branch:** Move authorization, conversation
    lists, requests, unread state, receipts, mute/archive, notifications, and
    media access to membership-aware services. Add disabled group endpoints
    behind `GROUP_CHAT_ENABLED=false`; do not expose group selection in the UI.
-5. **Verification and release:** Cover direct-chat regressions, privacy and
-   account isolation, duplicate/concurrent starts, every eligibility state,
-   route aliases, disabled group endpoints, database migration rehearsal, and
+5. **Verification and release — in progress:** The staging database is at the
+   repository migration head and the migration gate passes. Cover direct-chat
+   regressions, privacy and account isolation, duplicate/concurrent starts,
+   every eligibility state, route aliases, disabled group endpoints, and
    staging acceptance before promotion.
