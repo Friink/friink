@@ -1,14 +1,13 @@
 "use client";
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
+import { ProfileCard } from '@/components/profile-card';
 import { ActionMenu } from '@/components/action-menu';
 import { navItems } from '@/lib/data';
-import { acceptChatRequest, listConversations, loadAuthSession, searchContent, updateChatSettings, type ApiConversation, type ApiSearchResult } from '@/lib/auth';
+import { acceptChatRequest, blockUser, listConversations, loadAuthSession, searchContent, updateChatSettings, type ApiConversation, type ApiSearchResult } from '@/lib/auth';
 import { formatRelativeTime } from '@/lib/time';
 
 function ScreenHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
@@ -26,12 +25,60 @@ function getConversationPreview(conversation: ApiConversation) {
   return conversation.preview || 'No messages yet';
 }
 
+function getConversationState(conversation: ApiConversation, currentUserId: string | undefined) {
+  if (conversation.unread_count > 0) return `${conversation.unread_count} new message${conversation.unread_count === 1 ? '' : 's'}`;
+  if (conversation.status === 'pending' && conversation.requester_id !== currentUserId) return 'New message';
+  if (conversation.preview_sender_id === currentUserId && conversation.preview_receipt_status) {
+    return conversation.preview_receipt_status === 'read' ? 'Seen' : conversation.preview_receipt_status === 'delivered' ? 'Delivered' : 'Sent';
+  }
+  return '';
+}
+
+function ChatConversationRow({ conversation, currentUserId, onOpen, onSettingChange, onAccept, onBlocked }: { conversation: ApiConversation; currentUserId?: string; onOpen: () => void; onSettingChange: (input: { muted?: boolean; archived?: boolean }) => Promise<void>; onAccept: () => Promise<void>; onBlocked: () => void }) {
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
+  const state = getConversationState(conversation, currentUserId);
+
+  async function handleBlock() {
+    const session = loadAuthSession();
+    if (!session || blockBusy) return;
+    setBlockBusy(true);
+    try {
+      await blockUser(session.accessToken, conversation.participant.username);
+      onBlocked();
+    } finally {
+      setBlockBusy(false);
+    }
+  }
+
+  const menuItems = [
+    ...(conversation.status === 'pending' && conversation.requester_id !== currentUserId ? [{ label: 'Accept request', icon: 'fa-check', onClick: () => { void onAccept(); } }] : []),
+    { label: conversation.muted ? 'Unmute chat' : 'Mute chat', icon: conversation.muted ? 'fa-bell' : 'fa-bell-slash', onClick: () => { void onSettingChange({ muted: !conversation.muted }); } },
+    { label: conversation.archived ? 'Unarchive chat' : 'Archive chat', icon: conversation.archived ? 'fa-box-open' : 'fa-box-archive', onClick: () => { void onSettingChange({ archived: !conversation.archived }); } },
+    { label: 'Block user', icon: 'fa-ban', dividerBefore: true, disabled: blockBusy, onClick: () => { void handleBlock().catch(() => undefined); } },
+  ];
+
+  return (
+    <ListRow
+      className="chat-list-row"
+      title={<span className="chat-row-profile" onClick={(event) => event.stopPropagation()}><ProfileCard href={`/${conversation.participant.username}`} name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} showProfessionalBadge={conversation.participant.show_professional_badge} /></span>}
+      middle={<span className="chat-row-details"><span className="chat-row-preview">{getConversationPreview(conversation)}</span><span className="chat-row-date">{formatRelativeTime(conversation.updated_at)}</span>{state ? <span className="chat-row-state">{state}</span> : null}</span>}
+      trailing={<button ref={menuButtonRef} className="icon-button chat-row-menu-button" type="button" aria-label="Chat actions" aria-haspopup="menu" aria-expanded={menuOpen} onClick={(event) => { event.stopPropagation(); setMenuOpen((open) => !open); }}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /><ActionMenu open={menuOpen} anchorRef={menuButtonRef} items={menuItems} ariaLabel="Chat actions" onClose={() => setMenuOpen(false)} /></button>}
+      unread={conversation.unread}
+      onClick={onOpen}
+      ariaLabel={`Open chat with ${conversation.participant.display_name || conversation.participant.username}`}
+    />
+  );
+}
+
 export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab }) {
   const router = useRouter();
   const [conversations, setConversations] = useState<ApiConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
+  const currentUserId = loadAuthSession()?.user.id;
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -114,34 +161,14 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
           </div>
         )}
         {!loading && !loadError && visibleConversations.map((conversation) => (
-          <ListRow
+          <ChatConversationRow
             key={conversation.id}
-            avatar={
-              <Link className="message-row-profile" href={`/${conversation.participant.username}`} aria-label={`Open ${conversation.participant.display_name || conversation.participant.username} profile`}>
-                <span className="profile-card-avatar user-avatar avatar-mint profile-card-avatar-image">
-                  <img src={conversation.participant.profile_picture_url || DEFAULT_PROFILE_IMAGE} alt="" />
-                </span>
-              </Link>
-            }
-            title={
-              <span className="chat-row-title">
-                <Link className="message-profile-link" href={`/${conversation.participant.username}`}>
-                  {conversation.participant.display_name || conversation.participant.username}
-                </Link>
-                <span className="chat-row-preview">{getConversationPreview(conversation)}</span>
-              </span>
-            }
-            subtitle={<span className="chat-row-date">{formatRelativeTime(conversation.updated_at)}</span>}
-            trailing={
-              <span className="chat-row-actions">
-                {conversation.status === 'pending' && conversation.requester_id !== loadAuthSession()?.user.id ? <button className="text-link" type="button" onClick={(event) => { event.stopPropagation(); acceptRequest(conversation).catch(() => undefined); }}>Accept</button> : null}
-                <button className="icon-button chat-row-action" type="button" aria-label={conversation.muted ? 'Unmute chat' : 'Mute chat'} aria-pressed={conversation.muted} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { muted: !conversation.muted }).catch(() => undefined); }}><i className={`fa-solid ${conversation.muted ? 'fa-bell' : 'fa-bell-slash'}`} aria-hidden="true" /></button>
-                <button className="icon-button chat-row-action" type="button" aria-label={conversation.archived ? 'Unarchive chat' : 'Archive chat'} onClick={(event) => { event.stopPropagation(); changeSetting(conversation, { archived: !conversation.archived }).catch(() => undefined); }}><i className={`fa-solid ${conversation.archived ? 'fa-box-open' : 'fa-box-archive'}`} aria-hidden="true" /></button>
-              </span>
-            }
-            unread={conversation.unread}
-            onClick={() => router.push(`/${conversation.participant.username}/chat`)}
-            ariaLabel={`Open chat with ${conversation.participant.display_name || conversation.participant.username}`}
+            conversation={conversation}
+            currentUserId={currentUserId}
+            onOpen={() => router.push(`/${conversation.participant.username}/chat`)}
+            onSettingChange={(input) => changeSetting(conversation, input)}
+            onAccept={() => acceptRequest(conversation)}
+            onBlocked={() => setConversations((current) => current.filter((item) => item.id !== conversation.id))}
           />
         ))}
         {!loading && !loadError && visibleConversations.length === 0 && <div className="home-feed-message">No chats to show yet.</div>}
