@@ -15,6 +15,11 @@ class ConversationStatus(str, enum.Enum):
     declined = "declined"
 
 
+class ConversationType(str, enum.Enum):
+    direct = "direct"
+    group = "group"
+
+
 class Conversation(Base):
     __tablename__ = "conversations"
     __table_args__ = (
@@ -25,6 +30,13 @@ class Conversation(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_one_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     user_two_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_type: Mapped[ConversationType] = mapped_column(
+        Enum(ConversationType, name="conversation_type"),
+        nullable=False,
+        default=ConversationType.direct,
+        server_default="direct",
+        index=True,
+    )
     status: Mapped[ConversationStatus] = mapped_column(Enum(ConversationStatus, name="conversation_status"), nullable=False, default=ConversationStatus.accepted, server_default="accepted", index=True)
     requester_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     requester_message_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
@@ -35,6 +47,29 @@ class Conversation(Base):
     user_two = relationship("User", foreign_keys=[user_two_id])
     requester = relationship("User", foreign_keys=[requester_id])
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", order_by="Message.created_at")
+    members = relationship("ConversationMember", back_populates="conversation", cascade="all, delete-orphan")
+
+
+class ConversationMember(Base):
+    __tablename__ = "conversation_members"
+
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="member", server_default="member")
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    conversation = relationship("Conversation", back_populates="members")
+    user = relationship("User")
 
 
 class Message(Base):

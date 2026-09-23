@@ -1,5 +1,31 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T20:12:01Z — Apply chat membership migration to staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the new data-foundation migration to staging while the
+  user prepares the development branch update.
+- Changes Made: Applied Alembic migration `20260924_0057` to staging. No code,
+  branch, production database, or production release was changed.
+- Verification Status: Staging is at migration `20260924_0057`; its two
+  conversations have four membership rows total, with exactly two members per
+  conversation, and Alembic reports no schema drift.
+
+## 2026-09-23T20:05:58Z — Implement conversation data foundation on development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Start the group-ready chat implementation with the data
+  foundation, changing only the development branch.
+- Changes Made: Added the `conversation_type` enum and column, added the
+  composite-key `conversation_members` table with role and join/leave fields,
+  and added a migration that backfills both members of each existing direct
+  conversation without changing conversation IDs. Kept pair columns and
+  existing service behavior unchanged for the compatibility phase. Updated
+  the Chat unit documentation.
+- Verification Status: Targeted migration and model checks pending.
+
 ## 2026-09-23T19:25:20Z — Synchronize development and staging Chat work
 
 - Agent: Codex

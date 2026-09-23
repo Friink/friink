@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T14:05:10Z
+**Last edited:** 2026-09-23T20:12:01Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -135,7 +135,7 @@ implemented yet.
 
 ## Planned evolution: ID-based conversations and group-ready backend
 
-This section records planned work only. It is not an active rule in
+This section records implementation status and planned work. It is not an active rule in
 [`docs/rules.md`](../rules.md) until the implementation and verification are
 complete.
 
@@ -206,11 +206,13 @@ group creation while the feature is disabled.
 
 ### Planned backend foundation deliverables
 
-1. **Conversation membership schema:** Add `conversation_type` (`direct` or
-   `group`) and a `conversation_members` table containing conversation ID,
-   user ID, role, join/leave timestamps, and membership uniqueness. Backfill
-   existing direct conversations without changing their IDs. Retain the
-   current pair columns temporarily during compatibility migration.
+1. **Conversation membership schema — implemented on `development`:** Added
+   `conversation_type` (`direct` or `group`) and a `conversation_members`
+   table containing conversation ID, user ID, role, join/leave timestamps, and
+   composite membership uniqueness. Existing direct conversations are
+   backfilled with exactly two member rows without changing their IDs. The
+   current pair columns remain in place for compatibility. This migration is
+   applied to development and staging; production remains unchanged.
 2. **Member-based authorization:** Refactor conversation access, message
    sending, list queries, and direct-chat resolution around membership while
    preserving the current mutual-follow, request, block, and paid-entitlement
@@ -240,9 +242,10 @@ staging and production databases separate.
 
 The work should be delivered in five bounded workstreams:
 
-1. **Conversation data foundation:** Add the conversation type and membership
-   schema, backfill direct conversations, preserve IDs, and retain pair-column
-   compatibility until all reads and writes have moved to membership data.
+1. **Conversation data foundation — complete on `development`:** Add the
+   conversation type and membership schema, backfill direct conversations,
+   preserve IDs, and retain pair-column compatibility until all reads and
+   writes have moved to membership data.
 2. **Canonical routing and resolver:** Add `/chats/{conversation_id}` and
    `/chats/new`, preserve the username aliases, implement one server-side
    direct-conversation resolver, and make `/chat`/`/chat/new` compatibility
