@@ -208,7 +208,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'profile' && !profileUser) || (activeScreen === 'messages' && hasContextualFloatingBar));
   const visibleNotifications = notifications.filter((notification) => {
     if (notificationsTab === 'security' && notification.kind !== 'login') return false;
     if (notificationsUnreadOnly && !notification.unread) return false;

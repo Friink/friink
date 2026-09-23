@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T01:00:04Z — Show composer on own profile
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Allow the signed-in user to create a post from their own profile using the floating composer.
+- Changes Made: Updated shared shell visibility so the standalone composer appears only on the owner profile; other profiles retain contextual Reply/Quote behavior. Synchronized profile, feed, and design contracts.
+- Verification Status: Targeted TypeScript and diff checks passed.
+
 ## 2026-09-23T00:58:03Z — Use saved-profile follow icons
 
 - Agent: Codex
