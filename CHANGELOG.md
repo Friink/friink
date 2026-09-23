@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23T11:50:36Z
+- [api/notifications] Added push-subscription persistence and authenticated
+  list, create/replace, and revoke APIs with ownership, origin, and payload
+  validation tests.
+
+## 2026-09-23T11:37:23Z
+- [docs/notifications] Recorded the five-deliverable Web Push implementation
+  plan and the 7–10 engineering-day production-ready target.
+
 ## 2026-09-23T02:06:46Z
 - [docs/chat] Recorded the deferred mobile-first chat-list proposal to omit usernames from conversation rows while retaining them in conversation headers and profiles.
 

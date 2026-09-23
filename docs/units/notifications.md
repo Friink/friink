@@ -84,6 +84,12 @@ API endpoints are in `api/app/routers/notifications.py`; records and outbox
 behavior are represented by notification models and services. The web surface
 uses `notifications-screen.tsx` and the TopBar dropdown.
 
+The push-subscription API foundation is implemented: authenticated clients can
+list their active subscriptions, create or replace a subscription by endpoint,
+and revoke an owned subscription. Subscription keys are accepted for delivery
+but are not returned in API responses. The `push_subscriptions` table is added
+by migration `20260923_0055`.
+
 ### Planned Web Push requirements
 
 External delivery should use the standard Web Push protocol with VAPID, not a
@@ -119,6 +125,26 @@ Required implementation pieces:
   mentions, connection requests, and security alerts. In-app notifications
   remain the source of truth when external delivery is unavailable.
 
+### Implementation plan
+
+The low-risk Web Push scope is split into five deliverables. The target for a
+production-ready implementation is approximately 7–10 engineering days,
+subject to the worker-runtime decision below.
+
+1. **Push subscription foundation** — Add the subscription model and migration,
+   authenticated create/replace/revoke operations, and basic cleanup.
+2. **Browser enable/disable flow** — Register the service worker, handle
+   permission states, and add the Settings > Notifications controls for
+   enabling, disabling, and recovering external delivery.
+3. **Push delivery integration** — Configure VAPID, send safe Web Push payloads,
+   and handle notification clicks by opening the canonical Friink route.
+4. **Outbox and failure handling** — Extend the existing outbox for push,
+   including retries, deduplication, invalid-subscription removal, and source
+   action isolation.
+5. **Verification and release hardening** — Add targeted API tests, browser
+   checks, permission and delivery-failure coverage, multi-device checks, and
+   staging verification.
+
 ## Acceptance criteria
 
 - [ ] **NOTIFY-AC-001** Unread count and list are server-authoritative.
@@ -143,8 +169,10 @@ External email and push notification delivery are not active product channels.
 Manual subscription grant, change, and revoke events now use the active
 in-app notification channel; expiry reminders and expiry notifications remain
 planned.
-The requirements above are planned; no service worker, VAPID configuration,
-subscription persistence, or external-delivery API is implemented yet.
+The service worker, VAPID configuration, external-delivery sender, and push
+outbox processing are not implemented yet. The subscription persistence and
+authenticated management API are now implemented, but they do not deliver
+push notifications by themselves.
 
 ## Open questions
 
