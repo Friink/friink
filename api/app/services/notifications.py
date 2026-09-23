@@ -6,8 +6,9 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models.notification import Notification, NotificationType
+from app.models.push_subscription import PushSubscription
 from app.models.user import User
-from app.schemas.notifications import NotificationPageResponse, NotificationResponse, UnreadCountResponse
+from app.schemas.notifications import NotificationPageResponse, NotificationResponse, PushSubscriptionRequest, PushSubscriptionResponse, UnreadCountResponse
 from app.services.session_ops import commit
 
 DEFAULT_NOTIFICATION_LIMIT = 20
@@ -70,6 +71,76 @@ async def mark_notification_read(session: Session, user: User, notification_id: 
 async def mark_all_notifications_read(session: Session, user: User) -> None:
     session.execute(update(Notification).where(Notification.recipient_user_id == user.id, Notification.read.is_(False)).values(read=True))
     await commit(session)
+
+
+async def list_push_subscriptions(session: Session, user: User) -> list[PushSubscriptionResponse]:
+    subscriptions = session.execute(
+        select(PushSubscription)
+        .where(PushSubscription.user_id == user.id, PushSubscription.active.is_(True))
+        .order_by(PushSubscription.created_at.desc(), PushSubscription.id.desc())
+    ).scalars().all()
+    return [serialize_push_subscription(subscription) for subscription in subscriptions]
+
+
+async def upsert_push_subscription(
+    session: Session,
+    user: User,
+    payload: PushSubscriptionRequest,
+    user_agent: str | None,
+) -> PushSubscriptionResponse:
+    endpoint = str(payload.endpoint)
+    subscription = session.execute(
+        select(PushSubscription).where(PushSubscription.user_id == user.id, PushSubscription.endpoint == endpoint)
+    ).scalar_one_or_none()
+    now = datetime.now().astimezone()
+    if subscription is None:
+        subscription = PushSubscription(
+            user_id=user.id,
+            endpoint=endpoint,
+            p256dh_key=payload.keys.p256dh,
+            auth_key=payload.keys.auth,
+            device_label=payload.device_label,
+            user_agent=user_agent,
+            active=True,
+            revoked_at=None,
+            last_seen_at=now,
+        )
+        session.add(subscription)
+    else:
+        subscription.user_id = user.id
+        subscription.p256dh_key = payload.keys.p256dh
+        subscription.auth_key = payload.keys.auth
+        subscription.device_label = payload.device_label
+        subscription.user_agent = user_agent
+        subscription.active = True
+        subscription.revoked_at = None
+        subscription.last_seen_at = now
+    await commit(session)
+    return serialize_push_subscription(subscription)
+
+
+async def revoke_push_subscription(session: Session, user: User, subscription_id: uuid.UUID) -> None:
+    subscription = session.execute(
+        select(PushSubscription).where(PushSubscription.id == subscription_id, PushSubscription.user_id == user.id)
+    ).scalar_one_or_none()
+    if subscription is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Push subscription not found.")
+    subscription.active = False
+    subscription.revoked_at = datetime.now().astimezone()
+    await commit(session)
+
+
+def serialize_push_subscription(subscription: PushSubscription) -> PushSubscriptionResponse:
+    return PushSubscriptionResponse(
+        id=subscription.id,
+        endpoint=subscription.endpoint,
+        device_label=subscription.device_label,
+        active=subscription.active,
+        revoked_at=subscription.revoked_at,
+        created_at=subscription.created_at,
+        updated_at=subscription.updated_at,
+        last_seen_at=subscription.last_seen_at,
+    )
 
 
 def serialize_notification(notification: Notification) -> NotificationResponse:

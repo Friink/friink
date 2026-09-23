@@ -50,9 +50,11 @@ shared contextual surface, measures its rendered top edge, remains within the
 current viewport, shows at most eight rendered rows at once, and scrolls only its
 unread list after the eighth row while keeping the destination footer visible.
 `/notifications` provides the
-full list with tabs, filters, read tracking, actions, loading, empty, and retry
-states. Security notifications use the shield treatment and may link to
-session review.
+full list with `Security` and `Activity` tabs, filters, read tracking, actions,
+loading, empty, and retry states. Security notifications use the shield
+treatment and may link to session review. Activity contains other meaningful
+events such as follows, messages, mentions, likes, registrations, and
+subscription changes.
 
 Registration submissions and staff decisions are rendered as Friink
 notifications in the in-app list and top-bar dropdown. They explain pending,
@@ -83,6 +85,21 @@ language or data model.
 API endpoints are in `api/app/routers/notifications.py`; records and outbox
 behavior are represented by notification models and services. The web surface
 uses `notifications-screen.tsx` and the TopBar dropdown.
+
+The push-subscription API foundation is implemented: authenticated clients can
+list their active subscriptions, create or replace an account-scoped
+subscription by endpoint, and revoke an owned subscription. The same browser
+subscription may be enabled independently for multiple remembered accounts;
+subscription settings therefore belong to the authenticated account, not only
+to the browser. Subscription keys are accepted for delivery but are not
+returned in API responses. The account-scoped constraint is added by migration
+`20260923_0056`.
+
+The browser enable/disable flow is implemented in General settings. It is
+explicitly user-gesture-gated, account-scoped, and registers the root-scoped
+`/friink-push-sw.js` worker. The current browser subscription is associated or
+revoked for the active account without unsubscribing the shared browser
+subscription used by another remembered account.
 
 ### Planned Web Push requirements
 
@@ -119,6 +136,26 @@ Required implementation pieces:
   mentions, connection requests, and security alerts. In-app notifications
   remain the source of truth when external delivery is unavailable.
 
+### Implementation plan
+
+The low-risk Web Push scope is split into five deliverables. The target for a
+production-ready implementation is approximately 7–10 engineering days,
+subject to the worker-runtime decision below.
+
+1. **Push subscription foundation** — Add the subscription model and migration,
+   authenticated create/replace/revoke operations, and basic cleanup.
+2. **Browser enable/disable flow** — Register the service worker, handle
+   permission states, and add the Settings > Notifications controls for
+   enabling, disabling, and recovering external delivery.
+3. **Push delivery integration** — Configure VAPID, send safe Web Push payloads,
+   and handle notification clicks by opening the canonical Friink route.
+4. **Outbox and failure handling** — Extend the existing outbox for push,
+   including retries, deduplication, invalid-subscription removal, and source
+   action isolation.
+5. **Verification and release hardening** — Add targeted API tests, browser
+   checks, permission and delivery-failure coverage, multi-device checks, and
+   staging verification.
+
 ## Acceptance criteria
 
 - [ ] **NOTIFY-AC-001** Unread count and list are server-authoritative.
@@ -143,8 +180,10 @@ External email and push notification delivery are not active product channels.
 Manual subscription grant, change, and revoke events now use the active
 in-app notification channel; expiry reminders and expiry notifications remain
 planned.
-The requirements above are planned; no service worker, VAPID configuration,
-subscription persistence, or external-delivery API is implemented yet.
+The VAPID configuration, external-delivery sender, and push outbox processing
+are not implemented yet. The subscription persistence, authenticated
+management API, and browser enable/disable flow are implemented, but they do
+not deliver push notifications until the sender is added.
 
 ## Open questions
 

@@ -2477,6 +2477,17 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   gap: 0.6rem;
 }
 
+.settings-notification-control {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.settings-notification-status {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+
 .settings-icon {
   display: inline-grid;
   place-items: center;

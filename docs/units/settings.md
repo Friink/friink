@@ -27,7 +27,8 @@ preferences and account controls. Underlying authentication belongs to
 ## Product definition
 
 Settings tabs are ordered General, Profile, Privacy & Safety, Account, and
-Subscription.
+Subscription. General includes account-scoped Notifications controls for
+Security and Activity alerts on the current browser/device.
 Each setting has a clear description, local or server-backed state, a visible
 save/result state, and accessible controls.
 
@@ -117,7 +118,11 @@ entitlement or feature access.
 
 Settings is implemented primarily through `account-screens.tsx`, shared
 `SettingsRow`/`ListRow` patterns, and authenticated `/auth/me` endpoints. The
-API remains authoritative for credential, identity, and privacy changes.
+API remains authoritative for credential, identity, privacy, and notification
+subscription changes. Browser notification permission is requested only after
+the user activates the General settings control; disabling notifications
+revokes the current account's subscription without removing another remembered
+account's association with the same browser.
 
 ## Acceptance criteria
 
