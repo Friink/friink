@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T12:49:11Z — Improve chat attached-image gallery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and show a cleaner local UI for attached pictures
+  in chat.
+- Changes Made: Added `ChatMediaGallery` with bounded one-image containment,
+  balanced two-to-four-image layouts, `+N` overflow, and full-screen viewer
+  navigation. Updated shared CSS, active rules, chat unit documentation, and
+  the design implementation contract.
+- Verification Status: TypeScript, targeted ESLint, and `git diff --check`
+  passed. The local Next.js server is running at `http://localhost:3000`;
+  browser preview is left on `/login` because no local authenticated session
+  could be restored.
+
 ## 2026-09-23T12:31:55Z — Promote notification implementation and database head
 
 - Agent: Codex

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T12:49:11Z
+- [chat] Replaced messy attached-image rendering with a bounded responsive
+  gallery supporting single-image containment, balanced multi-image tiles,
+  `+N` overflow, and the existing full-screen viewer interaction.
+
 ## 2026-09-23T12:31:55Z
 - [release/database] Applied Alembic migrations `20260923_0055` and
   `20260923_0056` to development, staging, and production; all three passed

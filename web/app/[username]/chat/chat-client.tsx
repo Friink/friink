@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
+import { ChatMediaGallery } from '@/components/chat-media-gallery';
 import { ProfileCard } from '@/components/profile-card';
 import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { PollingChatTransport } from '@/lib/chat-transport';
@@ -219,9 +220,7 @@ export function ChatClient({ username }: ChatClientProps) {
               <div className={`chat-bubble-row ${message.sender_id === user.id ? 'mine' : ''}`} data-message-id={message.id}>
                 <div className="chat-bubble">
                   {message.content ? <p>{message.content}</p> : null}
-                  {message.media.length ? <div className="chat-message-media" aria-label={`${message.media.length} attached image${message.media.length === 1 ? '' : 's'}`}>
-                    {message.media.map((item, index) => <img key={`${item.url}-${index}`} src={item.url} alt={`Attached image ${index + 1}`} />)}
-                  </div> : null}
+                  {message.media.length ? <ChatMediaGallery urls={message.media.map((item) => item.url)} senderName={message.sender_id === user.id ? 'Your' : displayName} /> : null}
                   <small>{formatRelativeTime(message.created_at)}{message.sender_id === user.id ? <span className={`chat-receipt chat-receipt-${getReceiptStatus(message)}`} aria-label={`${getReceiptStatus(message)} message`} title={`${getReceiptStatus(message)} message`}><span className="chat-receipt-mark">✓</span>{getReceiptStatus(message) !== 'sent' ? <span className="chat-receipt-mark chat-receipt-mark-second">✓</span> : null}</span> : null}</small>
                 </div>
               </div>

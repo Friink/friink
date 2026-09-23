@@ -64,6 +64,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   composer prepares them with the post-media JPEG preset before authenticated
   chat-media upload and confirmation; text-only and media-only messages are
   valid.
+- **CHAT-R-013:** Attached chat images render as a deterministic gallery: one
+  image uses a contained frame, two to four images use balanced tiles, and
+  larger attachments show four tiles with a `+N` overflow indicator. Selecting
+  any tile opens the shared full-screen image viewer.
 
 ## UX and flows
 
@@ -80,7 +84,11 @@ such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
 The chat composer supports up to eight image attachments with the shared
-post-media compression target; attached images render in the message bubble.
+post-media compression target; attached images render in a bounded
+message-bubble gallery. One image preserves its aspect ratio inside a
+contained frame; multiple images use balanced square tiles with a `+N`
+overflow indicator after the fourth image. Selecting a tile opens the
+full-screen viewer with keyboard navigation and a counter.
 The direct conversation page uses the document scrollbar for the message
 history. On a full browser refresh, the route restores the authenticated
 session through the shared refresh flow before loading the conversation. The
