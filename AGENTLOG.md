@@ -6,7 +6,15 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Model: GPT-5
 - Prompt Summary: Show the full ProfileCard at left, message/date/state in the middle, and Mute/Archive/Block in an action menu.
 - Changes Made: Replaced the chat list's compact identity and separate mute/archive controls with a full ProfileCard, two-line-clamped message preview, date/state stack, and per-conversation overflow menu with blocking.
-- Verification Status: Targeted TypeScript and diff checks pending.
+- Verification Status: Targeted TypeScript and diff checks passed; the refinement was committed and propagated to all three release branches.
+
+## 2026-09-23T01:56:17Z — Verify release branches and database heads
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the documentation after completing the session and verify that the latest code and database head are present in development, staging, and production.
+- Changes Made: Recorded the release verification in the changelog and agent log. Confirmed that `development`, `staging`, and `main` have identical file trees and that each configured database is at the current Alembic head.
+- Verification Status: The migration gate upgraded and checked all three databases successfully; current revision verification returned the repository head for each environment.
 
 ## 2026-09-23T01:20:00Z — Add compressed chat image attachments
 
