@@ -212,7 +212,7 @@ group creation while the feature is disabled.
    composite membership uniqueness. Existing direct conversations are
    backfilled with exactly two member rows without changing their IDs. The
    current pair columns remain in place for compatibility. This migration is
-   applied to development only; staging and production remain unchanged.
+   applied to development and staging; production remains unchanged.
 2. **Member-based authorization:** Refactor conversation access, message
    sending, list queries, and direct-chat resolution around membership while
    preserving the current mutual-follow, request, block, and paid-entitlement

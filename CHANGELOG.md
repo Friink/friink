@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T20:12:01Z
+- [release/database] Applied chat membership migration `20260924_0057` to
+  staging and verified the schema, conversation-type enum, and two-member
+  backfill. Production remains unchanged.
+
 ## 2026-09-23T20:05:58Z
 - [api/chat] Added the development-only conversation membership foundation:
   direct/group conversation types, composite-unique membership rows, and a
