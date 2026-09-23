@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T20:26:23Z
+- [release/branches] Resolved the local staging-to-main documentation
+  conflicts while preserving both branch histories and preparing a clean
+  promotion path.
+
 ## 2026-09-23T20:12:01Z
 - [release/database] Applied chat membership migration `20260924_0057` to
   staging and verified the schema, conversation-type enum, and two-member
@@ -10,7 +15,6 @@
   direct/group conversation types, composite-unique membership rows, and a
   stable-ID backfill for existing direct conversations. Pair columns remain
   compatible for the later member-aware service migration.
-
 ## 2026-09-23T19:25:20Z
 - [release/branches] Propagated the committed Chat gallery and conversation
   UX documentation to development and staging; verified both branch trees are
