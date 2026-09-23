@@ -1496,7 +1496,9 @@ export type ApiChatUser = {
 
 export type ApiConversation = {
   id: string;
+  conversation_type?: 'direct' | 'group';
   participant: ApiChatUser;
+  participants?: ApiChatUser[];
   preview: string | null;
   preview_sender_id: string | null;
   preview_receipt_status: 'sent' | 'delivered' | 'read' | null;
@@ -1527,6 +1529,13 @@ export type ApiChatContext = {
   requester_message_count: number;
   unread_count: number;
   last_read_message_id: string | null;
+};
+
+export type ApiChatPerson = ApiChatContext['participant'];
+
+export type ApiChatEligibility = {
+  can_send: boolean;
+  status: string;
 };
 
 export type ApiMessage = {
@@ -1911,6 +1920,32 @@ export async function getConversationWithUser(accessToken: string, username: str
 export async function getChatContext(accessToken: string, username: string): Promise<ApiChatContext> {
   return requestApi<ApiChatContext>(`/chat/conversations/with/${encodeURIComponent(username)}`, {
     method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function searchChatPeople(accessToken: string, query: string): Promise<ApiChatPerson[]> {
+  const params = new URLSearchParams({ query });
+  const response = await requestApi<{ items: ApiChatPerson[] }>(`/chat/people?${params.toString()}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+  return response.items;
+}
+
+export async function getChatEligibility(accessToken: string, username: string): Promise<ApiChatEligibility> {
+  return requestApi<ApiChatEligibility>(`/chat/people/${encodeURIComponent(username)}/eligibility`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function getChatContextById(accessToken: string, conversationId: string): Promise<ApiChatContext> {
+  return requestApi<ApiChatContext>(`/chat/conversations/${encodeURIComponent(conversationId)}`, {
+    method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
     authContext: 'authenticated_request',
   });

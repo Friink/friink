@@ -13,8 +13,8 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onRetry }
       <main className="lifecycle-screen" data-theme={appearance} aria-busy="true">
         <section className="lifecycle-card" aria-labelledby="session-loading-title">
           <BrandLockup size="lg" />
-          <h1 id="session-loading-title">Restoring your session…</h1>
-          <p>Just a moment while Friink reconnects.</p>
+          <h1 id="session-loading-title">Reconnecting…</h1>
+          <p>Just a moment while we get you back in.</p>
         </section>
       </main>
     );

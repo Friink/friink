@@ -19,6 +19,70 @@ Mobile authentication and session requirements are preserved in the historical
 archive at `docs/archives/auth-and-session-mobile.md` and remain deferred until
 a mobile client exists.
 
+## Remembered accounts reappeared after local staging API recovery
+
+**Recorded:** 2026-09-23T22:39:40Z — **Status:** Code path identified; exact
+incident request sequence unverified.
+
+### Reported sequence
+
+The user reported that the local frontend initially loaded, then showed a
+`Failed to fetch`/logged-out or reconnecting state while its API connection was
+unavailable. After the API connection returned, the app appeared signed in,
+but the feed and profile did not load correctly. The staging database was then
+migrated to the repository's latest Alembic head, after which remembered
+accounts that had been present during earlier local runs appeared in the
+account switcher. The user's hypothesis was that the API/database mismatch
+had hidden earlier sessions and the migration made them reappear.
+
+### Finding in the current implementation
+
+There is a concrete recovery path that can make the timing look that way:
+
+1. Authenticated route entry calls `restoreAuthSessionForEntry()` in
+   `web/lib/auth.ts`. Recoverable network failures leave the app in its session
+   recovery state; the client only attempts remembered-slot recovery after a
+   terminal refresh response.
+2. On a terminal refresh failure, the client reads previously cached,
+   device-scoped account summaries, sorts them by last use, and tries each
+   eligible remembered slot through `POST /auth/refresh` with the opaque slot
+   ID in `X-Friink-Account-Slot`.
+3. The API validates the `friink_device_id` cookie, the slot, its active
+   unrevoked auth session, and the account's active lifecycle state. If the
+   slot's refresh cookie is absent, the API can issue a new refresh token for
+   that still-valid server-side session and return a new access token.
+4. After a session is restored, `GET /auth/accounts` lists active,
+   unrevoked slots associated with that same device. The account switcher
+   refreshes this list when the shell mounts and when the selector opens.
+
+This means an API outage can prevent a browser from reaching sessions that
+remain in the database. Once the API is reachable and the refresh flow is
+retried, the existing device-bound sessions can become usable again. The
+switcher list is not a query for every account in the database; it is limited
+to eligible remembered sessions for the browser's device cookie.
+
+### Migration boundary and conclusion
+
+The staging migrations applied in this run (`20260924_0057` and
+`20260924_0058`) changed chat conversation structure: the first added and
+backfilled conversation membership, and the second adjusted direct/group
+conversation constraints and indexes. They did not modify users, auth
+sessions, refresh tokens, or account-session slots. Therefore the migrations
+could not themselves recreate or restore those auth records. The most
+consistent explanation is that API recovery enabled the existing session
+recovery/account-slot path, while the chat migration separately addressed the
+database schema mismatch. The migrations alone do not establish why the feed
+or profile failed.
+
+The source code supports this explanation, but the exact sequence for the
+screenshot is not proven: the local API is no longer running and the request
+log from the incident is unavailable. No dedicated client regression test for
+the terminal-refresh-to-remembered-slot fallback was found during this review.
+The visible account list is consistent with accounts intentionally remembered
+on this browser and is not, by itself, evidence of a breach. Any account the
+user did not intentionally add would still require review of the matching
+device slots, auth sessions, and authentication/account-switch events.
+
 ## Add-account limit mismatch after refresh
 
 **Recorded:** 2026-09-21T21:44:25Z

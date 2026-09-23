@@ -1,5 +1,123 @@
 # Changelog
 
+## 2026-09-23T23:03:28Z
+- [bug/chat] Logged the staging `/chats/new` people-search failure shown in
+  the user's screenshot. Root cause and endpoint response remain unknown;
+  staging diagnosis is still required.
+
+## 2026-09-23T23:01:46Z
+- [test/chat] Recorded the user's report that one staging message send
+  succeeded. The `/chats/new` flow remains under test and Phase 5 remains open.
+
+## 2026-09-23T22:59:17Z
+- [release/database] Applied the repository migration gate to the production
+  database, upgrading chat schema from `20260924_0057` to `20260924_0058`.
+  `alembic check` reported no schema drift; no application deployment or
+  feature-flag change was made. Chat acceptance remains open.
+
+## 2026-09-23T22:55:03Z
+- [docs/design] Refreshed the last-edited metadata for Navigation, the design
+  system, and its implementation contract after the TopBar sizing update.
+
+## 2026-09-23T22:46:29Z
+- [design/topbar] Increased the shared TopBar utility glyphs to 20px, page
+  title to 20px/800, and expanded-search input/buttons to match the larger
+  controls. Set ActionMenu row icons to 16px and preserved the Friink logo
+  size. Updated the navigation and shared design contracts.
+
+## 2026-09-23T22:39:40Z
+- [docs/auth] Recorded the reported local staging API/database incident and
+  the remembered-account recovery path found in the web/API code. Clarified
+  that chat migrations do not modify auth sessions or account slots, and
+  preserved the limits of what can be proven without the incident request log.
+
+## 2026-09-23T22:17:03Z
+- [release/chat] Applied the chat compatibility migration to the staging
+  database using the repository migration gate. Alembic reports the staging
+  database at head, and `alembic check` detects no schema drift. Chat Phase 5
+  remains open for regression and staging acceptance verification.
+
+## 2026-09-23T22:13:36Z
+- [design/tabs] Adjusted the shared tab label size to `0.8rem` after visual
+  review; active labels remain bold. Updated the shared design contracts.
+
+## 2026-09-23T22:10:49Z
+- [design/tabs] Doubled shared tab-label type size from `0.64rem` to
+  `1.28rem` and made the active label bold. Updated the design system,
+  implementation contract, and Navigation unit.
+
+## 2026-09-23T22:00:31Z
+- [auth/ux] Changed the session-restoration loading copy to “Reconnecting…”
+  and “Just a moment while we get you back in.” Updated the Account Access
+  and Profiles unit docs and the active session-recovery rule.
+
+## 2026-09-23T21:44:20Z
+- [chat/membership] Implemented policy and shared conversation behavior on
+  the staging branch: active-membership authorization and lists, direct-chat
+  resolution, per-member receipts, group notification fan-out, member-aware
+  message/search access, and disabled-by-default group operations. Added the
+  direct-pair compatibility migration and synchronized active policy and unit
+  documentation. Verification/release remains open; migration `20260924_0058`
+  is not applied.
+
+## 2026-09-23T21:21:33Z
+- [chat/discovery] Implemented the one-person `/chats/new` flow on staging:
+  server-filtered people search, immediate and final eligibility checks,
+  account-switch reset, neutral states, and responsive modal behavior.
+  Updated Chat and Search unit docs and the active chat discovery rule.
+
+## 2026-09-23T20:40:24Z
+- [chat/routing] Implemented Phase 2 on `development`: canonical
+  conversation-ID context loading, username compatibility redirects, the
+  `/chats/new` reserved route, and `/chat/new` compatibility routing. Added a
+  real API regression assertion and updated the active chat route contract.
+
+## 2026-09-23T20:26:23Z
+- [release/branches] Resolved the local staging-to-main documentation
+  conflicts while preserving both branch histories and preparing a clean
+  promotion path.
+
+## 2026-09-23T20:12:01Z
+- [release/database] Applied chat membership migration `20260924_0057` to
+  staging and verified the schema, conversation-type enum, and two-member
+  backfill. Production remains unchanged.
+
+## 2026-09-23T20:05:58Z
+- [api/chat] Added the development-only conversation membership foundation:
+  direct/group conversation types, composite-unique membership rows, and a
+  stable-ID backfill for existing direct conversations. Pair columns remain
+  compatible for the later member-aware service migration.
+## 2026-09-23T19:25:20Z
+- [release/branches] Propagated the committed Chat gallery and conversation
+  UX documentation to development and staging; verified both branch trees are
+  identical and pushed both remote branches.
+
+## 2026-09-23T14:05:10Z
+- [docs/chat] Consolidated the `/chats/new` UX contract and five-workstream
+  implementation breakdown, including compatibility redirects, modal history,
+  validation loading behavior, account-switch reset, and chat-specific search.
+
+## 2026-09-23T14:00:47Z
+- [docs/chat] Reconciled planned chat autocomplete with the active Search
+  visibility rule: unauthorized private, blocked, deactivated, and
+  pending-deletion users remain excluded from suggestions.
+
+## 2026-09-23T13:58:02Z
+- [docs/chat] Recorded the settled `/chats/new` UX decisions: two-character
+  search, scrollable identity-rich suggestions, private-account discovery,
+  immediate plus final server validation, neutral unavailable states, pending
+  request behavior, modal close navigation, and one-person selection.
+
+## 2026-09-23T13:46:25Z
+- [docs/chat] Documented the planned ID-based conversation routes, `/chats/new`
+  one-to-one resolver flow, and five-deliverable group-ready backend plan.
+  Kept group creation explicitly planned and server-disabled until launch.
+
+## 2026-09-23T12:49:11Z
+- [chat] Replaced messy attached-image rendering with a bounded responsive
+  gallery supporting single-image containment, balanced multi-image tiles,
+  `+N` overflow, and the existing full-screen viewer interaction.
+
 ## 2026-09-23T12:31:55Z
 - [release/database] Applied Alembic migrations `20260923_0055` and
   `20260923_0056` to development, staging, and production; all three passed

@@ -4,12 +4,13 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
+import { ChatMediaGallery } from '@/components/chat-media-gallery';
 import { ProfileCard } from '@/components/profile-card';
-import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 
-type ChatClientProps = { username: string };
+type ChatClientProps = { username?: string; conversationId?: string };
 
 type ReceiptState = {
   unreadCount: number;
@@ -25,7 +26,7 @@ function mergeMessages(current: ApiMessage[], incoming: ApiMessage[]) {
   return [...messages.values()].sort((left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime());
 }
 
-export function ChatClient({ username }: ChatClientProps) {
+export function ChatClient({ username, conversationId }: ChatClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [context, setContext] = useState<ApiChatContext | null>(null);
@@ -66,8 +67,14 @@ export function ChatClient({ username }: ChatClientProps) {
       const transport = new PollingChatTransport(session.accessToken);
 
       try {
-        const nextContext = await getChatContext(session.accessToken, username);
+        const nextContext = conversationId
+          ? await getChatContextById(session.accessToken, conversationId)
+          : await getChatContext(session.accessToken, username!);
         if (cancelled) return;
+        if (username && nextContext.conversation?.id) {
+          router.replace(`/chats/${encodeURIComponent(nextContext.conversation.id)}`);
+          return;
+        }
         setContext(nextContext);
         if (!nextContext.conversation) return;
         const page = await transport.loadMessages(nextContext.conversation.id);
@@ -93,7 +100,7 @@ export function ChatClient({ username }: ChatClientProps) {
       cancelled = true;
       unsubscribe();
     };
-  }, [router, username]);
+  }, [conversationId, router, username]);
 
   useEffect(() => {
     if (!conversation?.id || !messages.length || initiallyScrolledConversationRef.current === conversation.id) return;
@@ -147,13 +154,19 @@ export function ChatClient({ username }: ChatClientProps) {
     setDraft('');
     setBusy(true);
     try {
+      if (!conversation && !username) return;
       const sent = conversation
         ? await sendConversationMessage(session.accessToken, conversation.id, text, clientMessageId, media)
-        : await sendMessageToUser(session.accessToken, username, text, clientMessageId, media);
+        : await sendMessageToUser(session.accessToken, username!, text, clientMessageId, media);
       if (optimisticMessage) setMessages((current) => mergeMessages(current.filter((message) => message.id !== optimisticMessage.id), [sent]));
       optimisticMediaUrls.forEach((url) => URL.revokeObjectURL(url));
-      const nextContext = await getChatContext(session.accessToken, username);
+      const nextContext = conversation
+        ? await getChatContextById(session.accessToken, conversation.id)
+        : await getChatContext(session.accessToken, username!);
       setContext(nextContext);
+      if (username && nextContext.conversation?.id) {
+        router.replace(`/chats/${encodeURIComponent(nextContext.conversation.id)}`);
+      }
       if (!optimisticMessage) setMessages((current) => mergeMessages(current, [sent]));
     } catch (nextError) {
       if (optimisticMessage) setMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
@@ -184,8 +197,9 @@ export function ChatClient({ username }: ChatClientProps) {
   if (!user) return null;
 
   const participant = context?.participant || conversation?.participant;
-  const displayName = participant?.display_name || participant?.username || `@${username}`;
-  const handle = `@${participant?.username || username}`;
+  const displayName = participant?.display_name || participant?.username || (username ? `@${username}` : 'Chat');
+  const handle = participant?.username ? `@${participant.username}` : username ? `@${username}` : '';
+  const participantUsername = participant?.username || username;
   function getReceiptStatus(message: ApiMessage) {
     if (!user || message.sender_id !== user.id) return 'sent';
     const messageIndex = messages.findIndex((item) => item.id === message.id);
@@ -206,7 +220,7 @@ export function ChatClient({ username }: ChatClientProps) {
     >
       <section className="messages-screen chat-screen">
         <div className="chat-header">
-          <ProfileCard href={`/${encodeURIComponent(participant?.username || username)}/posts`} name={displayName} handle={handle} imageUrl={participant?.profile_picture_url} showProfessionalBadge={participant?.show_professional_badge} />
+          <ProfileCard href={participantUsername ? `/${encodeURIComponent(participantUsername)}/posts` : '/chats'} name={displayName} handle={handle} imageUrl={participant?.profile_picture_url} showProfessionalBadge={participant?.show_professional_badge} />
           {context?.status === 'pending' && conversation && conversation.requester_id !== user.id ? <button className="button-primary chat-accept-button" type="button" onClick={handleAcceptRequest}>Accept request</button> : null}
         </div>
 
@@ -219,9 +233,7 @@ export function ChatClient({ username }: ChatClientProps) {
               <div className={`chat-bubble-row ${message.sender_id === user.id ? 'mine' : ''}`} data-message-id={message.id}>
                 <div className="chat-bubble">
                   {message.content ? <p>{message.content}</p> : null}
-                  {message.media.length ? <div className="chat-message-media" aria-label={`${message.media.length} attached image${message.media.length === 1 ? '' : 's'}`}>
-                    {message.media.map((item, index) => <img key={`${item.url}-${index}`} src={item.url} alt={`Attached image ${index + 1}`} />)}
-                  </div> : null}
+                  {message.media.length ? <ChatMediaGallery urls={message.media.map((item) => item.url)} senderName={message.sender_id === user.id ? 'Your' : displayName} /> : null}
                   <small>{formatRelativeTime(message.created_at)}{message.sender_id === user.id ? <span className={`chat-receipt chat-receipt-${getReceiptStatus(message)}`} aria-label={`${getReceiptStatus(message)} message`} title={`${getReceiptStatus(message)} message`}><span className="chat-receipt-mark">✓</span>{getReceiptStatus(message) !== 'sent' ? <span className="chat-receipt-mark chat-receipt-mark-second">✓</span> : null}</span> : null}</small>
                 </div>
               </div>

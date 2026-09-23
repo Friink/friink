@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-23T01:00:04Z
+**Last edited:** 2026-09-23T22:00:31Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -64,8 +64,9 @@ relationship, privacy, and blocking state.
   the shell-owned contextual NavigationBar menu; Block is not rendered as a
   detached action-row menu.
 - **PROFILE-R-011:** Profile bootstrap shows an explicit session-restoration
-  state and a retry action for recoverable API failures; it never leaves the
-  profile as a blank surface while authentication is being restored.
+  state (“Reconnecting…” / “Just a moment while we get you back in.”) and a
+  retry action for recoverable API failures; it never leaves the profile as a
+  blank surface while authentication is being restored.
 - **PROFILE-R-012:** When the owner enables the professional-profile badge
   preference, the public profile renders `Professional` immediately next to
   the displayed name. The badge is omitted otherwise.

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -94,7 +95,9 @@ class MessagePageResponse(BaseModel):
 
 class ConversationResponse(BaseModel):
     id: uuid.UUID
+    conversation_type: str = "direct"
     participant: ChatUserResponse
+    participants: list[ChatUserResponse] = []
     preview: str | None
     preview_sender_id: str | None = None
     preview_receipt_status: str | None = None
@@ -123,6 +126,33 @@ class ChatContextResponse(BaseModel):
     requester_message_count: int = 0
     unread_count: int = 0
     last_read_message_id: uuid.UUID | None = None
+
+
+class ChatPeopleResponse(BaseModel):
+    items: list[ChatUserResponse]
+
+
+class ChatEligibilityResponse(BaseModel):
+    can_send: bool
+    status: str
+
+
+class CreateGroupConversationRequest(BaseModel):
+    member_usernames: list[str] = Field(min_length=2, max_length=99)
+
+
+class GroupMemberChangeRequest(BaseModel):
+    usernames: list[str] = Field(min_length=1, max_length=99)
+
+
+class GroupMemberRoleRequest(BaseModel):
+    role: Literal["admin", "member"]
+
+
+class GroupConversationResponse(BaseModel):
+    id: uuid.UUID
+    conversation_type: str
+    members: list[ChatUserResponse]
 
 
 class ChatReadResponse(BaseModel):

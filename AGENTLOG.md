@@ -1,5 +1,323 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T23:03:28Z — Log staging new-chat search failure
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Record the `/chats/new` failure shown in the screenshot in
+  `docs/bugs.md`.
+- Changes Made: Added `BUG-CHAT-002` with the staging environment, `admin`
+  query, visible unavailable state, expected/actual behavior, confirmed
+  client mapping, unverified underlying request failure, and targeted
+  diagnosis/verification steps. Linked the Chat unit and relevant sources.
+- Files: `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Compared the screenshot with the new-chat client and
+  API route; all linked paths exist and `git diff --check` passed. No staging
+  request was made.
+
+## 2026-09-23T23:01:46Z — Record staging message-send smoke check
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Correct the environment attribution for the successful chat
+  message send and record the staging check while `/chats/new` testing proceeds.
+- Changes Made: Added a user-reported staging smoke-check entry to the Chat
+  unit and project changelog. Recorded one successful message send, left
+  Phase 5 acceptance open, and noted that `/chats/new` testing has started but
+  has no reported result yet.
+- Files: `docs/units/chat.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation updated from the user's explicit staging
+  clarification; no additional API calls or database changes were made.
+
+## 2026-09-23T22:59:17Z — Apply latest chat migration to production
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Update the production database to the repository migration
+  head and update project logs/docs to match.
+- Changes Made: Confirmed the production database was at
+  `20260924_0057`, then ran `api/scripts/migrate_before_deploy.py` using the
+  production environment. The gate applied `20260924_0058` and completed
+  `alembic check`. Updated the Chat unit, changelog, and this log. No
+  application deployment or feature-flag change was made.
+- Files: `docs/units/chat.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The migration gate succeeded, `alembic check` reported
+  no new upgrade operations, and a fresh `alembic current` returned
+  `20260924_0058 (head)`. Production application code was not deployed.
+
+## 2026-09-23T22:55:03Z — Synchronize design-document edit metadata
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Check whether the day's implementation and investigation
+  work is documented and correct any stale documentation metadata.
+- Changes Made: Updated the last-edited timestamps in the Navigation unit,
+  product design-system document, and design implementation contract to match
+  the TopBar sizing documentation update. Added this documentation sync to the
+  changelog.
+- Files: `docs/units/navigation.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed today's related unit/design/incident docs and
+  project logs; `git diff --check` passed.
+
+## 2026-09-23T22:46:29Z — Increase shared TopBar sizing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Enlarge TopBar utility icons and title, enlarge expanded
+  search controls, set ActionMenu row icons to 16px, and preserve logo size.
+- Changes Made: Set TopBar hamburger, Back, Search, Chat, Notifications,
+  Filter, and Actions trigger glyphs to 20px in 40px hit areas; set the
+  centered title to 20px at weight 800; set expanded-search text and icons to
+  20px with 40px submit/close controls; set ActionMenu row glyphs to 16px.
+  Preserved the 24px logo image within its 40px link area. Updated the
+  Navigation unit, design-system, and implementation contract.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Reviewed the shared TopBar and ActionMenu selectors;
+  `git diff --check` passed. No tests or build run; browser rendering was not
+  checked. No behavior changes.
+
+## 2026-09-23T22:39:40Z — Record remembered-session recovery investigation
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Document the user's incident sequence and the code/migration
+  evidence explaining why previously remembered accounts appeared after
+  local API recovery and the staging DB migration.
+- Changes Made: Added an incident note to `docs/notes.md` describing the
+  reported sequence, terminal-refresh fallback through device-bound account
+  slots, API-side recovery when a slot refresh cookie is missing, account-list
+  filtering, and the chat-only scope of migrations `20260924_0057` and
+  `20260924_0058`. Recorded that API recovery is the likely explanation, the
+  migration did not recreate auth sessions, and the precise request sequence
+  remains unverified without the original logs.
+- Files: `docs/notes.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the relevant client, API, account-slot, and
+  migration code; no dedicated client regression test for this exact fallback
+  was found. Documentation links and diff formatting checked; no runtime or
+  database state was changed.
+
+## 2026-09-23T22:17:03Z — Apply latest chat migration to staging
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Migrate the staging database to the latest repository head.
+- Changes Made: Ran `api/scripts/migrate_before_deploy.py` with
+  `api/.env.staging`, applying `20260924_0058` to staging. Updated Chat unit
+  status to record the migration gate completion while leaving acceptance work
+  open. No production database or feature-flag state was changed.
+- Verification Status: The migration gate completed successfully;
+  `alembic check` reported no new upgrade operations, and a fresh
+  `alembic current` returned `20260924_0058 (head)`. Local API liveness and
+  frontend route checks passed. `/health/db` timed out on one probe but passed
+  on another; the staging connection has shown intermittent resets. Full
+  staging acceptance remains outstanding.
+
+## 2026-09-23T22:13:36Z — Refine shared tab label size
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Reduce the doubled shared Tabs label size to `0.8rem`.
+- Changes Made: Set `.tabs__pill` font size to `0.8rem`, preserved bold active
+  labels, and synchronized shared design documentation.
+- Verification Status: TypeScript, targeted ESLint, and `git diff --check`
+  passed. The local browser reports `12.8px` (`0.8rem`) labels, with the
+  selected tab at weight `700` and the unselected tab at `400`.
+
+## 2026-09-23T22:10:49Z — Enlarge shared tab labels and emphasize selection
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Double the shared Tabs font size and make the active tab
+  label bold.
+- Changes Made: Increased `.tabs__pill` from `0.64rem` to `1.28rem` and set
+  active tabs to weight 700. Updated the shared design system, implementation
+  contract, and Navigation unit.
+- Verification Status: TypeScript, targeted ESLint, and `git diff --check`
+  passed. The local browser reports `20.48px` (`1.28rem`) labels, with the
+  selected tab at weight `700` and the unselected tab at `400`.
+
+## 2026-09-23T22:00:31Z — Simplify session-restoration loading copy
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Improve the loading copy shown while Friink restores an
+  authenticated session.
+- Changes Made: Replaced the technical headline and supporting line with
+  “Reconnecting…” and “Just a moment while we get you back in.” Synchronized
+  Account Access, Profiles, and active session-recovery documentation.
+- Verification Status: The web TypeScript check and `git diff --check` pass.
+  Targeted ESLint reports seven existing `no-html-link-for-pages` violations
+  on the unchanged navigation anchors at lines 25 and 32 of
+  `session-recovery-screen.tsx`. No API or browser behavior changed.
+
+## 2026-09-23T21:44:20Z — Migrate chat policy and shared behavior on staging
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Implement chat workstream 4, policy and shared behavior migration.
+- Changes Made: Moved chat access, listing, direct resolution, message/media
+  reads, search visibility, read state, and notification fan-out to active
+  membership rows. Added membership-aware group receipts and API group
+  operations behind the disabled-by-default `GROUP_CHAT_ENABLED` flag. Added
+  migration `20260924_0058` to preserve legacy direct-pair compatibility while
+  allowing group rows, and updated Chat, Search, architecture, deployment, and
+  active policy documentation.
+- Verification Status: Changed API files and migration passed Python syntax
+  compilation; frontend TypeScript passed; `git diff --check` passed; Alembic
+  reports `20260924_0058` as the sole head. Direct requests to all four group
+  create/member endpoints returned 403 with the flag false and a stubbed DB
+  session. The migration has not been applied. Offline SQL generation is
+  blocked by a pre-existing data query in migration
+  `20260830_0009_add_public_id_to_posts.py`; DB-backed regression and staging
+  release verification remain for workstream 5.
+
+## 2026-09-23T21:21:33Z — Implement Chat new-person discovery on staging
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Implement the remaining new-chat discovery UX.
+- Changes Made: Replaced the `/chats/new` placeholder with a one-person
+  discovery modal, debounced two-character people search, identity-rich
+  suggestions, immediate and final server eligibility checks, neutral loading,
+  empty, unavailable, and retryable search states, and account-switch reset.
+  Added authenticated `GET /chat/people` and read-only
+  `GET /chat/people/{username}/eligibility` with active, block, and
+  private-profile visibility filters. Updated Chat and Search docs plus the
+  active rule.
+- Verification Status: TypeScript, targeted ESLint, Python syntax compilation,
+  and `git diff --check` passed. Direct people-search and eligibility requests
+  returned HTTP 200 with expected response shapes using a stubbed DB session.
+  Full test suite and live database-backed search behavior were not run.
+
+## 2026-09-23T20:40:24Z — Implement Chat Phase 2 on development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement canonical chat routing and the conversation
+  resolver on the development branch.
+- Changes Made: Added the authorized ID-based conversation context endpoint,
+  canonical `/chats/{conversationId}` loading, username compatibility
+  redirects, `/chats/new` as the reserved Phase 3 entry point, and `/chat/new`
+  compatibility routing. Updated the active rules and Chat unit documents.
+- Verification Status: The targeted chat API test passed with the new
+  request/response assertion; TypeScript passed; targeted ESLint passed with
+  one existing hook-dependency warning; diff checks passed.
+
+## 2026-09-23T20:26:23Z — Resolve staging-to-main conflicts locally
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Resolve the conflicts preventing development-to-staging and
+  staging-to-main promotion, without pushing branches.
+- Changes Made: Merged local `main` into local `staging`, preserved the newer
+  staging Chat/release history and the main notification release entry, and
+  removed the two documentation conflict blocks.
+- Verification Status: No unresolved conflict markers remain and
+  `git diff --check` passes; the resolved staging merge is ready to commit.
+
+## 2026-09-23T20:12:01Z — Apply chat membership migration to staging
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the new data-foundation migration to staging while the
+  user prepares the development branch update.
+- Changes Made: Applied Alembic migration `20260924_0057` to staging. No code,
+  branch, production database, or production release was changed.
+- Verification Status: Staging is at migration `20260924_0057`; its two
+  conversations have four membership rows total, with exactly two members per
+  conversation, and Alembic reports no schema drift.
+
+## 2026-09-23T20:05:58Z — Implement conversation data foundation on development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Start the group-ready chat implementation with the data
+  foundation, changing only the development branch.
+- Changes Made: Added the `conversation_type` enum and column, added the
+  composite-key `conversation_members` table with role and join/leave fields,
+  and added a migration that backfills both members of each existing direct
+  conversation without changing conversation IDs. Kept pair columns and
+  existing service behavior unchanged for the compatibility phase. Updated
+  the Chat unit documentation.
+- Verification Status: Targeted migration and model checks pending.
+## 2026-09-23T19:25:20Z — Synchronize development and staging Chat work
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Commit the latest Chat work to both development and staging
+  and keep the branches synchronized.
+- Changes Made: Applied the five local Chat/gallery/documentation commits to
+  development, verified development and staging have identical Git trees, and
+  pushed both branches to origin.
+- Verification Status: Both branch pushes succeeded; local tree comparison
+  reports identical content.
+
+## 2026-09-23T14:05:10Z — Consolidate new-chat UX and implementation breakdown
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document all agreed `/chats/new` UX behavior and explain how
+  the group-ready backend work is broken down.
+- Changes Made: Added compatibility redirects, modal history behavior,
+  validation loading and account-switch rules, chat-specific search ownership,
+  and a five-workstream execution breakdown to the Chat unit.
+- Verification Status: Documentation-only change; diff check pending.
+
+## 2026-09-23T14:00:47Z — Reconcile chat discovery with search privacy rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check whether the planned `/chats/new` UX conflicts with
+  existing business rules.
+- Changes Made: Corrected the Chat unit so autocomplete inherits the active
+  Search visibility contract instead of exposing unauthorized private
+  identities. Kept server-side chat eligibility separate from discovery.
+- Verification Status: Documentation-only correction; diff check pending.
+
+## 2026-09-23T13:58:02Z — Settle `/chats/new` UX decisions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Decide the remaining user-discovery, validation, request,
+  modal, and one-to-one selection behavior for the planned new-chat flow.
+- Changes Made: Recorded two-character debounced search, scrollable profile
+  suggestions, private-account discoverability, immediate and final server
+  validation, neutral unavailable copy, existing declined-request behavior,
+  pending-request navigation, close-to-home behavior, and prevention of
+  multiple selection before group-chat launch.
+- Verification Status: Documentation-only change; diff check pending.
+
+## 2026-09-23T13:46:25Z — Document group-ready chat evolution plan
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the planned conversation-ID, `/chats/new`, and
+  group-ready backend approach without implementing group chats.
+- Changes Made: Updated the Chat unit with the canonical ID route, username
+  compatibility resolver, one-to-one `/chats/new` flow, disabled group
+  capability boundary, membership migration strategy, and five backend
+  deliverables. Active rules were left unchanged because this is planned work.
+- Verification Status: Documentation-only change; structure and diff checks
+  pending.
+
+## 2026-09-23T12:49:11Z — Improve chat attached-image gallery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and show a cleaner local UI for attached pictures
+  in chat.
+- Changes Made: Added `ChatMediaGallery` with bounded one-image containment,
+  balanced two-to-four-image layouts, `+N` overflow, and full-screen viewer
+  navigation. Updated shared CSS, active rules, chat unit documentation, and
+  the design implementation contract.
+- Verification Status: TypeScript, targeted ESLint, and `git diff --check`
+  passed. The local Next.js server is running at `http://localhost:3000`;
+  browser preview is left on `/login` because no local authenticated session
+  could be restored.
+
 ## 2026-09-23T12:31:55Z — Promote notification implementation and database head
 
 - Agent: Codex

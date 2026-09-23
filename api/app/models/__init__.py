@@ -7,7 +7,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.auth_challenge import LoginChallenge
 from app.models.auth_session import AuthSession
 from app.models.email_change import EmailChangeRequest
-from app.models.chat import Conversation, ConversationSetting, ConversationStatus, Message, MessageMedia, UserBlock
+from app.models.chat import Conversation, ConversationMember, ConversationSetting, ConversationStatus, ConversationType, Message, MessageMedia, UserBlock
 from app.models.user import User
 from app.models.identity_history import UserEmailHistory, UserUsernameHistory
 from app.models.reserved_username import ReservedUsername
@@ -24,4 +24,4 @@ from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignmen
 from app.models.professional_registration import ProfessionalRegistration
 from app.models.push_subscription import PushSubscription
 
-__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "MessageMedia", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "PushSubscription", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
+__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationMember", "ConversationSetting", "ConversationStatus", "ConversationType", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "MessageMedia", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "PushSubscription", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]

@@ -7,8 +7,8 @@ from app.config import get_settings
 from app.db import get_session
 from app.models.user import User
 from app.routers.auth import get_current_user
-from app.schemas.chat import ChatContextResponse, ChatMediaCleanupRequest, ChatMediaConfirmRequest, ChatMediaConfirmResponse, ChatMediaUploadUrlItem, ChatMediaUploadUrlRequest, ChatMediaUploadUrlResponse, ChatReadResponse, ConversationListResponse, ConversationResponse, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse, SendMessageRequest
-from app.services.chat import accept_request, get_chat_context, list_conversations, list_messages, mark_messages_read, reject_request, send_message, send_message_to_user, set_conversation_setting, set_read_receipts_enabled
+from app.schemas.chat import ChatContextResponse, ChatEligibilityResponse, ChatMediaCleanupRequest, ChatMediaConfirmRequest, ChatMediaConfirmResponse, ChatMediaUploadUrlItem, ChatMediaUploadUrlRequest, ChatMediaUploadUrlResponse, ChatPeopleResponse, ChatReadResponse, ConversationListResponse, ConversationResponse, CreateGroupConversationRequest, GroupConversationResponse, GroupMemberChangeRequest, GroupMemberRoleRequest, MessagePageResponse, MessageResponse, ReadReceiptPreferenceResponse, SendMessageRequest
+from app.services.chat import accept_request, add_group_members, create_group_conversation, get_chat_context, get_chat_context_by_id, get_chat_eligibility, list_conversations, list_messages, mark_messages_read, reject_request, remove_group_member, search_chat_people, send_message, send_message_to_user, set_conversation_setting, set_group_member_role, set_read_receipts_enabled
 from app.services.post_media import CHAT_MEDIA_PREFIX, PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -61,9 +61,44 @@ async def conversations(current_user: User = Depends(get_current_user), session:
     return await list_conversations(session, current_user)
 
 
+@router.get("/people", response_model=ChatPeopleResponse)
+async def chat_people(query: str = Query(min_length=2, max_length=80), current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatPeopleResponse:
+    return await search_chat_people(session, current_user, query)
+
+
+@router.get("/people/{username}/eligibility", response_model=ChatEligibilityResponse)
+async def chat_eligibility(username: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatEligibilityResponse:
+    return await get_chat_eligibility(session, current_user, username)
+
+
+@router.post("/groups", response_model=GroupConversationResponse, status_code=status.HTTP_201_CREATED)
+async def create_group(payload: CreateGroupConversationRequest, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> GroupConversationResponse:
+    return await create_group_conversation(session, current_user, payload.member_usernames)
+
+
+@router.post("/conversations/{conversation_id}/members", response_model=GroupConversationResponse)
+async def add_group_members_route(conversation_id: uuid.UUID, payload: GroupMemberChangeRequest, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> GroupConversationResponse:
+    return await add_group_members(session, current_user, conversation_id, payload.usernames)
+
+
+@router.delete("/conversations/{conversation_id}/members/{username}", response_model=GroupConversationResponse)
+async def remove_group_member_route(conversation_id: uuid.UUID, username: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> GroupConversationResponse:
+    return await remove_group_member(session, current_user, conversation_id, username)
+
+
+@router.patch("/conversations/{conversation_id}/members/{username}", response_model=GroupConversationResponse)
+async def set_group_member_role_route(conversation_id: uuid.UUID, username: str, payload: GroupMemberRoleRequest, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> GroupConversationResponse:
+    return await set_group_member_role(session, current_user, conversation_id, username, payload.role)
+
+
 @router.post("/conversations/with/{username}", response_model=ChatContextResponse)
 async def conversation_with_user(username: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatContextResponse:
     return await get_chat_context(session, current_user, username)
+
+
+@router.get("/conversations/{conversation_id}", response_model=ChatContextResponse)
+async def conversation_by_id(conversation_id: uuid.UUID, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> ChatContextResponse:
+    return await get_chat_context_by_id(session, current_user, conversation_id)
 
 
 @router.post("/conversations/with/{username}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)

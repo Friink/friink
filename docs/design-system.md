@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-23T01:35:00Z
+**Last edited:** 2026-09-23T22:55:03Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -57,8 +57,9 @@ contract rather than repeated here.
   strip, and their arrow controls remain contained within the tab-bar height
   and flush with the strip edges.
 - Selected tabs use the user-configurable accent color for both text and the
-  smoothly moving active-tab underline. The shared tab container also renders
-  a subtle full-width bottom rule, but selected tabs have no background fill.
+  smoothly moving active-tab underline, use bold text, and have a comfortably
+  readable label size. The shared tab container also renders a subtle
+  full-width bottom rule, but selected tabs have no background fill.
 - Post actions use the current accent color on hover, keyboard focus, and
   press; persistent Like and Save states also retain the accent color.
 - Signup password and username guidance uses full-width left alignment;
@@ -174,7 +175,10 @@ The exact widths, heights, breakpoints, and token names are defined in
   drawer, and keeps the compact Friink mark visible in every mode. The mark
   always links Home except on the search route, where the search field occupies
   the middle slot between Back and Actions. The page title stays centered on
-  other routes. The existing Header and
+  other routes. TopBar utility icons use a consistent 20px glyph size within
+  40px controls; the centered title is 20px and weight 800. Expanded search
+  keeps a 40px field with 20px text and 40px icon buttons. ActionMenu row icons
+  are 16px, and the logo keeps its existing compact size. The existing Header and
   NavigationBar remain mounted but are hidden during preview evaluation. Home exposes the sidebar toggle, compact
   theme-aware mark, Search, Chat, and Notifications. Contextual screens add a
   history-aware Back control and the existing ActionMenu. Its

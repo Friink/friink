@@ -6,7 +6,7 @@ permission-aware results.
 
 **Status:** Partial  
 **Tier:** Standard  
-**Last edited:** 2026-09-21T00:00:00Z
+**Last edited:** 2026-09-23T21:44:20Z
 **Platforms:** Web and API  
 **Canonical sources:** [Rules](../rules.md), [Testing](../testing.md),
 `api/app/routers/search.py`, `web/components/top-bar.tsx`, and
@@ -90,6 +90,12 @@ directory eligibility rules. It consumes those units' authoritative state.
 Search requires an authenticated session. Global results may include only
 active, visible people and content. Messages results are restricted to the
 current user's permitted conversations and participants.
+
+Chat's `/chats/new` discovery flow uses a separate chat-specific people search
+contract. It matches usernames and display names, excludes blocked and
+inactive/deleted profiles, and includes private profiles only when the viewer
+already has an accepted follow relationship. It does not change global Search
+result behavior or expose message eligibility as a search result.
 
 ### Privacy and security
 
@@ -257,6 +263,10 @@ items are omitted rather than replaced with synthetic identities.
 
 - Global search covers people, usernames, and posts for the MVP.
 - Messages search covers permitted users, conversations, and chat content.
+- Message and conversation search authorizes through active
+  `conversation_members` rows. Group conversations are excluded while
+  `GROUP_CHAT_ENABLED` is false; when enabled, participant and message matches
+  route to the canonical conversation-ID URL.
 - Search is authenticated, server-authoritative, bounded, indexed, and supports
   basic pagination for the MVP.
 
