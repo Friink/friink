@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T14:00:47Z
+**Last edited:** 2026-09-23T14:05:10Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -194,6 +194,15 @@ group creation while the feature is disabled.
 - The modal has a close control. Closing `/chats/new` without entering a chat
   returns the user to `/home`; selecting a second person is prevented while
   group chats are unavailable.
+- `/chat` redirects to `/chats`, and `/chat/new` redirects to `/chats/new` as
+  compatibility aliases. Browser Back closes the modal before leaving the
+  Chats surface when the modal is represented in history.
+- `Next` is disabled while immediate eligibility validation is loading. The
+  selected person's identity remains visible while validation runs, and an
+  active-account change clears the selection and its validation result.
+- The first version uses a chat-specific people-search contract that reuses
+  the existing Search visibility policy rather than expanding global Search
+  with live suggestions.
 
 ### Planned backend foundation deliverables
 
@@ -226,3 +235,27 @@ The pair columns should not be removed until all reads, writes, authorization
 checks, notification fan-out, and administrative queries use membership rows.
 Production migration must follow the repository deployment gate and must keep
 staging and production databases separate.
+
+### Recommended implementation breakdown
+
+The work should be delivered in five bounded workstreams:
+
+1. **Conversation data foundation:** Add the conversation type and membership
+   schema, backfill direct conversations, preserve IDs, and retain pair-column
+   compatibility until all reads and writes have moved to membership data.
+2. **Canonical routing and resolver:** Add `/chats/{conversation_id}` and
+   `/chats/new`, preserve the username aliases, implement one server-side
+   direct-conversation resolver, and make `/chat`/`/chat/new` compatibility
+   redirects.
+3. **New-chat discovery UX:** Build the modal, two-character debounced search,
+   scrollable profile-rich suggestions, single-person selection, immediate
+   eligibility feedback, loading/empty/error states, account-switch reset,
+   close behavior, and keyboard/mobile accessibility.
+4. **Policy and shared behavior migration:** Move authorization, conversation
+   lists, requests, unread state, receipts, mute/archive, notifications, and
+   media access to membership-aware services. Add disabled group endpoints
+   behind `GROUP_CHAT_ENABLED=false`; do not expose group selection in the UI.
+5. **Verification and release:** Cover direct-chat regressions, privacy and
+   account isolation, duplicate/concurrent starts, every eligibility state,
+   route aliases, disabled group endpoints, database migration rehearsal, and
+   staging acceptance before promotion.
