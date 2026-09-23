@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:58:03Z
+- [saved-profiles] Replaced text Follow/Requested/Following controls with the shared icon-only follow state actions.
+
 ## 2026-09-23T00:55:22Z
 - [saved-profiles] Added Follow/Following and More actions for Remove from saved and Block user on available saved profiles.
 
