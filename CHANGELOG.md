@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:39:31Z
+- [saved-profiles] Replaced the CSS-drawn removal slash with Font Awesome's layered star and slash glyphs.
+
 ## 2026-09-23T00:35:20Z
 - [saved-profiles] Removed duplicate saved-profile identity copy and added a visible star-with-slash removal control.
 
