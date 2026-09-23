@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T12:03:13Z
+- [api/notifications] Scoped push subscriptions to `(user_id, endpoint)` so
+  multiple remembered accounts can independently enable notifications on the
+  same browser. Documented the Security and Activity notification categories.
+
 ## 2026-09-23T11:50:36Z
 - [api/notifications] Added push-subscription persistence and authenticated
   list, create/replace, and revoke APIs with ownership, origin, and payload

@@ -11,7 +11,7 @@ from app.db import Base
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
     __table_args__ = (
-        UniqueConstraint("endpoint", name="uq_push_subscriptions_endpoint"),
+        UniqueConstraint("user_id", "endpoint", name="uq_push_subscriptions_user_endpoint"),
         Index("ix_push_subscriptions_user_active", "user_id", "active"),
     )
 

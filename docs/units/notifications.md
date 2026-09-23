@@ -50,9 +50,11 @@ shared contextual surface, measures its rendered top edge, remains within the
 current viewport, shows at most eight rendered rows at once, and scrolls only its
 unread list after the eighth row while keeping the destination footer visible.
 `/notifications` provides the
-full list with tabs, filters, read tracking, actions, loading, empty, and retry
-states. Security notifications use the shield treatment and may link to
-session review.
+full list with `Security` and `Activity` tabs, filters, read tracking, actions,
+loading, empty, and retry states. Security notifications use the shield
+treatment and may link to session review. Activity contains other meaningful
+events such as follows, messages, mentions, likes, registrations, and
+subscription changes.
 
 Registration submissions and staff decisions are rendered as Friink
 notifications in the in-app list and top-bar dropdown. They explain pending,
@@ -85,10 +87,13 @@ behavior are represented by notification models and services. The web surface
 uses `notifications-screen.tsx` and the TopBar dropdown.
 
 The push-subscription API foundation is implemented: authenticated clients can
-list their active subscriptions, create or replace a subscription by endpoint,
-and revoke an owned subscription. Subscription keys are accepted for delivery
-but are not returned in API responses. The `push_subscriptions` table is added
-by migration `20260923_0055`.
+list their active subscriptions, create or replace an account-scoped
+subscription by endpoint, and revoke an owned subscription. The same browser
+subscription may be enabled independently for multiple remembered accounts;
+subscription settings therefore belong to the authenticated account, not only
+to the browser. Subscription keys are accepted for delivery but are not
+returned in API responses. The account-scoped constraint is added by migration
+`20260923_0056`.
 
 ### Planned Web Push requirements
 

@@ -95,6 +95,26 @@ def test_push_subscription_isolated_by_owner_and_mutations_require_allowed_origi
             session.commit()
 
 
+def test_same_browser_subscription_can_be_enabled_for_multiple_accounts() -> None:
+    client = TestClient(app)
+    first_headers, first_id = _signup_and_login(client, "push-first")
+    second_headers, second_id = _signup_and_login(client, "push-second")
+    endpoint = f"https://push.example.test/{uuid.uuid4()}"
+    try:
+        payload = {"endpoint": endpoint, "keys": {"p256dh": "public-key", "auth": "auth-key"}}
+        first = client.post("/notifications/push-subscriptions", headers=first_headers, json=payload)
+        second = client.post("/notifications/push-subscriptions", headers=second_headers, json=payload)
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+        assert first.json()["id"] != second.json()["id"]
+        assert client.get("/notifications/push-subscriptions", headers=first_headers).json()[0]["endpoint"] == endpoint
+        assert client.get("/notifications/push-subscriptions", headers=second_headers).json()[0]["endpoint"] == endpoint
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_([first_id, second_id])))
+            session.commit()
+
+
 def test_push_subscription_rejects_invalid_payload() -> None:
     client = TestClient(app)
     headers, user_id = _signup_and_login(client, "push-validation")

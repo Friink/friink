@@ -90,7 +90,7 @@ async def upsert_push_subscription(
 ) -> PushSubscriptionResponse:
     endpoint = str(payload.endpoint)
     subscription = session.execute(
-        select(PushSubscription).where(PushSubscription.endpoint == endpoint)
+        select(PushSubscription).where(PushSubscription.user_id == user.id, PushSubscription.endpoint == endpoint)
     ).scalar_one_or_none()
     now = datetime.now().astimezone()
     if subscription is None:

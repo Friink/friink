@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T12:03:13Z — Make push subscriptions account-scoped
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Capture the decision that every remembered account has its
+  own notification settings and support multiple account subscriptions per
+  browser.
+- Changes Made: Changed push-subscription uniqueness from endpoint-wide to
+  `(user_id, endpoint)`, added migration `20260923_0056`, updated upsert
+  ownership lookup, added multi-account API coverage, and documented the
+  `Security` and `Activity` categories.
+- Files: `api/app/models/push_subscription.py`,
+  `api/app/services/notifications.py`,
+  `api/alembic/versions/20260923_0056_account_scoped_push_subscriptions.py`,
+  `api/tests/test_push_subscriptions.py`, `docs/units/notifications.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused API tests and migration checks pending.
+
 ## 2026-09-23T11:50:36Z — Add push-subscription management APIs
 
 - Agent: Codex
