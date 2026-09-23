@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T01:20:00Z — Add compressed chat image attachments
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reuse post media compression for chat and allow up to eight images per message.
+- Changes Made: Added chat-media upload/confirmation endpoints, message media storage and migration, shared post-media compression uploads, composer image selection, and inline chat-bubble rendering. Updated media, chat, and design contracts.
+- Verification Status: Targeted TypeScript, Python compile, schema import, and diff checks passed.
+
 ## 2026-09-23T01:10:05Z — Show latest message in chat list rows
 
 - Agent: Codex

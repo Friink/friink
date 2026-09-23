@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T01:10:05Z
+**Last edited:** 2026-09-23T01:20:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -59,6 +59,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   through the shared refresh flow when a full browser refresh clears the
   in-memory access session. A terminal refresh failure routes to login; a
   successful refresh keeps the user on the requested conversation.
+- **CHAT-R-012:** Chat messages may include up to eight images. The shared
+  composer prepares them with the post-media JPEG preset before authenticated
+  chat-media upload and confirmation; text-only and media-only messages are
+  valid.
 
 ## UX and flows
 
@@ -73,6 +77,8 @@ Conversations use `/{username}/chat`. The composer communicates policy states
 such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
+The chat composer supports up to eight image attachments with the shared
+post-media compression target; attached images render in the message bubble.
 The direct conversation page uses the document scrollbar for the message
 history. On a full browser refresh, the route restores the authenticated
 session through the shared refresh flow before loading the conversation. The
@@ -104,6 +110,9 @@ mute and archive. Read operations use per-user cursors and server checks.
 - [x] **CHAT-AC-008** Conversation rows remove duplicate identity content,
   expose unread/receipt state in the secondary line, and use borderless
   accent-reactive mute/archive actions.
+- [x] **CHAT-AC-009** Chat image attachments use the shared compression preset,
+  enforce the eight-image limit, and remain associated with the authenticated
+  message after upload.
 
 ## Known limitations
 

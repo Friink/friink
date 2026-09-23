@@ -8,6 +8,7 @@ from app.config import Settings
 
 MAX_POST_MEDIA_BYTES = 500 * 1024
 POST_MEDIA_PREFIX = "post-media"
+CHAT_MEDIA_PREFIX = "chat-media"
 
 
 class PostMediaStorageNotConfiguredError(RuntimeError):
@@ -26,10 +27,10 @@ class PostMediaUpload:
 
 
 class PostMediaStorageService:
-    """R2 operations for post media only.
+    """R2 operations for authenticated JPEG media.
 
-    This service deliberately owns the post-media namespace and limits. It
-    does not share profile-picture key validation, confirmation, or deletion.
+    Profile pictures retain their separate storage contract. Post and chat
+    media use distinct namespaces but share this upload implementation.
     """
 
     def __init__(self, settings: Settings):
@@ -63,8 +64,8 @@ class PostMediaStorageService:
             return None
         return f"{self.settings.r2_public_url.rstrip('/')}/{object_key}"
 
-    def create_upload(self, user_id: uuid.UUID) -> PostMediaUpload:
-        object_key = f"{POST_MEDIA_PREFIX}/{user_id}/{uuid.uuid4().hex}.jpg"
+    def create_upload(self, user_id: uuid.UUID, prefix: str = POST_MEDIA_PREFIX) -> PostMediaUpload:
+        object_key = f"{prefix}/{user_id}/{uuid.uuid4().hex}.jpg"
         upload_url = self._client().generate_presigned_url(
             "put_object",
             Params={
@@ -81,17 +82,17 @@ class PostMediaStorageService:
             object_key=object_key,
         )
 
-    def confirm(self, object_key: str, user_id: uuid.UUID) -> None:
+    def confirm(self, object_key: str, user_id: uuid.UUID, prefix: str = POST_MEDIA_PREFIX) -> None:
         """Confirm an API-issued key after the client receives a successful PUT.
 
         Public object reads are deliberately not part of confirmation because
         staging may use a private bucket or a delivery domain that rejects
         HEAD/GET.
         """
-        self._validate_key(object_key, user_id)
+        self._validate_key(object_key, user_id, prefix)
 
-    def delete(self, object_key: str, user_id: uuid.UUID) -> None:
-        self._validate_key(object_key, user_id)
+    def delete(self, object_key: str, user_id: uuid.UUID, prefix: str = POST_MEDIA_PREFIX) -> None:
+        self._validate_key(object_key, user_id, prefix)
         try:
             self._client().delete_object(Bucket=self.settings.r2_bucket_name, Key=object_key)
         except PostMediaStorageNotConfiguredError:
@@ -100,7 +101,11 @@ class PostMediaStorageService:
             raise PostMediaObjectError("The post image could not be removed.") from exc
 
     @staticmethod
-    def _validate_key(object_key: str, user_id: uuid.UUID) -> None:
-        prefix = f"{POST_MEDIA_PREFIX}/{user_id}/"
+    def validate_key(object_key: str, user_id: uuid.UUID, namespace: str = POST_MEDIA_PREFIX) -> None:
+        PostMediaStorageService._validate_key(object_key, user_id, namespace)
+
+    @staticmethod
+    def _validate_key(object_key: str, user_id: uuid.UUID, namespace: str = POST_MEDIA_PREFIX) -> None:
+        prefix = f"{namespace}/{user_id}/"
         if not object_key.startswith(prefix) or object_key.count("/") != 2 or not object_key.endswith(".jpg"):
             raise ValueError("Post media object key is invalid.")

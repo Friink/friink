@@ -1,15 +1,60 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 CHAT_MESSAGE_MAX_LENGTH = 2048
+CHAT_MESSAGE_MAX_MEDIA_FILES = 8
+
+
+class MessageMediaInput(BaseModel):
+    storage_key: str
+    url: str | None = None
+
+
+class ChatMediaUploadUrlRequest(BaseModel):
+    count: int = Field(ge=1, le=CHAT_MESSAGE_MAX_MEDIA_FILES)
+
+
+class ChatMediaUploadUrlItem(BaseModel):
+    upload_url: str
+    public_url: str | None = None
+    object_key: str
+
+
+class ChatMediaUploadUrlResponse(BaseModel):
+    items: list[ChatMediaUploadUrlItem]
+
+
+class ChatMediaConfirmRequest(BaseModel):
+    object_key: str = Field(min_length=1, max_length=512)
+
+
+class ChatMediaConfirmResponse(BaseModel):
+    object_key: str
+    public_url: str | None = None
+
+
+class ChatMediaCleanupRequest(BaseModel):
+    storage_keys: list[str] = Field(min_length=1, max_length=CHAT_MESSAGE_MAX_MEDIA_FILES)
 
 
 class SendMessageRequest(BaseModel):
-    content: str = Field(min_length=1, max_length=CHAT_MESSAGE_MAX_LENGTH)
+    content: str = Field(default="", max_length=CHAT_MESSAGE_MAX_LENGTH)
     client_message_id: str = Field(min_length=1, max_length=64)
+    media: list[MessageMediaInput] = Field(default_factory=list, max_length=CHAT_MESSAGE_MAX_MEDIA_FILES)
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, content: str) -> str:
+        return content.strip()
+
+    @model_validator(mode="after")
+    def validate_message_has_content(self) -> "SendMessageRequest":
+        if not self.content and not self.media:
+            raise ValueError("Message content or media is required.")
+        return self
 
 
 class ChatUserResponse(BaseModel):
@@ -20,6 +65,10 @@ class ChatUserResponse(BaseModel):
     show_professional_badge: bool = False
 
 
+class MessageMediaResponse(BaseModel):
+    url: str
+
+
 class MessageResponse(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
@@ -27,6 +76,7 @@ class MessageResponse(BaseModel):
     content: str
     created_at: datetime
     receipt_status: str = "sent"
+    media: list[MessageMediaResponse] = []
 
     model_config = {"from_attributes": True}
 

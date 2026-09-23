@@ -80,6 +80,7 @@ type ComposerProps = {
   } | null;
   enableMentions?: boolean;
   enableMedia?: boolean;
+  mediaTargetLabel?: 'post' | 'message';
 };
 
 export function Composer({
@@ -101,6 +102,7 @@ export function Composer({
   referencedPreview = null,
   enableMentions = false,
   enableMedia = true,
+  mediaTargetLabel = 'post',
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -132,7 +134,7 @@ export function Composer({
 
     const availableSlots = 8 - media.length;
     const filesToAdd = selectedFiles.slice(0, availableSlots);
-    if (filesToAdd.length < selectedFiles.length) setMediaError('You can attach up to 8 images to a post.');
+    if (filesToAdd.length < selectedFiles.length) setMediaError(`You can attach up to 8 images to a ${mediaTargetLabel}.`);
 
     setMedia((current) => [
       ...current,
@@ -249,7 +251,7 @@ export function Composer({
             ref={attachmentButtonRef}
             className="icon-button"
             type="button"
-            aria-label="Add to post"
+            aria-label={`Add to ${mediaTargetLabel}`}
             aria-haspopup="menu"
             aria-expanded={attachmentMenuOpen}
             disabled={disabled}
@@ -259,7 +261,7 @@ export function Composer({
           </button>
           <ActionMenu
             open={attachmentMenuOpen}
-            ariaLabel="Add to post"
+            ariaLabel={`Add to ${mediaTargetLabel}`}
             anchorRef={attachmentButtonRef}
             align="start"
             onClose={() => setAttachmentMenuOpen(false)}

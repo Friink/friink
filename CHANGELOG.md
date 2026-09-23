@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T01:20:00Z
+- [chat/media] Added chat image attachments using the post-media JPEG compression preset, with up to eight images per message and persisted message-media associations.
+
 ## 2026-09-23T01:10:05Z
 - [chat] Updated conversation rows to show the latest message beside the participant name with an ellipsis and moved the relative date to the line below.
 

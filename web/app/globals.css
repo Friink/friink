@@ -4400,6 +4400,25 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   line-height: 1.4;
 }
 
+.chat-message-media {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.chat-message-media:first-child {
+  margin-top: 0;
+}
+
+.chat-message-media img {
+  display: block;
+  width: 100%;
+  max-height: 16rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
 .chat-bubble small {
   display: block;
   margin-top: 0.3rem;
