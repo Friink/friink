@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:39:31Z — Use layered Font Awesome saved-profile icon
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Improve the saved-profile removal icon with a star and cross/slash treatment.
+- Changes Made: Confirmed Font Awesome Free has no native `fa-star-slash`; replaced the CSS-drawn slash with the installed `fa-slash` glyph layered over `fa-star`.
+- Verification Status: TypeScript compilation and diff checks passed.
+
 ## 2026-09-23T00:35:20Z — Refine saved-profile rows
 
 - Agent: Codex

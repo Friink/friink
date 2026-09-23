@@ -154,7 +154,7 @@ export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPost
                   if (!session) return;
                   await removeSavedProfile(session.accessToken, profile.id);
                   setSavedProfiles((current) => current.filter((item) => item.id !== profile.id));
-                }}><span className="saved-profile-remove-icon" aria-hidden="true"><i className="fa-solid fa-star" /></span></button>}
+                }}><span className="saved-profile-remove-icon" aria-hidden="true"><i className="fa-solid fa-star" /><i className="fa-solid fa-slash saved-profile-remove-slash" /></span></button>}
               />
                 );
               })()

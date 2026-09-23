@@ -5749,14 +5749,10 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   height: 1.35rem;
 }
 
-.saved-profile-remove-icon::after {
+.saved-profile-remove-slash {
   position: absolute;
-  width: 1.45rem;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  content: '';
-  transform: rotate(-45deg);
+  font-size: 0.95rem;
+  transform: rotate(-8deg) scaleX(1.35);
 }
 
 .saved-row .list-row-subtitle {
