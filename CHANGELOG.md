@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:29:26Z
+- [development] Migrated the explicit local development database to migration head so saved-profile requests no longer fail to fetch.
+
 ## 2026-09-23T00:19:45Z
 - [profiles/saved] Switched profile saving to the star action icon, changed the saved label to Remove from saved, and applied the pending local database migrations that caused the fetch failure.
 

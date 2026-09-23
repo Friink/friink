@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:29:26Z — Migrate local development database
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate the continuing saved-profile Failed to fetch error.
+- Changes Made: Identified that localhost uses `.env.development`, which was still at `20260917_0051`; migrated it through `20260922_0052` to `20260923_0053`.
+- Verification Status: The authenticated profile-save status request now returns HTTP 200 for another active profile; own-profile requests correctly return HTTP 404 because users cannot save themselves.
+
 ## 2026-09-23T00:19:45Z — Fix saved-profile action and API fetch
 
 - Agent: Codex
