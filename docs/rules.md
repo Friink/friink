@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-21T23:21:14Z
+**Last edited:** 2026-09-23T01:03:06Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -1276,15 +1276,15 @@ missing evidence can be filled in.
 
 ### CLIENT-R-003 — Incoming Requests Are Available In The Owner's Connections
 
-- **Status:** Active
+- **Status:** Superseded by [CONN-R-011](#conn-r-011--requests-tab-is-private-account-ui)
 - **Effective:** 2026-09-01T00:00:00Z
 - **Related units:** [connections](units/connections.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
 - **File(s):** `web/components/app-shell.tsx`, `web/components/connections-screen.tsx`, `api/app/routers/connections.py`, `api/app/services/connections.py`
 
-- **What:** The signed-in account's Connections surface always exposes the Requests tab. Incoming pending follow requests are loaded from the authenticated API and render Accept and Reject actions; the client must not hide or reset the tab based on a cached privacy flag.
-- **Edge cases:** Other users' Connections directories do not expose the owner's private request queue. Public accounts normally have no pending incoming requests because public follows are accepted immediately, but the Requests tab remains a valid empty state.
+- **What:** The former contract always exposed Requests to the signed-in account, including public accounts. It was replaced by the privacy-aware Connections rule so the UI matches the account's follow semantics.
+- **Edge cases:** The authenticated request endpoints remain available as API contracts; this superseded client rule did not authorize exposing another user's request queue.
 
 ### CLIENT-R-004 — Floating Post Composer Expands Above Its Controls
 

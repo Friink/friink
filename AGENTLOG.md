@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T01:03:06Z — Restrict connection requests tab to private profiles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show the Connections Requests tab only for private profiles.
+- Changes Made: Added privacy-aware Requests tab rendering, normalized direct unauthorized Requests routes to All, and synchronized Connections rules and unit documentation.
+- Verification Status: Targeted TypeScript and diff checks pending.
+
 ## 2026-09-23T01:00:04Z — Show composer on own profile
 
 - Agent: Codex
