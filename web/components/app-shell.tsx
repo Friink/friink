@@ -190,22 +190,25 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     ? null
     : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
+  const canViewConnectionRequests = !viewingOtherConnections && user.isPrivate;
+  useEffect(() => {
+    if (activeScreen !== 'connections' || connectionsFilter !== 'requests' || canViewConnectionRequests) return;
+    setConnectionsFilter('all');
+    const basePath = viewingOtherConnections
+      ? `/${encodeURIComponent(connectionsUsername!)}/connections`
+      : `/${encodeURIComponent(user.username)}/connections`;
+    router.replace(basePath, { scroll: false });
+  }, [activeScreen, canViewConnectionRequests, connectionsFilter, connectionsUsername, router, user.username, viewingOtherConnections]);
   const searchFilterParam = searchParams.get('filter');
   const searchFilter: 'all' | 'people' | 'posts' | 'messages' = searchFilterParam === 'people' || searchFilterParam === 'posts' || searchFilterParam === 'messages' ? searchFilterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';
   const directoryTabParam = searchParams.get('tab');
   const directoryTab: DirectoryTab = directoryTabParam === 'registered' ? 'registered' : 'all';
-  const connectionsTabs = !viewingOtherConnections
-    ? [
-        { id: 'all', label: 'All' },
-        { id: 'followers', label: 'Followers' },
-        { id: 'following', label: 'Following' },
-        { id: 'requests', label: 'Requests' },
-      ]
-    : [
-        { id: 'all', label: 'All' },
-        { id: 'followers', label: 'Followers' },
-        { id: 'following', label: 'Following' },
-      ];
+  const connectionsTabs = [
+    { id: 'all', label: 'All' },
+    { id: 'followers', label: 'Followers' },
+    { id: 'following', label: 'Following' },
+    ...(canViewConnectionRequests ? [{ id: 'requests', label: 'Requests' }] : []),
+  ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
   const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'profile' && !profileUser) || (activeScreen === 'messages' && hasContextualFloatingBar));
@@ -471,6 +474,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   }
 
   function handleConnectionsFilterChange(filter: 'all' | 'followers' | 'following' | 'requests') {
+    if (filter === 'requests' && !canViewConnectionRequests) {
+      filter = 'all';
+    }
     setConnectionsFilter(filter);
     const basePath = viewingOtherConnections
       ? `/${encodeURIComponent(connectionsUsername!)}/connections`

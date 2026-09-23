@@ -5,7 +5,7 @@ requests, and the visibility and access consequences of those relationships.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T23:44:00Z
+**Last edited:** 2026-09-23T01:03:06Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -27,7 +27,10 @@ relationships; Chat owns message access after relationship checks.
   connections only when the relevant direction is accepted.
 - **CONNECTIONS-R-002:** Public accounts accept follows immediately.
 - **CONNECTIONS-R-003:** Private accounts require pending requests and expose a
-  private Requests tab to the owner.
+  private Requests tab to the owner. Public account owners and other users'
+  connection directories expose only All, Followers, and Following; a direct
+  Requests route normalizes back to All when the viewer is not allowed to see
+  it.
 - **CONNECTIONS-R-004:** Rejected and owner-removed requests observe the active
   cooldown rules; cancellation has its own resend lockout.
 - **CONNECTIONS-R-005:** Changing a private account to public auto-accepts
@@ -38,10 +41,11 @@ relationships; Chat owns message access after relationship checks.
 
 ## UX and flows
 
-The owner's Connections surface includes All, Followers, Following, and
-Requests. Incoming requests provide Accept and Reject actions. Profile actions
-show Follow, Following, Pending, or the appropriate unavailable state based on
-server status.
+The owner's private Connections surface includes All, Followers, Following, and
+Requests. Public owners and other users' Connections surfaces include only All,
+Followers, and Following. Incoming requests provide Accept and Reject actions.
+Profile actions show Follow, Following, Pending, or the appropriate unavailable
+state based on server status.
 
 ## Technical contract
 
