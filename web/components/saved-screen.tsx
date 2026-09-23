@@ -121,8 +121,16 @@ function SavedProfileRow({ profile, onRemoved, onError }: { profile: ApiSavedPro
       className="saved-row"
       trailing={profile.available ? (
         <span className="saved-profile-actions">
-          <button className="button-secondary saved-profile-follow" type="button" disabled={busy} aria-pressed={connectionState === 'following'} onClick={() => { void handleConnection(); }}>
-            {connectionState === 'following' ? 'Following' : connectionState === 'requested' ? 'Requested' : 'Follow'}
+          <button
+            className="icon-button saved-profile-follow"
+            type="button"
+            disabled={busy}
+            aria-label={connectionState === 'following' ? `Unfollow ${profileName}` : connectionState === 'requested' ? `Cancel follow request to ${profileName}` : `Follow ${profileName}`}
+            title={connectionState === 'following' ? 'Unfollow' : connectionState === 'requested' ? 'Cancel follow request' : 'Follow'}
+            aria-pressed={connectionState === 'following'}
+            onClick={() => { void handleConnection(); }}
+          >
+            <i className={`fa-solid ${connectionState === 'following' ? 'fa-user-check' : connectionState === 'requested' ? 'fa-user-clock' : 'fa-user-plus'}`} aria-hidden="true" />
           </button>
           <button ref={menuButtonRef} className="icon-button" type="button" aria-label={`More actions for ${profileName}`} aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
             <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
