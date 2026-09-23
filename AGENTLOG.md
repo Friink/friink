@@ -1,5 +1,65 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T23:03:28Z — Log staging new-chat search failure
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Record the `/chats/new` failure shown in the screenshot in
+  `docs/bugs.md`.
+- Changes Made: Added `BUG-CHAT-002` with the staging environment, `admin`
+  query, visible unavailable state, expected/actual behavior, confirmed
+  client mapping, unverified underlying request failure, and targeted
+  diagnosis/verification steps. Linked the Chat unit and relevant sources.
+- Files: `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Compared the screenshot with the new-chat client and
+  API route; all linked paths exist and `git diff --check` passed. No staging
+  request was made.
+
+## 2026-09-23T23:01:46Z — Record staging message-send smoke check
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Correct the environment attribution for the successful chat
+  message send and record the staging check while `/chats/new` testing proceeds.
+- Changes Made: Added a user-reported staging smoke-check entry to the Chat
+  unit and project changelog. Recorded one successful message send, left
+  Phase 5 acceptance open, and noted that `/chats/new` testing has started but
+  has no reported result yet.
+- Files: `docs/units/chat.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation updated from the user's explicit staging
+  clarification; no additional API calls or database changes were made.
+
+## 2026-09-23T22:59:17Z — Apply latest chat migration to production
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Update the production database to the repository migration
+  head and update project logs/docs to match.
+- Changes Made: Confirmed the production database was at
+  `20260924_0057`, then ran `api/scripts/migrate_before_deploy.py` using the
+  production environment. The gate applied `20260924_0058` and completed
+  `alembic check`. Updated the Chat unit, changelog, and this log. No
+  application deployment or feature-flag change was made.
+- Files: `docs/units/chat.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The migration gate succeeded, `alembic check` reported
+  no new upgrade operations, and a fresh `alembic current` returned
+  `20260924_0058 (head)`. Production application code was not deployed.
+
+## 2026-09-23T22:55:03Z — Synchronize design-document edit metadata
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Check whether the day's implementation and investigation
+  work is documented and correct any stale documentation metadata.
+- Changes Made: Updated the last-edited timestamps in the Navigation unit,
+  product design-system document, and design implementation contract to match
+  the TopBar sizing documentation update. Added this documentation sync to the
+  changelog.
+- Files: `docs/units/navigation.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed today's related unit/design/incident docs and
+  project logs; `git diff --check` passed.
+
 ## 2026-09-23T22:46:29Z — Increase shared TopBar sizing
 
 - Agent: Codex
@@ -9,9 +69,9 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Changes Made: Set TopBar hamburger, Back, Search, Chat, Notifications,
   Filter, and Actions trigger glyphs to 20px in 40px hit areas; set the
   centered title to 20px at weight 800; set expanded-search text and icons to
-  20px with 40px submit/close controls; set ActionMenu row glyphs to 16px. Preserved the
-  24px logo image within its 40px link area. Updated the Navigation unit,
-  design-system, and implementation contract.
+  20px with 40px submit/close controls; set ActionMenu row glyphs to 16px.
+  Preserved the 24px logo image within its 40px link area. Updated the
+  Navigation unit, design-system, and implementation contract.
 - Files: `web/app/globals.css`, `docs/units/navigation.md`,
   `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
   `AGENTLOG.md`.

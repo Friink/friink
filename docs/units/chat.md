@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T22:17:03Z
+**Last edited:** 2026-09-23T23:01:46Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -239,8 +239,9 @@ group creation while the feature is disabled.
    table containing conversation ID, user ID, role, join/leave timestamps, and
    composite membership uniqueness. Existing direct conversations are
    backfilled with exactly two member rows without changing their IDs. The
-   current pair columns remain in place for compatibility. This migration is
-   applied to development and staging; production remains unchanged.
+   current pair columns remain in place for compatibility. The migration is
+   applied to development, staging, and production; group-chat behavior remains
+   controlled separately by the disabled-by-default feature flag.
 2. **Member-based authorization — implemented on the staging branch:** Move
    conversation access, message sending, list queries, and direct-chat
    resolution to membership while preserving direct-chat policy.
@@ -250,10 +251,18 @@ group creation while the feature is disabled.
 4. **Shared conversation behavior — implemented on the staging branch:** Make
    unread counts, read receipts, mute/archive settings, notifications, polling,
    and media access member-aware while keeping the canonical conversation route.
-5. **Migration and release verification — in progress:** The staging migration
-   gate is applied and `alembic check` passes at the repository head. Still
-   verify direct-chat regressions and authorization, the disabled group API,
-   and complete staging acceptance before any production promotion.
+5. **Migration and release verification — in progress:** The migration gate is
+   applied and `alembic check` passes at the repository head in development,
+   staging, and production. Production's schema is current; this database-only
+   migration did not deploy application code or enable group chat. Still verify
+   direct-chat regressions and authorization, the disabled group API, and
+   complete staging acceptance before promoting application code to production.
+
+**Staging smoke-check record (user-reported):** One message send succeeded on
+staging during the 2026-09-23/24 local session; the exact event time and request
+details were not captured. This single send does not close Phase 5. The user
+reported that the `/chats/new` flow is being tested; no result has been
+recorded yet.
 
 ### Planned migration constraints
 
@@ -264,8 +273,9 @@ use null pair values. The follow-up migration replaces global pair uniqueness
 with a direct-only unique index and checks pair-column shape by conversation
 type. Authorization, conversation lists, direct resolution, message access,
 search, notification fan-out, and read state use active membership rows.
-Production migration must follow the repository deployment gate and must keep
-staging and production databases separate.
+Production migration was applied through the repository deployment gate;
+staging and production databases remain separate. Schema migration alone does
+not promote application code or enable group chat.
 
 ### Membership-backed service behavior (implemented on the staging branch)
 

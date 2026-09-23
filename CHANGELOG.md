@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-23T23:03:28Z
+- [bug/chat] Logged the staging `/chats/new` people-search failure shown in
+  the user's screenshot. Root cause and endpoint response remain unknown;
+  staging diagnosis is still required.
+
+## 2026-09-23T23:01:46Z
+- [test/chat] Recorded the user's report that one staging message send
+  succeeded. The `/chats/new` flow remains under test and Phase 5 remains open.
+
+## 2026-09-23T22:59:17Z
+- [release/database] Applied the repository migration gate to the production
+  database, upgrading chat schema from `20260924_0057` to `20260924_0058`.
+  `alembic check` reported no schema drift; no application deployment or
+  feature-flag change was made. Chat acceptance remains open.
+
+## 2026-09-23T22:55:03Z
+- [docs/design] Refreshed the last-edited metadata for Navigation, the design
+  system, and its implementation contract after the TopBar sizing update.
+
 ## 2026-09-23T22:46:29Z
 - [design/topbar] Increased the shared TopBar utility glyphs to 20px, page
   title to 20px/800, and expanded-search input/buttons to match the larger

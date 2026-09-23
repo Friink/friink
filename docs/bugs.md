@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-22T11:55:05Z
+**Last edited:** 2026-09-23T23:03:28Z
 
 ## Instructions for agents
 
@@ -239,3 +239,76 @@ while the chat list uses the more complete `AppShellRoute` recovery path.
 - [`ChatClient`](../web/app/[username]/chat/chat-client.tsx)
 - [`AppShellRoute`](../web/components/app-shell-route.tsx)
 - [`LoginClient`](../web/app/login/login-client.tsx)
+
+## BUG-CHAT-002 — New-chat people search reports unavailable on staging
+
+- **Status:** Open
+- **Reported/updated:** 2026-09-23T23:03:28Z
+- **Affected area:** New-chat discovery at `/chats/new`, people-search API
+- **Environment:** Staging; user-reported during staging acceptance testing
+- **Severity:** medium
+
+### Bug summary
+
+The `/chats/new` flow fails to show people-search results and instead reports
+that search is unavailable, preventing the user from continuing to start a
+chat.
+
+### Reproduction
+
+1. Open `/chats/new` on staging.
+2. Enter at least two characters in the people-search field; the screenshot
+   shows the query `admin`.
+3. Observe the results panel.
+
+### Expected behavior
+
+The flow should show eligible matching people, or the normal empty state when
+there are no matches. A transient failure should allow retry and recover when
+the search request succeeds.
+
+### Actual behavior
+
+The panel shows `Search is unavailable. Try again` after entering `admin`.
+The user reports that the new-chat flow is not working.
+
+### Root cause
+
+- **Confirmed:** The screenshot shows the search-unavailable state. The client
+  calls `GET /chat/people?query=...` and maps any rejected request to that
+  state.
+- **Open questions:** The staging request status, response body, and matching
+  API log were not captured. The underlying failure could not be identified
+  from the screenshot alone.
+
+### Proposed fix
+
+Diagnose the staging `GET /chat/people?query=admin` request and its API log,
+then fix the confirmed failing layer. Preserve server-side people visibility
+and chat-eligibility policies; do not loosen those rules to work around a
+transport or configuration error.
+
+Non-goals: changing who is eligible or visible in chat search without evidence
+that the policy itself is incorrect.
+
+### Tests and verification
+
+- **Required:** Verify a successful staging search with matching people, a
+  successful no-results response, recoverable network/API failures and Retry,
+  and the existing visibility/eligibility filters.
+- **Completed:** Screenshot review only. Staging endpoint status and response
+  shape are unknown; diagnosis and regression verification remain open.
+
+### Noteworthy
+
+The user separately reported that sending a message on staging succeeded.
+That confirms one send path only and does not verify new-chat discovery. The
+user is currently exercising the `/chats/new` flow; no subsequent result has
+been recorded.
+
+### Related documentation and implementation
+
+- [Chat unit](units/chat.md)
+- [`NewChatScreen`](../web/components/new-chat-screen.tsx)
+- [`GET /chat/people`](../api/app/routers/chat.py)
+- [`searchChatPeople`](../web/lib/auth.ts)

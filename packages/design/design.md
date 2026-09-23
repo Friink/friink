@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-23T22:13:36Z
+**Last edited:** 2026-09-23T22:55:03Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)

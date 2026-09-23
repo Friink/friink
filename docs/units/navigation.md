@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-23T22:13:36Z
+**Last edited:** 2026-09-23T22:55:03Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -38,10 +38,10 @@ the established search, chat-unread, and notification interactions.
   the search field occupies the middle header slot.
 - The TopBar's hamburger, Back, Search, Chat, Notifications, Filter, and
   Actions trigger icons are 20px inside 40px hit areas. The title is centered
-  at 20px, weight 800. Expanded search uses a 40px-high field, 20px input text, and
-  40px submit/close controls; the existing compact Friink logo dimensions are
-  unchanged. ActionMenu row icons are 16px while their labels retain the
-  existing type size.
+  at 20px, weight 800. Expanded search uses a 40px-high field, 20px input
+  text, and 40px submit/close controls; the existing compact Friink logo
+  dimensions are unchanged. ActionMenu row icons are 16px while their labels
+  retain the existing type size.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
   expands into a text input with bounded scope shortcuts and routes submitted
   queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the
