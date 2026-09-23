@@ -6,7 +6,7 @@ permalinks.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-22T23:41:02Z
+**Last edited:** 2026-09-23T00:52:12Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -80,6 +80,10 @@ marking the post deleted. The API continues to return a privacy-preserving
 404-equivalent for posts the viewer cannot access; the web maps that response
 to the unavailable-post state.
 
+The post options menu exposes `Delete post` only to the post owner. Deletion
+requires confirmation, calls the authenticated delete endpoint, and removes the
+post from the current feed or returns from its detail route after success.
+
 ## Acceptance criteria
 
 - [ ] **POSTS-AC-001** Post, reply, and quote payloads enforce their kinds.
@@ -87,6 +91,7 @@ to the unavailable-post state.
 - [ ] **POSTS-AC-003** Canonical public URLs resolve by public ID.
 - [ ] **POSTS-AC-004** Like and Save toggles are unique and retry-safe.
 - [ ] **POSTS-AC-005** Media failure does not leave half-created posts.
+- [x] **POSTS-AC-006** Owners can delete their posts from the post options menu.
 
 ## Known limitations
 
