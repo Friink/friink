@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T20:05:58Z — Implement conversation data foundation on development
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Start the group-ready chat implementation with the data
+  foundation, changing only the development branch.
+- Changes Made: Added the `conversation_type` enum and column, added the
+  composite-key `conversation_members` table with role and join/leave fields,
+  and added a migration that backfills both members of each existing direct
+  conversation without changing conversation IDs. Kept pair columns and
+  existing service behavior unchanged for the compatibility phase. Updated
+  the Chat unit documentation.
+- Verification Status: Targeted migration and model checks pending.
+
 ## 2026-09-23T19:25:20Z — Synchronize development and staging Chat work
 
 - Agent: Codex

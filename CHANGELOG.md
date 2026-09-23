@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23T20:05:58Z
+- [api/chat] Added the development-only conversation membership foundation:
+  direct/group conversation types, composite-unique membership rows, and a
+  stable-ID backfill for existing direct conversations. Pair columns remain
+  compatible for the later member-aware service migration.
+
 ## 2026-09-23T19:25:20Z
 - [release/branches] Propagated the committed Chat gallery and conversation
   UX documentation to development and staging; verified both branch trees are
