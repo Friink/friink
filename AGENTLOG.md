@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T01:35:00Z — Rework chat list row hierarchy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show the full ProfileCard at left, message/date/state in the middle, and Mute/Archive/Block in an action menu.
+- Changes Made: Replaced the chat list's compact identity and separate mute/archive controls with a full ProfileCard, two-line-clamped message preview, date/state stack, and per-conversation overflow menu with blocking.
+- Verification Status: Targeted TypeScript and diff checks pending.
+
 ## 2026-09-23T01:20:00Z — Add compressed chat image attachments
 
 - Agent: Codex

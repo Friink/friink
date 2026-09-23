@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T01:35:00Z
+- [chat] Reworked conversation rows to use the full ProfileCard, a two-line message/date/state middle column, and an overflow menu for Mute, Archive, and Block.
+
 ## 2026-09-23T01:20:00Z
 - [chat/media] Added chat image attachments using the post-media JPEG compression preset, with up to eight images per message and persisted message-media associations.
 

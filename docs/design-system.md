@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-23T01:20:00Z
+**Last edited:** 2026-09-23T01:35:00Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -71,11 +71,11 @@ contract rather than repeated here.
   and date filtering. Applying changes URL-backed state, reloads results, and
   shows an accent indicator while a non-default refinement is active.
 - Chat list rows show the participant's avatar and display name once. The
-  latest message preview appears beside the name on the first line and uses
-  ellipsis truncation; the relative date appears right-aligned on the second
-  line. Muted and Archived are reserved for their dedicated tabs. Mute and
-  archive row actions are borderless contextual icon controls with accent
-  hover, focus, and active treatments.
+  full ProfileCard remains together on the left. The flexible middle column
+  shows a two-line latest message preview with ellipsis truncation, then the
+  relative date and unread/receipt state. Muted and Archived are reserved for
+  their dedicated tabs; Mute, Archive, and Block are provided through one
+  overflow action menu.
 - Chat uses the shared multiline composer with the post-media image preparation
   preset, an eight-image attachment limit, and inline image rendering in
   message bubbles.

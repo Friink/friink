@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-23T01:20:00Z
+**Last edited:** 2026-09-23T01:35:00Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
@@ -158,7 +158,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Chat list opens at `/chats`; its filter tabs remain addressable at `/chat/all`, `/chat/muted`, `/chat/requests`, and `/chat/archived`; conversation routes use `/{username}/chat`. The legacy `/chat` root redirects to `/chats`.
 - Chat read receipts use single/double tick states, a 4-second visible-app inbox sync, an unread state line in conversation rows, and an `Unread messages` separator before the first unread message. Inbox sync marks discovered messages delivered; viewport scrolling marks messages read. Consecutive chat bubbles retain the shared 4px rhythm.
 - The `/chat` conversation list refreshes its server-authoritative previews, ordering, unread pills, and row state every 4 seconds while visible; hidden documents pause polling and focus/visibility recovery resumes it immediately.
-- Conversation rows render an avatar-only profile link, one display-name title, and the latest message preview beside the name. The preview is a shrinkable, ellipsis-truncated single line; the relative date sits right-aligned on the line below. Muted and Archived are represented by their tabs, not row labels. Mute/archive row actions use borderless icon-button geometry with transparent default surfaces and accent hover/focus/active treatment.
+- Conversation rows render the full ProfileCard identity on the left, including enabled badges and username. The flexible middle column shows a two-line, ellipsis-truncated latest message preview followed by the relative date and unread/receipt state. Muted and Archived are represented by their tabs, not row labels. Mute, Archive, and Block use one overflow action menu.
 - Settings uses `/settings/general`, `/settings/profile`, `/settings/account`, and `/settings/privacy`.
 - Settings > Privacy includes the shared toggle/save pattern for Read receipts; the copy explains that visibility is mutual.
 - Profile content uses `/{username}/posts` and `/{username}/replies`.
