@@ -208,6 +208,18 @@ missing evidence can be filled in.
 - **What:** Authenticated post-detail routes use the contextual `Post` shell screen. The header shows `Post`, and no drawer destination is active while the detail is open.
 - **Edge cases:** The route remains history-aware through the shared Back control; opening or returning to Home restores the Home title and drawer highlight.
 
+### WEB-R-021 — Owners Delete Posts From The Post Options Menu
+
+- **Status:** Active
+- **Effective:** 2026-09-23T00:52:12Z
+- **Related units:** [posts](units/posts.md), [feed](units/feed.md)
+- **Source:** Current implementation
+- **Platform:** Web/API
+- **File(s):** `api/app/routers/posts.py`, `api/app/services/posts.py`, `web/lib/auth.ts`, `web/components/feed-post.tsx`, `web/components/home-screen.tsx`, `web/components/profile-screen.tsx`, `web/components/saved-screen.tsx`, `web/components/post-detail-screen.tsx`
+
+- **What:** The post options menu exposes `Delete post` only when the authenticated viewer owns the post. The action confirms intent, calls `DELETE /posts/{post_id}`, and removes the deleted post from active feed lists.
+- **Edge cases:** The API remains authoritative and rejects deletion of another user's post. Successful deletion soft-deletes the post and removes its associated media before the web shows a success toast; post-detail deletion returns to the previous route.
+
 ### WEB-R-014 — Quoted Posts Link To Their Original
 
 - **Status:** Active

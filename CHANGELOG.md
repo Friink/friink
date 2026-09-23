@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:52:12Z
+- [posts] Integrated owner-only post deletion into the post options menu with confirmation and feed/detail removal handling.
+
 ## 2026-09-23T00:44:25Z
 - [profiles/saved] Fixed Profile saved and removal confirmations displaying with the error/red toast tone.
 

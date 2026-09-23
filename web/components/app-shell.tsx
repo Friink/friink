@@ -524,6 +524,13 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       : current.filter((post) => post.id !== updatedPost.id));
   }
 
+  function handlePostDeleted(deletedPost: Post) {
+    setPosts((current) => current.filter((post) => post.id !== deletedPost.id));
+    setProfileLikedPosts((current) => current.filter((post) => post.id !== deletedPost.id));
+    addToast('Post deleted.', 'success');
+    router.refresh();
+  }
+
   function dismissToast(id: number) {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }
@@ -1305,6 +1312,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onReply={handleReply}
                       onQuote={handleQuote}
                       onPostUpdated={handlePostUpdated}
+                      onPostDeleted={handlePostDeleted}
                       onReactionError={(message) => addToast(message)}
                       injectedPost={homeInjectedPost}
                       onInjectedPostConsumed={() => setHomeInjectedPost(null)}
@@ -1325,6 +1333,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onReply={handleReply}
                       onQuote={handleQuote}
                       onPostUpdated={handlePostUpdated}
+                      onPostDeleted={handlePostDeleted}
                       onReactionError={(message) => addToast(message)}
                       onEditProfile={openProfileSettings}
                       onMessage={() => router.push(`/${encodeURIComponent((profileUser ?? user).username)}/chat`)}
@@ -1352,7 +1361,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}
-                  {activeScreen === 'saved' && <SavedScreen section={initialSavedSection} posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onReactionError={(message) => addToast(message)} />}
+                  {activeScreen === 'saved' && <SavedScreen section={initialSavedSection} posts={posts} onReply={handleReply} onQuote={handleQuote} onPostUpdated={handlePostUpdated} onPostDeleted={handlePostDeleted} onReactionError={(message) => addToast(message)} />}
                   {activeScreen === 'directory' && <DirectoryScreen tab={directoryTab} />}
                   {activeScreen === 'search' && <SearchScreen initialQuery={initialSearchQuery} />}
                   {activeScreen === 'notifications' && <NotificationsScreen notifications={visibleNotifications} onMarkRead={handleMarkNotificationRead} emptyMessage={notificationsUnreadOnly ? 'No unread notifications.' : notificationsTab === 'security' ? 'No security notifications yet.' : 'No notifications yet.'} />}

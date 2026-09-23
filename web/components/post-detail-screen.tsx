@@ -13,11 +13,12 @@ type PostDetailScreenProps = {
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onPostUpdated?: (post: Post) => void;
+  onPostDeleted?: (post: Post) => void;
   onReactionError?: (message: string) => void;
   reactionError?: string;
 };
 
-export function PostDetailScreen({ post, replies = [], ancestors = [], onReply, onQuote, onPostUpdated, onReactionError, reactionError }: PostDetailScreenProps) {
+export function PostDetailScreen({ post, replies = [], ancestors = [], onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, reactionError }: PostDetailScreenProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const children = useMemo(() => {
     const result = new Map<string, Post[]>();
@@ -42,7 +43,7 @@ export function PostDetailScreen({ post, replies = [], ancestors = [], onReply, 
       const isCollapsed = collapsed.has(reply.id);
       return (
         <div className={`post-thread-node post-thread-depth-${Math.min(depth, 3)}`} key={reply.id}>
-          <FeedPost post={reply} threadDepth={depth} replyContext={depth > 3 ? 'the parent reply' : undefined} truncateBody={false} truncateQuotedPost={false} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />
+          <FeedPost post={reply} threadDepth={depth} replyContext={depth > 3 ? 'the parent reply' : undefined} truncateBody={false} truncateQuotedPost={false} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onPostDeleted={onPostDeleted} onReactionError={onReactionError} />
           {descendants.length > 0 && <button className="post-thread-toggle" type="button" onClick={() => toggle(reply.id)} aria-expanded={!isCollapsed}>{isCollapsed ? `View ${descendants.length} replies` : 'Hide replies'}</button>}
           {!isCollapsed && renderReplies(reply.id, depth + 1)}
         </div>
@@ -57,7 +58,7 @@ export function PostDetailScreen({ post, replies = [], ancestors = [], onReply, 
         <span aria-hidden="true">›</span>
         <strong>Focused reply</strong>
       </nav>}
-      <FeedPost post={post} truncateBody={false} truncateQuotedPost={false} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />
+      <FeedPost post={post} truncateBody={false} truncateQuotedPost={false} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onPostDeleted={onPostDeleted} onReactionError={onReactionError} />
       {reactionError && <p className="post-reaction-message" role="status">{reactionError}</p>}
       <div className="post-thread">
         {replies.length > 0 ? (

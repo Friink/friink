@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation';
 import { ProfileCard } from '@/components/profile-card';
 import { MentionText } from '@/components/mention-text';
 import { PostMediaGallery } from '@/components/post-media-gallery';
+import { ActionMenu } from '@/components/action-menu';
 import type { Post } from '@/lib/data';
 import { getPostPath, getPostPathForPost } from '@/lib/post-path';
 import { formatRelativeTime } from '@/lib/time';
-import { loadAuthSession, setPostLike, setPostSave } from '@/lib/auth';
+import { deletePost, loadAuthSession, setPostLike, setPostSave } from '@/lib/auth';
 import { PostLikesModal } from '@/components/post-likes-modal';
 
 type FeedPostProps = {
@@ -17,6 +18,7 @@ type FeedPostProps = {
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onPostUpdated?: (post: Post) => void;
+  onPostDeleted?: (post: Post) => void;
   onReactionError?: (message: string) => void;
   truncateBody?: boolean;
   truncateQuotedPost?: boolean;
@@ -24,7 +26,7 @@ type FeedPostProps = {
   replyContext?: string;
 };
 
-export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionError, truncateBody = true, truncateQuotedPost = true, threadDepth, replyContext }: FeedPostProps) {
+export function FeedPost({ post, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, truncateBody = true, truncateQuotedPost = true, threadDepth, replyContext }: FeedPostProps) {
   const router = useRouter();
   const bodyRef = useRef<HTMLParagraphElement | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -32,8 +34,13 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
   const [reactionPost, setReactionPost] = useState(post);
   const [reactionBusy, setReactionBusy] = useState<'like' | 'save' | null>(null);
   const [likesOpen, setLikesOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const postPath = getPostPathForPost(post);
   const shouldClampBody = !isExpanded;
+  const session = loadAuthSession();
+  const isOwnPost = Boolean(session?.user.username && session.user.username.toLowerCase() === post.handle.replace('@', '').toLowerCase());
 
   useEffect(() => {
     setReactionPost(post);
@@ -90,6 +97,20 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
     router.push(postPath);
   }
 
+  async function handleDelete() {
+    if (!session || deleteBusy || !isOwnPost) return;
+    if (!window.confirm('Delete this post? This cannot be undone.')) return;
+    setDeleteBusy(true);
+    try {
+      await deletePost(session.accessToken, post.id);
+      onPostDeleted?.(post);
+    } catch (error) {
+      onReactionError?.(error instanceof Error ? error.message : 'Could not delete post.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
   return (
     <>
     <article
@@ -105,9 +126,15 @@ export function FeedPost({ post, onReply, onQuote, onPostUpdated, onReactionErro
           <button className="icon-button feed-post-share" type="button" aria-label="Share post">
             <i className="fa-solid fa-share-nodes" aria-hidden="true" />
           </button>
-          <button className="icon-button feed-post-more" type="button" aria-label="Post options">
+          <button ref={menuButtonRef} className="icon-button feed-post-more" type="button" aria-label="Post options" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
             <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
           </button>
+          <ActionMenu
+            open={menuOpen}
+            anchorRef={menuButtonRef}
+            items={isOwnPost ? [{ label: 'Delete post', icon: 'fa-trash', disabled: deleteBusy, onClick: () => { void handleDelete(); } }] : undefined}
+            onClose={() => setMenuOpen(false)}
+          />
         </div>
       </div>
       <div className="feed-post-date">

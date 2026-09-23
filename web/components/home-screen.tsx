@@ -25,6 +25,7 @@ type HomeScreenProps = {
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onPostUpdated?: (post: Post) => void;
+  onPostDeleted?: (post: Post) => void;
   onReactionError?: (message: string) => void;
   injectedPost?: Post | null;
   onInjectedPostConsumed?: () => void;
@@ -194,7 +195,7 @@ function getTopVisiblePostId() {
   return partiallyVisible?.dataset.feedPostId ?? null;
 }
 
-export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
+export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
   void onFilterChange;
   const initialSeedPosts = useMemo(() => dedupeAndSortPosts(posts), [posts]);
   const [feedPosts, setFeedPosts] = useState<Post[]>(initialSeedPosts);
@@ -620,7 +621,7 @@ export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilt
 
       {visiblePosts.map((post) => (
         <div key={post.id} data-feed-post-id={post.id}>
-          <FeedPost post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />
+          <FeedPost post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onPostDeleted={(deleted) => { setFeedPosts((current) => current.filter((item) => item.id !== deleted.id)); onPostDeleted?.(deleted); }} onReactionError={onReactionError} />
         </div>
       ))}
 

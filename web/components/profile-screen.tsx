@@ -22,6 +22,7 @@ type ProfileScreenProps = {
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onPostUpdated?: (post: Post) => void;
+  onPostDeleted?: (post: Post) => void;
   onReactionError?: (message: string) => void;
   onEditProfile?: () => void;
   onMessage?: () => void;
@@ -69,6 +70,7 @@ export function ProfileScreen({
   onReply,
   onQuote,
   onPostUpdated,
+  onPostDeleted,
   onReactionError,
   onEditProfile,
   onMessage,
@@ -166,11 +168,11 @@ export function ProfileScreen({
 
       <div className="profile-feed">
         {activeTab === 'posts' && posts.length > 0 ? (
-          posts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+          posts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onPostDeleted={onPostDeleted} onReactionError={onReactionError} />)
         ) : activeTab === 'replies' && replies.length > 0 ? (
-          replies.map((reply) => <FeedPost key={reply.id} post={reply} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+          replies.map((reply) => <FeedPost key={reply.id} post={reply} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onPostDeleted={onPostDeleted} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && showLikesTab && likedPosts.length > 0 ? (
-          likedPosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onReactionError={onReactionError} />)
+          likedPosts.map((post) => <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={onPostUpdated} onPostDeleted={onPostDeleted} onReactionError={onReactionError} />)
         ) : activeTab === 'likes' && !showLikesTab ? (
           <div className="profile-empty">
             <i className="fa-regular fa-heart" aria-hidden="true" />
