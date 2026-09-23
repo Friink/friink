@@ -5740,6 +5740,25 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   min-height: 0;
 }
 
+.saved-profile-remove-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.saved-profile-remove-icon::after {
+  position: absolute;
+  width: 1.45rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  content: '';
+  transform: rotate(-45deg);
+}
+
 .saved-row .list-row-subtitle {
   white-space: nowrap;
 }
