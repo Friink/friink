@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23T13:58:02Z
+- [docs/chat] Recorded the settled `/chats/new` UX decisions: two-character
+  search, scrollable identity-rich suggestions, private-account discovery,
+  immediate plus final server validation, neutral unavailable states, pending
+  request behavior, modal close navigation, and one-person selection.
+
 ## 2026-09-23T13:46:25Z
 - [docs/chat] Documented the planned ID-based conversation routes, `/chats/new`
   one-to-one resolver flow, and five-deliverable group-ready backend plan.

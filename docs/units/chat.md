@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T13:46:25Z
+**Last edited:** 2026-09-23T13:58:02Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -169,6 +169,30 @@ conversation:
 Selecting more than one username remains unavailable until group-chat rules
 and UX are explicitly launched. The server, not only the frontend, must reject
 group creation while the feature is disabled.
+
+### Settled `/chats/new` UX decisions
+
+- Search begins after two characters, since usernames are defined with a
+  minimum two-character prefix. Results are shown in a scrollable suggestion
+  list and include the profile picture, display name, and username to avoid
+  ambiguity.
+- Search may match usernames and display names. Private users remain
+  discoverable with limited identity information; privacy and chat eligibility
+  are evaluated separately. Blocked, deactivated, and pending-deletion users
+  are hidden.
+- Selecting a person starts immediate server validation for responsive
+  eligibility feedback. `Next` performs a final authoritative validation
+  before navigation, so client state cannot bypass chat policy.
+- Existing conversations redirect to `/chats/{conversation_id}`. Opening a
+  pending request opens the chat but does not accept it; the existing request
+  state and `Reply to accept.` behavior remain visible.
+- Declined requests follow the existing Chat business rule and are not
+  silently restarted by this flow.
+- Restricted, blocked, or otherwise unavailable cases use a neutral message
+  rather than revealing relationship or privacy details.
+- The modal has a close control. Closing `/chats/new` without entering a chat
+  returns the user to `/home`; selecting a second person is prevented while
+  group chats are unavailable.
 
 ### Planned backend foundation deliverables
 
