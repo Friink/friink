@@ -22,20 +22,7 @@ export function QuestionsScreen() {
 type MessagesTab = 'all' | 'muted' | 'requests' | 'archived';
 export type DirectoryTab = 'all' | 'registered';
 
-function getConversationStatus(conversation: ApiConversation, currentUserId: string | undefined) {
-  if (conversation.unread_count > 0) {
-    return `${conversation.unread_count} new message${conversation.unread_count === 1 ? '' : 's'}`;
-  }
-  if (conversation.status === 'pending' && conversation.requester_id !== currentUserId) {
-    return 'New message';
-  }
-  if (conversation.preview_sender_id === currentUserId && conversation.preview_receipt_status) {
-    return conversation.preview_receipt_status === 'read'
-      ? 'Seen'
-      : conversation.preview_receipt_status === 'delivered'
-        ? 'Delivered'
-        : 'Sent';
-  }
+function getConversationPreview(conversation: ApiConversation) {
   return conversation.preview || 'No messages yet';
 }
 
@@ -137,12 +124,14 @@ export function MessagesScreen({ activeTab = 'all' }: { activeTab?: MessagesTab 
               </Link>
             }
             title={
-              <Link className="message-profile-link" href={`/${conversation.participant.username}`}>
-                {conversation.participant.display_name || conversation.participant.username}
-              </Link>
+              <span className="chat-row-title">
+                <Link className="message-profile-link" href={`/${conversation.participant.username}`}>
+                  {conversation.participant.display_name || conversation.participant.username}
+                </Link>
+                <span className="chat-row-preview">{getConversationPreview(conversation)}</span>
+              </span>
             }
-            subtitle={getConversationStatus(conversation, loadAuthSession()?.user.id)}
-            meta={formatRelativeTime(conversation.updated_at)}
+            subtitle={<span className="chat-row-date">{formatRelativeTime(conversation.updated_at)}</span>}
             trailing={
               <span className="chat-row-actions">
                 {conversation.status === 'pending' && conversation.requester_id !== loadAuthSession()?.user.id ? <button className="text-link" type="button" onClick={(event) => { event.stopPropagation(); acceptRequest(conversation).catch(() => undefined); }}>Accept</button> : null}

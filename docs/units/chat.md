@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-22T10:46:15Z
+**Last edited:** 2026-09-23T01:10:05Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -42,9 +42,11 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 - **CHAT-R-008:** Conversation-list transport failures render an in-app error
   state with a retry action; they must not surface as an uncaught runtime
   overlay or be mistaken for an empty chat list.
-- **CHAT-R-009:** Conversation rows render identity once and use the secondary
-  line for conversation state; Muted and Archived remain represented by their
-  dedicated tabs rather than row labels.
+- **CHAT-R-009:** Conversation rows render the participant name and latest
+  message preview on the first line, truncating the preview with an ellipsis
+  when needed. The relative date appears on the second line, aligned to the
+  right; Muted and Archived remain represented by their dedicated tabs rather
+  than row labels.
 - **CHAT-R-010:** Direct conversation pages use the document viewport as their
   only vertical scroll surface. The participant header is fixed below the
   global top bar and aligned to the centered chat content column; the message
@@ -62,9 +64,9 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 
 The chat list is at `/chats`; filters are All, Muted, Requests, and Archived.
 Conversation rows show the participant's display name once, an avatar-only
-profile link, and a state line: an unread count (`New message` or `N new
-messages`), `Seen`/`Delivered`/`Sent` for the user's latest outgoing message,
-or the latest incoming message preview. Muted and Archived are tab-level
+profile link, and the latest message preview beside the name on the first line.
+Long previews truncate with an ellipsis. The relative date remains on the
+second line and is aligned to the right. Muted and Archived are tab-level
 filters and are not repeated as row metadata. Mute and archive controls are
 borderless contextual icon actions with accent hover, focus, and active states.
 Conversations use `/{username}/chat`. The composer communicates policy states

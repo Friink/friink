@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-23T01:03:06Z
+**Last edited:** 2026-09-23T01:10:05Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -1449,7 +1449,7 @@ missing evidence can be filled in.
 - **Platform:** Web/API
 - **File(s):** `api/app/schemas/chat.py`, `api/app/services/chat.py`, `web/lib/auth.ts`, `web/components/screens.tsx`, `web/app/globals.css`
 
-- **What:** Conversation rows render an avatar-only profile link and one display-name title. The secondary line shows an unread count or `New message`, the latest outgoing message's `Sent`, `Delivered`, or `Seen` state, or the latest incoming preview. States with dedicated tabs—Muted, Requests, and Archived—are represented by those tabs only and must not be repeated as row metadata elsewhere. Mute and archive actions are borderless contextual icon controls with accent hover, focus, and active treatments.
+- **What:** Conversation rows render an avatar-only profile link and one display-name title. The latest message preview appears beside the name on the first line and truncates with an ellipsis when needed; the relative date appears right-aligned on the second line. States with dedicated tabs—Muted, Requests, and Archived—are represented by those tabs only and must not be repeated as row metadata elsewhere. Mute and archive actions are borderless contextual icon controls with accent hover, focus, and active treatments.
 
 ### CLIENT-R-014B — Direct Chat Uses Document Scrolling
 
