@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T01:03:06Z
+- [connections] Limited the Requests tab to private signed-in profiles and normalized unauthorized direct Requests routes to All.
+
 ## 2026-09-23T01:00:04Z
 - [profiles/composer] Enabled the standalone floating post composer on the signed-in user's own profile while keeping it hidden on other profiles.
 
