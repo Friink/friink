@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T20:05:58Z
+**Last edited:** 2026-09-23T20:12:01Z
 **Platforms:** Web and API
 
 ## Canonical ownership
