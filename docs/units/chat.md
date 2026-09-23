@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T13:58:02Z
+**Last edited:** 2026-09-23T14:00:47Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -176,10 +176,11 @@ group creation while the feature is disabled.
   minimum two-character prefix. Results are shown in a scrollable suggestion
   list and include the profile picture, display name, and username to avoid
   ambiguity.
-- Search may match usernames and display names. Private users remain
-  discoverable with limited identity information; privacy and chat eligibility
-  are evaluated separately. Blocked, deactivated, and pending-deletion users
-  are hidden.
+- Search may match usernames and display names, but autocomplete inherits the
+  existing Search visibility rules. Unauthorized private, blocked, deactivated,
+  and pending-deletion users are excluded. A private user may appear only when
+  the viewer is already authorized to see that identity; chat eligibility is
+  still evaluated separately by the server.
 - Selecting a person starts immediate server validation for responsive
   eligibility feedback. `Next` performs a final authoritative validation
   before navigation, so client state cannot bypass chat policy.
