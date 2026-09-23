@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:55:22Z
+- [saved-profiles] Added Follow/Following and More actions for Remove from saved and Block user on available saved profiles.
+
 ## 2026-09-23T00:52:12Z
 - [posts] Integrated owner-only post deletion into the post options menu with confirmation and feed/detail removal handling.
 

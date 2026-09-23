@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:55:22Z — Add saved-profile row actions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add Follow/Unfollow and a saved-profile action menu with Remove from saved and Block.
+- Changes Made: Added per-row connection state loading and mutation, Follow/Requested/Following control, More menu actions, blocked-row removal, and synchronized saved-item/design documentation.
+- Verification Status: TypeScript compilation and diff checks passed.
+
 ## 2026-09-23T00:52:12Z — Integrate post deletion into action menu
 
 - Agent: Codex
