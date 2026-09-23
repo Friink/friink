@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T12:31:55Z — Promote notification implementation and database head
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the latest notification migrations to development,
+  staging, and production, then push the latest code to all three branches.
+- Changes Made: Applied migrations `20260923_0055` and `20260923_0056` to all
+  three configured databases. Merged the current `main` implementation into
+  `development` and `staging`, preserving their historical logs, and pushed
+  `development`, `staging`, and `main` to origin.
+- Verification Status: Each environment passed `alembic upgrade head` and
+  `alembic check`; all three remote branch updates succeeded.
+
 ## 2026-09-23T12:12:55Z — Add browser notification enable/disable flow
 
 - Agent: Codex
