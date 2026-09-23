@@ -5747,9 +5747,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 }
 
 .saved-profile-follow {
-  min-height: 2.25rem;
-  padding: 0.35rem 0.75rem;
-  white-space: nowrap;
+  color: var(--color-accent);
 }
 
 .saved-profile-remove-icon {

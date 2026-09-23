@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:58:03Z — Use saved-profile follow icons
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reuse the existing Follow/Unfollow icons in Saved Profiles instead of text buttons.
+- Changes Made: Saved-profile rows now use `fa-user-plus`, `fa-user-clock`, and `fa-user-check` icon-only controls with accessible labels and tooltips.
+- Verification Status: TypeScript compilation and diff checks passed.
+
 ## 2026-09-23T00:55:22Z — Add saved-profile row actions
 
 - Agent: Codex
