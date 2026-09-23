@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:35:20Z
+- [saved-profiles] Removed duplicate saved-profile identity copy and added a visible star-with-slash removal control.
+
 ## 2026-09-23T00:29:26Z
 - [development] Migrated the explicit local development database to migration head so saved-profile requests no longer fail to fetch.
 
