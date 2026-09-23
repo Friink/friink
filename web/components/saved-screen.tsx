@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { FeedPost } from '@/components/feed-post';
+import { ActionMenu } from '@/components/action-menu';
 import { ListRow } from '@/components/list-row';
 import { ProfileCard } from '@/components/profile-card';
 import { PageSurface } from '@/components/page-surface';
-import { listSavedPosts, listSavedProfiles, loadAuthSession, removeSavedProfile, type ApiPost, type ApiSavedProfile } from '@/lib/auth';
+import { blockUser, cancelFollowRequest, getConnectionStatus, listSavedPosts, listSavedProfiles, loadAuthSession, removeConnection, removeSavedProfile, sendFollowRequest, type ApiPost, type ApiSavedProfile } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
 type SavedScreenProps = {
@@ -43,6 +44,104 @@ function mapApiPost(post: ApiPost): Post {
       unavailable: post.quoted_post.unavailable,
     } : null,
   };
+}
+
+function SavedProfileRow({ profile, onRemoved, onError }: { profile: ApiSavedProfile; onRemoved: (id: string) => void; onError?: (message: string) => void }) {
+  const [connectionState, setConnectionState] = useState<'none' | 'requested' | 'following'>('none');
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const profileName = profile.available ? (profile.display_name || profile.username || 'Profile') : 'Profile unavailable';
+  const profileHandle = profile.available ? `@${profile.username}` : 'This profile is no longer available.';
+
+  useEffect(() => {
+    if (!profile.available || !profile.username) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    getConnectionStatus(session.accessToken, profile.username)
+      .then((status) => {
+        setConnectionState(status.state === 'following' ? 'following' : status.state === 'requested' ? 'requested' : 'none');
+        setRequestId(status.request?.id ?? null);
+      })
+      .catch(() => setConnectionState('none'));
+  }, [profile.available, profile.username]);
+
+  async function handleConnection() {
+    if (!profile.username || busy) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    setBusy(true);
+    try {
+      if (connectionState === 'none') {
+        const request = await sendFollowRequest(session.accessToken, profile.username);
+        setConnectionState(request.status === 'accepted' ? 'following' : 'requested');
+        setRequestId(request.id);
+      } else if (requestId) {
+        if (connectionState === 'requested') await cancelFollowRequest(session.accessToken, requestId);
+        else await removeConnection(session.accessToken, requestId);
+        setConnectionState('none');
+        setRequestId(null);
+      }
+    } catch (error) {
+      onError?.(error instanceof Error ? error.message : 'Could not update the connection.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRemoveSaved() {
+    const session = loadAuthSession();
+    if (!session) return;
+    try {
+      await removeSavedProfile(session.accessToken, profile.id);
+      onRemoved(profile.id);
+    } catch (error) {
+      onError?.(error instanceof Error ? error.message : 'Could not remove saved profile.');
+    }
+  }
+
+  async function handleBlock() {
+    if (!profile.username) return;
+    const session = loadAuthSession();
+    if (!session || !window.confirm(`Block @${profile.username}?`)) return;
+    try {
+      await blockUser(session.accessToken, profile.username);
+      onRemoved(profile.id);
+    } catch (error) {
+      onError?.(error instanceof Error ? error.message : 'Could not block user.');
+    }
+  }
+
+  return (
+    <ListRow
+      avatar={profile.available ? <ProfileCard href={`/${encodeURIComponent(profile.username!)}/posts`} name={profileName} handle={`@${profile.username}`} initials={profileName.slice(0, 2).toUpperCase()} tone="mint" imageUrl={profile.profile_picture_url} showProfessionalBadge={profile.show_professional_badge} /> : <ProfileCard name={profileName} handle="" initials="?" tone="sage" />}
+      title={<span className="sr-only">{profileName}</span>}
+      subtitle={<span className="sr-only">{profileHandle}</span>}
+      className="saved-row"
+      trailing={profile.available ? (
+        <span className="saved-profile-actions">
+          <button className="button-secondary saved-profile-follow" type="button" disabled={busy} aria-pressed={connectionState === 'following'} onClick={() => { void handleConnection(); }}>
+            {connectionState === 'following' ? 'Following' : connectionState === 'requested' ? 'Requested' : 'Follow'}
+          </button>
+          <button ref={menuButtonRef} className="icon-button" type="button" aria-label={`More actions for ${profileName}`} aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
+            <i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" />
+          </button>
+          <ActionMenu
+            open={menuOpen}
+            anchorRef={menuButtonRef}
+            items={[
+              { label: 'Remove from saved', icon: 'fa-star', onClick: () => { void handleRemoveSaved(); } },
+              { label: 'Block user', icon: 'fa-ban', dividerBefore: true, onClick: () => { void handleBlock(); } },
+            ]}
+            onClose={() => setMenuOpen(false)}
+          />
+        </span>
+      ) : (
+        <button className="icon-button" type="button" aria-label="Remove saved profile" title="Remove saved profile" onClick={() => { void handleRemoveSaved(); }}><span className="saved-profile-remove-icon" aria-hidden="true"><i className="fa-solid fa-star" /><i className="fa-solid fa-slash saved-profile-remove-slash" /></span></button>
+      )}
+    />
+  );
 }
 
 export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError }: SavedScreenProps) {
@@ -139,27 +238,7 @@ export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPost
       ) : (
         <>
           <div className="saved-list">
-            {savedProfiles.length > 0 ? savedProfiles.map((profile) => (
-              (() => {
-                const profileName = profile.available ? (profile.display_name || profile.username || 'Profile') : 'Profile unavailable';
-                const profileHandle = profile.available ? `@${profile.username}` : 'This profile is no longer available.';
-                return (
-              <ListRow
-                key={profile.id}
-                avatar={profile.available ? <ProfileCard href={`/${encodeURIComponent(profile.username!)}/posts`} name={profileName} handle={`@${profile.username}`} initials={profileName.slice(0, 2).toUpperCase()} tone="mint" imageUrl={profile.profile_picture_url} showProfessionalBadge={profile.show_professional_badge} /> : <ProfileCard name={profileName} handle="" initials="?" tone="sage" />}
-                title={<span className="sr-only">{profileName}</span>}
-                subtitle={<span className="sr-only">{profileHandle}</span>}
-                className="saved-row"
-                trailing={<button className="icon-button" type="button" aria-label="Remove saved profile" title="Remove saved profile" onClick={async () => {
-                  const session = loadAuthSession();
-                  if (!session) return;
-                  await removeSavedProfile(session.accessToken, profile.id);
-                  setSavedProfiles((current) => current.filter((item) => item.id !== profile.id));
-                }}><span className="saved-profile-remove-icon" aria-hidden="true"><i className="fa-solid fa-star" /><i className="fa-solid fa-slash saved-profile-remove-slash" /></span></button>}
-              />
-                );
-              })()
-            )) : !profilesLoading ? (
+            {savedProfiles.length > 0 ? savedProfiles.map((profile) => <SavedProfileRow key={profile.id} profile={profile} onRemoved={(id) => setSavedProfiles((current) => current.filter((item) => item.id !== id))} onError={onReactionError} />) : !profilesLoading ? (
               <div className="connections-empty saved-empty">
                 <i className="fa-solid fa-bookmark" aria-hidden="true" />
                 <p>No saved profiles yet.</p>

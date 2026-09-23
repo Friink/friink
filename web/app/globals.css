@@ -5740,6 +5740,18 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   min-height: 0;
 }
 
+.saved-profile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.saved-profile-follow {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  white-space: nowrap;
+}
+
 .saved-profile-remove-icon {
   position: relative;
   display: inline-flex;

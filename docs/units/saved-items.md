@@ -42,6 +42,8 @@ content remains inside the shared capped content box.
   the account cascade.
 - **SAVED-R-007:** A saved-profile row renders its ProfileCard identity once and
   uses a visible star-with-slash removal control.
+- **SAVED-R-008:** Available saved-profile rows expose Follow/Following state
+  and a More menu containing Remove from saved and Block user actions.
 
 ## Acceptance criteria
 
@@ -49,6 +51,7 @@ content remains inside the shared capped content box.
 - [ ] Save and Unsave are retry-safe and unique.
 - [ ] Save actors are never exposed.
 - [ ] Saved profiles show available profiles and removable unavailable rows.
+- [x] Available saved profiles expose connection and moderation actions.
 
 ## Known limitations
 
