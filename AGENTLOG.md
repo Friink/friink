@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T19:25:20Z — Synchronize development and staging Chat work
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Commit the latest Chat work to both development and staging
+  and keep the branches synchronized.
+- Changes Made: Applied the five local Chat/gallery/documentation commits to
+  development, verified development and staging have identical Git trees, and
+  pushed both branches to origin.
+- Verification Status: Both branch pushes succeeded; local tree comparison
+  reports identical content.
+
 ## 2026-09-23T14:05:10Z — Consolidate new-chat UX and implementation breakdown
 
 - Agent: Codex
