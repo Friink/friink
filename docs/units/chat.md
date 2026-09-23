@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T01:20:00Z
+**Last edited:** 2026-09-23T01:35:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -44,9 +44,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   overlay or be mistaken for an empty chat list.
 - **CHAT-R-009:** Conversation rows render the participant name and latest
   message preview on the first line, truncating the preview with an ellipsis
-  when needed. The relative date appears on the second line, aligned to the
-  right; Muted and Archived remain represented by their dedicated tabs rather
-  than row labels.
+  when needed. The row keeps the full ProfileCard identity on the left; its
+  flexible middle column contains the preview, relative date, and unread or
+  receipt state, while the overflow action menu contains Mute, Archive, and
+  Block.
 - **CHAT-R-010:** Direct conversation pages use the document viewport as their
   only vertical scroll surface. The participant header is fixed below the
   global top bar and aligned to the centered chat content column; the message
@@ -67,12 +68,13 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 ## UX and flows
 
 The chat list is at `/chats`; filters are All, Muted, Requests, and Archived.
-Conversation rows show the participant's display name once, an avatar-only
-profile link, and the latest message preview beside the name on the first line.
-Long previews truncate with an ellipsis. The relative date remains on the
-second line and is aligned to the right. Muted and Archived are tab-level
-filters and are not repeated as row metadata. Mute and archive controls are
-borderless contextual icon actions with accent hover, focus, and active states.
+Conversation rows show the full participant ProfileCard once, including the
+picture, display name, enabled badges, and username. The flexible middle
+column shows the latest message preview for up to two lines, truncating longer
+content with an ellipsis, followed by the message date/time and unread or
+receipt state. An overflow action menu provides Mute, Archive, and Block.
+Muted and Archived are also tab-level filters and are not repeated as row
+metadata.
 Conversations use `/{username}/chat`. The composer communicates policy states
 such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
@@ -107,9 +109,9 @@ mute and archive. Read operations use per-user cursors and server checks.
 - [ ] **CHAT-AC-006** Blocking preserves required read-only history behavior.
 - [ ] **CHAT-AC-007** A conversation-list timeout or transport failure shows a
   recoverable error state with Try again.
-- [x] **CHAT-AC-008** Conversation rows remove duplicate identity content,
-  expose unread/receipt state in the secondary line, and use borderless
-  accent-reactive mute/archive actions.
+- [x] **CHAT-AC-008** Conversation rows use one full ProfileCard, expose the
+  latest message/date/unread-or-receipt stack in the middle, and provide Mute,
+  Archive, and Block through one overflow action menu.
 - [x] **CHAT-AC-009** Chat image attachments use the shared compression preset,
   enforce the eight-image limit, and remain associated with the authenticated
   message after upload.
