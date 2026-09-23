@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23T12:31:55Z
+- [release/database] Applied Alembic migrations `20260923_0055` and
+  `20260923_0056` to development, staging, and production; all three passed
+  the migration gate with no schema drift. Promoted the verified notification
+  implementation to all three release branches.
+
 ## 2026-09-23T12:12:55Z
 - [web/notifications] Added the account-scoped General settings flow for
   enabling and disabling browser notifications, including permission states,
