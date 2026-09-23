@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T14:05:10Z — Consolidate new-chat UX and implementation breakdown
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document all agreed `/chats/new` UX behavior and explain how
+  the group-ready backend work is broken down.
+- Changes Made: Added compatibility redirects, modal history behavior,
+  validation loading and account-switch rules, chat-specific search ownership,
+  and a five-workstream execution breakdown to the Chat unit.
+- Verification Status: Documentation-only change; diff check pending.
+
 ## 2026-09-23T14:00:47Z — Reconcile chat discovery with search privacy rules
 
 - Agent: Codex

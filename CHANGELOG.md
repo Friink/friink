@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T14:05:10Z
+- [docs/chat] Consolidated the `/chats/new` UX contract and five-workstream
+  implementation breakdown, including compatibility redirects, modal history,
+  validation loading behavior, account-switch reset, and chat-specific search.
+
 ## 2026-09-23T14:00:47Z
 - [docs/chat] Reconciled planned chat autocomplete with the active Search
   visibility rule: unauthorized private, blocked, deactivated, and
