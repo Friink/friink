@@ -54,6 +54,10 @@ export type ManagedAuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const ACCOUNT_SLOT_KEY = 'friink-active-account-slot';
+const ACCOUNT_SLOT_SESSION_KEY = 'friink-active-account-slot-session';
+const ACCOUNT_SUMMARIES_KEY = 'friink-account-summaries';
+const AUTH_SESSION_SLOT_PREFIX = 'friink-auth-session-slot:';
+const AUTH_SESSION_USER_PREFIX = 'friink-auth-session-user:';
 const DEACTIVATION_FALLBACK_SLOT_KEY = 'friink-deactivation-fallback-slot';
 const REFRESH_COORDINATION_KEY = 'friink-auth-refresh-coordination';
 const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
@@ -159,6 +163,10 @@ export async function staffStepUp(accessToken: string, password: string): Promis
 }
 export async function staffMe(accessToken: string): Promise<{ permissions: string[]; privileged_expires_at: string }> {
   return requestApi('/staff/me', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
+}
+export type StaffOverview = { total_users: number; staff_users: number };
+export async function getStaffOverview(accessToken: string): Promise<StaffOverview> {
+  return requestApi('/staff/overview', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true });
 }
 export async function listStaffUsers(accessToken: string, query = ''): Promise<StaffUser[]> {
   const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
@@ -460,10 +468,10 @@ export function saveAuthSession(session: AuthSession) {
   installAuthCoordinationListener();
   const previousAccountSlot = inMemoryAuthSession?.accountSlot;
   inMemoryAuthSession = session;
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user: session.user }));
-  if (session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, session.accountSlot);
-  else window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
-  authBroadcastChannel?.postMessage({ type: 'session-updated', session });
+  cacheSafeSessionUser(session);
+  window.localStorage.removeItem(AUTH_SESSION_KEY);
+  setActiveAccountSlot(session.accountSlot ?? null);
+  authBroadcastChannel?.postMessage({ type: 'session-updated', accountSlot: session.accountSlot ?? null, session });
   if (previousAccountSlot && session.accountSlot && previousAccountSlot !== session.accountSlot) {
     window.dispatchEvent(new CustomEvent('friink-account-switched'));
   }
@@ -476,17 +484,7 @@ export function loadAuthSession(): AuthSession | null {
 }
 
 export function loadCachedAuthUser(): AuthUser | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { user?: Partial<AuthUser> };
-    const user = parsed.user;
-    if (!user || typeof user.id !== 'string' || typeof user.name !== 'string' || typeof user.email !== 'string' || typeof user.username !== 'string') return null;
-    return user as AuthUser;
-  } catch {
-    return null;
-  }
+  return loadCachedUserForSlot(activeAccountSlot());
 }
 
 export function loadPersistedAuthSession(): AuthSession | null {
@@ -499,10 +497,12 @@ export function clearAuthSession() {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
   authSessionGeneration += 1;
+  const accountSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
   inMemoryAuthSession = null;
+  if (accountSlot) window.localStorage.removeItem(`${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}`);
   window.localStorage.removeItem(AUTH_SESSION_KEY);
-  window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
-  authBroadcastChannel?.postMessage({ type: 'session-cleared' });
+  setActiveAccountSlot(null);
+  authBroadcastChannel?.postMessage({ type: 'session-cleared', accountSlot: accountSlot ?? null });
 }
 
 export function setDeactivationFallbackSlot(accountSlot: string | null) {
@@ -558,6 +558,23 @@ export async function restoreAccountSession(accountSlot: string): Promise<AuthSe
     skipAuthRefresh: true,
   });
   return mapTokenResponse({ ...response, account_slot: accountSlot });
+}
+
+async function restoreMostRecentRememberedAccount(failedSlot: string | null): Promise<AuthSession | null> {
+  const candidates = getRememberedAccountSummaries()
+    .filter((account) => account.accountSlot !== failedSlot)
+    .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+  for (const candidate of candidates) {
+    try {
+      const session = await restoreAccountSession(candidate.accountSlot);
+      saveAuthSession(session);
+      return session;
+    } catch {
+      // A revoked or expired slot is skipped; another remembered slot may
+      // still restore the user's account without requiring credentials.
+    }
+  }
+  return null;
 }
 
 export async function logout(accessToken: string, accountSlot?: string): Promise<void> {
@@ -616,11 +633,28 @@ export async function refreshAuthSession(): Promise<AuthSession> {
   if (refreshPromise) return refreshPromise;
 
   installAuthCoordinationListener();
-  refreshPromise = coordinateRefresh().finally(() => {
-    refreshPromise = null;
-  });
+  refreshPromise = coordinateRefresh()
+    .catch(async (error) => {
+      if (!isTerminalRefreshFailure(error)) throw error;
+      const recovered = await restoreMostRecentRememberedAccount(activeAccountSlot());
+      if (recovered) return recovered;
+      clearAuthSession();
+      throw error;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
 
   return refreshPromise;
+}
+
+/** Restore the in-memory session required by any authenticated route entry. */
+export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
+  const currentSession = loadAuthSession();
+  if (currentSession) return currentSession;
+  const restoredSession = await refreshAuthSession();
+  saveAuthSession(restoredSession);
+  return restoredSession;
 }
 
 type RefreshCoordinationState = {
@@ -631,20 +665,122 @@ type RefreshCoordinationState = {
   error?: { message: string; status: number; code?: AuthErrorCode };
 };
 
+type CachedAccountSummary = Pick<AccountSummary, 'accountSlot' | 'username' | 'displayName' | 'profilePictureUrl' | 'lastUsedAt' | 'showProfessionalBadge'>;
+
+function activeAccountSlot(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.sessionStorage.getItem(ACCOUNT_SLOT_SESSION_KEY) || window.localStorage.getItem(ACCOUNT_SLOT_KEY);
+  } catch {
+    return window.localStorage.getItem(ACCOUNT_SLOT_KEY);
+  }
+}
+
+function setActiveAccountSlot(accountSlot: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (accountSlot) window.sessionStorage.setItem(ACCOUNT_SLOT_SESSION_KEY, accountSlot);
+    else window.sessionStorage.removeItem(ACCOUNT_SLOT_SESSION_KEY);
+  } catch {
+    // Continue with the in-memory session when session storage is unavailable.
+  }
+  if (accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, accountSlot);
+  else window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
+}
+
+function authSessionCacheKey(session: Pick<AuthSession, 'accountSlot' | 'user'>): string {
+  return session.accountSlot
+    ? `${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(session.accountSlot)}`
+    : `${AUTH_SESSION_USER_PREFIX}${encodeURIComponent(session.user.id)}`;
+}
+
+function cacheSafeSessionUser(session: AuthSession) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(authSessionCacheKey(session), JSON.stringify({ user: session.user }));
+}
+
+function loadCachedUserForSlot(accountSlot: string | null): AuthUser | null {
+  if (typeof window === 'undefined') return null;
+  const key = accountSlot
+    ? `${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}`
+    : null;
+  try {
+    const raw = key ? window.localStorage.getItem(key) : null;
+    const legacy = raw || window.localStorage.getItem(AUTH_SESSION_KEY);
+    if (!legacy) return null;
+    const parsed = JSON.parse(legacy) as { user?: Partial<AuthUser> };
+    const user = parsed.user;
+    if (!user || typeof user.id !== 'string' || typeof user.name !== 'string' || typeof user.email !== 'string' || typeof user.username !== 'string') return null;
+    return user as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+function cacheAccountSummaries(accounts: AccountSummary[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    const cached: Record<string, CachedAccountSummary> = {};
+    for (const account of accounts) {
+      if (!account.accountSlot) continue;
+      cached[account.accountSlot] = {
+        accountSlot: account.accountSlot,
+        username: account.username,
+        displayName: account.displayName,
+        profilePictureUrl: account.profilePictureUrl,
+        lastUsedAt: account.lastUsedAt,
+        showProfessionalBadge: account.showProfessionalBadge,
+      };
+    }
+    window.localStorage.setItem(ACCOUNT_SUMMARIES_KEY, JSON.stringify(cached));
+  } catch {
+    // The server remains authoritative when browser storage is unavailable.
+  }
+}
+
+export function getRememberedAccountSummaries(): AccountSummary[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(ACCOUNT_SUMMARIES_KEY) || '{}') as Record<string, CachedAccountSummary>;
+    return Object.values(parsed)
+      .filter((account) => typeof account.accountSlot === 'string' && account.accountSlot.length > 0 && typeof account.username === 'string')
+      .map((account) => ({ ...account, active: account.accountSlot === activeAccountSlot(), available: true }));
+  } catch {
+    return [];
+  }
+}
+
+export function getMostRecentRememberedAccount(): AccountSummary | null {
+  return getRememberedAccountSummaries().sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt))[0] ?? null;
+}
+
+export function getLoginRecoveryPath(reason: 'expired' | 'security-revocation' = 'expired'): string {
+  const params = new URLSearchParams({ reason });
+  const recent = reason === 'expired' ? getMostRecentRememberedAccount() : null;
+  if (recent?.username) params.set('account', recent.username);
+  return `/login?${params.toString()}`;
+}
+
+function scopedRefreshKey(prefix: string): string {
+  const scope = activeAccountSlot() || (inMemoryAuthSession ? `user:${inMemoryAuthSession.user.id}` : 'unassigned');
+  return `${prefix}:${encodeURIComponent(scope)}`;
+}
+
 function installAuthCoordinationListener() {
   if (typeof window === 'undefined' || coordinationListenerInstalled) return;
   coordinationListenerInstalled = true;
   if (typeof BroadcastChannel !== 'undefined') {
     authBroadcastChannel = new BroadcastChannel('friink-auth-session');
     authBroadcastChannel.addEventListener('message', (event: MessageEvent) => {
-      const message = event.data as { type?: string; session?: Partial<AuthSession> } | null;
+      const message = event.data as { type?: string; accountSlot?: string | null; session?: Partial<AuthSession> } | null;
+      if (message?.accountSlot !== (activeAccountSlot() ?? null)) return;
       if (message?.type === 'session-cleared') {
         authSessionGeneration += 1;
         inMemoryAuthSession = null;
       } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
         const previousAccountSlot = inMemoryAuthSession?.accountSlot;
         inMemoryAuthSession = message.session;
-        if (message.session.accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, message.session.accountSlot);
+        if (message.session.accountSlot) setActiveAccountSlot(message.session.accountSlot);
         if (previousAccountSlot && message.session.accountSlot && previousAccountSlot !== message.session.accountSlot) {
           window.dispatchEvent(new CustomEvent('friink-account-switched'));
         }
@@ -652,7 +788,8 @@ function installAuthCoordinationListener() {
     });
   }
   window.addEventListener('storage', (event) => {
-    if (event.key === AUTH_SESSION_KEY && event.newValue === null) {
+    const accountSlot = activeAccountSlot();
+    if ((accountSlot && event.key === `${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}` && event.newValue === null) || (!accountSlot && event.key === AUTH_SESSION_KEY && event.newValue === null)) {
       authSessionGeneration += 1;
       inMemoryAuthSession = null;
     }
@@ -661,7 +798,7 @@ function installAuthCoordinationListener() {
 
 function readRefreshCoordination(): RefreshCoordinationState | null {
   if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(REFRESH_COORDINATION_KEY);
+  const raw = window.localStorage.getItem(scopedRefreshKey(REFRESH_COORDINATION_KEY));
   if (!raw) return null;
   try {
     const state = JSON.parse(raw) as RefreshCoordinationState;
@@ -674,13 +811,13 @@ function readRefreshCoordination(): RefreshCoordinationState | null {
 
 function publishRefreshCoordination(state: RefreshCoordinationState) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(REFRESH_COORDINATION_KEY, JSON.stringify(state));
+  window.localStorage.setItem(scopedRefreshKey(REFRESH_COORDINATION_KEY), JSON.stringify(state));
 }
 
 async function coordinateRefresh(): Promise<AuthSession> {
   if (supportsCrossTabLock()) {
     const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
-    return lockManager.request(REFRESH_LOCK_NAME, { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease());
+    return lockManager.request(scopedRefreshKey(REFRESH_LOCK_NAME), { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease());
   }
   return coordinateRefreshWithStorageLease();
 }
@@ -729,9 +866,6 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
       return session;
     } catch (error) {
       const refreshError = error instanceof AuthApiError ? error : new AuthApiError(error instanceof Error ? error.message : 'Refresh failed.', 0);
-      if (isTerminalRefreshFailure(refreshError)) {
-        clearAuthSession();
-      }
       publishRefreshCoordination({
         ...started,
         status: 'failed',
@@ -897,15 +1031,16 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
 }
 
 export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
-  const activeSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+  const activeSlot = activeAccountSlot();
   const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string; show_professional_badge: boolean }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
   const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at, showProfessionalBadge: item.show_professional_badge ?? false }));
+  cacheAccountSummaries(accounts);
   const currentUser = loadPersistedAuthSession()?.user;
   const currentAccount = currentUser
     ? accounts.find((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())
     : undefined;
   if (currentAccount && typeof window !== 'undefined') {
-    window.localStorage.setItem(ACCOUNT_SLOT_KEY, currentAccount.accountSlot);
+    setActiveAccountSlot(currentAccount.accountSlot);
     return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
   }
   if (currentUser) {
@@ -927,7 +1062,8 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
 }
 
 export async function canAddAccount(accessToken: string): Promise<boolean> {
-  const response = await requestApi<{ allowed: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` }, authContext: 'authenticated_request' });
+  const activeSlot = activeAccountSlot();
+  const response = await requestApi<{ allowed: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
   return response.allowed;
 }
 
@@ -1248,6 +1384,35 @@ export async function listSavedPosts(accessToken: string, cursor?: string | null
   return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/saved?${params.toString()}`);
 }
 
+export type ApiProfileSaveStatus = { username: string; saved: boolean };
+export type ApiSavedProfile = {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  profile_picture_url: string | null;
+  show_professional_badge: boolean;
+  available: boolean;
+};
+export type ApiSavedProfilePage = { items: ApiSavedProfile[]; next_cursor: string | null; has_more: boolean };
+
+export async function getProfileSaveStatus(accessToken: string, username: string): Promise<ApiProfileSaveStatus> {
+  return authenticatedRequest<ApiProfileSaveStatus>(accessToken, `/users/${encodeURIComponent(username)}/save`);
+}
+
+export async function setProfileSave(accessToken: string, username: string, saved: boolean): Promise<ApiProfileSaveStatus> {
+  return authenticatedRequest<ApiProfileSaveStatus>(accessToken, `/users/${encodeURIComponent(username)}/save`, saved ? 'POST' : 'DELETE');
+}
+
+export async function listSavedProfiles(accessToken: string, cursor?: string | null): Promise<ApiSavedProfilePage> {
+  const params = new URLSearchParams({ limit: '20' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiSavedProfilePage>(accessToken, `/users/saved?${params.toString()}`);
+}
+
+export async function removeSavedProfile(accessToken: string, profileId: string): Promise<void> {
+  await authenticatedRequest<void>(accessToken, `/users/saved/${encodeURIComponent(profileId)}`, 'DELETE');
+}
+
 export type ApiConnectionUser = {
   id: string;
   username: string;
@@ -1344,7 +1509,7 @@ export type ApiNotification = {
   id: string;
   recipient_user_id: string;
   actor_user_id: string | null;
-  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security' | 'professional_registration_submitted' | 'professional_registration_approved' | 'professional_registration_rejected' | 'professional_registration_revoked';
+  type: 'follow_sent_public' | 'new_follower' | 'request_sent' | 'request_received' | 'unfollow_confirmed' | 'request_accepted' | 'mention' | 'like' | 'chat_request_received' | 'chat_message' | 'chat_request_accepted' | 'login_security' | 'professional_registration_submitted' | 'professional_registration_approved' | 'professional_registration_rejected' | 'professional_registration_revoked' | 'subscription_access_granted' | 'subscription_access_changed' | 'subscription_access_revoked';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;

@@ -52,10 +52,14 @@ through `NEXT_PUBLIC_API_BASE_URL`.
 ## Deployment and release flow
 
 - Use `development` for local implementation and destructive rehearsals.
-- Use `staging` for deployed acceptance testing.
+- Use `staging` for deployed acceptance testing and the authoritative release
+  gate. Staging must match production in runtime and configuration behavior,
+  while retaining separate data, credentials, secrets, and databases.
 - Use `main` for production release.
 - Each environment must apply and verify the current Alembic head before acceptance testing.
-- Production rollout remains a separate release gate from staging verification.
+- Promote the exact staging-verified artifact to production and run only basic
+  production smoke checks after promotion; production is not a second feature-
+  acceptance gate.
 
 ## Related documents
 

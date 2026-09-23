@@ -6,7 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
 import { PostUnavailableState } from '@/components/post-unavailable-state';
-import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, createPost, getLoginRecoveryPath, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 
@@ -51,6 +51,7 @@ function mapApiPost(post: ApiPost): Post {
     likeCount: post.like_count ?? 0,
     savedCount: post.saved_count ?? 0,
     reactions: 0,
+    media: post.media.map((item) => item.url),
     quotedPost: post.quoted_post
       ? {
           id: post.quoted_post.id,
@@ -62,6 +63,7 @@ function mapApiPost(post: ApiPost): Post {
           showProfessionalBadge: post.quoted_post.show_professional_badge,
           content: post.quoted_post.content,
           mediaCount: post.quoted_post.media_count,
+          media: post.quoted_post.media.map((item) => item.url),
           unavailable: post.quoted_post.unavailable,
         }
       : null,
@@ -117,7 +119,7 @@ export function PostClient({ postId }: PostClientProps) {
           void loadPost(restoredSession);
         })
         .catch((error) => {
-          if (active && isTerminalRefreshFailure(error)) router.replace('/login');
+          if (active && isTerminalRefreshFailure(error)) router.replace(getLoginRecoveryPath());
         });
     }
 
@@ -164,7 +166,7 @@ export function PostClient({ postId }: PostClientProps) {
 
   if (!post) {
     return postUnavailable ? (
-      <AppShell user={user} onLogout={handleLogout} initialScreen="home" showTabs={false} showFloatingBar={false}>
+      <AppShell user={user} onLogout={handleLogout} initialScreen="post" showTabs={false} showFloatingBar={false}>
         <PostUnavailableState />
       </AppShell>
     ) : null;
@@ -174,7 +176,7 @@ export function PostClient({ postId }: PostClientProps) {
     <AppShell
       user={user}
       onLogout={handleLogout}
-      initialScreen="home"
+      initialScreen="post"
       showTabs={false}
       showFloatingBar={Boolean(composeContext)}
       floatingBarContent={composeContext ? (
@@ -189,7 +191,6 @@ export function PostClient({ postId }: PostClientProps) {
           inputLabel="Post"
           sendLabel="Post"
           maxLength={512}
-          draftStorageKey={`friink-draft:${user.id}:post:${postId}:${composeContext.kind}`}
           showCount
           enableMentions
           contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}

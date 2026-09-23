@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/login-screen';
-import { consumeLoginLink, loadAuthSession, refreshAuthSession, saveAuthSession } from '@/lib/auth';
+import { consumeLoginLink, getMostRecentRememberedAccount, loadAuthSession, refreshAuthSession, saveAuthSession } from '@/lib/auth';
 
 const SECURITY_REVOCATION_MESSAGE = 'For your security, your session ended. Please sign in again.';
 
@@ -11,6 +11,7 @@ export function LoginClient() {
   const router = useRouter();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [initialMessage, setInitialMessage] = useState<string | undefined>();
+  const [initialIdentifier, setInitialIdentifier] = useState<string | undefined>();
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -19,6 +20,8 @@ export function LoginClient() {
     if (window.location.search.includes('reason=security-revocation')) {
       setInitialMessage(SECURITY_REVOCATION_MESSAGE);
     }
+    const rememberedAccount = new URLSearchParams(window.location.search).get('account') || getMostRecentRememberedAccount()?.username;
+    if (rememberedAccount) setInitialIdentifier(rememberedAccount);
 
     if (session) {
       router.replace('/home');
@@ -52,5 +55,5 @@ export function LoginClient() {
 
   if (!sessionChecked) return null;
 
-  return <LoginScreen onAuthenticated={() => router.replace('/home')} initialMessage={initialMessage} />;
+  return <LoginScreen onAuthenticated={() => router.replace('/home')} initialMessage={initialMessage} initialIdentifier={initialIdentifier} />;
 }

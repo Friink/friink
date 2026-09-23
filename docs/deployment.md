@@ -45,13 +45,25 @@ the changelog and agent log entries that record the work performed.
 
 1. Develop and verify against an isolated development database.
 2. Apply the migration gate and deploy to staging.
-3. Run targeted API, web, browser, and acceptance checks on staging.
-4. Confirm environment-specific configuration, database connectivity, storage,
-   email, and feature flags when relevant.
-5. Promote the verified release to `main` and production.
-6. Apply the same migration gate and complete the production release checks.
+3. Confirm staging is production-parity for runtime, build/deployment
+   topology, schema, configuration shape, feature flags, and integration
+   contracts. Keep staging data, credentials, secrets, and databases separate.
+4. Run targeted API, web, browser, and acceptance checks on staging.
+5. Confirm staging configuration, database connectivity, storage, email, and
+   feature flags when relevant.
+6. Promote the exact staging-verified artifact to `main` and production.
+7. Run only basic production smoke checks for routing, startup,
+   authentication, and critical availability.
 
-Production rollout is a separate release gate from staging acceptance.
+Staging acceptance is the authoritative release gate. Production smoke checks
+confirm deployment health and do not repeat feature acceptance.
+
+### Legacy production-gate workflow
+
+The former workflow treated production rollout as a separate full release
+gate: after staging acceptance, production required the same migration gate
+and full production release checks. This remains historical context only and
+is superseded by the staging-gate workflow above.
 
 ## Configuration boundaries
 

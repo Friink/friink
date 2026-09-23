@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-21T00:00:00Z
+**Last edited:** 2026-09-22T10:46:15Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -46,10 +46,17 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   line for conversation state; Muted and Archived remain represented by their
   dedicated tabs rather than row labels.
 - **CHAT-R-010:** Direct conversation pages use the document viewport as their
-  vertical scroll surface. The participant header, message history, and page
-  content must not create a nested message-only scrollbar. The participant
-  header remains sticky below the global top bar, and the fixed composer
-  remains clear of the final messages.
+  only vertical scroll surface. The participant header is fixed below the
+  global top bar and aligned to the centered chat content column; the message
+  list does not create a nested scrollbar, and the shared content-width cap
+  remains intact. On desktop, the header surface covers the full main panel
+  while its participant content remains aligned to the centered chat column.
+  The fixed composer remains clear of the final messages with a consistent
+  1rem gap after the last message across viewport sizes.
+- **CHAT-R-011:** Direct conversation pages restore the authenticated session
+  through the shared refresh flow when a full browser refresh clears the
+  in-memory access session. A terminal refresh failure routes to login; a
+  successful refresh keeps the user on the requested conversation.
 
 ## UX and flows
 
@@ -64,10 +71,16 @@ Conversations use `/{username}/chat`. The composer communicates policy states
 such as `Reply to accept.`, `Request pending.`, and `Chat unavailable.`. Own
 messages use single/double receipt ticks for sent/delivered/read, and unread
 messages use a separator and conversation-row state line.
-The direct conversation page scrolls as one document, so the participant
-header and message history share the browser/app scrollbar rather than placing
-scrolling inside the message list. The participant card stays pinned below the
-global top bar while the conversation is scrolled.
+The direct conversation page uses the document scrollbar for the message
+history. On a full browser refresh, the route restores the authenticated
+session through the shared refresh flow before loading the conversation. The
+participant card remains fixed below the global top bar, aligned with the
+centered chat content column, while the conversation is scrolled. On desktop,
+the fixed header background spans the main panel so messages cannot show
+through beside the capped content column. The shared content-width cap is
+preserved and no inner chat scrollbar is rendered. Shared shell bottom padding
+is removed for this route so it does not compound the message-list reservation;
+the final message remains 1rem above the floating composer.
 
 ## Technical contract
 

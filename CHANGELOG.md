@@ -1,6 +1,197 @@
 # Changelog
 
+## 2026-09-23T00:19:45Z
+- [profiles/saved] Switched profile saving to the star action icon, changed the saved label to Remove from saved, and applied the pending local database migrations that caused the fetch failure.
+
+## 2026-09-23T00:05:46Z
+- [profiles/saved] Added private saved-profile actions, a Saved Profiles list, and neutral removable handling for unavailable accounts.
+
+## 2026-09-22T23:50:18Z
+- [development] Fixed localhost startup on Windows by making the web dev scripts use Next.js Webpack mode when the native SWC binding is unavailable.
+
+## 2026-09-22T23:44:25Z
+- [profiles/composer] Fixed Reply and Quote actions on profile posts so they open the shared contextual composer while keeping the standalone profile post composer hidden.
+
+## 2026-09-22T23:41:02Z
+- [composer] Removed browser-local draft persistence; composer text now clears when leaving its screen and is not restored on return.
+
+## 2026-09-22T23:29:46Z
+- [navigation/posts] Fixed post-detail routes incorrectly retaining the Home header title and drawer highlight by giving them their own contextual shell state.
+
+## 2026-09-22T23:05:00Z
+- [docs] Audited the completed session work and corrected stale post-media documentation that still described the retired horizontal slider; the Posts and Media units plus shared design contracts now match the responsive gallery/lightbox implementation and explicitly record the still-planned picker helper/counter.
+
+## 2026-09-22T23:00:00Z
+- [feed/media] Fixed tall media clipping by preserving the natural aspect ratio for single-image previews and constraining lightbox images with explicit intrinsic sizing.
+
+## 2026-09-22T22:55:00Z
+- [feed/media] Replaced the generic media modal with a dedicated full-viewport lightbox: dimmed backdrop, contained image stage, close/previous/next controls, counter, keyboard navigation, backdrop dismissal, and body-scroll locking.
+- [docs/design] Updated the shared post-media design contract to describe the lightbox behavior.
+
+## 2026-09-22T22:50:00Z
+- [feed/media] Fixed individual post routes dropping media when mapping API responses; main and quoted media now remain visible after opening a post.
+
+## 2026-09-22T22:45:00Z
+- [feed/media] Fixed the `+N` media overflow affordance so it explicitly opens the viewer and cannot be swallowed by the surrounding post or quoted-post link.
+
+## 2026-09-22T22:40:00Z
+- [feed/media] Replaced the horizontal portrait-strip gallery with responsive one-to-four item layouts, overflow counts, and a full-screen image viewer with previous/next controls.
+- [docs/design] Documented the shared post-media interaction contract.
+
+## 2026-09-22T22:30:00Z
+- [discovery] Removed the Professionals tab from the Directory UI and normalized unsupported `tab=professionals` URLs to All.
+- [docs/discovery] Updated the directory unit and active rule registry.
+
+## 2026-09-22T22:24:00Z
+- [staff/control-panel] Shortened the header action label to `End CP session`.
+
+## 2026-09-22T22:22:00Z
+- [staff/control-panel] Added an action-menu option to end only the privileged Control Panel session and return to Home while preserving ordinary account access.
+
+## 2026-09-22T22:18:00Z
+- [staff/control-panel] Simplified the Staff and Users tabs to display only `Search for a user.` while the persistent Control Panel search workflow is being consolidated.
+
+## 2026-09-22T22:14:00Z
+- [staff/overview] Aligned overview metric rows with Settings composition: icon, title, description, and trailing database count.
+
+## 2026-09-22T22:10:51Z
+- [staff/overview] Replaced custom overview cards with two independent full-width shared list rows for Total users and Staff users, matching the authenticated design contract.
+
+## 2026-09-22T21:58:44Z
+- [staff/overview] Added the first database-backed Control Panel overview cards for total users and staff users, protected by the existing staff-access gate.
+- [docs/staff] Documented the overview summary-card contract and persistent-search relationship.
+
+## 2026-09-22T21:40:16Z
+- [staff/control-panel] Reworked the local Control Panel Users surface with a dedicated search workspace, clear/reset behavior, selected-user profile access, explicit dark-theme controls, and safer username matching including `@` prefixes.
+- [staff/auth] Serialized staff-access validation before loading user results so an expired privileged cookie cannot race the users request and leave stale “Staff session expired” copy after verification succeeds.
+
+## 2026-09-22T13:25:23Z
+
+- [auth/public-routing] Reopened and corrected BUG-AUTH-002 by centralizing
+  public and authenticated route entry on `restoreAuthSessionForEntry()` and
+  responding to cross-tab session restoration events.
+- [docs/auth] Updated the defect register, account-access contract, and active
+  session-restoration rule to distinguish the incomplete previous fix from the
+  shared bootstrap correction.
+
+## 2026-09-22T12:33:44Z
+
+- [subscriptions] Completed the manual plan-change notification path: staff
+  grants, changes, and returns to Free now create recipient-owned in-app
+  notifications linking to Subscription settings, with safe plan and expiry
+  copy rendered through the existing notification surfaces.
+- [api] Added the subscription notification enum migration and focused
+  lifecycle assertions; no external push delivery was introduced.
+- [docs/subscriptions] and [docs/notifications] synchronized the active
+  manual-access notification contract and remaining expiry-notification scope.
+
+## 2026-09-22T12:20:04Z
+
+- [docs/notifications] Documented the planned cross-platform Web Push
+  requirements, platform-neutral setup UX, subscription lifecycle, delivery
+  reliability, security boundaries, acceptance criteria, and open questions.
+- [docs/stack] Recorded standard Web Push with VAPID as the planned push
+  delivery approach; no runtime behavior changed.
+
+## 2026-09-22T12:00:08Z
+
+- [auth/public-routing] Added explicit session-checking UX to the public
+  landing route: loading while checking, Home redirect on success, public
+  content for confirmed signed-out visitors, and retryable recovery on
+  transient failures.
+- [docs/auth] Marked BUG-AUTH-002 resolved and synchronized account-access and
+  active auth/navigation rules.
+
+## 2026-09-22T11:55:05Z
+
+- [docs/bugs] Added BUG-AUTH-002 for inconsistent public-route session
+  detection across fresh tabs, including confirmed behavior, open diagnostics,
+  proposed fix, and verification requirements.
+
+## 2026-09-22T11:19:27Z
+
+- [chat] Restored the authenticated session before loading an individual chat
+  after a full browser refresh; terminal refresh failures still route to login.
+- [docs/chat] Marked BUG-CHAT-001 resolved and documented the direct-chat
+  refresh-session contract and verification requirements.
+
+## 2026-09-22T11:11:46Z
+
+- [docs/bugs] Replaced the placeholder with a draft defect-register format,
+  agent instructions, and BUG-CHAT-001 documenting the individual-chat refresh
+  redirect defect; synchronized the docs README and viewer label.
+
+## 2026-09-22T10:46:15Z
+
+- [chat] Removed compounded shell bottom padding from direct conversations and
+  set a consistent 1rem gap between the final message and floating composer.
+- [docs/chat] Synchronized the chat spacing contract across active rules, unit
+  documentation, and shared design documentation.
+
+## 2026-09-22T10:38:57Z
+
+- [chat] Extended the fixed desktop chat-header surface across the main panel
+  while preserving participant alignment with the centered chat column, so
+  scrolling messages no longer show through at the capped column's side gaps.
+- [docs/chat] Synchronized the chat scroll and desktop header-surface contract
+  across the chat unit, active rules, and shared design contract.
+
+## 2026-09-22T00:08:28Z
+
+- [docs/workflow] Added a clearly marked draft workflow covering work types,
+  statuses, side states, staging-based definition of done, reopening, and
+  production smoke checks.
+- [docs/bugs] Added a placeholder defect-register document and linked both
+  new documents in the documentation README and viewer.
+
+## 2026-09-21T23:59:54Z
+
+- [docs/testing] Made production-parity staging the authoritative acceptance
+  gate, clarified the definition of done, and limited production verification
+  to smoke checks after promoting the exact staging-verified artifact.
+- [docs/deployment] Updated the active release flow and retained the former
+  full production-gate workflow as legacy history; synchronized architecture
+  and notes with the same staging-gate policy.
+
+## 2026-09-21T23:21:14Z
+
+- [auth/session] Implemented stale remembered-slot capacity handling,
+  slot-scoped web session coordination, terminal-session fallback across
+  remembered accounts, and recent-account login preselection. Added targeted
+  local API regression coverage and synchronized account-access rules/status;
+  staging browser acceptance remains pending.
+
+## 2026-09-21T22:02:08Z
+
+- [docs/account-access] Added the staged development plan for the add-account
+  limit mismatch, terminal-session recovery, and per-slot client-state
+  isolation, including ordering, verification, and migration expectations.
+
+## 2026-09-21T21:44:25Z
+
+- [docs/notes] Recorded the open staging bug where Add account can report a
+  remembered-account limit despite the browser showing one account after
+  repeated refreshes, including the required API and log comparison.
+
+## 2026-09-21T21:33:31Z
+
+- [docs/account-access] Documented the planned multi-account terminal-session
+  recovery flow, per-slot client-state isolation, recent-account login
+  preselection, credential/challenge boundaries, and expected no-schema-change
+  path. Active rules remain unchanged until implementation and verification.
+
 ## 2026-09-22T00:00:00Z
+
+- [chat] Removed the nested chat scrollbar and fixed the participant header
+  below the global top bar while messages use the document scrollbar.
+- [docs/design] Synchronized the chat scroll contract with the fixed-header,
+  document-scroll implementation.
+
+- [chat] Fixed direct-chat scrolling so the centered chat column owns one
+  contained native scrollbar and the participant header remains sticky without
+  widening the content surface.
+- [docs/design] Synchronized chat scroll rules across the implementation,
+  design contracts, and product documentation.
 
 - [docs/rules] Recorded the shared accent-colored compact pill contract for
   Professional and Friink Registered profile badges, including the side drawer.

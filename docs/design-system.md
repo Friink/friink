@@ -122,6 +122,12 @@ contract rather than repeated here.
 - Feed posts remain flat list items, with a subtle surface shift on hover;
   shared content panels should not add visible side lines or outlines solely
   to establish depth.
+- Post media uses predictable layouts: one natural-ratio image, balanced
+  two-item grids, a larger lead image for three items, and a four-item grid
+  with a `+N` overflow indicator. Selecting media opens a dedicated full-screen
+  lightbox with contained sizing, accessible previous, next, close, counter,
+  and keyboard controls; tall images must not be cropped, and media never
+  autoplays audio.
 - Settings, chat, notifications, and directory rows should share a calm
   divider-based rhythm.
 
@@ -187,11 +193,14 @@ styling must preserve native wheel, keyboard, touch, accessibility, and
 reduced-motion behavior; JavaScript scrollbar replacements are not part of the
 platform design system. In dark theme, the thumb uses a darker neutral (`#666666`)
 with `#7a7a7a` on hover so it remains visible without appearing washed out.
-Direct conversation pages use this document-level scroll surface for the
-participant header and message history; they must not introduce a nested
-message-only scrollbar. The participant header remains sticky below the global
-top bar, and the fixed contextual composer remains clear of the last message
-through shared page spacing.
+Direct conversation pages use the document viewport as the only native scroll
+surface for the message history; they must not introduce a nested message-only
+scrollbar. The participant header remains fixed below the global top bar and
+aligned to the centered chat content column. On desktop, its opaque background
+spans the full main panel so messages cannot show through beside the capped
+column. The shared content width cap remains intact. Shared shell bottom
+padding must not compound the chat message-list reservation; the fixed
+contextual composer remains 1rem from the last message on every viewport.
 
 ### Actions
 
@@ -209,6 +218,11 @@ through shared page spacing.
 - Labels, helper text, validation, and error messages should be clear and
   located near the relevant control.
 - Preserve user-entered values when a submission fails whenever safe.
+- Profile pages keep the standalone new-post composer hidden, but show the
+  shared contextual composer after a visitor selects Reply or Quote on a
+  profile post.
+- Composer text is screen-local and in-memory only; leaving a composer does
+  not restore its previous text from browser storage.
 - Do not replace a loading state with a generic disabled state that hides why
   the user cannot continue.
 

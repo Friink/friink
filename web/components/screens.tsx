@@ -20,7 +20,7 @@ export function QuestionsScreen() {
 }
 
 type MessagesTab = 'all' | 'muted' | 'requests' | 'archived';
-export type DirectoryTab = 'all' | 'professionals' | 'registered';
+export type DirectoryTab = 'all' | 'registered';
 
 function getConversationStatus(conversation: ApiConversation, currentUserId: string | undefined) {
   if (conversation.unread_count > 0) {
@@ -297,7 +297,7 @@ function DirectoryResultRow({ entry }: { entry: DirectoryEntry }) {
 }
 
 export function DirectoryScreen({ tab = 'all' }: { tab?: DirectoryTab }) {
-  const entries = directoryEntries.filter((entry) => tab === 'professionals' ? entry.professional : tab === 'registered' ? entry.registered : true);
+  const entries = directoryEntries.filter((entry) => tab === 'registered' ? entry.registered : true);
 
   return (
     <PageSurface className="directory-screen" variant="list">

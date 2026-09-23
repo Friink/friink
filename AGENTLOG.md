@@ -1,5 +1,344 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:19:45Z — Fix saved-profile action and API fetch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the profile-save bookmark action with a star, use Remove from saved after saving, and resolve the failed fetch error.
+- Changes Made: Updated the shared profile action menu and synchronized profile/design/rule documentation. Registered ProfileSave in Alembic metadata and upgraded the local API database from `20260917_0051` through `20260923_0053`; the missing saved-profile schema was the fetch failure cause.
+- Verification Status: Database is at migration head `20260923_0053`; TypeScript, targeted Python compilation, and diff checks passed.
+
+## 2026-09-23T00:05:46Z — Add saved profiles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add profile saving from the profile action menu and define behavior for deactivated or deleted profiles.
+- Changes Made: Added the private profile-save relation, API endpoints, migration, profile-menu Save/Unsave action, Saved Profiles listing, and a privacy-preserving removable unavailable row; synchronized product/design documentation and added API coverage.
+- Verification Status: Web TypeScript, targeted Python compilation, diff checks, and the saved-profile API flow test passed. The API test used an isolated SQLite database and confirmed unavailable rows do not expose profile identity and can be removed.
+
+## 2026-09-22T23:50:18Z — Restore local development server
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and resolve localhost returning internal server errors.
+- Changes Made: Confirmed all routes returned 500 from the stale Turbopack/SWC process, verified the same route returned 200 under Webpack, restarted port 3000 with Webpack, and made both web development scripts use the Webpack fallback automatically on this Windows environment.
+- Verification Status: `/admin/posts` and `/` returned HTTP 200 after restart; targeted TypeScript and diff checks from the preceding feature changes remain passing.
+
+## 2026-09-22T23:44:25Z — Enable profile post replies and quotes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Reply and Quote actions not opening a composer on profile posts.
+- Changes Made: Updated the shared AppShell floating-bar visibility rule to show contextual composers on profile surfaces, while keeping the standalone new-post composer hidden. Synchronized the Profiles, Posts, design, and active rule documentation.
+- Verification Status: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+## 2026-09-22T23:41:02Z — Remove composer draft persistence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the feature that restores typed composer text after returning to a screen.
+- Changes Made: Removed the shared Composer's localStorage read/write behavior and all draft-storage key props, then documented the screen-local in-memory draft contract across Feed, Posts, active rules, and the design implementation contract.
+- Verification Status: `npx tsc --noEmit --incremental false` and `git diff --check` passed; repository search found no remaining composer persistence references.
+
+## 2026-09-22T23:29:46Z — Fix post-detail shell state
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix post details showing Home in the header and highlighting Home in the side drawer.
+- Changes Made: Added an explicit `post` shell screen, mapped post-detail clients to it, kept all drawer destinations inactive for detail routes, and documented the contextual header/drawer contract in the Navigation, Posts, and active rules documents.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. Focused ESLint remains blocked by pre-existing `react-hooks/set-state-in-effect` errors and dependency warnings in `web/components/app-shell.tsx`.
+
+## 2026-09-22T23:05:00Z — Audit session documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure the completed session work is represented in the relevant documentation.
+- Changes Made: Audited the session's Control Panel, Directory, chat, session, and post-media documentation. Corrected the stale shared design contract that described the retired horizontal media slider, and added the implemented responsive gallery/lightbox behavior and tall-image aspect-ratio rule to the Posts, Media, and product design documents. Recorded the not-yet-implemented picker helper/counter as a known limitation rather than active behavior.
+- Verification Status: Documentation links and changed-text consistency reviewed; `git diff --check` passed.
+
+## 2026-09-22T23:00:00Z — Preserve tall media aspect ratios
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix taller post images clipping in the media display.
+- Changes Made: Removed the forced cover crop from single-image previews, allowed the preview frame to follow the natural image ratio up to its maximum height, and added explicit intrinsic sizing/minimum constraints to the lightbox stage and image.
+- Verification Status: Targeted frontend TypeScript and `git diff --check` verification completed after the change; local hot reload remains available.
+
+## 2026-09-22T22:55:00Z — Replace post media modal with lightbox
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Improve the post media viewer and show the result locally.
+- Changes Made: Replaced the generic modal with a dedicated full-viewport lightbox rendered through a body portal. Added contained image presentation, counter, close/previous/next controls, Escape and arrow-key navigation, backdrop dismissal, and body-scroll locking. Updated the design contract.
+- Verification Status: Frontend TypeScript and `git diff --check` passed; local hot reload is available at `/home/explore`.
+
+## 2026-09-22T22:50:00Z — Preserve media on post detail routes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose why media disappears after opening a media post.
+- Changes Made: Added main and quoted media URL mapping to both `/posts/[postId]` and username-scoped post detail mappers.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:45:00Z — Fix media overflow action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the post media `+N` control that did not open anything.
+- Changes Made: Prevented default/link propagation on media tile activation and made the overflow tile explicitly open the full media viewer at image four with accessible copy for the additional items.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:40:00Z — Implement post media display UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and show the agreed post media display experience locally.
+- Changes Made: Reworked `PostMediaGallery` into predictable one, two, three, and four-plus media layouts; added `+N` overflow treatment and a full-screen accessible viewer with previous, next, and close controls. Updated the design contracts.
+- Verification Status: Frontend TypeScript and `git diff --check` passed. Local hot reload remains available at `/home/explore`; authenticated visual verification depends on local feed data/session.
+
+## 2026-09-22T22:30:00Z — Remove Directory Professionals tab
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the Professionals tab from the Directory page.
+- Changes Made: Removed the tab and its DirectoryTab value; unsupported `tab=professionals` URLs now resolve to All. Updated discovery documentation and the active rule registry.
+- Verification Status: Targeted frontend TypeScript verification is being rerun from the web workspace; `git diff --check` passed.
+
+## 2026-09-22T22:24:00Z — Shorten CP session label
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Shorten the Control Panel session action label.
+- Changes Made: Renamed the menu action to `End CP session` without changing its behavior.
+- Verification Status: Copy-only change; local hot reload will reflect it immediately.
+
+## 2026-09-22T22:22:00Z — Add Control Panel session action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a Control Panel header action to end the privileged staff session.
+- Changes Made: Added `End Control Panel session` to the shared desktop/mobile header action menu. It calls the existing staff logout endpoint and returns to Home while keeping the ordinary Friink session active.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:18:00Z — Simplify Staff and Users tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Staff and Users tabs show only a Search for a user prompt.
+- Changes Made: Removed the old Users-page data loading from the Control Panel tab render and replaced both Staff and Users content with the shared prompt while the persistent search entry point is consolidated.
+- Verification Status: Targeted TypeScript and `git diff --check` verification pending after the final local hot reload.
+
+## 2026-09-22T22:14:00Z — Match overview rows to Settings structure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make overview metrics use the Settings-row order of icon, title, and description.
+- Changes Made: Changed Total users and Staff users rows to use a descriptive title/subtitle pair with the database count in the trailing slot.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:10:51Z — Align overview metrics with shared rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make Total users and Staff users independent rows that follow the design guidelines.
+- Changes Made: Replaced the custom metric-card markup with two full-width shared `ListRow` surfaces, preserving the database-backed counts and standard icon/spacing treatment.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T21:58:44Z — Add Control Panel overview cards
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add total-user and staff-user cards to the Control Panel overview using database-backed counts.
+- Changes Made: Added the protected `/staff/overview` endpoint and frontend client method; rendered full-row overview cards for total users and staff users; documented the behavior in the staff-admin unit.
+- Verification Status: Local frontend TypeScript, API Python compilation, and `git diff --check` passed. The unauthenticated endpoint request correctly returned `401 Not authenticated`; authenticated browser verification remains pending.
+
+## 2026-09-22T21:40:16Z — Fix Control Panel staff-session race
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the frontend and backend locally, improve the manual-subscription Control Panel UI, and fix stale staff-session-expired feedback during local requests.
+- Changes Made: Added a dedicated Users search workspace with explicit form styling, clear/reset behavior, selected-user profile access, and tolerant `@username` API normalization. Serialized staff privilege validation before loading users and made later staff `401` responses reopen verification instead of leaving stale error copy.
+- Verification Status: Local FastAPI and Next.js Webpack servers are running. TypeScript, Python compilation, and `git diff --check` passed. Authenticated browser verification remains pending because the local browser does not have a local session.
+
+## 2026-09-22T13:25:23Z — Correct public session bootstrap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update the session-routing defect documentation, fix the
+  public route so it recognizes an existing session consistently with `/home`,
+  and validate locally before reporting completion.
+- Changes Made: Reopened BUG-AUTH-002 because the previous public guard did not
+  share the authenticated entry path. Added `restoreAuthSessionForEntry()` and
+  reused it in `PublicRouteGuard` and `AppShellRoute`; the public guard now also
+  responds to cross-tab account restoration events. Synchronized the bug
+  register, account-access unit, active auth rule, changelog, and this log.
+- Verification Status: Local Webpack dev server and FastAPI development server
+  started successfully. The local public route showed the loading recovery
+  state, then correctly remained on the public landing page after the API
+  returned a confirmed signed-out result. TypeScript and `git diff --check`
+  passed. An authenticated local browser rehearsal could not be completed
+  without valid local credentials; repository lint still reports pre-existing
+  effect-hook errors in `AppShellRoute`.
+
+## 2026-09-22T12:33:44Z — Complete manual subscription notification flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Finish the staff plan-assignment flow end to end using the
+  existing UI and design system, including notifying the affected user.
+- Changes Made: Added subscription grant/change/revoke notification types and
+  the Alembic enum migration; subscription mutations now create durable,
+  recipient-owned in-app notifications with safe plan/expiry payloads and a
+  Subscription settings destination. Extended the existing notification
+  mapping and copy, added focused subscription notification assertions, and
+  synchronized active rules and unit documentation. Existing staff search,
+  adjustment, confirmation, settings summary, server entitlement, and expiry
+  behavior were reused rather than replaced.
+- Verification Status: Web TypeScript check passed; Python compilation,
+  `git diff --check`, and `npx eslint lib/auth.ts` passed. Focused subscription
+  coverage passed 7 tests using an in-memory test database. Repository-wide
+  lint remains blocked by pre-existing unrelated errors; the changed
+  `app-shell.tsx` file reports only its existing effect-hook errors.
+
+## 2026-09-22T12:20:04Z — Document Web Push requirements
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record requirements for enabling external notifications from
+  Friink while keeping the UX platform-neutral.
+- Changes Made: Marked the notifications unit Partial and documented the
+  planned setup UX, Web Push/VAPID architecture, subscription persistence,
+  delivery guarantees, security constraints, acceptance criteria, limitations,
+  and open questions. Updated the technology stack to record the planned
+  delivery approach. No product code changed.
+- Verification Status: Reviewed documentation structure and source-of-truth
+  boundaries; `git diff --check` passed.
+
+## 2026-09-22T12:00:08Z — Make public session detection explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the public landing route leaving an existing session
+  ambiguous across fresh tabs.
+- Changes Made: Added explicit loading, signed-out, and retryable transient
+  failure states to `PublicRouteGuard`; synchronized BUG-AUTH-002, account
+  access documentation, and active auth/navigation rules.
+- Verification Status: `npm --prefix web run lint`, `npx tsc --noEmit --incremental false` from `web/`, and `git diff --check` passed. Staging and production browser acceptance remain pending.
+
+## 2026-09-22T11:55:05Z — Record public-route session inconsistency
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Report the public landing page failing to consistently reveal
+  an existing session in a fresh tab while `/home` restores it.
+- Changes Made: Added BUG-AUTH-002 to `docs/bugs.md` with reproduction,
+  confirmed root cause, open diagnostics, proposed fix, and verification scope;
+  updated the changelog. No product code changed.
+- Verification Status: Markdown structure reviewed and `git diff --check`
+  passed.
+
+## 2026-09-22T11:19:27Z — Restore session on individual chat refresh
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix individual chats redirecting to login after a browser
+  refresh.
+- Changes Made: Added shared refresh-session bootstrapping to `ChatClient`,
+  preserved terminal-auth login behavior, and synchronized BUG-CHAT-001, the
+  chat unit, active rules, changelog, and agent log.
+- Verification Status: `npm --prefix web run lint`, `npx tsc --noEmit --incremental false` from `web/`, and `git diff --check` passed. Staging browser refresh acceptance remains pending.
+
+## 2026-09-22T11:11:46Z — Start draft bug register
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the individual-chat refresh redirect bug and propose a
+  reusable bug-entry template for agent use.
+- Changes Made: Replaced the placeholder `docs/bugs.md` with draft agent
+  instructions, a complete entry template, and BUG-CHAT-001; synchronized the
+  documentation README, viewer registry label, changelog, and this log.
+- Verification Status: Markdown structure and referenced paths reviewed;
+  `git diff --check` passed. No product code changed.
+
+## 2026-09-22T10:46:15Z — Reduce direct-chat composer gap
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the excessive space after the final chat message
+  before the floating composer and keep the gap consistent across devices.
+- Changes Made: Removed shared shell bottom-padding duplication for chat screens
+  and set the message-list reservation to leave a consistent 1rem gap above
+  the floating composer; synchronized chat/design documentation and logs.
+- Verification Status: `npm --prefix web run lint` and `git diff --check`
+  passed.
+
+## 2026-09-22T10:38:57Z — Cover desktop chat-header side gaps
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent messages from showing through beside the fixed chat
+  header while document scrolling on desktop.
+- Changes Made: Made the desktop chat-header background span the full main
+  panel and moved the horizontal padding to the centered content-column inset;
+  synchronized the chat unit, active rules, shared design contract, and logs.
+- Verification Status: `npm --prefix web run lint`, targeted CSS inspection,
+  and `git diff --check` passed.
+
+## 2026-09-22T00:08:28Z — Add draft workflow and bugs placeholder
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the proposed work workflow and reserve a future
+  defect register.
+- Changes Made: Added `docs/workflow.md` as an explicitly non-authoritative
+  draft, added `docs/bugs.md` as a placeholder, and synchronized the docs
+  README and viewer navigation.
+- Verification Status: Markdown links and document registry reviewed;
+  `git diff --check` pending.
+
+## 2026-09-21T23:59:54Z — Make staging the authoritative release gate
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Establish production-parity staging acceptance as the active
+  testing workflow and define production verification as post-promotion smoke
+  checks only.
+- Changes Made: Updated `docs/testing.md`, `docs/deployment.md`,
+  `docs/architecture.md`, `docs/notes.md`, and the account-access release
+  gates; preserved the former full production-gate workflow as legacy history
+  and recorded the definition of done.
+- Verification Status: Documentation links and Markdown structure reviewed;
+  `git diff --check` pending.
+
+## 2026-09-22T00:00:00Z — Make chat header fixed with document scrolling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the inner chat scrollbar and keep only messages
+  moving while the participant header remains fixed below the global bar.
+- Changes Made: Restored document-level scrolling, fixed the participant
+  header to the centered content rail, restored document-based initial scroll
+  and read visibility, and synchronized the chat/design rules and logs.
+- Verification Status: `npx tsc --noEmit --incremental false`,
+  `npm run build -- --webpack`, and `git diff --check` passed. The build used
+  the existing WASM fallback because the installed native SWC binary is not a
+  valid Win32 application. Browser visual verification was limited because
+  the local browser session was not authenticated for the chat route.
+
+## 2026-09-22T00:00:00Z — Fix direct-chat sticky header scrolling
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the chat header scrolling out of view while preserving
+  the centered content width.
+- Changes Made: Made `.chat-screen` the contained native scroll surface, moved
+  sticky positioning to the top of that surface, and synchronized chat/design
+  rules and release logs.
+- Verification Status: `npx tsc --noEmit --incremental false`,
+  `npm run build -- --webpack`, and `git diff --check` passed. The build used
+  the existing WASM fallback because the installed native SWC binary is not a
+  valid Win32 application.
+
 ## 2026-09-22T00:00:00Z — Align rules with profile badge styling
 
 - Agent: Codex
@@ -12635,3 +12974,74 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Verification Status: TypeScript, Python compilation, authenticated local
   browser acceptance, API boundary validation, and `git diff --check` passed.
   Staging acceptance and automated search coverage remain pending.
+## 2026-09-21T21:33:31Z — Document planned multi-account session recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the proposed fix for remembered-account recovery
+  when the active session terminates.
+- Changes Made: Updated `docs/units/account-access.md` with the planned
+  most-recent-slot refresh fallback, per-slot client coordination boundary,
+  login preselection behavior, credential and OTP requirements, planned
+  acceptance criteria, test scenarios, implementation status, and migration
+  expectation. Kept `docs/rules.md` unchanged because the behavior is not yet
+  implemented or verified.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation instructions and affected unit reviewed;
+  `git diff --check` passed; targeted rule and traceability review passed.
+
+## 2026-09-21T21:44:25Z — Record add-account limit mismatch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record the staging bug where Add account reports a full
+  remembered-account limit although the browser shows one account.
+- Changes Made: Added an open implementation note describing the observed
+  mismatch, the fact that refreshes must not create slots, suspected device,
+  configuration, and UI-refresh causes, and the API responses and logs needed
+  for confirmation. No code or active rule changes were made.
+- Files: `docs/notes.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` and
+  targeted link review passed.
+
+## 2026-09-21T22:02:08Z — Document auth/session development plan
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document the three-workstream auth/session development plan
+  in the account-access unit.
+- Changes Made: Added the staged plan for diagnosing the Add account limit
+  mismatch, implementing terminal-session recovery, isolating multi-account
+  client state, targeted verification, release ordering, and the expected
+  no-schema-change path. Linked the existing open bug note and kept active
+  rules unchanged.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only update; `git diff --check` and
+  targeted link review pending.
+
+## 2026-09-21T23:21:14Z — Implement auth/session recovery workstreams
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Develop the documented auth/session plan, compare it with
+  the docs, and test locally.
+- Changes Made: Fixed remembered-slot capacity counting so revoked sessions
+  and inactive accounts do not block Add account; repaired stale current-slot
+  backfill; added a targeted API regression test; implemented slot-scoped safe
+  session metadata, remembered-account summaries, refresh coordination, locks,
+  and cross-tab filtering; added terminal refresh fallback across remembered
+  slots and recent-account login preselection; synchronized active auth rules,
+  the account-access unit, and the staging verification note.
+- Files: `api/app/services/account_slots.py`, `api/app/routers/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `web/components/app-shell-route.tsx`, `web/app/login/login-client.tsx`,
+  `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`,
+  `web/app/posts/[postId]/post-client.tsx`,
+  `web/app/[username]/[postId]/post-client.tsx`, `docs/rules.md`,
+  `docs/units/account-access.md`, `docs/notes.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Targeted account tests passed their assertions (pytest
+  cleanup hit a pre-existing Python 3.14 SQLite file-lock error); API files
+  compiled; TypeScript passed; the webpack production build passed; local
+  browser/API servers could not bind because Windows returned WinError 10013;
+  staging acceptance remains pending.

@@ -2,8 +2,9 @@ import { ListRow } from '@/components/list-row';
 import { Modal } from '@/components/modal';
 import { PageSurface } from '@/components/page-surface';
 import { ProfileCard } from '@/components/profile-card';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { decideProfessionalRegistration, grantSubscription, listProfessionalRegistrations, listStaffUsers, listSubscriptionAssignments, listSubscriptionPlans, revokeSubscription, staffMe, staffStepUp, type AuthSession, type ProfessionalRegistration, type StaffUser, type SubscriptionAssignment } from '@/lib/auth';
+import { decideProfessionalRegistration, getStaffOverview, grantSubscription, listProfessionalRegistrations, listStaffUsers, listSubscriptionAssignments, listSubscriptionPlans, revokeSubscription, staffMe, staffStepUp, type AuthSession, type ProfessionalRegistration, type StaffOverview, type StaffUser, type SubscriptionAssignment } from '@/lib/auth';
 
 export type ControlPanelTab = 'overview' | 'staff' | 'users' | 'professional-registration' | 'security' | 'audit' | 'public-site';
 
@@ -110,10 +111,11 @@ function SubscriptionAdmin({ accessToken, users, canManage }: { accessToken: str
   const [modal, setModal] = useState<'adjust' | 'revoke' | null>(null);
 
   useEffect(() => {
+    let active = true;
     const timer = window.setTimeout(() => {
-      listStaffUsers(accessToken, query).then(setResults).catch((err) => setError(err.message));
+      listStaffUsers(accessToken, query).then((nextResults) => { if (active) setResults(nextResults); }).catch((err) => { if (active) setError(err.message); });
     }, query.trim() ? 250 : 0);
-    return () => window.clearTimeout(timer);
+    return () => { active = false; window.clearTimeout(timer); };
   }, [accessToken, query]);
 
   useEffect(() => {
@@ -162,14 +164,26 @@ function SubscriptionAdmin({ accessToken, users, canManage }: { accessToken: str
   const expiryLabel = duration === 'none' ? 'No expiration' : duration === 'custom' ? (customDate ? formatDate(new Date(`${customDate}T12:00:00`).toISOString()) : 'Choose a date') : isRenewal ? `${durationLabel} added to current expiry` : `${durationLabel} from today`;
   const currentAssignmentLabel = latest ? `${latest.plan_name} · ${latest.status} · ${formatDate(latest.expires_at)}` : 'Friink Free · No active assignment';
   const changeEffectLabel = isRenewal ? `Extends ${latest.plan_name} from its current expiry.` : latest?.status === 'active' ? `Replaces ${latest.plan_name} immediately.` : 'Creates a new manual assignment.';
-  return <div className="subscription-admin">
-    <label className="settings-field-label" htmlFor="staff-user-search">Find a user</label>
-    <input id="staff-user-search" className="settings-field-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search username or email" autoComplete="off" />
+  return <div className="subscription-admin control-panel-users">
+    <div className="control-panel-users-intro">
+      <div>
+        <p className="control-panel-eyebrow">User access</p>
+        <h2>Find a user</h2>
+        <p>Search by username, email, or display name to review and manage plan access.</p>
+      </div>
+      <span className="control-panel-count" aria-live="polite">{results.length} result{results.length === 1 ? '' : 's'}</span>
+    </div>
+    <div className="control-panel-search">
+      <label className="sr-only" htmlFor="staff-user-search">Search users</label>
+      <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+      <input id="staff-user-search" type="text" value={query} onChange={(event) => { setSelected(null); setAssignments([]); setQuery(event.target.value); }} placeholder="Search username, email, or display name" autoComplete="off" />
+      {query ? <button className="control-panel-search-clear" type="button" onClick={() => setQuery('')} aria-label="Clear user search"><i className="fa-solid fa-xmark" aria-hidden="true" /></button> : null}
+    </div>
     <div className="subscription-admin-results" aria-live="polite">
-      {results.length === 0 ? <p className="settings-field-message">{query.trim().length < 2 ? 'Type at least 2 characters to search.' : 'No users found.'}</p> : results.map((user) => <ListRow key={user.id} title={`@${user.username}`} subtitle={user.display_name ? `${user.display_name} · ${user.email}` : user.email} meta={user.lifecycle_status === 'pending_deletion' ? `Scheduled for deletion${user.deletion_deadline ? ` on ${formatDate(user.deletion_deadline)}` : ''}` : user.lifecycle_status === 'deactivated' ? 'Deactivated' : user.account_locked ? 'Locked' : 'Active'} trailing={<button className="button-secondary" type="button" onClick={() => void chooseUser(user)}>View</button>} className={`settings-row settings-row-expanded${selected?.id === user.id ? ' active' : ''}`} />)}
+      {results.length === 0 ? <div className="control-panel-empty"><i className="fa-solid fa-user-slash" aria-hidden="true" /><p>{query.trim().length < 2 ? 'Type at least 2 characters to search.' : 'No users found.'}</p></div> : results.map((user) => <ListRow key={user.id} title={`@${user.username}`} subtitle={user.display_name ? `${user.display_name} · ${user.email}` : user.email} meta={user.lifecycle_status === 'pending_deletion' ? `Scheduled for deletion${user.deletion_deadline ? ` on ${formatDate(user.deletion_deadline)}` : ''}` : user.lifecycle_status === 'deactivated' ? 'Deactivated' : user.account_locked ? 'Locked' : 'Active'} trailing={<button className="button-secondary" type="button" onClick={() => void chooseUser(user)}>Review</button>} className={`settings-row settings-row-expanded${selected?.id === user.id ? ' active' : ''}`} />)}
     </div>
     {selected ? <div className="subscription-admin-detail">
-      <div className="subscription-admin-detail-heading"><div><h3>@{selected.username}</h3><p>{selected.email}</p></div><span className="subscription-status-pill">{latest ? latest.status : 'Free default'}</span></div>
+      <div className="subscription-admin-detail-heading"><div><p className="control-panel-eyebrow">Selected user</p><h3>@{selected.username}</h3><p>{selected.display_name ? `${selected.display_name} · ` : ''}{selected.email}</p></div><div className="subscription-admin-detail-actions"><span className="subscription-status-pill">{latest ? latest.status : 'Free default'}</span><Link className="button-secondary" href={`/${encodeURIComponent(selected.username)}/posts`}>Open profile</Link></div></div>
       <p className="settings-field-message">{latest ? `${latest.plan_name} · ${latest.status} · ${formatDate(latest.expires_at)}` : 'Friink Free · No expiration'}</p>
       {inactive ? <p className="settings-field-message" role="status">Plan actions are unavailable while this account is {selected.lifecycle_status.replace('_', ' ')}.</p> : null}
       {canManage && !inactive ? <div className="subscription-admin-actions"><button className="button-primary" type="button" onClick={() => { setPlanCode(latest?.plan_code ?? 'friink_pro'); setModal('adjust'); }}>Adjust plan</button>{latest?.status === 'active' && latest.plan_code !== 'friink_free' ? <button className="button-secondary" type="button" onClick={() => setModal('revoke')}>Return to Free</button> : null}</div> : null}
@@ -184,10 +198,32 @@ function SubscriptionAdmin({ accessToken, users, canManage }: { accessToken: str
 
 export function ControlPanelScreen({ activeTab = 'overview', session }: { activeTab?: ControlPanelTab; session?: AuthSession | null }) {
   const content = tabContent[activeTab];
-  const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [permissions, setPermissions] = useState<string[]>([]); const [users, setUsers] = useState<StaffUser[]>([]); const [password, setPassword] = useState(''); const [showPassword, setShowPassword] = useState(false); const [needsStepUp, setNeedsStepUp] = useState(false); const [verifyBusy, setVerifyBusy] = useState(false);
-  useEffect(() => { if (!session) return; staffMe(session.accessToken).then((value) => { setPermissions(value.permissions); setNeedsStepUp(false); }).catch((err) => { setNeedsStepUp(err?.status === 401); setError(err?.message ?? 'Could not load staff access.'); }).finally(() => setLoading(false)); }, [session]);
-  useEffect(() => { if (!session || needsStepUp) return; if (activeTab === 'users') listStaffUsers(session.accessToken).then(setUsers).catch((err) => setError(err.message)); }, [activeTab, needsStepUp, session]);
-  async function verify() { if (!session || verifyBusy) return; setVerifyBusy(true); setError(null); try { const value = await staffStepUp(session.accessToken, password); setPermissions(value.permissions); setNeedsStepUp(false); setPassword(''); } catch (err: any) { setError(err.message); } finally { setVerifyBusy(false); } }
+  const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [permissions, setPermissions] = useState<string[]>([]); const [overview, setOverview] = useState<StaffOverview | null>(null); const [overviewLoading, setOverviewLoading] = useState(false); const [password, setPassword] = useState(''); const [showPassword, setShowPassword] = useState(false); const [needsStepUp, setNeedsStepUp] = useState(false); const [staffReady, setStaffReady] = useState(false); const [verifyBusy, setVerifyBusy] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setStaffReady(false); setError(null);
+    if (!session) return () => { active = false; };
+    staffMe(session.accessToken).then((value) => {
+      if (!active) return;
+      setPermissions(value.permissions); setNeedsStepUp(false); setStaffReady(true);
+    }).catch((err) => {
+      if (!active) return;
+      setNeedsStepUp(err?.status === 401); setError(err?.message ?? 'Could not load staff access.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [session]);
+  useEffect(() => {
+    let active = true;
+    if (!session || !staffReady || needsStepUp || activeTab !== 'overview') return () => { active = false; };
+    setOverviewLoading(true); setError(null);
+    getStaffOverview(session.accessToken).then((value) => { if (active) setOverview(value); }).catch((err) => {
+      if (!active) return;
+      if (err?.status === 401) { setStaffReady(false); setNeedsStepUp(true); }
+      else setError(err?.message ?? 'Could not load the Control Panel overview.');
+    }).finally(() => { if (active) setOverviewLoading(false); });
+    return () => { active = false; };
+  }, [activeTab, needsStepUp, session, staffReady]);
+  async function verify() { if (!session || verifyBusy) return; setVerifyBusy(true); setError(null); try { const value = await staffStepUp(session.accessToken, password); setPermissions(value.permissions); setNeedsStepUp(false); setStaffReady(true); setPassword(''); } catch (err: any) { setError(err.message); } finally { setVerifyBusy(false); } }
   if (loading) return <PageSurface className="simple-screen settings-screen" aria-label="Control panel loading"><div className="settings-panel"><p className="settings-field-message" role="status">Loading Control panel…</p></div></PageSurface>;
   if (needsStepUp) return <Modal title="Verify staff access" onClose={() => window.history.back()} closeLabel="Close staff verification" actions={<><button className="button-secondary" type="button" onClick={() => window.history.back()} disabled={verifyBusy}>Cancel</button><button className="button-primary" type="submit" form="staff-verification-form" disabled={verifyBusy || !password}>{verifyBusy ? 'Verifying…' : 'Verify'}</button></>}><form id="staff-verification-form" onSubmit={(event) => { event.preventDefault(); void verify(); }}><p className="settings-field-message">Your ordinary Friink session stays active. Verify again to open protected staff tools.</p><div className="settings-password-input"><input className="settings-field-input" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" autoFocus aria-label="Staff password" /><button className="password-toggle" type="button" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}><i className={`fa-regular ${showPassword ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" /></button></div>{error ? <p className="settings-field-message" role="alert">{error}</p> : null}</form></Modal>;
   if (error && !permissions.length) return <PageSurface className="simple-screen settings-screen" aria-label="Control panel unavailable"><div className="settings-panel"><p className="settings-field-message" role="alert">{error}</p><button className="button-secondary" type="button" onClick={() => window.location.reload()}>Retry</button></div></PageSurface>;
@@ -198,9 +234,10 @@ export function ControlPanelScreen({ activeTab = 'overview', session }: { active
     <PageSurface className="simple-screen settings-screen" aria-label="Control panel content">
       <div className="settings-panel">
         <div className="settings-section" role="tabpanel" id={`control-panel-${activeTab}`} aria-label={content.title}>
-          {activeTab === 'users' && allowed('users.view') && session ? <SubscriptionAdmin accessToken={session.accessToken} users={users} canManage={allowed('subscriptions.manage')} /> : null}
+          {(activeTab === 'users' || activeTab === 'staff') ? <p className="control-panel-search-prompt">Search for a user.</p> : null}
           {activeTab === 'professional-registration' && allowed('professional_registration.manage') && session ? <ProfessionalRegistrationAdmin accessToken={session.accessToken} canManage /> : null}
-          {(activeTab === 'overview' || activeTab === 'staff' || activeTab === 'security' || activeTab === 'audit' || activeTab === 'public-site') ? content.items.map((item) => (
+          {activeTab === 'overview' ? (overviewLoading ? <p className="settings-field-message" role="status">Loading overview…</p> : overview ? <div className="control-panel-overview-rows"><ListRow avatar={<span className="settings-icon"><i className="fa-solid fa-users" aria-hidden="true" /></span>} title="Total users" subtitle="All accounts currently recorded in Friink." trailing={<span className="control-panel-overview-number">{overview.total_users.toLocaleString()}</span>} className="settings-row settings-row-expanded control-panel-overview-row" /><ListRow avatar={<span className="settings-icon"><i className="fa-solid fa-user-shield" aria-hidden="true" /></span>} title="Staff users" subtitle="Accounts with staff access enabled." trailing={<span className="control-panel-overview-number">{overview.staff_users.toLocaleString()}</span>} className="settings-row settings-row-expanded control-panel-overview-row" /></div> : null) : null}
+          {(activeTab === 'staff' || activeTab === 'security' || activeTab === 'audit' || activeTab === 'public-site') ? content.items.map((item) => (
             <ListRow
               key={item.title}
               avatar={<span className="settings-icon"><i className={item.icon} aria-hidden="true" /></span>}

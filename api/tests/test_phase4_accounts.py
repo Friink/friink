@@ -8,9 +8,11 @@ from sqlalchemy import delete
 from api.index import app
 from app.config import Settings, get_settings
 from app.db import get_session_factory
+from app.models.account_session_slot import AccountSessionSlot
 from app.models.auth_session import AuthSession
 from app.models.user import User
 from app.services.security import hash_password
+from app.services.session_service import revoke_auth_session
 
 
 def _settings(**overrides) -> Settings:
@@ -430,6 +432,52 @@ def test_normal_login_succeeds_when_remembered_account_limit_is_reached() -> Non
         assert second.status_code == 200, second.text
         assert second.json()["account_slot"] is None
         assert client.get("/auth/me", headers={"Authorization": f"Bearer {second.json()['access_token']}"}).status_code == 200
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_stale_revoked_slot_does_not_block_add_account() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings(MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=2)
+    password = "Strong1!pass"
+    users = []
+    emails = []
+    for label in ("one", "two", "three"):
+        user_id = uuid.uuid4()
+        users.append(user_id)
+        email = f"phase4-stale-slot-{label}-{uuid.uuid4().hex}@example.com"
+        emails.append(email)
+        username = f"phase4_stale_slot_{label}_{uuid.uuid4().hex[:12]}"
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": emails[0], "password": password})
+        second = client.post("/auth/login", json={"identifier": emails[1], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+
+        with get_session_factory()() as session:
+            stale_slot = session.get(AccountSessionSlot, uuid.UUID(second.json()["account_slot"]))
+            assert stale_slot is not None
+            stale_session = session.get(AuthSession, stale_slot.auth_session_id)
+            assert stale_session is not None
+            revoke_auth_session(session, stale_session, "test_stale_slot")
+            session.commit()
+
+        accounts = client.get("/auth/accounts", headers={"Authorization": f"Bearer {first.json()['access_token']}", "X-Friink-Account-Slot": first.json()["account_slot"]})
+        assert accounts.status_code == 200, accounts.text
+        assert [item["account_slot"] for item in accounts.json()] == [first.json()["account_slot"]]
+        availability = client.get("/auth/accounts/add-availability", headers={"Authorization": f"Bearer {first.json()['access_token']}", "X-Friink-Account-Slot": first.json()["account_slot"]})
+        assert availability.status_code == 200, availability.text
+        assert availability.json() == {"allowed": True}
+
+        third = client.post("/auth/login", json={"identifier": emails[2], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert third.status_code == 200, third.text
+        assert third.json()["account_slot"]
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(users)))

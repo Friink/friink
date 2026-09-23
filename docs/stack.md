@@ -26,7 +26,9 @@ planned or undecided items are marked explicitly.
 - **Validation and settings:** Pydantic, pydantic-settings, and email-validator.
 - **Notifications:** In-app notification records and API endpoints are implemented; an email delivery provider is TBD.
 - **Payments:** TBD.
-- **Push notifications:** TBD.
+- **Push notifications:** Planned standard Web Push with VAPID and browser-
+  supplied subscription endpoints. Delivery is not implemented; requirements
+  and UX are documented in [Notifications](units/notifications.md).
 
 ## Hosting and environments
 

@@ -45,10 +45,13 @@ import {
   markNotificationRead,
   getUnreadNotificationCount,
   getProfessionalRegistration,
+  getProfileSaveStatus,
   submitProfessionalRegistration,
   cancelProfessionalRegistration,
+  setProfileSave,
   listPosts,
   loadAuthSession,
+  staffLogout,
   rejectFollowRequest,
   removeConnection,
   removeFollower,
@@ -128,6 +131,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [profileBlockOpen, setProfileBlockOpen] = useState(false);
   const [profileBlockBusy, setProfileBlockBusy] = useState(false);
+  const [profileSaved, setProfileSaved] = useState<boolean | null>(null);
+  const [profileSaveBusy, setProfileSaveBusy] = useState(false);
   const [professionalRegistration, setProfessionalRegistration] = useState<ProfessionalRegistration | null>(null);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
   const [registrationInstitute, setRegistrationInstitute] = useState('');
@@ -172,14 +177,23 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       .then(setProfessionalRegistration)
       .catch(() => setProfessionalRegistration(null));
   }, [activeScreen, profileUser]);
-  const sidebarActiveScreen: Screen | null = activeScreen === 'profile' && profileUser
+  useEffect(() => {
+    setProfileSaved(null);
+    if (activeScreen !== 'profile' || !profileUser) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    getProfileSaveStatus(session.accessToken, profileUser.username)
+      .then((status) => setProfileSaved(status.saved))
+      .catch(() => setProfileSaved(false));
+  }, [activeScreen, profileUser]);
+  const sidebarActiveScreen: Screen | null = activeScreen === 'post' || (activeScreen === 'profile' && profileUser)
     ? null
     : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
   const searchFilterParam = searchParams.get('filter');
   const searchFilter: 'all' | 'people' | 'posts' | 'messages' = searchFilterParam === 'people' || searchFilterParam === 'posts' || searchFilterParam === 'messages' ? searchFilterParam : searchParams.get('scope') === 'messages' ? 'messages' : 'all';
   const directoryTabParam = searchParams.get('tab');
-  const directoryTab: DirectoryTab = directoryTabParam === 'professionals' || directoryTabParam === 'registered' ? directoryTabParam : 'all';
+  const directoryTab: DirectoryTab = directoryTabParam === 'registered' ? 'registered' : 'all';
   const connectionsTabs = !viewingOtherConnections
     ? [
         { id: 'all', label: 'All' },
@@ -194,7 +208,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && activeScreen !== 'profile' && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
   const visibleNotifications = notifications.filter((notification) => {
     if (notificationsTab === 'security' && notification.kind !== 'login') return false;
     if (notificationsUnreadOnly && !notification.unread) return false;
@@ -228,8 +242,27 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   };
   const profileMenuItems: ActionMenuItem[] = profileUser ? [
     {
+      label: profileSaved ? 'Remove from saved' : 'Save profile',
+      icon: 'fa-star',
+      disabled: profileSaved === null || profileSaveBusy,
+      onClick: () => {
+        const session = loadAuthSession();
+        if (!session || profileSaved === null) return;
+        const nextSaved = !profileSaved;
+        setProfileSaveBusy(true);
+        void setProfileSave(session.accessToken, profileUser.username, nextSaved)
+          .then(() => {
+            setProfileSaved(nextSaved);
+            addToast(nextSaved ? 'Profile saved.' : 'Profile removed from Saved.');
+          })
+          .catch((error) => addToast(error instanceof Error ? error.message : 'Could not update saved profile.'))
+          .finally(() => setProfileSaveBusy(false));
+      },
+    },
+    {
       label: 'Block user',
       icon: 'fa-ban',
+      dividerBefore: true,
       onClick: () => setProfileBlockOpen(true),
     },
   ] : [
@@ -252,10 +285,25 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       },
     },
   ];
+  const controlPanelMenuItems: ActionMenuItem[] = [
+    {
+      label: 'End CP session',
+      icon: 'fa-right-from-bracket',
+      onClick: () => {
+        const currentSession = loadAuthSession();
+        if (!currentSession) return;
+        void staffLogout(currentSession.accessToken)
+          .catch(() => undefined)
+          .finally(() => router.push('/home'));
+      },
+    },
+  ];
   const navigationMenuItems = activeScreen === 'profile'
     ? profileMenuItems
     : activeScreen === 'notifications'
       ? notificationMenuItems
+      : activeScreen === 'control-panel'
+        ? controlPanelMenuItems
       : [];
 
   useEffect(() => {
@@ -358,6 +406,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     switch (screen) {
       case 'home':
         return 'Home';
+      case 'post':
+        return 'Post';
       case 'profile':
         return 'Profile';
       case 'connections':
@@ -766,19 +816,22 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     const postSlug = typeof payload.post_slug === 'string' ? payload.post_slug : '';
     const connectionId = typeof payload.connection_id === 'string' ? payload.connection_id : null;
     const conversationId = typeof payload.conversation_id === 'string' ? payload.conversation_id : null;
+    const isSubscriptionNotification = notification.type.startsWith('subscription_access_');
     const notificationHref = notification.type === 'login_security'
       ? (typeof payload.action_href === 'string' ? payload.action_href : '/settings')
+      : isSubscriptionNotification
+      ? (typeof payload.action_href === 'string' ? payload.action_href : '/settings/subscription')
       : (notification.type === 'mention' || notification.type === 'like') && postPublicId
       ? getPostPath(postAuthorUsername || actorHandle, postSlug, postPublicId)
       : undefined;
     return {
       id: notification.id,
-      kind: notification.type === 'login_security' ? 'login' : notification.type.startsWith('professional_registration_') ? 'service' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
-      name: notification.type === 'login_security' || notification.type.startsWith('professional_registration_') ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
-      handle: `@${notification.type === 'login_security' || notification.type.startsWith('professional_registration_') ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
+      kind: notification.type === 'login_security' ? 'login' : notification.type.startsWith('professional_registration_') || isSubscriptionNotification ? 'service' : notification.type === 'mention' ? 'mention' : notification.type === 'like' ? 'like' : notification.type.startsWith('chat_') ? (notification.type === 'chat_message' ? 'chat' : 'request') : notification.type.includes('request') ? 'request' : 'follow',
+      name: notification.type === 'login_security' || notification.type.startsWith('professional_registration_') || isSubscriptionNotification ? 'Friink' : notification.type.startsWith('chat_') ? chatActorName : actorName || 'Friink',
+      handle: `@${notification.type === 'login_security' || notification.type.startsWith('professional_registration_') || isSubscriptionNotification ? 'friink' : notification.type.startsWith('chat_') ? chatActorHandle : actorHandle}`,
       text: getNotificationText(notification.type, requesterUsername, recipientUsername, notification.type.startsWith('chat_') ? chatActorName : actorName, notification.type.startsWith('chat_') ? chatActorHandle : actorHandle, payload),
       createdAt: notification.created_at,
-      initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : actorName || actorHandle),
+      initials: getInitials(notification.type.startsWith('chat_') ? chatActorName : isSubscriptionNotification ? 'Friink' : actorName || actorHandle),
       showProfessionalBadge: notification.actor_show_professional_badge,
       tone: notification.read ? 'sage' : 'mint',
       unread: !notification.read,
@@ -835,6 +888,12 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return typeof payload.message === 'string' && payload.message ? `Your Friink Registration request was declined: ${payload.message}` : 'Your Friink Registration request was declined. You may apply again.';
       case 'professional_registration_revoked':
         return typeof payload.message === 'string' && payload.message ? `Your Friink Registration was revoked: ${payload.message}` : 'Your Friink Registration was revoked by Friink staff.';
+      case 'subscription_access_granted':
+        return typeof payload.plan_name === 'string' ? `Friink staff granted you ${payload.plan_name} access${payload.indefinite ? ' with no expiration' : '.'}` : 'Friink staff granted you a new plan.';
+      case 'subscription_access_changed':
+        return typeof payload.plan_name === 'string' ? `Your Friink plan changed to ${payload.plan_name}${payload.indefinite ? ' with no expiration' : '.'}` : 'Your Friink plan was updated by staff.';
+      case 'subscription_access_revoked':
+        return typeof payload.plan_name === 'string' ? `Your ${payload.plan_name} access was ended by Friink staff. You are now on Friink Free.` : 'Your paid Friink access was ended. You are now on Friink Free.';
       case 'request_accepted':
       default:
         return recipientUsername ? `You are now following @${recipientUsername}.` : 'Your follow request was accepted.';
@@ -1226,7 +1285,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
             )}
             {showTabs !== false && activeScreen === 'directory' && (
               <Tabs
-                tabs={[{ id: 'all', label: 'All' }, { id: 'professionals', label: 'Professionals' }, { id: 'registered', label: 'Friink Registered' }]}
+                tabs={[{ id: 'all', label: 'All' }, { id: 'registered', label: 'Friink Registered' }]}
                 activeId={directoryTab}
                 onChange={(id) => router.replace(`/directory?tab=${id as DirectoryTab}`)}
                 ariaLabel="Directory sections"
@@ -1416,7 +1475,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 inputLabel="Post"
                 sendLabel="Post"
                 maxLength={256}
-                draftStorageKey={`friink-draft:${user.id}:floating:${composeContext.kind}:${composeContext.kind === 'post' ? 'new' : composeContext.post.id}`}
                 showCount
                 allowEmptySubmit={composeContext.kind === 'quote'}
                 enableMentions

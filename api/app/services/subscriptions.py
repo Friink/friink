@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.models.security_event import SecurityEventType
 from app.services.security_events import record_security_event_safely
+from app.models.notification import NotificationType
 from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignment
 from app.models.user import User
+from app.services.notifications import create_notification
 
 FREE_CODE = "friink_free"
 ENTITLEMENTS = (
@@ -77,6 +79,19 @@ def _audit(session: Session, actor: User, kind: str, assignment: SubscriptionAss
         payload={"kind": kind, "target_user": assignment.user_id.hex, "assignment_id": str(assignment.id), "plan": assignment.plan.code, "reason": reason, "replaced_assignment_id": str(replaced_id) if replaced_id else None},
     )
 
+def _notify_access_change(session: Session, user: User, assignment: SubscriptionAssignment, *, replaced: bool) -> None:
+    create_notification(
+        session,
+        recipient_user_id=user.id,
+        notification_type=NotificationType.subscription_access_changed if replaced else NotificationType.subscription_access_granted,
+        payload={
+            "plan_name": assignment.plan.name,
+            "expires_at": assignment.expires_at.isoformat() if assignment.expires_at else None,
+            "indefinite": assignment.expires_at is None,
+            "action_href": "/settings/subscription",
+        },
+    )
+
 def grant(session: Session, actor: User, user: User, plan_code: str, duration_days: int | None, reason: str, expires_at: datetime | None = None) -> SubscriptionAssignment:
     if user.lifecycle_status != "active":
         raise HTTPException(409, "Plan changes are unavailable while this account is inactive.")
@@ -101,6 +116,7 @@ def grant(session: Session, actor: User, user: User, plan_code: str, duration_da
     session.add(assignment)
     session.flush()
     replaced_id = prior.id if prior else None
+    _notify_access_change(session, user, assignment, replaced=prior is not None)
     session.commit()
     session.refresh(assignment)
     _audit(session, actor, "subscription_granted", assignment, reason, replaced_id)
@@ -115,6 +131,12 @@ def revoke(session: Session, actor: User, user: User, reason: str) -> Subscripti
     if assignment is None:
         raise HTTPException(404, "No active subscription assignment.")
     assignment.status = "revoked"; assignment.revoked_at = utc_now(); assignment.revoked_by_user_id = actor.id
+    create_notification(
+        session,
+        recipient_user_id=user.id,
+        notification_type=NotificationType.subscription_access_revoked,
+        payload={"plan_name": assignment.plan.name, "action_href": "/settings/subscription"},
+    )
     session.commit()
     session.refresh(assignment)
     _audit(session, actor, "subscription_revoked", assignment, reason)
