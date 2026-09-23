@@ -63,7 +63,7 @@ function ChatConversationRow({ conversation, currentUserId, onOpen, onSettingCha
     <ListRow
       className="chat-list-row"
       title={<span className="chat-row-profile" onClick={(event) => event.stopPropagation()}><ProfileCard href={`/${conversation.participant.username}`} name={conversation.participant.display_name || conversation.participant.username} handle={`@${conversation.participant.username}`} imageUrl={conversation.participant.profile_picture_url} showProfessionalBadge={conversation.participant.show_professional_badge} /></span>}
-      middle={<span className="chat-row-details"><span className="chat-row-preview">{getConversationPreview(conversation)}</span><span className="chat-row-date">{formatRelativeTime(conversation.updated_at)}</span>{state ? <span className="chat-row-state">{state}</span> : null}</span>}
+      middle={<span className="chat-row-details"><span className="chat-row-preview">{getConversationPreview(conversation)}</span><span className="chat-row-date">{formatRelativeTime(conversation.updated_at)}</span>{state ? <span className={`chat-row-state${conversation.unread || state === 'New message' ? ' is-unread' : ''}`}>{state}</span> : null}</span>}
       trailing={<button ref={menuButtonRef} className="icon-button chat-row-menu-button" type="button" aria-label="Chat actions" aria-haspopup="menu" aria-expanded={menuOpen} onClick={(event) => { event.stopPropagation(); setMenuOpen((open) => !open); }}><i className="fa-solid fa-ellipsis-vertical" aria-hidden="true" /><ActionMenu open={menuOpen} anchorRef={menuButtonRef} items={menuItems} ariaLabel="Chat actions" onClose={() => setMenuOpen(false)} /></button>}
       unread={conversation.unread}
       onClick={onOpen}
