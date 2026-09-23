@@ -4106,6 +4106,31 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   min-width: 0;
 }
 
+.chat-row-title {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.chat-row-title .message-profile-link {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-row-preview {
+  min-width: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .list-row-header strong,
 .message-profile-link {
   min-width: 0;
@@ -4122,6 +4147,11 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chat-row-date {
+  display: block;
+  text-align: right;
 }
 
 .list-row-body {

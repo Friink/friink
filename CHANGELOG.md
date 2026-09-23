@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T01:10:05Z
+- [chat] Updated conversation rows to show the latest message beside the participant name with an ellipsis and moved the relative date to the line below.
+
 ## 2026-09-23T01:03:06Z
 - [connections] Limited the Requests tab to private signed-in profiles and normalized unauthorized direct Requests routes to All.
 

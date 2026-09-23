@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T01:10:05Z — Show latest message in chat list rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use the chat-list row's available line to show the last message and place the date below it.
+- Changes Made: Chat rows now place the latest preview beside the participant name, truncate long previews with ellipsis, and right-align the relative date on the second line. Updated chat and design contracts.
+- Verification Status: Targeted TypeScript and diff checks pending.
+
 ## 2026-09-23T01:03:06Z — Restrict connection requests tab to private profiles
 
 - Agent: Codex
