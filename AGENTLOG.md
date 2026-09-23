@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:44:25Z — Fix saved-profile success toast tone
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Profile saved confirmation toast use the success color instead of red.
+- Changes Made: Passed the explicit `success` tone for both profile save and remove confirmations.
+- Verification Status: Targeted TypeScript verification follows.
+
 ## 2026-09-23T00:39:31Z — Use layered Font Awesome saved-profile icon
 
 - Agent: Codex

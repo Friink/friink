@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T00:44:25Z
+- [profiles/saved] Fixed Profile saved and removal confirmations displaying with the error/red toast tone.
+
 ## 2026-09-23T00:39:31Z
 - [saved-profiles] Replaced the CSS-drawn removal slash with Font Awesome's layered star and slash glyphs.
 

@@ -253,7 +253,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         void setProfileSave(session.accessToken, profileUser.username, nextSaved)
           .then(() => {
             setProfileSaved(nextSaved);
-            addToast(nextSaved ? 'Profile saved.' : 'Profile removed from Saved.');
+            addToast(nextSaved ? 'Profile saved.' : 'Profile removed from Saved.', 'success');
           })
           .catch((error) => addToast(error instanceof Error ? error.message : 'Could not update saved profile.'))
           .finally(() => setProfileSaveBusy(false));
