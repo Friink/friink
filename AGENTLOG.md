@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T20:45:43Z — Align staging and production chat schema
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure staging and production databases include the current
+  chat data foundation.
+- Changes Made: Verified staging at `20260924_0057`; applied migration
+  `20260924_0057` to production, which was one revision behind. No code or
+  branch was changed.
+- Verification Status: Both staging and production report migration
+  `20260924_0057`; `alembic check` reports no schema drift in either database.
+
 ## 2026-09-23T20:40:24Z — Implement Chat Phase 2 on development
 
 - Agent: Codex

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T20:45:43Z
+- [release/database] Verified staging at migration `20260924_0057` and applied
+  that migration to production, which was one revision behind. Both staging
+  and production now pass `alembic check` with no schema drift.
+
 ## 2026-09-23T20:40:24Z
 - [chat/routing] Implemented Phase 2 on `development`: canonical
   conversation-ID context loading, username compatibility redirects, the
