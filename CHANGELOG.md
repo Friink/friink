@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-23T22:46:29Z
+- [design/topbar] Increased the shared TopBar utility glyphs to 20px, page
+  title to 20px/800, and expanded-search input/buttons to match the larger
+  controls. Set ActionMenu row icons to 16px and preserved the Friink logo
+  size. Updated the navigation and shared design contracts.
+
+## 2026-09-23T22:39:40Z
+- [docs/auth] Recorded the reported local staging API/database incident and
+  the remembered-account recovery path found in the web/API code. Clarified
+  that chat migrations do not modify auth sessions or account slots, and
+  preserved the limits of what can be proven without the incident request log.
+
 ## 2026-09-23T22:17:03Z
 - [release/chat] Applied the chat compatibility migration to the staging
   database using the repository migration gate. Alembic reports the staging

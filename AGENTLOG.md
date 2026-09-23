@@ -1,5 +1,44 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T22:46:29Z — Increase shared TopBar sizing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Enlarge TopBar utility icons and title, enlarge expanded
+  search controls, set ActionMenu row icons to 16px, and preserve logo size.
+- Changes Made: Set TopBar hamburger, Back, Search, Chat, Notifications,
+  Filter, and Actions trigger glyphs to 20px in 40px hit areas; set the
+  centered title to 20px at weight 800; set expanded-search text and icons to
+  20px with 40px submit/close controls; set ActionMenu row glyphs to 16px. Preserved the
+  24px logo image within its 40px link area. Updated the Navigation unit,
+  design-system, and implementation contract.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Reviewed the shared TopBar and ActionMenu selectors;
+  `git diff --check` passed. No tests or build run; browser rendering was not
+  checked. No behavior changes.
+
+## 2026-09-23T22:39:40Z — Record remembered-session recovery investigation
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Document the user's incident sequence and the code/migration
+  evidence explaining why previously remembered accounts appeared after
+  local API recovery and the staging DB migration.
+- Changes Made: Added an incident note to `docs/notes.md` describing the
+  reported sequence, terminal-refresh fallback through device-bound account
+  slots, API-side recovery when a slot refresh cookie is missing, account-list
+  filtering, and the chat-only scope of migrations `20260924_0057` and
+  `20260924_0058`. Recorded that API recovery is the likely explanation, the
+  migration did not recreate auth sessions, and the precise request sequence
+  remains unverified without the original logs.
+- Files: `docs/notes.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the relevant client, API, account-slot, and
+  migration code; no dedicated client regression test for this exact fallback
+  was found. Documentation links and diff formatting checked; no runtime or
+  database state was changed.
+
 ## 2026-09-23T22:17:03Z — Apply latest chat migration to staging
 
 - Agent: Codex

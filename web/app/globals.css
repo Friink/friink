@@ -1822,6 +1822,7 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 .action-menu-item i {
   width: 1rem;
   color: var(--color-muted);
+  font-size: 1rem;
   text-align: center;
 }
 
@@ -5467,6 +5468,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   padding: 0;
   color: var(--color-ink);
   background: transparent;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-search-panel input:focus { outline: none; }
@@ -5474,12 +5476,13 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .topbar-preview-search-button {
   display: inline-grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border: 0;
   border-radius: var(--radius-sm);
   color: var(--color-muted);
   background: transparent;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-search-button:hover,
@@ -5552,6 +5555,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   color: var(--color-ink);
   background: transparent;
   text-decoration: none;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-menu:hover,
@@ -5609,7 +5613,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 
 .topbar-preview-context strong {
   font-family: var(--font-display);
-  font-size: var(--text-sm);
+  font-size: 1.25rem;
   font-weight: 800;
 }
 
@@ -5621,7 +5625,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   overflow: hidden;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: var(--text-sm);
+  font-size: 1.25rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5637,6 +5641,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   padding: 0;
   color: var(--color-ink);
   background: transparent;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-back:hover,

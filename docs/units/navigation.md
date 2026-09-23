@@ -36,6 +36,12 @@ the established search, chat-unread, and notification interactions.
   available header space. Activating the mark goes to Home.
 - The current screen title remains centered except on the search route, where
   the search field occupies the middle header slot.
+- The TopBar's hamburger, Back, Search, Chat, Notifications, Filter, and
+  Actions trigger icons are 20px inside 40px hit areas. The title is centered
+  at 20px, weight 800. Expanded search uses a 40px-high field, 20px input text, and
+  40px submit/close controls; the existing compact Friink logo dimensions are
+  unchanged. ActionMenu row icons are 16px while their labels retain the
+  existing type size.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
   expands into a text input with bounded scope shortcuts and routes submitted
   queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the

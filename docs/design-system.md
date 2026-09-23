@@ -175,7 +175,10 @@ The exact widths, heights, breakpoints, and token names are defined in
   drawer, and keeps the compact Friink mark visible in every mode. The mark
   always links Home except on the search route, where the search field occupies
   the middle slot between Back and Actions. The page title stays centered on
-  other routes. The existing Header and
+  other routes. TopBar utility icons use a consistent 20px glyph size within
+  40px controls; the centered title is 20px and weight 800. Expanded search
+  keeps a 40px field with 20px text and 40px icon buttons. ActionMenu row icons
+  are 16px, and the logo keeps its existing compact size. The existing Header and
   NavigationBar remain mounted but are hidden during preview evaluation. Home exposes the sidebar toggle, compact
   theme-aware mark, Search, Chat, and Notifications. Contextual screens add a
   history-aware Back control and the existing ActionMenu. Its
