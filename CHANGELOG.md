@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T19:25:20Z
+- [release/branches] Propagated the committed Chat gallery and conversation
+  UX documentation to development and staging; verified both branch trees are
+  identical and pushed both remote branches.
+
 ## 2026-09-23T14:05:10Z
 - [docs/chat] Consolidated the `/chats/new` UX contract and five-workstream
   implementation breakdown, including compatibility redirects, modal history,
