@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23T12:12:55Z
+- [web/notifications] Added the account-scoped General settings flow for
+  enabling and disabling browser notifications, including permission states,
+  service-worker registration, current-device revoke behavior, and safe
+  notification click routing.
+
 ## 2026-09-23T12:03:13Z
 - [api/notifications] Scoped push subscriptions to `(user_id, endpoint)` so
   multiple remembered accounts can independently enable notifications on the

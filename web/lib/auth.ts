@@ -118,6 +118,16 @@ export type StaffRole = { key: string; display_name: string; system: boolean; pe
 export type StaffUser = { id: string; username: string; display_name: string | null; email: string; is_staff: boolean; account_locked: boolean; lifecycle_status: 'active' | 'deactivated' | 'pending_deletion' | 'deleted'; deletion_deadline: string | null; permissions: string[] };
 export type SubscriptionSummary = { plan_code: string; plan_name: string; expires_at: string | null; status: 'active' | 'expired' | 'revoked'; assignment_status: 'active' | 'expired' | 'revoked' | null; assignment_id: string | null };
 export type SubscriptionAssignment = SubscriptionSummary & { user_id: string; starts_at: string | null; reason: string | null; created_at: string | null; revoked_at: string | null };
+export type PushSubscription = {
+  id: string;
+  endpoint: string;
+  device_label: string | null;
+  active: boolean;
+  revoked_at: string | null;
+  created_at: string;
+  updated_at: string;
+  last_seen_at: string;
+};
 export type ProfessionalRegistration = {
   user_id: string;
   username: string;
@@ -136,6 +146,38 @@ export type ProfessionalRegistration = {
   created_at: string | null;
   decided_at: string | null;
 };
+
+export async function listPushSubscriptions(accessToken: string): Promise<PushSubscription[]> {
+  return requestApi<PushSubscription[]>('/notifications/push-subscriptions', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
+
+export async function savePushSubscription(accessToken: string, subscription: PushSubscriptionJSON, deviceLabel?: string): Promise<PushSubscription> {
+  if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys.auth) {
+    throw new AuthApiError('This browser did not provide a complete notification subscription.', 0);
+  }
+  return requestApi<PushSubscription>('/notifications/push-subscriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+    body: JSON.stringify({
+      endpoint: subscription.endpoint,
+      keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth },
+      ...(deviceLabel ? { device_label: deviceLabel } : {}),
+    }),
+  });
+}
+
+export async function revokePushSubscription(accessToken: string, subscriptionId: string): Promise<void> {
+  await requestApi<void>(`/notifications/push-subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    authContext: 'authenticated_request',
+  });
+}
 export async function getProfessionalRegistration(accessToken: string): Promise<ProfessionalRegistration> {
   return requestApi<ProfessionalRegistration>('/professional-registration', {
     method: 'GET',

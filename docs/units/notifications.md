@@ -95,6 +95,12 @@ to the browser. Subscription keys are accepted for delivery but are not
 returned in API responses. The account-scoped constraint is added by migration
 `20260923_0056`.
 
+The browser enable/disable flow is implemented in General settings. It is
+explicitly user-gesture-gated, account-scoped, and registers the root-scoped
+`/friink-push-sw.js` worker. The current browser subscription is associated or
+revoked for the active account without unsubscribing the shared browser
+subscription used by another remembered account.
+
 ### Planned Web Push requirements
 
 External delivery should use the standard Web Push protocol with VAPID, not a
@@ -174,10 +180,10 @@ External email and push notification delivery are not active product channels.
 Manual subscription grant, change, and revoke events now use the active
 in-app notification channel; expiry reminders and expiry notifications remain
 planned.
-The service worker, VAPID configuration, external-delivery sender, and push
-outbox processing are not implemented yet. The subscription persistence and
-authenticated management API are now implemented, but they do not deliver
-push notifications by themselves.
+The VAPID configuration, external-delivery sender, and push outbox processing
+are not implemented yet. The subscription persistence, authenticated
+management API, and browser enable/disable flow are implemented, but they do
+not deliver push notifications until the sender is added.
 
 ## Open questions
 

@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T12:12:55Z — Add browser notification enable/disable flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close the push-subscription foundation and browser
+  enable/disable deliverables using account-scoped Settings behavior.
+- Changes Made: Added native browser Push API helpers, a General settings
+  Notifications row with explicit enable/disable and permission-state handling,
+  root-scoped `friink-push-sw.js` registration and safe click routing, and
+  account-specific revoke behavior that preserves another remembered account's
+  browser association. Updated Notifications and Settings unit documentation.
+- Files: `web/lib/auth.ts`, `web/components/account-screens.tsx`,
+  `web/app/globals.css`, `web/public/friink-push-sw.js`,
+  `docs/units/notifications.md`, `docs/units/settings.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript, targeted ESLint, service-worker syntax, and
+  `git diff --check` passed. API subscription tests remain 4 passed.
+
 ## 2026-09-23T12:03:13Z — Make push subscriptions account-scoped
 
 - Agent: Codex
