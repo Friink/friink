@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-23T14:00:47Z
+- [docs/chat] Reconciled planned chat autocomplete with the active Search
+  visibility rule: unauthorized private, blocked, deactivated, and
+  pending-deletion users remain excluded from suggestions.
+
 ## 2026-09-23T13:58:02Z
 - [docs/chat] Recorded the settled `/chats/new` UX decisions: two-character
   search, scrollable identity-rich suggestions, private-account discovery,

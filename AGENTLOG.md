@@ -1,5 +1,16 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T14:00:47Z — Reconcile chat discovery with search privacy rules
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Check whether the planned `/chats/new` UX conflicts with
+  existing business rules.
+- Changes Made: Corrected the Chat unit so autocomplete inherits the active
+  Search visibility contract instead of exposing unauthorized private
+  identities. Kept server-side chat eligibility separate from discovery.
+- Verification Status: Documentation-only correction; diff check pending.
+
 ## 2026-09-23T13:58:02Z — Settle `/chats/new` UX decisions
 
 - Agent: Codex
