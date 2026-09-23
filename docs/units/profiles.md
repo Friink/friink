@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-23T00:05:46Z
+**Last edited:** 2026-09-23T01:00:04Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -73,7 +73,8 @@ relationship, privacy, and blocking state.
   status. An active registered profile shows a `Friink Registered` badge by
   default, and the owner may hide or show that badge from Settings.
 - **PROFILE-R-014:** Reply and Quote actions on profile posts open the shared
-  contextual composer while the standalone new-post composer remains hidden.
+  contextual composer. The signed-in user's own profile also shows the
+  standalone floating post composer; another user's profile keeps it hidden.
 - **PROFILE-R-015:** Another user's profile action menu exposes Save profile
   with a star icon, then Remove from saved after saving; the signed-in user's
   own profile does not expose a save action.

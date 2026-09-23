@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T01:00:04Z
+- [profiles/composer] Enabled the standalone floating post composer on the signed-in user's own profile while keeping it hidden on other profiles.
+
 ## 2026-09-23T00:58:03Z
 - [saved-profiles] Replaced text Follow/Requested/Following controls with the shared icon-only follow state actions.
 

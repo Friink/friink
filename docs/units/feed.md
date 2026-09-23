@@ -58,8 +58,10 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
 ## UX and flows
 
 The Home surface defaults to Explore and supports Following. Feed cards use the
-shared `FeedPost`; the floating composer is available on feed surfaces and is
-hidden on profiles. Empty, loading, refresh, and error states are explicit.
+shared `FeedPost`; the floating composer is available on feed surfaces and the
+signed-in user's own profile, while remaining hidden on other profiles except
+for contextual Reply/Quote composition. Empty, loading, refresh, and error
+states are explicit.
 When new posts are prepended after a refresh or post creation, the feed updates
 after the current React lifecycle and preserves the reader's scroll position
 without forcing a synchronous render from an effect.
