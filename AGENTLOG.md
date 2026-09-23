@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T13:58:02Z — Settle `/chats/new` UX decisions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Decide the remaining user-discovery, validation, request,
+  modal, and one-to-one selection behavior for the planned new-chat flow.
+- Changes Made: Recorded two-character debounced search, scrollable profile
+  suggestions, private-account discoverability, immediate and final server
+  validation, neutral unavailable copy, existing declined-request behavior,
+  pending-request navigation, close-to-home behavior, and prevention of
+  multiple selection before group-chat launch.
+- Verification Status: Documentation-only change; diff check pending.
+
 ## 2026-09-23T13:46:25Z — Document group-ready chat evolution plan
 
 - Agent: Codex
