@@ -167,7 +167,7 @@ export function PostClient({ postId }: PostClientProps) {
 
   if (!post) {
     return postUnavailable ? (
-      <AppShell user={user} onLogout={handleLogout} initialScreen="home" showTabs={false} showFloatingBar={false}>
+      <AppShell user={user} onLogout={handleLogout} initialScreen="post" showTabs={false} showFloatingBar={false}>
         <PostUnavailableState />
       </AppShell>
     ) : null;
@@ -177,7 +177,7 @@ export function PostClient({ postId }: PostClientProps) {
     <AppShell
       user={user}
       onLogout={handleLogout}
-      initialScreen="home"
+      initialScreen="post"
       showTabs={false}
       showFloatingBar={Boolean(composeContext)}
       floatingBarContent={composeContext ? (
@@ -192,7 +192,6 @@ export function PostClient({ postId }: PostClientProps) {
           inputLabel="Post"
           sendLabel="Post"
           maxLength={512}
-          draftStorageKey={`friink-draft:${user.id}:post:${postId}:${composeContext.kind}`}
           showCount
           enableMentions
           contextLabel={composeContext.kind === 'reply' ? `Replying to ${composeContext.post.name}` : `Quoting ${composeContext.post.name}`}

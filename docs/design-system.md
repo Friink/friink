@@ -218,6 +218,11 @@ contextual composer remains 1rem from the last message on every viewport.
 - Labels, helper text, validation, and error messages should be clear and
   located near the relevant control.
 - Preserve user-entered values when a submission fails whenever safe.
+- Profile pages keep the standalone new-post composer hidden, but show the
+  shared contextual composer after a visitor selects Reply or Quote on a
+  profile post.
+- Composer text is screen-local and in-memory only; leaving a composer does
+  not restore its previous text from browser storage.
 - Do not replace a loading state with a generic disabled state that hides why
   the user cannot continue.
 

@@ -1,5 +1,53 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:19:45Z — Fix saved-profile action and API fetch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the profile-save bookmark action with a star, use Remove from saved after saving, and resolve the failed fetch error.
+- Changes Made: Updated the shared profile action menu and synchronized profile/design/rule documentation. Registered ProfileSave in Alembic metadata and upgraded the local API database from `20260917_0051` through `20260923_0053`; the missing saved-profile schema was the fetch failure cause.
+- Verification Status: Database is at migration head `20260923_0053`; TypeScript, targeted Python compilation, and diff checks passed.
+
+## 2026-09-23T00:05:46Z — Add saved profiles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add profile saving from the profile action menu and define behavior for deactivated or deleted profiles.
+- Changes Made: Added the private profile-save relation, API endpoints, migration, profile-menu Save/Unsave action, Saved Profiles listing, and a privacy-preserving removable unavailable row; synchronized product/design documentation and added API coverage.
+- Verification Status: Web TypeScript, targeted Python compilation, diff checks, and the saved-profile API flow test passed. The API test used an isolated SQLite database and confirmed unavailable rows do not expose profile identity and can be removed.
+
+## 2026-09-22T23:50:18Z — Restore local development server
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and resolve localhost returning internal server errors.
+- Changes Made: Confirmed all routes returned 500 from the stale Turbopack/SWC process, verified the same route returned 200 under Webpack, restarted port 3000 with Webpack, and made both web development scripts use the Webpack fallback automatically on this Windows environment.
+- Verification Status: `/admin/posts` and `/` returned HTTP 200 after restart; targeted TypeScript and diff checks from the preceding feature changes remain passing.
+
+## 2026-09-22T23:44:25Z — Enable profile post replies and quotes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Reply and Quote actions not opening a composer on profile posts.
+- Changes Made: Updated the shared AppShell floating-bar visibility rule to show contextual composers on profile surfaces, while keeping the standalone new-post composer hidden. Synchronized the Profiles, Posts, design, and active rule documentation.
+- Verification Status: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+## 2026-09-22T23:41:02Z — Remove composer draft persistence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the feature that restores typed composer text after returning to a screen.
+- Changes Made: Removed the shared Composer's localStorage read/write behavior and all draft-storage key props, then documented the screen-local in-memory draft contract across Feed, Posts, active rules, and the design implementation contract.
+- Verification Status: `npx tsc --noEmit --incremental false` and `git diff --check` passed; repository search found no remaining composer persistence references.
+
+## 2026-09-22T23:29:46Z — Fix post-detail shell state
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix post details showing Home in the header and highlighting Home in the side drawer.
+- Changes Made: Added an explicit `post` shell screen, mapped post-detail clients to it, kept all drawer destinations inactive for detail routes, and documented the contextual header/drawer contract in the Navigation, Posts, and active rules documents.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. Focused ESLint remains blocked by pre-existing `react-hooks/set-state-in-effect` errors and dependency warnings in `web/components/app-shell.tsx`.
+
 ## 2026-09-22T23:05:00Z — Audit session documentation
 
 - Agent: Codex

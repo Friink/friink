@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T02:55:00Z
+**Last edited:** 2026-09-22T23:41:02Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -51,6 +51,9 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
 - **FEED-R-010:** The Home feed refresh control spans the same content column as
   the feed body and floating composer; it must not add a second horizontal
   inset of its own.
+- **FEED-R-011:** Composer text is held in screen-local memory only. Leaving a
+  feed or contextual composer does not restore its previous text from browser
+  storage.
 
 ## UX and flows
 

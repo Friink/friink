@@ -45,8 +45,10 @@ import {
   markNotificationRead,
   getUnreadNotificationCount,
   getProfessionalRegistration,
+  getProfileSaveStatus,
   submitProfessionalRegistration,
   cancelProfessionalRegistration,
+  setProfileSave,
   listPosts,
   loadAuthSession,
   staffLogout,
@@ -129,6 +131,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [connectionActionBusy, setConnectionActionBusy] = useState(false);
   const [profileBlockOpen, setProfileBlockOpen] = useState(false);
   const [profileBlockBusy, setProfileBlockBusy] = useState(false);
+  const [profileSaved, setProfileSaved] = useState<boolean | null>(null);
+  const [profileSaveBusy, setProfileSaveBusy] = useState(false);
   const [professionalRegistration, setProfessionalRegistration] = useState<ProfessionalRegistration | null>(null);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
   const [registrationInstitute, setRegistrationInstitute] = useState('');
@@ -173,7 +177,16 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       .then(setProfessionalRegistration)
       .catch(() => setProfessionalRegistration(null));
   }, [activeScreen, profileUser]);
-  const sidebarActiveScreen: Screen | null = activeScreen === 'profile' && profileUser
+  useEffect(() => {
+    setProfileSaved(null);
+    if (activeScreen !== 'profile' || !profileUser) return;
+    const session = loadAuthSession();
+    if (!session) return;
+    getProfileSaveStatus(session.accessToken, profileUser.username)
+      .then((status) => setProfileSaved(status.saved))
+      .catch(() => setProfileSaved(false));
+  }, [activeScreen, profileUser]);
+  const sidebarActiveScreen: Screen | null = activeScreen === 'post' || (activeScreen === 'profile' && profileUser)
     ? null
     : activeScreen;
   const viewingOtherConnections = Boolean(connectionsUsername && connectionsUsername.toLowerCase() !== user.username.toLowerCase());
@@ -195,7 +208,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       ];
   const hasContextualFloatingBar = floatingBarContent !== null && floatingBarContent !== undefined && floatingBarContent !== false;
   const hasComposerContext = composeContext.kind !== 'post';
-  const shouldShowFloatingBar = showFloatingBar && activeScreen !== 'profile' && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
+  const shouldShowFloatingBar = showFloatingBar && (hasContextualFloatingBar || hasComposerContext || activeScreen === 'home' || (activeScreen === 'messages' && hasContextualFloatingBar));
   const visibleNotifications = notifications.filter((notification) => {
     if (notificationsTab === 'security' && notification.kind !== 'login') return false;
     if (notificationsUnreadOnly && !notification.unread) return false;
@@ -229,8 +242,27 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   };
   const profileMenuItems: ActionMenuItem[] = profileUser ? [
     {
+      label: profileSaved ? 'Remove from saved' : 'Save profile',
+      icon: 'fa-star',
+      disabled: profileSaved === null || profileSaveBusy,
+      onClick: () => {
+        const session = loadAuthSession();
+        if (!session || profileSaved === null) return;
+        const nextSaved = !profileSaved;
+        setProfileSaveBusy(true);
+        void setProfileSave(session.accessToken, profileUser.username, nextSaved)
+          .then(() => {
+            setProfileSaved(nextSaved);
+            addToast(nextSaved ? 'Profile saved.' : 'Profile removed from Saved.');
+          })
+          .catch((error) => addToast(error instanceof Error ? error.message : 'Could not update saved profile.'))
+          .finally(() => setProfileSaveBusy(false));
+      },
+    },
+    {
       label: 'Block user',
       icon: 'fa-ban',
+      dividerBefore: true,
       onClick: () => setProfileBlockOpen(true),
     },
   ] : [
@@ -374,6 +406,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     switch (screen) {
       case 'home':
         return 'Home';
+      case 'post':
+        return 'Post';
       case 'profile':
         return 'Profile';
       case 'connections':
@@ -1441,7 +1475,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                 inputLabel="Post"
                 sendLabel="Post"
                 maxLength={256}
-                draftStorageKey={`friink-draft:${user.id}:floating:${composeContext.kind}:${composeContext.kind === 'post' ? 'new' : composeContext.post.id}`}
                 showCount
                 allowEmptySubmit={composeContext.kind === 'quote'}
                 enableMentions

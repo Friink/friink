@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-23T00:19:45Z
+- [profiles/saved] Switched profile saving to the star action icon, changed the saved label to Remove from saved, and applied the pending local database migrations that caused the fetch failure.
+
+## 2026-09-23T00:05:46Z
+- [profiles/saved] Added private saved-profile actions, a Saved Profiles list, and neutral removable handling for unavailable accounts.
+
+## 2026-09-22T23:50:18Z
+- [development] Fixed localhost startup on Windows by making the web dev scripts use Next.js Webpack mode when the native SWC binding is unavailable.
+
+## 2026-09-22T23:44:25Z
+- [profiles/composer] Fixed Reply and Quote actions on profile posts so they open the shared contextual composer while keeping the standalone profile post composer hidden.
+
+## 2026-09-22T23:41:02Z
+- [composer] Removed browser-local draft persistence; composer text now clears when leaving its screen and is not restored on return.
+
+## 2026-09-22T23:29:46Z
+- [navigation/posts] Fixed post-detail routes incorrectly retaining the Home header title and drawer highlight by giving them their own contextual shell state.
+
 ## 2026-09-22T23:05:00Z
 - [docs] Audited the completed session work and corrected stale post-media documentation that still described the retired horizontal slider; the Posts and Media units plus shared design contracts now match the responsive gallery/lightbox implementation and explicitly record the still-planned picker helper/counter.
 

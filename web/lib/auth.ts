@@ -1384,6 +1384,35 @@ export async function listSavedPosts(accessToken: string, cursor?: string | null
   return authenticatedRequest<ApiFeedPage>(accessToken, `/posts/saved?${params.toString()}`);
 }
 
+export type ApiProfileSaveStatus = { username: string; saved: boolean };
+export type ApiSavedProfile = {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  profile_picture_url: string | null;
+  show_professional_badge: boolean;
+  available: boolean;
+};
+export type ApiSavedProfilePage = { items: ApiSavedProfile[]; next_cursor: string | null; has_more: boolean };
+
+export async function getProfileSaveStatus(accessToken: string, username: string): Promise<ApiProfileSaveStatus> {
+  return authenticatedRequest<ApiProfileSaveStatus>(accessToken, `/users/${encodeURIComponent(username)}/save`);
+}
+
+export async function setProfileSave(accessToken: string, username: string, saved: boolean): Promise<ApiProfileSaveStatus> {
+  return authenticatedRequest<ApiProfileSaveStatus>(accessToken, `/users/${encodeURIComponent(username)}/save`, saved ? 'POST' : 'DELETE');
+}
+
+export async function listSavedProfiles(accessToken: string, cursor?: string | null): Promise<ApiSavedProfilePage> {
+  const params = new URLSearchParams({ limit: '20' });
+  if (cursor) params.set('cursor', cursor);
+  return authenticatedRequest<ApiSavedProfilePage>(accessToken, `/users/saved?${params.toString()}`);
+}
+
+export async function removeSavedProfile(accessToken: string, profileId: string): Promise<void> {
+  await authenticatedRequest<void>(accessToken, `/users/saved/${encodeURIComponent(profileId)}`, 'DELETE');
+}
+
 export type ApiConnectionUser = {
   id: string;
   username: string;
