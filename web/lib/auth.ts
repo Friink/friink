@@ -1494,6 +1494,7 @@ export type ApiMessage = {
   content: string;
   created_at: string;
   receipt_status?: 'sent' | 'delivered' | 'read';
+  media: { url: string }[];
 };
 
 export const CHAT_MESSAGE_MAX_LENGTH = 2048;
@@ -1639,6 +1640,7 @@ export async function listPostReplies(postId: string): Promise<ApiPost[]> {
 
 type PostMediaUploadUrls = { items: PresignedMediaUpload[] };
 type PostMediaConfirmation = { object_key: string; public_url: string };
+type ChatMediaConfirmation = { object_key: string; public_url: string | null };
 
 function postMediaUploadError(stage: 'start' | 'transfer' | 'confirm', error: unknown): AuthApiError {
   const apiError = error instanceof AuthApiError ? error : null;
@@ -1747,6 +1749,64 @@ async function uploadPostMedia(accessToken: string, files: File[]): Promise<stri
   }
 }
 
+async function uploadChatMedia(accessToken: string, files: File[]): Promise<string[]> {
+  const uploadedKeys: string[] = [];
+  try {
+    for (const file of files) {
+      const compressedFile = await compressImage(file, 'postMedia');
+      const uploadUrls = await requestApi<PostMediaUploadUrls>('/chat/media/upload-url', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ count: 1 }),
+      });
+      const item = uploadUrls.items[0];
+      if (uploadUrls.items.length !== 1 || !item) throw new AuthApiError('The server returned an invalid chat-media upload plan.', 502);
+      uploadedKeys.push(item.object_key);
+      await uploadPresignedMedia(item, compressedFile);
+      await requestApi<ChatMediaConfirmation>('/chat/media/confirm', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ object_key: item.object_key }),
+      });
+    }
+    return uploadedKeys;
+  } catch (error) {
+    if (uploadedKeys.length) {
+      await requestApi<void>('/chat/media/cleanup', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ storage_keys: uploadedKeys }),
+      }).catch(() => undefined);
+    }
+    throw error;
+  }
+}
+
+async function sendChatMessage(accessToken: string, path: string, content: string, clientMessageId: string, media: File[] = []): Promise<ApiMessage> {
+  const mediaKeys = media.length ? await uploadChatMedia(accessToken, media) : [];
+  try {
+    return await requestApi<ApiMessage>(path, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      authContext: 'authenticated_request',
+      body: JSON.stringify({ content, client_message_id: clientMessageId, media: mediaKeys.map((storageKey) => ({ storage_key: storageKey })) }),
+    });
+  } catch (error) {
+    if (mediaKeys.length) {
+      await requestApi<void>('/chat/media/cleanup', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        authContext: 'authenticated_request',
+        body: JSON.stringify({ storage_keys: mediaKeys }),
+      }).catch(() => undefined);
+    }
+    throw error;
+  }
+}
+
 export async function createPost(accessToken: string, input: { content: string; kind?: 'post' | 'quote' | 'reply'; quotedPostId?: string | null; parentPostId?: string | null; media?: File[] }): Promise<ApiPost> {
   const mediaKeys = input.media?.length ? await uploadPostMedia(accessToken, input.media) : undefined;
   try {
@@ -1814,13 +1874,8 @@ export async function getChatContext(accessToken: string, username: string): Pro
   });
 }
 
-export async function sendMessageToUser(accessToken: string, username: string, content: string, clientMessageId: string): Promise<ApiMessage> {
-  return requestApi<ApiMessage>(`/chat/conversations/with/${encodeURIComponent(username)}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    authContext: 'authenticated_request',
-    body: JSON.stringify({ content, client_message_id: clientMessageId }),
-  });
+export async function sendMessageToUser(accessToken: string, username: string, content: string, clientMessageId: string, media: File[] = []): Promise<ApiMessage> {
+  return sendChatMessage(accessToken, `/chat/conversations/with/${encodeURIComponent(username)}/messages`, content, clientMessageId, media);
 }
 
 export async function acceptChatRequest(accessToken: string, conversationId: string): Promise<ApiConversation> {
@@ -1883,13 +1938,8 @@ export async function getReadReceiptPreference(accessToken: string): Promise<{ r
   });
 }
 
-export async function sendConversationMessage(accessToken: string, conversationId: string, content: string, clientMessageId: string): Promise<ApiMessage> {
-  return requestApi<ApiMessage>(`/chat/conversations/${conversationId}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    authContext: 'authenticated_request',
-    body: JSON.stringify({ content, client_message_id: clientMessageId }),
-  });
+export async function sendConversationMessage(accessToken: string, conversationId: string, content: string, clientMessageId: string, media: File[] = []): Promise<ApiMessage> {
+  return sendChatMessage(accessToken, `/chat/conversations/${conversationId}/messages`, content, clientMessageId, media);
 }
 
 export async function sendFollowRequest(accessToken: string, recipientUsername: string): Promise<ApiFollowRequest> {
