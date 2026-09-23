@@ -1,5 +1,78 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T12:12:55Z — Add browser notification enable/disable flow
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close the push-subscription foundation and browser
+  enable/disable deliverables using account-scoped Settings behavior.
+- Changes Made: Added native browser Push API helpers, a General settings
+  Notifications row with explicit enable/disable and permission-state handling,
+  root-scoped `friink-push-sw.js` registration and safe click routing, and
+  account-specific revoke behavior that preserves another remembered account's
+  browser association. Updated Notifications and Settings unit documentation.
+- Files: `web/lib/auth.ts`, `web/components/account-screens.tsx`,
+  `web/app/globals.css`, `web/public/friink-push-sw.js`,
+  `docs/units/notifications.md`, `docs/units/settings.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: TypeScript, targeted ESLint, service-worker syntax, and
+  `git diff --check` passed. API subscription tests remain 4 passed.
+
+## 2026-09-23T12:03:13Z — Make push subscriptions account-scoped
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Capture the decision that every remembered account has its
+  own notification settings and support multiple account subscriptions per
+  browser.
+- Changes Made: Changed push-subscription uniqueness from endpoint-wide to
+  `(user_id, endpoint)`, added migration `20260923_0056`, updated upsert
+  ownership lookup, added multi-account API coverage, and documented the
+  `Security` and `Activity` categories.
+- Files: `api/app/models/push_subscription.py`,
+  `api/app/services/notifications.py`,
+  `api/alembic/versions/20260923_0056_account_scoped_push_subscriptions.py`,
+  `api/tests/test_push_subscriptions.py`, `docs/units/notifications.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused API tests and migration checks pending.
+
+## 2026-09-23T11:50:36Z — Add push-subscription management APIs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and test the Notifications API portion of the
+  planned Web Push work.
+- Changes Made: Added the `push_subscriptions` model and Alembic migration
+  `20260923_0055`; added authenticated list, create/replace, and revoke
+  endpoints; protected browser mutations with the existing allowed-origin
+  check; validated subscription payloads; and kept key material out of API
+  responses. Updated the Notifications unit to distinguish the implemented API
+  foundation from the still-planned service worker and delivery sender.
+- Files: `api/app/models/push_subscription.py`,
+  `api/app/models/__init__.py`, `api/app/schemas/notifications.py`,
+  `api/app/services/notifications.py`, `api/app/routers/notifications.py`,
+  `api/alembic/versions/20260923_0055_push_subscriptions.py`,
+  `api/tests/test_push_subscriptions.py`, `docs/units/notifications.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused API tests passed (3 passed); Alembic reports
+  `20260923_0055` as the head; Python compilation and `git diff --check` passed.
+
+## 2026-09-23T11:37:23Z — Plan Web Push notification delivery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Record a practical five-deliverable plan for closing the
+  partial Notifications unit.
+- Changes Made: Added the planned Web Push delivery sequence to the
+  Notifications unit: subscription foundation, browser enable/disable flow,
+  VAPID delivery, outbox/failure handling, and verification/release hardening.
+  Recorded a 7–10 engineering-day target for production-ready completion.
+  Kept `docs/rules.md` unchanged because the behavior remains planned and is
+  not yet an active implementation-backed rule.
+- Files: `docs/units/notifications.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documentation-only change; Markdown structure and diff
+  checks pending.
+
 ## 2026-09-23T01:35:00Z — Rework chat list row hierarchy
 
 - Agent: Codex

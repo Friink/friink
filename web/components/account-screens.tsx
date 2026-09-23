@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getMySubscription, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, saveAuthSession, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval, type SubscriptionSummary } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getMySubscription, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, listPushSubscriptions, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, revokePushSubscription, saveAuthSession, savePushSubscription, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval, type PushSubscription, type SubscriptionSummary } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -15,6 +15,7 @@ import { PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, PasswordCriteria } from '@/compo
 
 export type AppearanceMode = 'system' | 'light' | 'dark';
 type SettingsTab = 'general' | 'profile' | 'account' | 'subscription' | 'privacy';
+type PushStatus = 'loading' | 'not-enabled' | 'enabled' | 'blocked' | 'unsupported' | 'unavailable';
 
 type SettingsScreenProps = {
   user: AuthUser;
@@ -187,6 +188,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
   const [pendingApprovals, setPendingApprovals] = useState<PendingLoginApproval[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [subscriptionError, setSubscriptionError] = useState('');
+  const [pushSubscriptions, setPushSubscriptions] = useState<PushSubscription[]>([]);
+  const [pushStatus, setPushStatus] = useState<PushStatus>('loading');
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMessage, setPushMessage] = useState('');
   const [lifecyclePassword, setLifecyclePassword] = useState('');
   const [deletionToken, setDeletionToken] = useState('');
   const [deletionOtp, setDeletionOtp] = useState('');
@@ -260,6 +265,39 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
       .catch((error) => { if (!cancelled) setSubscriptionError(error instanceof Error ? error.message : 'Could not load your plan.'); });
     return () => { cancelled = true; };
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'general') return;
+    let cancelled = false;
+    const loadPushState = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+        if (!cancelled) setPushStatus('unsupported');
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        if (!cancelled) setPushStatus('blocked');
+        return;
+      }
+      const session = loadAuthSession();
+      if (!session) return;
+      try {
+        const items = await listPushSubscriptions(session.accessToken);
+        if (cancelled) return;
+        setPushSubscriptions(items);
+        const registration = await navigator.serviceWorker.getRegistration();
+        const browserSubscription = await registration?.pushManager.getSubscription();
+        const enabledHere = Boolean(browserSubscription && items.some((item) => item.endpoint === browserSubscription.endpoint && item.active));
+        setPushStatus(enabledHere ? 'enabled' : 'not-enabled');
+      } catch (error) {
+        if (!cancelled) {
+          setPushStatus('unavailable');
+          setPushMessage(error instanceof Error ? error.message : 'Notifications are temporarily unavailable.');
+        }
+      }
+    };
+    void loadPushState();
+    return () => { cancelled = true; };
+  }, [activeTab, user.id]);
 
   async function loadBlocked(reset = false) {
     const session = loadAuthSession();
@@ -842,6 +880,63 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     }
   }
 
+  function pushStatusLabel() {
+    switch (pushStatus) {
+      case 'enabled': return 'Enabled on this device';
+      case 'blocked': return 'Blocked by browser';
+      case 'unsupported': return 'Unavailable in this browser';
+      case 'unavailable': return 'Temporarily unavailable';
+      case 'loading': return 'Checking…';
+      default: return 'Not enabled';
+    }
+  }
+
+  async function handlePushToggle() {
+    if (pushBusy || pushStatus === 'unsupported' || pushStatus === 'blocked' || pushStatus === 'loading') return;
+    const session = loadAuthSession();
+    if (!session || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      setPushStatus('unsupported');
+      return;
+    }
+    setPushBusy(true);
+    setPushMessage('');
+    try {
+      const registration = await navigator.serviceWorker.register('/friink-push-sw.js', { scope: '/' });
+      if (pushStatus === 'enabled') {
+        const browserSubscription = await registration.pushManager.getSubscription();
+        const matchingServerSubscription = browserSubscription
+          ? pushSubscriptions.find((item) => item.endpoint === browserSubscription.endpoint && item.active)
+          : null;
+        if (!matchingServerSubscription) {
+          setPushStatus('not-enabled');
+          return;
+        }
+        await revokePushSubscription(session.accessToken, matchingServerSubscription.id);
+        setPushSubscriptions((items) => items.map((item) => item.id === matchingServerSubscription.id ? { ...item, active: false, revoked_at: new Date().toISOString() } : item));
+        setPushStatus('not-enabled');
+        setPushMessage('Notifications are disabled for this account on this device.');
+        return;
+      }
+      const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setPushStatus(permission === 'denied' ? 'blocked' : 'not-enabled');
+        setPushMessage(permission === 'denied' ? 'Notifications remain available in Friink. To enable browser alerts, allow them in your browser settings.' : 'Browser notification permission was not granted.');
+        return;
+      }
+      const browserSubscription = await registration.pushManager.getSubscription()
+        ?? await registration.pushManager.subscribe({ userVisibleOnly: true });
+      const saved = await savePushSubscription(session.accessToken, browserSubscription.toJSON(), 'This browser');
+      setPushSubscriptions((items) => [...items.filter((item) => item.id !== saved.id), saved]);
+      setPushStatus('enabled');
+      setPushMessage('Notifications are enabled on this device for this account.');
+    } catch (error) {
+      setPushStatus('unavailable');
+      setPushMessage(error instanceof Error ? error.message : 'We could not update browser notifications. Please try again.');
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   return (
     <PageSurface className="simple-screen settings-screen">
       <div className="settings-header" />
@@ -924,6 +1019,28 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
                   </span>
                 </label>
               ) : null}
+            </SettingsRow>
+
+            <SettingsRow
+              icon={<span className="settings-icon"><i className="fa-regular fa-bell" aria-hidden="true" /></span>}
+              title="Notifications"
+              subtitle="Security and Activity alerts for this account on this device."
+              className="settings-row settings-row-expanded"
+              trailing={<span className="settings-notification-status" aria-live="polite">{pushStatusLabel()}</span>}
+            >
+              <div className="settings-notification-control">
+                <button
+                  className={pushStatus === 'enabled' ? 'button-secondary' : 'button-primary'}
+                  type="button"
+                  onClick={() => void handlePushToggle()}
+                  disabled={pushBusy || pushStatus === 'unsupported' || pushStatus === 'blocked' || pushStatus === 'loading'}
+                >
+                  <i className={`fa-solid ${pushBusy ? 'fa-spinner fa-spin' : pushStatus === 'enabled' ? 'fa-bell-slash' : 'fa-bell'}`} aria-hidden="true" />
+                  {pushBusy ? 'Updating…' : pushStatus === 'enabled' ? 'Disable on this device' : 'Enable notifications'}
+                </button>
+                {pushMessage ? <span className="settings-field-message" role={pushStatus === 'unavailable' ? 'alert' : 'status'}>{pushMessage}</span> : null}
+                {pushStatus === 'blocked' ? <span className="settings-field-message">Browser permission is blocked. Allow notifications in your browser settings, then return here to try again.</span> : null}
+              </div>
             </SettingsRow>
 
           </div>
