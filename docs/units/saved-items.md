@@ -40,6 +40,8 @@ content remains inside the shared capped content box.
   removable unavailable row without a link or profile details. Reactivation
   restores its details; permanent deletion removes the relationship through
   the account cascade.
+- **SAVED-R-007:** A saved-profile row renders its ProfileCard identity once and
+  uses a visible star-with-slash removal control.
 
 ## Acceptance criteria
 

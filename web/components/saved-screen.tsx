@@ -139,18 +139,25 @@ export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPost
         <>
           <div className="saved-list">
             {savedProfiles.length > 0 ? savedProfiles.map((profile) => (
+              (() => {
+                const profileName = profile.available ? (profile.display_name || profile.username || 'Profile') : 'Profile unavailable';
+                const profileHandle = profile.available ? `@${profile.username}` : 'This profile is no longer available.';
+                return (
               <ListRow
                 key={profile.id}
-                avatar={profile.available ? <ProfileCard href={`/${encodeURIComponent(profile.username!)}/posts`} name={profile.display_name || profile.username || 'Profile'} handle={`@${profile.username}`} initials={(profile.display_name || profile.username || 'FR').slice(0, 2).toUpperCase()} tone="mint" imageUrl={profile.profile_picture_url} showProfessionalBadge={profile.show_professional_badge} /> : <ProfileCard name="Profile unavailable" handle="" initials="?" tone="sage" />}
-                title={profile.available ? (profile.display_name || profile.username || 'Profile') : 'Profile unavailable'}
-                subtitle={profile.available ? `@${profile.username}` : 'This profile is no longer available.'}
+                avatar={profile.available ? <ProfileCard href={`/${encodeURIComponent(profile.username!)}/posts`} name={profileName} handle={`@${profile.username}`} initials={profileName.slice(0, 2).toUpperCase()} tone="mint" imageUrl={profile.profile_picture_url} showProfessionalBadge={profile.show_professional_badge} /> : <ProfileCard name={profileName} handle="" initials="?" tone="sage" />}
+                title={<span className="sr-only">{profileName}</span>}
+                subtitle={<span className="sr-only">{profileHandle}</span>}
+                className="saved-row"
                 trailing={<button className="icon-button" type="button" aria-label="Remove saved profile" title="Remove saved profile" onClick={async () => {
                   const session = loadAuthSession();
                   if (!session) return;
                   await removeSavedProfile(session.accessToken, profile.id);
                   setSavedProfiles((current) => current.filter((item) => item.id !== profile.id));
-                }}><i className="fa-solid fa-bookmark-slash" aria-hidden="true" /></button>}
+                }}><span className="saved-profile-remove-icon" aria-hidden="true"><i className="fa-solid fa-star" /></span></button>}
               />
+                );
+              })()
             )) : !profilesLoading ? (
               <div className="connections-empty saved-empty">
                 <i className="fa-solid fa-bookmark" aria-hidden="true" />

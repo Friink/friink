@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:35:20Z — Refine saved-profile rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove duplicate floating profile identity text and restore the saved-profile removal icon as a star with a slash.
+- Changes Made: Kept the ProfileCard as the sole visible identity treatment, made the ListRow copy screen-reader-only, and added a shared CSS star-with-slash removal glyph; synchronized saved-item and design contracts.
+- Verification Status: TypeScript compilation and diff checks passed.
+
 ## 2026-09-23T00:29:26Z — Migrate local development database
 
 - Agent: Codex
