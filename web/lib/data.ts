@@ -37,7 +37,7 @@ export type Post = {
   } | null;
 };
 
-export type Screen = 'home' | 'profile' | 'connections' | 'saved' | 'directory' | 'search' | 'messages' | 'notifications' | 'settings' | 'control-panel';
+export type Screen = 'home' | 'post' | 'profile' | 'connections' | 'saved' | 'directory' | 'search' | 'messages' | 'notifications' | 'settings' | 'control-panel';
 
 export type NavItem = {
   id: Screen;

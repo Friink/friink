@@ -2,6 +2,7 @@ from app.models.connection import FollowRequest, FollowRequestStatus
 from app.models.notification import Notification, NotificationType
 from app.models.otp import OtpCode
 from app.models.post import Post, PostLike, PostMedia, PostSave
+from app.models.profile_save import ProfileSave
 from app.models.refresh_token import RefreshToken
 from app.models.auth_challenge import LoginChallenge
 from app.models.auth_session import AuthSession
@@ -22,4 +23,4 @@ from app.models.staff import StaffPermission, StaffRole, UserPermissionGrant, Pr
 from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignment
 from app.models.professional_registration import ProfessionalRegistration
 
-__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
+__all__ = ["AccountSessionSlot", "AuthSession", "Conversation", "ConversationSetting", "ConversationStatus", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]

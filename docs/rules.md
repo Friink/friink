@@ -196,6 +196,18 @@ missing evidence can be filled in.
 - **What:** The signed-in app renders a functional shared `TopBar` preview. It uses the side-drawer surface, keeps the Home-linked compact mark and centered current title visible in every mode, and provides Home's sidebar toggle/Search/Chat/Notifications plus contextual history-aware Back and the existing `ActionMenu` using the same shell state and route handlers.
 - **Edge cases:** The preview overlays the existing Header and NavigationBar; neither existing component is removed or replaced. Tabs remain unchanged, and all preview actions preserve the established destinations and semantics until the prototype is accepted.
 
+### WEB-R-020 — Post Details Use A Contextual Shell State
+
+- **Status:** Active
+- **Effective:** 2026-09-22T23:29:46Z
+- **Related units:** [navigation](units/navigation.md), [posts](units/posts.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/lib/data.ts`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+
+- **What:** Authenticated post-detail routes use the contextual `Post` shell screen. The header shows `Post`, and no drawer destination is active while the detail is open.
+- **Edge cases:** The route remains history-aware through the shared Back control; opening or returning to Home restores the Home title and drawer highlight.
+
 ### WEB-R-014 — Quoted Posts Link To Their Original
 
 - **Status:** Active
@@ -230,7 +242,8 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/saved/page.tsx`, `web/app/saved/posts/page.tsx`, `web/app/saved/profiles/page.tsx`, `web/app/starred/page.tsx`, `web/components/saved-screen.tsx`, `web/components/feed-post.tsx`, `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`
 
-- **What:** The signed-in Saved area uses `/saved/posts` for the user's private saved-post feed and `/saved/profiles` as the reserved future profile-saving surface. `/saved` and legacy `/starred` redirect to `/saved/posts`. The `/saved/profiles` view remains a placeholder until profile saving is implemented.
+- **What:** The signed-in Saved area uses `/saved/posts` for the user's private saved-post feed and `/saved/profiles` for private saved profiles. `/saved` and legacy `/starred` redirect to `/saved/posts`. Profile saves are created from another user's profile action menu with a star-icon Save profile action and removed through the resulting Remove from saved action.
+- **Edge cases:** Deactivated or pending-deletion profiles remain as removable unavailable rows without links or profile details; reactivation restores the saved row's details, while permanent account deletion removes the relationship through the database cascade.
 - **Interaction:** Each post has one Save/Unsave control: the star in the lower counted action row. The redundant header star is not rendered. The adjacent Save count is display-only because Save actors are private.
 
 ### WEB-R-017 — Sidebar Highlight Tracks Only Owned Profile Navigation
@@ -1271,7 +1284,31 @@ missing evidence can be filled in.
 - **File(s):** `web/components/composer.tsx`, `web/components/mention-input.tsx`, `web/app/globals.css`
 
 - **What:** The floating post composer has no field background or border. Once typing begins, its text editor occupies the full-width top row and grows upward to eight lines; longer drafts scroll within the editor. Attachment, character count, and send controls remain in the bottom row.
-- **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior. Profile pages do not render the floating composer.
+- **Edge cases:** Empty composers retain the compact single-row layout. Chat composers are not changed by the post-composer expansion behavior. Profile pages do not render the standalone new-post composer, but do render a contextual composer after Reply or Quote is selected on a profile post.
+
+### CLIENT-R-005 — Composer Text Is Session-Local
+
+- **Status:** Active
+- **Effective:** 2026-09-22T23:41:02Z
+- **Related units:** [feed](units/feed.md), [posts](units/posts.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/composer.tsx`, `web/components/app-shell.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+
+- **What:** Composer text is held in the owning screen's in-memory state only. The shared Composer does not read or write browser storage, so unmounting a feed, post, reply, quote, or chat composer clears its text.
+- **Edge cases:** Failed submissions still preserve the current mounted draft for retry; successful submissions continue to clear it through the existing submit flow.
+
+### CLIENT-R-017 — Profile Posts Open Contextual Reply And Quote Composition
+
+- **Status:** Active
+- **Effective:** 2026-09-22T23:44:25Z
+- **Related units:** [profiles](units/profiles.md), [posts](units/posts.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/components/profile-screen.tsx`, `web/components/feed-post.tsx`
+
+- **What:** Reply and Quote controls on visible profile posts invoke the shared AppShell composer with the selected post as context. The contextual composer is shown on the profile surface and submits through the existing authenticated post flow.
+- **Edge cases:** Profile pages still hide the standalone new-post composer; clearing the context returns to the profile without opening an empty composer.
 
 ### CLIENT-R-005 — API Origin Resolution
 
@@ -1678,7 +1715,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [connections](units/connections.md) | CONNECTIONS-R-005 | Changing a private account to public auto-accepts |
 | [connections](units/connections.md) | CONNECTIONS-R-006 | Follow counts include accepted relationships only. |
 | [connections](units/connections.md) | CONNECTIONS-R-007 | Connection actions resolve from authenticated API |
-| [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory UI uses All, Professionals, and Friink Registered tabs; the |
+| [discovery](units/discovery.md) | DISCOVERY-R-003 | The Directory UI uses All and Friink Registered tabs; the |
 | [discovery](units/discovery.md) | DISCOVERY-R-004 | Friink registration and credential review are staff-owned API workflows; |
 | [feed](units/feed.md) | FEED-R-001 | Home has Explore and Following tabs; Explore is the default. |
 | [feed](units/feed.md) | FEED-R-002 | Following contains posts strictly from accounts the viewer |

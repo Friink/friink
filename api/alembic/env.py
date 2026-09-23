@@ -8,7 +8,7 @@ from sqlalchemy.engine import Connection
 from app.config import get_settings
 from app.db import Base
 from app.models.professional_registration import ProfessionalRegistration  # noqa: F401
-from app.models import AccountSessionSlot, AuthSession, FollowRequest, LoginChallenge, OtpCode, PasswordResetToken, Post, PostLike, PostMedia, PostSave, ProgressiveAuthFlow, RecognizedDevice, RefreshToken, User  # noqa: F401
+from app.models import AccountSessionSlot, AuthSession, FollowRequest, LoginChallenge, OtpCode, PasswordResetToken, Post, PostLike, PostMedia, PostSave, ProfileSave, ProgressiveAuthFlow, RecognizedDevice, RefreshToken, User  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

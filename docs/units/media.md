@@ -5,7 +5,7 @@ storage, delivery, cleanup, and deletion for posts and profile pictures.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-22T23:05:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -41,7 +41,9 @@ and [Profiles](./profiles.md) own the product meaning of attached media.
 Selecting a post image opens the fixed crop flow; Apply saves the crop for
 submission and Reset restores the crop view. Upload actions show processing,
 transfer, confirmation, success, and actionable failure states. Crop and upload
-surfaces are accessible modal interactions.
+surfaces are accessible modal interactions. Published post images use the
+responsive gallery and full-screen lightbox defined by the Posts and Design
+System units; tall images preserve their complete aspect ratio.
 
 ## Technical contract
 
@@ -61,4 +63,7 @@ are environment-specific and are never cross-environment shared.
 ## Known limitations
 
 Post crop bounds and final crop aspect ratio are not persisted. Freeform crop
-bounds and carousel-ratio locking are not implemented.
+bounds and carousel-ratio locking are not implemented. The native browser file
+chooser cannot expose a reliable maximum-file attribute; the composer enforces
+the eight-image limit after selection. A pre-selection helper/counter that
+communicates remaining image slots is planned but not yet implemented.

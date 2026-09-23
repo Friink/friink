@@ -6,7 +6,7 @@ permalinks.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-21T00:00:00Z
+**Last edited:** 2026-09-22T23:41:02Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -49,6 +49,11 @@ owns selection and ordering; [Media](./media.md) owns upload mechanics.
   post may be private, deleted, or no longer visible and provides a `Go home`
   action. Authenticated client-side failures retain the app shell; route-level
   failures use the same card in a lightweight page wrapper.
+- **POSTS-R-010:** Post-detail routes use the contextual `Post` shell state;
+  the header must not present Home as the current screen and the drawer must
+  not highlight Home or another destination while the detail is open.
+- **POSTS-R-011:** Post, reply, and quote composer text is held in screen-local
+  memory only and is not restored from browser storage after leaving the route.
 
 ## UX and flows
 
@@ -59,6 +64,12 @@ error states remain explicit. A missing, deleted, private, or inaccessible
 direct post URL renders a post-like unavailable card without exposing a
 technical error code; the canonical post URL still redirects when the post is
 otherwise accessible.
+
+Published media uses the shared responsive gallery: a natural-ratio single
+image, balanced two-image grid, lead-image three-image layout, or four-tile
+overflow layout. Selecting any tile opens a contained full-screen lightbox with
+counter, previous/next controls, close behavior, keyboard navigation, and
+background-scroll locking. Tall images preserve their full aspect ratio.
 
 ## Technical contract
 

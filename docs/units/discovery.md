@@ -65,8 +65,8 @@ drawer.
 
 ## UX and flows
 
-`/directory` uses shell-level shared `Tabs` for `All`, `Professionals`, and
-`Friink Registered`, then renders shared `PageSurface`, `ListRow`, and identity
+`/directory` uses shell-level shared `Tabs` for `All` and `Friink Registered`,
+then renders shared `PageSurface`, `ListRow`, and identity
 patterns inside the capped content box. Each row presents the profile card,
 About text, name-adjacent status badges, and right-side icon-only Chat,
 Follow/Unfollow, and More actions; rows link to the public profile and stack

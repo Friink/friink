@@ -1,5 +1,70 @@
 # Changelog
 
+## 2026-09-23T00:19:45Z
+- [profiles/saved] Switched profile saving to the star action icon, changed the saved label to Remove from saved, and applied the pending local database migrations that caused the fetch failure.
+
+## 2026-09-23T00:05:46Z
+- [profiles/saved] Added private saved-profile actions, a Saved Profiles list, and neutral removable handling for unavailable accounts.
+
+## 2026-09-22T23:50:18Z
+- [development] Fixed localhost startup on Windows by making the web dev scripts use Next.js Webpack mode when the native SWC binding is unavailable.
+
+## 2026-09-22T23:44:25Z
+- [profiles/composer] Fixed Reply and Quote actions on profile posts so they open the shared contextual composer while keeping the standalone profile post composer hidden.
+
+## 2026-09-22T23:41:02Z
+- [composer] Removed browser-local draft persistence; composer text now clears when leaving its screen and is not restored on return.
+
+## 2026-09-22T23:29:46Z
+- [navigation/posts] Fixed post-detail routes incorrectly retaining the Home header title and drawer highlight by giving them their own contextual shell state.
+
+## 2026-09-22T23:05:00Z
+- [docs] Audited the completed session work and corrected stale post-media documentation that still described the retired horizontal slider; the Posts and Media units plus shared design contracts now match the responsive gallery/lightbox implementation and explicitly record the still-planned picker helper/counter.
+
+## 2026-09-22T23:00:00Z
+- [feed/media] Fixed tall media clipping by preserving the natural aspect ratio for single-image previews and constraining lightbox images with explicit intrinsic sizing.
+
+## 2026-09-22T22:55:00Z
+- [feed/media] Replaced the generic media modal with a dedicated full-viewport lightbox: dimmed backdrop, contained image stage, close/previous/next controls, counter, keyboard navigation, backdrop dismissal, and body-scroll locking.
+- [docs/design] Updated the shared post-media design contract to describe the lightbox behavior.
+
+## 2026-09-22T22:50:00Z
+- [feed/media] Fixed individual post routes dropping media when mapping API responses; main and quoted media now remain visible after opening a post.
+
+## 2026-09-22T22:45:00Z
+- [feed/media] Fixed the `+N` media overflow affordance so it explicitly opens the viewer and cannot be swallowed by the surrounding post or quoted-post link.
+
+## 2026-09-22T22:40:00Z
+- [feed/media] Replaced the horizontal portrait-strip gallery with responsive one-to-four item layouts, overflow counts, and a full-screen image viewer with previous/next controls.
+- [docs/design] Documented the shared post-media interaction contract.
+
+## 2026-09-22T22:30:00Z
+- [discovery] Removed the Professionals tab from the Directory UI and normalized unsupported `tab=professionals` URLs to All.
+- [docs/discovery] Updated the directory unit and active rule registry.
+
+## 2026-09-22T22:24:00Z
+- [staff/control-panel] Shortened the header action label to `End CP session`.
+
+## 2026-09-22T22:22:00Z
+- [staff/control-panel] Added an action-menu option to end only the privileged Control Panel session and return to Home while preserving ordinary account access.
+
+## 2026-09-22T22:18:00Z
+- [staff/control-panel] Simplified the Staff and Users tabs to display only `Search for a user.` while the persistent Control Panel search workflow is being consolidated.
+
+## 2026-09-22T22:14:00Z
+- [staff/overview] Aligned overview metric rows with Settings composition: icon, title, description, and trailing database count.
+
+## 2026-09-22T22:10:51Z
+- [staff/overview] Replaced custom overview cards with two independent full-width shared list rows for Total users and Staff users, matching the authenticated design contract.
+
+## 2026-09-22T21:58:44Z
+- [staff/overview] Added the first database-backed Control Panel overview cards for total users and staff users, protected by the existing staff-access gate.
+- [docs/staff] Documented the overview summary-card contract and persistent-search relationship.
+
+## 2026-09-22T21:40:16Z
+- [staff/control-panel] Reworked the local Control Panel Users surface with a dedicated search workspace, clear/reset behavior, selected-user profile access, explicit dark-theme controls, and safer username matching including `@` prefixes.
+- [staff/auth] Serialized staff-access validation before loading user results so an expired privileged cookie cannot race the users request and leave stale “Staff session expired” copy after verification succeeds.
+
 ## 2026-09-22T13:25:23Z
 
 - [auth/public-routing] Reopened and corrected BUG-AUTH-002 by centralizing

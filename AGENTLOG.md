@@ -1,5 +1,165 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:19:45Z — Fix saved-profile action and API fetch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace the profile-save bookmark action with a star, use Remove from saved after saving, and resolve the failed fetch error.
+- Changes Made: Updated the shared profile action menu and synchronized profile/design/rule documentation. Registered ProfileSave in Alembic metadata and upgraded the local API database from `20260917_0051` through `20260923_0053`; the missing saved-profile schema was the fetch failure cause.
+- Verification Status: Database is at migration head `20260923_0053`; TypeScript, targeted Python compilation, and diff checks passed.
+
+## 2026-09-23T00:05:46Z — Add saved profiles
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add profile saving from the profile action menu and define behavior for deactivated or deleted profiles.
+- Changes Made: Added the private profile-save relation, API endpoints, migration, profile-menu Save/Unsave action, Saved Profiles listing, and a privacy-preserving removable unavailable row; synchronized product/design documentation and added API coverage.
+- Verification Status: Web TypeScript, targeted Python compilation, diff checks, and the saved-profile API flow test passed. The API test used an isolated SQLite database and confirmed unavailable rows do not expose profile identity and can be removed.
+
+## 2026-09-22T23:50:18Z — Restore local development server
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and resolve localhost returning internal server errors.
+- Changes Made: Confirmed all routes returned 500 from the stale Turbopack/SWC process, verified the same route returned 200 under Webpack, restarted port 3000 with Webpack, and made both web development scripts use the Webpack fallback automatically on this Windows environment.
+- Verification Status: `/admin/posts` and `/` returned HTTP 200 after restart; targeted TypeScript and diff checks from the preceding feature changes remain passing.
+
+## 2026-09-22T23:44:25Z — Enable profile post replies and quotes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix Reply and Quote actions not opening a composer on profile posts.
+- Changes Made: Updated the shared AppShell floating-bar visibility rule to show contextual composers on profile surfaces, while keeping the standalone new-post composer hidden. Synchronized the Profiles, Posts, design, and active rule documentation.
+- Verification Status: `npx tsc --noEmit --incremental false` and `git diff --check` passed.
+
+## 2026-09-22T23:41:02Z — Remove composer draft persistence
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the feature that restores typed composer text after returning to a screen.
+- Changes Made: Removed the shared Composer's localStorage read/write behavior and all draft-storage key props, then documented the screen-local in-memory draft contract across Feed, Posts, active rules, and the design implementation contract.
+- Verification Status: `npx tsc --noEmit --incremental false` and `git diff --check` passed; repository search found no remaining composer persistence references.
+
+## 2026-09-22T23:29:46Z — Fix post-detail shell state
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix post details showing Home in the header and highlighting Home in the side drawer.
+- Changes Made: Added an explicit `post` shell screen, mapped post-detail clients to it, kept all drawer destinations inactive for detail routes, and documented the contextual header/drawer contract in the Navigation, Posts, and active rules documents.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. Focused ESLint remains blocked by pre-existing `react-hooks/set-state-in-effect` errors and dependency warnings in `web/components/app-shell.tsx`.
+
+## 2026-09-22T23:05:00Z — Audit session documentation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Ensure the completed session work is represented in the relevant documentation.
+- Changes Made: Audited the session's Control Panel, Directory, chat, session, and post-media documentation. Corrected the stale shared design contract that described the retired horizontal media slider, and added the implemented responsive gallery/lightbox behavior and tall-image aspect-ratio rule to the Posts, Media, and product design documents. Recorded the not-yet-implemented picker helper/counter as a known limitation rather than active behavior.
+- Verification Status: Documentation links and changed-text consistency reviewed; `git diff --check` passed.
+
+## 2026-09-22T23:00:00Z — Preserve tall media aspect ratios
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix taller post images clipping in the media display.
+- Changes Made: Removed the forced cover crop from single-image previews, allowed the preview frame to follow the natural image ratio up to its maximum height, and added explicit intrinsic sizing/minimum constraints to the lightbox stage and image.
+- Verification Status: Targeted frontend TypeScript and `git diff --check` verification completed after the change; local hot reload remains available.
+
+## 2026-09-22T22:55:00Z — Replace post media modal with lightbox
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Improve the post media viewer and show the result locally.
+- Changes Made: Replaced the generic modal with a dedicated full-viewport lightbox rendered through a body portal. Added contained image presentation, counter, close/previous/next controls, Escape and arrow-key navigation, backdrop dismissal, and body-scroll locking. Updated the design contract.
+- Verification Status: Frontend TypeScript and `git diff --check` passed; local hot reload is available at `/home/explore`.
+
+## 2026-09-22T22:50:00Z — Preserve media on post detail routes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose why media disappears after opening a media post.
+- Changes Made: Added main and quoted media URL mapping to both `/posts/[postId]` and username-scoped post detail mappers.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:45:00Z — Fix media overflow action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the post media `+N` control that did not open anything.
+- Changes Made: Prevented default/link propagation on media tile activation and made the overflow tile explicitly open the full media viewer at image four with accessible copy for the additional items.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:40:00Z — Implement post media display UX
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement and show the agreed post media display experience locally.
+- Changes Made: Reworked `PostMediaGallery` into predictable one, two, three, and four-plus media layouts; added `+N` overflow treatment and a full-screen accessible viewer with previous, next, and close controls. Updated the design contracts.
+- Verification Status: Frontend TypeScript and `git diff --check` passed. Local hot reload remains available at `/home/explore`; authenticated visual verification depends on local feed data/session.
+
+## 2026-09-22T22:30:00Z — Remove Directory Professionals tab
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the Professionals tab from the Directory page.
+- Changes Made: Removed the tab and its DirectoryTab value; unsupported `tab=professionals` URLs now resolve to All. Updated discovery documentation and the active rule registry.
+- Verification Status: Targeted frontend TypeScript verification is being rerun from the web workspace; `git diff --check` passed.
+
+## 2026-09-22T22:24:00Z — Shorten CP session label
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Shorten the Control Panel session action label.
+- Changes Made: Renamed the menu action to `End CP session` without changing its behavior.
+- Verification Status: Copy-only change; local hot reload will reflect it immediately.
+
+## 2026-09-22T22:22:00Z — Add Control Panel session action
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add a Control Panel header action to end the privileged staff session.
+- Changes Made: Added `End Control Panel session` to the shared desktop/mobile header action menu. It calls the existing staff logout endpoint and returns to Home while keeping the ordinary Friink session active.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:18:00Z — Simplify Staff and Users tabs
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the Staff and Users tabs show only a Search for a user prompt.
+- Changes Made: Removed the old Users-page data loading from the Control Panel tab render and replaced both Staff and Users content with the shared prompt while the persistent search entry point is consolidated.
+- Verification Status: Targeted TypeScript and `git diff --check` verification pending after the final local hot reload.
+
+## 2026-09-22T22:14:00Z — Match overview rows to Settings structure
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make overview metrics use the Settings-row order of icon, title, and description.
+- Changes Made: Changed Total users and Staff users rows to use a descriptive title/subtitle pair with the database count in the trailing slot.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T22:10:51Z — Align overview metrics with shared rows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make Total users and Staff users independent rows that follow the design guidelines.
+- Changes Made: Replaced the custom metric-card markup with two full-width shared `ListRow` surfaces, preserving the database-backed counts and standard icon/spacing treatment.
+- Verification Status: Frontend TypeScript and `git diff --check` passed.
+
+## 2026-09-22T21:58:44Z — Add Control Panel overview cards
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add total-user and staff-user cards to the Control Panel overview using database-backed counts.
+- Changes Made: Added the protected `/staff/overview` endpoint and frontend client method; rendered full-row overview cards for total users and staff users; documented the behavior in the staff-admin unit.
+- Verification Status: Local frontend TypeScript, API Python compilation, and `git diff --check` passed. The unauthenticated endpoint request correctly returned `401 Not authenticated`; authenticated browser verification remains pending.
+
+## 2026-09-22T21:40:16Z — Fix Control Panel staff-session race
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Run the frontend and backend locally, improve the manual-subscription Control Panel UI, and fix stale staff-session-expired feedback during local requests.
+- Changes Made: Added a dedicated Users search workspace with explicit form styling, clear/reset behavior, selected-user profile access, and tolerant `@username` API normalization. Serialized staff privilege validation before loading users and made later staff `401` responses reopen verification instead of leaving stale error copy.
+- Verification Status: Local FastAPI and Next.js Webpack servers are running. TypeScript, Python compilation, and `git diff --check` passed. Authenticated browser verification remains pending because the local browser does not have a local session.
+
 ## 2026-09-22T13:25:23Z — Correct public session bootstrap
 
 - Agent: Codex

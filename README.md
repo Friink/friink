@@ -90,6 +90,10 @@ npm run build     # Build the web client
 npm --prefix web run lint
 ```
 
+The local web dev scripts use Next.js Webpack mode because this Windows
+development environment does not have a usable native SWC binding. Production
+builds retain their normal Next.js configuration.
+
 From `api/` with the virtual environment active:
 
 ```powershell

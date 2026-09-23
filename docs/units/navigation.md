@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-18T21:26:00Z
+**Last edited:** 2026-09-22T23:29:46Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -44,6 +44,9 @@ the established search, chat-unread, and notification interactions.
   the shared Search control beside the existing three-dot ActionMenu populated
   by shell-owned menu items. The search route keeps Back and ActionMenu while
   expanding Search between them.
+- Post-detail mode uses the title `Post`, keeps the contextual Back control,
+  and leaves every drawer destination inactive because a post is not one of
+  the drawer's sections.
 - All controls use the existing navigation callbacks and server-authoritative
   unread state. The legacy Header remains mounted but visually hidden for
   rollback safety; NavigationBar and Tabs remain rendered and functional.
@@ -66,6 +69,8 @@ the established search, chat-unread, and notification interactions.
   own profile. Viewing another user's profile leaves both Home and Profile
   inactive; it must not inherit the highlight from the previous screen. See
   [WEB-R-017](../rules.md#web-r-017--sidebar-highlight-tracks-only-owned-profile-navigation).
+- **NAV-R-007:** Post-detail routes use a contextual `Post` shell state; Home
+  is not shown as the current title or highlighted as the active drawer item.
 
 ## Acceptance criteria
 
@@ -80,6 +85,8 @@ the established search, chat-unread, and notification interactions.
 - [ ] **NAV-AC-006** Opening another user's profile does not leave Home or
   Profile highlighted in the drawer; opening the signed-in user's profile
   highlights Profile.
+- [ ] **NAV-AC-007** Opening a post shows `Post` in the contextual header and
+  leaves Home and all other drawer destinations inactive.
 
 ## Verification checklist
 

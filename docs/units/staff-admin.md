@@ -72,6 +72,14 @@ returns to the prior screen.
 
 ### Subscription administration (current rollout)
 
+The Control Panel overview begins with database-backed summary rows for total
+users and staff users. These counts are visible only after staff access is
+validated and are informational; the persistent Control Panel search remains
+the entry point for opening an individual user's administrative workspace.
+The Control Panel header action menu includes `End CP session`,
+which revokes the privileged staff session and returns the user to Home without
+ending the ordinary Friink session.
+
 Staff with the delegated `subscriptions.manage` permission manage entitlements
 from Control Panel → Users. Search accepts
 both username and email and returns all matching accounts. Deactivated and

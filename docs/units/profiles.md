@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-16T23:44:00Z
+**Last edited:** 2026-09-23T00:05:46Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -23,6 +23,7 @@ content, and profile actions. Account credentials and lifecycle state belong to
 - [Posts](./posts.md) — owns post, reply, quote, and reaction semantics.
 - [Media](./media.md) — owns profile-picture processing and storage.
 - [Subscriptions](./subscriptions.md) — owns the subscription gate for directory visibility.
+- [Saved Items](./saved-items.md) — owns private saved-profile storage and the Saved Profiles surface.
 - [Staff Admin](./staff-admin.md) — owns Friink registration review decisions.
 - [Design System](../design-system.md) — owns shared identity and surface patterns.
 
@@ -71,6 +72,11 @@ relationship, privacy, and blocking state.
 - **PROFILE-R-013:** Friink registration is a separate staff-granted
   status. An active registered profile shows a `Friink Registered` badge by
   default, and the owner may hide or show that badge from Settings.
+- **PROFILE-R-014:** Reply and Quote actions on profile posts open the shared
+  contextual composer while the standalone new-post composer remains hidden.
+- **PROFILE-R-015:** Another user's profile action menu exposes Save profile
+  with a star icon, then Remove from saved after saving; the signed-in user's
+  own profile does not expose a save action.
 
 ## UX and flows
 
@@ -83,7 +89,9 @@ visibility value across profiles, posts, quoted posts, connections, chat,
 notifications, likes, blocked users, and remembered-account surfaces.
 The contextual NavigationBar overflow menu exposes Block for another user and
 opens the shared confirmation modal. Profile content uses author-scoped routes
-and visibility rules.
+and visibility rules. Selecting Reply or Quote on a visible profile post opens
+the contextual composer with that post referenced; its submission uses the
+same authenticated post flow as feed and post-detail composers.
 
 ### Friink registration (user flow active)
 

@@ -10,6 +10,7 @@ class ReasonRequest(BaseModel): reason: str = Field(min_length=1, max_length=500
 class GrantRequest(BaseModel): permission: str = Field(min_length=3, max_length=100); granted: bool = True
 class StaffStatusRequest(BaseModel): enabled: bool
 class StaffMe(BaseModel): permissions: list[str]; privileged_expires_at: datetime
+class StaffOverviewResponse(BaseModel): total_users: int; staff_users: int
 class RoleResponse(BaseModel): key: str; display_name: str; system: bool; permissions: list[str]
 class StaffUserResponse(BaseModel): id: str; username: str; display_name: str | None; email: str; is_staff: bool; account_locked: bool; permissions: list[str]; lifecycle_status: str = "active"; deletion_deadline: datetime | None = None
 class AuditResponse(BaseModel): event_type: str; payload: dict; created_at: datetime
