@@ -4,7 +4,7 @@ Saved Items provides private saved-post and saved-profile access.
 
 **Status:** Active
 **Tier:** Minimal  
-**Last edited:** 2026-09-23T00:05:46Z
+**Last edited:** 2026-09-23T01:56:17Z
 **Platforms:** Web and API
 
 ## Canonical ownership

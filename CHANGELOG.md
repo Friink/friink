@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-09-23T01:56:17Z
+- [release/database] Applied and verified the current Alembic head in development, staging, and production; confirmed the three release branches contain identical file trees.
+
 ## 2026-09-23T01:35:00Z
 - [chat] Reworked conversation rows to use the full ProfileCard, a two-line message/date/state middle column, and an overflow menu for Mute, Archive, and Block.
 
