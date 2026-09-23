@@ -14,6 +14,7 @@ type SavedScreenProps = {
   onReply?: (post: Post) => void;
   onQuote?: (post: Post) => void;
   onPostUpdated?: (post: Post) => void;
+  onPostDeleted?: (post: Post) => void;
   onReactionError?: (message: string) => void;
 };
 
@@ -44,7 +45,7 @@ function mapApiPost(post: ApiPost): Post {
   };
 }
 
-export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPostUpdated, onReactionError }: SavedScreenProps) {
+export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError }: SavedScreenProps) {
   const [savedPosts, setSavedPosts] = useState<Post[]>(posts.filter((post) => post.isSaved));
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -123,7 +124,7 @@ export function SavedScreen({ section = 'posts', posts, onReply, onQuote, onPost
         <>
           <div className="saved-list">
             {savedPosts.length > 0 ? savedPosts.map((post) => (
-              <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={handleUpdated} onReactionError={onReactionError} />
+              <FeedPost key={post.id} post={post} onReply={onReply} onQuote={onQuote} onPostUpdated={handleUpdated} onPostDeleted={(deleted) => { setSavedPosts((current) => current.filter((item) => item.id !== deleted.id)); onPostDeleted?.(deleted); }} onReactionError={onReactionError} />
             )) : !loading ? (
               <div className="connections-empty saved-empty">
                 <i className="fa-solid fa-star" aria-hidden="true" />

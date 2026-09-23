@@ -216,6 +216,7 @@ export function PostClient({ postId }: PostClientProps) {
         onReply={(target) => setComposeContext({ kind: 'reply', post: target })}
         onQuote={(target) => setComposeContext({ kind: 'quote', post: target })}
         onPostUpdated={(updated) => { if (updated.id === post.id) setPost(updated); setReplies((current) => current.map((item) => item.id === updated.id ? updated : item)); }}
+        onPostDeleted={() => router.back()}
         onReactionError={setReactionError}
         reactionError={reactionError}
       />

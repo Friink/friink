@@ -1,5 +1,13 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-23T00:52:12Z — Integrate post deletion into action menu
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Integrate the existing delete API as an item in the post action menu.
+- Changes Made: Added the authenticated delete client helper, owner-only Delete post menu item, explicit confirmation, success/error handling, feed removal, saved-list removal, and post-detail back navigation; synchronized post rules and documentation.
+- Verification Status: TypeScript compilation and diff checks passed.
+
 ## 2026-09-23T00:44:25Z — Fix saved-profile success toast tone
 
 - Agent: Codex

@@ -1349,6 +1349,10 @@ export async function setPostSave(accessToken: string, postId: string, saved: bo
   return authenticatedRequest<ApiReaction>(accessToken, `/posts/${encodeURIComponent(postId)}/save`, saved ? 'POST' : 'DELETE');
 }
 
+export async function deletePost(accessToken: string, postId: string): Promise<void> {
+  await authenticatedRequest<void>(accessToken, `/posts/${encodeURIComponent(postId)}`, 'DELETE');
+}
+
 export async function listPostLikes(accessToken: string, postId: string, input: { query?: string; cursor?: string | null; limit?: number } = {}): Promise<LikeActorPage> {
   const params = new URLSearchParams({ query: input.query ?? '', limit: String(input.limit ?? 24) });
   if (input.cursor) params.set('cursor', input.cursor);
