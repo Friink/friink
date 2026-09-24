@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T19:15:50Z
+**Last edited:** 2026-09-24T19:18:39Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -48,6 +48,7 @@ the established search, chat-unread, and notification interactions.
   expands into a text input with bounded scope shortcuts and routes submitted
   queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the
   notification bell shows a dot and opens the unread notification dropdown.
+  The unread-message and unread-notification dots are 2×2px.
 - Contextual mode provides a history-aware Back control, the page title, and
   the shared Search control beside the existing three-dot ActionMenu populated
   by shell-owned menu items. The search route keeps Back and ActionMenu while

@@ -1,5 +1,17 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T19:18:39Z — Reduce TopBar unread dots to 2px
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Set the new-message and new-notification dots to 2×2px.
+- Changes Made: Added semantic classes for the Chat unread and Notifications
+  dots, set both to solid 2×2px circles, and updated active design contracts.
+- Files: `web/components/top-bar.tsx`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `packages/design/design.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed. No build or tests run.
+
 ## 2026-09-24T19:15:50Z — Match TopBar icon hover backgrounds to drawer gray
 
 - Agent: Codex

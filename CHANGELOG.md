@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-24T19:18:39Z
+- [design/navigation] Reduced the new-message and notification presence dots
+  in the TopBar to 2×2px.
+
 ## 2026-09-24T19:15:50Z
 - [design/navigation] Matched TopBar icon hover and keyboard-focus backgrounds
   to the active drawer item's theme-aware gray; retained accent-colored icons.
