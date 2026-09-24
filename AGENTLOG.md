@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T19:15:50Z — Match TopBar icon hover backgrounds to drawer gray
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Change the TopBar icon hover background from accent tint to
+  the same gray used behind the active drawer item.
+- Changes Made: TopBar icon hover/focus backgrounds now use the shared,
+  theme-aware `--color-sidebar-active` token; icon colors remain accent.
+  Updated navigation, design-system, and implementation documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `docs/units/navigation.md`, `packages/design/design.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed. No build or tests run.
+
 ## 2026-09-24T19:12:07Z — Fix account switcher overflow and hover bounds
 
 - Agent: Codex

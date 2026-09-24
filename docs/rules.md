@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-24T19:07:47Z
+**Last edited:** 2026-09-24T19:15:50Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -193,7 +193,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`
 
-- **What:** The signed-in app renders a functional shared `TopBar` preview. It uses the side-drawer surface, keeps the Home-linked compact mark and centered current title visible in every mode, and provides Home's sidebar toggle/Search/Chat/Notifications plus contextual history-aware Back and the existing `ActionMenu` using the same shell state and route handlers.
+- **What:** The signed-in app renders a functional shared `TopBar` preview. It uses the side-drawer surface, keeps the Home-linked compact mark and centered current title visible in every mode, and provides Home's sidebar toggle/Search/Chat/Notifications plus contextual history-aware Back and the existing `ActionMenu` using the same shell state and route handlers. TopBar icon controls use the active drawer item's neutral gray for hover and keyboard-focus backgrounds in both themes while retaining accent-colored icons.
 - **Edge cases:** The preview overlays the existing Header and NavigationBar; neither existing component is removed or replaced. Tabs remain unchanged, and all preview actions preserve the established destinations and semantics until the prototype is accepted.
 
 ### WEB-R-020 — Post Details Use A Contextual Shell State

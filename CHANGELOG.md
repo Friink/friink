@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-24T19:15:50Z
+- [design/navigation] Matched TopBar icon hover and keyboard-focus backgrounds
+  to the active drawer item's theme-aware gray; retained accent-colored icons.
+
 ## 2026-09-24T19:12:07Z
 - [design/navigation] Constrained the portaled account switcher to a
   viewport-safe width, kept long account labels from shifting trailing controls,

@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T19:07:47Z
+**Last edited:** 2026-09-24T19:15:50Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -186,6 +186,8 @@ The exact widths, heights, breakpoints, and token names are defined in
 - The active drawer destination uses a neutral gray background (`#d6d6d6` in
   light mode, `#424242` in dark mode). Its icon is `#111111` in light mode and
   `#f0f0f0` in dark mode; active text keeps the theme's primary text color.
+- TopBar icon controls use that same neutral gray for hover and keyboard-focus
+  backgrounds; their icon color keeps the existing accent treatment.
 - The drawer's Profile picture is 44px in both expanded and collapsed modes.
   The account switcher stays at the Profile row's right edge when expanded; its
   20px button overlays the picture's lower-right corner when collapsed.

@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T19:07:47Z
+**Last edited:** 2026-09-24T19:15:50Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -42,6 +42,8 @@ the established search, chat-unread, and notification interactions.
   text, and 40px submit/close controls; the existing compact Friink logo
   dimensions are unchanged. ActionMenu row icons are 16px while their labels
   retain the existing type size.
+- TopBar icon controls use the same gray hover and keyboard-focus background
+  as the active drawer item in both themes. Their icon color remains accent.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
   expands into a text input with bounded scope shortcuts and routes submitted
   queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the

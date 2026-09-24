@@ -5560,7 +5560,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .topbar-preview-search-button:hover,
 .topbar-preview-search-button:focus-visible {
   color: var(--color-accent);
-  background: var(--color-accent-hover);
+  background: var(--color-sidebar-active);
   outline: none;
 }
 
@@ -5635,7 +5635,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .topbar-preview-action:hover,
 .topbar-preview-action:focus-visible {
   color: var(--color-accent);
-  background: var(--color-accent-hover);
+  background: var(--color-sidebar-active);
   outline: none;
 }
 
@@ -5719,7 +5719,7 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 .topbar-preview-back:hover,
 .topbar-preview-back:focus-visible {
   color: var(--color-accent);
-  background: var(--color-accent-hover);
+  background: var(--color-sidebar-active);
   outline: none;
 }
 
