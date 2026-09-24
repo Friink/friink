@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T19:15:50Z
+**Last edited:** 2026-09-24T19:55:59Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -200,21 +200,21 @@ The exact widths, heights, breakpoints, and token names are defined in
   active only for the signed-in user's own profile. When browsing another
   user's profile, neither Home nor Profile is highlighted.
 - The unified `TopBar` preview uses one consistent leading/context/actions
-  structure across signed-in surfaces, uses the same surface as the side
-  drawer, and keeps the compact Friink mark visible in every mode. The mark
-  always links Home except on the search route, where the search field occupies
-  the middle slot between Back and Actions. The page title stays centered on
-  other routes. TopBar utility icons use a consistent 20px glyph size within
-  40px controls; the centered title is 20px and weight 800. Expanded search
-  keeps a 40px field with 20px text and 40px icon buttons. ActionMenu row icons
-  are 16px, and the logo keeps its existing compact size. The existing Header and
-  NavigationBar remain mounted but are hidden during preview evaluation. Home exposes the sidebar toggle, compact
-  theme-aware mark, Search, Chat, and Notifications. Contextual screens add a
-  history-aware Back control and the existing ActionMenu. Its
-  preview controls must preserve existing route destinations and action
-  semantics until the replacement is accepted. The top-bar inner rail is
-  full-viewport width with only the shared edge padding; it must not use a
-  centered max-width cap that creates empty horizontal rails on wide screens.
+  structure across signed-in surfaces and shares the side-drawer surface. The
+  full theme-aware Friink lockup links Home and is 40px high, with a 16px gap
+  after the hamburger or Back control. Desktop keeps the title centered. On
+  mobile Home shows the logo without a title; other regular screens show the
+  title beside Back, hide the logo, and keep actions at the right edge. The
+  search route retains its Back/search/actions composition. TopBar utility
+  glyphs are 24px in 40px hit areas; the desktop title and expanded-search
+  text are 20px, and ActionMenu row icons are 16px. Home Chat and Notifications
+  display actual unread counts in top-right pills, capped at `9+`; pills are
+  16px high with 12px text and a 1px surface-colored border. The active
+  search-filter indicator remains a dot. The existing Header and NavigationBar
+  remain mounted but are hidden during preview evaluation. The preview controls
+  preserve existing route destinations and action semantics. The top-bar inner
+  rail is full viewport width with shared edge padding and no centered
+  max-width cap.
 - The persistent Search field on `/search/{query}` does not force the optional
   suggestions dropdown open; dropdown visibility is controlled separately from
   the field's route visibility.

@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T22:00:31Z
+**Last edited:** 2026-09-24T19:55:59Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -27,6 +27,8 @@ while this document owns the underlying access and session semantics.
 
 - [Account Lifecycle](./account-lifecycle.md) — lifecycle states may prevent
   login, refresh, or switching and may end sessions.
+- [Navigation](./navigation.md) — owns the shared TopBar and drawer surfaces
+  that expose navigation and account-switcher entry points.
 - [Settings](./settings.md) — exposes password, email, and active-session
   controls.
 - [Notifications](./notifications.md) — receives login-security and failed-login
@@ -373,6 +375,8 @@ disclosure that the account-switching experience is still being stabilized; it
 does not change account limits, authorization, session behavior, or access.
 The menu keeps a viewport-safe fixed width, truncates long account labels before
 the trailing controls, and contains row hover surfaces within its padded bounds.
+Its width is capped at `min(16rem, calc(100vw - 1rem))`; the header status
+control remains visible when account labels are long.
 
 #### Business rules and contract
 

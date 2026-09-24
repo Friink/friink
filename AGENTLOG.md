@@ -1,5 +1,24 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T19:55:59Z — Document SideDrawer and TopBar refinements
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document all SideDrawer and TopBar changes from this session,
+  including the account-switcher UI fix.
+- Changes Made: Finalized the TopBar code for 24px icons, the theme-aware full
+  logo, mobile title/logo placement, right-aligned mobile actions, and unread
+  count pills. Synchronized Navigation, Account Access, design-system,
+  design-implementation, and active-rule documentation; retained the finalized
+  drawer layout and documented account-menu truncation, width, and hover
+  containment. Added this session summary to the change logs.
+- Files: `docs/units/navigation.md`, `docs/units/account-access.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `docs/rules.md`,
+  `web/app/globals.css`, `web/components/app-shell.tsx`,
+  `web/components/top-bar.tsx`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; reviewed links and active
+  rule text for consistency. No build or tests run.
+
 ## 2026-09-24T19:18:39Z — Reduce TopBar unread dots to 2px
 
 - Agent: Codex

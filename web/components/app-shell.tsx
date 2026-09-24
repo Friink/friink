@@ -143,7 +143,8 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [outgoingRequests, setOutgoingRequests] = useState<ConnectionRequest[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const hasUnreadMessages = unreadMessageCount > 0;
   const [followers, setFollowers] = useState<Connection[]>([]);
   const [following, setFollowing] = useState<Connection[]>([]);
   const [requestActionBusyId, setRequestActionBusyId] = useState<string | null>(null);
@@ -591,7 +592,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       busy = true;
       try {
         const conversations = await listConversations(loadAuthSession()?.accessToken ?? session.accessToken);
-        if (!stopped) setHasUnreadMessages(conversations.some((conversation) => conversation.unread_count > 0));
+        if (!stopped) setUnreadMessageCount(conversations.reduce((total, conversation) => total + conversation.unread_count, 0));
       } catch { /* delivery sync and header state are best effort */ }
       finally { busy = false; }
     };
@@ -1163,6 +1164,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           searchFilter={searchFilter}
           searchScope={activeScreen === 'messages' ? 'messages' : 'global'}
           notificationCount={unreadNotificationCount}
+          unreadMessageCount={unreadMessageCount}
           notifications={notifications}
           hasUnreadMessages={hasUnreadMessages}
           backDisabled={!canGoBack}

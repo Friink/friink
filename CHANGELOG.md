@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-24T19:55:59Z
+- [design/navigation] Finalized and documented the SideDrawer and TopBar
+  refinements: mobile title/logo placement, 24px TopBar controls, unread count
+  pills, and account-switcher overflow containment.
+
 ## 2026-09-24T19:18:39Z
 - [design/navigation] Reduced the new-message and notification presence dots
   in the TopBar to 2×2px.

@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T19:18:39Z
+**Last edited:** 2026-09-24T19:55:59Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -14,13 +14,16 @@ NavigationBar, drawer, or tabs.
 
 This document owns the signed-in TopBar and its interaction contract.
 The drawer owns destination discovery, NavigationBar owns the existing
-contextual navigation, and Tabs own section selection.
+contextual navigation, Account Access owns remembered-account switching, and
+Tabs own section selection.
 
 ## Related units
 
 - [Feed](./feed.md) — home tabs and feed navigation.
 - [Profiles](./profiles.md) — profile contextual actions.
 - [Notifications](./notifications.md) — notification destination and unread state.
+- [Account Access](./account-access.md) — remembered-account switcher behavior
+  and its menu.
 - [Settings](./settings.md) — settings navigation.
 - [Design System](../design-system.md) — shared visual and interaction rules.
 
@@ -31,24 +34,29 @@ the established search, chat-unread, and notification interactions.
 
 ## UX and interaction
 
-- Signed-in screens keep the compact theme-aware Friink mark in the leading
-  area, except the search route where Back and the search field use the
-  available header space. Activating the mark goes to Home.
-- The current screen title remains centered except on the search route, where
-  the search field occupies the middle header slot.
-- The TopBar's hamburger, Back, Search, Chat, Notifications, Filter, and
-  Actions trigger icons are 20px inside 40px hit areas. The title is centered
-  at 20px, weight 800. Expanded search uses a 40px-high field, 20px input
-  text, and 40px submit/close controls; the existing compact Friink logo
-  dimensions are unchanged. ActionMenu row icons are 16px while their labels
-  retain the existing type size.
+- Desktop keeps the full Friink lockup in the leading area and centers the page
+  title. The logo links to Home and is 40px high; there is a 16px gap between
+  the hamburger or Back control and the logo.
+- On mobile Home, the full logo replaces the redundant page title. On other
+  regular screens, the logo is hidden and the page title appears beside Back;
+  the right-side actions remain aligned to the right edge. The search route
+  keeps its Back, persistent search field, and actions layout. These mobile
+  changes do not alter desktop placement.
+- TopBar hamburger, Back, Search, Chat, Notifications, Filter, and Actions
+  trigger icons are 24×24px inside 40×40px hit areas. The desktop title is
+  centered at 20px, weight 800. Expanded search uses a 40px-high field, 20px
+  input text, and 40px submit/close controls. ActionMenu row icons are 16px
+  while their labels retain the existing type size.
 - TopBar icon controls use the same gray hover and keyboard-focus background
   as the active drawer item in both themes. Their icon color remains accent.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
   expands into a text input with bounded scope shortcuts and routes submitted
-  queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the
-  notification bell shows a dot and opens the unread notification dropdown.
-  The unread-message and unread-notification dots are 2×2px.
+  queries to `/search/{query}`. Chat and Notifications show top-right count
+  pills: unread messages are summed across conversations, and unread
+  notifications use the unread notification count. Counts 1–9 display
+  directly; counts above 9 display `9+`. Pills are 16px high with 12px text
+  and a 1px surface-colored border. The search-filter active state retains its
+  separate presence dot.
 - Contextual mode provides a history-aware Back control, the page title, and
   the shared Search control beside the existing three-dot ActionMenu populated
   by shell-owned menu items. The search route keeps Back and ActionMenu while
@@ -133,6 +141,12 @@ the established search, chat-unread, and notification interactions.
 - [ ] **NAV-AC-008** The drawer shows one standard-height Profile row with the
   signed-in user's avatar, marks only that row active on their own profile,
   and keeps the account menu on a separate right-side caret.
+- [ ] **NAV-AC-009** Mobile Home shows the full logo without a page title;
+  other regular screens show the title beside Back and align actions to the
+  right, while desktop placement remains unchanged.
+- [ ] **NAV-AC-010** TopBar icons remain 24px inside 40px controls, and Chat
+  and Notifications show accurate 1–9 counts then `9+` without changing the
+  filter-active presence dot.
 
 ## Verification checklist
 
