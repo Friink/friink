@@ -169,6 +169,9 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Show the signed-in user's 44×44px avatar and `@username` in the Profile
   drawer row. Truncate long usernames with an ellipsis before the separate
   right-side account switcher.
+- Keep the account-switcher menu at a fixed viewport-safe width. Truncate long
+  account labels within their rows so trailing actions stay aligned, and keep
+  hover surfaces inside the menu's padded bounds.
 - Drawer navigation and footer rows use 100% width and 44px height, with 8px
   top, left, and bottom padding. Their 28px icon cells contain 20px-high,
   auto-width glyphs; text starts 16px after the icon cell. The Profile row is

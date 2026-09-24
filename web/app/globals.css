@@ -1735,6 +1735,13 @@ textarea {
   visibility: hidden;
 }
 
+/* Account menus are portaled to body, so keep their sizing outside sidebar scope. */
+.account-switcher-menu {
+  box-sizing: border-box;
+  width: min(16rem, calc(100vw - 1rem));
+  min-width: 0;
+}
+
 body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) {
   border-color: #555555;
   background: #161616;
@@ -1867,6 +1874,9 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .action-menu-item-with-trailing {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   padding: 0;
 }
 
@@ -1887,9 +1897,24 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .action-menu-item-main span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-switcher-header-title {
+  min-width: 0;
+}
+
+.account-switcher-header-title > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-switcher-header-status {
+  flex: 0 0 auto;
 }
 
 .action-menu-item-trailing-action {

@@ -371,6 +371,8 @@ or returns to the public site when none remain.
 The account switcher header includes an accessible `Beta` badge. This is a
 disclosure that the account-switching experience is still being stabilized; it
 does not change account limits, authorization, session behavior, or access.
+The menu keeps a viewport-safe fixed width, truncates long account labels before
+the trailing controls, and contains row hover surfaces within its padded bounds.
 
 #### Business rules and contract
 

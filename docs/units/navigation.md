@@ -81,6 +81,9 @@ the established search, chat-unread, and notification interactions.
 - The account-switcher button stays at the Profile row's right side when
   expanded and overlays the picture's lower-right corner when collapsed. Its
   inner cell is 14×14px with a centered 12×12px glyph.
+- The portaled account-switcher menu uses a viewport-safe fixed width. Long
+  account names truncate with an ellipsis before the trailing account controls;
+  row hover surfaces stay within the menu padding.
 - The active drawer row uses a neutral gray fill and theme-appropriate text.
   Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
 - Shared tab labels use the design-system type size, and the active

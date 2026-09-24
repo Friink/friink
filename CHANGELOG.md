@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-24T19:12:07Z
+- [design/navigation] Constrained the portaled account switcher to a
+  viewport-safe width, kept long account labels from shifting trailing controls,
+  and contained row hover backgrounds within the menu. Updated active design
+  contracts and navigation/account-access documentation.
+
 ## 2026-09-24T19:07:47Z
 - [design/navigation] Matched the mobile expanded drawer to the desktop layout,
   using the shared 256px width cap and removing its mobile-only footer divider;

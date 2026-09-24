@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T19:12:07Z — Fix account switcher overflow and hover bounds
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Keep account-switcher controls aligned with long usernames
+  and prevent the hovered row surface from overflowing the menu.
+- Changes Made: Applied explicit viewport-safe sizing to the portaled menu,
+  bounded trailing-action rows, enabled label truncation, and kept header status
+  controls from being pushed out. Updated navigation, account-access, design
+  system, design contract, and active rule documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `docs/units/navigation.md`, `docs/units/account-access.md`,
+  `packages/design/design.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed. No build or tests run.
+
 ## 2026-09-24T19:07:47Z — Match mobile drawer layout to desktop
 
 - Agent: Codex
