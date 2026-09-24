@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-23T22:55:03Z
+**Last edited:** 2026-09-24T21:23:52Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -14,13 +14,16 @@ NavigationBar, drawer, or tabs.
 
 This document owns the signed-in TopBar and its interaction contract.
 The drawer owns destination discovery, NavigationBar owns the existing
-contextual navigation, and Tabs own section selection.
+contextual navigation, Account Access owns remembered-account switching, and
+Tabs own section selection.
 
 ## Related units
 
 - [Feed](./feed.md) — home tabs and feed navigation.
 - [Profiles](./profiles.md) — profile contextual actions.
 - [Notifications](./notifications.md) — notification destination and unread state.
+- [Account Access](./account-access.md) — remembered-account switcher behavior
+  and its menu.
 - [Settings](./settings.md) — settings navigation.
 - [Design System](../design-system.md) — shared visual and interaction rules.
 
@@ -31,21 +34,29 @@ the established search, chat-unread, and notification interactions.
 
 ## UX and interaction
 
-- Signed-in screens keep the compact theme-aware Friink mark in the leading
-  area, except the search route where Back and the search field use the
-  available header space. Activating the mark goes to Home.
-- The current screen title remains centered except on the search route, where
-  the search field occupies the middle header slot.
-- The TopBar's hamburger, Back, Search, Chat, Notifications, Filter, and
-  Actions trigger icons are 20px inside 40px hit areas. The title is centered
-  at 20px, weight 800. Expanded search uses a 40px-high field, 20px input
-  text, and 40px submit/close controls; the existing compact Friink logo
-  dimensions are unchanged. ActionMenu row icons are 16px while their labels
-  retain the existing type size.
+- Desktop keeps the full Friink lockup in the leading area and centers the page
+  title. The logo links to Home and is 40px high; there is a 16px gap between
+  the hamburger or Back control and the logo.
+- On mobile Home, the full logo replaces the redundant page title. On other
+  regular screens, the logo is hidden and the page title appears beside Back;
+  the right-side actions remain aligned to the right edge. The search route
+  keeps its Back, persistent search field, and actions layout. These mobile
+  changes do not alter desktop placement.
+- TopBar hamburger, Back, Search, Chat, Notifications, Filter, and Actions
+  trigger icons are 24×24px inside 40×40px hit areas. The desktop title is
+  centered at 20px, weight 800. Expanded search uses a 40px-high field, 20px
+  input text, and 40px submit/close controls. ActionMenu row icons are 16px
+  while their labels retain the existing type size.
+- TopBar icon controls use the same gray hover and keyboard-focus background
+  as the active drawer item in both themes. Their icon color remains accent.
 - Home mode provides inline Search, Chat, and Notifications actions. Search
   expands into a text input with bounded scope shortcuts and routes submitted
-  queries to `/search/{query}`. Chat shows a dot when conversations are unread, and the
-  notification bell shows a dot and opens the unread notification dropdown.
+  queries to `/search/{query}`. Chat and Notifications show top-right count
+  pills: unread messages are summed across conversations, and unread
+  notifications use the unread notification count. Counts 1–9 display
+  directly; counts above 9 display `9+`. Pills are 16px high with 12px text
+  and a 1px surface-colored border. The search-filter active state retains its
+  separate presence dot.
 - Contextual mode provides a history-aware Back control, the page title, and
   the shared Search control beside the existing three-dot ActionMenu populated
   by shell-owned menu items. The search route keeps Back and ActionMenu while
@@ -56,6 +67,57 @@ the established search, chat-unread, and notification interactions.
 - All controls use the existing navigation callbacks and server-authoritative
   unread state. The legacy Header remains mounted but visually hidden for
   rollback safety; NavigationBar and Tabs remain rendered and functional.
+- The drawer presents the signed-in user's avatar and `@username` as one
+  profile destination, with a separate account dropdown on its right. Long
+  usernames truncate with an ellipsis and cannot overlap the switcher.
+- The drawer avatar is 44px in both expanded and collapsed layouts. The 24px expanded
+  account caret sits inside the Profile row at its right edge. Collapsed mode
+  overlays a 20px circular caret button flush with the avatar's lower-right
+  corner.
+- Expanded drawer width is 256px and collapsed width is 77px. Both modes use
+  fixed 16px padding on all four sides.
+- On mobile, the expanded drawer keeps the same row geometry, gaps, icon cells,
+  Profile treatment, and footer placement; it appears as an overlay and fits
+  within the available viewport width.
+- At viewport widths of 768px and above, hovering a collapsed drawer with a
+  non-touch pointer temporarily reveals its expanded layout over the page.
+  Pointer exit restores the collapsed ribbon; the content, top bar, and saved
+  hamburger state remain unchanged. Touch pointers and mobile widths do not
+  trigger this behavior.
+- With no saved drawer preference, desktop and tablet start with the drawer
+  collapsed. When a saved expanded preference exists, the drawer applies it
+  after reading the cookie; mobile continues to start collapsed.
+- The tablet/desktop drawer keeps native vertical scrolling but hides its
+  scrollbar indicator, preventing a transient scrollbar during width changes.
+- Navigation and footer action rows use 100% width and 44px height, with 8px
+  padding on the top, left, and bottom. Each row has a 28px square inner icon
+  cell and a 16px gap before its label. Glyphs are 20px high, use automatic
+  width, and are centered in their cells.
+- The Profile row is separate from the icon-cell layout. Its picture and
+  wrapper are 44×44px with no row padding; the picture keeps the same position
+  in expanded and collapsed modes. Its label has a 16px gap after the picture.
+- A 16px gap separates the Profile row from navigation rows and navigation
+  rows from one another. Footer action rows also have a 16px gap, and the footer
+  stays at the bottom of the drawer.
+- The account-switcher button stays at the Profile row's right side when
+  expanded and overlays the picture's lower-right corner when collapsed. Its
+  inner cell is 14×14px with a centered 12×12px glyph.
+- The portaled account-switcher menu uses a viewport-safe fixed width. Long
+  account names truncate with an ellipsis before the trailing account controls;
+  row hover surfaces stay within the menu padding.
+- **Known account-switcher defects:** Session recovery can currently make a
+  different remembered account current without an explicit selection, and a
+  restored account can remain last in the menu because refresh recency is not
+  persisted. The agreed corrections are documented in [Account Access](./account-access.md)
+  and tracked as [BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
+  and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
+- The active drawer row uses a neutral gray fill and theme-appropriate text.
+  Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
+- The Profile identity row does not receive the active destination's gray fill,
+  including on the signed-in user's own Profile. The expanded drawer's account
+  switcher uses the same neutral gray fill on hover, keyboard focus, and while
+  its menu is open; the icon remains accent-colored. Collapsed styling remains
+  unchanged.
 - Shared tab labels use the design-system type size, and the active
   label is bold. Tab selection, underline, and horizontal-overflow behavior
   are unchanged.
@@ -68,9 +130,10 @@ the established search, chat-unread, and notification interactions.
   prior destination.
 - **NAV-R-003:** Contextual menu items remain permission- and screen-owned by
   the AppShell; the TopBar only presents and invokes them.
-- **NAV-R-004:** The preview TopBar uses the same surface token as the side
-  drawer: `--color-paper` in light mode and the shell's `--color-chrome`
-  override in dark mode.
+- **NAV-R-004:** The signed-in shell shares one base surface across the TopBar,
+  drawer, tabs, content area, and floating navigation: white in light mode and
+  `#161616` in dark mode. Interactive states and overlays may use distinct
+  surfaces.
 - **NAV-R-005:** Search is available on every signed-in screen except that the
   search route displays the search field persistently. Home search is global;
   other screens may provide contextual search behavior.
@@ -80,6 +143,15 @@ the established search, chat-unread, and notification interactions.
   [WEB-R-017](../rules.md#web-r-017--sidebar-highlight-tracks-only-owned-profile-navigation).
 - **NAV-R-007:** Post-detail routes use a contextual `Post` shell state; Home
   is not shown as the current title or highlighted as the active drawer item.
+- **NAV-R-008:** At widths of 768px and above, a non-touch pointer may
+  temporarily expand the collapsed drawer while hovered. Pointer exit restores
+  ribbon width without changing the persisted hamburger state or shifting the
+  page. Mobile and touch behavior remain unchanged.
+- **NAV-R-009:** When no drawer preference is saved, the drawer starts
+  collapsed. A saved expanded preference is applied after the cookie is read;
+  the mobile drawer starts collapsed regardless of that preference.
+- **NAV-R-010:** The tablet/desktop drawer remains vertically scrollable while
+  hiding the scrollbar indicator during its width transition.
 
 ## Acceptance criteria
 
@@ -96,6 +168,22 @@ the established search, chat-unread, and notification interactions.
   highlights Profile.
 - [ ] **NAV-AC-007** Opening a post shows `Post` in the contextual header and
   leaves Home and all other drawer destinations inactive.
+- [ ] **NAV-AC-008** The drawer shows one standard-height Profile row with the
+  signed-in user's avatar, marks only that row active on their own profile,
+  and keeps the account menu on a separate right-side caret.
+- [ ] **NAV-AC-009** Mobile Home shows the full logo without a page title;
+  other regular screens show the title beside Back and align actions to the
+  right, while desktop placement remains unchanged.
+- [ ] **NAV-AC-010** TopBar icons remain 24px inside 40px controls, and Chat
+  and Notifications show accurate 1–9 counts then `9+` without changing the
+  filter-active presence dot.
+- [ ] **NAV-AC-011** Hovering the collapsed drawer with a non-touch pointer at
+  768px or wider temporarily expands it over the page; pointer exit restores
+  ribbon width without changing page alignment or the saved hamburger state.
+- [ ] **NAV-AC-012** With no saved desktop preference, the first rendered drawer
+  is collapsed; a saved expanded preference expands the drawer after it is read.
+- [ ] **NAV-AC-013** The tablet/desktop drawer can still scroll vertically but
+  displays no scrollbar indicator while its width changes.
 
 ## Verification checklist
 

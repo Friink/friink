@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-23T22:55:03Z
+**Last edited:** 2026-09-24T22:19:59Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -88,8 +88,10 @@ contract rather than repeated here.
 - Profile moderation actions use the shell-owned contextual NavigationBar
   overflow menu rather than a detached menu in the profile action row.
 - Ink and muted gray establish the text hierarchy.
-- Paper and background colors distinguish surfaces from the application
-  canvas.
+- The signed-in app uses one shared gray base surface across its canvas, top
+  bar, drawer, tabs, content area, and floating navigation: `#f2f2f2` in light
+  mode and `#161616` in dark mode. Dividers, controls, cards with intentional
+  emphasis, overlays, and interactive states may still use distinct treatments.
 - Danger colors are reserved for errors, destructive actions, and warnings.
 - The in-app accent may be device-local, but public marketing surfaces retain
   the fixed Friink brand color. The implemented Accent color setting is
@@ -97,7 +99,7 @@ contract rather than repeated here.
   re-exposed.
 - Every light-theme surface and foreground must have an intentional dark-theme
   equivalent with sufficient contrast.
-- Profile-picture borders use white in the light theme and `#111111` in the
+- Profile-picture borders use white in the light theme and `#161616` in the
   dark theme so the border blends with the surrounding dark background.
 - Notification dropdown rows use a muted neutral unread surface rather than
   the brand accent, with a small consistent gap between rows.
@@ -164,6 +166,46 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Use the global header for utilities such as Search, Chat, and Notifications.
 - Use the drawer for personal identity, network navigation, Saved, Directory,
   Settings, and staff discoverability.
+- Show the signed-in user's 44×44px avatar and `@username` in the Profile
+  drawer row. Truncate long usernames with an ellipsis before the separate
+  right-side account switcher.
+- Keep the account-switcher menu at a fixed viewport-safe width. Truncate long
+  account labels within their rows so trailing actions stay aligned, and keep
+  hover surfaces inside the menu's padded bounds.
+- Drawer navigation and footer rows use 100% width and 44px height, with 8px
+  top, left, and bottom padding. Their 28px icon cells contain 20px-high,
+  auto-width glyphs; text starts 16px after the icon cell. The Profile row is
+  separate: its picture is 44×44px, has no row padding, and stays in the same
+  position in either drawer mode. The account switcher uses a 14×14px inner
+  cell with a centered 12×12px glyph.
+- Expanded and collapsed drawers use fixed 16px outer padding on all four sides.
+  A 16px gap separates Profile from navigation and each navigation row; footer
+  rows also have 16px gaps. The footer rests at the bottom of the drawer.
+- At tablet and desktop widths (768px and wider), a non-touch pointer over a
+  collapsed drawer temporarily expands it. Leaving the drawer restores ribbon
+  width without shifting the page or changing the saved hamburger state. The
+  behavior does not apply to mobile widths or touch pointers.
+- When no desktop drawer preference is saved, the drawer starts collapsed. A
+  saved expanded preference is applied after its cookie is read; mobile always
+  starts collapsed.
+- On tablet and desktop, the drawer keeps native vertical scrolling but hides
+  the scrollbar indicator so width changes do not flash a scrollbar.
+- The mobile expanded drawer uses the same layout and appears as an overlay,
+  capped at the shared 256px expanded width and constrained to the viewport.
+- The active drawer destination uses a neutral gray background (`#d6d6d6` in
+  light mode, `#424242` in dark mode). Its icon is `#111111` in light mode and
+  `#f0f0f0` in dark mode; active text keeps the theme's primary text color.
+- The Profile identity row does not use the active destination's gray fill,
+  including while the signed-in user's own Profile is open. In the expanded
+  drawer, the account-switcher button uses that same gray fill on hover,
+  keyboard focus, and while its menu is open; its icon retains the accent color.
+- TopBar icon controls use that same neutral gray for hover and keyboard-focus
+  backgrounds; their icon color keeps the existing accent treatment.
+- The drawer's Profile picture is 44px in both expanded and collapsed modes.
+  The account switcher stays at the Profile row's right edge when expanded; its
+  20px button overlays the picture's lower-right corner when collapsed.
+- Expanded drawer width is 256px and collapsed width is 77px. Collapsed icons
+  stay centered in their cells on the same horizontal axis as the Profile avatar.
 - Use addressable links for stable destinations so browser history, status
   previews, middle-click, and open-in-new-tab behavior remain available.
 - Use the shared navigation bar and tabs for subpages and addressable sections.
@@ -171,21 +213,21 @@ The exact widths, heights, breakpoints, and token names are defined in
   active only for the signed-in user's own profile. When browsing another
   user's profile, neither Home nor Profile is highlighted.
 - The unified `TopBar` preview uses one consistent leading/context/actions
-  structure across signed-in surfaces, uses the same surface as the side
-  drawer, and keeps the compact Friink mark visible in every mode. The mark
-  always links Home except on the search route, where the search field occupies
-  the middle slot between Back and Actions. The page title stays centered on
-  other routes. TopBar utility icons use a consistent 20px glyph size within
-  40px controls; the centered title is 20px and weight 800. Expanded search
-  keeps a 40px field with 20px text and 40px icon buttons. ActionMenu row icons
-  are 16px, and the logo keeps its existing compact size. The existing Header and
-  NavigationBar remain mounted but are hidden during preview evaluation. Home exposes the sidebar toggle, compact
-  theme-aware mark, Search, Chat, and Notifications. Contextual screens add a
-  history-aware Back control and the existing ActionMenu. Its
-  preview controls must preserve existing route destinations and action
-  semantics until the replacement is accepted. The top-bar inner rail is
-  full-viewport width with only the shared edge padding; it must not use a
-  centered max-width cap that creates empty horizontal rails on wide screens.
+  structure across signed-in surfaces and shares the side-drawer surface. The
+  full theme-aware Friink lockup links Home and is 40px high, with a 16px gap
+  after the hamburger or Back control. Desktop keeps the title centered. On
+  mobile Home shows the logo without a title; other regular screens show the
+  title beside Back, hide the logo, and keep actions at the right edge. The
+  search route retains its Back/search/actions composition. TopBar utility
+  glyphs are 24px in 40px hit areas; the desktop title and expanded-search
+  text are 20px, and ActionMenu row icons are 16px. Home Chat and Notifications
+  display actual unread counts in top-right pills, capped at `9+`; pills are
+  16px high with 12px text and a 1px surface-colored border. The active
+  search-filter indicator remains a dot. The existing Header and NavigationBar
+  remain mounted but are hidden during preview evaluation. The preview controls
+  preserve existing route destinations and action semantics. The top-bar inner
+  rail is full viewport width with shared edge padding and no centered
+  max-width cap.
 - The persistent Search field on `/search/{query}` does not force the optional
   suggestions dropdown open; dropdown visibility is controlled separately from
   the field's route visibility.
@@ -193,6 +235,24 @@ The exact widths, heights, breakpoints, and token names are defined in
   composition.
 
 ## Interaction patterns
+
+### Session recovery
+
+- Terminal refresh failure identifies the account needing sign-in when safe
+  cached metadata is available and offers an explicit remembered-account
+  choice.
+- Remembered accounts open in the shared modal; the recovery page itself stays
+  a fixed-height surface. Put the current account first, followed by the other
+  accounts in most-recent order. Each row shows a safe avatar and username,
+  and progress identifies the account currently being restored.
+- A selection refreshes only that slot. On failure, keep the visitor on the
+  recovery surface and explain that they can choose again or sign in. Never
+  cycle through remembered identities without explicit selection.
+- Recoverable connection failures retain “Try again” and may offer the same
+  explicit account choice. Do not claim the account has been signed out for an
+  ambiguous network failure.
+- Recovery actions share one centered width; paired actions form equal-width
+  columns and the account-choice action aligns to that group width.
 
 ### Scrollbar treatment
 
@@ -204,6 +264,8 @@ styling must preserve native wheel, keyboard, touch, accessibility, and
 reduced-motion behavior; JavaScript scrollbar replacements are not part of the
 platform design system. In dark theme, the thumb uses a darker neutral (`#666666`)
 with `#7a7a7a` on hover so it remains visible without appearing washed out.
+The tablet/desktop SideDrawer hides its scrollbar indicator while retaining
+native vertical scrolling to avoid a transient bar during width changes.
 Direct conversation pages use the document viewport as the only native scroll
 surface for the message history; they must not introduce a nested message-only
 scrollbar. The participant header remains fixed below the global top bar and

@@ -592,6 +592,10 @@ async def refresh(
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
             if auth_session:
                 auth_session.last_active_at = now
+            if account_slot:
+                slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+                if slot:
+                    slot.last_used_at = now
             issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
             access_token = create_access_token(user.id, user.security_epoch)
             await commit(session)
@@ -682,6 +686,10 @@ async def refresh(
         session_id=token_record.session_id,
         payload={"kind": "refresh"},
     )
+    if account_slot:
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if slot:
+            slot.last_used_at = now
     await commit(session)
     log_token_issued(flow="refresh_exchange", token_type="access", token=access_token, user_id=str(user.id))
     log_refresh_token_event(
@@ -695,10 +703,6 @@ async def refresh(
         set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
     else:
         set_refresh_cookie(response, issued_refresh.raw_token, settings)
-    if account_slot:
-        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
-        if slot:
-            slot.last_used_at = now
     return RefreshResponse(access_token=access_token, account_slot=account_slot)
 
 

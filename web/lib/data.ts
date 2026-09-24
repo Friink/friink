@@ -54,7 +54,6 @@ export const navItems: NavItem[] = [
 
 export const sidebarNavItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: 'fa-solid fa-house' },
-  { id: 'profile', label: 'Profile', icon: 'fa-solid fa-user' },
   { id: 'connections', label: 'Connections', icon: 'fa-solid fa-user-group' },
   { id: 'saved', label: 'Saved', icon: 'fa-solid fa-star' },
   { id: 'directory', label: 'Directory', icon: 'fa-solid fa-address-book' },

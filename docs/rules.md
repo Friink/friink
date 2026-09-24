@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-23T22:00:31Z
+**Last edited:** 2026-09-24T22:19:59Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -193,7 +193,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/app/globals.css`
 
-- **What:** The signed-in app renders a functional shared `TopBar` preview. It uses the side-drawer surface, keeps the Home-linked compact mark and centered current title visible in every mode, and provides Home's sidebar toggle/Search/Chat/Notifications plus contextual history-aware Back and the existing `ActionMenu` using the same shell state and route handlers.
+- **What:** The signed-in app renders a functional shared `TopBar` preview on the side-drawer surface. Desktop uses the theme-aware full Friink logo linked to Home, a centered current title, and Home sidebar toggle/Search/Chat/Notifications or contextual history-aware Back and the existing `ActionMenu`. Mobile Home shows the full logo without a title; other regular screens show the title beside Back and align actions to the right. The search route retains its Back/search/actions layout. TopBar control glyphs are 24px inside 40px hit areas and use the neutral gray from the active drawer item for hover and keyboard-focus backgrounds while retaining accent-colored icons. Chat and Notifications display actual unread counts in top-right pills, showing 1–9 and then `9+`; pills are 16px high, use 12px text, and have a 1px surface-colored border. The search-filter active indicator remains a dot.
 - **Edge cases:** The preview overlays the existing Header and NavigationBar; neither existing component is removed or replaced. Tabs remain unchanged, and all preview actions preserve the established destinations and semantics until the prototype is accepted.
 
 ### WEB-R-020 — Post Details Use A Contextual Shell State
@@ -219,6 +219,42 @@ missing evidence can be filled in.
 
 - **What:** The post options menu exposes `Delete post` only when the authenticated viewer owns the post. The action confirms intent, calls `DELETE /posts/{post_id}`, and removes the deleted post from active feed lists.
 - **Edge cases:** The API remains authoritative and rejects deletion of another user's post. Successful deletion soft-deletes the post and removes its associated media before the web shows a success toast; post-detail deletion returns to the previous route.
+
+### WEB-R-022 — Collapsed Drawer Temporarily Expands On Hover
+
+- **Status:** Active
+- **Effective:** 2026-09-24T20:20:36Z
+- **Related units:** [navigation](units/navigation.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/side-drawer.tsx`, `web/app/globals.css`
+
+- **What:** At viewport widths of 768px and above, a non-touch pointer over the collapsed drawer temporarily reveals its expanded layout. The expanded drawer overlays the page while the page and top bar retain the collapsed layout width.
+- **Edge cases:** Pointer exit restores ribbon width without changing the persisted hamburger state. Touch pointers and mobile widths do not trigger hover expansion; the hamburger continues to toggle the persistent drawer state.
+
+### WEB-R-023 — Drawer Starts Collapsed Without A Saved Preference
+
+- **Status:** Active
+- **Effective:** 2026-09-24T20:29:07Z
+- **Related units:** [navigation](units/navigation.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`
+
+- **What:** The drawer's first render is collapsed when no saved desktop preference is available. A saved expanded preference is applied after the browser cookie is read.
+- **Edge cases:** Mobile starts collapsed regardless of the saved preference. A saved collapsed preference remains collapsed on desktop and tablet.
+
+### WEB-R-024 — Desktop Drawer Hides Its Scrollbar Indicator
+
+- **Status:** Active
+- **Effective:** 2026-09-24T20:34:23Z
+- **Related units:** [navigation](units/navigation.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/app/globals.css`
+
+- **What:** At tablet and desktop widths, the drawer retains native vertical scrolling while its scrollbar indicator is hidden.
+- **Edge cases:** Hiding the indicator does not disable scrolling; mobile drawer scrollbar styling is unchanged.
 
 ### WEB-R-014 — Quoted Posts Link To Their Original
 
@@ -265,9 +301,9 @@ missing evidence can be filled in.
 - **Related units:** [navigation](units/navigation.md), [profiles](units/profiles.md)
 - **Source:** [Design implementation contract](../packages/design/design.md)
 - **Platform:** Web only
-- **File(s):** `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/app/[username]/profile-client.tsx`
+- **File(s):** `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`
 
-- **What:** The signed-in drawer highlights the Profile destination only while viewing the signed-in user's own profile. Home and Profile must not be shown as active while browsing another user's profile route.
+- **What:** The signed-in drawer highlights the Profile destination only while viewing the signed-in user's own profile. The Profile identity row does not receive the standard active-destination gray background. Home and Profile must not be shown as active while browsing another user's profile route.
 - **Edge cases:** The other-user profile remains fully navigable and may expose its own contextual actions, but it does not inherit the Home highlight from the route used to reach it. The active drawer state is derived from the current shell screen, not from the previous page.
 
 ### WEB-R-018 — Search Refinements Are URL-Backed And Scope-Aware
@@ -394,14 +430,14 @@ missing evidence can be filled in.
 ### AUTH-R-010 — Multiple Account Switching
 
 - **Status:** Active
-- **Effective:** 2026-09-04T23:28:41Z
+- **Effective:** 2026-09-24T21:58:14Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
 - **File(s):** `docs/archives/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`
 
 - **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile. The account-switcher menu remains available with the current account and `Add account`, and switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
-- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared server-side security state, or cross-account data access. Device session slots and account-specific sessions are server-authoritative operational records only. Switching must validate an opaque slot and its device/session state; it must never trust a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only. Server-side account data remains isolated, but the web browser currently uses origin-global `friink-auth-session`, `friink-active-account-slot`, refresh-coordination storage, refresh-lock coordination, and `BroadcastChannel('friink-auth-session')` state rather than account-slot namespaces; cross-account/tab state collisions remain possible. OTP completion for another account must preserve an existing `friink_device_id`; it must not silently replace the browser device identity and hide prior slots.
+- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared server-side security state, or cross-account data access. Device slots and account sessions are server-authoritative. Switching validates an opaque slot and its device/session state; it never trusts a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only. Browser refresh locks, coordination results, and cached user metadata are slot-scoped. The active slot has an origin-shared localStorage value plus a per-tab sessionStorage override, and the auth BroadcastChannel is shared but filters messages by active slot. OTP completion for another account must preserve an existing `friink_device_id`; it must not replace the browser device identity and hide prior slots.
 - **Compatibility:** This is an additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Mobile-specific requirements are deferred in `docs/archives/auth-and-session-mobile.md`.
 
 ### AUTH-R-011 — Login Route Is Signed-Out Only
@@ -449,8 +485,8 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/side-drawer.tsx`, `web/components/action-menu.tsx`, `web/app/globals.css`
 
-- **What:** The signed-in SideDrawer profile card has a separate caret account-menu trigger. The expanded drawer places it beside the profile card; the collapsed desktop drawer places it over the avatar's bottom-right corner. The menu shows `Using as @username`, all remembered accounts in the existing server-provided order, then Manage accounts and Add account.
-- **Edge cases:** The ProfileCard remains separate from the account-menu trigger, and the existing Profile navigation item remains the drawer's profile destination. The menu only reorganizes existing web account actions; it creates no backend relationship and changes no account/session rules.
+- **What:** The signed-in SideDrawer has a 256px expanded width and a 77px collapsed width, with fixed 16px padding on all four sides in both modes. Navigation and footer action rows use 100% width and 44px height, with 8px top/left/bottom padding, 28px icon cells, 20px-high auto-width glyphs, and 16px icon-to-label gaps. The Profile row is separate: its picture and wrapper are 44×44px with no row padding and stay at the same position in both modes; it displays the current `@username`, truncating long values with an ellipsis before the account switcher. A 16px gap separates the picture and username, Profile from navigation, and navigation rows from one another; footer action rows use the same gap. The footer stays at the drawer bottom. On mobile the expanded drawer uses the same layout as desktop, shown as a viewport-constrained overlay. The account switcher sits to the right of the Profile row when expanded and overlays the lower-right corner of the picture when collapsed; its inner cell is 14×14px with a centered 12×12px glyph. Its portaled menu uses `min(16rem, calc(100vw - 1rem))`, keeps long account labels ellipsized before fixed trailing controls, and confines row hover surfaces to its padded bounds. The menu header is `Switch Account` with a Beta badge; account rows retain the active-account checkmark and trailing logout controls for other accounts, followed by Add account. Active drawer icon color is `#111111` in light mode and `#f0f0f0` in dark mode.
+- **Edge cases:** The Profile destination and current-user identity share one row, avoiding duplicate Profile navigation entries. The account-menu trigger remains separate from the Profile link. The menu only reorganizes existing web account actions; it creates no backend relationship and changes no account/session rules.
 
 ### AUTH-R-015 — Signup Creates Active Public Accounts
 
@@ -754,11 +790,11 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While the refresh-cookie exchange runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Authenticated route bootstrap may mount the app shell from previously stored safe user metadata while the session is being recovered; that metadata is presentation-only and authenticated API effects and actions require a successful in-memory refresh. The public landing route remains behind an explicit loading/recovery surface, redirects after a successful refresh, shows the public page only after a confirmed terminal signed-out result, responds to cross-tab session restoration, and offers retry on recoverable failures. A terminal refresh failure first tries remembered account slots in most-recent order through slot-aware refresh; if none succeeds, login opens with the most-recent remembered username preselected while normal credentials and any required challenge remain mandatory.
-- **Edge cases:** Network and other recoverable failures remain on the explicit recovery surface instead of being silently treated as signed out. Refresh-token rotation and server-side validation remain authoritative. A failed slot is skipped without clearing other remembered-account summaries, and stale or delayed cross-tab state from another slot cannot replace the active slot.
-- **Verification:** Local targeted account-slot tests, TypeScript checks, and the webpack production build pass; staging browser acceptance remains a release gate.
+- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While refresh runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Cached safe user metadata is presentation-only; authenticated effects require a successful in-memory refresh. The public landing route remains behind explicit loading/recovery, redirects after successful refresh, responds to cross-tab restoration, and offers retry on recoverable failures. A terminal refresh failure preserves the selected account as safe recovery context and offers sign-in as that account plus a remembered-account modal. The modal lists the current account first, then other accounts by recency. Switching from recovery requires explicit selection; only that slot is refreshed and the shell changes after success.
+- **Edge cases:** Recoverable failures retain retry and do not clear account state. Terminal failures clear in-memory credentials but retain safe profile metadata and selected-slot context; no other account is attempted automatically. The account list scrolls inside the capped modal, not the recovery page. Refresh-token rotation and reuse detection remain authoritative. Refresh coordination and request headers use the same captured account slot; stale ordinary responses cannot replace a later active slot.
+- **Verification:** Implementation updated locally; automated tests and staging browser acceptance remain pending.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
@@ -1791,6 +1827,9 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [media](units/media.md) | MEDIA-R-005 | Failed post submission cleans up uploaded objects and does |
 | [media](units/media.md) | MEDIA-R-006 | Successfully associated media is rendered through the shared |
 | [media](units/media.md) | MEDIA-R-007 | The last confirmed profile image remains visible until the |
+| [navigation](units/navigation.md) | NAV-R-008 | Hover temporarily expands the collapsed drawer on non-touch pointers at tablet and desktop widths. |
+| [navigation](units/navigation.md) | NAV-R-009 | Without a saved drawer preference, desktop and tablet start collapsed; mobile always starts collapsed. |
+| [navigation](units/navigation.md) | NAV-R-010 | The tablet/desktop drawer remains vertically scrollable while hiding its scrollbar indicator. |
 | [notifications](units/notifications.md) | NOTIFY-R-001 | In-app notifications are fetchable, readable, and marked |
 | [notifications](units/notifications.md) | NOTIFY-R-002 | Unread count is server-authoritative and uses adaptive |
 | [notifications](units/notifications.md) | NOTIFY-R-003 | The header dropdown shows unread items only, is empty at |

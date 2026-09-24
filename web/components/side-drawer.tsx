@@ -1,11 +1,12 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
 import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
+import Image from 'next/image';
 import { Modal } from '@/components/modal';
 import { LoginScreen } from '@/components/login-screen';
 import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import { BetaBadge } from '@/components/design/beta-badge';
 import type { AuthUser } from '@/lib/auth';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
 
 type SideDrawerProps = {
@@ -33,6 +34,8 @@ function getInitials(value: string) {
 
 export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout, onAccountChange }: SideDrawerProps) {
   const ref = useRef<HTMLElement | null>(null);
+  const hoverExpansionExitPending = useRef(false);
+  const [hoverExpanded, setHoverExpanded] = useState(false);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountSwitchingUsername, setAccountSwitchingUsername] = useState<string | null>(null);
@@ -45,6 +48,41 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const accountRefreshId = useRef(0);
   const accountRefreshPromise = useRef<Promise<void> | null>(null);
+
+  function handleDrawerPointerEnter(event: PointerEvent<HTMLElement>) {
+    hoverExpansionExitPending.current = false;
+    if (event.pointerType === 'touch' || !window.matchMedia('(min-width: 768px)').matches) return;
+    setHoverExpanded(true);
+  }
+
+  function handleDrawerPointerLeave() {
+    if (accountMenuOpen) {
+      hoverExpansionExitPending.current = true;
+      return;
+    }
+    setHoverExpanded(false);
+  }
+
+  function handleAccountMenuClose() {
+    setAccountMenuOpen(false);
+    if (hoverExpansionExitPending.current) {
+      hoverExpansionExitPending.current = false;
+      setHoverExpanded(false);
+    }
+  }
+
+  useEffect(() => {
+    const desktopOrTablet = window.matchMedia('(min-width: 768px)');
+    const resetMobileHoverExpansion = () => {
+      if (desktopOrTablet.matches) return;
+      hoverExpansionExitPending.current = false;
+      setHoverExpanded(false);
+    };
+
+    resetMobileHoverExpansion();
+    desktopOrTablet.addEventListener('change', resetMobileHoverExpansion);
+    return () => desktopOrTablet.removeEventListener('change', resetMobileHoverExpansion);
+  }, []);
 
   const refreshAccounts = useCallback(() => {
     if (accountRefreshPromise.current) return accountRefreshPromise.current;
@@ -245,9 +283,30 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   ];
 
   return (
-    <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
+    <aside
+      ref={ref}
+      className={`sidebar${collapsed && !hoverExpanded ? ' sidebar-collapsed' : ''}${collapsed && hoverExpanded ? ' sidebar-hover-expanded' : ''}`}
+      aria-label="Main navigation"
+      onPointerEnter={handleDrawerPointerEnter}
+      onPointerLeave={handleDrawerPointerLeave}
+    >
       <div className="sidebar-profile">
-        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} imageUrl={user.profilePictureUrl} showProfessionalBadge={user.showProfessionalBadge} />
+        <a
+          className={`nav-item sidebar-profile-link${activeScreen === 'profile' ? ' active' : ''}`}
+          href={getNavigationHref('profile')}
+          aria-current={activeScreen === 'profile' ? 'page' : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            handleNavigate('profile');
+          }}
+        >
+            <span className="nav-item-icon sidebar-profile-avatar" aria-hidden="true">
+              <span className="user-avatar avatar-mint profile-card-avatar-image">
+                <Image src={user.profilePictureUrl || DEFAULT_PROFILE_IMAGE} alt="" width={20} height={20} sizes="20px" unoptimized />
+              </span>
+          </span>
+          <span className="sidebar-profile-label">@{user.username}</span>
+        </a>
         <button
           ref={accountMenuButtonRef}
           className="sidebar-account-menu-button"
@@ -257,19 +316,21 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           aria-busy={accountLoading}
           onClick={() => {
             if (accountMenuOpen) {
-              setAccountMenuOpen(false);
+              handleAccountMenuClose();
               return;
             }
             setAccountMenuOpen(true);
             void refreshAccounts();
           }}
         >
-          <i className="fa-solid fa-caret-down" aria-hidden="true" />
+          <span className="sidebar-account-menu-icon" aria-hidden="true">
+            <i className="fa-solid fa-caret-down" />
+          </span>
         </button>
         <ActionMenu
           open={accountMenuOpen}
           anchorRef={accountMenuButtonRef}
-          onClose={() => setAccountMenuOpen(false)}
+          onClose={handleAccountMenuClose}
           ariaLabel="Account switcher"
           className="account-switcher-menu"
           header={

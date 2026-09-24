@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-23T23:03:28Z
+**Last edited:** 2026-09-24T21:23:52Z
 
 ## Instructions for agents
 
@@ -73,6 +73,214 @@ Copy this template for a new defect and replace every placeholder:
 ```
 
 ## Defect entries
+
+## BUG-AUTH-003 — Refresh-token replay silently switches the active account
+
+- **Status:** Implemented locally; staging acceptance pending
+- **Reported/updated:** 2026-09-24T21:58:14Z
+- **Affected area:** Web session refresh, account-slot coordination, remembered-account recovery, and account switcher
+- **Environment:** Staging API/database; reproduced from the local web app against remembered accounts in one browser profile
+- **Severity:** high
+
+### Bug summary
+
+After refreshing or retrying session recovery for `@muflahulfurqan`, the app
+can end up authenticated as `@admin` without an explicit account selection.
+The user may then continue using the app under the wrong account context.
+
+### Reproduction
+
+The user reproduced this on staging; refresh-token reuse can make the sequence
+intermittent:
+
+1. With `@muflahulfurqan`, `@phase4test20260906`, and `@admin` remembered in the
+   same browser profile, explicitly switch to `@muflahulfurqan`.
+2. Refresh the app. During the observed reproduction, the app showed “Friink is
+   having trouble reconnecting. Your account has not been signed out.”
+3. Retry or refresh again as the user did during the report.
+4. Observe that a later refresh opens the app as `@admin`, although no account
+   switch to admin was requested.
+5. Open the account switcher: admin can be marked current while still appearing
+   last in the remembered-account list; see BUG-AUTH-004.
+
+### Expected behavior
+
+A recoverable connection failure should keep the selected account and offer a
+retry. A terminal failure should not silently authenticate a different
+remembered account; any account change should require an explicit user action.
+
+### Actual behavior (before fix)
+
+A refresh-token reuse response was terminal. Previously,
+`refreshAuthSession()` silently saved the first different remembered slot that
+refreshed successfully. The client now preserves the selected slot and cached
+safe profile metadata, then presents sign-in for that identity and an explicit
+remembered-account choice. Each explicit choice refreshes only its selected
+slot.
+
+### Root cause
+
+- **Confirmed from staging database:** The `security_events` and
+  `refresh_tokens` rows contain this sequence on 2026-09-24 (UTC):
+  - `@muflahulfurqan`'s token rotated at `20:56:35.915`; its one-time grace
+    replay was consumed at `20:56:41.261`; another presentation of that stale
+    token revoked the family at `20:56:47.164`. The durable
+    `refresh_reuse_detected` event was recorded at `20:56:47.656`.
+  - `@phase4test20260906`'s family had already been revoked for reuse at
+    `20:51:22.962`; its durable `refresh_reuse_detected` event was recorded at
+    `20:51:26.200`, leaving that remembered slot unable to refresh.
+  - `@admin` then received a new refresh token at `20:57:11.404`; the refresh
+    event was recorded at `20:57:12.226`, consistent with fallback reaching
+    admin after the other accounts could not be restored.
+- **Confirmed in API behavior:** Re-presenting a rotated token after its
+  single-use grace has been consumed revokes its token family and returns a
+  terminal `401 REFRESH_TOKEN_INVALID`; this reuse protection remains enabled.
+- **Confirmed in web implementation:** The previous coordination key used
+  `activeAccountSlot()` while `performRefresh()` read a shared localStorage
+  slot. Coordination and refresh now use one captured slot, and ordinary
+  responses are checked against the still-active slot before persistence.
+- **Open questions:** The persisted records prove that the same rotated token
+  was presented repeatedly and that Phase could not be restored. They do not
+  identify whether the repeated requests came from concurrent tabs, a response
+  lost after the database commit, or another stale-cookie retry. The database
+  does not retain every HTTP refresh failure or browser request identifier.
+  The transient reconnect screen may be related to a lost response, but that
+  link is not proven by the stored events. Neon cold start alone is not
+  established as the cause.
+
+### Fix applied locally
+
+1. Capture the active account slot once and use that exact value for both the
+   refresh coordination key and the `/auth/refresh` request. Recheck that slot
+   before committing the restored session so stale work cannot overwrite a
+   later explicit account selection.
+2. Remove silent cross-account fallback on terminal refresh failure. Keep the
+   failed account context, offer sign-in as that account, and show an inline
+   remembered-account list. Explicit selection restores only that slot.
+3. Keep server-side refresh-token reuse detection enabled. Correct client
+   refresh coalescing; do not broaden grace or weaken family
+   revocation until a focused security design covers lost responses and
+   duplicate requests.
+
+Staging browser acceptance remains pending. The duplicate-request origin is
+still unknown.
+
+Non-goals: storing refresh/access tokens in browser-readable storage, disabling
+refresh-family reuse detection, or changing server authorization between
+accounts.
+
+### Tests and verification
+
+- **Required:** Reproduce two tabs refreshing the same slot concurrently,
+  including tabs whose `sessionStorage` account slots differ while the shared
+  `localStorage` slot points to one account; verify one rotation does not make
+  the active account silently change. Simulate a successful server rotation
+  whose response is lost, then retry with the stale cookie; verify grace and
+  subsequent reuse behavior remain secure and understandable. Verify a
+  terminal failure preserves the selected account and requires explicit user
+  choice. Include a multi-account browser acceptance run.
+- **Completed:** Read-only inspection of staging `security_events` and
+  `refresh_tokens`; captured-slot coordination and explicit recovery implemented
+  locally. No automated tests run; staging acceptance remains pending.
+
+### Noteworthy
+
+The database stores durable `refresh` and `refresh_reuse_detected` security
+events, but not every HTTP error or client request ID. Detailed token-lifecycle
+stdout events require `AUTH_DEBUG_LOGGING_ENABLED`; never copy raw cookies,
+refresh tokens, token hashes, or internal UUIDs into this register. The
+staging evidence establishes reuse and family revocation, not the client-side
+origin of the duplicate requests.
+
+### Related documentation and implementation
+
+- [Account Access unit](units/account-access.md)
+- [Session restoration rule](rules.md#auth-r-040--session-restoration-has-explicit-recovery-ux)
+- [`refreshAuthSession()` and refresh coordination](../web/lib/auth.ts)
+- [`POST /auth/refresh`](../api/app/routers/auth.py)
+- [Refresh-token reuse model](../api/app/models/refresh_token.py)
+- [Account-slot ordering](../api/app/services/account_slots.py)
+
+## BUG-AUTH-004 — Successfully restored account remains last in the switcher
+
+- **Status:** Implemented locally; staging acceptance pending
+- **Reported/updated:** 2026-09-24T21:58:14Z
+- **Affected area:** Account-slot recency persistence and switcher ordering
+- **Environment:** Staging; observed during BUG-AUTH-003 reproduction
+- **Severity:** medium
+
+### Bug summary
+
+After session recovery selects a remembered account, the account is shown as
+current but can remain at the bottom of the switcher instead of moving to the
+top as the most recently used account.
+
+### Reproduction
+
+1. Ensure multiple remembered accounts exist and the account to be restored is
+   not currently first in the switcher.
+2. Trigger a successful slot-aware session restore (the staging incident
+   restored `@admin` after other slots failed).
+3. Open the account switcher and compare its current checkmark with row order.
+4. Observe that the restored account can remain last.
+
+### Expected behavior
+
+A successful restore updates that slot's `last_used_at`, and the account list
+then places it first while marking it current.
+
+### Actual behavior (before fix)
+
+The restored account can be marked current without its server-side recency
+being updated, so `GET /auth/accounts` continues returning the old ordering.
+
+### Root cause
+
+- **Confirmed:** The normal refresh-token rotation branch previously committed
+  before setting `slot.last_used_at`, so the request-scoped session discarded
+  the timestamp. `list_slots()` orders by persisted recency. The normal and
+  grace refresh branches now set recency before their transaction commit.
+- **Confirmed from staging:** Admin's successful refresh event at
+  `20:57:12.226 UTC` follows the account fallback sequence documented in
+  BUG-AUTH-003, while the reported switcher screenshot shows admin current at
+  the bottom.
+- **Open questions:** None for the identified missing commit. Staging should
+  verify the returned account list after ordinary, grace, and cookie-missing
+  refresh paths.
+
+### Fix applied locally
+
+The normal and grace refresh branches now set the restored slot's
+`last_used_at` before the token rotation transaction commits. The existing
+refresh-cookie-missing path already updated it before committing. Server
+ordering remains based on persisted descending recency.
+
+Non-goals: changing the account list's descending recency sort or reordering
+accounts only in the client without persisting the server's authoritative
+recency.
+
+### Tests and verification
+
+- **Required:** Exercise both refresh branches with a remembered slot, then
+  request `GET /auth/accounts` and verify the restored slot is first and
+  current. Verify a failed refresh does not change recency, and verify ordinary
+  explicit account switching continues to update and persist order.
+- **Completed:** Read-only staging event/token-record inspection and source
+  trace; recency now persists in normal and grace refresh transactions. No
+  automated tests run; staging acceptance remains pending.
+
+### Noteworthy
+
+This ordering defect is separate from the silent account switch and has its
+own backend fix. Both changes are implemented locally; staging acceptance will
+verify each behavior.
+
+### Related documentation and implementation
+
+- [Account Access unit](units/account-access.md)
+- [Session restoration rule](rules.md#auth-r-040--session-restoration-has-explicit-recovery-ux)
+- [`POST /auth/refresh`](../api/app/routers/auth.py)
+- [`list_slots()` ordering](../api/app/services/account_slots.py)
 
 ## BUG-AUTH-002 — Public landing page does not consistently reveal an existing session
 

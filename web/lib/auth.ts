@@ -547,6 +547,23 @@ export function clearAuthSession() {
   authBroadcastChannel?.postMessage({ type: 'session-cleared', accountSlot: accountSlot ?? null });
 }
 
+function preserveFailedAuthContext(error: unknown) {
+  if (typeof window === 'undefined') return;
+  const accountSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
+  authSessionGeneration += 1;
+  inMemoryAuthSession = null;
+  window.localStorage.removeItem(AUTH_SESSION_KEY);
+  // Keep the selected slot and safe cached profile metadata for recovery UI;
+  // no credential is retained after terminal refresh failure.
+  const status = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY' ? 'security' : 'expired';
+  authBroadcastChannel?.postMessage({ type: 'session-expired', accountSlot: accountSlot ?? null, status });
+  window.dispatchEvent(new CustomEvent('friink-session-expired', { detail: { accountSlot, status } }));
+}
+
+export function clearAuthSessionForRecovery(error: unknown) {
+  preserveFailedAuthContext(error);
+}
+
 export function setDeactivationFallbackSlot(accountSlot: string | null) {
   setDeactivationFallbackSlots(accountSlot ? [accountSlot] : []);
 }
@@ -593,30 +610,7 @@ export function clearDeactivationFallbackSlot() {
 }
 
 export async function restoreAccountSession(accountSlot: string): Promise<AuthSession> {
-  const response = await requestApi<ApiTokenResponse>('/auth/refresh', {
-    method: 'POST',
-    headers: { 'X-Friink-Account-Slot': accountSlot },
-    authContext: 'refresh_exchange',
-    skipAuthRefresh: true,
-  });
-  return mapTokenResponse({ ...response, account_slot: accountSlot });
-}
-
-async function restoreMostRecentRememberedAccount(failedSlot: string | null): Promise<AuthSession | null> {
-  const candidates = getRememberedAccountSummaries()
-    .filter((account) => account.accountSlot !== failedSlot)
-    .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
-  for (const candidate of candidates) {
-    try {
-      const session = await restoreAccountSession(candidate.accountSlot);
-      saveAuthSession(session);
-      return session;
-    } catch {
-      // A revoked or expired slot is skipped; another remembered slot may
-      // still restore the user's account without requiring credentials.
-    }
-  }
-  return null;
+  return coordinateRefresh(accountSlot, false, true);
 }
 
 export async function logout(accessToken: string, accountSlot?: string): Promise<void> {
@@ -675,12 +669,10 @@ export async function refreshAuthSession(): Promise<AuthSession> {
   if (refreshPromise) return refreshPromise;
 
   installAuthCoordinationListener();
-  refreshPromise = coordinateRefresh()
-    .catch(async (error) => {
+  refreshPromise = coordinateRefresh(activeAccountSlot(), true)
+    .catch((error) => {
       if (!isTerminalRefreshFailure(error)) throw error;
-      const recovered = await restoreMostRecentRememberedAccount(activeAccountSlot());
-      if (recovered) return recovered;
-      clearAuthSession();
+      preserveFailedAuthContext(error);
       throw error;
     })
     .finally(() => {
@@ -786,7 +778,8 @@ export function getRememberedAccountSummaries(): AccountSummary[] {
     const parsed = JSON.parse(window.localStorage.getItem(ACCOUNT_SUMMARIES_KEY) || '{}') as Record<string, CachedAccountSummary>;
     return Object.values(parsed)
       .filter((account) => typeof account.accountSlot === 'string' && account.accountSlot.length > 0 && typeof account.username === 'string')
-      .map((account) => ({ ...account, active: account.accountSlot === activeAccountSlot(), available: true }));
+      .map((account) => ({ ...account, active: account.accountSlot === activeAccountSlot(), available: true }))
+      .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
   } catch {
     return [];
   }
@@ -803,8 +796,8 @@ export function getLoginRecoveryPath(reason: 'expired' | 'security-revocation' =
   return `/login?${params.toString()}`;
 }
 
-function scopedRefreshKey(prefix: string): string {
-  const scope = activeAccountSlot() || (inMemoryAuthSession ? `user:${inMemoryAuthSession.user.id}` : 'unassigned');
+function scopedRefreshKey(prefix: string, slot: string | null = activeAccountSlot()): string {
+  const scope = slot || (inMemoryAuthSession ? `user:${inMemoryAuthSession.user.id}` : 'unassigned');
   return `${prefix}:${encodeURIComponent(scope)}`;
 }
 
@@ -814,11 +807,15 @@ function installAuthCoordinationListener() {
   if (typeof BroadcastChannel !== 'undefined') {
     authBroadcastChannel = new BroadcastChannel('friink-auth-session');
     authBroadcastChannel.addEventListener('message', (event: MessageEvent) => {
-      const message = event.data as { type?: string; accountSlot?: string | null; session?: Partial<AuthSession> } | null;
+      const message = event.data as { type?: string; accountSlot?: string | null; status?: 'expired' | 'security'; session?: Partial<AuthSession> } | null;
       if (message?.accountSlot !== (activeAccountSlot() ?? null)) return;
       if (message?.type === 'session-cleared') {
         authSessionGeneration += 1;
         inMemoryAuthSession = null;
+      } else if (message?.type === 'session-expired') {
+        authSessionGeneration += 1;
+        inMemoryAuthSession = null;
+        window.dispatchEvent(new CustomEvent('friink-session-expired', { detail: { accountSlot: message.accountSlot ?? null, status: message.status ?? 'expired' } }));
       } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
         const previousAccountSlot = inMemoryAuthSession?.accountSlot;
         inMemoryAuthSession = message.session;
@@ -838,9 +835,9 @@ function installAuthCoordinationListener() {
   });
 }
 
-function readRefreshCoordination(): RefreshCoordinationState | null {
+function readRefreshCoordination(slot: string | null): RefreshCoordinationState | null {
   if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(scopedRefreshKey(REFRESH_COORDINATION_KEY));
+  const raw = window.localStorage.getItem(scopedRefreshKey(REFRESH_COORDINATION_KEY, slot));
   if (!raw) return null;
   try {
     const state = JSON.parse(raw) as RefreshCoordinationState;
@@ -851,36 +848,36 @@ function readRefreshCoordination(): RefreshCoordinationState | null {
   }
 }
 
-function publishRefreshCoordination(state: RefreshCoordinationState) {
+function publishRefreshCoordination(state: RefreshCoordinationState, slot: string | null) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(scopedRefreshKey(REFRESH_COORDINATION_KEY), JSON.stringify(state));
+  window.localStorage.setItem(scopedRefreshKey(REFRESH_COORDINATION_KEY, slot), JSON.stringify(state));
 }
 
-async function coordinateRefresh(): Promise<AuthSession> {
+async function coordinateRefresh(slot: string | null = activeAccountSlot(), persist = true, retryFailed = false): Promise<AuthSession> {
   if (supportsCrossTabLock()) {
     const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
-    return lockManager.request(scopedRefreshKey(REFRESH_LOCK_NAME), { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease());
+    return lockManager.request(scopedRefreshKey(REFRESH_LOCK_NAME, slot), { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease(slot, persist, retryFailed));
   }
-  return coordinateRefreshWithStorageLease();
+  return coordinateRefreshWithStorageLease(slot, persist, retryFailed);
 }
 
 function supportsCrossTabLock() {
   return typeof navigator !== 'undefined' && 'locks' in navigator;
 }
 
-async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
+async function coordinateRefreshWithStorageLease(slot: string | null, persist: boolean, retryFailed: boolean): Promise<AuthSession> {
   const generation = authSessionGeneration;
 
   while (true) {
-    const existing = readRefreshCoordination();
+    const existing = readRefreshCoordination(slot);
     if (existing && existing.expiresAt > Date.now()) {
       if (existing.status === 'succeeded') {
         const sharedSession = loadPersistedAuthSession();
-        if (sharedSession) return sharedSession;
-      } else if (existing.status === 'failed') {
+        if (sharedSession?.accountSlot === slot) return sharedSession;
+      } else if (existing.status === 'failed' && !retryFailed) {
         throw refreshErrorFromState(existing);
       } else if (existing.ownerId !== tabId) {
-        await waitForRefreshCoordination(existing.operationId);
+        await waitForRefreshCoordination(existing.operationId, slot);
         continue;
       }
     }
@@ -892,19 +889,19 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
       status: 'refreshing',
       expiresAt: Date.now() + REFRESH_LEASE_MS,
     };
-    publishRefreshCoordination(started);
-    const winner = readRefreshCoordination();
+    publishRefreshCoordination(started, slot);
+    const winner = readRefreshCoordination(slot);
     if (!winner || winner.operationId !== operationId || winner.ownerId !== tabId) {
       continue;
     }
 
     try {
-      const session = await performRefresh(generation, operationId);
+      const session = await performRefresh(generation, operationId, slot, persist);
       publishRefreshCoordination({
         ...started,
         status: 'succeeded',
         expiresAt: Date.now() + REFRESH_RESULT_TTL_MS,
-      });
+      }, slot);
       return session;
     } catch (error) {
       const refreshError = error instanceof AuthApiError ? error : new AuthApiError(error instanceof Error ? error.message : 'Refresh failed.', 0);
@@ -913,15 +910,15 @@ async function coordinateRefreshWithStorageLease(): Promise<AuthSession> {
         status: 'failed',
         expiresAt: Date.now() + REFRESH_RESULT_TTL_MS,
         error: { message: refreshError.message, status: refreshError.status, code: refreshError.code },
-      });
+      }, slot);
       throw refreshError;
     }
   }
 }
 
-async function performRefresh(generation: number, operationId: string): Promise<AuthSession> {
-  const currentSession = loadPersistedAuthSession();
-  const slot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
+async function performRefresh(generation: number, operationId: string, slot: string | null, persist: boolean): Promise<AuthSession> {
+  const loadedSession = loadPersistedAuthSession();
+  const currentSession = loadedSession?.accountSlot === slot ? loadedSession : null;
   const response = await requestApi<{ access_token: string; token_type: string; account_slot?: string }>('/auth/refresh', {
     method: 'POST',
     headers: slot ? { 'X-Friink-Account-Slot': slot } : undefined,
@@ -929,15 +926,15 @@ async function performRefresh(generation: number, operationId: string): Promise<
     skipAuthRefresh: true,
   });
 
-  if (generation !== authSessionGeneration) {
+  if (persist && generation !== authSessionGeneration) {
     throw new AuthApiError('The session was cleared while it was refreshing.', 0);
   }
 
   // A different tab may have switched accounts while this refresh was in
   // flight. Do not let the stale tab commit its old slot back into shared
   // localStorage/BroadcastChannel state.
-  const latestSlot = typeof window !== 'undefined' ? window.localStorage.getItem(ACCOUNT_SLOT_KEY) : null;
-  if (latestSlot !== slot) {
+  const latestSlot = activeAccountSlot();
+  if (persist && latestSlot !== slot) {
     throw new AuthApiError('The active account changed while the session was refreshing.', 0);
   }
   if (slot && response.account_slot !== slot) {
@@ -955,8 +952,10 @@ async function performRefresh(generation: number, operationId: string): Promise<
       tokenType: 'Bearer',
       accountSlot: response.account_slot ?? undefined,
     };
-    saveAuthSession(nextSession);
-    authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
+    if (persist) {
+      saveAuthSession(nextSession);
+      authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
+    }
     return nextSession;
   }
 
@@ -966,7 +965,7 @@ async function performRefresh(generation: number, operationId: string): Promise<
     authContext: 'authenticated_request',
     skipAuthRefresh: true,
   });
-  if (generation !== authSessionGeneration || loadPersistedAuthSession()) {
+  if ((persist && generation !== authSessionGeneration) || (persist && loadPersistedAuthSession())) {
     throw new AuthApiError('The session changed while it was refreshing.', 0);
   }
   const restoredSession: AuthSession = {
@@ -975,12 +974,14 @@ async function performRefresh(generation: number, operationId: string): Promise<
       accountSlot: response.account_slot ?? undefined,
       user: mapApiUser(restoredUser),
   };
-  saveAuthSession(restoredSession);
-  authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
+  if (persist) {
+    saveAuthSession(restoredSession);
+    authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
+  }
   return restoredSession;
 }
 
-function waitForRefreshCoordination(operationId: string): Promise<void> {
+function waitForRefreshCoordination(operationId: string, slot: string | null): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
   return new Promise((resolve) => {
     const finish = () => {
@@ -989,11 +990,11 @@ function waitForRefreshCoordination(operationId: string): Promise<void> {
       resolve();
     };
     const check = () => {
-      const state = readRefreshCoordination();
+      const state = readRefreshCoordination(slot);
       if (!state || state.operationId !== operationId || state.status !== 'refreshing' || state.expiresAt <= Date.now()) finish();
     };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === REFRESH_COORDINATION_KEY) check();
+      if (event.key === scopedRefreshKey(REFRESH_COORDINATION_KEY, slot)) check();
     };
     const pollId = window.setInterval(check, 100);
     window.addEventListener('storage', onStorage);

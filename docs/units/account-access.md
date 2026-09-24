@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T22:00:31Z
+**Last edited:** 2026-09-24T21:23:52Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -27,6 +27,8 @@ while this document owns the underlying access and session semantics.
 
 - [Account Lifecycle](./account-lifecycle.md) — lifecycle states may prevent
   login, refresh, or switching and may end sessions.
+- [Navigation](./navigation.md) — owns the shared TopBar and drawer surfaces
+  that expose navigation and account-switcher entry points.
 - [Settings](./settings.md) — exposes password, email, and active-session
   controls.
 - [Notifications](./notifications.md) — receives login-security and failed-login
@@ -273,28 +275,51 @@ accessible without authentication.
 
 #### Multi-account terminal-session recovery
 
-The current implementation first tries remembered slots after a confirmed
-terminal refresh failure. The behavior is implemented locally and remains
-subject to staging browser acceptance:
+After a terminal refresh failure, recovery keeps the failed account as context
+and never tries another remembered account automatically. The implemented
+recovery flow is:
 
 1. Preserve the device-scoped remembered-account summaries locally, without
    storing or replaying passwords.
-2. Keep refresh coordination, cached session metadata, active-account state,
-   and cross-tab notifications isolated by remembered account slot rather than
-   using one origin-global namespace.
-3. When the active account's refresh is terminal, try the remembered slots in
-   most-recent order by calling the existing slot-aware refresh contract.
-4. Restore the first slot whose refresh succeeds and refresh the account-
-   scoped shell without exposing an intermediate signed-out state.
-5. If no remembered slot can be restored, show `/login` with the most-recent
-   remembered account preselected. Normal password authentication and any
-   required OTP or device challenge remain mandatory; remembered metadata does
-   not authenticate the account.
+2. Coordination keys, state reads/writes, and refresh requests use one captured
+   account slot. Ordinary refresh results are checked against the still-active
+   slot before persistence.
+3. A terminal refresh failure clears in-memory credentials but preserves the
+   selected slot and safe cached profile metadata for recovery.
+4. Offer sign-in as the failed account and a “Choose another remembered
+   account” action that opens the shared modal. Put the current account first,
+   then order other accounts by recency. Recoverable failures keep `Try again`
+   and offer the same explicit account choice. The modal scrolls its list
+   independently so it does not extend the recovery page.
+5. A selected remembered account is refreshed alone through slot-scoped
+   coordination. The shell changes only after success; failures remain visible
+   and do not cause automatic attempts against other accounts.
 
 This flow applies to session expiry or revocation observed by the
 active account. Explicit logout and account removal retain their existing
-fallback semantics. The API's existing slot-aware refresh endpoint is the
-intended contract; no schema change is expected for this recovery behavior.
+fallback semantics. The API's existing slot-aware refresh endpoint supports
+explicit recovery; no schema change is expected. Staging confirmed refresh-
+token reuse and the earlier silent fallback. Its duplicate-request origin
+remains unknown. Both defects and local fixes are tracked in
+[BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
+and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
+
+#### Refresh coordination and recovery contract
+
+- Use one captured active-slot value for both refresh coordination and the
+  refresh request, and verify it is still active before saving the response.
+- A terminal refresh failure keeps the failed account context and exposes
+  reauthentication or explicit account choice; it never silently restores a
+  different remembered account.
+- Retain refresh-token reuse detection and its current security boundary while
+  correcting client-side refresh coordination. Any broader retry grace or
+  server-side idempotency behavior needs a separate security review for lost
+  responses and duplicate requests.
+- Persist a successful restore's `last_used_at` update in the same transaction
+  as the refresh rotation, so the server's account-list order reflects recency.
+
+These decisions are tracked by [BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
+and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
 
 #### Business rules and contract
 
@@ -304,6 +329,12 @@ intended contract; no schema change is expected for this recovery behavior.
   and rotated within a token family.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
+- **ACCESS-R-031:** Terminal refresh failure requires same-account sign-in or
+  explicit remembered-account selection; no automatic cross-account recovery.
+- **ACCESS-R-032:** Refresh coordination, request headers, and result state use
+  one slot captured at operation start.
+- **ACCESS-R-033:** Successful refresh persists slot recency in the same
+  transaction as token rotation.
 - **ACCESS-R-017:** Refresh is reactive and occurs only after `TOKEN_EXPIRED`.
 - **ACCESS-R-018:** Ambiguous refresh failures preserve local access state.
 - **ACCESS-R-019:** Logout revokes only the relevant session/family.
@@ -320,16 +351,17 @@ the release is considered complete.
 
 - [ ] **ACCESS-AC-014** Expired access tokens refresh once and retry once.
 - [ ] **ACCESS-AC-015** Recoverable refresh failures preserve the session.
-- [ ] **ACCESS-AC-016** Confirmed terminal refresh failure clears local state.
+- [x] **ACCESS-AC-016** Confirmed terminal refresh failure clears in-memory
+      credentials while retaining only safe recovery context.
 - [ ] **ACCESS-AC-017** Rotation and reuse detection are transactional and tested.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
-- [ ] **ACCESS-AC-026** A terminal refresh failure tries remembered slots in
-      most-recent order without storing or replaying passwords.
-- [ ] **ACCESS-AC-027** Refresh coordination and cached session state cannot
-      cross-contaminate remembered account slots or tabs.
-- [ ] **ACCESS-AC-028** A successful fallback restores the selected account;
-      when all slots fail, login preselects the most-recent account and still
-      requires normal credentials and any required challenge.
+- [x] **ACCESS-AC-026** A terminal failure never tries another slot without an
+      explicit selection; recovery exposes the failed account and remembered
+      list.
+- [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
+      slot and isolate state across remembered slots.
+- [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after
+      success and never cycles through other remembered slots.
 
 #### Decision record
 
@@ -371,6 +403,10 @@ or returns to the public site when none remain.
 The account switcher header includes an accessible `Beta` badge. This is a
 disclosure that the account-switching experience is still being stabilized; it
 does not change account limits, authorization, session behavior, or access.
+The menu keeps a viewport-safe fixed width, truncates long account labels before
+the trailing controls, and contains row hover surfaces within its padded bounds.
+Its width is capped at `min(16rem, calc(100vw - 1rem))`; the header status
+control remains visible when account labels are long.
 
 #### Business rules and contract
 
@@ -415,8 +451,8 @@ does not change account limits, authorization, session behavior, or access.
   storage, responses, emails, or logs.
 - Planned recovery coverage: terminal refresh failure with a valid second
   slot, all remembered slots invalid, concurrent tabs on different slots,
-  delayed refresh responses, and required OTP/device challenge after fallback
-  to login.
+  delayed refresh responses, explicit remembered-account recovery, and
+  required OTP/device challenge after sign-in.
 
 #### Implementation plan and rollout status
 
@@ -430,21 +466,19 @@ The remaining web/API work is organized into three dependent workstreams:
    login, switching, and logout. The fix must preserve the active account when
    an Add account attempt fails and must prove that refreshes do not create
    duplicate slots.
-2. **Implement terminal-session recovery.** After a terminal refresh failure,
-   try remembered slots in most-recent order through the existing slot-aware
-   refresh contract. Restore the first valid account and its account-scoped
-   shell. If all slots fail, show login with the most-recent account
-   preselected while still requiring normal credentials and any required OTP or
-   device challenge. Passwords must never be stored or replayed.
-3. **Isolate multi-account client state.** Scope cached user metadata,
+2. **Isolate multi-account client state.** Scope cached user metadata,
    active-account state, refresh coordination, refresh locks, and cross-tab
    notifications by account slot. Stale or delayed responses must not restore
    the wrong account, and explicit logout/removal fallback behavior must remain
    intact.
+3. **Terminal-session recovery.** Implemented locally: preserve the failed
+   account context and allow explicit sign-in or selection from the inline
+   remembered-account list. Never automatically try another identity.
 
 The implementation order was workstream 1, then workstream 3, then workstream
-2. Workstream 1 now has a local API regression test; workstreams 2 and 3 have
-local TypeScript/build verification. Each workstream still requires browser checks for
+2. Existing workstream 1 tests are recorded in prior history. The recovery and
+slot-coordination changes in this task have not had automated verification.
+Each workstream still requires browser checks for
    clean and existing multi-account profiles, including concurrent tabs and
    delayed responses. The current API slot-aware refresh contract is expected
 to be sufficient; no schema migration is planned unless implementation
@@ -497,13 +531,16 @@ credentials, cookies, IPs, or internal identifiers.
 |---|---|---|---|
 | ACCESS-R-017 | Reactive refresh after expiry | Web auth refresh tests | Implemented |
 | ACCESS-R-018 | Recoverable refresh preserves access | Token resilience tests | Implemented |
+| ACCESS-R-031 | Terminal refresh preserves context and requires explicit account choice | Planned recovery-flow verification | Implemented locally — staging pending |
+| ACCESS-R-032 | Refresh keys and requests use one captured slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
+| ACCESS-R-033 | Refresh recency commits with token rotation | Planned account-list ordering verification | Implemented locally — staging pending |
 | ACCESS-R-026 | Configurable slot limit | `api/tests/test_phase4_accounts.py` | Implemented |
 | ACCESS-R-029 | Failed operations preserve active account | Account isolation tests | Implemented |
 | ACCESS-R-030 | Logout fallback | Active-slot logout test | Implemented |
 | ACCESS-R-014/015 | Token lifetime and refresh contract | Configuration/token tests | Documented — MIG-001 |
-| ACCESS-AC-026 | Terminal-refresh recovery tries remembered slots | Planned slot-recovery test | Implemented locally — staging pending |
-| ACCESS-AC-027 | Client session state is isolated per slot | Planned cross-tab isolation test | Implemented locally — staging pending |
-| ACCESS-AC-028 | Fallback restores an account or returns to credentialed login | Planned recovery-flow test | Implemented locally — staging pending |
+| ACCESS-AC-026 | Terminal-refresh recovery requires explicit account choice | Planned recovery-flow verification | Implemented locally — staging pending |
+| ACCESS-AC-027 | Client session state is isolated per slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
+| ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
 
 ### Release gates
 
@@ -533,9 +570,9 @@ logs.
   implementation; `MIG-001` records the historical documentation mismatch.
 - Email delivery and some deployment/release evidence remain environment-
   dependent verification gates.
-- Implemented locally: multi-account recovery after terminal refresh failure,
-  per-account-slot client coordination, and stale-slot capacity handling.
-  Staging browser acceptance remains pending.
+- Implemented locally: explicit multi-account recovery after terminal refresh
+  failure, captured per-slot client coordination, and persisted refresh recency.
+  Automated verification and staging browser acceptance remain pending.
 - Open staging verification: Add account previously reported a full
   remembered-account limit while the browser showed only one account; the
   local fix and regression test are recorded in [`docs/notes.md`](../notes.md).
@@ -549,8 +586,8 @@ logs.
 - [ ] Implement active-session listing and revocation.
 - [ ] Implement device recognition and account slots.
 - [ ] Implement switching, isolation, fallback, and account limits.
-- [x] Implement terminal-refresh recovery across remembered slots and isolate
-      client coordination state per slot locally; staging acceptance pending.
+- [x] Implement explicit terminal-refresh account recovery and isolate client
+      coordination state per slot locally; staging acceptance pending.
 - [ ] Implement durable security events and notification isolation.
 - [ ] Implement permissions, privacy, and secret-redaction boundaries.
 - [x] Apply and verify the documented 30-day refresh-token lifetime.
@@ -573,3 +610,11 @@ project-wide history. This section records changes specific to this unit.
 - 2026-09-21 — Implemented the stale-slot capacity fix, slot-scoped web
   session coordination, remembered-slot recovery, and recent-account login
   preselection; local tests/build pass and staging acceptance remains open.
+- 2026-09-24T21:58:14Z — Replaced automatic terminal-refresh fallback with explicit
+  account recovery, scoped refresh coordination to one captured slot, and
+  persisted refresh recency in the API transaction; verification pending.
+- 2026-09-24T22:14:02Z — Matched recovery action widths into one centered group
+  with equal columns and a full-width account-choice action.
+- 2026-09-24T22:19:59Z — Moved the remembered-account list into the shared
+  modal, ordered the current account first, and kept list scrolling inside the
+  dialog.
