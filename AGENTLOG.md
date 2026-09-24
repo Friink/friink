@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T19:07:47Z — Match mobile drawer layout to desktop
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Use the finalized desktop drawer design and layout in the
+  expanded mobile drawer.
+- Changes Made: Capped the mobile overlay at the shared 256px drawer width,
+  retained viewport fitting and overlay behavior, removed the mobile-only
+  footer divider, and synchronized Navigation, design-system, implementation,
+  and active drawer-rule documentation.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `docs/rules.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; verified the mobile width
+  uses the shared expanded-width token and no mobile-only drawer footer border
+  remains. No build or tests run.
+
 ## 2026-09-24T18:57:55Z — Show the username in the Profile row
 
 - Agent: Codex

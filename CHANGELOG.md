@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-24T19:07:47Z
+- [design/navigation] Matched the mobile expanded drawer to the desktop layout,
+  using the shared 256px width cap and removing its mobile-only footer divider;
+  the drawer remains a viewport-constrained overlay.
+
 ## 2026-09-24T18:57:55Z
 - [design/navigation] Replaced the Profile row label with the current user's
   `@username`; long usernames truncate before the account switcher.

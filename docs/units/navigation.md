@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T18:57:55Z
+**Last edited:** 2026-09-24T19:07:47Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -65,6 +65,9 @@ the established search, chat-unread, and notification interactions.
   corner.
 - Expanded drawer width is 256px and collapsed width is 77px. Both modes use
   fixed 16px padding on all four sides.
+- On mobile, the expanded drawer keeps the same row geometry, gaps, icon cells,
+  Profile treatment, and footer placement; it appears as an overlay and fits
+  within the available viewport width.
 - Navigation and footer action rows use 100% width and 44px height, with 8px
   padding on the top, left, and bottom. Each row has a 28px square inner icon
   cell and a 16px gap before its label. Glyphs are 20px high, use automatic

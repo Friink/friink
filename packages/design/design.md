@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-24T18:57:55Z
+**Last edited:** 2026-09-24T19:07:47Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
@@ -459,7 +459,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   4. Footer actions (`.sidebar-footer`): Settings (`fa-gear`) and Log out (`fa-right-from-bracket`). Account switching, Add account, and Manage accounts live in the profile-card account menu. The switcher remains a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
   - Desktop: Persistent, collapsible between `256px` and `77px`.
-  - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
+  - Mobile (`<768px`): The expanded drawer uses the same row, padding, icon, gap, Profile, and footer layout as desktop. It appears as a viewport-constrained overlay capped at the shared 256px width and auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
 
 ### 8. Composer (`web/components/composer.tsx`)
 - **`Composer`**:

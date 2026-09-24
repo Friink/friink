@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T18:57:55Z
+**Last edited:** 2026-09-24T19:07:47Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -178,6 +178,8 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Expanded and collapsed drawers use fixed 16px outer padding on all four sides.
   A 16px gap separates Profile from navigation and each navigation row; footer
   rows also have 16px gaps. The footer rests at the bottom of the drawer.
+- The mobile expanded drawer uses the same layout and appears as an overlay,
+  capped at the shared 256px expanded width and constrained to the viewport.
 - The active drawer destination uses a neutral gray background (`#d6d6d6` in
   light mode, `#424242` in dark mode). Its icon is `#111111` in light mode and
   `#f0f0f0` in dark mode; active text keeps the theme's primary text color.

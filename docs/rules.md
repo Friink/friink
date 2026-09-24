@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-24T18:57:55Z
+**Last edited:** 2026-09-24T19:07:47Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -449,7 +449,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/side-drawer.tsx`, `web/components/action-menu.tsx`, `web/app/globals.css`
 
-- **What:** The signed-in SideDrawer has a 256px expanded width and a 77px collapsed width, with fixed 16px padding on all four sides in both modes. Navigation and footer action rows use 100% width and 44px height, with 8px top/left/bottom padding, 28px icon cells, 20px-high auto-width glyphs, and 16px icon-to-label gaps. The Profile row is separate: its picture and wrapper are 44×44px with no row padding and stay at the same position in both modes; it displays the current `@username`, truncating long values with an ellipsis before the account switcher. A 16px gap separates the picture and username, Profile from navigation, and navigation rows from one another; footer action rows use the same gap. The footer stays at the drawer bottom. The account switcher sits at the Profile row's right when expanded and overlays the picture's lower-right corner when collapsed; its inner cell is 14×14px with a centered 12×12px glyph. Active drawer icon color is `#111111` in light mode and `#f0f0f0` in dark mode. The menu shows `Using as @username`, all remembered accounts in the existing server-provided order, then Manage accounts and Add account.
+- **What:** The signed-in SideDrawer has a 256px expanded width and a 77px collapsed width, with fixed 16px padding on all four sides in both modes. Navigation and footer action rows use 100% width and 44px height, with 8px top/left/bottom padding, 28px icon cells, 20px-high auto-width glyphs, and 16px icon-to-label gaps. The Profile row is separate: its picture and wrapper are 44×44px with no row padding and stay at the same position in both modes; it displays the current `@username`, truncating long values with an ellipsis before the account switcher. A 16px gap separates the picture and username, Profile from navigation, and navigation rows from one another; footer action rows use the same gap. The footer stays at the drawer bottom. On mobile the expanded drawer uses the same layout as desktop, shown as a viewport-constrained overlay. The account switcher sits at the Profile row's right when expanded and overlays the picture's lower-right corner when collapsed; its inner cell is 14×14px with a centered 12×12px glyph. Active drawer icon color is `#111111` in light mode and `#f0f0f0` in dark mode. The menu shows `Using as @username`, all remembered accounts in the existing server-provided order, then Manage accounts and Add account.
 - **Edge cases:** The Profile destination and current-user identity share one row, avoiding duplicate Profile navigation entries. The account-menu trigger remains separate from the Profile link. The menu only reorganizes existing web account actions; it creates no backend relationship and changes no account/session rules.
 
 ### AUTH-R-015 — Signup Creates Active Public Accounts

@@ -1414,7 +1414,7 @@ textarea {
     display: flex;
     flex-direction: column;
     row-gap: var(--space-sidebar-gap);
-    width: min(18rem, calc(100% - 2rem));
+    width: min(var(--space-sidebar-width), calc(100% - 2rem));
     max-height: none;
     overflow-y: auto;
     padding: var(--space-sidebar-padding);
@@ -1531,7 +1531,6 @@ textarea {
   .sidebar:not(.sidebar-collapsed) .sidebar-footer {
     display: grid;
     margin-top: auto;
-    border-top: 1px solid var(--color-line);
   }
 
 }
