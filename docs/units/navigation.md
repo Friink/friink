@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-23T22:55:03Z
+**Last edited:** 2026-09-24T18:51:03Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -56,6 +56,30 @@ the established search, chat-unread, and notification interactions.
 - All controls use the existing navigation callbacks and server-authoritative
   unread state. The legacy Header remains mounted but visually hidden for
   rollback safety; NavigationBar and Tabs remain rendered and functional.
+- The drawer presents the signed-in user's avatar as a standard-height
+  `Profile` row with a separate account dropdown on its right, instead of
+  showing a large identity card and a duplicate Profile destination.
+- The drawer avatar is 44px in both expanded and collapsed layouts. The 24px expanded
+  account caret sits inside the Profile row at its right edge. Collapsed mode
+  overlays a 20px circular caret button flush with the avatar's lower-right
+  corner.
+- Expanded drawer width is 256px and collapsed width is 77px. Both modes use
+  fixed 16px padding on all four sides.
+- Navigation and footer action rows use 100% width and 44px height, with 8px
+  padding on the top, left, and bottom. Each row has a 28px square inner icon
+  cell and a 16px gap before its label. Glyphs are 20px high, use automatic
+  width, and are centered in their cells.
+- The Profile row is separate from the icon-cell layout. Its picture and
+  wrapper are 44×44px with no row padding; the picture keeps the same position
+  in expanded and collapsed modes. Its label has a 16px gap after the picture.
+- A 16px gap separates the Profile row from navigation rows and navigation
+  rows from one another. Footer action rows also have a 16px gap, and the footer
+  stays at the bottom of the drawer.
+- The account-switcher button stays at the Profile row's right side when
+  expanded and overlays the picture's lower-right corner when collapsed. Its
+  inner cell is 14×14px with a centered 12×12px glyph.
+- The active drawer row uses a neutral gray fill and theme-appropriate text.
+  Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
 - Shared tab labels use the design-system type size, and the active
   label is bold. Tab selection, underline, and horizontal-overflow behavior
   are unchanged.
@@ -68,9 +92,10 @@ the established search, chat-unread, and notification interactions.
   prior destination.
 - **NAV-R-003:** Contextual menu items remain permission- and screen-owned by
   the AppShell; the TopBar only presents and invokes them.
-- **NAV-R-004:** The preview TopBar uses the same surface token as the side
-  drawer: `--color-paper` in light mode and the shell's `--color-chrome`
-  override in dark mode.
+- **NAV-R-004:** The signed-in shell shares one base surface across the TopBar,
+  drawer, tabs, content area, and floating navigation: white in light mode and
+  `#161616` in dark mode. Interactive states and overlays may use distinct
+  surfaces.
 - **NAV-R-005:** Search is available on every signed-in screen except that the
   search route displays the search field persistently. Home search is global;
   other screens may provide contextual search behavior.
@@ -96,6 +121,9 @@ the established search, chat-unread, and notification interactions.
   highlights Profile.
 - [ ] **NAV-AC-007** Opening a post shows `Post` in the contextual header and
   leaves Home and all other drawer destinations inactive.
+- [ ] **NAV-AC-008** The drawer shows one standard-height Profile row with the
+  signed-in user's avatar, marks only that row active on their own profile,
+  and keeps the account menu on a separate right-side caret.
 
 ## Verification checklist
 

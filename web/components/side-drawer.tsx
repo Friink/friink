@@ -1,5 +1,6 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
 import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
+import Image from 'next/image';
 import { Modal } from '@/components/modal';
 import { LoginScreen } from '@/components/login-screen';
 import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
@@ -247,7 +248,22 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   return (
     <aside ref={ref} className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-profile">
-        <ProfileCard name={user.name} handle={`@${user.username}`} tone="mint" initials={getInitials(user.name)} imageUrl={user.profilePictureUrl} showProfessionalBadge={user.showProfessionalBadge} />
+        <a
+          className={`nav-item sidebar-profile-link${activeScreen === 'profile' ? ' active' : ''}`}
+          href={getNavigationHref('profile')}
+          aria-current={activeScreen === 'profile' ? 'page' : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            handleNavigate('profile');
+          }}
+        >
+            <span className="nav-item-icon sidebar-profile-avatar" aria-hidden="true">
+              <span className="user-avatar avatar-mint profile-card-avatar-image">
+                <Image src={user.profilePictureUrl || DEFAULT_PROFILE_IMAGE} alt="" width={20} height={20} sizes="20px" unoptimized />
+              </span>
+          </span>
+          <span className="sidebar-profile-label">Profile</span>
+        </a>
         <button
           ref={accountMenuButtonRef}
           className="sidebar-account-menu-button"
@@ -264,7 +280,9 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
             void refreshAccounts();
           }}
         >
-          <i className="fa-solid fa-caret-down" aria-hidden="true" />
+          <span className="sidebar-account-menu-icon" aria-hidden="true">
+            <i className="fa-solid fa-caret-down" />
+          </span>
         </button>
         <ActionMenu
           open={accountMenuOpen}

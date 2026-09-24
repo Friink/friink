@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-23T22:55:03Z
+**Last edited:** 2026-09-24T18:51:03Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -88,8 +88,10 @@ contract rather than repeated here.
 - Profile moderation actions use the shell-owned contextual NavigationBar
   overflow menu rather than a detached menu in the profile action row.
 - Ink and muted gray establish the text hierarchy.
-- Paper and background colors distinguish surfaces from the application
-  canvas.
+- The signed-in app uses one shared gray base surface across its canvas, top
+  bar, drawer, tabs, content area, and floating navigation: `#f2f2f2` in light
+  mode and `#161616` in dark mode. Dividers, controls, cards with intentional
+  emphasis, overlays, and interactive states may still use distinct treatments.
 - Danger colors are reserved for errors, destructive actions, and warnings.
 - The in-app accent may be device-local, but public marketing surfaces retain
   the fixed Friink brand color. The implemented Accent color setting is
@@ -97,7 +99,7 @@ contract rather than repeated here.
   re-exposed.
 - Every light-theme surface and foreground must have an intentional dark-theme
   equivalent with sufficient contrast.
-- Profile-picture borders use white in the light theme and `#111111` in the
+- Profile-picture borders use white in the light theme and `#161616` in the
   dark theme so the border blends with the surrounding dark background.
 - Notification dropdown rows use a muted neutral unread surface rather than
   the brand accent, with a small consistent gap between rows.
@@ -164,6 +166,25 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Use the global header for utilities such as Search, Chat, and Notifications.
 - Use the drawer for personal identity, network navigation, Saved, Directory,
   Settings, and staff discoverability.
+- Show the signed-in user's avatar in a standard-height `Profile` drawer row;
+  keep the account dropdown as a separate right-side control on that row.
+- Drawer navigation and footer rows use 100% width and 44px height, with 8px
+  top, left, and bottom padding. Their 28px icon cells contain 20px-high,
+  auto-width glyphs; text starts 16px after the icon cell. The Profile row is
+  separate: its picture is 44×44px, has no row padding, and stays in the same
+  position in either drawer mode. The account switcher uses a 14×14px inner
+  cell with a centered 12×12px glyph.
+- Expanded and collapsed drawers use fixed 16px outer padding on all four sides.
+  A 16px gap separates Profile from navigation and each navigation row; footer
+  rows also have 16px gaps. The footer rests at the bottom of the drawer.
+- The active drawer destination uses a neutral gray background (`#d6d6d6` in
+  light mode, `#424242` in dark mode). Its icon is `#111111` in light mode and
+  `#f0f0f0` in dark mode; active text keeps the theme's primary text color.
+- The drawer's Profile picture is 44px in both expanded and collapsed modes.
+  The account switcher stays at the Profile row's right edge when expanded; its
+  20px button overlays the picture's lower-right corner when collapsed.
+- Expanded drawer width is 256px and collapsed width is 77px. Collapsed icons
+  stay centered in their cells on the same horizontal axis as the Profile avatar.
 - Use addressable links for stable destinations so browser history, status
   previews, middle-click, and open-in-new-tab behavior remain available.
 - Use the shared navigation bar and tabs for subpages and addressable sections.

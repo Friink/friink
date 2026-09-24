@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-09-24T18:51:03Z
+- [design/navigation] Finalized the drawer layout: 256px expanded and 77px
+  collapsed widths, 16px outer padding, 44px full-width rows, 28px icon cells,
+  20px-high auto-width glyphs, 16px row and label gaps, a fixed unpadded 44px
+  Profile picture, a 14px/12px account-switcher icon, and a bottom-anchored
+  footer. Synchronized active design and navigation documentation.
+
+## 2026-09-24T17:56:12Z
+- [design/navigation] Set each drawer navigation/action icon cell to 28×28px
+  and aligned uniform 20px glyph boxes within it; excluded the Profile picture.
+
+## 2026-09-24T17:50:00Z
+- [design/navigation] Set the collapsed drawer width to 76px; retained the
+  256px expanded width and fixed 16px padding in both modes.
+
+## 2026-09-24T17:44:59Z
+- [design/navigation] Set the collapsed drawer width to 96px and applied fixed
+  16px padding on all four sides in both expanded and collapsed modes.
+
+## 2026-09-24T01:00:11Z
+- [design/navigation] Removed custom drawer padding, margins, and gaps in both
+  states, retained existing colors and icon sizing, and set collapsed width to
+  64px. Centered collapsed icon cells with the Profile avatar.
+
+## 2026-09-24T00:47:10Z
+- [design/navigation] Set drawer icon hit cells to 44×44px around 20px glyphs,
+  retaining 8px row gaps. Constrained collapsed rows so icons remain centered
+  with the Profile avatar.
+
+## 2026-09-24T00:40:37Z
+- [design/navigation] Set the drawer's expanded and collapsed outer left/right
+  padding to the shared 16px inset token; kept vertical and control spacing.
+
+## 2026-09-24T00:30:21Z
+- [design/navigation] Matched the expanded Profile row to collapsed geometry:
+  44px avatar, 52px row, and 16px row spacing above and before navigation.
+  Added shared theme tokens and synchronized Navigation/design contracts.
+
+## 2026-09-24T00:26:23Z
+- [design/navigation] Moved drawer icon dimensions and spacing to generated
+  shared theme tokens and updated the implementation contract. Drawer CSS uses
+  shared selectors; no inline styles were added.
+
+## 2026-09-24T00:23:37Z
+- [fix/navigation] Added explicit 4px padding to the drawer's 28px icon cells
+  while retaining 20px glyphs and 8px gaps between 28px navigation rows.
+  Verified the collapsed drawer's computed styles in the live local app and
+  clarified the CSS contract in the navigation and design documentation.
+
 ## 2026-09-23T23:03:28Z
 - [bug/chat] Logged the staging `/chats/new` people-search failure shown in
   the user's screenshot. Root cause and endpoint response remain unknown;
@@ -4835,3 +4884,41 @@ _Last updated: 2026-09-10_
 - [web] Added accent-color hover, focus, and press feedback to all post action
   controls, including the Share and More header utilities, and updated the
   shared design/feed contracts.
+
+## 2026-09-23T23:19:08Z
+- [design/surfaces] Unified signed-in app canvas and shared shell surfaces: white in light mode and #161616 in dark mode. Updated dark avatar-border alignment and the design contracts.
+
+## 2026-09-23T23:26:09Z
+- [design/navigation] Replaced the oversized signed-in drawer identity card and duplicate Profile link with one standard-height Profile row. The row retains the user's avatar and a separate account dropdown control.
+
+## 2026-09-23T23:34:40Z
+- [design/navigation] Enlarged side-drawer navigation icons and labels to 22px and changed signed-in app surfaces to coordinated light and dark gray shades. Updated the design contracts.
+
+## 2026-09-23T23:37:39Z
+- [design/navigation] Reduced drawer icons and labels from 22px to 20px and doubled the icon-label and drawer-row/footer-action gaps. Updated Navigation and design contracts.
+
+## 2026-09-23T23:41:12Z
+- [design/navigation] Increased the drawer Profile avatar to 32px and centered the circular account-menu chevron, placing it at the lower-right of the avatar when collapsed.
+
+## 2026-09-23T23:43:07Z
+- [design/navigation] Changed the active drawer row to a neutral gray fill with black foreground in light theme and white foreground in dark theme.
+
+## 2026-09-23T23:45:10Z
+- [design/navigation] Tightened spacing and centered icon cells only in the collapsed drawer; expanded drawer spacing remains unchanged.
+
+## 2026-09-23T23:49:20Z
+- [design/navigation] Restored the collapsed Profile avatar to 44px and its lower-right circular account caret to 24px, with a subtly lighter background.
+## 2026-09-23T23:51:27Z
+- [design/theme] Set the signed-in app's shared dark surface and avatar border to `#161616`.
+
+## 2026-09-23T23:51:27Z
+- [design/theme] Set the signed-in app shared dark surface and avatar border to `#161616`.
+
+## 2026-09-23T23:56:14Z
+- [design/navigation] Set drawer icon cells to 28px with 20px glyphs and 8px edge spacing in expanded and collapsed layouts; set active icon colors to #111111 light and #f0f0f0 dark.
+
+## 2026-09-24T00:13:25Z
+- [design/navigation] Kept drawer glyphs at 20px in 28px cells with an 8px gap between buttons in both modes; enlarged the expanded Profile avatar, moved its smaller caret inside the row, and aligned the collapsed caret to the avatar corner.
+
+## 2026-09-24T00:15:21Z
+- [design/navigation] Set the Profile control 16px from the drawer top and 16px above the first navigation button in expanded and collapsed layouts.

@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-23T22:55:03Z
+**Last edited:** 2026-09-24T18:51:03Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
@@ -76,14 +76,14 @@ Friink is a calm, people-first social space centered on meaningful conversations
 
 > Updated to match shipped behavior as of 2026-08-27 — see CHANGELOG.md entries 2026-08-26, 2026-08-27
 
-- **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.5rem` collapsed) and a main content panel.
+- **Desktop Shell**: Uses a persistent/collapsible navigation sidebar (`SideDrawer`, `16rem` expanded / `4.75rem` collapsed) and a main content panel.
 - **Top Headers**:
   - Desktop uses the top `TopBar` (`4rem` height) containing the sidebar toggle/back control, compact brand mark, expandable search control, Chat link (`/chats`), and Notifications bell (`/notifications`). The legacy `Header` remains mounted but is visually hidden for rollback safety.
   - Mobile and sub-pages use `NavigationBar` (`2rem` height) containing a history-aware Back button, current page title, and a three-dot overflow button triggering `ActionMenu`.
   - The Notifications surface reuses `Tabs` for `All` and `Security`; its `NavigationBar` overflow uses `ActionMenu` for unread-only filtering and the explicit mark-all-as-read action. Notification rows reuse `ListRow` and keep pending request actions inline. The bell dropdown shows unread notifications only, is empty at zero unread, measures its rendered top edge to stay within the available viewport, shows at most eight rendered rows at once, and scrolls only the unread list after the eighth row while keeping the footer visible. See `docs/notifications.md` for the full interaction contract.
 - **Persistent Contextual Surface**: The bottom `FloatingBar` (`3.5rem` height) hosts the reusable `Composer` as the app-wide quick post surface and seamlessly expands as post text needs multiple lines. The direct chat route also uses this shared surface for its message composer and keeps it visible while changing enabled state and placeholder according to the chat policy contract.
 - **Profile Composer Rule**: The signed-in user's own profile renders the standalone new-post composer in the floating bar. Other profiles keep that composer hidden, but selecting Reply or Quote on a profile post opens the shared contextual composer. The composer references the selected post and uses the same submit behavior as feed and post-detail surfaces.
-- **TopBar Preview**: `TopBar` (`web/components/top-bar.tsx`) is the functional signed-in top-bar prototype. It uses a full-viewport inner rail with a fixed leading/context/actions grid, shared edge padding, shared icon hit areas, the side-drawer surface token (`--color-paper`, with the shell dark-mode `--color-chrome` override), and a theme-aware compact mark (`logoBlack.svg` on light surfaces and `logoWhite.svg` on dark surfaces). The mark is always visible, links Home, and is `1.5rem` inside a `2.5rem` hit area; leave this logo size unchanged. The hamburger, Back, Search, Chat, Notifications, contextual Filter, and Actions trigger glyphs use `1.25rem` (20px) icons inside `2.5rem` (40px) hit areas. The centered page title uses `1.25rem` type at weight 800. Expanded search remains `2.5rem` high, uses `1.25rem` input text, and its submit/close controls use `2.5rem` hit areas with `1.25rem` icons. ActionMenu row glyphs use `1rem` (16px), while row labels keep the existing type size. Home actions are sidebar toggle, Search, Chat, and Notifications; contextual screens provide Back and the existing `ActionMenu`. The preview keeps the existing `Header` and `NavigationBar` mounted but hides them with shared CSS, preserving rollback while removing their layout gap. The inner rail must not be capped and centered, because that creates empty horizontal space at both viewport edges on wide screens.
+- **TopBar Preview**: `TopBar` (`web/components/top-bar.tsx`) is the functional signed-in top-bar prototype. It uses a full-viewport inner rail with a fixed leading/context/actions grid, shared edge padding, shared icon hit areas, the shared signed-in app surface, and a theme-aware compact mark (`logoBlack.svg` on light surfaces and `logoWhite.svg` on dark surfaces). The mark is always visible, links Home, and is `1.5rem` inside a `2.5rem` hit area; leave this logo size unchanged. The hamburger, Back, Search, Chat, Notifications, contextual Filter, and Actions trigger glyphs use `1.25rem` (20px) icons inside `2.5rem` (40px) hit areas. The centered page title uses `1.25rem` type at weight 800. Expanded search remains `2.5rem` high, uses `1.25rem` input text, and its submit/close controls use `2.5rem` hit areas with `1.25rem` icons. ActionMenu row glyphs use `1rem` (16px), while row labels keep the existing type size. Home actions are sidebar toggle, Search, Chat, and Notifications; contextual screens provide Back and the existing `ActionMenu`. The preview keeps the existing `Header` and `NavigationBar` mounted but hides them with shared CSS, preserving rollback while removing their layout gap. The inner rail must not be capped and centered, because that creates empty horizontal space at both viewport edges on wide screens.
 - **Feed & Content Layout**: App page content uses the shared `ContentBox` as a fluid, responsive content surface. On tablet and desktop, the visible content surface is capped at `720px` via `--space-content-col` and centered within the available panel so very wide monitors do not stretch primary app content into unreadable layouts. The shared content inset is applied outside that cap as an available-width gutter, and `ContentBox` owns bottom spacing. Child screens should fit that container responsively instead of re-adding competing page-level horizontal padding. Page containers reserve bottom spacing (`padding-bottom: calc(var(--space-floating-bar-height) + 2rem)`) to prevent persistent bar overlap.
 - **Shared Type and Motion Scale**: `web/theme.config.ts` owns the signed-in scale of `12px` small, `14px` supporting, `16px` body, `19px` large, and `26px` extra-large text. Shared interactive transitions use the `180ms ease` motion token in `globals.css`.
 - **Scrollbar Treatment**: The shared app stylesheet styles native scrollbars globally with thin rounded muted-neutral thumbs, transparent tracks, and a slightly stronger neutral hover treatment. Light theme uses the existing muted/line blend; dark theme uses darker neutral `#666666` and hover `#7a7a7a`. Scrollbars must not use the brand/accent color. Do not replace native scrolling with a JavaScript scrollbar component; wheel, keyboard, touch, accessibility, and reduced-motion behavior remain browser-owned.
@@ -193,7 +193,7 @@ Navigation is partitioned across dedicated functional surfaces rather than a sin
 - Settings should follow the same divider-based row rhythm as chat and notifications; avoid individual boxed cards around every setting item unless a future component contract explicitly calls for a standalone card.
 - The in-app Accent color setting remains implemented but is currently hidden from the General settings UI. When re-exposed, it accepts a six-digit hex code (`#RRGGBB`), previews the color, and applies it to the app shell's `--color-accent` token only; the public site remains on the fixed Friink brand color. Accent-derived soft, background, hover, and focus colors must be computed from `--color-accent`. Invalid values keep the update action disabled.
 - Avatars use circular shapes and soft color variations. Profile-card picture
-  borders are white in light theme and `#111111` in dark theme, matching the
+  borders are white in light theme and `#161616` in dark theme, matching the
   surrounding dark background.
 - Notification dropdown unread rows use a muted neutral surface and a small
   vertical gap rather than a saturated accent background.
@@ -256,9 +256,9 @@ The following design tokens are locked hard values extracted directly from the c
   - `--color-ink`: `#111111` (Primary text; Dark mode: `#f5f5f5`)
   - `--color-muted`: `#8a908c` (Secondary text, inactive icons, handles, dates; Dark mode: `#c4c4c4`)
   - `--color-line`: `#e3e6e3` (Borders, dividers; Dark mode: `#555555`)
-  - `--color-paper`: `#ffffff` (Card and panel backgrounds, floating bar; Dark mode: `#161616`)
-  - `--color-background`: `#f2f5f1` (App background; Dark mode: `#111111`)
-  - `--color-chrome`: `#111111` (Header/shell dark surfaces)
+  - `--color-paper`: `#ffffff` (Base paper token; signed-in shell overrides it to `#f2f2f2` in light mode and `#161616` in dark mode)
+  - `--color-background`: `#f2f5f1` (Base token outside the signed-in shell; the shell aliases it to `--color-paper`. Dark shell: `#161616`)
+  - `--color-chrome`: `#111111` (Legacy/standalone chrome token; signed-in shell uses `#161616`)
   - `--color-danger`: `#ed8c6b` / `#b54444` (Error states and destructive actions)
 - **Avatar Tone Palette**:
   - Coral: `--color-avatar-coral`: `#f4b3a4`
@@ -280,7 +280,10 @@ The following design tokens are locked hard values extracted directly from the c
   - `--text-xl`: `1.5625rem` (25px)
 
 ### Layout & Dimensions
-- **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `4.5rem` (72px, `--space-sidebar-collapsed-width`)
+- **Sidebar Width**: `16rem` (256px, `--space-sidebar-width`) / Collapsed: `77px` (`--space-sidebar-collapsed-width`)
+- **Sidebar Padding**: `16px` on all four sides in expanded and collapsed modes (`--space-sidebar-padding`)
+- **Sidebar Rows**: `44px` high, full width, and padded `8px` on the top, left, and bottom (`--space-sidebar-row-height`, `--space-sidebar-row-padding`). Row and label gaps are `16px` (`--space-sidebar-gap`).
+- **Sidebar Icons**: `28px` square cells (`--space-sidebar-icon-cell`) contain centered glyphs `20px` high with automatic width (`--space-sidebar-icon-size`). The account switcher uses a `14px` square cell with a `12px` glyph. The Profile picture has its separate fixed `44px` size and no row padding.
 - **Topbar Height**: `4rem` (64px, `--space-topbar-height`)
 - **Floating Bar Height**: `3.5rem` (56px, `--space-floating-bar-height`)
 - **Mobile Navigation / Tabs Height**: `2rem` for `NavigationBar`; top tab strips are `1.98rem` and start immediately after the navigation bar with no visual gap.
@@ -447,12 +450,15 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### 7. SideDrawer (`web/components/side-drawer.tsx`)
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
-  1. Top identity: `ProfileCard` for signed-in user (`.sidebar-profile`) with a separate caret trigger (`.sidebar-account-menu-button`) for account actions. The ProfileCard itself is not the account-menu trigger; the drawer's Profile navigation item remains the profile destination.
-  2. Main navigation links (`.sidebar-nav`): Profile (`fa-user`), Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
+  1. Profile destination (`.sidebar-profile`): one `Profile` row shows a fixed 44×44px signed-in user avatar and links to the profile. Its link has no padding and remains at the same position in both modes; the label has a 16px gap after the picture. The separate account trigger stays at the row's right edge when expanded and overlays the avatar's lower-right corner when collapsed. Its 14×14px inner cell contains a centered 12×12px glyph; the collapsed button uses the subtle `--color-account-caret-surface` tint (`#ffffff` light, `#383838` dark) and retains a visible accent focus ring.
+  2. Main navigation links (`.sidebar-nav`): Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`), and Directory (`fa-address-book`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
+  - Sidebar sizing tokens in `web/theme.config.ts` set expanded/collapsed drawer widths to 256px/77px, fixed 16px outer padding on all four sides, and 44px-high full-width rows with 8px top/left/bottom padding. Navigation/action rows use 28px cells, 20px-high auto-width glyphs, and a 16px text gap. The Profile picture remains a separate unpadded 44×44px element. Shared `globals.css` selectors center glyphs inside their cells; TSX provides semantic classes only.
+  - Active drawer rows use `--color-sidebar-active` (`#d6d6d6` light, `#424242` dark). Active icons use `--color-sidebar-active-icon` (`#111111` light, `#f0f0f0` dark), while active labels use `--color-ink`; the icon cell stays transparent so the gray fill covers the row uniformly.
+  - The Profile row and navigation/action rows have a 16px vertical rhythm; navigation and footer rows use 16px gaps. The footer stays at the bottom of the drawer. Collapsed nav/action cells align to the Profile avatar's horizontal axis.
   3. Staff action, when `AuthUser.isStaff` is true: Control panel (`fa-shield-halved`) linking to `/cp`. This is a discoverability control only; server-side authorization remains authoritative. The protected panel uses the shared app-shell theme and exposes Overview, Staff, Users, Security & Sessions, Audit Log, and Public site sections. Only Users is functional in the current rollout; the remaining sections are explicit placeholders until their requirements are refined. It shows a calm step-up state when privileged access is absent, retains the ordinary session during verification expiry, and shows only permission-authorized areas and actions.
   4. Footer actions (`.sidebar-footer`): Settings (`fa-gear`) and Log out (`fa-right-from-bracket`). Account switching, Add account, and Manage accounts live in the profile-card account menu. The switcher remains a device-session convenience, not an account-linking surface.
 - **Responsive Behavior**:
-  - Desktop: Persistent, collapsible between `16rem` and `4.5rem`.
+  - Desktop: Persistent, collapsible between `256px` and `77px`.
   - Mobile (`<768px`): Overlay drawer, auto-collapses on outside click or focus loss. The shared header hamburger stops its pointer/focus events from reaching outside-dismiss handling so it can explicitly open and close the drawer.
 
 ### 8. Composer (`web/components/composer.tsx`)

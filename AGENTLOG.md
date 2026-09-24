@@ -1,5 +1,178 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T18:51:03Z — Document and save the final drawer layout
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the finalized side-drawer layout and make sure it
+  is saved after iterative CSS adjustments.
+- Changes Made: Consolidated the active Navigation, product design, design
+  implementation, and drawer account-control rule docs to record the final
+  widths, insets, row sizing/padding, icon and account-caret dimensions, gaps,
+  fixed Profile picture placement, and bottom-aligned footer. Earlier interim
+  log entries remain as history.
+- Files: `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`; final drawer code
+  remains in the shared theme, CSS, and SideDrawer component files.
+- Verification Status: `git diff --check` passed; active drawer contracts have
+  no stale width, row-gap, padding, or icon-cell statements. No build or tests
+  run.
+
+## 2026-09-24T17:56:12Z — Use uniform 28px drawer icon cells
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Give every drawer icon its own centered 28px square container
+  and make glyph boxes uniform, excluding the Profile picture.
+- Changes Made: Set shared navigation/action icon cells to 28×28px, kept glyph
+  boxes uniformly 20×20px, and added the same inner container for the account
+  caret. Left the Profile picture sizing and layout untouched. Updated active
+  Navigation and design contracts.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `web/components/side-drawer.tsx`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `docs/rules.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; active drawer contracts no
+  longer describe 44px icon cells. No build or tests run.
+
+## 2026-09-24T17:50:00Z — Set collapsed drawer width to 76px
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Change only the collapsed drawer width from 96px to 76px.
+- Changes Made: Updated the collapsed-width token and active Navigation,
+  design-system, implementation, and rule documentation. Preserved expanded
+  width, fixed padding, and all other drawer behavior.
+- Files: `web/theme.config.ts`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `docs/rules.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; active drawer contracts no
+  longer reference 96px. No build or tests run.
+
+## 2026-09-24T17:44:59Z — Set drawer width and fixed padding
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Set the expanded and collapsed drawer widths to 256px and
+  96px, with fixed 16px padding on all four sides in both modes.
+- Changes Made: Updated the collapsed-width and shared drawer-padding tokens,
+  applied the padding in mobile-expanded and desktop drawer styles, and
+  synchronized the Navigation unit, design contracts, active drawer rule, and
+  task logs. No row, icon, color, or interaction behavior was changed.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; reviewed active drawer
+  contracts for stale width values. No build or tests run.
+
+## 2026-09-24T01:00:11Z — Remove drawer spacing rules and set collapsed width
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Remove the side drawer's custom spacing and padding in
+  expanded and collapsed states, preserve colors, and set collapsed width to
+  64px.
+- Changes Made: Removed drawer layout padding, margins, and gaps, including the
+  profile/nav spacing and icon-cell padding; kept 20px glyphs centered within
+  44px cells. Set the collapsed-width token to 64px and removed the stale 72px
+  override. Updated navigation, design-system, and active-rule documentation.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Live browser confirmed collapsed width 64px, zero
+  sidebar padding, centered 20px glyphs in 44px cells, and no custom nav gaps;
+  expanded width is 256px with zero sidebar padding and nav gaps. `git diff
+  --check` passed; no build or tests run.
+
+## 2026-09-24T00:47:10Z — Use 44px square drawer icon controls and center collapsed rows
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Set drawer icons at 20px in 44px square padded areas and
+  prevent collapsed content from drifting right.
+- Changes Made: Increased the shared drawer icon-cell token to 44px and its
+  inner padding to 12px while keeping glyphs 20px and row gaps 8px. Constrained
+  collapsed rows to the drawer's available inner width so their icon centers
+  align with the Profile avatar. Updated active navigation/design contracts.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Live expanded and collapsed browser styles confirmed
+  44×44px cells, 20×20px glyphs, 12px padding, and 8px gaps. In collapsed mode,
+  Profile and nav-cell centers both measured x=35.6px (drawer center x=36px).
+  `git diff --check` passed; no build or tests run.
+
+## 2026-09-24T00:40:37Z — Apply 16px drawer horizontal inset
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Set the app drawer's left and right padding to 16px without
+  changing other spacing.
+- Changes Made: Added a shared 16px inline-axis spacing token and applied it to
+  the mobile and desktop drawer outer padding. Kept vertical padding and
+  control-level insets unchanged; updated navigation and design contracts.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Live computed styles confirmed 16px left and right
+  padding in both collapsed and expanded desktop drawers. `git diff --check`
+  passed; no build or tests run.
+
+## 2026-09-24T00:30:21Z — Match expanded Profile spacing to collapsed drawer
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Keep the collapsed Profile picture's dimensions and 16px
+  spacing above and below when the side drawer is expanded.
+- Changes Made: Set expanded Profile avatars to the same 44px size as collapsed,
+  matched the 52px Profile row, and aligned row spacing with 16px above and
+  before the first navigation item. Applied the same geometry in the mobile
+  expanded drawer using generated theme tokens. Updated active navigation and
+  design contracts.
+- Files: `web/theme.config.ts`, `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `docs/rules.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Live desktop browser comparison confirmed matching
+  collapsed and expanded geometry: avatar y=84/h=44px; Profile row y=80/h=52px;
+  first nav row y=148/h=28px; 16px from drawer top to Profile row and 16px from
+  Profile row to navigation. `git diff --check` passed; no build or tests run.
+
+## 2026-09-24T00:26:23Z — Move drawer geometry to shared theme tokens
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Recheck drawer styling against the explicit shared design
+  implementation rules after the user flagged inline CSS as prohibited.
+- Changes Made: Confirmed the drawer component contains no JSX `style` props
+  or HTML style attributes. Moved 20px glyph, 28px cell, 4px padding, and 8px
+  row/icon-label gaps into generated `web/theme.config.ts` spacing tokens and
+  made shared `globals.css` semantic selectors consume those tokens. Updated
+  the design implementation contract.
+- Files: `web/theme.config.ts`, `web/app/globals.css`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Source inspection found no inline styles in the drawer
+  component. Live browser computed styles confirmed token-backed values of
+  20px glyphs, 28px cells, 4px padding, and 8px row gaps. `git diff --check`
+  passed; no build or tests run.
+
+## 2026-09-24T00:23:37Z — Correct and verify drawer icon-cell spacing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Address the user's concern that the side-drawer icons,
+  padding, and spacing did not match the stated 20px / 4px / 8px contract.
+- Changes Made: Added explicit 4px padding to 28px icon cells in expanded and
+  collapsed drawer styles; excluded the profile avatar from icon-cell sizing.
+  Clarified that contract and 28px row height in the navigation, product design,
+  implementation design, and active navigation rule documentation.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Inspected live computed styles in the local app at
+  devicePixelRatio 1.25: icon cell 28×28px with 4px padding; glyph 20×20px at
+  20px font size; row height 28px; navigation row gap 8px. Did not run a build
+  or test suite.
+
 ## 2026-09-23T23:03:28Z — Log staging new-chat search failure
 
 - Agent: Codex
@@ -13561,3 +13734,111 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   compiled; TypeScript passed; the webpack production build passed; local
   browser/API servers could not bind because Windows returned WinError 10013;
   staging acceptance remains pending.
+
+## 2026-09-23T23:19:08Z — Unify signed-in app surfaces
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Make the drawer, top bar, tabs, content area, and other signed-in app surfaces share one background in light and dark themes, using the darker existing shell shade for dark mode.
+- Changes Made: Aliased the signed-in app background to its paper surface in light mode and set dark shell background/chrome to #161616; aligned profile-avatar borders and updated Navigation, design-system, and implementation contracts. Public and lifecycle surfaces remain separately themed.
+- Files: web/app/globals.css, docs/design-system.md, docs/units/navigation.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Reviewed the light/dark shell token resolution and shared surface selectors; `git diff --check` passed. No build or automated tests run.
+
+## 2026-09-23T23:26:09Z — Make the drawer profile row match navigation
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Resize the drawer profile card to match the other navigation buttons, label it Profile, and retain the dropdown control on the right.
+- Changes Made: Combined the signed-in user avatar and Profile destination into a standard-height nav row, removed the duplicate Profile entry from the main nav list, retained the separate right-side account-menu caret in expanded view, and preserved the compact avatar/caret treatment when collapsed. Updated the active account-switcher rule and Navigation/design contracts.
+- Files: web/components/side-drawer.tsx, web/lib/data.ts, web/app/globals.css, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed. Targeted ESLint found no issues in the changed markup; it reports three pre-existing `no-html-link-for-pages` errors on the unchanged `/cp` anchor at line 328. Browser inspection was unavailable because the browser control bridge failed to load its request-header policy. No tests or build run.
+
+## 2026-09-23T23:34:40Z — Enlarge drawer controls and use gray surfaces
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Set side-drawer icons to about 22px, size labels to match, and use gray background colors in both app themes.
+- Changes Made: Set drawer nav/action icons and labels to 1.375rem (22px), resized icon cells and Profile avatar accordingly, kept the collapsed account caret compact, and unified signed-in light/dark surfaces to #f2f2f2 / #242424. Updated design-system, Navigation, and implementation contracts.
+- Files: web/app/globals.css, docs/design-system.md, docs/units/navigation.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Responsive drawer CSS and theme token overrides reviewed; git diff --check passed. No build or automated tests run.
+
+## 2026-09-23T23:37:39Z — Reduce drawer sizing and increase spacing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Reduce the drawer icon and font size to 20px and double the spacing.
+- Changes Made: Reduced drawer nav/action glyphs, labels, icon cells, and Profile avatar from 22px to 20px. Doubled icon-to-label gaps, navigation-row gaps, and footer-action gaps; doubled the profile-row control gap. The compact account caret remains unchanged.
+- Files: web/app/globals.css, docs/design-system.md, docs/units/navigation.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Responsive drawer selectors reviewed; git diff --check passed. No tests or build run.
+
+## 2026-09-23T23:41:12Z — Fix drawer Profile avatar and dropdown alignment
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Fix the too-small drawer profile picture, off-center oval dropdown hover, and collapsed drawer avatar/caret placement.
+- Changes Made: Increased the Profile avatar to 32px in expanded and collapsed layouts; made the expanded account-menu button a fixed circular hit target with centered chevron; kept the smaller collapsed caret over the avatar's lower-right corner. Updated Navigation/design contracts and active account-switcher rule.
+- Files: web/app/globals.css, web/components/side-drawer.tsx, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: git diff --check passed. Targeted ESLint reports three pre-existing errors on the unchanged /cp anchor at line 328. Browser inspection unavailable from the app control bridge; no tests or build run.
+
+## 2026-09-23T23:43:07Z — Set neutral active drawer styling
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Use a gray active drawer background and theme-appropriate black/light and white/dark icons.
+- Changes Made: Added a shared active-drawer gray token (#d6d6d6 light and #424242 dark); active destination labels/icons use the theme's ink color and the icon cell remains transparent so the row fill is uniform. Updated design-system and Navigation contracts.
+- Files: web/app/globals.css, docs/design-system.md, docs/units/navigation.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Active state selectors reviewed for desktop/mobile and dark/system themes; git diff --check passed. No build or tests run.
+
+## 2026-09-23T23:45:10Z — Tighten collapsed drawer icon spacing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Fix the icon spacing in the collapsed side drawer while preserving the expanded drawer spacing.
+- Changes Made: Centered collapsed nav/action icons, reduced their row padding to 0.5rem, set collapsed nav gaps to 0.25rem and footer gaps to 0.35rem. Expanded drawer layout remains unchanged. Updated Navigation and design-system implementation contracts.
+- Files: web/app/globals.css, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Collapsed-only selector scope reviewed; git diff --check passed. No tests or build run.
+
+## 2026-09-23T23:49:20Z — Restore the collapsed Profile avatar treatment
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Restore the original collapsed drawer Profile picture and account switcher appearance from the user's screenshot, with a slightly lighter caret button surface.
+- Changes Made: Increased the collapsed Profile avatar to 44px; set the lower-right account-menu circle to 24px, fixed its circular geometry, and added a subtle lighter surface tint in both themes while preserving a visible keyboard focus ring. Expanded drawer appearance remains unchanged. Updated account-switcher and visual contracts.
+- Files: web/app/globals.css, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Collapsed profile geometry and theme tokens reviewed; git diff --check passed. No tests or build run.
+
+## 2026-09-23T23:51:27Z — Set the dark application surface to #161616
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Change the shared application background color to `#161616`.
+- Changes Made: Updated dark and system-dark app-shell background, paper, and chrome tokens plus the profile avatar border to `#161616`; documented the surface and token values.
+- Files: web/app/globals.css, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed. No tests or build run.
+
+## 2026-09-23T23:56:14Z — Normalize drawer icon size and spacing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Make drawer icon boxes square and consistent, maintain 8px edge spacing expanded/collapsed, and set active icon colors by theme.
+- Changes Made: Set 28px icon cells around 20px glyphs, adjusted expanded icon-label gap and row padding so glyph edges stay 8px apart in both modes, and introduced a shared active-icon color token (#111111 light, #f0f0f0 dark). Updated navigation and design contracts.
+- Files: web/app/globals.css, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed; stylesheet selectors reviewed. No tests or build run.
+
+## 2026-09-24T00:13:25Z — Correct drawer icon gaps and Profile control placement
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Apply 20px drawer icons in 28px containers with 4px inner spacing and 8px between buttons in both drawer states; correct Profile avatar and caret placement.
+- Changes Made: Set navigation and footer grids to an 8px gap in expanded and collapsed layouts. Expanded Profile avatar is 40px and its 24px caret is positioned inside the row. Restored the caret-down glyph and aligned its smaller 20px collapsed control with the 44px avatar lower-right. Updated active rules and design contracts.
+- Files: web/app/globals.css, web/components/side-drawer.tsx, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed; drawer selectors reviewed. No build or tests run.
+
+## 2026-09-24T00:15:21Z — Set Profile control vertical spacing
+
+- Agent: Codex
+- Model: GPT-6 Luna
+- Prompt Summary: Give the Profile control 16px spacing from the drawer top and from the remaining buttons in expanded and collapsed modes.
+- Changes Made: Reduced the profile row top offset to make a 16px top inset and set the navigation start padding to 16px in both modes. Preserved the 8px spacing between navigation buttons. Updated the navigation, design-system, and active account-switcher contracts.
+- Files: web/app/globals.css, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed. No build or tests run.
