@@ -1,6 +1,50 @@
 # Changelog
 
-## 2026-09-25T20:06:35Z
+## 2026-09-24T22:13:07Z
+- [account-access/design] Constrained session recovery actions to a shared
+  centered width. Paired actions now use equal columns and the account-choice
+  action spans the same group width.
+
+## 2026-09-24T21:58:14Z
+- [account-access] Removed silent automatic cross-account recovery after a
+  terminal refresh failure. Recovery retains safe context and requires
+  explicit account choice; refresh coordination now uses one captured slot for
+  keys and requests. Persisted slot recency within normal and grace refresh
+  transactions. Updated recovery UI contracts and bug records. TypeScript,
+  Python syntax, and whitespace checks passed; staging acceptance remains open.
+  Focused auth/recovery lint passed; the route-level lint still reports existing
+  hydration-effect and dependency warnings in `app-shell-route.tsx`.
+
+## 2026-09-24T21:23:52Z
+- [account-access/navigation] Recorded the agreed, not-yet-implemented fix
+  direction in the bug register and owning unit docs: coordinate and request
+  refresh for the same captured slot, prevent silent account changes on
+  terminal failure, preserve token reuse protection, and persist restored-slot
+  recency in the refresh transaction.
+
+## 2026-09-24T21:15:34Z
+- [account-access] Documented two diagnosed staging defects: refresh-token
+  reuse can trigger silent remembered-account fallback, and a successfully
+  restored slot's recency update is not persisted. Added the staging database
+  event sequence, reproduction steps, confirmed findings, remaining hypotheses,
+  proposed fix areas, and verification requirements to the bug register.
+
+## 2026-09-24T20:37:39Z
+- [design/navigation] Hid the tablet/desktop side-drawer scrollbar indicator
+  while preserving native vertical scrolling, preventing the bar from flashing
+  during width changes.
+
+## 2026-09-24T20:29:07Z
+- [design/navigation] Defaulted the side drawer to collapsed before reading its
+  saved preference, so refresh no longer flashes the expanded layout. Saved
+  expanded preferences still take effect after the cookie is read.
+
+## 2026-09-24T20:20:36Z
+- [design/navigation] Added temporary hover expansion for a collapsed drawer
+  on non-touch pointers at tablet and desktop widths; page alignment and saved
+  hamburger state remain unchanged.
+
+## 2026-09-24T20:06:35Z
 - [design/navigation] Kept the Profile identity row clear of the active
   destination gray fill and matched the expanded account-switcher hover,
   focus, and open backgrounds to that shared gray.

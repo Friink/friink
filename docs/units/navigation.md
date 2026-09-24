@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-25T20:06:35Z
+**Last edited:** 2026-09-24T21:23:52Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -79,6 +79,16 @@ the established search, chat-unread, and notification interactions.
 - On mobile, the expanded drawer keeps the same row geometry, gaps, icon cells,
   Profile treatment, and footer placement; it appears as an overlay and fits
   within the available viewport width.
+- At viewport widths of 768px and above, hovering a collapsed drawer with a
+  non-touch pointer temporarily reveals its expanded layout over the page.
+  Pointer exit restores the collapsed ribbon; the content, top bar, and saved
+  hamburger state remain unchanged. Touch pointers and mobile widths do not
+  trigger this behavior.
+- With no saved drawer preference, desktop and tablet start with the drawer
+  collapsed. When a saved expanded preference exists, the drawer applies it
+  after reading the cookie; mobile continues to start collapsed.
+- The tablet/desktop drawer keeps native vertical scrolling but hides its
+  scrollbar indicator, preventing a transient scrollbar during width changes.
 - Navigation and footer action rows use 100% width and 44px height, with 8px
   padding on the top, left, and bottom. Each row has a 28px square inner icon
   cell and a 16px gap before its label. Glyphs are 20px high, use automatic
@@ -95,6 +105,12 @@ the established search, chat-unread, and notification interactions.
 - The portaled account-switcher menu uses a viewport-safe fixed width. Long
   account names truncate with an ellipsis before the trailing account controls;
   row hover surfaces stay within the menu padding.
+- **Known account-switcher defects:** Session recovery can currently make a
+  different remembered account current without an explicit selection, and a
+  restored account can remain last in the menu because refresh recency is not
+  persisted. The agreed corrections are documented in [Account Access](./account-access.md)
+  and tracked as [BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
+  and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
 - The active drawer row uses a neutral gray fill and theme-appropriate text.
   Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
 - The Profile identity row does not receive the active destination's gray fill,
@@ -127,6 +143,15 @@ the established search, chat-unread, and notification interactions.
   [WEB-R-017](../rules.md#web-r-017--sidebar-highlight-tracks-only-owned-profile-navigation).
 - **NAV-R-007:** Post-detail routes use a contextual `Post` shell state; Home
   is not shown as the current title or highlighted as the active drawer item.
+- **NAV-R-008:** At widths of 768px and above, a non-touch pointer may
+  temporarily expand the collapsed drawer while hovered. Pointer exit restores
+  ribbon width without changing the persisted hamburger state or shifting the
+  page. Mobile and touch behavior remain unchanged.
+- **NAV-R-009:** When no drawer preference is saved, the drawer starts
+  collapsed. A saved expanded preference is applied after the cookie is read;
+  the mobile drawer starts collapsed regardless of that preference.
+- **NAV-R-010:** The tablet/desktop drawer remains vertically scrollable while
+  hiding the scrollbar indicator during its width transition.
 
 ## Acceptance criteria
 
@@ -152,6 +177,13 @@ the established search, chat-unread, and notification interactions.
 - [ ] **NAV-AC-010** TopBar icons remain 24px inside 40px controls, and Chat
   and Notifications show accurate 1–9 counts then `9+` without changing the
   filter-active presence dot.
+- [ ] **NAV-AC-011** Hovering the collapsed drawer with a non-touch pointer at
+  768px or wider temporarily expands it over the page; pointer exit restores
+  ribbon width without changing page alignment or the saved hamburger state.
+- [ ] **NAV-AC-012** With no saved desktop preference, the first rendered drawer
+  is collapsed; a saved expanded preference expands the drawer after it is read.
+- [ ] **NAV-AC-013** The tablet/desktop drawer can still scroll vertically but
+  displays no scrollbar indicator while its width changes.
 
 ## Verification checklist
 

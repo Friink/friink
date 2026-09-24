@@ -252,6 +252,22 @@ body {
   margin-top: 0.5rem;
 }
 
+.session-recovery-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 25.625rem);
+}
+
+.session-recovery-actions > * {
+  min-width: 0;
+  justify-content: center;
+}
+
+.session-recovery-actions-offline > :nth-child(3),
+.session-recovery-actions-terminal > * {
+  grid-column: 1 / -1;
+}
+
 h1,
 h2,
 h3,
@@ -1370,6 +1386,65 @@ textarea {
 .sidebar-header {
   display: flex;
   align-items: center;
+}
+
+.session-recovery-accounts {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 30rem;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+}
+
+.session-recovery-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.session-recovery-account:hover,
+.session-recovery-account:focus-visible {
+  background: color-mix(in srgb, var(--color-muted) 12%, var(--color-paper));
+}
+
+.session-recovery-account:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.session-recovery-account img {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.session-recovery-account span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-recovery-account i {
+  margin-left: auto;
+  color: var(--color-muted);
+}
+
+.session-recovery-error {
+  margin-top: 12px;
+  color: var(--color-danger, #b54444);
 }
 
 .sidebar-menu-button:hover,
@@ -7062,6 +7137,10 @@ input[type="search"]:focus {
     --desktop-sidebar-width: var(--space-sidebar-collapsed-width);
   }
 
+  .app-layout:has(.sidebar-hover-expanded) {
+    --desktop-sidebar-width: var(--space-sidebar-collapsed-width);
+  }
+
   .sidebar {
     position: fixed;
     top: var(--space-topbar-height);
@@ -7078,6 +7157,17 @@ input[type="search"]:focus {
     padding: var(--space-sidebar-padding);
     border-right: 1px solid var(--color-line);
     background: var(--color-paper);
+    transition: width var(--motion-standard);
+    scrollbar-width: none;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-hover-expanded {
+    z-index: 30;
+    width: var(--space-sidebar-width);
   }
 
   .sidebar-menu-button {
@@ -7359,7 +7449,8 @@ input[type="search"]:focus {
     width: var(--space-sidebar-collapsed-width);
   }
 
-  .app-layout:has(.sidebar-collapsed) .topbar {
+  .app-layout:has(.sidebar-collapsed) .topbar,
+  .app-layout:has(.sidebar-hover-expanded) .topbar {
     left: 0;
   }
 

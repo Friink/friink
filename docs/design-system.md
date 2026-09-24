@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T19:55:59Z
+**Last edited:** 2026-09-24T22:14:02Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -181,6 +181,15 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Expanded and collapsed drawers use fixed 16px outer padding on all four sides.
   A 16px gap separates Profile from navigation and each navigation row; footer
   rows also have 16px gaps. The footer rests at the bottom of the drawer.
+- At tablet and desktop widths (768px and wider), a non-touch pointer over a
+  collapsed drawer temporarily expands it. Leaving the drawer restores ribbon
+  width without shifting the page or changing the saved hamburger state. The
+  behavior does not apply to mobile widths or touch pointers.
+- When no desktop drawer preference is saved, the drawer starts collapsed. A
+  saved expanded preference is applied after its cookie is read; mobile always
+  starts collapsed.
+- On tablet and desktop, the drawer keeps native vertical scrolling but hides
+  the scrollbar indicator so width changes do not flash a scrollbar.
 - The mobile expanded drawer uses the same layout and appears as an overlay,
   capped at the shared 256px expanded width and constrained to the viewport.
 - The active drawer destination uses a neutral gray background (`#d6d6d6` in
@@ -227,6 +236,23 @@ The exact widths, heights, breakpoints, and token names are defined in
 
 ## Interaction patterns
 
+### Session recovery
+
+- Terminal refresh failure identifies the account needing sign-in when safe
+  cached metadata is available and offers an explicit remembered-account
+  choice.
+- Remembered accounts appear inline in the recovery card; they do not open a
+  modal. Each row shows a safe avatar and username, and progress identifies
+  the account currently being restored.
+- A selection refreshes only that slot. On failure, keep the visitor on the
+  recovery surface and explain that they can choose again or sign in. Never
+  cycle through remembered identities without explicit selection.
+- Recoverable connection failures retain “Try again” and may offer the same
+  explicit account choice. Do not claim the account has been signed out for an
+  ambiguous network failure.
+- Recovery actions share one centered width; paired actions form equal-width
+  columns and a full-row account-choice action aligns to that group width.
+
 ### Scrollbar treatment
 
 The web platform uses native scrolling with a shared CSS scrollbar treatment.
@@ -237,6 +263,8 @@ styling must preserve native wheel, keyboard, touch, accessibility, and
 reduced-motion behavior; JavaScript scrollbar replacements are not part of the
 platform design system. In dark theme, the thumb uses a darker neutral (`#666666`)
 with `#7a7a7a` on hover so it remains visible without appearing washed out.
+The tablet/desktop SideDrawer hides its scrollbar indicator while retaining
+native vertical scrolling to avoid a transient bar during width changes.
 Direct conversation pages use the document viewport as the only native scroll
 surface for the message history; they must not introduce a nested message-only
 scrollbar. The participant header remains fixed below the global top bar and

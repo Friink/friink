@@ -116,7 +116,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const [accentColor, setAccentColor] = useState('#33aa55');
   const [activeScreen, setActiveScreen] = useState<Screen>(initialScreen);
@@ -329,7 +329,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         return;
       }
 
-      // desktop: prefer saved cookie if present, otherwise default open
+      // Desktop and tablet start collapsed unless a saved preference says otherwise.
       try {
         const match = document.cookie.match(/(?:^|; )friink_sidebar_collapsed=([^;]+)/);
         if (match && match[1]) {
@@ -340,7 +340,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
         // ignore
       }
 
-      setSidebarCollapsed(false);
     };
 
     updateSidebarState();

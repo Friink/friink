@@ -1,6 +1,127 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
-## 2026-09-25T20:06:35Z — Document Profile and account-switcher color states
+## 2026-09-24T22:13:07Z — Align session recovery action widths
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Reduce the oversized remembered-account button and align it
+  with the width of the recovery actions above it.
+- Changes Made: Recovery actions now share a centered maximum width. The
+  offline top row uses two equal columns and the remembered-account action
+  spans both columns; terminal actions use the same group width. Updated the
+  design and Account Access contracts.
+- Files: `web/components/session-recovery-screen.tsx`, `web/app/globals.css`,
+  `docs/design-system.md`, `docs/units/account-access.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` only; no tests/build run for this CSS
+  layout adjustment.
+
+## 2026-09-24T21:58:14Z — Fix terminal account recovery and recency persistence
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement both diagnosed account-refresh defects following
+  the existing design guides and document the result.
+- Changes Made: Refresh operations now capture one slot for coordination and
+  request scoping. Terminal refresh failure clears in-memory credentials while
+  retaining safe recovery context; the recovery screen offers same-account
+  sign-in and an inline remembered-account list that only restores an
+  explicitly selected slot. Normal and grace refresh paths commit slot recency
+  with token rotation. Updated Account Access, active rules, design guidance,
+  and both bug records. Reuse detection remains unchanged.
+- Files: `web/lib/auth.ts`, `web/components/app-shell-route.tsx`,
+  `web/components/session-recovery-screen.tsx`, `web/app/globals.css`,
+  `api/app/routers/auth.py`, `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/rules.md`, `docs/design-system.md`, `packages/design/design.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `tsc --noEmit --incremental false`, API Python syntax
+  compilation, `git diff --check`, and focused ESLint for `auth.ts` and the
+  recovery screen passed. ESLint on `app-shell-route.tsx` still reports the
+  pre-existing cookie-hydration/cached-user setState-in-effect violations and
+  missing `initialScreen` dependency. Automated tests were not run; staging
+  browser acceptance remains pending.
+
+## 2026-09-24T21:23:52Z — Document account-refresh fix direction
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the account-refresh defects and agreed fixes in the
+  relevant product documentation.
+- Changes Made: Updated BUG-AUTH-003/004 with the agreed fix direction and
+  non-goals. Updated Account Access with the recovery, refresh-coordination,
+  token-reuse, and recency contract; updated Navigation with the visible
+  account-switcher defects and links to their owner and bug reports. No separate
+  `account-switcher.md` exists; Navigation owns the menu UI and Account Access
+  owns switching/session semantics, so no duplicate unit was created.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/navigation.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` and added relative documentation
+  links verified. Documentation only; no code, build, or tests changed or run.
+
+## 2026-09-24T21:15:34Z — Record staging account-refresh defects
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record both account-switching defects in the bug register
+  with behavior, reproduction, staging evidence, and findings before discussing
+  fixes.
+- Changes Made: Added BUG-AUTH-003 for repeated stale refresh-token use,
+  terminal fallback to another remembered account, and the client slot/lock
+  scoping mismatch; added BUG-AUTH-004 for the uncommitted account recency
+  update after refresh. Updated Account Access documentation to disclose both
+  defects and link the register.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Read-only staging database queries confirmed
+  `refresh_reuse_detected` events and the subsequent admin refresh; source paths
+  reviewed; `git diff --check` passed. No code or database records were changed;
+  no build or tests were run.
+
+## 2026-09-24T20:37:39Z — Hide the drawer scrollbar indicator
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Remove the transient scrollbar during side-drawer expansion
+  and document the behavior.
+- Changes Made: Hid the tablet/desktop drawer's scrollbar indicator while
+  retaining native vertical scrolling. Updated Navigation, design guidance,
+  the implementation contract, active rules, and the change logs.
+- Files: `web/app/globals.css`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; no build or tests run.
+
+## 2026-09-24T20:29:07Z — Start the drawer collapsed before preference restore
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Default the drawer to collapsed and allow the cookie to
+  expand it later when the user previously chose expanded.
+- Changes Made: Initialized the drawer as collapsed and kept cookie restoration
+  authoritative when a saved preference exists. With no cookie, desktop and
+  tablet remain collapsed. Documented the behavior in Navigation, the design
+  system, implementation contract, and active rules.
+- Files: `web/components/app-shell.tsx`, `docs/units/navigation.md`,
+  `docs/design-system.md`, `packages/design/design.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; no build or tests run.
+
+## 2026-09-24T20:20:36Z — Add temporary drawer hover expansion
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Add temporary collapsed-drawer expansion on pointer hover for
+  desktop and tablet while leaving the hamburger control unchanged.
+- Changes Made: Added non-touch pointer enter/exit behavior at viewport widths
+  of 768px and above. The drawer temporarily overlays the page at expanded
+  width; reserved page width and persisted hamburger state remain collapsed.
+  Documented the behavior and corrected the preceding entry's UTC date.
+- Files: `web/components/side-drawer.tsx`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; no build or tests run.
+
+## 2026-09-24T20:06:35Z — Document Profile and account-switcher color states
 
 - Agent: Codex
 - Model: GPT-6
