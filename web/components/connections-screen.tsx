@@ -127,7 +127,7 @@ export function ConnectionsScreen({
           <div className="connections-empty">
             <i className="fa-solid fa-users" aria-hidden="true" />
             <p>{isRequestsView ? 'No pending requests.' : 'No people here yet.'}</p>
-            <span>{isRequestsView ? 'Incoming follow requests will appear here.' : 'New connection activity will appear here.'}</span>
+            <span>{isRequestsView ? 'Incoming follow requests will appear here.' : 'Your connections will appear here.'}</span>
           </div>
         )}
       </div>

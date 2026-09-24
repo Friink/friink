@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-24T21:58:14Z
+**Last edited:** 2026-09-24T22:19:59Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -792,8 +792,8 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While refresh runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Cached safe user metadata is presentation-only; authenticated effects require a successful in-memory refresh. The public landing route remains behind explicit loading/recovery, redirects after successful refresh, responds to cross-tab restoration, and offers retry on recoverable failures. A terminal refresh failure preserves the selected account as safe recovery context and offers sign-in as that account plus an inline remembered-account list. Switching from recovery requires explicit selection; only that slot is refreshed and the shell changes after success.
-- **Edge cases:** Recoverable failures retain retry and do not clear account state. Terminal failures clear in-memory credentials but retain safe profile metadata and selected-slot context; no other account is attempted automatically. Refresh-token rotation and reuse detection remain authoritative. Refresh coordination and request headers use the same captured account slot; stale ordinary responses cannot replace a later active slot.
+- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While refresh runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Cached safe user metadata is presentation-only; authenticated effects require a successful in-memory refresh. The public landing route remains behind explicit loading/recovery, redirects after successful refresh, responds to cross-tab restoration, and offers retry on recoverable failures. A terminal refresh failure preserves the selected account as safe recovery context and offers sign-in as that account plus a remembered-account modal. The modal lists the current account first, then other accounts by recency. Switching from recovery requires explicit selection; only that slot is refreshed and the shell changes after success.
+- **Edge cases:** Recoverable failures retain retry and do not clear account state. Terminal failures clear in-memory credentials but retain safe profile metadata and selected-slot context; no other account is attempted automatically. The account list scrolls inside the capped modal, not the recovery page. Refresh-token rotation and reuse detection remain authoritative. Refresh coordination and request headers use the same captured account slot; stale ordinary responses cannot replace a later active slot.
 - **Verification:** Implementation updated locally; automated tests and staging browser acceptance remain pending.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles

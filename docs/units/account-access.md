@@ -286,10 +286,11 @@ recovery flow is:
    slot before persistence.
 3. A terminal refresh failure clears in-memory credentials but preserves the
    selected slot and safe cached profile metadata for recovery.
-4. Offer sign-in as the failed account and an inline remembered-account list.
-   Recoverable failures keep `Try again` and also offer explicit account
-   choice. Recovery actions share one centered width; paired actions use equal
-   columns and the full-row account-choice action matches their group width.
+4. Offer sign-in as the failed account and a “Choose another remembered
+   account” action that opens the shared modal. Put the current account first,
+   then order other accounts by recency. Recoverable failures keep `Try again`
+   and offer the same explicit account choice. The modal scrolls its list
+   independently so it does not extend the recovery page.
 5. A selected remembered account is refreshed alone through slot-scoped
    coordination. The shell changes only after success; failures remain visible
    and do not cause automatic attempts against other accounts.
@@ -614,3 +615,6 @@ project-wide history. This section records changes specific to this unit.
   persisted refresh recency in the API transaction; verification pending.
 - 2026-09-24T22:14:02Z — Matched recovery action widths into one centered group
   with equal columns and a full-width account-choice action.
+- 2026-09-24T22:19:59Z — Moved the remembered-account list into the shared
+  modal, ordered the current account first, and kept list scrolling inside the
+  dialog.

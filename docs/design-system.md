@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T22:14:02Z
+**Last edited:** 2026-09-24T22:19:59Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -241,9 +241,10 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Terminal refresh failure identifies the account needing sign-in when safe
   cached metadata is available and offers an explicit remembered-account
   choice.
-- Remembered accounts appear inline in the recovery card; they do not open a
-  modal. Each row shows a safe avatar and username, and progress identifies
-  the account currently being restored.
+- Remembered accounts open in the shared modal; the recovery page itself stays
+  a fixed-height surface. Put the current account first, followed by the other
+  accounts in most-recent order. Each row shows a safe avatar and username,
+  and progress identifies the account currently being restored.
 - A selection refreshes only that slot. On failure, keep the visitor on the
   recovery surface and explain that they can choose again or sign in. Never
   cycle through remembered identities without explicit selection.
@@ -251,7 +252,7 @@ The exact widths, heights, breakpoints, and token names are defined in
   explicit account choice. Do not claim the account has been signed out for an
   ambiguous network failure.
 - Recovery actions share one centered width; paired actions form equal-width
-  columns and a full-row account-choice action aligns to that group width.
+  columns and the account-choice action aligns to that group width.
 
 ### Scrollbar treatment
 

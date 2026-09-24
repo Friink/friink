@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T22:19:59Z — Put remembered-account recovery in a modal
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Stop recovery-list page scrolling, use a modal, and show the
+  current account first.
+- Changes Made: Replaced the inline account list with the shared `Modal`.
+  Account rows now sort the current account first, then by recency; modal body
+  contains its own scrolling and matches the recovery page theme. Updated the
+  Account Access and design contracts.
+- Files: `web/components/session-recovery-screen.tsx`, `web/app/globals.css`,
+  `docs/design-system.md`, `docs/rules.md`, `docs/units/account-access.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` only; no tests/build run.
+
 ## 2026-09-24T22:13:07Z — Align session recovery action widths
 
 - Agent: Codex

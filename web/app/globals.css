@@ -1392,10 +1392,6 @@ textarea {
   display: grid;
   gap: 8px;
   width: 100%;
-  max-width: 30rem;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-line);
 }
 
 .session-recovery-account {
@@ -1423,6 +1419,12 @@ textarea {
   cursor: wait;
 }
 
+.session-recovery-account-current,
+.session-recovery-account-current:hover,
+.session-recovery-account-current:focus-visible {
+  background: color-mix(in srgb, var(--color-muted) 12%, var(--color-paper));
+}
+
 .session-recovery-account img {
   width: 32px;
   height: 32px;
@@ -1445,6 +1447,16 @@ textarea {
 .session-recovery-error {
   margin-top: 12px;
   color: var(--color-danger, #b54444);
+}
+
+.session-recovery-account-modal {
+  width: min(100%, 28rem);
+}
+
+.session-recovery-account-modal .modal-body {
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
 .sidebar-menu-button:hover,
@@ -3114,7 +3126,8 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 /* Portaled modals sit under document.body, so resolve the app theme here
    instead of relying on variables inherited from the app shell. */
-body:has(.app-shell[data-theme='dark']) .modal-dialog {
+body:has(.app-shell[data-theme='dark']) .modal-dialog,
+body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   --color-background: #111111;
   --color-paper: #161616;
   --color-ink: #f5f5f5;
@@ -3126,7 +3139,8 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
 }
 
 @media (prefers-color-scheme: dark) {
-  body:has(.app-shell[data-theme='system']) .modal-dialog {
+  body:has(.app-shell[data-theme='system']) .modal-dialog,
+  body:has(.lifecycle-screen[data-theme='system']) .session-recovery-account-modal {
     --color-background: #111111;
     --color-paper: #161616;
     --color-ink: #f5f5f5;

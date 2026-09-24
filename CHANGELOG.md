@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-24T22:19:59Z
+- [account-access/design] Moved remembered-account recovery choices into the
+  shared modal, ordered the current account first, and kept account-list
+  scrolling inside the dialog.
+
 ## 2026-09-24T22:13:07Z
 - [account-access/design] Constrained session recovery actions to a shared
   centered width. Paired actions now use equal columns and the account-choice
