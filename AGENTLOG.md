@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-25T20:06:35Z — Document Profile and account-switcher color states
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the Profile active-background and expanded
+  account-switcher hover color adjustments.
+- Changes Made: Recorded that the Profile identity row does not use the active
+  destination gray fill, and that the expanded account switcher uses the same
+  gray for hover, focus, and open states. Added the behavior to the active
+  navigation rule and synchronized product and implementation design guidance.
+- Files: `docs/units/navigation.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; reviewed updated rule and
+  design statements against the implementation. No build or tests run.
+
 ## 2026-09-24T19:55:59Z — Document SideDrawer and TopBar refinements
 
 - Agent: Codex

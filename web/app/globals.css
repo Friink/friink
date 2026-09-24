@@ -5115,11 +5115,11 @@ body:has(.app-shell[data-theme='dark']) .modal-dialog {
   line-height: 1;
 }
 
-.sidebar-account-menu-button:hover,
-.sidebar-account-menu-button:focus-visible,
-.sidebar-account-menu-button[aria-expanded='true'] {
+.sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button:hover,
+.sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button:focus-visible,
+.sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button[aria-expanded='true'] {
   color: var(--color-accent);
-  background: var(--color-accent-soft);
+  background: var(--color-sidebar-active);
   outline: none;
 }
 
@@ -7128,11 +7128,11 @@ input[type="search"]:focus {
     line-height: 1;
   }
 
-  .sidebar-account-menu-button:hover,
-  .sidebar-account-menu-button:focus-visible,
-  .sidebar-account-menu-button[aria-expanded='true'] {
+  .sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button:hover,
+  .sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button:focus-visible,
+  .sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button[aria-expanded='true'] {
     color: var(--color-accent);
-    background: var(--color-accent-soft);
+    background: var(--color-sidebar-active);
     outline: none;
   }
 
@@ -7374,4 +7374,9 @@ input[type="search"]:focus {
     padding-bottom: 0;
   }
 
+}
+
+.sidebar .sidebar-profile .sidebar-profile-link.active,
+.sidebar .sidebar-profile .sidebar-profile-link.active:hover {
+  background: transparent;
 }

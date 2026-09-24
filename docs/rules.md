@@ -265,9 +265,9 @@ missing evidence can be filled in.
 - **Related units:** [navigation](units/navigation.md), [profiles](units/profiles.md)
 - **Source:** [Design implementation contract](../packages/design/design.md)
 - **Platform:** Web only
-- **File(s):** `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/app/[username]/profile-client.tsx`
+- **File(s):** `web/components/app-shell.tsx`, `web/components/side-drawer.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/globals.css`
 
-- **What:** The signed-in drawer highlights the Profile destination only while viewing the signed-in user's own profile. Home and Profile must not be shown as active while browsing another user's profile route.
+- **What:** The signed-in drawer highlights the Profile destination only while viewing the signed-in user's own profile. The Profile identity row does not receive the standard active-destination gray background. Home and Profile must not be shown as active while browsing another user's profile route.
 - **Edge cases:** The other-user profile remains fully navigable and may expose its own contextual actions, but it does not inherit the Home highlight from the route used to reach it. The active drawer state is derived from the current shell screen, not from the previous page.
 
 ### WEB-R-018 — Search Refinements Are URL-Backed And Scope-Aware

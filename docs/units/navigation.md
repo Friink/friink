@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T19:55:59Z
+**Last edited:** 2026-09-25T20:06:35Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -97,6 +97,11 @@ the established search, chat-unread, and notification interactions.
   row hover surfaces stay within the menu padding.
 - The active drawer row uses a neutral gray fill and theme-appropriate text.
   Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
+- The Profile identity row does not receive the active destination's gray fill,
+  including on the signed-in user's own Profile. The expanded drawer's account
+  switcher uses the same neutral gray fill on hover, keyboard focus, and while
+  its menu is open; the icon remains accent-colored. Collapsed styling remains
+  unchanged.
 - Shared tab labels use the design-system type size, and the active
   label is bold. Tab selection, underline, and horizontal-overflow behavior
   are unchanged.

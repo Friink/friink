@@ -186,6 +186,10 @@ The exact widths, heights, breakpoints, and token names are defined in
 - The active drawer destination uses a neutral gray background (`#d6d6d6` in
   light mode, `#424242` in dark mode). Its icon is `#111111` in light mode and
   `#f0f0f0` in dark mode; active text keeps the theme's primary text color.
+- The Profile identity row does not use the active destination's gray fill,
+  including while the signed-in user's own Profile is open. In the expanded
+  drawer, the account-switcher button uses that same gray fill on hover,
+  keyboard focus, and while its menu is open; its icon retains the accent color.
 - TopBar icon controls use that same neutral gray for hover and keyboard-focus
   backgrounds; their icon color keeps the existing accent treatment.
 - The drawer's Profile picture is 44px in both expanded and collapsed modes.

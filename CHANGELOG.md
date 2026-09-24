@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-25T20:06:35Z
+- [design/navigation] Kept the Profile identity row clear of the active
+  destination gray fill and matched the expanded account-switcher hover,
+  focus, and open backgrounds to that shared gray.
+
 ## 2026-09-24T19:55:59Z
 - [design/navigation] Finalized and documented the SideDrawer and TopBar
   refinements: mobile title/logo placement, 24px TopBar controls, unread count
