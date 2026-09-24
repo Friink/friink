@@ -1388,6 +1388,14 @@ textarea {
   column-gap: var(--space-sidebar-gap);
 }
 
+.sidebar-profile-label {
+  min-width: 0;
+  margin-right: 2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 767px) {
   .topbar-brand {
     visibility: visible;

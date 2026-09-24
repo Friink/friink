@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-24T18:51:03Z
+**Last edited:** 2026-09-24T18:57:55Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
@@ -450,7 +450,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 ### 7. SideDrawer (`web/components/side-drawer.tsx`)
 - **Purpose**: Primary desktop sidebar and mobile navigation drawer.
 - **Fixed Internal Layout Order**:
-  1. Profile destination (`.sidebar-profile`): one `Profile` row shows a fixed 44×44px signed-in user avatar and links to the profile. Its link has no padding and remains at the same position in both modes; the label has a 16px gap after the picture. The separate account trigger stays at the row's right edge when expanded and overlays the avatar's lower-right corner when collapsed. Its 14×14px inner cell contains a centered 12×12px glyph; the collapsed button uses the subtle `--color-account-caret-surface` tint (`#ffffff` light, `#383838` dark) and retains a visible accent focus ring.
+  1. Profile destination (`.sidebar-profile`): one row shows a fixed 44×44px signed-in user avatar and the current `@username`, and links to the profile. Its link has no padding and remains at the same position in both modes; the label has a 16px gap after the picture, truncates with an ellipsis, and reserves clear space before the account switcher. The separate account trigger stays at the row's right edge when expanded and overlays the avatar's lower-right corner when collapsed. Its 14×14px inner cell contains a centered 12×12px glyph; the collapsed button uses the subtle `--color-account-caret-surface` tint (`#ffffff` light, `#383838` dark) and retains a visible accent focus ring.
   2. Main navigation links (`.sidebar-nav`): Home (`fa-house`), Connections (`fa-user-group`), Saved (`fa-star`), and Directory (`fa-address-book`). Chat is owned by the global Header instead of the drawer. Route-based drawer items are real anchors with destination `href` values so browsers can preview their URLs on hover; client navigation remains intercepted for SPA behavior.
   - Sidebar sizing tokens in `web/theme.config.ts` set expanded/collapsed drawer widths to 256px/77px, fixed 16px outer padding on all four sides, and 44px-high full-width rows with 8px top/left/bottom padding. Navigation/action rows use 28px cells, 20px-high auto-width glyphs, and a 16px text gap. The Profile picture remains a separate unpadded 44×44px element. Shared `globals.css` selectors center glyphs inside their cells; TSX provides semantic classes only.
   - Active drawer rows use `--color-sidebar-active` (`#d6d6d6` light, `#424242` dark). Active icons use `--color-sidebar-active-icon` (`#111111` light, `#f0f0f0` dark), while active labels use `--color-ink`; the icon cell stays transparent so the gray fill covers the row uniformly.

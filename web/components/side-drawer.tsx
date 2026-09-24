@@ -262,7 +262,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
                 <Image src={user.profilePictureUrl || DEFAULT_PROFILE_IMAGE} alt="" width={20} height={20} sizes="20px" unoptimized />
               </span>
           </span>
-          <span className="sidebar-profile-label">Profile</span>
+          <span className="sidebar-profile-label">@{user.username}</span>
         </a>
         <button
           ref={accountMenuButtonRef}

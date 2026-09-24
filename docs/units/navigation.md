@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T18:51:03Z
+**Last edited:** 2026-09-24T18:57:55Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -56,9 +56,9 @@ the established search, chat-unread, and notification interactions.
 - All controls use the existing navigation callbacks and server-authoritative
   unread state. The legacy Header remains mounted but visually hidden for
   rollback safety; NavigationBar and Tabs remain rendered and functional.
-- The drawer presents the signed-in user's avatar as a standard-height
-  `Profile` row with a separate account dropdown on its right, instead of
-  showing a large identity card and a duplicate Profile destination.
+- The drawer presents the signed-in user's avatar and `@username` as one
+  profile destination, with a separate account dropdown on its right. Long
+  usernames truncate with an ellipsis and cannot overlap the switcher.
 - The drawer avatar is 44px in both expanded and collapsed layouts. The 24px expanded
   account caret sits inside the Profile row at its right edge. Collapsed mode
   overlays a 20px circular caret button flush with the avatar's lower-right

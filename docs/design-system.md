@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T18:51:03Z
+**Last edited:** 2026-09-24T18:57:55Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -166,8 +166,9 @@ The exact widths, heights, breakpoints, and token names are defined in
 - Use the global header for utilities such as Search, Chat, and Notifications.
 - Use the drawer for personal identity, network navigation, Saved, Directory,
   Settings, and staff discoverability.
-- Show the signed-in user's avatar in a standard-height `Profile` drawer row;
-  keep the account dropdown as a separate right-side control on that row.
+- Show the signed-in user's 44×44px avatar and `@username` in the Profile
+  drawer row. Truncate long usernames with an ellipsis before the separate
+  right-side account switcher.
 - Drawer navigation and footer rows use 100% width and 44px height, with 8px
   top, left, and bottom padding. Their 28px icon cells contain 20px-high,
   auto-width glyphs; text starts 16px after the icon cell. The Profile row is

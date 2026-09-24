@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-24T18:57:55Z
+- [design/navigation] Replaced the Profile row label with the current user's
+  `@username`; long usernames truncate before the account switcher.
+
 ## 2026-09-24T18:51:03Z
 - [design/navigation] Finalized the drawer layout: 256px expanded and 77px
   collapsed widths, 16px outer padding, 44px full-width rows, 28px icon cells,

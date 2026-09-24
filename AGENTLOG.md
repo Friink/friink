@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-24T18:57:55Z — Show the username in the Profile row
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Replace the Profile label with the current username and
+  truncate long values so they do not overlap the account switcher.
+- Changes Made: Rendered `@username` and applied single-line ellipsis behavior
+  with space reserved before the account switcher. Updated active Navigation,
+  design-system, implementation, and account-control rule documentation.
+- Files: `web/components/side-drawer.tsx`, `web/app/globals.css`,
+  `docs/units/navigation.md`, `docs/design-system.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; checked the username markup,
+  ellipsis styles, and active drawer text. No build or tests run.
+
 ## 2026-09-24T18:51:03Z — Document and save the final drawer layout
 
 - Agent: Codex
