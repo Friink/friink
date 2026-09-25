@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-25T01:00:36Z
+**Last edited:** 2026-09-25T01:20:58Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -290,11 +290,11 @@ data before that slot has validated. The recovery flow is:
    presentation rule; automatic fallback follows actual most-recent-use time.
 
 This flow applies to session expiry or revocation observed by the
-active account. Explicit logout and account removal retain their existing
-fallback semantics. The API's existing slot-aware refresh endpoint supports
-explicit recovery; no schema change is expected. Staging confirmed refresh-
-token reuse and the earlier silent fallback. Its duplicate-request origin
-remains unknown. Both defects and local fixes are tracked in
+active account. Explicit logout revokes that account and validates the newest
+remaining slot; removing a slot ends that remembered session. The slot-aware
+API validates fallback candidates without a schema change. Staging confirmed
+refresh-token reuse and the earlier silent fallback. Its duplicate-request
+origin remains unknown. Both defects and local fixes are tracked in
 [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
 and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
 

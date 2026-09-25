@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-25T01:20:58Z
+- [account-access/navigation] Restarted the stale local API process with the
+  current staging configuration. Browser smoke checks confirmed auth recovery
+  returned to the active feed, an authenticated Explore-to-Following transition
+  stayed in app, and a reload with a valid access cookie validated via
+  `/auth/me` without another refresh exchange. Corrected the bug/unit-doc
+  statuses to keep remaining staging and operation-matrix checks explicit.
+
 ## 2026-09-25T01:00:36Z
 - [account-access/navigation/chat] Added slot-scoped HttpOnly access-cookie
   restoration with session-bound JWT validation, reactive coordinated refresh,

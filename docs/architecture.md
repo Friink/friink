@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-09-25T01:00:36Z
+**Last edited:** 2026-09-25T01:20:58Z
 
 ## Repository and runtime boundaries
 

@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-25T01:00:36Z
+**Last edited:** 2026-09-25T01:20:58Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -213,5 +213,7 @@ acceptance; see [the bug record](../bugs.md#bug-nav-001--route-changes-remount-t
 - [x] `git diff --check` passes.
 - [x] Existing in-memory sessions render without a route-transition restore
   screen; account-scoped shell/chat state is retained by the root provider.
+- [x] Local authenticated browser moved from Explore to Following and remained
+  in the app after session validation.
 - [ ] Representative route-owned operations and all browser navigation paths
   are verified for cancellation, resume, and duplicate mutation behavior.

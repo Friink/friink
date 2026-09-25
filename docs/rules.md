@@ -778,9 +778,9 @@ missing evidence can be filled in.
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/lib/auth.ts`, `web/components/public-header.tsx`, `web/app/login/login-client.tsx`
+- **File(s):** `web/lib/auth.ts`, `web/components/public-header.tsx`, `web/app/login/login-client.tsx`, `api/app/routers/auth.py`
 
-- **What:** The web client stores only safe authenticated account metadata and remembered-account summaries in slot-scoped browser storage; the short-lived access token remains in memory and refresh credentials remain HTTP-only cookies. Logout clears the current slot's cached metadata and in-memory session without clearing other remembered-account summaries.
+- **What:** The web client stores only safe authenticated account metadata and remembered-account summaries in slot-scoped browser storage. Access JWTs remain in memory and in short-lived, slot-scoped HttpOnly cookies; refresh credentials remain HttpOnly cookies. Logout clears the current slot's cached metadata and session cookies without clearing other remembered-account summaries.
 - **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions. Slot-scoped coordination and cached summaries must not store access/refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or device secrets in browser-readable storage.
 
 ### AUTH-R-040 — Session Restoration Has Explicit Recovery UX
@@ -792,9 +792,9 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While refresh runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Cached safe user metadata is presentation-only; authenticated effects require a successful in-memory refresh. The public landing route remains behind explicit loading/recovery, redirects after successful refresh, responds to cross-tab restoration, and offers retry on recoverable failures. A terminal refresh failure preserves the selected account as safe recovery context and offers sign-in as that account plus a remembered-account modal. The modal lists the current account first, then other accounts by recency. Switching from recovery requires explicit selection; only that slot is refreshed and the shell changes after success.
-- **Edge cases:** Recoverable failures retain retry and do not clear account state. Terminal failures clear in-memory credentials but retain safe profile metadata and selected-slot context; no other account is attempted automatically. The account list scrolls inside the capped modal, not the recovery page. Refresh-token rotation and reuse detection remain authoritative. Refresh coordination and request headers use the same captured account slot; stale ordinary responses cannot replace a later active slot.
-- **Verification:** Implementation updated locally; automated tests and staging browser acceptance remain pending.
+- **What:** Public route content renders immediately. A non-blocking `/auth/entry-status` hint redirects to the app only after a session validates; signed-out public visits do not perform refresh. Authenticated route entry first validates `/auth/me` with the slot access cookie, then refreshes only when access is expired or absent. Cached safe user metadata is presentation-only; private data/actions require server validation. On confirmed terminal failure, other remembered sessions are validated by most-recent-use order and the shell changes only after a candidate succeeds. Recovery preserves retry, sign-in, explicit account choice, and logout for ambiguous failures or when no remembered session validates.
+- **Edge cases:** Timeouts/network/CORS/5xx/malformed responses never switch identity. The account-choice list scrolls inside its modal. Refresh-token reuse detection remains active. Refresh coordination and request headers use the same captured slot; cross-tab followers validate using their own slot access cookie, and stale responses cannot replace a later active slot.
+- **Verification:** Locally implemented and covered by focused API tests, TypeScript/targeted lint, and local browser smoke checks. Staging multi-account and operation-matrix acceptance remains pending.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 

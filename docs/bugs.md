@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-25T01:00:36Z
+**Last edited:** 2026-09-25T01:35:14Z
 
 ## Instructions for agents
 
@@ -76,7 +76,7 @@ Copy this template for a new defect and replace every placeholder:
 
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
-- **Status:** Implemented locally; staging acceptance pending
+- **Status:** In progress
 - **Reported/updated:** 2026-09-24T22:54:37Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
@@ -212,14 +212,16 @@ accounts.
   the active account silently change. Simulate a successful server rotation
   whose response is lost, then retry with the stale cookie; verify grace and
   subsequent reuse behavior remain secure and understandable. Verify a
-  terminal failure preserves the selected account and requires explicit user
-  choice. Include a multi-account browser acceptance run.
-- **Completed:** Earlier read-only inspection of staging `security_events` and
-  `refresh_tokens`; source confirms refresh-on-entry and token rotation. The
-  earlier captured-slot and explicit-recovery mitigations are in the branch.
-  The duplicate-request origin and latest production request sequence remain
-  unverified; no new tests or production inspection were performed for this
-  update.
+  terminal failure restores the next valid account by recency, while ambiguous
+  failures preserve identity and require user choice. Include a multi-account
+  staging browser acceptance run.
+- **Completed locally:** Account access-cookie/revocation test, refresh-family
+  reuse test, and account-slot suite pass with isolated SQLite. Browser reload
+  in the local staging-connected app recovered the current account; the first
+  reload refreshed once after access validation failed, and a subsequent reload
+  validated successfully without another refresh exchange. The API access log
+  confirmed `/auth/me` 200 responses. The duplicate-request origin and full
+  concurrent/lost-response matrix remain unverified.
 
 ### Noteworthy
 
@@ -238,6 +240,88 @@ origin of the duplicate requests.
 - [`POST /auth/refresh`](../api/app/routers/auth.py)
 - [Refresh-token reuse model](../api/app/models/refresh_token.py)
 - [Account-slot ordering](../api/app/services/account_slots.py)
+
+## BUG-AUTH-005 — Failed account switch shows sign-in for the previous account
+
+- **Status:** Open
+- **Reported/updated:** 2026-09-25T01:35:14Z
+- **Affected area:** Remembered-account switching and session-recovery identity
+- **Environment:** Staging; browser with `@admin` active while switching to
+  `@muflah`
+- **Severity:** high
+
+### Bug summary
+
+After switching from active `@admin` to `@muflah` fails, the session-recovery
+screen offers “Sign in as @admin.” The recovery action names the previous
+account instead of the account whose switch failed, confusing which session
+needs attention.
+
+### Reproduction
+
+1. On staging, keep `@admin` active and ensure `@muflah` is a remembered
+   account.
+2. Use the account switcher to select `@muflah` and let that switch fail.
+3. On the resulting recovery screen, observe the primary action reads “Sign in
+   as @admin.”
+
+### Expected behavior
+
+The failed switch must not present sign-in for an unrelated account. If
+`@admin` remains valid, keep it active and show a failure tied to the attempted
+`@muflah` switch. If recovery is required for `@muflah`, identify that target
+account explicitly. Never imply that `@admin` expired because another
+account's switch failed.
+
+### Actual behavior
+
+The recovery screen reports an expired/unavailable session and offers “Sign in
+as @admin,” alongside Log out and Choose another remembered account.
+
+### Root cause
+
+- **Confirmed:** The staging screenshot shows `@admin` as the sign-in identity
+  after the user attempted to switch to `@muflah` and that attempt failed.
+- **Open questions:** The screenshot alone does not establish which request
+  failed, whether the failure was terminal or transient, whether `@admin`'s
+  session was still valid at that moment, or which account slot/username the
+  recovery code received. Trace the switch request and the error/context passed
+  into recovery before assigning a code-level cause.
+
+### Proposed fix
+
+Trace account-switch failure handling end to end. Keep a still-valid active
+account active when a different target slot fails. If the UI enters recovery,
+derive its identity from the failed target slot and preserve the previous
+active account separately; do not build the sign-in action from stale active
+account metadata.
+
+Non-goals: silently retrying with credentials for either account or changing
+the remembered-account list order.
+
+### Tests and verification
+
+- **Required:** On staging-equivalent data, fail a target switch while the
+  source account remains valid and verify the source stays active with a
+  target-specific error. Also test a confirmed terminal target session and
+  verify any sign-in action names the target account. Cover transient errors
+  and ensure they do not clear or mislabel the source session.
+- **Completed:** Staging screenshot and user reproduction report only; no
+  source trace or fix has been performed for this entry.
+
+### Noteworthy
+
+This is distinct from reload fallback/order defects in BUG-AUTH-003 and
+BUG-AUTH-004. The recovery screen controls visible in the screenshot are
+evidence of the behavior, not evidence that those controls are the requested
+solution.
+
+### Related documentation and implementation
+
+- [Account Access unit](units/account-access.md)
+- [Session restoration rule](rules.md#auth-r-040--session-restoration-has-explicit-recovery-ux)
+- [`switchAccount()` and restoration context](../web/lib/auth.ts)
+- [`AppShellRoute` recovery identity](../web/components/app-shell-route.tsx)
 
 ## BUG-AUTH-004 — Successfully restored account remains last in the switcher
 
@@ -322,7 +406,7 @@ verify each behavior.
 
 ## BUG-AUTH-002 — Public landing blocks while checking for a session
 
-- **Status:** Implemented locally; browser/staging acceptance pending
+- **Status:** In progress
 - **Reported/updated:** 2026-09-24T22:54:37Z
 - **Affected area:** Public landing route `/`, `PublicRouteGuard`, refresh-session recovery
 - **Environment:** Production, staging, and local; reproduced in an incognito/private window with no account session
@@ -406,7 +490,7 @@ are different.
 
 ## BUG-NAV-001 — Route changes remount the app shell and discard in-progress work
 
-- **Status:** Partially mitigated locally; operation acceptance pending
+- **Status:** In progress
 - **Reported/updated:** 2026-09-24T22:54:37Z
 - **Affected area:** Authenticated App Router navigation, shared shell, and
   operations owned by screen components
@@ -485,10 +569,11 @@ storage, or keep every route-specific screen mounted indefinitely.
   representative pending and completed operations across route transitions;
   verify reload recovery separately; verify no duplicate mutation after retry.
 - **Completed locally:** `npx tsc --noEmit` passes; root provider and synchronous
-  session initialization were source-reviewed. Chat retry idempotency has a
-  focused API test. A full App Router browser navigation/operation matrix has
-  not been run, so this bug remains open for acceptance and remaining
-  operation-specific fixes.
+  session initialization were source-reviewed. Local browser navigation from
+  Explore to Following retained the authenticated shell without a restore
+  screen. Chat retry idempotency has a focused API test. A full App Router
+  navigation/operation matrix has not been run, so this bug remains open for
+  acceptance and remaining operation-specific fixes.
 
 ### Noteworthy
 

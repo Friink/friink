@@ -1,5 +1,31 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-25T01:20:58Z — Verify live local auth and route recovery
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Finish validating the planned session restoration and route
+  continuity implementation in the running local application.
+- Changes Made: Replaced the stale local API process on port 8000 with the
+  current API, loading the authorized `api/.env.staging` configuration. Added
+  local browser verification details to BUG-AUTH-003 and BUG-NAV-001 and
+  updated unit/architecture edit timestamps. Confirmed public entry status
+  returns 200; after access validation failed once the session refreshed and
+  returned to the active feed; a later reload validated with `/auth/me` and no
+  additional refresh; Explore-to-Following navigation stayed authenticated.
+  The temporary plan file had already been removed after its details were
+  transferred.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/navigation.md`, `docs/units/chat.md`, `docs/architecture.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`; temporary bootstrap/log files are under the
+  system temp directory.
+- Verification Status: Local browser smoke checks passed after restarting the
+  stale server; API `test_phase4_accounts.py` passed 12 tests before the added
+  hostile-Origin assertion, and that modified access-cookie/revocation test
+  passed independently; `test_chat_requests.py` passed; refresh reuse test
+  passed; TypeScript, targeted ESLint, Python compilation, and `git diff
+  --check` passed. Full staging browser/operation acceptance remains pending.
+
 ## 2026-09-25T01:00:36Z — Implement session continuity and entry/navigation fixes
 
 - Agent: Codex
