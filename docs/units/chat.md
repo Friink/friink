@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-23T23:01:46Z
+**Last edited:** 2026-09-25T01:00:36Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -76,6 +76,12 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
 
 ## UX and flows
 
+During client-side route changes, each account/conversation retains its draft
+and pending-message UI state in the root shell-state provider. Sends carry a
+stable `client_message_id`; the API deduplicates retries for the same
+conversation and echoes that ID so the client can reconcile the result after
+remount. This in-memory continuity does not cover a full document reload.
+
 The chat list is at `/chats`; filters are All, Muted, Requests, and Archived.
 Conversation rows show the full participant ProfileCard once, including the
 picture, display name, enabled badges, and username. The flexible middle
@@ -138,6 +144,9 @@ archive. Read operations use per-user cursors and server checks.
 - [x] **CHAT-AC-010** Canonical conversation-ID loading is authorized by the
   API, username aliases redirect when an ID exists, and `/chat` plus
   `/chat/new` remain compatibility redirects.
+- [x] **CHAT-AC-011** Client-side navigation preserves the active
+  account/conversation draft and pending send ID; retrying a send with the same
+  ID returns the original message instead of creating a duplicate.
 
 ## Known limitations
 

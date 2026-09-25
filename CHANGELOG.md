@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-25T01:00:36Z
+- [account-access/navigation/chat] Added slot-scoped HttpOnly access-cookie
+  restoration with session-bound JWT validation, reactive coordinated refresh,
+  and most-recent-account fallback only after confirmed session termination.
+  Public routes now render immediately while session hints resolve in the
+  background. Added account-scoped root shell state, chat draft/pending-send
+  retention, and client-message idempotency for navigation retries. Updated
+  rules, architecture, bug records, and owning unit docs. Navigation remains
+  partially open because the AppShell instance and every route-owned operation
+  are not yet persistent or audited.
+
+## 2026-09-24T22:54:37Z
+- [account-access/navigation] Opened three production/staging reliability
+  bugs: refresh-token instability across reloads, session restoration blocking
+  the public landing page, and page-level shell remounts that lose in-progress
+  work. Added planned fixes to the owning unit and architecture documents;
+  corrected AUTH-R-008 to describe the current bootstrap-refresh exception.
+
+## 2026-09-24T22:49:16Z
+- [connections] Changed the empty-state supporting copy to “Your connections
+  will appear here.” and recorded the view-specific empty-state copy in the
+  Connections unit document.
+
 ## 2026-09-24T22:19:59Z
 - [account-access/design] Moved remembered-account recovery choices into the
   shared modal, ordered the current account first, and kept account-list

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, clearAuthSession, clearAuthSessionForRecovery, getCurrentUser, getLoginRecoveryPath, getRememberedAccountSummaries, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, restoreAccountSession, restoreAuthSessionForEntry, saveAuthSession, type AccountSummary, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, clearAuthSessionForRecovery, getCurrentUser, getLoginRecoveryPath, getRememberedAccountSummaries, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -24,10 +24,10 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const router = useRouter();
   // Keep the server and first client render identical. Browser-only cached
   // metadata is hydrated in the effect below after React has mounted.
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [sessionReady, setSessionReady] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
+  const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
   const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
   const [recoveryUsername, setRecoveryUsername] = useState<string | null>(null);
   const [recoveryAccounts, setRecoveryAccounts] = useState<AccountSummary[]>([]);
@@ -54,11 +54,32 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       const cachedUser = loadCachedAuthUser();
       const detail = (event as CustomEvent<{ status?: 'expired' | 'security' }>).detail;
       setRecoveryUsername(cachedUser?.username ?? null);
-      setRecoveryAccounts(getRememberedAccountSummaries());
-      setSessionError(detail?.status ?? 'expired');
       setUser(null);
       setSessionReady(false);
-      setAuthCheckComplete(true);
+      setAuthCheckComplete(false);
+      setSessionError(null);
+      setRecoveryAccounts([]);
+      const failedSlot = loadAuthSession()?.accountSlot ?? getRememberedAccountSummaries().find((account) => account.active)?.accountSlot;
+      void (async () => {
+        try {
+          const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
+          if (fallback) {
+            saveAuthSession(fallback);
+            setUser(fallback.user);
+            setSessionReady(true);
+            setSessionError(null);
+            setAuthCheckComplete(true);
+            return;
+          }
+          setRecoveryAccounts(getRememberedAccountSummaries());
+          setSessionError(detail?.status ?? 'expired');
+          setAuthCheckComplete(true);
+        } catch {
+          setRecoveryAccounts(getRememberedAccountSummaries());
+          setSessionError('offline');
+          setAuthCheckComplete(true);
+        }
+      })();
     }
     window.addEventListener('friink-session-expired', handleSessionExpired);
     return () => window.removeEventListener('friink-session-expired', handleSessionExpired);
@@ -79,10 +100,28 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }, []);
 
   useEffect(() => {
+    async function handleSessionUpdated(event: Event) {
+      const detail = (event as CustomEvent<{ accountSlot?: string | null }>).detail;
+      try {
+        const updated = await restoreAuthSessionForEntry();
+        if (detail?.accountSlot && updated.accountSlot !== detail.accountSlot) return;
+        setUser(updated.user);
+        setSessionReady(true);
+        setSessionError(null);
+        setAuthCheckComplete(true);
+      } catch {
+        // The sending tab has not supplied a credential; stay on the current
+        // account until this tab can validate its own slot cookie.
+      }
+    }
+    window.addEventListener('friink-session-updated', handleSessionUpdated);
+    return () => window.removeEventListener('friink-session-updated', handleSessionUpdated);
+  }, []);
+
+  useEffect(() => {
     const session = loadAuthSession();
     if (!session) {
       const cachedUser = loadCachedAuthUser();
-      if (cachedUser) setUser(cachedUser);
       restoreAuthSessionForEntry()
         .then((restoredSession) => {
           setUser(restoredSession.user);
@@ -164,11 +203,48 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       await logout(session.accessToken, session.accountSlot);
       if (typeof window !== 'undefined') window.sessionStorage.removeItem(`friink-setup-dismissed-${session.user.id}`);
       clearAuthSession();
+      const fallback = await restoreRememberedAccountWithFallback(session.accountSlot ? [session.accountSlot] : []);
+      if (fallback) {
+        saveAuthSession(fallback);
+        setUser(fallback.user);
+        setSessionReady(true);
+        setSessionError(null);
+        setAuthCheckComplete(true);
+      } else {
+        router.replace('/');
+      }
+    } catch {
+      if (loadAuthSession()) {
+        setLogoutError('Could not log out. Your account is still active; please try again.');
+      } else {
+        setSessionError('offline');
+        setRecoveryAccounts(getRememberedAccountSummaries());
+        setAuthCheckComplete(true);
+      }
+    }
+  }
+
+  async function handleRecoveryLogout() {
+    const activeAccount = getRememberedAccountSummaries().find((account) => account.active);
+    const failedSlot = activeAccount?.accountSlot;
+    try {
+      await logout('', failedSlot);
+      clearAuthSession();
+      const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
+      if (fallback) {
+        saveAuthSession(fallback);
+        setUser(fallback.user);
+        setSessionReady(true);
+        setSessionError(null);
+        setAuthCheckComplete(true);
+        return;
+      }
       router.replace('/');
     } catch {
-      // Preserve the active account on ambiguous network/API failures. The
-      // user can retry logout without losing the usable local session.
-      setLogoutError('Could not log out. Your account is still active; please try again.');
+      setSessionError('offline');
+      setRecoveryAccounts(getRememberedAccountSummaries());
+      setAccountRecoveryError('Could not log out while Friink is unreachable. Try again when the connection is restored.');
+      setAuthCheckComplete(true);
     }
   }
 
@@ -176,7 +252,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     setRestoringAccountSlot(account.accountSlot);
     setAccountRecoveryError(null);
     try {
-      const restoredSession = await restoreAccountSession(account.accountSlot);
+      const restoredSession = await restoreRememberedAccountWithFallback([], account.accountSlot);
+      if (!restoredSession) throw new AuthApiError('No remembered account session is available.', 401, 'SESSION_NOT_FOUND');
       saveAuthSession(restoredSession);
       setUser(restoredSession.user);
       setSessionReady(true);
@@ -192,7 +269,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
 
   if (!user) {
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
-    return <SessionRecoveryScreen status={sessionError ?? 'offline'} appearance={appearance} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
+    return <SessionRecoveryScreen status={sessionError ?? 'offline'} appearance={appearance} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} onLogout={handleRecoveryLogout} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
   return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;

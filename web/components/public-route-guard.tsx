@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { isTerminalRefreshFailure, loadAuthSession, restoreAuthSessionForEntry } from '@/lib/auth';
-import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { AuthApiError, getLoginRecoveryPath, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -11,21 +10,34 @@ type PublicRouteGuardProps = {
 
 export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
   const router = useRouter();
-  const [checkState, setCheckState] = useState<'loading' | 'offline' | 'signed-out'>('loading');
-  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
 
     async function checkSession() {
-      setCheckState('loading');
+      if (loadAuthSession()) {
+        router.replace('/home');
+        return;
+      }
+      const cachedUser = loadCachedAuthUser();
       try {
+        if (!await hasSessionForEntry()) return;
         await restoreAuthSessionForEntry();
         if (!active) return;
         router.replace('/home');
       } catch (error) {
         if (!active) return;
-        setCheckState(isTerminalRefreshFailure(error) ? 'signed-out' : 'offline');
+        if (isTerminalRefreshFailure(error)) {
+          const reason = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY'
+            ? 'security-revocation'
+            : 'expired';
+          router.replace(getLoginRecoveryPath(reason));
+        } else if (cachedUser) {
+          // A previously authenticated visitor stays in the app's retryable
+          // recovery state during a network outage. Signed-out visitors have
+          // no cached active identity and keep seeing public content.
+          router.replace('/home');
+        }
       }
     }
 
@@ -33,7 +45,7 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
     return () => {
       active = false;
     };
-  }, [retryVersion, router]);
+  }, [router]);
 
   useEffect(() => {
     function handleSessionUpdate() {
@@ -43,14 +55,6 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
     window.addEventListener('friink-account-switched', handleSessionUpdate);
     return () => window.removeEventListener('friink-account-switched', handleSessionUpdate);
   }, [router]);
-
-  if (checkState === 'loading') {
-    return <SessionRecoveryScreen status="loading" />;
-  }
-
-  if (checkState === 'offline') {
-    return <SessionRecoveryScreen status="offline" onRetry={() => setRetryVersion((current) => current + 1)} />;
-  }
 
   return <>{children}</>;
 }

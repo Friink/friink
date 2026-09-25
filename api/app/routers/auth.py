@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -86,8 +85,6 @@ from app.services.account_slots import create_or_replace_slot, find_slot_for_use
 from app.services.login_throttling import enforce_ip_throttle
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def request_account_region(request: Request) -> str | None:
@@ -99,6 +96,7 @@ def request_account_region(request: Request) -> str | None:
     return f"{country}-{region}"
 
 REFRESH_COOKIE_NAME = "friink_refresh_token"
+ACCESS_COOKIE_NAME = "friink_access_token"
 ACCOUNT_SLOT_HEADER = "X-Friink-Account-Slot"
 ACCOUNT_FLOW_HEADER = "X-Friink-Account-Flow"
 ADD_ACCOUNT_FLOW = "add-account"
@@ -170,6 +168,34 @@ def set_account_refresh_cookie(response: Response, slot: str, token: str, settin
 
 def delete_account_refresh_cookie(response: Response, slot: str, settings: Settings) -> None:
     response.delete_cookie(key=f"friink_refresh_{slot}", httponly=True, secure=settings.is_production, samesite="none" if settings.is_production else "lax", path="/")
+
+
+def access_cookie_name(account_slot: str | None) -> str:
+    return f"friink_access_{account_slot}" if account_slot else ACCESS_COOKIE_NAME
+
+
+def set_access_cookie(response: Response, token: str, settings: Settings, account_slot: str | None = None) -> None:
+    response.set_cookie(
+        key=access_cookie_name(account_slot), value=token, httponly=True,
+        secure=settings.is_production, samesite="none" if settings.is_production else "lax",
+        max_age=int(timedelta(minutes=settings.access_token_expire_minutes).total_seconds()), path="/",
+    )
+
+
+def delete_access_cookie(response: Response, settings: Settings, account_slot: str | None = None) -> None:
+    response.delete_cookie(
+        key=access_cookie_name(account_slot), httponly=True,
+        secure=settings.is_production, samesite="none" if settings.is_production else "lax", path="/",
+    )
+
+
+def access_token_from_request(request: Request, account_slot: str | None = None) -> tuple[str | None, bool]:
+    authorization = request.headers.get("authorization", "")
+    scheme, _, value = authorization.partition(" ")
+    if scheme.casefold() == "bearer" and value.strip():
+        return value.strip(), False
+    slot = account_slot or request.headers.get(ACCOUNT_SLOT_HEADER)
+    return request.cookies.get(access_cookie_name(slot)), True
 
 
 @router.post("/signup/email/start", response_model=SignupStartResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -314,11 +340,11 @@ async def _issue_login_session(
             status_code=status.HTTP_409_CONFLICT,
             detail="This account could not be added to the current browser. Please retry from the active session.",
         )
-    access_token = create_access_token(user.id, user.security_epoch)
     recognized_device, device_identifier, _recognized = get_or_create_recognized_device(
         session, user.id, request, raw_device_identifier
     )
     auth_session = create_auth_session(session, user.id, request, device_id=recognized_device.id)
+    access_token = create_access_token(user.id, user.security_epoch, auth_session.id)
     issued_refresh = issue_refresh_token(session, user.id, settings, session_id=auth_session.id)
     try:
         # The remembered-account cap applies to Add account. A normal login
@@ -379,6 +405,7 @@ async def _issue_login_session(
         set_refresh_cookie(response, issued_refresh.raw_token, settings)
     if slot:
         set_account_refresh_cookie(response, slot, issued_refresh.raw_token, settings)
+    set_access_cookie(response, access_token, settings, slot)
     set_device_cookie(response, device_identifier, settings)
     return TokenResponse(access_token=access_token, user=user_response(user, settings), account_slot=slot)
 
@@ -529,7 +556,9 @@ async def refresh(
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
             set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
-            return RefreshResponse(access_token=create_access_token(slot_user.id, slot_user.security_epoch), account_slot=account_slot)
+            access_token = create_access_token(slot_user.id, slot_user.security_epoch, slot_auth_session.id)
+            set_access_cookie(response, access_token, settings, account_slot)
+            return RefreshResponse(access_token=access_token, account_slot=account_slot)
     if not refresh_token:
         log_auth_failure(
             flow="refresh_exchange",
@@ -597,7 +626,7 @@ async def refresh(
                 if slot:
                     slot.last_used_at = now
             issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
-            access_token = create_access_token(user.id, user.security_epoch)
+            access_token = create_access_token(user.id, user.security_epoch, token_record.session_id)
             await commit(session)
             log_refresh_token_event(
                 event="auth_refresh_token_grace_replayed",
@@ -611,8 +640,10 @@ async def refresh(
                 set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
             else:
                 set_refresh_cookie(response, issued_refresh.raw_token, settings)
+            set_access_cookie(response, access_token, settings, account_slot)
             return RefreshResponse(access_token=access_token, account_slot=account_slot)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
+        await commit(session)
         record_security_event_safely(
             session,
             event_type=SecurityEventType.refresh_reuse_detected,
@@ -622,7 +653,6 @@ async def refresh(
             payload={"kind": "refresh_reuse"},
             idempotent=True,
         )
-        await commit(session)
         log_refresh_token_event(
             event="auth_refresh_token_reuse_detected",
             flow="refresh_exchange",
@@ -677,7 +707,7 @@ async def refresh(
     issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
-    access_token = create_access_token(user.id, user.security_epoch)
+    access_token = create_access_token(user.id, user.security_epoch, token_record.session_id)
     record_security_event_safely(
         session,
         event_type=SecurityEventType.refresh,
@@ -686,6 +716,8 @@ async def refresh(
         session_id=token_record.session_id,
         payload={"kind": "refresh"},
     )
+
+
     if account_slot:
         slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
         if slot:
@@ -703,7 +735,25 @@ async def refresh(
         set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
     else:
         set_refresh_cookie(response, issued_refresh.raw_token, settings)
+    set_access_cookie(response, access_token, settings, account_slot)
     return RefreshResponse(access_token=access_token, account_slot=account_slot)
+
+
+@router.get("/entry-status")
+async def entry_status(request: Request, response: Response) -> dict[str, bool]:
+    """Indicate whether the selected account has a credential worth restoring.
+
+    This is a non-authenticating hint so the public route can render immediately
+    without making a refresh exchange for signed-out visitors.
+    """
+    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    has_access = bool(request.cookies.get(access_cookie_name(account_slot)))
+    has_refresh = bool(
+        request.cookies.get(f"friink_refresh_{account_slot}") if account_slot
+        else request.cookies.get(REFRESH_COOKIE_NAME)
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {"session_available": has_access or has_refresh}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -711,29 +761,32 @@ async def logout(
     request: Request,
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
-    access_token: str | None = Depends(optional_oauth2_scheme),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> Response:
     require_allowed_origin(request, settings)
     account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    access_token, from_cookie = access_token_from_request(request, account_slot)
+    if from_cookie and access_token and request.method not in {"GET", "HEAD", "OPTIONS"}:
+        require_allowed_origin(request, settings)
     if account_slot:
-        if not access_token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
-        try:
-            access_payload = decode_token(access_token, "access")
-            access_user_id = user_id_from_subject(str(access_payload.get("sub", "")))
-        except TokenValidationError as exc:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", exc.code)) from exc
-        access_user = session.get(User, access_user_id)
-        if not access_user or access_user.lifecycle_status != "active":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
+        auth_session = None
         slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
-        if slot and slot.user_id != access_user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="That account session is not active.")
         if slot:
             auth_session = session.get(AuthSession, slot.auth_session_id)
+            if access_token:
+                try:
+                    presented = decode_token(access_token, "access")
+                    presented_user_id = user_id_from_subject(str(presented.get("sub", "")))
+                    presented_session_id = presented.get("sid")
+                    if presented_user_id != slot.user_id or (presented_session_id and auth_session and str(presented_session_id) != str(auth_session.id)):
+                        raise HTTPException(status_code=403, detail="The selected account does not match the active session.")
+                except TokenValidationError:
+                    # Expired credentials must not prevent a device owner from
+                    # ending the selected remembered session.
+                    pass
             revoke_slot(session, slot)
+            await commit(session)
             if auth_session:
                 record_security_event_safely(
                     session,
@@ -743,7 +796,6 @@ async def logout(
                     session_id=auth_session.id,
                     payload={"kind": "logout", "account_slot": account_slot},
                 )
-            await commit(session)
         response.delete_cookie(
             key=f"friink_refresh_{account_slot}",
             httponly=True,
@@ -751,13 +803,24 @@ async def logout(
             samesite="none" if settings.is_production else "lax",
             path="/",
         )
-        response.delete_cookie(
-            key=REFRESH_COOKIE_NAME,
-            httponly=True,
-            secure=settings.is_production,
-            samesite="none" if settings.is_production else "lax",
-            path="/",
-        )
+        delete_access_cookie(response, settings, account_slot)
+        generic_refresh_record = get_refresh_token_for_update(session, refresh_token) if refresh_token else None
+        if generic_refresh_record and auth_session and generic_refresh_record.session_id == auth_session.id:
+            response.delete_cookie(
+                key=REFRESH_COOKIE_NAME,
+                httponly=True,
+                secure=settings.is_production,
+                samesite="none" if settings.is_production else "lax",
+                path="/",
+            )
+        generic_access = request.cookies.get(ACCESS_COOKIE_NAME)
+        if generic_access and auth_session:
+            try:
+                generic_payload = decode_token(generic_access, "access")
+                if str(generic_payload.get("sid", "")) == str(auth_session.id):
+                    delete_access_cookie(response, settings)
+            except TokenValidationError:
+                pass
         response.status_code = status.HTTP_204_NO_CONTENT
         return response
     if refresh_token:
@@ -771,6 +834,7 @@ async def logout(
                     revoke_refresh_family(session, token_record.family_id, "logout")
             else:
                 revoke_refresh_family(session, token_record.family_id, "logout")
+            await commit(session)
             record_security_event_safely(
                 session,
                 event_type=SecurityEventType.logout,
@@ -779,7 +843,6 @@ async def logout(
                 session_id=token_record.session_id,
                 payload={"kind": "logout"},
             )
-            await commit(session)
             log_refresh_token_event(
                 event="auth_refresh_token_family_revoked",
                 flow="logout",
@@ -795,6 +858,7 @@ async def logout(
         samesite="none" if settings.is_production else "lax",
         path="/",
     )
+    delete_access_cookie(response, settings)
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
 
@@ -834,11 +898,19 @@ async def password_reset_confirm(
 
 async def get_current_user(
     request: Request,
-    token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_session),
     settings: Settings = Depends(get_settings),
     auth_flow_context: str | None = Depends(get_auth_flow_context),
 ) -> User:
+    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    token, from_cookie = access_token_from_request(request, account_slot)
+    if from_cookie and token and request.method not in {"GET", "HEAD", "OPTIONS"}:
+        require_allowed_origin(request, settings)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Access session is not available.", AuthErrorCode.REFRESH_TOKEN_MISSING),
+        )
     try:
         payload = decode_token(token, "access")
     except TokenValidationError as exc:
@@ -886,6 +958,23 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
         )
+    session_id_raw = payload.get("sid")
+    auth_session = None
+    if session_id_raw:
+        try:
+            auth_session_id = uuid.UUID(str(session_id_raw))
+        except ValueError as exc:
+            raise HTTPException(status_code=401, detail=auth_error_detail("Invalid access token.", AuthErrorCode.TOKEN_SCHEMA_INVALID)) from exc
+        auth_session = session.get(AuthSession, auth_session_id)
+        if not auth_session or auth_session.user_id != user.id or auth_session.revoked_at is not None:
+            raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer active.", AuthErrorCode.SESSION_NOT_FOUND))
+    if account_slot and auth_session:
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if not slot or slot.user_id != user.id or slot.auth_session_id != auth_session.id:
+            raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer active.", AuthErrorCode.SESSION_NOT_FOUND))
+        if request.url.path == "/auth/me":
+            slot.last_used_at = datetime.now(UTC)
+            await commit(session)
     # Lifecycle deactivation is intentionally stricter than ordinary lockout:
     # RULES.md requires inactive accounts to reject already-issued access JWTs,
     # while an ordinary account lock leaves those JWTs valid until expiry.
@@ -894,7 +983,8 @@ async def get_current_user(
     return user
 
 
-async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme), session: Session = Depends(get_session)) -> User | None:
+async def get_optional_user(request: Request, session: Session = Depends(get_session)) -> User | None:
+    token, _from_cookie = access_token_from_request(request)
     if not token:
         return None
     try:
@@ -905,6 +995,19 @@ async def get_optional_user(token: str | None = Depends(optional_oauth2_scheme),
     user = session.get(User, user_id)
     if not user or user.lifecycle_status != "active" or int(payload.get("security_epoch", 0)) != user.security_epoch:
         return None
+    session_id_raw = payload.get("sid")
+    if session_id_raw:
+        try:
+            auth_session = session.get(AuthSession, uuid.UUID(str(session_id_raw)))
+        except ValueError:
+            return None
+        if not auth_session or auth_session.user_id != user.id or auth_session.revoked_at is not None:
+            return None
+    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    if account_slot and session_id_raw:
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if not slot or slot.user_id != user.id or str(slot.auth_session_id) != str(session_id_raw):
+            return None
     return user
 
 
@@ -1203,7 +1306,10 @@ async def switch_account(
             slot.last_used_at = datetime.now(UTC)
             await commit(session)
             log_account_switch_event(result="success", reason="already_active")
-            return TokenResponse(access_token=create_access_token(current_user.id, current_user.security_epoch), user=user_response(current_user, settings), account_slot=payload.account_slot)
+            auth_session = session.get(AuthSession, slot.auth_session_id)
+            access_token = create_access_token(current_user.id, current_user.security_epoch, auth_session.id if auth_session else None)
+            set_access_cookie(response, access_token, settings, payload.account_slot)
+            return TokenResponse(access_token=access_token, user=user_response(current_user, settings), account_slot=payload.account_slot)
         log_account_switch_event(result="failure", reason="slot_not_found")
         raise HTTPException(status_code=404, detail="Account session not found.")
     target = session.get(User, slot.user_id)
@@ -1213,10 +1319,12 @@ async def switch_account(
         raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer available.", AuthErrorCode.SESSION_NOT_FOUND))
     slot.last_used_at = datetime.now(UTC)
     issued_refresh = issue_refresh_token(session, target.id, settings, session_id=auth_session.id)
+    access_token = create_access_token(target.id, target.security_epoch, auth_session.id)
     await commit(session)
     set_account_refresh_cookie(response, payload.account_slot, issued_refresh.raw_token, settings)
+    set_access_cookie(response, access_token, settings, payload.account_slot)
     log_account_switch_event(result="success", reason="switched")
-    return TokenResponse(access_token=create_access_token(target.id, target.security_epoch), user=user_response(target, settings), account_slot=payload.account_slot)
+    return TokenResponse(access_token=access_token, user=user_response(target, settings), account_slot=payload.account_slot)
 
 
 @router.delete("/accounts/{account_slot}", status_code=status.HTTP_204_NO_CONTENT)
@@ -1234,6 +1342,7 @@ async def remove_account(
     revoke_slot(session, slot)
     await commit(session)
     delete_account_refresh_cookie(response, account_slot, settings)
+    delete_access_cookie(response, settings, account_slot)
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
 

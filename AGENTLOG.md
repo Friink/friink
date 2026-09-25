@@ -1,5 +1,73 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-25T01:00:36Z — Implement session continuity and entry/navigation fixes
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Execute the `25-9 fixes.md` plan step by step, validate
+  against bugs and unit docs, test the implementation, and update owning docs.
+- Changes Made: Added slot-scoped HttpOnly access cookies bound to JWT session
+  IDs, cookie-first `/auth/me` restoration, reactive per-slot refresh,
+  cross-tab revalidation, allowed-Origin protection for cookie-authenticated
+  writes, and most-recent remembered-account fallback only after confirmed
+  terminal failure. Public content now renders before its non-blocking entry
+  check. Added root account-scoped AppShell state persistence and chat draft /
+  pending-send persistence with API `client_message_id` idempotency. Updated
+  Account Access, Navigation, Chat, Architecture, active AUTH-R-008, and bug
+  records. Deleted temporary `25-9 fixes.md` after transferring plan status.
+  BUG-NAV-001 remains partially open: AppShell itself still remounts and all
+  route-owned operations have not been migrated/verified.
+- Files: `api/app/routers/auth.py`, `api/app/routers/posts.py`,
+  `api/app/services/security.py`, `api/app/schemas/chat.py`,
+  `api/app/services/chat.py`, affected API tests, `web/lib/auth.ts`,
+  `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/app-shell-state-provider.tsx`, `web/components/public-route-guard.tsx`,
+  affected route clients, `web/app/layout.tsx`, `docs/rules.md`,
+  `docs/bugs.md`, `docs/architecture.md`, `docs/units/account-access.md`,
+  `docs/units/navigation.md`, `docs/units/chat.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `api/tests/test_phase4_accounts.py` passed (12 tests)
+  with isolated SQLite and test OTP settings; `api/tests/test_chat_requests.py`
+  passed (1 test); targeted refresh/revocation tests passed earlier in this
+  turn (2 tests); `npx tsc --noEmit --pretty false` passed; `git diff --check`
+  passed. Combined OTP/session test invocation had a fixture configuration
+  failure and was rerun in isolation; the broad browser/staging operation
+  matrix remains pending. Staging was not modified.
+
+## 2026-09-24T22:54:37Z — Record session, public-entry, and shell-remount bugs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document three reported reliability bugs as open and add
+  planned fixes to their owning documents.
+- Changes Made: Updated BUG-AUTH-003 with current reload-time refresh behavior,
+  prior staging token-reuse evidence, and a planned slot-scoped HTTP-only access
+  cookie plus bounded idempotent refresh recovery. Reframed BUG-AUTH-002 around
+  the confirmed public-route loading gate and documented non-blocking public
+  rendering as planned. Added BUG-NAV-001 for page-level shell remounts and
+  operation-state loss. Updated Account Access, Navigation, Architecture, and
+  AUTH-R-008 to match current behavior and identify planned work. No application
+  code changed.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/navigation.md`, `docs/architecture.md`, `docs/rules.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check`, bug-link, heading, and status
+  review. No tests/build run; no runtime behavior changed.
+
+## 2026-09-24T22:49:16Z — Document Connections empty-state copy
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record the completed Connections page copy change after the
+  user asked to resume documentation.
+- Changes Made: Documented the empty-state supporting copy “Your connections
+  will appear here.” and retained the distinct Requests empty-state wording in
+  the Connections unit document. Added this documentation task to the
+  changelog. No application code changed in this documentation task.
+- Files: `docs/units/connections.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` and targeted link/content review.
+  No tests or build run.
+
 ## 2026-09-24T22:19:59Z — Put remembered-account recovery in a modal
 
 - Agent: Codex

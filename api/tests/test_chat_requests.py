@@ -72,11 +72,16 @@ def test_paid_chat_request_acceptance_limit_and_settings() -> None:
         assert new_context.json()["participant"]["id"] != str(recipient_id)
         assert new_context.json()["can_send"] is True
 
-        first = client.post(f"/chat/conversations/with/{recipient_username}/messages", headers=requester_headers, json={"content": "x" * 2048, "client_message_id": str(uuid.uuid4())})
+        client_message_id = str(uuid.uuid4())
+        first = client.post(f"/chat/conversations/with/{recipient_username}/messages", headers=requester_headers, json={"content": "x" * 2048, "client_message_id": client_message_id})
         assert first.status_code == 201, first.text
         conversation_id = first.json()["conversation_id"]
+        assert first.json()["client_message_id"] == client_message_id
         assert first.json()["sender_id"] == requester_public_id
         assert first.json()["sender_id"] != str(requester_id)
+        retried_first = client.post(f"/chat/conversations/{conversation_id}/messages", headers=requester_headers, json={"content": "x" * 2048, "client_message_id": client_message_id})
+        assert retried_first.status_code == 201, retried_first.text
+        assert retried_first.json()["id"] == first.json()["id"]
 
         canonical_context = client.get(f"/chat/conversations/{conversation_id}", headers=requester_headers)
         assert canonical_context.status_code == 200, canonical_context.text

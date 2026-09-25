@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/login-screen';
-import { consumeLoginLink, getMostRecentRememberedAccount, loadAuthSession, refreshAuthSession, saveAuthSession } from '@/lib/auth';
+import { consumeLoginLink, getMostRecentRememberedAccount, hasSessionForEntry, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession } from '@/lib/auth';
 
 const SECURITY_REVOCATION_MESSAGE = 'For your security, your session ended. Please sign in again.';
 
 export function LoginClient() {
   const router = useRouter();
-  const [sessionChecked, setSessionChecked] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(true);
   const [initialMessage, setInitialMessage] = useState<string | undefined>();
   const [initialIdentifier, setInitialIdentifier] = useState<string | undefined>();
 
@@ -42,13 +42,18 @@ export function LoginClient() {
       return;
     }
 
-    refreshAuthSession()
-      .then(() => router.replace('/home'))
+    hasSessionForEntry()
+      .then((available) => available ? restoreAuthSessionForEntry() : null)
+      .then((restored) => {
+        if (restored || loadAuthSession()) router.replace('/home');
+        else setSessionChecked(true);
+      })
       .catch((error) => {
-        // A failed refresh is not proof that the user has no session: network,
-        // CORS, timeout, and server errors are intentionally ambiguous. On the
-        // signed-out login route there is no local session to clear, so render
-        // the form for a fresh login instead of leaving the page blank forever.
+        if (loadAuthSession()) {
+          router.replace('/home');
+          return;
+        }
+        if (error instanceof Error && error.message) setInitialMessage(error.message);
         setSessionChecked(true);
       });
   }, [router]);

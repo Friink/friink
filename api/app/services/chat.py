@@ -254,6 +254,8 @@ def _receipt_status(session: Session, conversation: Conversation, message: Messa
     recipients = _recipient_settings(session, conversation, viewer)
     if not recipients:
         return "sent"
+    if _conversation_is_blocked(session, conversation, viewer):
+        return "sent"
     if _receipt_visible(session, conversation, viewer) and all(
         setting is not None and _message_index(conversation, setting.last_read_message_id) >= message_index
         for _, setting in recipients
@@ -268,7 +270,7 @@ def _message_response(session: Session, conversation: Conversation, message: Mes
     if peer_setting is None:
         _, peer_setting = _receipt_cursors(session, conversation, viewer)
     sender = session.get(User, message.sender_id)
-    return MessageResponse(id=message.id, conversation_id=message.conversation_id, sender_id=sender.public_id, content=message.content, created_at=message.created_at, receipt_status=_receipt_status(session, conversation, message, viewer, peer_setting), media=[{"url": item.url} for item in message.media if item.url])
+    return MessageResponse(id=message.id, conversation_id=message.conversation_id, client_message_id=message.client_message_id, sender_id=sender.public_id, content=message.content, created_at=message.created_at, receipt_status=_receipt_status(session, conversation, message, viewer, peer_setting), media=[{"url": item.url} for item in message.media if item.url])
 
 
 def _receipt_summary(session: Session, conversation: Conversation, viewer: User) -> tuple[int, uuid.UUID | None, uuid.UUID | None, uuid.UUID | None]:

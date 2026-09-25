@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-24T21:23:52Z
+**Last edited:** 2026-09-25T01:00:36Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -250,50 +250,44 @@ other cannot overwrite it.
 
 #### UX and flows
 
-The web client sends its in-memory access token. After `401 TOKEN_EXPIRED`, it
-performs one coordinated refresh and retries the original request once.
-Network, timeout, CORS, 403, 5xx, malformed-response, and other recoverable
-failures do not clear local session state. Only an explicit terminal refresh
-response clears local state and redirects to `/login`.
+The web client keeps its access JWT in memory and the API also sets a
+short-lived HttpOnly access cookie for the selected account slot. The JWT is
+bound to its server-side session with `sid`. On full document entry, the app
+validates `/auth/me` with the slot cookie first; a valid access cookie restores
+the user without rotating the refresh cookie. Only an expired or absent access
+cookie causes one slot-captured refresh exchange and a single retried request.
+Network, timeout, CORS, 403, 5xx, malformed-response, and other ambiguous
+failures preserve the remembered identity and show retryable in-app recovery.
+Cookie-authenticated unsafe API requests enforce allowed-Origin checks.
+Access and refresh credentials are HttpOnly; browser-readable storage and
+cross-tab messages contain no bearer tokens.
 
-On a full browser reload, the client may use the previously stored safe user
-metadata to mount the application shell immediately while the refresh-cookie
-exchange runs in the background. This cached metadata is presentation-only:
-authenticated API effects and actions still wait for the in-memory access token
-created by a successful refresh. A failed refresh returns to the existing
-recovery surface.
-
-The public landing route and authenticated app entry use the shared
-`restoreAuthSessionForEntry()` contract. While the refresh-cookie exchange
-runs, the loading recovery surface says “Reconnecting…” and “Just a moment
-while we get you back in.” A successful refresh redirects an
-already authenticated visitor to the app; a confirmed terminal refresh failure
-shows the public landing page; and a recoverable network, timeout, CORS, or
-server failure shows an explicit retry surface instead of silently treating the
-visitor as signed out. Public pages that do not use this guard remain
-accessible without authentication.
+The public landing page renders immediately. A non-blocking entry-status
+request uses cookie presence only as a redirect hint; it does not call refresh
+to decide whether public content can render. Protected app routes remain
+authoritative and validate the session before exposing private data or actions.
 
 #### Multi-account terminal-session recovery
 
-After a terminal refresh failure, recovery keeps the failed account as context
-and never tries another remembered account automatically. The implemented
-recovery flow is:
+When a current account is confirmed ended, automatic continuity validates
+remembered sessions in most-recent-use order. It never renders a candidate's
+data before that slot has validated. The recovery flow is:
 
 1. Preserve the device-scoped remembered-account summaries locally, without
    storing or replaying passwords.
 2. Coordination keys, state reads/writes, and refresh requests use one captured
    account slot. Ordinary refresh results are checked against the still-active
    slot before persistence.
-3. A terminal refresh failure clears in-memory credentials but preserves the
-   selected slot and safe cached profile metadata for recovery.
-4. Offer sign-in as the failed account and a “Choose another remembered
-   account” action that opens the shared modal. Put the current account first,
-   then order other accounts by recency. Recoverable failures keep `Try again`
-   and offer the same explicit account choice. The modal scrolls its list
-   independently so it does not extend the recovery page.
-5. A selected remembered account is refreshed alone through slot-scoped
-   coordination. The shell changes only after success; failures remain visible
-   and do not cause automatic attempts against other accounts.
+3. On confirmed terminal failure, clear the in-memory credential for that
+   account, keep only safe recovery context, and try other remembered slots in
+   descending `last_used_at` order. A confirmed invalid candidate advances to
+   the next; an ambiguous result stops fallback and preserves identity.
+4. On a transient failure, keep the user in the app with retry, sign-in, and
+   logout choices. Never redirect to public content or switch account because
+   of a timeout/network failure.
+5. The “Choose another remembered account” recovery action remains available
+   in its modal for explicit choice. Its current-account-first ordering is a
+   presentation rule; automatic fallback follows actual most-recent-use time.
 
 This flow applies to session expiry or revocation observed by the
 active account. Explicit logout and account removal retain their existing
@@ -301,16 +295,17 @@ fallback semantics. The API's existing slot-aware refresh endpoint supports
 explicit recovery; no schema change is expected. Staging confirmed refresh-
 token reuse and the earlier silent fallback. Its duplicate-request origin
 remains unknown. Both defects and local fixes are tracked in
-[BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
+[BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
 and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
 
 #### Refresh coordination and recovery contract
 
 - Use one captured active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
-- A terminal refresh failure keeps the failed account context and exposes
-  reauthentication or explicit account choice; it never silently restores a
-  different remembered account.
+- A confirmed terminal failure tries other remembered accounts by last-use
+  order and validates each slot before committing it. Ambiguous failures keep
+  the active identity in recovery with reauthentication or explicit account
+  choice; they never cause a switch.
 - Retain refresh-token reuse detection and its current security boundary while
   correcting client-side refresh coordination. Any broader retry grace or
   server-side idempotency behavior needs a separate security review for lost
@@ -318,8 +313,49 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 - Persist a successful restore's `last_used_at` update in the same transaction
   as the refresh rotation, so the server's account-list order reflects recency.
 
-These decisions are tracked by [BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
+These decisions are tracked by [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
 and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
+
+#### Refresh stability and failure handling
+
+[BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
+tracks reload-time refresh rotation and intermittent session loss. It is now
+locally implemented with a short-lived HTTP-only access cookie per slot, so a
+normal reload reuses a valid access credential without rotating the refresh
+cookie. Refresh rotation is reactive to access expiry and retains the API's
+bounded retry grace and family-reuse detection. Cookie-authenticated unsafe
+requests enforce allowed-Origin checks. A tab that observes another tab's
+refresh revalidates with its own slot access cookie instead of rotating again.
+Staging acceptance remains required.
+
+#### Multi-account session continuity policy
+
+Keep the user inside the authenticated app while at least one remembered
+account session remains valid. A remembered-account row alone is not proof that
+its session is valid; fallback validates the selected account's own slot-scoped
+session before exposing that account's app state.
+
+- Treat the account currently in use as most recent. If accounts were last
+  used in the order one, two, three, then three is active and two is next in
+  recency order.
+- If the active session ends because the user logs out of that account, it is
+  remotely terminated, or a terminal failure is confirmed, attempt the next
+  most recently used remembered account. Continue by recency only when a
+  candidate is confirmed invalid; do not switch identities on timeout, network
+  failure, or another ambiguous/recoverable result.
+- When the failure is recoverable, keep the user in the app's recovery flow
+  and offer retry, sign-in again, or logout. Do not treat a transient failure
+  as proof that the session ended and do not redirect to the public site.
+- If no remembered session validates, remain on the session-recovery screen
+  with sign-in and logout choices. Reach the public site after the user
+  explicitly logs out. Preserve each account's identity boundary and never
+  show one account's state while another account is still being validated.
+
+This continuity policy is implemented locally; staging acceptance remains
+open. The behavior and remaining checks are tracked by
+[BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session).
+The behavior is implemented locally; multi-account staging acceptance is
+required before release.
 
 #### Business rules and contract
 
@@ -329,19 +365,23 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
   and rotated within a token family.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
-- **ACCESS-R-031:** Terminal refresh failure requires same-account sign-in or
-  explicit remembered-account selection; no automatic cross-account recovery.
+- **ACCESS-R-031:** A confirmed terminal failure of the active session triggers
+  validation of other remembered accounts by most-recent-use order. Ambiguous
+  failures never switch identity; explicit remembered-account choice remains
+  available in recovery.
 - **ACCESS-R-032:** Refresh coordination, request headers, and result state use
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
   transaction as token rotation.
-- **ACCESS-R-017:** Refresh is reactive and occurs only after `TOKEN_EXPIRED`.
+- **ACCESS-R-017:** Refresh is reactive and occurs only after `TOKEN_EXPIRED`
+  or a missing/expired access cookie during session restoration.
 - **ACCESS-R-018:** Ambiguous refresh failures preserve local access state.
 - **ACCESS-R-019:** Logout revokes only the relevant session/family.
 - `POST /auth/refresh` exchanges and rotates the refresh credential.
 - `POST /auth/logout` revokes the relevant session/family and clears its cookie.
-- JWT claims are minimal and stable: `sub`, `typ`, `iat`, and `exp`, with a key
-  identifier in the header.
+- JWT claims include `sub`, `typ`, `iat`, `exp`, and the active session `sid`,
+  with a key identifier in the header. `sid` lets the API reject access after
+  server-side session revocation.
 
 The active cross-unit contract is recorded in [`AUTH-R-038`](../rules.md) and
 [`AUTH-R-040`](../rules.md). Staging browser acceptance remains open before
@@ -355,13 +395,31 @@ the release is considered complete.
       credentials while retaining only safe recovery context.
 - [ ] **ACCESS-AC-017** Rotation and reuse detection are transactional and tested.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
-- [x] **ACCESS-AC-026** A terminal failure never tries another slot without an
-      explicit selection; recovery exposes the failed account and remembered
-      list.
+- [x] **ACCESS-AC-026** A confirmed terminal failure tries remembered slots in
+      most-recent-use order; ambiguous failures do not switch identity and
+      recovery exposes the failed account and remembered list.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
-- [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after
-      success and never cycles through other remembered slots.
+- [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after that
+      slot validates successfully.
+- [x] **ACCESS-AC-029** A valid access cookie survives a full reload without
+      refresh-cookie rotation; expired access performs one coordinated,
+      slot-correct refresh while replay detection remains active.
+- [ ] **ACCESS-AC-030** An interrupted or repeated expiry-time refresh recovers
+      idempotently within the reviewed retry condition, without silently
+      switching accounts or disabling family-reuse detection.
+- [x] **ACCESS-AC-031** A public landing visit with no session renders without
+      a blocking restore screen or refresh exchange; protected routes still
+      reject unauthenticated requests.
+- [x] **ACCESS-AC-032** When the current session is confirmed ended, the app
+      validates and restores the next most recently used remembered account;
+      an invalid candidate advances to the next candidate without crossing
+      account data boundaries.
+- [x] **ACCESS-AC-033** A timeout, network error, or other ambiguous session
+      failure does not change accounts or redirect to the public site; recovery
+      offers retry, sign-in again, and logout.
+- [x] **ACCESS-AC-034** When no remembered session validates, recovery offers
+      sign-in and logout; the public site is reached after explicit logout.
 
 #### Decision record
 
@@ -456,7 +514,7 @@ control remains visible when account labels are long.
 
 #### Implementation plan and rollout status
 
-The remaining web/API work is organized into three dependent workstreams:
+Remaining web/API work and planned reliability fixes are:
 
 1. **Diagnose and fix the Add account limit mismatch.** Compare the same
    browser's `friink_device_id` context across `GET /auth/accounts`,
@@ -471,19 +529,18 @@ The remaining web/API work is organized into three dependent workstreams:
    notifications by account slot. Stale or delayed responses must not restore
    the wrong account, and explicit logout/removal fallback behavior must remain
    intact.
-3. **Terminal-session recovery.** Implemented locally: preserve the failed
-   account context and allow explicit sign-in or selection from the inline
-   remembered-account list. Never automatically try another identity.
+3. **Terminal-session recovery.** Implemented locally: confirmed terminal
+   failure falls back by last use, while ambiguous failures remain in recovery.
+   Explicit account choice is still available in the shared modal.
+4. **Reload-time token stability and public entry.** Implemented locally with
+   slot-scoped access cookies, cookie-first restoration, reactive refresh,
+   allowed-Origin checks, and immediate public rendering. Staging acceptance is
+   pending under BUG-AUTH-003 and BUG-AUTH-002.
 
-The implementation order was workstream 1, then workstream 3, then workstream
-2. Existing workstream 1 tests are recorded in prior history. The recovery and
-slot-coordination changes in this task have not had automated verification.
-Each workstream still requires browser checks for
-   clean and existing multi-account profiles, including concurrent tabs and
-   delayed responses. The current API slot-aware refresh contract is expected
-to be sufficient; no schema migration is planned unless implementation
-evidence contradicts that assumption. Active rules now describe the local
-implementation; staging acceptance remains a release gate.
+The earlier Add-account limit and account-state-isolation workstreams remain
+subject to their existing verification requirements. Reload-stability and
+public-entry changes are implemented locally; production-parity staging
+acceptance remains required before release.
 
 ## 5. Cross-subunit behavior
 
@@ -618,3 +675,10 @@ project-wide history. This section records changes specific to this unit.
 - 2026-09-24T22:19:59Z — Moved the remembered-account list into the shared
   modal, ordered the current account first, and kept list scrolling inside the
   dialog.
+- 2026-09-24T22:54:37Z — Recorded open reload-time refresh instability and the
+  public-route restore gate, with an HTTP-only access-cookie and non-blocking
+  public-render plan. No behavior changed.
+- 2026-09-24T23:13:58Z — Added the planned multi-account continuity policy:
+  retain app access while a valid remembered session exists, fall back by
+  most-recent use after confirmed session end, and keep recoverable failures
+  inside recovery. No behavior changed.

@@ -64,7 +64,7 @@ const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
 const REFRESH_LEASE_MS = 20000;
 const REFRESH_RESULT_TTL_MS = 3000;
-let refreshPromise: Promise<AuthSession> | null = null;
+const refreshPromises = new Map<string, Promise<AuthSession>>();
 let authSessionGeneration = 0;
 const tabId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 let coordinationListenerInstalled = false;
@@ -511,9 +511,10 @@ export function saveAuthSession(session: AuthSession) {
   const previousAccountSlot = inMemoryAuthSession?.accountSlot;
   inMemoryAuthSession = session;
   cacheSafeSessionUser(session);
+  touchCachedActiveAccount(session);
   window.localStorage.removeItem(AUTH_SESSION_KEY);
   setActiveAccountSlot(session.accountSlot ?? null);
-  authBroadcastChannel?.postMessage({ type: 'session-updated', accountSlot: session.accountSlot ?? null, session });
+  authBroadcastChannel?.postMessage({ type: 'session-updated', accountSlot: session.accountSlot ?? null });
   if (previousAccountSlot && session.accountSlot && previousAccountSlot !== session.accountSlot) {
     window.dispatchEvent(new CustomEvent('friink-account-switched'));
   }
@@ -610,7 +611,15 @@ export function clearDeactivationFallbackSlot() {
 }
 
 export async function restoreAccountSession(accountSlot: string): Promise<AuthSession> {
-  return coordinateRefresh(accountSlot, false, true);
+  try {
+    const user = await getCurrentUser('', accountSlot, true);
+    return { accessToken: '', tokenType: 'Bearer', user, accountSlot };
+  } catch (error) {
+    if (!(error instanceof AuthApiError) || error.status !== 401 || !['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING'].includes(error.code ?? '')) {
+      throw error;
+    }
+    return coordinateRefresh(accountSlot, false, true);
+  }
 }
 
 export async function logout(accessToken: string, accountSlot?: string): Promise<void> {
@@ -665,19 +674,22 @@ export function isLoginChallenge(value: AuthSession | LoginChallenge): value is 
   return 'challengeRequired' in value && value.challengeRequired === true;
 }
 
-export async function refreshAuthSession(): Promise<AuthSession> {
-  if (refreshPromise) return refreshPromise;
+export async function refreshAuthSession(accountSlot: string | null = activeAccountSlot()): Promise<AuthSession> {
+  const key = accountSlot ?? 'unassigned';
+  const existing = refreshPromises.get(key);
+  if (existing) return existing;
 
   installAuthCoordinationListener();
-  refreshPromise = coordinateRefresh(activeAccountSlot(), true)
+  const refreshPromise = coordinateRefresh(accountSlot, true, true)
     .catch((error) => {
       if (!isTerminalRefreshFailure(error)) throw error;
       preserveFailedAuthContext(error);
       throw error;
     })
     .finally(() => {
-      refreshPromise = null;
+      refreshPromises.delete(key);
     });
+  refreshPromises.set(key, refreshPromise);
 
   return refreshPromise;
 }
@@ -686,9 +698,69 @@ export async function refreshAuthSession(): Promise<AuthSession> {
 export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
   const currentSession = loadAuthSession();
   if (currentSession) return currentSession;
-  const restoredSession = await refreshAuthSession();
-  saveAuthSession(restoredSession);
-  return restoredSession;
+  const accountSlot = activeAccountSlot();
+  try {
+    const user = await getCurrentUser('', accountSlot ?? undefined, true);
+    const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: accountSlot ?? undefined };
+    saveAuthSession(restoredSession);
+    return restoredSession;
+  } catch (error) {
+    const refreshedSession = loadAuthSession();
+    if (refreshedSession && refreshedSession.accountSlot === accountSlot) return refreshedSession;
+    if (!isTerminalRefreshFailure(error)) throw error;
+
+    let terminalFailure = error;
+    if (error instanceof AuthApiError && ['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING'].includes(error.code ?? '')) {
+      try {
+        const restoredSession = await coordinateRefresh(accountSlot, true, true);
+        saveAuthSession(restoredSession);
+        return restoredSession;
+      } catch (refreshError) {
+        if (!isTerminalRefreshFailure(refreshError)) throw refreshError;
+        terminalFailure = refreshError;
+      }
+    }
+
+    const fallback = await restoreRememberedAccountWithFallback(accountSlot ? [accountSlot] : []);
+    if (fallback) {
+      saveAuthSession(fallback);
+      return fallback;
+    }
+    throw terminalFailure;
+  }
+}
+
+export async function restoreRememberedAccountWithFallback(
+  excludedSlots: string[] = [],
+  preferredSlot?: string,
+): Promise<AuthSession | null> {
+  const excluded = new Set(excludedSlots);
+  const accounts = getRememberedAccountSummaries()
+    .filter((account) => !excluded.has(account.accountSlot))
+    .sort((a, b) => {
+      if (a.accountSlot === preferredSlot) return -1;
+      if (b.accountSlot === preferredSlot) return 1;
+      return b.lastUsedAt.localeCompare(a.lastUsedAt);
+    });
+
+  for (const account of accounts) {
+    try {
+      return await restoreAccountSession(account.accountSlot);
+    } catch (error) {
+      if (!isTerminalRefreshFailure(error)) throw error;
+    }
+  }
+  return null;
+}
+
+export async function hasSessionForEntry(): Promise<boolean> {
+  const slot = activeAccountSlot();
+  const response = await requestApi<{ session_available: boolean }>('/auth/entry-status', {
+    method: 'GET',
+    headers: slot ? { 'X-Friink-Account-Slot': slot } : undefined,
+    skipAuthRefresh: true,
+  });
+  return response.session_available;
 }
 
 type RefreshCoordinationState = {
@@ -807,7 +879,7 @@ function installAuthCoordinationListener() {
   if (typeof BroadcastChannel !== 'undefined') {
     authBroadcastChannel = new BroadcastChannel('friink-auth-session');
     authBroadcastChannel.addEventListener('message', (event: MessageEvent) => {
-      const message = event.data as { type?: string; accountSlot?: string | null; status?: 'expired' | 'security'; session?: Partial<AuthSession> } | null;
+      const message = event.data as { type?: string; accountSlot?: string | null; status?: 'expired' | 'security' } | null;
       if (message?.accountSlot !== (activeAccountSlot() ?? null)) return;
       if (message?.type === 'session-cleared') {
         authSessionGeneration += 1;
@@ -816,13 +888,9 @@ function installAuthCoordinationListener() {
         authSessionGeneration += 1;
         inMemoryAuthSession = null;
         window.dispatchEvent(new CustomEvent('friink-session-expired', { detail: { accountSlot: message.accountSlot ?? null, status: message.status ?? 'expired' } }));
-      } else if (message?.type === 'session-updated' && message.session && isStoredAuthSession(message.session)) {
-        const previousAccountSlot = inMemoryAuthSession?.accountSlot;
-        inMemoryAuthSession = message.session;
-        if (message.session.accountSlot) setActiveAccountSlot(message.session.accountSlot);
-        if (previousAccountSlot && message.session.accountSlot && previousAccountSlot !== message.session.accountSlot) {
-          window.dispatchEvent(new CustomEvent('friink-account-switched'));
-        }
+      } else if (message?.type === 'session-updated') {
+        inMemoryAuthSession = null;
+        window.dispatchEvent(new CustomEvent('friink-session-updated', { detail: { accountSlot: message.accountSlot ?? null } }));
       }
     });
   }
@@ -853,6 +921,24 @@ function publishRefreshCoordination(state: RefreshCoordinationState, slot: strin
   window.localStorage.setItem(scopedRefreshKey(REFRESH_COORDINATION_KEY, slot), JSON.stringify(state));
 }
 
+function touchCachedActiveAccount(session: AuthSession) {
+  if (typeof window === 'undefined' || !session.accountSlot) return;
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(ACCOUNT_SUMMARIES_KEY) || '{}') as Record<string, CachedAccountSummary>;
+    cached[session.accountSlot] = {
+      accountSlot: session.accountSlot,
+      username: session.user.username,
+      displayName: session.user.name,
+      profilePictureUrl: session.user.profilePictureUrl,
+      lastUsedAt: new Date().toISOString(),
+      showProfessionalBadge: session.user.showProfessionalBadge,
+    };
+    window.localStorage.setItem(ACCOUNT_SUMMARIES_KEY, JSON.stringify(cached));
+  } catch {
+    // Server-side slot timestamps remain authoritative if browser storage is unavailable.
+  }
+}
+
 async function coordinateRefresh(slot: string | null = activeAccountSlot(), persist = true, retryFailed = false): Promise<AuthSession> {
   if (supportsCrossTabLock()) {
     const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
@@ -874,6 +960,23 @@ async function coordinateRefreshWithStorageLease(slot: string | null, persist: b
       if (existing.status === 'succeeded') {
         const sharedSession = loadPersistedAuthSession();
         if (sharedSession?.accountSlot === slot) return sharedSession;
+        // Access credentials never cross tabs. Rehydrate the just-refreshed
+        // slot through its HttpOnly cookie so a waiting tab does not replay
+        // the same refresh cookie and rotate the family again.
+        const user = await getCurrentUser('', slot ?? undefined, true);
+        const restoredSession: AuthSession = {
+          accessToken: '',
+          tokenType: 'Bearer',
+          user,
+          accountSlot: slot ?? undefined,
+        };
+        if (persist) {
+          if (activeAccountSlot() !== slot) {
+            throw new AuthApiError('The active account changed while it was restoring.', 0);
+          }
+          saveAuthSession(restoredSession);
+        }
+        return restoredSession;
       } else if (existing.status === 'failed' && !retryFailed) {
         throw refreshErrorFromState(existing);
       } else if (existing.ownerId !== tabId) {
@@ -954,14 +1057,16 @@ async function performRefresh(generation: number, operationId: string, slot: str
     };
     if (persist) {
       saveAuthSession(nextSession);
-      authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: nextSession });
     }
     return nextSession;
   }
 
   const restoredUser = await requestApi<ApiUser>('/auth/me', {
     method: 'GET',
-    headers: { Authorization: `Bearer ${response.access_token}` },
+    headers: {
+      Authorization: `Bearer ${response.access_token}`,
+      ...(slot ? { 'X-Friink-Account-Slot': slot } : {}),
+    },
     authContext: 'authenticated_request',
     skipAuthRefresh: true,
   });
@@ -976,7 +1081,6 @@ async function performRefresh(generation: number, operationId: string, slot: str
   };
   if (persist) {
     saveAuthSession(restoredSession);
-    authBroadcastChannel?.postMessage({ type: 'refresh-completed', operationId, session: restoredSession });
   }
   return restoredSession;
 }
@@ -1138,13 +1242,15 @@ export async function completeApprovedLogin(challengeToken: string, options: Aut
   return mapTokenResponse(response);
 }
 
-export async function getCurrentUser(accessToken: string): Promise<AuthUser> {
+export async function getCurrentUser(accessToken: string, accountSlot?: string, skipAuthRefresh = false): Promise<AuthUser> {
   const response = await requestApi<ApiUser>('/auth/me', {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : {}),
     },
     authContext: 'authenticated_request',
+    skipAuthRefresh,
   });
 
   return mapApiUser(response);
@@ -1542,6 +1648,7 @@ export type ApiChatEligibility = {
 export type ApiMessage = {
   id: string;
   conversation_id: string;
+  client_message_id?: string;
   sender_id: string;
   content: string;
   created_at: string;
@@ -2172,16 +2279,20 @@ async function requestApi<T>(
   },
 ): Promise<T> {
   const requestInit = { ...init };
+  const headers = new Headers(requestInit.headers);
+  headers.set('Content-Type', 'application/json');
+  if (requestInit.authContext) headers.set('X-Friink-Auth-Context', requestInit.authContext);
+  if (!headers.has('X-Friink-Account-Slot')) {
+    const slot = activeAccountSlot();
+    if (slot) headers.set('X-Friink-Account-Slot', slot);
+  }
+  if (/^Bearer\s*$/i.test(headers.get('Authorization') ?? '')) headers.delete('Authorization');
 
   let response: Response;
   try {
     response = await fetchApi(path, {
       ...requestInit,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(requestInit.authContext ? { 'X-Friink-Auth-Context': requestInit.authContext } : {}),
-        ...requestInit.headers,
-      },
+      headers,
       credentials: 'include',
     });
   } catch (error) {
@@ -2198,14 +2309,23 @@ async function requestApi<T>(
       apiError.code === 'TOKEN_EXPIRED' &&
       requestInit.authContext === 'authenticated_request'
     ) {
-      const refreshedSession = await refreshAuthSession();
+      const requestSlot = headers.get('X-Friink-Account-Slot') || activeAccountSlot();
+      const refreshedSession = await refreshAuthSession(requestSlot);
       return requestApi<T>(path, {
         ...requestInit,
         headers: withAuthorizationHeader(requestInit.headers, refreshedSession.accessToken),
         retryingAfterRefresh: true,
       });
     }
-    throw new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
+    const authError = new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
+    if (
+      !requestInit.skipAuthRefresh &&
+      requestInit.authContext === 'authenticated_request' &&
+      isTerminalRefreshFailure(authError)
+    ) {
+      preserveFailedAuthContext(authError);
+    }
+    throw authError;
   }
 
   if (response.status === 204) {
@@ -2283,17 +2403,6 @@ function mapApiUser(user: ApiUser): AuthUser {
     status: user.is_verified ? 'active' : 'pending_email_verification',
     emailVerifiedAt: user.is_verified ? user.updated_at : null,
   };
-}
-
-function isStoredAuthSession(session: Partial<AuthSession>): session is AuthSession {
-  return Boolean(
-    typeof session.accessToken === 'string' &&
-      session.accessToken.split('.').length === 3 &&
-      session.tokenType === 'Bearer' &&
-      session.user &&
-      typeof session.user === 'object' &&
-      typeof session.user.email === 'string',
-  );
 }
 
 export function isTerminalRefreshFailure(error: unknown): error is AuthApiError {

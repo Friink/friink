@@ -6,16 +6,16 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-24T21:23:52Z
+**Last edited:** 2026-09-25T01:00:36Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
 ## Canonical ownership
 
-This document owns the signed-in TopBar and its interaction contract.
-The drawer owns destination discovery, NavigationBar owns the existing
-contextual navigation, Account Access owns remembered-account switching, and
-Tabs own section selection.
+This document owns the signed-in shell's navigation and persistence contract,
+including the TopBar, drawer, and cross-route shell behavior. Account Access
+owns session/token semantics and remembered-account switching; NavigationBar
+owns existing contextual navigation; Tabs own section selection.
 
 ## Related units
 
@@ -105,12 +105,15 @@ the established search, chat-unread, and notification interactions.
 - The portaled account-switcher menu uses a viewport-safe fixed width. Long
   account names truncate with an ellipsis before the trailing account controls;
   row hover surfaces stay within the menu padding.
-- **Known account-switcher defects:** Session recovery can currently make a
-  different remembered account current without an explicit selection, and a
-  restored account can remain last in the menu because refresh recency is not
-  persisted. The agreed corrections are documented in [Account Access](./account-access.md)
-  and tracked as [BUG-AUTH-003](../bugs.md#bug-auth-003--refresh-token-replay-silently-switches-the-active-account)
-  and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
+- **Account-switcher defect status:** The local implementation now prevents
+  automatic cross-account recovery and persists restored-slot recency. Staging
+  acceptance remains pending; the broader reload-time session instability is
+  still open under [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session).
+- **Open shell defect:** Page routes currently instantiate `AppShellRoute`
+  independently. Route changes can therefore show a session-restoration flash,
+  remount the shell, and discard in-progress screen state. The planned
+  persistent-layout and operation-survival work is tracked as
+  [BUG-NAV-001](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
 - The active drawer row uses a neutral gray fill and theme-appropriate text.
   Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
 - The Profile identity row does not receive the active destination's gray fill,
@@ -153,6 +156,24 @@ the established search, chat-unread, and notification interactions.
 - **NAV-R-010:** The tablet/desktop drawer remains vertically scrollable while
   hiding the scrollbar indicator during its width transition.
 
+## Shell state and route changes
+
+The root layout mounts `AppShellStateProvider`, which retains account-scoped
+shell state across page-level `AppShellRoute` remounts during client-side
+navigation. `AppShellRoute` initializes from the in-memory authenticated
+session synchronously, avoiding a restore-screen flash when that session is
+already available. Shared drafts, shell filters, feed state, and chat message
+draft/pending state are rehydrated from the provider after route changes.
+Outgoing chat messages carry a stable client message ID; the API returns that
+ID and deduplicates retries by conversation and client ID.
+
+This does not keep one `AppShell` React instance mounted: App Router page
+components still remount. Some route-owned forms and mutation feedback are not
+persisted, and their operations have not all been audited for cancellation,
+resume, or idempotency. Full document reloads also discard the in-memory
+provider. BUG-NAV-001 remains open for those remaining cases and route-level
+acceptance; see [the bug record](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
+
 ## Acceptance criteria
 
 - [ ] **NAV-AC-001** Home Search expands, submits to search, Chat shows unread
@@ -187,6 +208,10 @@ the established search, chat-unread, and notification interactions.
 
 ## Verification checklist
 
-- [ ] TypeScript check passes.
+- [x] TypeScript check passes.
 - [ ] Home and contextual localhost routes return successfully.
-- [ ] `git diff --check` passes.
+- [x] `git diff --check` passes.
+- [x] Existing in-memory sessions render without a route-transition restore
+  screen; account-scoped shell/chat state is retained by the root provider.
+- [ ] Representative route-owned operations and all browser navigation paths
+  are verified for cancellation, resume, and duplicate mutation behavior.

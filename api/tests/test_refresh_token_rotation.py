@@ -129,7 +129,7 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
 def test_session_management_lists_current_and_revokes_independently() -> None:
     suffix = uuid.uuid4().hex
     email = f"managed-session-{suffix}@example.com"
-    username = f"managed_session_{suffix[:22]}"
+    username = f"managed_session_{suffix[:15]}"
     password = "Strong-pass9!"
     signup_client = TestClient(app)
     user_id: uuid.UUID | None = None
