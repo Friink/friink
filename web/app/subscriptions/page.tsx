@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import styles from '../landing.module.css';
 import { Header } from '@/components/public-header';
 import { PublicRouteGuard } from '@/components/public-route-guard';
+import { redirectPublicVisitorWithSessionHint } from '@/lib/public-session-entry';
 
 export const metadata: Metadata = {
   title: 'Plans',
@@ -16,7 +17,9 @@ const plans = [
   { name: 'Friink Pro+', price: 'USD 8', cadence: '/month · 1 month free for Pro users', description: 'A fuller view of your presence on Friink.', features: ['Everything in Pro', 'Profile and post analytics', 'Profile boost for the feed', 'Fewer ads'], featured: false },
 ];
 
-export default function SubscriptionsPage() {
+export default async function SubscriptionsPage() {
+  await redirectPublicVisitorWithSessionHint();
+
   return (
     <PublicRouteGuard>
       <div className={styles.page}>

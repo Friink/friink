@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-26T13:46:26Z
+- [design-system] Set top-bar counter pills to 2px horizontal padding so the
+  count stays visually centered inside a compact pill.
+
+## 2026-09-26T13:44:23Z
+- [account-access] Added a non-sensitive web-origin session hint. Public entry
+  routes redirect to `/home` immediately when present; session restoration
+  remains authoritative, with `/auth/entry-status` retained for legacy clients.
+
 ## 2026-09-26T13:33:29Z
 - [design-system] Vertically centered the notification and message counter text
   within the top-bar pills by matching the line box to the 16px pill height.

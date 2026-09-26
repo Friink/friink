@@ -224,8 +224,8 @@ The exact widths, heights, breakpoints, and token names are defined in
   glyphs are 20px in 40px hit areas; page titles are 18px, expanded-search
   text is 20px, and ActionMenu row icons are 16px. Home Chat and Notifications
   display actual unread counts in top-right pills, capped at `9+`; pills are
-  16px high with 12px white, vertically centered text and no border in either
-  theme. The active
+  16px high with 12px white, vertically centered text, 2px horizontal padding,
+  and no border in either theme. The active
   search-filter indicator remains a dot. The existing Header and NavigationBar
   remain mounted but are hidden during preview evaluation. The preview controls
   preserve existing route destinations and action semantics. The top-bar inner

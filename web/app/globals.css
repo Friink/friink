@@ -5870,7 +5870,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   height: 16px;
   border: 0;
   border-radius: 999px;
-  padding: 0 4px;
+  padding: 0 2px;
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;

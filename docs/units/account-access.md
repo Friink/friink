@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-26T13:10:43Z
+**Last edited:** 2026-09-26T13:44:23Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -269,14 +269,25 @@ or switching accounts updates the shared selected-slot key. Other open tabs
 reload when that key changes, then restore and render only the selected slot.
 Legacy tab-local slot values do not override the shared selection.
 
-The public landing page renders immediately. A non-blocking entry-status
-request treats any access or refresh cookie, including cookies scoped to other
-account slots, only as a hint to try restoration; it does not establish that a
-session is valid or call refresh merely to decide whether public content can
-render. If no valid remembered session exists, the visitor remains on the
-public site. When one or more sessions validate, the client restores its most
-recently used account. Protected app routes remain authoritative before
-exposing private data or actions.
+After successful sign-in or session restoration, the web app sets a
+non-sensitive `friink_session_hint=1` cookie on the web origin. It contains no
+credential or account identifier and only signals that restoration should be
+attempted. The `/` and `/subscriptions` server pages check this hint before
+rendering and immediately redirect to `/home` when it is present. `/home`
+validates the session normally; a stale hint therefore reaches the established
+recovery flow and never grants access. `saveAuthSession` refreshes the hint for
+30 days, while `clearAuthSession` removes it when the client clears auth.
+
+When the hint is absent, public content renders immediately and the existing
+non-blocking `/auth/entry-status` request remains as a compatibility path for
+sessions created before this hint was introduced. That API response treats any
+access or refresh cookie, including cookies scoped to other account slots,
+only as a reason to try restoration; it does not establish that a session is
+valid or call refresh merely to decide whether public content can render. If no
+valid remembered session exists, the visitor remains on the public site. When
+one or more sessions validate, the client restores its most recently used
+account. Protected app routes remain authoritative before exposing private
+data or actions.
 
 #### Multi-account terminal-session recovery
 
@@ -451,6 +462,9 @@ the release is considered complete.
 - [x] **ACCESS-AC-031** A public landing visit with no session renders without
       a blocking restore screen or refresh exchange; protected routes still
       reject unauthenticated requests.
+- [x] **ACCESS-AC-041** A web-origin session hint redirects `/` and
+      `/subscriptions` to `/home` before rendering; without the hint, public
+      content renders and the client keeps the entry-status compatibility path.
 - [ ] **ACCESS-AC-032** When the current session is confirmed ended, the app
       waits for acknowledgment, then validates remembered accounts in
       most-recent-use order; invalid candidates are skipped without crossing
@@ -718,6 +732,7 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
 | ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
+| ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
 
 ### Release gates
 
@@ -785,6 +800,11 @@ logs.
   from switching: when lowered to one, existing multiple remembered accounts
   remain switchable while Add account is hidden; the switcher is hidden only
   when one account is available.
+- 2026-09-26T13:41:19Z — Added a non-sensitive web-origin session hint that
+  immediately redirects public entry to `/home`; retained `/auth/entry-status`
+  as a compatibility check when the hint is absent.
+- 2026-09-26T13:44:23Z — Verified both public entry routes return `200` without
+  the hint and redirect to `/home` with it; TypeScript check passes.
 - 2026-09-26T13:10:43Z — Clarified that switcher availability is based on both
   the configured limit and the number of accounts available on the device.
 

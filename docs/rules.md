@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-26T13:07:02Z
+**Last edited:** 2026-09-26T13:44:23Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -786,15 +786,15 @@ missing evidence can be filled in.
 ### AUTH-R-040 — Session Restoration Has Explicit Recovery UX
 
 - **Status:** Active
-- **Effective:** 2026-09-26T12:37:37Z
+- **Effective:** 2026-09-26T13:41:19Z
 - **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `api/app/services/auth_errors.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `api/app/routers/auth.py`, `api/app/services/auth_errors.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public route content renders immediately. A non-blocking `/auth/entry-status` hint treats any non-empty access or refresh cookie, including cookies for other remembered-account slots when the selected slot is missing or stale, as a reason to attempt restoration; this hint does not establish that a session is valid. A public-site visit with no valid remembered session stays public. If one or more remembered sessions validate, Friink restores the most recently used one. Authenticated route entry validates `/auth/me` with the slot access cookie, then refreshes only when access is expired or absent. Cached safe user metadata is presentation-only; private data/actions require server validation. When a known session has ended, Friink explains the cause and waits for acknowledgment before falling back to the most recently used valid remembered session, or returning to public when none remain. Expiry or another terminal cause is also explained; Friink does not silently switch accounts. A termination notice is shown once per browser client: other open tabs wait for acknowledgment and then follow the same account or public-site result. If the tab presenting the notice closes, another tab can take over.
+- **What:** A non-sensitive `friink_session_hint=1` cookie on the web origin makes `/` and `/subscriptions` redirect to `/home` before public content renders. Successful `saveAuthSession` calls set or refresh this 30-day hint, and `clearAuthSession` clears it. The hint contains no credential or account identifier and is only a restoration prompt; `/home` validates the session before exposing authenticated data. When the hint is absent, public content renders immediately and the non-blocking `/auth/entry-status` compatibility check detects legacy access or refresh cookies, including cookies for other remembered-account slots. That API response also only prompts restoration and does not validate a session. A public-site visit with no valid remembered session stays public. If one or more remembered sessions validate, Friink restores the most recently used one. Authenticated route entry validates `/auth/me` with the slot access cookie, then refreshes only when access is expired or absent. Cached safe user metadata is presentation-only; private data/actions require server validation. When a known session has ended, Friink explains the cause and waits for acknowledgment before falling back to the most recently used valid remembered session, or returning to public when none remain. Expiry or another terminal cause is also explained; Friink does not silently switch accounts. A termination notice is shown once per browser client: other open tabs wait for acknowledgment and then follow the same account or public-site result. If the tab presenting the notice closes, another tab can take over.
 - **Edge cases:** Timeouts/network/CORS/5xx/malformed responses never prove that a session ended, never change account identity, and remain retryable. Ambiguous recovery retains retry, sign-in, explicit account choice, and logout actions. The account-choice list scrolls inside its modal. Refresh-token reuse detection remains active. Refresh coordination and request headers use the same captured slot; cross-tab followers validate using their own slot access cookie, and stale responses cannot replace a later active slot.
-- **Verification:** Web TypeScript and API syntax checks pass. A focused API session-revocation test reached its passing assertion but pytest reported a Windows temporary-SQLite cleanup error during teardown. Multi-tab browser acceptance and staging acceptance remain pending.
+- **Verification:** The public routes return `200` without the web-origin hint and redirect to `/home` (`307`) when it is present; web TypeScript passes. Multi-tab browser and staging acceptance remain pending.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
@@ -1372,14 +1372,14 @@ missing evidence can be filled in.
 ### CLIENT-R-006 — Public Pages Use Explicit Session Routing
 
 - **Status:** Active
-- **Effective:** 2026-09-01T00:00:00Z
-- **Related units:** [feed](units/feed.md)
+- **Effective:** 2026-09-26T13:41:19Z
+- **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/lib/auth.ts`
+- **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`
 
-- **What:** The public landing page checks for an existing non-demo session before rendering its content. A successful refresh routes authenticated visitors to `/home`; confirmed signed-out visitors may remain on the landing page. `/subscriptions` remains accessible without authentication.
-- **Edge cases:** The landing route shows explicit loading and recoverable-error states during session checking; it does not silently treat network, timeout, CORS, or server failures as signed out. Demo sessions are not treated as signed-in public sessions.
+- **What:** A web-origin `friink_session_hint=1` cookie redirects `/` and `/subscriptions` to `/home` before public content renders. It is set on successful session save, cleared when local auth is cleared, and contains no credential. The authenticated route performs authoritative session restoration. Without the hint, public content renders immediately and `PublicRouteGuard` retains the non-blocking `/auth/entry-status` compatibility check for existing API-host cookies; confirmed signed-out visitors remain public.
+- **Edge cases:** A stale hint never authenticates the visitor; `/home` validates the session and uses normal recovery or public fallback. Ambiguous network failures remain retryable and do not infer sign-out. Demo sessions do not set the hint or redirect public visitors.
 
 ### CLIENT-R-007 — Public Header Uses Signed-In Account Menu
 

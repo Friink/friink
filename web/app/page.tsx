@@ -5,6 +5,7 @@ import styles from './landing.module.css';
 import { Header } from '@/components/public-header';
 import { PublicRouteGuard } from '@/components/public-route-guard';
 import { SubscribeForm } from './subscribe-form';
+import { redirectPublicVisitorWithSessionHint } from '@/lib/public-session-entry';
 
 export const metadata: Metadata = {
   title: {
@@ -12,7 +13,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  await redirectPublicVisitorWithSessionHint();
+
   return (
     <PublicRouteGuard>
       <div className={styles.page}>

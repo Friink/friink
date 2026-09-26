@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T13:46:26Z — Tighten Top-Bar Counter Pill Padding
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Give top-bar counter text 2px of horizontal padding on each side.
+- Changes Made: Reduced shared message and notification counter-pill horizontal padding from 4px to 2px and updated both design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` and targeted CSS/documentation checks passed.
+
+## 2026-09-26T13:44:23Z — Add Fast Public-Entry Session Hint
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Add a browser-specific cookie hint so public entry can route signed-in clients to Home without waiting for an API status round trip.
+- Changes Made: Successful saved sessions set a non-sensitive, 30-day web-origin hint; clearing local auth removes it. Server-rendered `/` and `/subscriptions` redirect to `/home` when the hint is present. `/home` remains responsible for session validation, and the prior `/auth/entry-status` path remains when the hint is absent.
+- Files: `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`, `web/lib/auth.ts`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed. Local HTTP requests returned `200` without the hint and `307` to `/home` with it on both public routes. Staging acceptance remains pending.
+
 ## 2026-09-26T13:33:29Z — Center Top-Bar Counter Text Vertically
 
 - Agent: Codex
