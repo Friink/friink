@@ -270,7 +270,67 @@ type AuthErrorCode =
   | 'SESSION_NOT_FOUND'
   | 'REFRESH_TOKEN_MISSING'
   | 'REFRESH_TOKEN_INVALID'
-  | 'SESSION_REVOKED_SECURITY';
+  | 'SESSION_REVOKED_SECURITY'
+  | 'SESSION_TERMINATED'
+  | 'ACCOUNT_DEACTIVATED'
+  | 'ACCOUNT_PENDING_DELETION';
+
+export type SessionTerminationCause = 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion';
+type SessionTerminationNotice = { id: string; ownerTabId: string; accountSlot: string | null; cause: SessionTerminationCause; acknowledged: boolean; leaseUntil: number };
+const SESSION_TERMINATION_KEY = 'friink-session-termination';
+const SESSION_TAB_ID_KEY = 'friink-session-tab-id';
+const SESSION_TERMINATION_LEASE_MS = 8000;
+
+function sessionTabId(): string {
+  let tabId = window.sessionStorage.getItem(SESSION_TAB_ID_KEY);
+  if (!tabId) {
+    tabId = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    window.sessionStorage.setItem(SESSION_TAB_ID_KEY, tabId);
+  }
+  return tabId;
+}
+
+export function getSessionTerminationNotice(): SessionTerminationNotice | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const value = window.localStorage.getItem(SESSION_TERMINATION_KEY);
+    return value ? JSON.parse(value) as SessionTerminationNotice : null;
+  } catch {
+    return null;
+  }
+}
+
+export function claimSessionTermination(id: string): SessionTerminationNotice | null {
+  const notice = getSessionTerminationNotice();
+  if (!notice || notice.id !== id) return null;
+  const tabId = sessionTabId();
+  if (notice.ownerTabId !== tabId && notice.leaseUntil > Date.now()) return notice;
+  const claimed = { ...notice, ownerTabId: tabId, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS };
+  window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify(claimed));
+  return getSessionTerminationNotice();
+}
+
+export function isSessionTerminationOwner(id: string): boolean {
+  const notice = getSessionTerminationNotice();
+  return Boolean(notice && notice.id === id && notice.ownerTabId === sessionTabId());
+}
+
+export function renewSessionTerminationLease(id: string): void {
+  const notice = getSessionTerminationNotice();
+  if (!notice || notice.id !== id || notice.ownerTabId !== sessionTabId()) return;
+  window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify({ ...notice, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS }));
+}
+
+export function acknowledgeSessionTermination(id: string): void {
+  const notice = getSessionTerminationNotice();
+  if (!notice || notice.id !== id || notice.ownerTabId !== sessionTabId()) return;
+  window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify({ ...notice, acknowledged: true, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS }));
+}
+
+export function clearSessionTermination(id?: string): void {
+  const notice = getSessionTerminationNotice();
+  if (!id || notice?.id === id) window.localStorage.removeItem(SESSION_TERMINATION_KEY);
+}
 
 type ApiErrorBody = {
   detail?: string | { message?: string; code?: AuthErrorCode; cooldown_seconds?: number } | Array<{ msg?: string }>;
@@ -507,6 +567,7 @@ export async function confirmAccountDeletion(accessToken: string, challengeToken
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
   installAuthCoordinationListener();
+  clearSessionTermination();
   const previousAccountSlot = inMemoryAuthSession?.accountSlot;
   inMemoryAuthSession = session;
   cacheSafeSessionUser(session);
@@ -555,9 +616,19 @@ function preserveFailedAuthContext(error: unknown) {
   window.localStorage.removeItem(AUTH_SESSION_KEY);
   // Keep the selected slot and safe cached profile metadata for recovery UI;
   // no credential is retained after terminal refresh failure.
-  const status = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY' ? 'security' : 'expired';
-  authBroadcastChannel?.postMessage({ type: 'session-expired', accountSlot: accountSlot ?? null, status });
-  window.dispatchEvent(new CustomEvent('friink-session-expired', { detail: { accountSlot, status } }));
+  const code = error instanceof AuthApiError ? error.code : undefined;
+  const cause: SessionTerminationCause = code === 'SESSION_REVOKED_SECURITY' ? 'security'
+    : code === 'ACCOUNT_DEACTIVATED' ? 'deactivated'
+      : code === 'ACCOUNT_PENDING_DELETION' ? 'pending_deletion'
+        : code === 'SESSION_TERMINATED' ? 'terminated' : 'expired';
+  let notice = getSessionTerminationNotice();
+  if (!notice || notice.leaseUntil <= Date.now()) {
+    notice = { id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`, ownerTabId: sessionTabId(), accountSlot: accountSlot ?? null, cause, acknowledged: false, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS };
+    try { window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify(notice)); } catch { /* Continue with in-tab recovery if storage is unavailable. */ }
+  }
+  const detail = { accountSlot: accountSlot ?? null, cause: notice.cause, terminationId: notice.id, ownerTabId: notice.ownerTabId };
+  authBroadcastChannel?.postMessage({ type: 'session-expired', ...detail });
+  window.dispatchEvent(new CustomEvent('friink-session-expired', { detail }));
 }
 
 export function clearAuthSessionForRecovery(error: unknown) {
@@ -719,12 +790,7 @@ export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
         terminalFailure = refreshError;
       }
     }
-
-    const fallback = await restoreRememberedAccountWithFallback(accountSlot ? [accountSlot] : []);
-    if (fallback) {
-      saveAuthSession(fallback);
-      return fallback;
-    }
+    preserveFailedAuthContext(terminalFailure);
     throw terminalFailure;
   }
 }
@@ -874,7 +940,7 @@ function installAuthCoordinationListener() {
   if (typeof BroadcastChannel !== 'undefined') {
     authBroadcastChannel = new BroadcastChannel('friink-auth-session');
     authBroadcastChannel.addEventListener('message', (event: MessageEvent) => {
-      const message = event.data as { type?: string; accountSlot?: string | null; status?: 'expired' | 'security' } | null;
+      const message = event.data as { type?: string; accountSlot?: string | null; cause?: SessionTerminationCause; terminationId?: string; ownerTabId?: string } | null;
       if (message?.accountSlot !== (activeAccountSlot() ?? null)) return;
       if (message?.type === 'session-cleared') {
         authSessionGeneration += 1;
@@ -882,7 +948,7 @@ function installAuthCoordinationListener() {
       } else if (message?.type === 'session-expired') {
         authSessionGeneration += 1;
         inMemoryAuthSession = null;
-        window.dispatchEvent(new CustomEvent('friink-session-expired', { detail: { accountSlot: message.accountSlot ?? null, status: message.status ?? 'expired' } }));
+        window.dispatchEvent(new CustomEvent('friink-session-expired', { detail: { accountSlot: message.accountSlot ?? null, cause: message.cause ?? 'expired', terminationId: message.terminationId, ownerTabId: message.ownerTabId } }));
       } else if (message?.type === 'session-updated') {
         inMemoryAuthSession = null;
         window.dispatchEvent(new CustomEvent('friink-session-updated', { detail: { accountSlot: message.accountSlot ?? null } }));
@@ -2430,6 +2496,9 @@ export function isTerminalRefreshFailure(error: unknown): error is AuthApiError 
     error.code === 'REFRESH_TOKEN_MISSING' ||
     error.code === 'REFRESH_TOKEN_INVALID'
     || error.code === 'SESSION_REVOKED_SECURITY'
+    || error.code === 'SESSION_TERMINATED'
+    || error.code === 'ACCOUNT_DEACTIVATED'
+    || error.code === 'ACCOUNT_PENDING_DELETION'
   );
 }
 

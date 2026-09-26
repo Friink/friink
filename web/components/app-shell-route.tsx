@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, clearAuthSession, clearAuthSessionForRecovery, getCurrentUser, getLoginRecoveryPath, getRememberedAccountSummaries, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser } from '@/lib/auth';
+import { acknowledgeSessionTermination, AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getLoginRecoveryPath, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -29,6 +29,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
+  const [termination, setTermination] = useState<{ id: string; cause: SessionTerminationCause; owner: boolean } | null>(null);
   const [recoveryUsername, setRecoveryUsername] = useState<string | null>(null);
   const [recoveryAccounts, setRecoveryAccounts] = useState<AccountSummary[]>([]);
   const [restoringAccountSlot, setRestoringAccountSlot] = useState<string | null>(null);
@@ -50,7 +51,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }, []);
 
   useEffect(() => {
-    function handleSessionExpired() {
+    function handleSessionExpired(event: Event) {
+      const detail = (event as CustomEvent<{ accountSlot?: string | null; cause?: SessionTerminationCause; terminationId?: string }>);
       const cachedUser = loadCachedAuthUser();
       setRecoveryUsername(cachedUser?.username ?? null);
       setUser(null);
@@ -58,30 +60,62 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       setAuthCheckComplete(false);
       setSessionError(null);
       setRecoveryAccounts([]);
-      const failedSlot = loadAuthSession()?.accountSlot ?? getRememberedAccountSummaries().find((account) => account.active)?.accountSlot;
-      void (async () => {
-        try {
-          const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
-          if (fallback) {
-            saveAuthSession(fallback);
-            setUser(fallback.user);
-            setSessionReady(true);
-            setSessionError(null);
-            setAuthCheckComplete(true);
-            return;
-          }
-          clearAuthSession();
-          router.replace('/');
-        } catch {
-          setRecoveryAccounts(getRememberedAccountSummaries());
-          setSessionError('offline');
-          setAuthCheckComplete(true);
-        }
-      })();
+      const notice = getSessionTerminationNotice();
+      const id = detail.detail?.terminationId ?? notice?.id;
+      if (id) setTermination({ id, cause: detail.detail?.cause ?? notice?.cause ?? 'expired', owner: isSessionTerminationOwner(id) });
+      else setSessionError('expired');
+      setAuthCheckComplete(true);
     }
     window.addEventListener('friink-session-expired', handleSessionExpired);
     return () => window.removeEventListener('friink-session-expired', handleSessionExpired);
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (!termination) return;
+    const timer = window.setInterval(() => {
+      renewSessionTerminationLease(termination.id);
+      const notice = getSessionTerminationNotice();
+      if (!notice || notice.id !== termination.id) return;
+      if (notice.ownerTabId !== undefined && notice.leaseUntil <= Date.now()) {
+        const claimed = claimSessionTermination(termination.id);
+        if (claimed && isSessionTerminationOwner(termination.id)) {
+          setTermination((current) => current?.id === termination.id ? { ...current, owner: true } : current);
+          if (claimed.acknowledged) void completeTerminatedSession(termination.id, notice.accountSlot);
+        }
+      }
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [termination]);
+
+  async function completeTerminatedSession(id: string, failedSlot?: string | null) {
+    try {
+      const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
+      clearSessionTermination(id);
+      if (fallback) {
+        saveAuthSession(fallback);
+        setUser(fallback.user);
+        setSessionReady(true);
+        setSessionError(null);
+        setTermination(null);
+        setAuthCheckComplete(true);
+      } else {
+        clearAuthSession();
+        setTermination(null);
+        router.replace('/');
+      }
+    } catch {
+      setSessionError('offline');
+      setRecoveryAccounts(getRememberedAccountSummaries());
+      setAuthCheckComplete(true);
+    }
+  }
+
+  function acknowledgeTermination() {
+    if (!termination || !termination.owner || !isSessionTerminationOwner(termination.id)) return;
+    const notice = getSessionTerminationNotice();
+    acknowledgeSessionTermination(termination.id);
+    void completeTerminatedSession(termination.id, notice?.accountSlot);
+  }
 
   useEffect(() => {
     function handleAccountSwitched() {
@@ -131,8 +165,10 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           setSessionReady(false);
           setAuthCheckComplete(true);
           if (isTerminalRefreshFailure(error)) {
-            clearAuthSession();
-            router.replace('/');
+            clearAuthSessionForRecovery(error);
+            const notice = getSessionTerminationNotice();
+            if (notice) setTermination({ id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) });
+            else setSessionError('expired');
           } else {
             setSessionError('offline');
             setRecoveryUsername(cachedUser?.username ?? null);
@@ -167,12 +203,13 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         // requestApi owns refresh. A terminal refresh clears in-memory auth
         // while preserving safe recovery context; other 401s stay separate.
         if (error instanceof AuthApiError && isTerminalRefreshFailure(error)) {
-          if (loadAuthSession()) clearAuthSessionForRecovery(error);
-          const deliberateSecurityRevocation = error.code === 'SESSION_REVOKED_SECURITY';
           const cachedUser = loadCachedAuthUser();
           setRecoveryUsername(cachedUser?.username ?? null);
           setRecoveryAccounts(getRememberedAccountSummaries());
-          setSessionError(deliberateSecurityRevocation ? 'security' : 'expired');
+          clearAuthSessionForRecovery(error);
+          const notice = getSessionTerminationNotice();
+          if (notice) setTermination({ id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) });
+          else setSessionError('expired');
           setUser(null);
           setSessionReady(false);
           setAuthCheckComplete(true);
@@ -264,7 +301,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
 
   if (!user) {
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
-    return <SessionRecoveryScreen status={sessionError ?? 'offline'} appearance={appearance} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} onLogout={handleRecoveryLogout} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
+    return <SessionRecoveryScreen status={sessionError === 'offline' ? 'offline' : termination ? (termination.owner ? termination.cause : 'waiting') : sessionError ?? 'offline'} appearance={appearance} onAcknowledge={acknowledgeTermination} onRetry={() => { if (termination) { const notice = getSessionTerminationNotice(); void completeTerminatedSession(termination.id, notice?.accountSlot); } else { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); } }} onLogout={handleRecoveryLogout} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
   return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;

@@ -7,9 +7,10 @@ import { Modal } from '@/components/modal';
 import type { AccountSummary } from '@/lib/auth';
 
 type SessionRecoveryScreenProps = {
-  status: 'loading' | 'offline' | 'expired' | 'security';
+  status: 'loading' | 'offline' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
   appearance?: 'light' | 'dark' | 'system';
   onRetry?: () => void;
+  onAcknowledge?: () => void;
   onLogout?: () => void;
   accounts?: AccountSummary[];
   currentUsername?: string | null;
@@ -18,7 +19,7 @@ type SessionRecoveryScreenProps = {
   onRestoreAccount?: (account: AccountSummary) => void;
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onRetry, onLogout, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
+export function SessionRecoveryScreen({ status, appearance = 'system', onRetry, onAcknowledge, onLogout, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
   const [showAccounts, setShowAccounts] = useState(false);
   const orderedAccounts = [...accounts].sort((a, b) => Number(b.active) - Number(a.active) || b.lastUsedAt.localeCompare(a.lastUsedAt));
   if (status === 'loading') {
@@ -39,13 +40,15 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onRetry, 
         <Link className="lifecycle-home-link" href="/" aria-label="Return to Friink home"><FriinkLogo /></Link>
         <section className="lifecycle-card" aria-labelledby="session-recovery-title">
           <BrandLockup size="lg" />
-          <h1 id="session-recovery-title">We couldn’t restore this session.</h1>
-          <p>{status === 'offline' ? 'Friink is having trouble reconnecting. Your account has not been signed out.' : status === 'security' ? 'For your security, your session ended. Please sign in again.' : 'Your session has expired or is no longer available. Sign in again to continue.'}</p>
+          <h1 id="session-recovery-title">{status === 'waiting' ? 'Session ended' : status === 'offline' ? 'We couldn’t reconnect.' : 'This account session ended.'}</h1>
+          <p>{status === 'offline' ? 'Friink is having trouble reconnecting. Your account has not been signed out.' : status === 'waiting' ? 'Another tab will continue after the session notice is acknowledged.' : status === 'security' ? 'Your session was ended for security reasons.' : status === 'deactivated' ? 'This account was deactivated on another device.' : status === 'pending_deletion' ? 'This account is scheduled for deletion.' : status === 'terminated' ? 'This session was ended from another device.' : status === 'expired' ? 'This session is no longer valid.' : 'Your session has ended.'}</p>
           <div className={`lifecycle-actions session-recovery-actions${status === 'offline' ? ' session-recovery-actions-offline' : ' session-recovery-actions-terminal'}`}>
+            {status !== 'offline' && status !== 'waiting' && onAcknowledge ? <button className="button-primary" type="button" onClick={onAcknowledge}>Okay</button> : null}
+            {status === 'waiting' ? <span role="status">Waiting for another tab…</span> : null}
             {status === 'offline' && onRetry ? <button className="button-primary" type="button" onClick={onRetry}>Try again</button> : null}
-            {status !== 'offline' && currentUsername ? <Link className="button-primary" href={`/login?${new URLSearchParams({ account: currentUsername, reason: status === 'security' ? 'security-revocation' : 'expired' }).toString()}`}>Sign in as @{currentUsername}</Link> : <Link className="button-secondary" href="/login">Go to login</Link>}
-            {onLogout ? <button className="button-secondary" type="button" onClick={onLogout} disabled={!!restoringAccountSlot}>Log out</button> : null}
-            {accounts.length > 0 && onRestoreAccount ? <button className="button-secondary" type="button" disabled={!!restoringAccountSlot} aria-haspopup="dialog" aria-expanded={showAccounts} onClick={() => setShowAccounts(true)}>Choose another remembered account</button> : null}
+            {status === 'offline' ? <Link className="button-secondary" href="/login">Go to login</Link> : null}
+            {status === 'offline' && onLogout ? <button className="button-secondary" type="button" onClick={onLogout} disabled={!!restoringAccountSlot}>Log out</button> : null}
+            {status === 'offline' && accounts.length > 0 && onRestoreAccount ? <button className="button-secondary" type="button" disabled={!!restoringAccountSlot} aria-haspopup="dialog" aria-expanded={showAccounts} onClick={() => setShowAccounts(true)}>Choose another remembered account</button> : null}
           </div>
         </section>
       </main>

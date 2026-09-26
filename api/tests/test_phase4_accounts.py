@@ -138,7 +138,7 @@ def test_slot_access_cookie_survives_reload_without_refresh_and_honors_revocatio
 
         rejected = client.get("/auth/me", headers={"X-Friink-Account-Slot": slot})
         assert rejected.status_code == 401, rejected.text
-        assert rejected.json()["detail"]["code"] == "SESSION_NOT_FOUND"
+        assert rejected.json()["detail"]["code"] == "SESSION_TERMINATED"
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id == user_id))

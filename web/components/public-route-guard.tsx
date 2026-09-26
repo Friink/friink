@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { clearAuthSession, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
+import { clearAuthSessionForRecovery, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -28,7 +28,8 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
       } catch (error) {
         if (!active) return;
         if (isTerminalRefreshFailure(error)) {
-          clearAuthSession();
+          clearAuthSessionForRecovery(error);
+          router.replace('/home');
           return;
         }
         if (cachedUser) {

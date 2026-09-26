@@ -559,6 +559,10 @@ async def refresh(
         if not refresh_token:
             slot_auth_session = session.get(AuthSession, slot.auth_session_id)
             slot_user = session.get(User, slot.user_id)
+            if slot_user and slot_user.lifecycle_status != "active":
+                lifecycle_code = AuthErrorCode.ACCOUNT_PENDING_DELETION if slot_user.lifecycle_status == "pending_deletion" else AuthErrorCode.ACCOUNT_DEACTIVATED
+                lifecycle_message = "This account is scheduled for deletion." if slot_user.lifecycle_status == "pending_deletion" else "This account has been deactivated."
+                raise HTTPException(status_code=401, detail=auth_error_detail(lifecycle_message, lifecycle_code))
             if not slot_auth_session or slot_auth_session.revoked_at is not None or not slot_user or slot_user.account_locked or slot_user.lifecycle_status != "active":
                 raise HTTPException(status_code=401, detail=auth_error_detail("Invalid account session.", AuthErrorCode.SESSION_NOT_FOUND))
             issued_refresh = issue_refresh_token(session, slot_user.id, settings, session_id=slot_auth_session.id)
@@ -605,6 +609,11 @@ async def refresh(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
             )
+        if token_record.revoked_at is not None:
+            revocation_reason = token_record.revocation_reason or ""
+            revoked_code = AuthErrorCode.ACCOUNT_DEACTIVATED if revocation_reason == "account_deactivated" else AuthErrorCode.ACCOUNT_PENDING_DELETION if revocation_reason == "account_pending_deletion" else AuthErrorCode.TOKEN_EXPIRED if revocation_reason == "expired" else AuthErrorCode.SESSION_TERMINATED
+            revoked_message = "This account has been deactivated." if revoked_code == AuthErrorCode.ACCOUNT_DEACTIVATED else "This account is scheduled for deletion." if revoked_code == AuthErrorCode.ACCOUNT_PENDING_DELETION else "Your session has expired." if revoked_code == AuthErrorCode.TOKEN_EXPIRED else "This session was terminated remotely."
+            raise HTTPException(status_code=401, detail=auth_error_detail(revoked_message, revoked_code))
         replacement = session.get(type(token_record), token_record.replaced_by_id) if token_record.replaced_by_id else None
         same_refresh_operation = bool(
             refresh_operation_id
@@ -645,7 +654,13 @@ async def refresh(
             token_record.reuse_grace_used_at = token_record.reuse_grace_used_at or now
             user = session.get(User, token_record.user_id)
             auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
-            if not user or user.account_locked or user.lifecycle_status != "active" or (auth_session and auth_session.revoked_at is not None):
+            if user and user.lifecycle_status != "active":
+                lifecycle_code = AuthErrorCode.ACCOUNT_PENDING_DELETION if user.lifecycle_status == "pending_deletion" else AuthErrorCode.ACCOUNT_DEACTIVATED
+                lifecycle_message = "This account is scheduled for deletion." if user.lifecycle_status == "pending_deletion" else "This account has been deactivated."
+                raise HTTPException(status_code=401, detail=auth_error_detail(lifecycle_message, lifecycle_code))
+            if auth_session and auth_session.revoked_at is not None:
+                raise HTTPException(status_code=401, detail=auth_error_detail("This session was terminated remotely.", AuthErrorCode.SESSION_TERMINATED))
+            if not user or user.account_locked:
                 if user and user.account_locked:
                     revoke_refresh_family(session, token_record.family_id, "account_locked", now)
                     await commit(session)
@@ -742,7 +757,11 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.SESSION_NOT_FOUND),
         )
-    if user.account_locked or user.lifecycle_status != "active":
+    if user.lifecycle_status != "active":
+        lifecycle_code = AuthErrorCode.ACCOUNT_PENDING_DELETION if user.lifecycle_status == "pending_deletion" else AuthErrorCode.ACCOUNT_DEACTIVATED
+        lifecycle_message = "This account is scheduled for deletion." if user.lifecycle_status == "pending_deletion" else "This account has been deactivated."
+        raise HTTPException(status_code=401, detail=auth_error_detail(lifecycle_message, lifecycle_code))
+    if user.account_locked:
         revoke_refresh_family(session, token_record.family_id, "account_locked", now)
         await commit(session)
         raise HTTPException(
@@ -751,7 +770,7 @@ async def refresh(
         )
     auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
     if auth_session and auth_session.revoked_at is not None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("This session was terminated remotely.", AuthErrorCode.SESSION_TERMINATED))
     if auth_session:
         auth_session.last_active_at = now
     rotation_key_id = settings.jwt_active_kid
@@ -1027,6 +1046,10 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
         )
+    if user.lifecycle_status != "active":
+        lifecycle_code = AuthErrorCode.ACCOUNT_PENDING_DELETION if user.lifecycle_status == "pending_deletion" else AuthErrorCode.ACCOUNT_DEACTIVATED
+        lifecycle_message = "This account is scheduled for deletion." if user.lifecycle_status == "pending_deletion" else "This account has been deactivated."
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail(lifecycle_message, lifecycle_code))
     session_id_raw = payload.get("sid")
     auth_session = None
     if session_id_raw:
@@ -1035,7 +1058,9 @@ async def get_current_user(
         except ValueError as exc:
             raise HTTPException(status_code=401, detail=auth_error_detail("Invalid access token.", AuthErrorCode.TOKEN_SCHEMA_INVALID)) from exc
         auth_session = session.get(AuthSession, auth_session_id)
-        if not auth_session or auth_session.user_id != user.id or auth_session.revoked_at is not None:
+        if auth_session and auth_session.user_id == user.id and auth_session.revoked_at is not None:
+            raise HTTPException(status_code=401, detail=auth_error_detail("This session was terminated remotely.", AuthErrorCode.SESSION_TERMINATED))
+        if not auth_session or auth_session.user_id != user.id:
             raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer active.", AuthErrorCode.SESSION_NOT_FOUND))
     if account_slot and auth_session:
         slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
@@ -1047,8 +1072,6 @@ async def get_current_user(
     # Lifecycle deactivation is intentionally stricter than ordinary lockout:
     # RULES.md requires inactive accounts to reject already-issued access JWTs,
     # while an ordinary account lock leaves those JWTs valid until expiry.
-    if user.lifecycle_status != "active":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid access token.", AuthErrorCode.SESSION_NOT_FOUND))
     return user
 
 
