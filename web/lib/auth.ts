@@ -985,7 +985,17 @@ async function coordinateRefreshWithStorageLease(slot: string | null, persist: b
       }
     }
 
-    const operationId = `${tabId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    // The API uses this ID to replay the same refresh result after a response
+    // is lost. Keep it when the previous request may have reached the server,
+    // including across a hard page reload that outlives the lease.
+    const previousErrorStatus = existing?.error?.status;
+    const previousRequestMayHaveCommitted = existing && (
+      existing.status === 'refreshing'
+      || (existing.status === 'failed' && (previousErrorStatus === 0 || (previousErrorStatus !== undefined && previousErrorStatus >= 500)))
+    );
+    const operationId = previousRequestMayHaveCommitted
+      ? existing.operationId
+      : `${tabId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const started: RefreshCoordinationState = {
       operationId,
       ownerId: tabId,
@@ -1024,7 +1034,10 @@ async function performRefresh(generation: number, operationId: string, slot: str
   const currentSession = loadedSession?.accountSlot === slot ? loadedSession : null;
   const response = await requestApi<{ access_token: string; token_type: string; account_slot?: string }>('/auth/refresh', {
     method: 'POST',
-    headers: slot ? { 'X-Friink-Account-Slot': slot } : undefined,
+    headers: {
+      ...(slot ? { 'X-Friink-Account-Slot': slot } : {}),
+      'X-Friink-Refresh-Operation-Id': operationId,
+    },
     authContext: 'refresh_exchange',
     skipAuthRefresh: true,
   });

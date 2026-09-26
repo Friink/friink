@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-25T01:20:58Z
+**Last edited:** 2026-09-25T22:18:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -514,33 +514,76 @@ control remains visible when account labels are long.
 
 #### Implementation plan and rollout status
 
-Remaining web/API work and planned reliability fixes are:
+The priority reliability proposal and deferred workstreams are:
 
-1. **Diagnose and fix the Add account limit mismatch.** Compare the same
+1. **Make refresh retries recoverable (implemented locally; staging pending;
+   BUG-AUTH-003 and BUG-AUTH-006).** A refresh request that has committed its
+   rotation must be safely retryable if the browser reload interrupts delivery
+   of the response cookie. A retry within the bounded recovery period must
+   recover the same committed result and must not create another independently
+   usable token in the family. The API now derives each rotated successor with
+   a keyed HMAC from its parent token and records the derivation key ID on the
+   successor row. The API accepts a refresh operation ID and records it on the
+   rotated parent. A retry with that same ID can reproduce and resend the same
+   successor during the grace period; only the SHA-256 hash is stored. Keep the
+   referenced JWT key ID configured through the grace period. Calls without an
+   operation ID retain the one-time legacy grace behavior. The web app now
+   persists the operation ID per account slot before sending the request,
+   reuses it after an interrupted or ambiguous refresh, and sends it in
+   `X-Friink-Refresh-Operation-Id`, while retaining one captured account slot
+   and cross-tab coordination.
+   HttpOnly cookie names, scope, and browser-readable storage are unchanged.
+   Verify reload interruption before and after the API commit, response loss,
+   concurrent same-slot tabs, and repeated stale-token presentation; each case
+   must leave at most one usable refresh token per family and preserve the
+   selected account. Staging acceptance is still required.
+2. **Defer the Add account limit mismatch investigation.** Compare the same
    browser's `friink_device_id` context across `GET /auth/accounts`,
    `GET /auth/accounts/add-availability`, and the final Add account login
    request. Inspect the configured `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value
    and redacted account-slot logs. Reproduce after repeated refreshes, normal
    login, switching, and logout. The fix must preserve the active account when
    an Add account attempt fails and must prove that refreshes do not create
-   duplicate slots.
-2. **Isolate multi-account client state.** Scope cached user metadata,
-   active-account state, refresh coordination, refresh locks, and cross-tab
-   notifications by account slot. Stale or delayed responses must not restore
-   the wrong account, and explicit logout/removal fallback behavior must remain
-   intact.
-3. **Terminal-session recovery.** Implemented locally: confirmed terminal
+   duplicate slots. Resume after refresh stability is verified.
+3. **Defer broader multi-account client-state isolation work.** Scope cached
+   user metadata, active-account state, refresh coordination, refresh locks,
+   and cross-tab notifications by account slot. Stale or delayed responses
+   must not restore the wrong account, and explicit logout/removal fallback
+   behavior must remain intact. Existing captured-slot coordination remains
+   in use for the refresh repair; defer unrelated expansion until that repair
+   passes staging.
+4. **Terminal-session recovery.** Implemented locally: confirmed terminal
    failure falls back by last use, while ambiguous failures remain in recovery.
    Explicit account choice is still available in the shared modal.
-4. **Reload-time token stability and public entry.** Implemented locally with
-   slot-scoped access cookies, cookie-first restoration, reactive refresh,
-   allowed-Origin checks, and immediate public rendering. Staging acceptance is
-   pending under BUG-AUTH-003 and BUG-AUTH-002.
+5. **Reload-time token stability and public entry.** The access-cookie and
+   cookie-first restoration changes are deployed to staging, but user
+   reproduction shows that interrupting reload during restoration can end the
+   session. The refresh retry proposal above must be implemented and accepted
+   under BUG-AUTH-003 and BUG-AUTH-006; public-entry acceptance remains tracked
+   under BUG-AUTH-002.
+6. **Defer client-bound session validation.** The proposed security change was
+   for every authenticated client context (for example, a browser profile or
+   mobile app installation) to have a reusable opaque client identifier, with
+   every auth session associated with that client. The conceptual per-user
+   “userspace” is only a collection of that user's sessions; it does not need
+   its own database entity. Each login creates a disposable session UUID, while
+   logging out and back in from the same client may reuse its client identifier
+   and create a new session UUID. Session validation would confirm both the
+   active session ID and proof of its associated client credential; a public
+   client identifier alone would not authorize requests. The contract would be
+   client-type-neutral and would not rely on a hardware fingerprint. Define
+   issuance, rotation/recovery, multi-tab behavior, and mobile secure storage
+   before implementation. Add migration and replay-from-another-client
+   verification requirements. Defer this until the refresh flow is stable; it
+   is not part of the current session repair. Current ordinary access-token
+   validation checks the JWT and active `sid` without requiring the
+   recognized-device cookie.
 
-The earlier Add-account limit and account-state-isolation workstreams remain
-subject to their existing verification requirements. Reload-stability and
-public-entry changes are implemented locally; production-parity staging
-acceptance remains required before release.
+The deferred Add-account and broader account-state workstreams remain recorded
+for later resumption. The focused refresh-token test module, web type-check,
+targeted lint, and whitespace check pass locally. The staging migration is
+applied and Alembic reports no schema drift. API/web deployment and browser
+acceptance remain required before release.
 
 ## 5. Cross-subunit behavior
 
@@ -630,6 +673,12 @@ logs.
 - Implemented locally: explicit multi-account recovery after terminal refresh
   failure, captured per-slot client coordination, and persisted refresh recency.
   Automated verification and staging browser acceptance remain pending.
+- The refresh-retry change has local API regression coverage for repeated
+  same-operation requests and refresh-family row count. The staging schema is
+  migrated; API/web deployment and browser verification remain required.
+- Staging session reliability is not accepted: interrupting page reload during
+  session restoration can end the session. The local retry implementation and
+  its verification gate are tracked in BUG-AUTH-003 and BUG-AUTH-006.
 - Open staging verification: Add account previously reported a full
   remembered-account limit while the browser showed only one account; the
   local fix and regression test are recorded in [`docs/notes.md`](../notes.md).
@@ -639,6 +688,8 @@ logs.
 - [ ] Implement identity normalization, validation, uniqueness, and privacy.
 - [ ] Implement signup, verification, login, risk challenges, and recovery.
 - [ ] Implement access-token validation and refresh rotation.
+- [ ] Verify the local refresh-retry recovery without token-family forks under
+      reload interruption and concurrent-tab behavior on staging.
 - [ ] Implement terminal versus ambiguous failure handling.
 - [ ] Implement active-session listing and revocation.
 - [ ] Implement device recognition and account slots.
@@ -682,3 +733,14 @@ project-wide history. This section records changes specific to this unit.
   retain app access while a valid remembered session exists, fall back by
   most-recent use after confirmed session end, and keep recoverable failures
   inside recovery. No behavior changed.
+- 2026-09-25T22:02:29Z — Deferred the add-account mismatch follow-up, broader
+  account-state isolation, and client-bound session project while documenting
+  the proposed API/web refresh-retry redesign.
+- 2026-09-25T22:18:00Z — Added deterministic refresh successors and API support
+  for retry operation IDs, retaining only the successor hash plus derivation
+  key ID and operation ID in the database. Cookie names and storage contracts
+  are unchanged.
+- 2026-09-25T22:27:54Z — Persisted per-slot web refresh operation IDs before
+  requests, reused them after interrupted or ambiguous attempts, and sent them
+  to the API. The focused refresh-token tests, web type-check, and targeted
+  lint have since passed locally; staging acceptance remains pending.

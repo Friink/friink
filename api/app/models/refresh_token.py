@@ -21,6 +21,8 @@ class RefreshToken(Base):
     )
     family_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     token_hash: Mapped[bytes] = mapped_column(LargeBinary(length=32), nullable=False, unique=True)
+    derivation_key_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rotation_operation_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     replaced_by_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("refresh_tokens.id", ondelete="SET NULL"), nullable=True
     )

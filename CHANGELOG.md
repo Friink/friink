@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-09-26T10:50:59Z
+- [account-access] Applied Alembic migration `20260925_0059` to the staging
+  database using `api/.env.staging`; confirmed revision at head and no schema
+  drift. API/web code was not deployed; staging browser acceptance remains.
+
+## 2026-09-26T10:39:52Z
+- [account-access] Added an API regression test proving same-operation retries
+  replay the same refresh cookie without forking the token family. Moved the
+  refresh audit write after the rotation commit and corrected the legacy grace
+  revocation call. Refresh tests, web type-check/lint, migration graph, and
+  diff checks pass locally; no shared database was migrated.
+
+## 2026-09-25T22:27:54Z
+- [account-access] Persisted the refresh operation ID per account slot before
+  sending a refresh request, reused it after interrupted or ambiguous attempts,
+  and sent it to the API. Automated verification and staging acceptance remain
+  pending; cookie names and scope are unchanged.
+
+## 2026-09-25T22:18:00Z
+- [account-access] Added deterministic refresh successors and API support for
+  refresh operation IDs. Matching retries can resend the same refresh cookie
+  without storing the raw token or forking the token family. Added nullable
+  derivation-key and operation-ID columns. Web persistence of operation IDs,
+  automated and staging verification remain open.
+
+## 2026-09-25T22:04:01Z
+- [account-access] Deferred the add-account limit follow-up, broader
+  multi-account state isolation, and client-bound session project. Documented
+  the proposed API/web refresh-retry redesign, preserved the current cookie
+  contract, and recorded that staging session acceptance is still failing.
+
+## 2026-09-25T21:57:46Z
+- [account-access] Updated BUG-AUTH-003 with the user's reproduction that
+  repeatedly interrupting page reload during session restoration can end the
+  session. The exact browser request/response timing remains to be captured.
+
+## 2026-09-25T21:47:34Z
+- [account-access] Added BUG-AUTH-006 documenting that refresh-token grace
+  replay can create multiple usable replacement rows in one token family.
+  Recorded the confirmed API behavior separately from the still-unknown
+  staging request origin.
+
+## 2026-09-25T04:26:37Z
+- [account-access] Clarified the planned client-bound session model: a user's
+  conceptual userspace is just a collection of sessions, client identity may
+  persist across logins, and each login receives a distinct session UUID.
+  Validation must require proof of the associated client credential.
+
+## 2026-09-25T04:16:13Z
+- [account-access] Recorded a planned client-bound session validation change:
+  each browser/mobile client context must have an opaque client identifier,
+  and API validation must require that identifier together with the active
+  session. Documented that this is not implemented and listed design and
+  verification requirements.
+
 ## 2026-09-25T01:20:58Z
 - [account-access/navigation] Restarted the stale local API process with the
   current staging configuration. Browser smoke checks confirmed auth recovery

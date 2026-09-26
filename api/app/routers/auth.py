@@ -67,10 +67,12 @@ from app.services.session_service import (
     DEVICE_COOKIE_NAME,
     create_auth_session,
     device_signals_changed,
+    derive_rotated_refresh_token,
     get_recognized_device,
     get_or_create_recognized_device,
     get_refresh_token,
     get_refresh_token_for_update,
+    hash_refresh_token,
     issue_refresh_token,
     list_active_auth_sessions,
     revoke_auth_session,
@@ -99,6 +101,7 @@ REFRESH_COOKIE_NAME = "friink_refresh_token"
 ACCESS_COOKIE_NAME = "friink_access_token"
 ACCOUNT_SLOT_HEADER = "X-Friink-Account-Slot"
 ACCOUNT_FLOW_HEADER = "X-Friink-Account-Flow"
+REFRESH_OPERATION_HEADER = "X-Friink-Refresh-Operation-Id"
 ADD_ACCOUNT_FLOW = "add-account"
 
 
@@ -541,6 +544,12 @@ async def refresh(
     settings: Settings = Depends(get_settings),
 ) -> RefreshResponse:
     require_allowed_origin(request, settings)
+    refresh_operation_id = request.headers.get(REFRESH_OPERATION_HEADER)
+    if refresh_operation_id is not None and (
+        not 1 <= len(refresh_operation_id) <= 128
+        or any(not (character.isascii() and (character.isalnum() or character in "._-")) for character in refresh_operation_id)
+    ):
+        raise HTTPException(status_code=400, detail="Invalid refresh operation identifier.")
     account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
     if account_slot:
         refresh_token = request.cookies.get(f"friink_refresh_{account_slot}")
@@ -597,17 +606,43 @@ async def refresh(
                 detail=auth_error_detail("For your security, your session ended. Please sign in again.", AuthErrorCode.SESSION_REVOKED_SECURITY),
             )
         replacement = session.get(type(token_record), token_record.replaced_by_id) if token_record.replaced_by_id else None
+        same_refresh_operation = bool(
+            refresh_operation_id
+            and token_record.rotation_operation_id == refresh_operation_id
+        )
+        recoverable_refresh_token: str | None = None
+        if replacement and replacement.derivation_key_id:
+            recovery_key = settings.jwt_verification_keys.get(replacement.derivation_key_id)
+            if not recovery_key:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Refresh recovery is temporarily unavailable.",
+                )
+            recoverable_refresh_token = derive_rotated_refresh_token(
+                refresh_token,
+                token_record,
+                replacement.derivation_key_id,
+                recovery_key,
+            )
+            if not secrets.compare_digest(
+                hash_refresh_token(recoverable_refresh_token), replacement.token_hash
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Refresh recovery is temporarily unavailable.",
+                )
         grace_is_valid = (
             token_record.rotated_at is not None
             and token_record.revoked_at is None
-            and token_record.reuse_grace_used_at is None
+            and (same_refresh_operation or token_record.reuse_grace_used_at is None)
             and (now - token_record.rotated_at).total_seconds() <= settings.refresh_token_reuse_grace_seconds
             and replacement is not None
+            and replacement.rotated_at is None
             and replacement.revoked_at is None
             and replacement.expires_at > now
         )
         if grace_is_valid:
-            token_record.reuse_grace_used_at = now
+            token_record.reuse_grace_used_at = token_record.reuse_grace_used_at or now
             user = session.get(User, token_record.user_id)
             auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
             if not user or user.account_locked or user.lifecycle_status != "active" or (auth_session and auth_session.revoked_at is not None):
@@ -625,7 +660,22 @@ async def refresh(
                 slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
                 if slot:
                     slot.last_used_at = now
-            issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
+            if same_refresh_operation and recoverable_refresh_token is not None:
+                replay_refresh_token = recoverable_refresh_token
+            else:
+                # Compatibility path for rows rotated before deterministic
+                # successors were introduced. Replace, rather than fork, the
+                # already-issued child during its single legacy grace replay.
+                if replacement:
+                    revoke_refresh_token(session, replacement, "refresh_retry_recovered", now)
+                issued_refresh = issue_refresh_token(
+                    session,
+                    user.id,
+                    settings,
+                    family_id=token_record.family_id,
+                    session_id=token_record.session_id,
+                )
+                replay_refresh_token = issued_refresh.raw_token
             access_token = create_access_token(user.id, user.security_epoch, token_record.session_id)
             await commit(session)
             log_refresh_token_event(
@@ -637,9 +687,9 @@ async def refresh(
                 reason="immediately_previous_token",
             )
             if account_slot:
-                set_account_refresh_cookie(response, account_slot, issued_refresh.raw_token, settings)
+                set_account_refresh_cookie(response, account_slot, replay_refresh_token, settings)
             else:
-                set_refresh_cookie(response, issued_refresh.raw_token, settings)
+                set_refresh_cookie(response, replay_refresh_token, settings)
             set_access_cookie(response, access_token, settings, account_slot)
             return RefreshResponse(access_token=access_token, account_slot=account_slot)
         revoke_refresh_family(session, token_record.family_id, "reuse_detected", now)
@@ -704,10 +754,32 @@ async def refresh(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID))
     if auth_session:
         auth_session.last_active_at = now
-    issued_refresh = issue_refresh_token(session, user.id, settings, family_id=token_record.family_id, session_id=token_record.session_id)
+    rotation_key_id = settings.jwt_active_kid
+    rotation_key = settings.jwt_signing_key
+    rotated_refresh_token = derive_rotated_refresh_token(
+        refresh_token,
+        token_record,
+        rotation_key_id,
+        rotation_key,
+    )
+    issued_refresh = issue_refresh_token(
+        session,
+        user.id,
+        settings,
+        family_id=token_record.family_id,
+        session_id=token_record.session_id,
+        raw_token=rotated_refresh_token,
+        derivation_key_id=rotation_key_id,
+    )
     token_record.rotated_at = now
     token_record.replaced_by_id = issued_refresh.record.id
+    token_record.rotation_operation_id = refresh_operation_id
     access_token = create_access_token(user.id, user.security_epoch, token_record.session_id)
+    if account_slot:
+        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
+        if slot:
+            slot.last_used_at = now
+    await commit(session)
     record_security_event_safely(
         session,
         event_type=SecurityEventType.refresh,
@@ -716,13 +788,6 @@ async def refresh(
         session_id=token_record.session_id,
         payload={"kind": "refresh"},
     )
-
-
-    if account_slot:
-        slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
-        if slot:
-            slot.last_used_at = now
-    await commit(session)
     log_token_issued(flow="refresh_exchange", token_type="access", token=access_token, user_id=str(user.id))
     log_refresh_token_event(
         event="auth_refresh_token_rotated",

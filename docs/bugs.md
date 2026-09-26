@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-25T01:35:14Z
+**Last edited:** 2026-09-25T22:18:00Z
 
 ## Instructions for agents
 
@@ -77,7 +77,7 @@ Copy this template for a new defect and replace every placeholder:
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
 - **Status:** In progress
-- **Reported/updated:** 2026-09-24T22:54:37Z
+- **Reported/updated:** 2026-09-25T21:56:59Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
 - **Severity:** high
@@ -109,6 +109,8 @@ session failures on production as well:
    captured.
 6. Earlier staging reproduction showed an unrequested switch to `@admin`; see
    BUG-AUTH-004 for the independent account-ordering defect.
+7. The user reports that repeatedly refreshing the page and interrupting the
+   reload while the session is restoring eventually kills the session.
 
 ### Expected behavior
 
@@ -143,6 +145,12 @@ session survives.
 - **Confirmed in API behavior:** Re-presenting a rotated token after its
   single-use grace has been consumed revokes its token family and returns a
   terminal `401 REFRESH_TOKEN_INVALID`; this reuse protection remains enabled.
+- **Confirmed from user reproduction:** Repeatedly reloading and interrupting
+  session restoration can end the session. This is consistent with interrupting
+  a refresh exchange after its database commit but before the browser receives
+  the replacement cookie: the browser can retain the old cookie and retry it.
+  The exact request and response timing still needs capture in the browser
+  network trace.
 - **Confirmed in web implementation:** Full document entry without an
   in-memory session calls the refresh endpoint. The documented reactive-refresh
   rule does not currently describe this bootstrap exception; see AUTH-R-008.
@@ -155,10 +163,9 @@ session survives.
   responses are checked against the still-active slot before persistence.
 - **Open questions:** The persisted records prove that the same rotated token
   was presented repeatedly and that Phase could not be restored. They do not
-  identify whether the repeated requests came from concurrent tabs, a response
-  lost after the database commit, a reload that interrupted an in-flight
-  request, or another stale-cookie retry. The database does not retain every
-  HTTP refresh failure or browser request identifier.
+  identify whether the repeated requests came from concurrent tabs, an
+  interrupted refresh response, or another stale-cookie retry. The database
+  does not retain every HTTP refresh failure or browser request identifier.
   The transient reconnect screen may be related to a lost response, but that
   link is not proven by the stored events. Neon cold start alone is not
   established as the cause.
@@ -240,6 +247,102 @@ origin of the duplicate requests.
 - [`POST /auth/refresh`](../api/app/routers/auth.py)
 - [Refresh-token reuse model](../api/app/models/refresh_token.py)
 - [Account-slot ordering](../api/app/services/account_slots.py)
+
+## BUG-AUTH-006 — Refresh grace replay forks token family
+
+- **Status:** In progress
+- **Reported/updated:** 2026-09-26T10:39:52Z
+- **Affected area:** API refresh-token rotation and retry-grace handling
+- **Environment:** All environments running the current implementation
+- **Severity:** High
+
+### Bug summary
+
+A concurrent or retried refresh request presenting a just-rotated token can
+cause the API to issue a second active replacement in the same refresh-token
+family. This makes one session family contain multiple usable refresh tokens.
+
+### Reproduction
+
+1. Present an active refresh token to `POST /auth/refresh` and allow the API to
+   commit its rotation, creating replacement A.
+2. Within the configured grace period, present the original token again.
+3. Inspect the rows for that family. The grace branch creates replacement B
+   while replacement A remains unrevoked and unrotated.
+
+### Expected behavior
+
+A retry of a refresh operation should recover its committed result without
+creating a second independently usable refresh token in the family.
+
+### Actual behavior before the local fix
+
+The API creates another refresh-token row in the same family during grace
+handling. Both the original replacement and the grace replacement can remain
+usable until one is rotated or the family is revoked.
+
+### Root cause
+
+- **Confirmed:** `POST /auth/refresh` locks the presented row. After one request
+  rotates it and commits, another presentation may enter the grace branch.
+  That branch sets `reuse_grace_used_at` and calls `issue_refresh_token()` with
+  the same `family_id`, but does not revoke the first replacement or link the
+  newly issued row as the replacement. `refresh_tokens` has a non-unique family
+  index and no constraint limiting a family to one active token.
+- **Open questions:** Whether this exact branch caused the staging incident in
+  BUG-AUTH-003 is not established. The recorded reuse events prove stale-token
+  replay and family revocation, but do not identify the originating browser
+  requests.
+
+### Proposed fix
+
+Make grace retries idempotent so they recover the already-committed refresh
+result instead of forking the family. Preserve refresh-token hashing at rest
+and bounded family-reuse detection.
+
+### Local implementation and remaining acceptance
+
+Normal refresh now derives the successor deterministically with keyed HMAC
+using the parent token, row/family IDs, and the configured signing-key ID. The
+  child row stores its derivation-key ID alongside the SHA-256 token hash, and
+  the parent stores the refresh operation ID supplied by the client. A grace retry with the same
+operation ID can reconstruct and resend the same cookie without creating a
+second row. Stale-token retries without a matching operation ID retain the
+one-time legacy grace path; stale-token use after the window still revokes the
+family. Existing pre-change rows retain that compatibility path. The refresh
+audit event is now written after the rotation transaction commits, and the
+legacy grace branch uses the correct revocation helper arguments. Migration
+`20260925_0059` is applied to staging and Alembic reports no schema drift; the
+API/web code remains local pending deployment and browser acceptance.
+
+### Tests and verification
+
+- **Required:** Cover concurrent presentations of one refresh token and a
+  successful rotation whose response is lost. After grace recovery, verify
+  repeated retries carrying the same operation ID return the same replacement
+  and leave at most one usable refresh token in the family; verify stale-token
+  use after grace still revokes the family. Verify key retention through the
+  grace period and migration compatibility for pre-change rows.
+- **Completed:** The focused refresh-token test module passes all three tests
+  on disposable SQLite, including a real FastAPI request/response check and
+  repeated same-operation retries returning the same refresh cookie with one
+  active token in the family. Python compilation and `git diff --check` pass;
+  web TypeScript and targeted lint checks pass. The staging schema is at the
+  migration head with no Alembic drift; staging API/web acceptance remains
+  pending.
+
+### Noteworthy
+
+This is an API rotation-logic defect with a related database constraint gap.
+It is tracked separately from BUG-AUTH-003 because the client-side trigger for
+the staging replay sequence remains unknown.
+
+### Related documentation and implementation
+
+- [Reload/session continuity bug](#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
+- [Account Access unit](units/account-access.md)
+- [`POST /auth/refresh`](../api/app/routers/auth.py)
+- [Refresh-token model](../api/app/models/refresh_token.py)
 
 ## BUG-AUTH-005 — Failed account switch shows sign-in for the previous account
 

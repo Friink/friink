@@ -1,5 +1,153 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T10:50:59Z — Apply refresh retry migration to staging
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Apply the required staging schema update using the connection
+  string in `.env.staging`.
+- Changes Made: Verified `.env.staging` resolves to the staging environment
+  and uses a database URL/host/name pair different from `.env`. Applied
+  migration `20260925_0059` with the repository pre-deploy gate and verified
+  `alembic current` is at head with no schema drift. API/web code was not
+  deployed and no staging auth requests were sent.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: Staging migration gate passed; post-migration revision
+  and `alembic check` passed. Browser acceptance remains pending.
+
+## 2026-09-26T10:39:52Z — Verify refresh retry and fix API transaction defects
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Complete local development and verification of the API, web,
+  and cookie portions of the session-stability fix before staging.
+- Changes Made: Added an API regression test for repeated same-operation stale
+  cookie retries; moved the refresh security-event write after rotation commit;
+  corrected the legacy grace-token revocation call. Confirmed the documented
+  per-slot HttpOnly access-cookie restore behavior already exists. Asked the
+  user to specify any additional desired cookie behavior because the current
+  plan preserves cookie names and scope.
+- Files: `api/app/routers/auth.py`, `api/tests/test_refresh_token_rotation.py`,
+  `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Three refresh-token API tests pass on disposable
+  SQLite; web `npx tsc --noEmit --incremental false` and `npx eslint lib/auth.ts`
+  pass; API modules compile; `alembic heads` reports `20260925_0059` as head;
+  `git diff --check` passes. No shared database was migrated and staging
+  acceptance remains pending.
+
+## 2026-09-25T22:27:54Z — Persist web refresh retry operation IDs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Continue the session-stability fix with the web app changes.
+- Changes Made: Persisted/reused the per-slot refresh operation ID across an
+  interrupted page reload or ambiguous request failure and sent it in the API
+  request header. Updated the Account Access implementation status. Cookie
+  names and scope remain unchanged.
+- Files: `web/lib/auth.ts`, `docs/units/account-access.md`, `CHANGELOG.md`,
+  `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` and `git diff --check` passed. API
+  request/response verification and staging acceptance remain pending.
+
+## 2026-09-25T22:18:00Z — Implement API refresh retry recovery
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Start the API-side fix for interrupted refresh responses and
+  refresh-family forks.
+- Changes Made: Added deterministic keyed-HMAC refresh successors with a
+  derivation key ID stored on each rotated child row and a client operation ID
+  stored on its parent. Matching grace retries can reconstruct and resend the
+  same successor rather than creating a second active child. Requests without
+  a matching ID retain a one-time compatibility path; legacy children are
+  replaced rather than forked. Added Alembic migration `20260925_0059` and
+  updated BUG-AUTH-006 plus the Account Access implementation status. Web
+  persistence of operation IDs remains necessary for interrupted reloads; no
+  cookie names or browser storage contracts changed.
+- Files: `api/app/models/refresh_token.py`, `api/app/routers/auth.py`,
+  `api/app/services/session_service.py`,
+  `api/alembic/versions/20260925_0059_refresh_rotation_derivation_key.py`,
+  `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Python compilation and `git diff --check` passed;
+  `py -m alembic heads` reports the new migration as the sole head. No
+  automated tests or real API request/response verification run; staging
+  acceptance remains pending.
+
+## 2026-09-25T22:04:01Z — Defer auth backlog and document retry proposal
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Defer existing planned Account Access workstreams and record
+  the proposed changes for refresh instability.
+- Changes Made: Marked the Add-account limit follow-up, broader multi-account
+  state isolation, and client-bound session validation as deferred. Added a
+  proposed API/web idempotent refresh-retry design, stated that cookie naming
+  and browser-readable storage are not proposed to change, and updated current
+  staging status and verification checklist. No active rule or code changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Checked the proposal against BUG-AUTH-003/006 and the
+  current refresh implementation; `git diff --check` passed. No tests run.
+
+## 2026-09-25T21:57:46Z — Record interrupted reload reproduction
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Incorporate the user's report that interrupting repeated
+  session restoration during page reload eventually ends the session.
+- Changes Made: Added the reproduction to BUG-AUTH-003 and described its
+  consistency with the refresh transaction committing before the replacement
+  cookie reaches the browser. Kept exact request/response timing as unverified.
+- Files: `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed API commit and cookie-response ordering;
+  `git diff --check` passed. No code changes or tests run.
+
+## 2026-09-25T21:47:34Z — Record refresh grace family fork finding
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Add the confirmed API refresh-token grace replay finding as a
+  separate bug from reload/session continuity.
+- Changes Made: Added BUG-AUTH-006 to document how the grace replay branch can
+  create another usable refresh-token row in the same family, with evidence,
+  reproduction, proposed fix direction, and required verification. Kept the
+  causal relationship to the reported staging incident explicitly unknown.
+- Files: `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; reviewed the new bug entry
+  against the API refresh handler and refresh-token schema. No code changes or
+  tests run.
+
+## 2026-09-25T04:26:37Z — Clarify planned client and session relationship
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Add the user's conceptual model of reusable client IDs and
+  disposable session UUIDs to the planned auth change.
+- Changes Made: Clarified that “userspace” means a conceptual collection of a
+  user's sessions, not a required database entity. A reusable client identity
+  may be associated with successive session UUIDs; validation requires proof
+  of the client credential, not merely a public identifier. No auth code or
+  active rules were changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; no build or tests run for this
+  documentation-only clarification.
+
+## 2026-09-25T04:16:13Z — Document planned client-bound session validation
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record the desired client identifier plus session ID
+  validation requirement as a planned authentication change.
+- Changes Made: Added an explicitly planned client-bound session item to the
+  Account Access implementation plan. It requires a client-type-neutral opaque
+  identifier and active session association, notes the current unbound access
+  behavior, and records design and replay-verification needs. No auth code or
+  active rules were changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed current access-token validation and account
+  slot checks against the plan wording; `git diff --check` passed. No build or
+  tests run for this documentation-only change.
+
 ## 2026-09-25T01:20:58Z — Verify live local auth and route recovery
 
 - Agent: Codex
