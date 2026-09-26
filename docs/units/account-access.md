@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-26T11:45:38Z
+**Last edited:** 2026-09-26T12:53:21Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -39,6 +39,8 @@ while this document owns the underlying access and session semantics.
   and recovery presentation patterns.
 - [Business Rules](../rules.md) — cross-unit rules are referenced rather than
   duplicated here.
+- [Session Handling](./session-handling.md) — owns the cross-account client
+  entry, ended-session acknowledgment, and multi-tab continuity UX.
 
 ---
 
@@ -269,17 +271,20 @@ Legacy tab-local slot values do not override the shared selection.
 
 The public landing page renders immediately. A non-blocking entry-status
 request treats any access or refresh cookie, including cookies scoped to other
-account slots, as a hint to try restoration; it does not call refresh merely
-to decide whether public content can render. Restoration validates the
-selected account and uses the existing most-recent valid-session fallback.
-Protected app routes remain authoritative before exposing private data or
-actions.
+account slots, only as a hint to try restoration; it does not establish that a
+session is valid or call refresh merely to decide whether public content can
+render. If no valid remembered session exists, the visitor remains on the
+public site. When one or more sessions validate, the client restores its most
+recently used account. Protected app routes remain authoritative before
+exposing private data or actions.
 
 #### Multi-account terminal-session recovery
 
-When a current account is confirmed ended, automatic continuity validates
-remembered sessions in most-recent-use order. It never renders a candidate's
-data before that slot has validated. The recovery flow is:
+When a current session is confirmed ended, Friink explains the cause and waits
+for the user to acknowledge the notice before changing accounts. After
+acknowledgment, it validates remembered sessions in most-recent-use order and
+never renders a candidate's data before that slot has validated. The recovery
+flow is:
 
 1. Preserve the device-scoped remembered-account summaries locally, without
    storing or replaying passwords.
@@ -287,22 +292,31 @@ data before that slot has validated. The recovery flow is:
    account slot. Ordinary refresh results are checked against the still-active
    slot before persistence.
 3. On confirmed terminal failure, clear the in-memory credential for that
-   account, keep only safe recovery context, and try other remembered slots in
-   descending `last_used_at` order. A confirmed invalid candidate advances to
-   the next; an ambiguous result stops fallback and preserves identity.
-4. On a transient failure, keep the user in the app with retry, sign-in, and
-   logout choices. Never redirect to public content or switch account because
-   of a timeout/network failure.
-5. The “Choose another remembered account” recovery action remains available
-   in its modal for explicit choice. Its current-account-first ordering is a
-   presentation rule; automatic fallback follows actual most-recent-use time.
+   account and keep only safe recovery context. Explain the known cause (remote
+   termination, deactivation, pending deletion, expiry, or security action) and
+   wait for acknowledgment before trying another remembered slot. A confirmed
+   invalid candidate advances to the next most-recent slot; after acknowledgment,
+   no valid candidate returns the user to the public site.
+4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
+   ambiguous failure does not prove that the session ended. Keep the user in
+   retryable recovery without changing identity.
+5. During ambiguous recovery, the “Choose another remembered account” action
+   remains available in its modal for explicit choice. Its current-account-first
+   ordering is a presentation rule; fallback after acknowledgment follows
+   actual most-recent-use time.
+6. Show one terminal notice for the browser client. Other open tabs wait for
+   acknowledgment, then converge on the same valid fallback account or public
+   site. If the tab showing the notice closes before acknowledgment, another
+   tab can take ownership and show it.
 
-This flow applies to session expiry or revocation observed by the
-active account. Explicit logout revokes that account and validates the newest
-remaining slot; removing a slot ends that remembered session. The slot-aware
-API validates fallback candidates without a schema change. Staging confirmed
-refresh-token reuse and the earlier silent fallback. Its duplicate-request
-origin remains unknown. Both defects and local fixes are tracked in
+This flow applies when a session ends remotely, an account is deactivated or
+scheduled for deletion, or another terminal session failure is confirmed.
+Explicit logout is user-initiated and proceeds directly to the newest valid
+remaining slot or public site; removing a slot ends that remembered session.
+The slot-aware API validates fallback candidates without a schema change.
+Prior staging testing confirmed refresh-token reuse and observed the earlier
+silent-fallback behavior. Its duplicate-request origin remains unknown. Both
+defects and local fixes are tracked in
 [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
 and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher).
 
@@ -310,10 +324,15 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 
 - Use one captured active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
-- A confirmed terminal failure tries other remembered accounts by last-use
-  order and validates each slot before committing it. Ambiguous failures keep
-  the active identity in recovery with reauthentication or explicit account
-  choice; they never cause a switch.
+- A confirmed terminal failure first presents its cause and waits for user
+  acknowledgment. It then tries other remembered accounts by last-use order
+  and validates each slot before committing it. Other terminal causes are also
+  explained and never trigger a silent switch. Ambiguous failures keep the
+  active identity in retryable recovery; they never cause a switch.
+- A single tab owns the browser-client termination notice. Other tabs wait for
+  acknowledgment and converge after the owner switches to a valid account or
+  clears the active selection; if the owner tab closes, another tab can take
+  over.
 - Retain refresh-token reuse detection and its current security boundary while
   correcting client-side refresh coordination. Any broader retry grace or
   server-side idempotency behavior needs a separate security review for lost
@@ -338,19 +357,25 @@ Staging acceptance remains required.
 
 #### Multi-account session continuity policy
 
-Keep the user inside the authenticated app while at least one remembered
-account session remains valid. A remembered-account row alone is not proof that
-its session is valid; fallback validates the selected account's own slot-scoped
-session before exposing that account's app state.
+When one or more remembered sessions are valid, restore the most recently used
+one. A remembered-account row alone is not proof that its session is valid;
+validate each candidate's own slot-scoped session before exposing that
+account's app state. A session is restorable while its refresh token remains
+valid and neither the session nor account has ended. A temporary connection
+problem does not invalidate it and must leave retry available.
 
 - Treat the account currently in use as most recent. If accounts were last
   used in the order one, two, three, then three is active and two is next in
   recency order.
-- If the active session ends because the user logs out of that account, it is
-  remotely terminated, or a terminal failure is confirmed, attempt the next
-  most recently used remembered account. Continue by recency only when a
+- A user-initiated logout proceeds directly to the next most recently used
+  valid remembered account. For remote termination, deactivation, pending
+  deletion, expiry, or another confirmed terminal failure, explain the cause
+  and wait for acknowledgment before fallback. Continue by recency only when a
   candidate is confirmed invalid; do not switch identities on timeout, network
   failure, or another ambiguous/recoverable result.
+- Show the terminal notice once across the browser client. Other tabs wait for
+  acknowledgment and then follow the same valid account or public-site result.
+  If the notice-owning tab closes, another tab may take over and present it.
 - When the failure is recoverable, keep the user in the app's recovery flow
   and offer retry, sign-in again, or logout. Do not treat a transient failure
   as proof that the session ended and do not redirect to the public site.
@@ -373,19 +398,21 @@ required before release.
   and rotated within a token family.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
-- **ACCESS-R-031:** A confirmed terminal failure of the active session triggers
-  validation of other remembered accounts by most-recent-use order. Ambiguous
-  failures never switch identity; explicit remembered-account choice remains
-  available in recovery.
+- **ACCESS-R-031:** A confirmed terminal failure explains its cause and waits
+  for acknowledgment before fallback through remembered accounts in
+  most-recent-use order. Ambiguous failures never switch identity; explicit
+  remembered-account choice remains available in recovery.
 - **ACCESS-R-032:** Refresh coordination, request headers, and result state use
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
   transaction as token rotation.
 - **ACCESS-R-034:** Adding or switching accounts updates one client-wide
   selected slot; every other open tab reloads and restores that selection.
-- **ACCESS-R-035:** A confirmed terminated session falls back to the
-  most-recently-used remembered session that validates, or to the public site
-  if none validates. Ambiguous failures remain retryable and do not switch.
+- **ACCESS-R-035:** A confirmed terminated session shows one cause-specific
+  notice across the browser client. After acknowledgment, all tabs converge on
+  the most-recently-used remembered session that validates, or the public site
+  if none validates. If the notice-owning tab closes, another tab can take
+  ownership. Ambiguous failures remain retryable and do not switch.
 - **ACCESS-R-017:** Refresh is reactive and occurs only after `TOKEN_EXPIRED`
   or a missing/expired access cookie during session restoration.
 - **ACCESS-R-018:** Ambiguous refresh failures preserve local access state.
@@ -408,9 +435,9 @@ the release is considered complete.
       credentials while retaining only safe recovery context.
 - [ ] **ACCESS-AC-017** Rotation and reuse detection are transactional and tested.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
-- [x] **ACCESS-AC-026** A confirmed terminal failure tries remembered slots in
-      most-recent-use order; when none validates the user returns to the public
-      site. Ambiguous failures do not switch identity and remain retryable.
+- [ ] **ACCESS-AC-026** A confirmed terminal failure explains its cause and
+      waits for acknowledgment before trying remembered slots in most-recent-use
+      order; if none validates after acknowledgment, the user returns to public.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
 - [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after that
@@ -424,15 +451,19 @@ the release is considered complete.
 - [x] **ACCESS-AC-031** A public landing visit with no session renders without
       a blocking restore screen or refresh exchange; protected routes still
       reject unauthenticated requests.
-- [x] **ACCESS-AC-032** When the current session is confirmed ended, the app
-      validates and restores the next most recently used remembered account;
-      an invalid candidate advances to the next candidate without crossing
+- [ ] **ACCESS-AC-032** When the current session is confirmed ended, the app
+      waits for acknowledgment, then validates remembered accounts in
+      most-recent-use order; invalid candidates are skipped without crossing
       account data boundaries.
 - [x] **ACCESS-AC-033** A timeout, network error, or other ambiguous session
       failure does not change accounts or redirect to the public site; recovery
       offers retry, sign-in again, and logout.
-- [x] **ACCESS-AC-034** When no remembered session validates after confirmed
-      termination or explicit logout, the user returns to the public site.
+- [ ] **ACCESS-AC-034** When no remembered session validates after an
+      acknowledged termination, the user returns to the public site. An
+      explicit user-initiated logout may proceed directly to that fallback.
+- [ ] **ACCESS-AC-038** A terminal cause is explained to the user, including
+      remote termination, deactivation, pending deletion, expiry, or a security
+      action; no terminal failure silently changes accounts.
 
 #### Decision record
 
@@ -466,6 +497,13 @@ be revoked individually or through `Log out other sessions`.
 `Add account` opens the existing login/signup modal. The current account remains
 active until new authentication, session, and slot establishment succeed.
 
+When the API reports `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the web app hides
+the account-switcher control and its add/switch menu. Ordinary sign-in and
+logout remain available. The API still enforces the one-slot limit; existing
+remembered slots are not silently revoked if the configured limit is lowered.
+If the device is already at capacity, a normal login remains possible but may
+create an un-slotted session that is not remembered by the account switcher.
+
 Selecting a remembered account shows a spinner, disables competing account
 actions, validates the slot, and updates the shell in place. Removing or
 logging out the active account selects the most-recent remaining valid account,
@@ -486,7 +524,10 @@ control remains visible when account labels are long.
 - **ACCESS-R-025:** Switching validates opaque slot, device, session, and
   lifecycle state server-side.
 - **ACCESS-R-026:** The default slot limit is four; the operational range is
-  one through sixteen and limits slots, not account creation.
+  one through sixteen and limits remembered slots, not account creation. When
+  the limit is one, the API reports the switcher as disabled and the web UI
+  hides account add/switch controls. This does not block ordinary sign-in or
+  silently revoke existing slots.
 - **ACCESS-R-027:** Adding an already remembered account reuses its slot.
 - **ACCESS-R-028:** Switching refreshes account-scoped shell, feed,
   notifications, drafts, and active-session state.
@@ -496,7 +537,7 @@ control remains visible when account labels are long.
   or the public site.
 - `GET /auth/accounts` returns safe device-scoped summaries.
 - `GET /auth/accounts/add-availability` reports whether another account may be
-  added.
+  added and whether account-switcher UI is enabled by the server configuration.
 - `POST /auth/accounts/switch` accepts an opaque slot.
 - `DELETE /auth/accounts/{account_slot}` removes a remembered slot.
 
@@ -507,15 +548,19 @@ control remains visible when account labels are long.
 - [ ] **ACCESS-AC-021** Failed switching preserves the current account.
 - [ ] **ACCESS-AC-022** Add-account preserves the existing device identity.
 - [ ] **ACCESS-AC-023** The slot limit blocks additions without breaking login.
+- [ ] **ACCESS-AC-039** With the configured slot limit set to one, the API
+      reports the switcher disabled and the web app hides its add/switch menu;
+      ordinary sign-in and logout remain available.
 - [ ] **ACCESS-AC-024** Active logout follows the correct fallback.
 - [ ] **ACCESS-AC-025** Reload and cross-tab updates do not leak account state.
 - [ ] **ACCESS-AC-035** Adding an account makes it the selected account in all
       tabs after the add succeeds.
 - [ ] **ACCESS-AC-036** Switching accounts in one tab updates every open tab;
       tabs reload and no stale tab-local value can select a different account.
-- [ ] **ACCESS-AC-037** Confirmed termination restores the most recently used
-      valid remembered account in all tabs, or returns all tabs to the public
-      site when none validates; transient failures preserve recovery.
+- [ ] **ACCESS-AC-037** Across open tabs, only one tab presents the termination
+      notice; other tabs wait for acknowledgment, then converge on the same
+      most-recent valid account or public site. If the notice tab closes,
+      another tab can take over. Transient failures preserve recovery.
 
 #### Test scenarios
 
@@ -571,9 +616,12 @@ The priority reliability proposal and deferred workstreams are:
    Broader isolation of unrelated page-owned state remains a separate follow-up;
    captured-slot refresh coordination and explicit logout/removal fallback
    remain required.
-4. **Terminal-session recovery.** Implemented locally: confirmed terminal
-   failure falls back by last use, while ambiguous failures remain in recovery.
-   Explicit account choice is still available in the shared modal.
+4. **Terminal-session recovery (implemented locally; browser/staging
+   acceptance pending).** A terminal failure displays its cause and waits for
+   acknowledgment before fallback by last use. Other tabs wait for the same
+   acknowledgment, and a waiting tab can take over if the notice tab closes.
+   Ambiguous failures remain retryable, and explicit account choice remains
+   available for that recovery state.
 5. **Reload-time token stability and public entry.** The access-cookie and
    cookie-first restoration changes are deployed to staging, but user
    reproduction shows that interrupting reload during restoration can end the
@@ -650,19 +698,19 @@ credentials, cookies, IPs, or internal identifiers.
 |---|---|---|---|
 | ACCESS-R-017 | Reactive refresh after expiry | Web auth refresh tests | Implemented |
 | ACCESS-R-018 | Recoverable refresh preserves access | Token resilience tests | Implemented |
-| ACCESS-R-031 | Terminal failure falls back by recency; ambiguous failure does not switch | Account recovery and cross-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-R-031 | Cause-specific notice waits for acknowledgment before terminal fallback; ambiguity remains retryable | Account recovery and browser matrix | Implemented locally — staging pending |
 | ACCESS-R-032 | Refresh keys and requests use one captured slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-R-033 | Refresh recency commits with token rotation | Planned account-list ordering verification | Implemented locally — staging pending |
-| ACCESS-R-034/035 | Account selection syncs client-wide; termination falls back or returns public | Multi-tab browser matrix | Implemented locally — staging pending |
-| ACCESS-R-026 | Configurable slot limit | `api/tests/test_phase4_accounts.py` | Implemented |
+| ACCESS-R-034/035 | Add/switch and acknowledged termination converge client-wide; notice owner can be replaced | Multi-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-R-026/AC-039 | Configurable slot limit disables switcher UI at one | Single-slot API test and browser check | Implemented locally — browser/staging pending |
 | ACCESS-R-029 | Failed operations preserve active account | Account isolation tests | Implemented |
 | ACCESS-R-030 | Logout fallback | Active-slot logout test | Implemented |
 | ACCESS-R-014/015 | Token lifetime and refresh contract | Configuration/token tests | Documented — MIG-001 |
-| ACCESS-AC-026 | Terminal failure falls back by recency or returns to public site | Account recovery and cross-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-AC-026/032/034 | Acknowledged terminal failure falls back by recency or returns to public site | Account recovery browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-027 | Requests and refresh coordination use the selected slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
 | ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
-| ACCESS-AC-037 | Termination falls back in every tab or returns to public | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
+| ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 
 ### Release gates
 
@@ -692,9 +740,10 @@ logs.
   implementation; `MIG-001` records the historical documentation mismatch.
 - Email delivery and some deployment/release evidence remain environment-
   dependent verification gates.
-- Implemented locally: explicit multi-account recovery after terminal refresh
-  failure, captured per-slot client coordination, and persisted refresh recency.
-  Automated verification and staging browser acceptance remain pending.
+- Implemented locally: cause-specific terminal notices, acknowledgment-gated
+  multi-account fallback, one notice owner across tabs with takeover, captured
+  per-slot client coordination, and persisted refresh recency. Multi-tab
+  browser verification and staging acceptance remain pending.
 - The refresh-retry change has local API regression coverage for repeated
   same-operation requests and refresh-family row count. The staging schema is
   migrated; API/web deployment and browser verification remain required.
@@ -712,18 +761,23 @@ logs.
 - [ ] Implement access-token validation and refresh rotation.
 - [ ] Verify the local refresh-retry recovery without token-family forks under
       reload interruption and concurrent-tab behavior on staging.
-- [ ] Implement terminal versus ambiguous failure handling.
+- [x] Implement terminal versus ambiguous failure handling locally, including
+      cause-specific notice, acknowledgment before fallback, and cross-tab
+      waiting/takeover; staging and browser acceptance remain pending.
 - [ ] Implement active-session listing and revocation.
 - [ ] Implement device recognition and account slots.
 - [ ] Implement switching, isolation, fallback, and account limits.
-- [x] Implement explicit terminal-refresh account recovery and isolate client
-      coordination state per slot locally; staging acceptance pending.
 - [ ] Implement durable security events and notification isolation.
 - [ ] Implement permissions, privacy, and secret-redaction boundaries.
 - [x] Apply and verify the documented 30-day refresh-token lifetime.
 - [ ] Run automated and manual verification for all acceptance criteria.
 
 ## Changelog
+
+- 2026-09-26T12:53:21Z — The API now reports when the configured remembered
+  account limit disables account switching; the web drawer hides the switcher
+  and add/switch controls in that case. Ordinary sign-in and logout remain
+  available.
 
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records changes specific to this unit.
@@ -770,3 +824,7 @@ project-wide history. This section records changes specific to this unit.
   reloads other tabs into the selected account. Confirmed termination now
   falls back to the most-recent valid slot or returns to public when none
   validate; transient failures remain in recovery. Staging acceptance pending.
+- 2026-09-26T12:44:44Z — Matched the session UX to
+  [`session-handling.md`](./session-handling.md): terminal causes are explained,
+  fallback waits for acknowledgment, one tab owns the notice, and another tab
+  can take over if it closes. Browser and staging acceptance remain pending.

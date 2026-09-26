@@ -318,6 +318,7 @@ class AccountSwitchRequest(BaseModel):
 
 class AccountAddAvailabilityResponse(BaseModel):
     allowed: bool
+    switcher_enabled: bool
 
 
 class AuthSessionResponse(BaseModel):

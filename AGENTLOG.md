@@ -1,5 +1,47 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T12:53:21Z — Hide Account Switcher When Slot Limit Is One
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain the behavior at an account slot limit of one and hide the account switcher UI in that configuration.
+- Changes Made: Extended add-availability response with `switcher_enabled`; hid account switch and add controls in the web drawer when disabled; kept ordinary sign-in/logout available; added API coverage and updated active rules and account-access documentation.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/tests/test_phase4_accounts.py`, `web/components/side-drawer.tsx`, `web/lib/auth.ts`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed. Focused API assertions passed, but pytest exited non-zero during Windows temporary-SQLite cleanup (`WinError 32`). Browser and staging acceptance remain pending.
+
+## 2026-09-26T12:44:44Z — Align Account Access with Session Handling
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Update the Account Access unit document to match the eight
+  session-handling points.
+- Changes Made: Reconciled public entry and most-recent valid-session language;
+  replaced automatic terminal fallback with cause-specific acknowledgment and
+  fallback; documented single-tab notice ownership, waiting tabs, and takeover;
+  clarified direct user-initiated logout; updated acceptance criteria, status,
+  traceability, and related-unit links. Preserved prior dated history.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Compared active UX and criteria with
+  `docs/units/session-handling.md` and `docs/rules.md`; link and whitespace
+  checks remain to be run. Browser and staging acceptance remain pending.
+
+## 2026-09-26T12:37:37Z — Align active session rules with Session Handling
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Update `docs/rules.md` to match the eight user-facing
+  session-handling points.
+- Changes Made: Updated AUTH-R-008 to require cause-specific acknowledgment
+  before terminal fallback, AUTH-R-013 to clarify lifecycle-message handling,
+  and AUTH-R-040 to document most-recent valid-session restore, terminal
+  notices, cross-tab waiting and takeover, and retryable ambiguous failures.
+  Added related-unit links and corrected the rule's verification note.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Checked the updated rules against
+  `docs/units/session-handling.md`, reviewed local verification status, and
+  ran `git diff --check`; multi-tab browser acceptance and staging acceptance
+  remain pending.
+
 ## 2026-09-26T11:45:38Z — Synchronize account selection and termination fallback
 
 - Agent: Codex

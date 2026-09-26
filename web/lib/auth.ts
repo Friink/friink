@@ -1292,10 +1292,9 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
   return accounts;
 }
 
-export async function canAddAccount(accessToken: string): Promise<boolean> {
+export async function getAccountAddAvailability(accessToken: string): Promise<{ allowed: boolean; switcher_enabled: boolean }> {
   const activeSlot = activeAccountSlot();
-  const response = await requestApi<{ allowed: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
-  return response.allowed;
+  return requestApi<{ allowed: boolean; switcher_enabled: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
 }
 
 export async function switchAccount(accessToken: string, accountSlot: string): Promise<AuthSession> {

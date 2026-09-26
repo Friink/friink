@@ -545,11 +545,47 @@ def test_stale_revoked_slot_does_not_block_add_account() -> None:
         assert [item["account_slot"] for item in accounts.json()] == [first.json()["account_slot"]]
         availability = client.get("/auth/accounts/add-availability", headers={"Authorization": f"Bearer {first.json()['access_token']}", "X-Friink-Account-Slot": first.json()["account_slot"]})
         assert availability.status_code == 200, availability.text
-        assert availability.json() == {"allowed": True}
+        assert availability.json() == {"allowed": True, "switcher_enabled": True}
 
         third = client.post("/auth/login", json={"identifier": emails[2], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
         assert third.status_code == 200, third.text
         assert third.json()["account_slot"]
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_single_slot_limit_disables_switcher_but_preserves_normal_login() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings(MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1)
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("one", "two"):
+        user_id = uuid.uuid4()
+        email = f"phase4-single-slot-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_single_slot_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        assert first.status_code == 200, first.text
+        headers = {"Authorization": f"Bearer {first.json()['access_token']}", "X-Friink-Account-Slot": first.json()["account_slot"]}
+        availability = client.get("/auth/accounts/add-availability", headers=headers)
+        assert availability.status_code == 200, availability.text
+        assert availability.json() == {"allowed": False, "switcher_enabled": False}
+
+        add_account = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert add_account.status_code == 409, add_account.text
+
+        normal_login = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password})
+        assert normal_login.status_code == 200, normal_login.text
+        assert normal_login.json()["account_slot"] is None
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(users)))

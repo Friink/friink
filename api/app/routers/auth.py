@@ -1380,7 +1380,10 @@ async def account_add_availability(
     await _ensure_current_account_slot(request, response, current_user, session, settings)
     raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
 
-    return AccountAddAvailabilityResponse(allowed=len(list_slots(session, raw_device)) < settings.max_remembered_accounts_per_device)
+    return AccountAddAvailabilityResponse(
+        allowed=len(list_slots(session, raw_device)) < settings.max_remembered_accounts_per_device,
+        switcher_enabled=settings.max_remembered_accounts_per_device > 1,
+    )
 
 
 @router.post("/accounts/switch", response_model=TokenResponse)

@@ -7,7 +7,7 @@ import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import { BetaBadge } from '@/components/design/beta-badge';
 import type { AuthUser } from '@/lib/auth';
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { canAddAccount, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
+import { getAccountAddAvailability, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
 
 type SideDrawerProps = {
   user: AuthUser;
@@ -43,6 +43,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const [removeTarget, setRemoveTarget] = useState<AccountSummary | null>(null);
   const [accountNotice, setAccountNotice] = useState('');
   const [accountLoading, setAccountLoading] = useState(false);
+  const [accountSwitcherEnabled, setAccountSwitcherEnabled] = useState<boolean | null>(null);
   const [accountLoadError, setAccountLoadError] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -96,9 +97,17 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       try {
         for (let attempt = 0; attempt < 2; attempt += 1) {
           try {
-            const nextAccounts = await listAccounts(session.accessToken);
+            const [nextAccounts, availability] = await Promise.all([
+              listAccounts(session.accessToken),
+              getAccountAddAvailability(session.accessToken),
+            ]);
             if (refreshId !== accountRefreshId.current) return;
             setAccounts(nextAccounts);
+            setAccountSwitcherEnabled(availability.switcher_enabled);
+            if (!availability.switcher_enabled) {
+              setAccountMenuOpen(false);
+              setAccountModal(null);
+            }
             setAccountNotice('');
             return;
           } catch {
@@ -149,6 +158,13 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   useEffect(() => {
     void refreshAccounts();
   }, [refreshAccounts, user.id]);
+
+  useEffect(() => {
+    if (accountSwitcherEnabled !== null) return;
+    const retryAvailabilityOnFocus = () => void refreshAccounts();
+    window.addEventListener('focus', retryAvailabilityOnFocus);
+    return () => window.removeEventListener('focus', retryAvailabilityOnFocus);
+  }, [accountSwitcherEnabled, refreshAccounts]);
 
   async function handleAccountSwitch(account: AccountSummary) {
     const session = loadAuthSession();
@@ -202,11 +218,9 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     if (!session) return;
     setAccountBusy(true);
     try {
-      if (!(await canAddAccount(session.accessToken))) {
-        setAccountNotice('');
-        setAccountModal('add');
-        return;
-      }
+      const availability = await getAccountAddAvailability(session.accessToken);
+      setAccountSwitcherEnabled(availability.switcher_enabled);
+      if (!availability.switcher_enabled) return;
       setAccountNotice('');
       setAccountModal('add');
     } catch {
@@ -307,7 +321,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           </span>
           <span className="sidebar-profile-label">@{user.username}</span>
         </a>
-        <button
+        {accountSwitcherEnabled ? <button
           ref={accountMenuButtonRef}
           className="sidebar-account-menu-button"
           type="button"
@@ -326,8 +340,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           <span className="sidebar-account-menu-icon" aria-hidden="true">
             <i className="fa-solid fa-caret-down" />
           </span>
-        </button>
-        <ActionMenu
+        </button> : null}
+        {accountSwitcherEnabled ? <ActionMenu
           open={accountMenuOpen}
           anchorRef={accountMenuButtonRef}
           onClose={handleAccountMenuClose}
@@ -346,7 +360,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
             </div>
           }
           items={accountMenuItems}
-        />
+        /> : null}
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-26T12:53:21Z
+- [account-access] The API now reports when `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`
+  disables account switching. The web drawer hides switch/add controls while
+  preserving ordinary sign-in and logout; added focused API coverage.
+
+## 2026-09-26T12:44:44Z
+- [account-access] Aligned session restoration and terminal recovery with
+  Session Handling: acknowledge cause-specific notices before fallback, keep
+  ambiguous failures retryable, and coordinate one notice across tabs with
+  takeover. Updated acceptance and verification status.
+
+## 2026-09-26T12:37:37Z
+- [session-handling] Aligned AUTH-R-008, AUTH-R-013, and AUTH-R-040 with the
+  documented public-entry, acknowledged termination, fallback, and cross-tab
+  behavior. Recorded current local checks and pending staging acceptance.
+
 ## 2026-09-26T11:45:38Z
 - [account-access] Made the selected account client-wide: adding or switching
   updates the shared slot and reloads other tabs. Confirmed termination now
