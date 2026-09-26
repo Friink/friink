@@ -593,6 +593,41 @@ def test_single_slot_limit_disables_switcher_but_preserves_normal_login() -> Non
         app.dependency_overrides.clear()
 
 
+def test_existing_multiple_accounts_keep_switcher_when_limit_is_lowered() -> None:
+    max_accounts = [2]
+    app.dependency_overrides[get_settings] = lambda: _settings(MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=max_accounts[0])
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("one", "two"):
+        user_id = uuid.uuid4()
+        email = f"phase4-lowered-limit-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_lowered_limit_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        assert first.status_code == 200, first.text
+        second = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert second.status_code == 200, second.text
+        assert second.json()["account_slot"]
+
+        max_accounts[0] = 1
+        headers = {"Authorization": f"Bearer {second.json()['access_token']}", "X-Friink-Account-Slot": second.json()["account_slot"]}
+        availability = client.get("/auth/accounts/add-availability", headers=headers)
+        assert availability.status_code == 200, availability.text
+        assert availability.json() == {"allowed": False, "switcher_enabled": True}
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
 def test_three_account_logout_and_readd_sequence_preserves_all_slots() -> None:
     app.dependency_overrides[get_settings] = lambda: _settings()
     password = "Strong1!pass"

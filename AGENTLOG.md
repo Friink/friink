@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T13:07:02Z — Preserve Switching After Lowering Account Limit
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Keep the switcher available when multiple accounts are already remembered even if the configured maximum is lowered to one.
+- Changes Made: The availability endpoint now independently reports whether adding is allowed and whether switching should remain visible based on the effective account count. The drawer hides Add account at capacity and hides the switcher only when one or fewer accounts are available. Added regression coverage and updated active rules and account-access docs.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`, `web/components/side-drawer.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed. Both focused API tests reached their passing assertions; pytest then exited non-zero because Windows could not unlink its temporary SQLite database (`WinError 32`). Browser and staging acceptance remain pending.
+
 ## 2026-09-26T12:53:21Z — Hide Account Switcher When Slot Limit Is One
 
 - Agent: Codex

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-26T13:07:02Z
+- [account-access] Decoupled switcher visibility from the account-add limit.
+  When a limit is lowered to one, already remembered accounts remain switchable;
+  Add account is hidden, and the switcher is hidden only when one account is
+  available. Added regression coverage for lowering the limit.
+
 ## 2026-09-26T12:53:21Z
 - [account-access] The API now reports when `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`
   disables account switching. The web drawer hides switch/add controls while

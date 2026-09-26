@@ -44,6 +44,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const [accountNotice, setAccountNotice] = useState('');
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountSwitcherEnabled, setAccountSwitcherEnabled] = useState<boolean | null>(null);
+  const [accountAddAllowed, setAccountAddAllowed] = useState(false);
   const [accountLoadError, setAccountLoadError] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -104,6 +105,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
             if (refreshId !== accountRefreshId.current) return;
             setAccounts(nextAccounts);
             setAccountSwitcherEnabled(availability.switcher_enabled);
+            setAccountAddAllowed(availability.allowed);
             if (!availability.switcher_enabled) {
               setAccountMenuOpen(false);
               setAccountModal(null);
@@ -220,7 +222,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     try {
       const availability = await getAccountAddAvailability(session.accessToken);
       setAccountSwitcherEnabled(availability.switcher_enabled);
-      if (!availability.switcher_enabled) return;
+      setAccountAddAllowed(availability.allowed);
+      if (!availability.allowed) return;
       setAccountNotice('');
       setAccountModal('add');
     } catch {
@@ -288,12 +291,12 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       closeOnClick: !account.active,
       onClick: () => void handleAccountSwitch(account),
     })),
-    {
+    ...(accountAddAllowed ? [{
       label: 'Add account',
       icon: 'fa-user-plus',
       disabled: accountBusy,
       onClick: () => void handleAddAccount(),
-    },
+    }] : []),
   ];
 
   return (

@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-26T12:53:21Z
+**Last edited:** 2026-09-26T13:07:02Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -33,14 +33,14 @@ missing evidence can be filled in.
 ### WEB-R-001 — Account Switcher Uses Device-Scoped Slots
 
 - **Status:** Active
-- **Effective:** 2026-09-26T12:53:21Z
+- **Effective:** 2026-09-26T13:07:02Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
 
 - **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
-- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is `1`, the API reports the switcher disabled and the web app hides its add/switch menu. This does not block ordinary sign-in or silently revoke existing slots; a normal login at capacity may remain un-slotted. With a larger limit, opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is `1`, Add account is unavailable. Existing multiple remembered accounts remain switchable if the limit is lowered; the switcher is hidden only when at most one account is available. This does not block ordinary sign-in or silently revoke existing slots; a normal login at capacity may remain un-slotted. Opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
 
 ### WEB-R-002 — OTP Flags Are API-Owned Runtime Configuration
 
@@ -467,14 +467,14 @@ missing evidence can be filled in.
 ### AUTH-R-013 — Account Switcher UX
 
 - **Status:** Active
-- **Effective:** 2026-09-26T12:53:21Z
+- **Effective:** 2026-09-26T13:07:02Z
 - **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
 - **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/archives/auth-and-session.md`
 
 - **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
-- **Edge cases:** With `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the account menu and its add/switch controls are hidden while ordinary sign-in and logout remain available. Otherwise, the selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging; after the user acknowledges that the session ended, Friink removes the unavailable account from the device list and activates the most recently used valid remembered account, or returns to public when none remain. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful add or switch selects that account client-wide; other tabs reload and restore it. Removing the active account may reload the browser after automatically switching to the most recently used remaining account.
+- **Edge cases:** When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, Add account is hidden; the switcher stays visible while multiple accounts are already available and is hidden when there is at most one. Ordinary sign-in and logout remain available. Otherwise, the selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging; after the user acknowledges that the session ended, Friink removes the unavailable account from the device list and activates the most recently used valid remembered account, or returns to public when none remain. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. The API remains authoritative for Add account availability. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful add or switch selects that account client-wide; other tabs reload and restore it. Removing the active account may reload the browser after automatically switching to the most recently used remaining account.
 
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 
