@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-25T22:18:00Z
+**Last edited:** 2026-09-26T11:45:38Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -262,10 +262,18 @@ Cookie-authenticated unsafe API requests enforce allowed-Origin checks.
 Access and refresh credentials are HttpOnly; browser-readable storage and
 cross-tab messages contain no bearer tokens.
 
+The active account selection is client-wide, not tab-local. Adding an account
+or switching accounts updates the shared selected-slot key. Other open tabs
+reload when that key changes, then restore and render only the selected slot.
+Legacy tab-local slot values do not override the shared selection.
+
 The public landing page renders immediately. A non-blocking entry-status
-request uses cookie presence only as a redirect hint; it does not call refresh
-to decide whether public content can render. Protected app routes remain
-authoritative and validate the session before exposing private data or actions.
+request treats any access or refresh cookie, including cookies scoped to other
+account slots, as a hint to try restoration; it does not call refresh merely
+to decide whether public content can render. Restoration validates the
+selected account and uses the existing most-recent valid-session fallback.
+Protected app routes remain authoritative before exposing private data or
+actions.
 
 #### Multi-account terminal-session recovery
 
@@ -346,10 +354,10 @@ session before exposing that account's app state.
 - When the failure is recoverable, keep the user in the app's recovery flow
   and offer retry, sign-in again, or logout. Do not treat a transient failure
   as proof that the session ended and do not redirect to the public site.
-- If no remembered session validates, remain on the session-recovery screen
-  with sign-in and logout choices. Reach the public site after the user
-  explicitly logs out. Preserve each account's identity boundary and never
-  show one account's state while another account is still being validated.
+- If no remembered session validates after confirmed termination or explicit
+  logout, clear the selected account and go to the public site. Preserve each
+  account's identity boundary and never show one account's state while another
+  account is still being validated.
 
 This continuity policy is implemented locally; staging acceptance remains
 open. The behavior and remaining checks are tracked by
@@ -373,6 +381,11 @@ required before release.
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
   transaction as token rotation.
+- **ACCESS-R-034:** Adding or switching accounts updates one client-wide
+  selected slot; every other open tab reloads and restores that selection.
+- **ACCESS-R-035:** A confirmed terminated session falls back to the
+  most-recently-used remembered session that validates, or to the public site
+  if none validates. Ambiguous failures remain retryable and do not switch.
 - **ACCESS-R-017:** Refresh is reactive and occurs only after `TOKEN_EXPIRED`
   or a missing/expired access cookie during session restoration.
 - **ACCESS-R-018:** Ambiguous refresh failures preserve local access state.
@@ -396,8 +409,8 @@ the release is considered complete.
 - [ ] **ACCESS-AC-017** Rotation and reuse detection are transactional and tested.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
 - [x] **ACCESS-AC-026** A confirmed terminal failure tries remembered slots in
-      most-recent-use order; ambiguous failures do not switch identity and
-      recovery exposes the failed account and remembered list.
+      most-recent-use order; when none validates the user returns to the public
+      site. Ambiguous failures do not switch identity and remain retryable.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
 - [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after that
@@ -418,8 +431,8 @@ the release is considered complete.
 - [x] **ACCESS-AC-033** A timeout, network error, or other ambiguous session
       failure does not change accounts or redirect to the public site; recovery
       offers retry, sign-in again, and logout.
-- [x] **ACCESS-AC-034** When no remembered session validates, recovery offers
-      sign-in and logout; the public site is reached after explicit logout.
+- [x] **ACCESS-AC-034** When no remembered session validates after confirmed
+      termination or explicit logout, the user returns to the public site.
 
 #### Decision record
 
@@ -496,6 +509,13 @@ control remains visible when account labels are long.
 - [ ] **ACCESS-AC-023** The slot limit blocks additions without breaking login.
 - [ ] **ACCESS-AC-024** Active logout follows the correct fallback.
 - [ ] **ACCESS-AC-025** Reload and cross-tab updates do not leak account state.
+- [ ] **ACCESS-AC-035** Adding an account makes it the selected account in all
+      tabs after the add succeeds.
+- [ ] **ACCESS-AC-036** Switching accounts in one tab updates every open tab;
+      tabs reload and no stale tab-local value can select a different account.
+- [ ] **ACCESS-AC-037** Confirmed termination restores the most recently used
+      valid remembered account in all tabs, or returns all tabs to the public
+      site when none validates; transient failures preserve recovery.
 
 #### Test scenarios
 
@@ -545,13 +565,12 @@ The priority reliability proposal and deferred workstreams are:
    login, switching, and logout. The fix must preserve the active account when
    an Add account attempt fails and must prove that refreshes do not create
    duplicate slots. Resume after refresh stability is verified.
-3. **Defer broader multi-account client-state isolation work.** Scope cached
-   user metadata, active-account state, refresh coordination, refresh locks,
-   and cross-tab notifications by account slot. Stale or delayed responses
-   must not restore the wrong account, and explicit logout/removal fallback
-   behavior must remain intact. Existing captured-slot coordination remains
-   in use for the refresh repair; defer unrelated expansion until that repair
-   passes staging.
+3. **Synchronize active account selection across tabs (implemented locally;
+   staging pending).** The shared active-slot key is authoritative. Adding or
+   switching accounts updates it, and other tabs reload to restore that slot.
+   Broader isolation of unrelated page-owned state remains a separate follow-up;
+   captured-slot refresh coordination and explicit logout/removal fallback
+   remain required.
 4. **Terminal-session recovery.** Implemented locally: confirmed terminal
    failure falls back by last use, while ambiguous failures remain in recovery.
    Explicit account choice is still available in the shared modal.
@@ -631,16 +650,19 @@ credentials, cookies, IPs, or internal identifiers.
 |---|---|---|---|
 | ACCESS-R-017 | Reactive refresh after expiry | Web auth refresh tests | Implemented |
 | ACCESS-R-018 | Recoverable refresh preserves access | Token resilience tests | Implemented |
-| ACCESS-R-031 | Terminal refresh preserves context and requires explicit account choice | Planned recovery-flow verification | Implemented locally — staging pending |
+| ACCESS-R-031 | Terminal failure falls back by recency; ambiguous failure does not switch | Account recovery and cross-tab browser matrix | Implemented locally — staging pending |
 | ACCESS-R-032 | Refresh keys and requests use one captured slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-R-033 | Refresh recency commits with token rotation | Planned account-list ordering verification | Implemented locally — staging pending |
+| ACCESS-R-034/035 | Account selection syncs client-wide; termination falls back or returns public | Multi-tab browser matrix | Implemented locally — staging pending |
 | ACCESS-R-026 | Configurable slot limit | `api/tests/test_phase4_accounts.py` | Implemented |
 | ACCESS-R-029 | Failed operations preserve active account | Account isolation tests | Implemented |
 | ACCESS-R-030 | Logout fallback | Active-slot logout test | Implemented |
 | ACCESS-R-014/015 | Token lifetime and refresh contract | Configuration/token tests | Documented — MIG-001 |
-| ACCESS-AC-026 | Terminal-refresh recovery requires explicit account choice | Planned recovery-flow verification | Implemented locally — staging pending |
-| ACCESS-AC-027 | Client session state is isolated per slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
+| ACCESS-AC-026 | Terminal failure falls back by recency or returns to public site | Account recovery and cross-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-AC-027 | Requests and refresh coordination use the selected slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
+| ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-AC-037 | Termination falls back in every tab or returns to public | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 
 ### Release gates
 
@@ -744,3 +766,7 @@ project-wide history. This section records changes specific to this unit.
   requests, reused them after interrupted or ambiguous attempts, and sent them
   to the API. The focused refresh-token tests, web type-check, and targeted
   lint have since passed locally; staging acceptance remains pending.
+- 2026-09-26T11:45:38Z — Made account selection client-wide so add/switch
+  reloads other tabs into the selected account. Confirmed termination now
+  falls back to the most-recent valid slot or returns to public when none
+  validate; transient failures remain in recovery. Staging acceptance pending.

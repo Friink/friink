@@ -809,13 +809,17 @@ async def entry_status(request: Request, response: Response) -> dict[str, bool]:
     """Indicate whether the selected account has a credential worth restoring.
 
     This is a non-authenticating hint so the public route can render immediately
-    without making a refresh exchange for signed-out visitors.
+    without making a refresh exchange for signed-out visitors. Any account's
+    slot-scoped cookie is enough to start restoration; the restore flow then
+    validates the selected slot and falls back only to another valid session.
     """
-    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
-    has_access = bool(request.cookies.get(access_cookie_name(account_slot)))
-    has_refresh = bool(
-        request.cookies.get(f"friink_refresh_{account_slot}") if account_slot
-        else request.cookies.get(REFRESH_COOKIE_NAME)
+    has_access = any(
+        name.startswith("friink_access_") and bool(value)
+        for name, value in request.cookies.items()
+    )
+    has_refresh = any(
+        name.startswith("friink_refresh_") and bool(value)
+        for name, value in request.cookies.items()
     )
     response.headers["Cache-Control"] = "no-store"
     return {"session_available": has_access or has_refresh}

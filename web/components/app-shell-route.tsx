@@ -50,9 +50,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }, []);
 
   useEffect(() => {
-    function handleSessionExpired(event: Event) {
+    function handleSessionExpired() {
       const cachedUser = loadCachedAuthUser();
-      const detail = (event as CustomEvent<{ status?: 'expired' | 'security' }>).detail;
       setRecoveryUsername(cachedUser?.username ?? null);
       setUser(null);
       setSessionReady(false);
@@ -71,9 +70,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
             setAuthCheckComplete(true);
             return;
           }
-          setRecoveryAccounts(getRememberedAccountSummaries());
-          setSessionError(detail?.status ?? 'expired');
-          setAuthCheckComplete(true);
+          clearAuthSession();
+          router.replace('/');
         } catch {
           setRecoveryAccounts(getRememberedAccountSummaries());
           setSessionError('offline');
@@ -83,7 +81,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     }
     window.addEventListener('friink-session-expired', handleSessionExpired);
     return () => window.removeEventListener('friink-session-expired', handleSessionExpired);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     function handleAccountSwitched() {
@@ -133,11 +131,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           setSessionReady(false);
           setAuthCheckComplete(true);
           if (isTerminalRefreshFailure(error)) {
-            const deliberateSecurityRevocation = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY';
-            setSessionError(deliberateSecurityRevocation ? 'security' : 'expired');
-            setRecoveryUsername(cachedUser?.username ?? null);
-            setRecoveryAccounts(getRememberedAccountSummaries());
-            setUser(null);
+            clearAuthSession();
+            router.replace('/');
           } else {
             setSessionError('offline');
             setRecoveryUsername(cachedUser?.username ?? null);
@@ -202,7 +197,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     try {
       await logout(session.accessToken, session.accountSlot);
       if (typeof window !== 'undefined') window.sessionStorage.removeItem(`friink-setup-dismissed-${session.user.id}`);
-      clearAuthSession();
       const fallback = await restoreRememberedAccountWithFallback(session.accountSlot ? [session.accountSlot] : []);
       if (fallback) {
         saveAuthSession(fallback);
@@ -211,6 +205,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         setSessionError(null);
         setAuthCheckComplete(true);
       } else {
+        clearAuthSession();
         router.replace('/');
       }
     } catch {
@@ -229,7 +224,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     const failedSlot = activeAccount?.accountSlot;
     try {
       await logout('', failedSlot);
-      clearAuthSession();
       const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
       if (fallback) {
         saveAuthSession(fallback);
@@ -239,6 +233,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         setAuthCheckComplete(true);
         return;
       }
+      clearAuthSession();
       router.replace('/');
     } catch {
       setSessionError('offline');

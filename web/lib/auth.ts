@@ -54,7 +54,6 @@ export type ManagedAuthSession = {
 
 const AUTH_SESSION_KEY = 'friink-auth-session';
 const ACCOUNT_SLOT_KEY = 'friink-active-account-slot';
-const ACCOUNT_SLOT_SESSION_KEY = 'friink-active-account-slot-session';
 const ACCOUNT_SUMMARIES_KEY = 'friink-account-summaries';
 const AUTH_SESSION_SLOT_PREFIX = 'friink-auth-session-slot:';
 const AUTH_SESSION_USER_PREFIX = 'friink-auth-session-user:';
@@ -776,20 +775,16 @@ type CachedAccountSummary = Pick<AccountSummary, 'accountSlot' | 'username' | 'd
 function activeAccountSlot(): string | null {
   if (typeof window === 'undefined') return null;
   try {
-    return window.sessionStorage.getItem(ACCOUNT_SLOT_SESSION_KEY) || window.localStorage.getItem(ACCOUNT_SLOT_KEY);
-  } catch {
     return window.localStorage.getItem(ACCOUNT_SLOT_KEY);
+  } catch {
+    return null;
   }
 }
 
 function setActiveAccountSlot(accountSlot: string | null) {
   if (typeof window === 'undefined') return;
-  try {
-    if (accountSlot) window.sessionStorage.setItem(ACCOUNT_SLOT_SESSION_KEY, accountSlot);
-    else window.sessionStorage.removeItem(ACCOUNT_SLOT_SESSION_KEY);
-  } catch {
-    // Continue with the in-memory session when session storage is unavailable.
-  }
+  // The selected account is client-wide. A tab-local override can leave a new
+  // tab restoring a stale identity after another tab switched accounts.
   if (accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, accountSlot);
   else window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
 }
@@ -895,6 +890,16 @@ function installAuthCoordinationListener() {
     });
   }
   window.addEventListener('storage', (event) => {
+    if (event.key === ACCOUNT_SLOT_KEY) {
+      const selectedSlot = activeAccountSlot();
+      if (event.oldValue !== selectedSlot) {
+        // Reload every other tab so its in-memory user and all route-owned
+        // state are rebuilt for the client-wide selected account, including
+        // when the selected key is cleared after terminal session failure.
+        window.location.reload();
+      }
+      return;
+    }
     const accountSlot = activeAccountSlot();
     if ((accountSlot && event.key === `${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}` && event.newValue === null) || (!accountSlot && event.key === AUTH_SESSION_KEY && event.newValue === null)) {
       authSessionGeneration += 1;

@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-25T22:18:00Z
+**Last edited:** 2026-09-26T11:45:38Z
 
 ## Instructions for agents
 
@@ -77,7 +77,7 @@ Copy this template for a new defect and replace every placeholder:
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
 - **Status:** In progress
-- **Reported/updated:** 2026-09-25T21:56:59Z
+- **Reported/updated:** 2026-09-26T11:45:38Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
 - **Severity:** high
@@ -111,13 +111,18 @@ session failures on production as well:
    BUG-AUTH-004 for the independent account-ordering defect.
 7. The user reports that repeatedly refreshing the page and interrupting the
    reload while the session is restoring eventually kills the session.
+8. The user then reproduced cross-tab divergence on staging: Admin was open in
+   one tab, the user switched to Muflah in another tab, and both tabs could
+   still post as their previous accounts. A third tab opened the site as Admin.
 
 ### Expected behavior
 
 A normal reload should keep the selected account usable without rotating its
-refresh token merely because the document reloaded. A transient failure must
-remain retryable; a terminal failure must not silently authenticate another
-remembered identity.
+refresh token merely because the document reloaded. Adding or switching
+accounts changes the selected account across all open tabs; other tabs reload
+and restore that account. After confirmed termination, restore the most-recently
+used other valid account, or return to the public site when none remain. A
+transient failure must remain retryable and must not change accounts.
 
 ### Actual behavior
 
@@ -161,6 +166,13 @@ session survives.
   `activeAccountSlot()` while `performRefresh()` read a shared localStorage
   slot. Coordination and refresh now use one captured slot, and ordinary
   responses are checked against the still-active slot before persistence.
+- **Confirmed in web implementation:** Account selection was read from a
+  per-tab `sessionStorage` value before the shared `localStorage` value. Each
+  tab could therefore retain a different account after switching elsewhere;
+  a new tab could inherit a stale tab value or fall back to whichever tab last
+  wrote the shared key. The browser sent that selected slot header and the API
+  correctly used the corresponding slot cookie. The fix makes the shared
+  selected slot authoritative and reloads other tabs when it changes.
 - **Open questions:** The persisted records prove that the same rotated token
   was presented repeatedly and that Phase could not be restored. They do not
   identify whether the repeated requests came from concurrent tabs, an
@@ -191,11 +203,15 @@ reload rotation. The historical stale-token replay origin remains unknown.
 Slot-scoped access cookies, session-bound JWT `sid` validation, cookie-first
 entry restoration, captured-slot refresh coordination, cross-tab revalidation,
 Origin checks for cookie-authenticated writes, and confirmed-terminal
-most-recent-account fallback are implemented locally. Refresh family-reuse
-detection remains enabled. Focused API and frontend checks pass as recorded in
-the handoff; browser/staging acceptance is still required. The evidence above
+most-recent-account fallback are implemented locally. Account addition and
+switching now propagate one client-wide selected account to other tabs; when
+no remembered session validates after confirmed termination, the app returns
+to the public site. Refresh family-reuse detection remains enabled. Focused API
+and frontend checks pass as recorded in the handoff; browser/staging acceptance
+is still required. The evidence above
 does not determine the origin of the historical repeated refresh requests, so
-the root-cause explanation is limited to the confirmed token-reuse sequence.
+the refresh-replay origin remains unknown; the cross-tab account-selection
+failure is separately confirmed in the web implementation.
 
 ### Staging acceptance still required
 
@@ -214,9 +230,11 @@ accounts.
 ### Tests and verification
 
 - **Required:** Reproduce two tabs refreshing the same slot concurrently,
-  including tabs whose `sessionStorage` account slots differ while the shared
-  `localStorage` slot points to one account; verify one rotation does not make
-  the active account silently change. Simulate a successful server rotation
+  then add an account or switch slots in one tab and verify every other tab
+  reloads into that selected account. Terminate that session and verify all
+  tabs use the same most-recent valid fallback, or the public site if none
+  remains. Also verify that one rotation does not make the active account
+  silently change. Simulate a successful server rotation
   whose response is lost, then retry with the stale cookie; verify grace and
   subsequent reuse behavior remain secure and understandable. Verify a
   terminal failure restores the next valid account by recency, while ambiguous
@@ -510,7 +528,7 @@ verify each behavior.
 ## BUG-AUTH-002 — Public landing blocks while checking for a session
 
 - **Status:** In progress
-- **Reported/updated:** 2026-09-24T22:54:37Z
+- **Reported/updated:** 2026-09-26T11:14:22Z
 - **Affected area:** Public landing route `/`, `PublicRouteGuard`, refresh-session recovery
 - **Environment:** Production, staging, and local; reproduced in an incognito/private window with no account session
 - **Severity:** medium
@@ -545,6 +563,10 @@ Signed-out visits do not make a refresh exchange.
   state and does not gate public children on auth status.
 - **Fixed locally:** Signed-out visits use the non-mutating entry-status hint;
   they do not call refresh.
+- **Fixed locally:** The hint recognizes any non-empty access or refresh
+  cookie, including per-account cookies when the selected-slot value is absent
+  or stale. A positive hint enters normal server validation and remembered
+  session fallback instead of leaving a valid other slot undiscovered.
 - **Confirmed:** Centralizing route restoration made `/` and `/home` share a
   helper, but incorrectly applied authenticated bootstrap as a prerequisite to
   public content.
@@ -555,9 +577,9 @@ Signed-out visits do not make a refresh exchange.
 ### Implemented local fix
 
 Render public content immediately and run a non-blocking cookie-presence check.
-If a session hint exists, validate it without making public content wait, then
-redirect only after successful validation. Token stability is covered by
-BUG-AUTH-003.
+If any access or refresh cookie exists, validate the selected slot and use the
+normal remembered-session fallback as needed, then redirect only after
+successful validation. Token stability is covered by BUG-AUTH-003.
 
 Non-goals: require authentication to view public content or weaken `/home`
 authorization. Session repair and refresh-token safety remain owned by
@@ -573,8 +595,9 @@ BUG-AUTH-003.
 - **Completed locally:** The guard renders public children immediately and
   checks `/auth/entry-status` in the background. A signed-out entry-status
   result does not call refresh; a detected session is validated and redirected
-  without replacing public content with a restore screen. Focused code review
-  and tests cover the entry endpoint; browser acceptance remains open.
+  without replacing public content with a restore screen. A focused API test
+  confirms slot-scoped cookies are detected when there is no selected slot or
+  the selected slot lacks matching cookies. Browser acceptance remains open.
 
 ### Noteworthy
 

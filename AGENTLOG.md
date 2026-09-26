@@ -1,5 +1,57 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T11:45:38Z — Synchronize account selection and termination fallback
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the specified account-switcher behavior: add/switch
+  applies client-wide, confirmed termination restores the last-used valid
+  account, and no remaining session returns the client to public.
+- Changes Made: Removed the tab-local active-slot override. The shared selected
+  slot is authoritative and other tabs reload on change. Terminal restoration
+  falls back across remembered slots; when none validates, the app clears the
+  selection and returns to public. Storage-event reload detection also covers
+  clearing the active key after terminal failure. Transient failures remain
+  retryable. Updated BUG-AUTH-003, AUTH-R-010/013/038/040, and Account Access
+  acceptance criteria.
+- Files: `web/lib/auth.ts`, `web/components/app-shell-route.tsx`,
+  `web/components/public-route-guard.tsx`, `docs/bugs.md`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web TypeScript check, targeted ESLint for `auth.ts` and
+  `public-route-guard.tsx`, and `git diff --check` passed. ESLint for
+  `app-shell-route.tsx` still reports existing `react-hooks/set-state-in-effect`
+  errors. Multi-tab browser acceptance remains pending.
+
+## 2026-09-26T11:22:15Z — Align public-entry rule with cookie hint
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Confirm the public-entry change is reflected in the Account
+  Access unit doc and `docs/rules.md`.
+- Changes Made: Confirmed `docs/units/account-access.md` already documents the
+  any-slot access/refresh-cookie restore hint. Updated AUTH-R-040 in
+  `docs/rules.md` to match the implementation and distinguish a cookie-presence
+  hint from server-side session validation.
+- Files: `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Checked the rule and unit wording against the API
+  `/auth/entry-status` implementation; `git diff --check` passed.
+
+## 2026-09-26T11:14:22Z — Find slot cookies during public entry restoration
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Investigate why a visitor with an active remembered session
+  can remain on the public landing page and align entry behavior with the
+  existing fallback to another valid session.
+- Changes Made: Changed `/auth/entry-status` to recognize any non-empty access
+  or refresh cookie, including slot-scoped cookies when the selected slot is
+  absent or stale. Added focused coverage for no selected slot and a stale
+  selection. Updated BUG-AUTH-002 and Account Access documentation.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`,
+  `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The focused API cookie-entry test passes on disposable
+  SQLite; broader staging browser acceptance remains pending.
+
 ## 2026-09-26T10:50:59Z — Apply refresh retry migration to staging
 
 - Agent: Codex

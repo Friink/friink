@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-26T11:45:38Z
+- [account-access] Made the selected account client-wide: adding or switching
+  updates the shared slot and reloads other tabs. Confirmed termination now
+  falls back to the most-recent valid remembered account or the public site;
+  ambiguous failures remain recoverable. Storage removal also reloads tabs after
+  terminal failure. Added regression acceptance criteria.
+
+## 2026-09-26T11:22:15Z
+- [account-access] Aligned AUTH-R-040 in `docs/rules.md` with public entry
+  behavior: any non-empty access/refresh cookie, including another account
+  slot's cookie, prompts restoration; actual session validation stays server-side.
+
+## 2026-09-26T11:14:22Z
+- [account-access] Updated the public entry hint to detect any non-empty
+  access/refresh cookie, including per-account cookies when the selected slot
+  is missing or stale. Added focused API coverage; selected-session validation
+  and most-recent valid-session fallback remain authoritative.
+
 ## 2026-09-26T10:50:59Z
 - [account-access] Applied Alembic migration `20260925_0059` to the staging
   database using `api/.env.staging`; confirmed revision at head and no schema

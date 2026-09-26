@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthApiError, getLoginRecoveryPath, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
+import { clearAuthSession, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -28,11 +28,10 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
       } catch (error) {
         if (!active) return;
         if (isTerminalRefreshFailure(error)) {
-          const reason = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY'
-            ? 'security-revocation'
-            : 'expired';
-          router.replace(getLoginRecoveryPath(reason));
-        } else if (cachedUser) {
+          clearAuthSession();
+          return;
+        }
+        if (cachedUser) {
           // A previously authenticated visitor stays in the app's retryable
           // recovery state during a network outage. Signed-out visitors have
           // no cached active identity and keep seeing public content.

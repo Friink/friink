@@ -99,6 +99,23 @@ def test_slot_access_cookie_survives_reload_without_refresh_and_honors_revocatio
 
         entry = client.get("/auth/entry-status", headers={"X-Friink-Account-Slot": slot})
         assert entry.status_code == 200 and entry.json() == {"session_available": True}
+
+        # The public entry guard must see slot cookies even after the selected
+        # slot header is missing or points at a slot without cookies. In either
+        # case, restoration can validate and choose the next active session.
+        slot_cookie_client = TestClient(app)
+        slot_cookie_client.cookies.set(access_cookie_name(slot), access_cookie)
+        slot_cookie_client.cookies.set(f"friink_refresh_{slot}", refresh_cookie)
+        unselected_entry = slot_cookie_client.get("/auth/entry-status")
+        assert unselected_entry.status_code == 200
+        assert unselected_entry.json() == {"session_available": True}
+        stale_selection_entry = slot_cookie_client.get(
+            "/auth/entry-status",
+            headers={"X-Friink-Account-Slot": str(uuid.uuid4())},
+        )
+        assert stale_selection_entry.status_code == 200
+        assert stale_selection_entry.json() == {"session_available": True}
+
         cross_site_logout = client.post(
             "/auth/logout",
             headers={"X-Friink-Account-Slot": slot, "Origin": "https://attacker.example"},
