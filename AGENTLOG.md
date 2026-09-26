@@ -1,5 +1,68 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T13:33:29Z — Center Top-Bar Counter Text Vertically
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Vertically center the notification and message counter-pill text.
+- Changes Made: Set the counter text line height to the 16px pill height and explicitly centered text horizontally; updated both design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted CSS and whitespace checks pending.
+
+## 2026-09-26T13:32:36Z — Set Active Tab Labels to Bold White
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Change active tabs to bold white text instead of accent-colored text.
+- Changes Made: Updated shared, Settings, Profile, and Connections active tab labels to white and bold, retaining existing accent underlines. Updated product and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted CSS and whitespace checks pending.
+
+## 2026-09-26T13:29:03Z — Adjust Top-Bar Logo and Title Sizes
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Set the top-bar logo height to 38px and page-title text to 18px.
+- Changes Made: Reduced only the logo artwork height and desktop/mobile page-title font sizes; left the 40px control rail and existing 20px icon glyphs unchanged. Updated design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted style and whitespace checks pending.
+
+## 2026-09-26T13:22:52Z — Run Local Apps Against Staging Database
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Run the frontend and backend locally with staging database configuration and update production DB if needed.
+- Changes Made: Started Next.js locally on port 3000 with its API origin set to the local API on port 8001. Started Uvicorn on port 8001 using `api/.env.staging`. Confirmed production and staging at Alembic head `20260925_0059`; production `alembic check` reported no new upgrade operations, so no migration was applied.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web root, API `/health`, and API `/health/db` returned HTTP 200. Both local server sessions remain running. Production migration status and drift were checked read-only.
+
+## 2026-09-26T13:15:19Z — Update Top-Bar Count Pill Styling
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Remove the top-bar counter-pill border and keep its text white in every theme.
+- Changes Made: Removed the unread-count pill border and set the count text to fixed white; updated product and implementation design documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted CSS and whitespace checks pending.
+
+## 2026-09-26T13:13:46Z — Reduce Top-Bar Icon Size
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Change top-bar icons to 20px.
+- Changes Made: Reduced the signed-in TopBar menu, back, action, and expanded-search glyphs to 20px while keeping 40px control hit areas. Updated the product-level and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Whitespace and targeted style checks pending.
+
+## 2026-09-26T13:10:43Z — Verify Account Session Documentation Coverage
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Confirm that the work completed in this session is reflected in documentation.
+- Changes Made: Audited the account-access, session-handling, and active-rule documentation against the current session behavior. Clarified that account-switcher visibility uses both the configured limit and available account count.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the eight session-handling UX points, account-access limit/switching behavior, matching active rules, and prior work history are present in the relevant docs and logs. Whitespace check pending.
+
 ## 2026-09-26T13:07:02Z — Preserve Switching After Lowering Account Limit
 
 - Agent: Codex

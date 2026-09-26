@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-26T13:07:02Z
+**Last edited:** 2026-09-26T13:10:43Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -540,7 +540,8 @@ control remains visible when account labels are long.
   or the public site.
 - `GET /auth/accounts` returns safe device-scoped summaries.
 - `GET /auth/accounts/add-availability` reports whether another account may be
-  added and whether account-switcher UI is enabled by the server configuration.
+  added and whether the switcher should be shown, based on the configured limit
+  and the number of accounts already available on the device.
 - `POST /auth/accounts/switch` accepts an opaque slot.
 - `DELETE /auth/accounts/{account_slot}` removes a remembered slot.
 
@@ -784,6 +785,8 @@ logs.
   from switching: when lowered to one, existing multiple remembered accounts
   remain switchable while Add account is hidden; the switcher is hidden only
   when one account is available.
+- 2026-09-26T13:10:43Z — Clarified that switcher availability is based on both
+  the configured limit and the number of accounts available on the device.
 
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records changes specific to this unit.

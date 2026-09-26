@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-26T13:33:29Z
+- [design-system] Vertically centered the notification and message counter text
+  within the top-bar pills by matching the line box to the 16px pill height.
+
+## 2026-09-26T13:32:36Z
+- [design-system] Changed active tab labels to bold white across shared, Settings,
+  Profile, and Connections tabs; existing accent underlines remain.
+
+## 2026-09-26T13:29:03Z
+- [design-system] Set the signed-in top-bar logo artwork to 38px high and page
+  titles to 18px, keeping the existing 40px control rail and icon sizing.
+
+## 2026-09-26T13:22:52Z
+- [operations] Started the local web app and API, with the API using staging
+  configuration. Verified local health and staging DB connectivity. Production
+  was already at migration head with no schema drift, so no DB migration was
+  needed.
+
+## 2026-09-26T13:15:19Z
+- [design-system] Removed borders from top-bar unread-count pills and fixed
+  their text color to white in both themes.
+
+## 2026-09-26T13:13:46Z
+- [design-system] Reduced signed-in top-bar icon glyphs from 24px to 20px,
+  retaining their 40px hit areas. Updated product and implementation design
+  contracts.
+
+## 2026-09-26T13:10:43Z
+- [account-access] Clarified that the availability endpoint decides whether
+  to show the switcher from both the configured limit and available account
+  count.
+
 ## 2026-09-26T13:07:02Z
 - [account-access] Decoupled switcher visibility from the account-add limit.
   When a limit is lowered to one, already remembered accounts remain switchable;

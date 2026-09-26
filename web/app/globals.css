@@ -2552,7 +2552,8 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .settings-tab.active {
-  color: var(--color-accent);
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .settings-tab.active::after {
@@ -3624,7 +3625,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
 }
 
 .tabs__pill[aria-selected="true"] {
-  color: var(--color-accent);
+  color: #ffffff;
   font-weight: 700;
   border-bottom: 0;
   background: transparent;
@@ -5648,7 +5649,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   border-radius: var(--radius-sm);
   color: var(--color-muted);
   background: transparent;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-search-button:hover,
@@ -5721,7 +5722,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   color: var(--color-ink);
   background: transparent;
   text-decoration: none;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-menu:hover,
@@ -5743,7 +5744,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
 
 .topbar-preview-logo img {
   width: auto;
-  height: 2.5rem;
+  height: 2.375rem;
   object-fit: contain;
 }
 
@@ -5779,7 +5780,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
 
 .topbar-preview-context strong {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 800;
 }
 
@@ -5791,7 +5792,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   overflow: hidden;
   color: var(--color-ink);
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5811,7 +5812,7 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   padding: 0;
   color: var(--color-ink);
   background: transparent;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .topbar-preview-back:hover,
@@ -5867,13 +5868,14 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   width: auto;
   min-width: 16px;
   height: 16px;
-  border: 1px solid var(--color-paper);
+  border: 0;
   border-radius: 999px;
   padding: 0 4px;
-  color: var(--color-paper);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 16px;
+  text-align: center;
 }
 
 .profile-tab {
@@ -5889,7 +5891,8 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
 }
 
 .profile-tab.active {
-  color: var(--color-accent);
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .profile-tab.active::after {
@@ -5975,7 +5978,8 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
 }
 
 .connection-tab.active {
-  color: var(--color-accent);
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .connection-tab.active::after {

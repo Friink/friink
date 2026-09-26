@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-24T22:19:59Z
+**Last edited:** 2026-09-26T13:32:36Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -51,14 +51,15 @@ contract rather than repeated here.
 
 ### Color
 
-- The primary brand color is green and is used for active states, selected
-  tabs, important links, primary actions, indicators, and focus treatment.
+- The primary brand color is green and is used for active indicators, important
+  links, primary actions, and focus treatment. Active tab labels use bold white
+  text; their underline remains accent-colored.
 - Scrollable tab strips hide the right scroll affordance at the end of the
   strip, and their arrow controls remain contained within the tab-bar height
   and flush with the strip edges.
-- Selected tabs use the user-configurable accent color for both text and the
-  smoothly moving active-tab underline, use bold text, and have a comfortably
-  readable label size. The shared tab container also renders a subtle
+- Selected tabs use bold white text and the user-configurable accent color for
+  the smoothly moving active-tab underline, with a comfortably readable label
+  size. The shared tab container also renders a subtle
   full-width bottom rule, but selected tabs have no background fill.
 - Post actions use the current accent color on hover, keyboard focus, and
   press; persistent Like and Save states also retain the accent color.
@@ -214,15 +215,17 @@ The exact widths, heights, breakpoints, and token names are defined in
   user's profile, neither Home nor Profile is highlighted.
 - The unified `TopBar` preview uses one consistent leading/context/actions
   structure across signed-in surfaces and shares the side-drawer surface. The
-  full theme-aware Friink lockup links Home and is 40px high, with a 16px gap
+  full theme-aware Friink lockup links Home and is 38px high inside a 40px
+  control rail, with a 16px gap
   after the hamburger or Back control. Desktop keeps the title centered. On
   mobile Home shows the logo without a title; other regular screens show the
   title beside Back, hide the logo, and keep actions at the right edge. The
   search route retains its Back/search/actions composition. TopBar utility
-  glyphs are 24px in 40px hit areas; the desktop title and expanded-search
-  text are 20px, and ActionMenu row icons are 16px. Home Chat and Notifications
+  glyphs are 20px in 40px hit areas; page titles are 18px, expanded-search
+  text is 20px, and ActionMenu row icons are 16px. Home Chat and Notifications
   display actual unread counts in top-right pills, capped at `9+`; pills are
-  16px high with 12px text and a 1px surface-colored border. The active
+  16px high with 12px white, vertically centered text and no border in either
+  theme. The active
   search-filter indicator remains a dot. The existing Header and NavigationBar
   remain mounted but are hidden during preview evaluation. The preview controls
   preserve existing route destinations and action semantics. The top-bar inner
