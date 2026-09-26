@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-26T22:50:19Z
+- [account-access] Added a read-only staging audit to BUG-AUTH-003: refresh
+  reuse family counts, active session/token mismatches, latest slot-replacement
+  sequence, and stale local-log limitations. Trigger remains unconfirmed.
+
 ## 2026-09-26T13:46:26Z
 - [design-system] Set top-bar counter pills to 2px horizontal padding so the
   count stays visually centered inside a compact pill.

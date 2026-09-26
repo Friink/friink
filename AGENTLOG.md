@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-26T22:50:19Z — Record Session-Stability Log and DB Audit
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the local and staging evidence gathered for randomly terminating sessions.
+- Changes Made: Updated BUG-AUTH-003 with read-only staging aggregates showing 37 refresh families marked `reuse_detected` across 32 sessions and 6 accounts, four linked active session rows, eight active session rows without a current usable refresh token, and the latest reuse-to-slot-replacement sequence. Recorded that the available local Uvicorn log is stale and lacks timestamps/request IDs; the browser-side replay trigger remains unconfirmed.
+- Files: `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed existing API/frontend refresh handling and `git diff --check` passed. Staging database queries ran in a read-only transaction; no database or application data was changed.
+
 ## 2026-09-26T13:46:26Z — Tighten Top-Bar Counter Pill Padding
 
 - Agent: Codex
