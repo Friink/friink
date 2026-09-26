@@ -4,14 +4,11 @@ from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.models.user import User
-from app.routers.auth import get_current_user
-from app.services.security import decode_token
-from app.services.auth import user_id_from_subject
+from app.routers.auth import get_current_user, get_optional_user
 from app.config import Settings, get_settings
 from app.schemas.posts import CreatePostRequest, FeedContextResponse, FeedPageResponse, LikeActorPageResponse, PostMediaCleanupRequest, PostMediaConfirmRequest, PostMediaConfirmResponse, PostMediaUploadUrlItem, PostMediaUploadUrlRequest, PostMediaUploadUrlResponse, PostResponse, ReactionResponse
 from app.services.post_media import PostMediaObjectError, PostMediaStorageNotConfiguredError, PostMediaStorageService
@@ -20,7 +17,6 @@ from app.services.reactions import list_like_actors, list_saved_posts, set_like,
 from app.services.session_ops import rollback
 
 router = APIRouter(prefix="/posts", tags=["posts"])
-optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 logger = logging.getLogger("friink.posts")
 
 
@@ -57,21 +53,6 @@ def _cleanup_post_media(storage: PostMediaStorageService, storage_keys: list[str
                 user_id,
                 key,
             )
-
-
-async def get_optional_current_user(
-    request: Request,
-    token: str | None = Depends(optional_oauth2_scheme),
-    session: Session = Depends(get_session),
-) -> User | None:
-    if not token:
-        return None
-    try:
-        payload = decode_token(token, "access")
-        user_id = user_id_from_subject(str(payload.get("sub", "")))
-    except Exception:
-        return None
-    return session.get(User, user_id)
 
 
 @router.post("/media/upload-url", response_model=PostMediaUploadUrlResponse)
@@ -198,7 +179,7 @@ async def list_posts(
     cursor: str | None = None,
     limit: int = 20,
     feed: Literal["explore", "following"] = "explore",
-    current_user: User | None = Depends(get_optional_current_user),
+    current_user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ) -> FeedPageResponse:
     return await get_posts_page(session, limit=limit, cursor=cursor, viewer=current_user, feed=feed)
@@ -210,7 +191,7 @@ async def list_post_updates(
     after_id: uuid.UUID,
     limit: int = 20,
     feed: Literal["explore", "following"] = "explore",
-    current_user: User | None = Depends(get_optional_current_user),
+    current_user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ) -> list[PostResponse]:
     return [serialize_post(post, viewer=current_user, session=session) for post in await get_newer_posts(session, after_created_at=after_created_at, after_post_id=after_id, limit=limit, viewer=current_user, feed=feed)]
@@ -232,7 +213,7 @@ async def get_post_context(
     before_limit: int = 10,
     after_limit: int = 10,
     feed: Literal["explore", "following"] = "explore",
-    current_user: User | None = Depends(get_optional_current_user),
+    current_user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
 ) -> FeedContextResponse:
     context = await get_feed_context(session, post_id, before_limit=before_limit, after_limit=after_limit, viewer=current_user, feed=feed)
@@ -242,7 +223,7 @@ async def get_post_context(
 
 
 @router.get("/public/{public_id}", response_model=PostResponse)
-async def get_public_post_route(public_id: str, current_user: User | None = Depends(get_optional_current_user), session: Session = Depends(get_session)) -> PostResponse:
+async def get_public_post_route(public_id: str, current_user: User | None = Depends(get_optional_user), session: Session = Depends(get_session)) -> PostResponse:
     post = await get_post_by_public_id(session, public_id)
     if not post or not can_view_post(session, current_user, post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
@@ -250,7 +231,7 @@ async def get_public_post_route(public_id: str, current_user: User | None = Depe
 
 
 @router.get("/{post_id}", response_model=PostResponse)
-async def get_post_route(post_id: uuid.UUID, current_user: User | None = Depends(get_optional_current_user), session: Session = Depends(get_session)) -> PostResponse:
+async def get_post_route(post_id: uuid.UUID, current_user: User | None = Depends(get_optional_user), session: Session = Depends(get_session)) -> PostResponse:
     post = await get_post(session, post_id)
     if not post or not can_view_post(session, current_user, post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
@@ -290,7 +271,7 @@ async def get_post_like_actors(
 
 
 @router.get("/{post_id}/replies", response_model=list[PostResponse])
-async def list_post_replies(post_id: uuid.UUID, current_user: User | None = Depends(get_optional_current_user), session: Session = Depends(get_session)) -> list[PostResponse]:
+async def list_post_replies(post_id: uuid.UUID, current_user: User | None = Depends(get_optional_user), session: Session = Depends(get_session)) -> list[PostResponse]:
     return [serialize_post(post, viewer=current_user, session=session) for post in await get_post_replies(session, post_id, viewer=current_user)]
 
 

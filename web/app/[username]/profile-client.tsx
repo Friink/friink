@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
-import { AuthApiError, clearAuthSession, getLoginRecoveryPath, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, refreshAuthSession, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { AuthApiError, clearAuthSession, getLoginRecoveryPath, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -65,7 +65,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     }
 
     let active = true;
-    refreshAuthSession()
+    restoreAuthSessionForEntry()
       .then((restoredSession) => {
         if (!active) return;
         saveAuthSession(restoredSession);

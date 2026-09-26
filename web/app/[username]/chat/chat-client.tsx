@@ -6,9 +6,10 @@ import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { ChatMediaGallery } from '@/components/chat-media-gallery';
 import { ProfileCard } from '@/components/profile-card';
-import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, refreshAuthSession, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
+import { useAppShellState } from '@/components/app-shell-state-provider';
 
 type ChatClientProps = { username?: string; conversationId?: string };
 
@@ -29,12 +30,15 @@ function mergeMessages(current: ApiMessage[], incoming: ApiMessage[]) {
 export function ChatClient({ username, conversationId }: ChatClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const chatIdentity = user?.id ?? loadAuthSession()?.user.id ?? loadCachedAuthUser()?.id ?? 'chat-recovery';
+  const chatKey = conversationId ?? username?.toLocaleLowerCase() ?? 'new';
   const [context, setContext] = useState<ApiChatContext | null>(null);
   const conversation = context?.conversation ?? null;
-  const [messages, setMessages] = useState<ApiMessage[]>([]);
-  const [draft, setDraft] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useAppShellState<ApiMessage[]>(chatIdentity, `chatMessages:${chatKey}`, []);
+  const [draft, setDraft] = useAppShellState(chatIdentity, `chatDraft:${chatKey}`, '');
+  const [busy, setBusy] = useAppShellState(chatIdentity, `chatBusy:${chatKey}`, false);
+  const [error, setError] = useAppShellState<string | null>(chatIdentity, `chatError:${chatKey}`, null);
+  const [retryMessageId, setRetryMessageId] = useAppShellState<string | null>(chatIdentity, `chatRetryMessage:${chatKey}`, null);
   const [chatAccessDenied, setChatAccessDenied] = useState(false);
   const [receiptState, setReceiptState] = useState<ReceiptState>({ unreadCount: 0, firstUnreadMessageId: null, lastReadMessageId: null, peerDeliveredMessageId: null, peerReadMessageId: null });
   const lastReadMessageRef = useRef<string | null>(null);
@@ -48,7 +52,7 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
       let session = loadAuthSession();
       if (!session) {
         try {
-          session = await refreshAuthSession();
+          session = await restoreAuthSessionForEntry();
           saveAuthSession(session);
         } catch (nextError) {
           if (cancelled) return;
@@ -79,7 +83,12 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
         if (!nextContext.conversation) return;
         const page = await transport.loadMessages(nextContext.conversation.id);
         if (cancelled) return;
-        setMessages(page.items);
+        setMessages((current) => {
+          const committedIds = new Set(page.items.map((message) => message.client_message_id).filter((id): id is string => Boolean(id)));
+          const pending = current.filter((message) => !message.id.startsWith('pending-') || !committedIds.has(message.id.slice('pending-'.length)));
+          return mergeMessages(pending, page.items);
+        });
+        setError(null);
         lastReadMessageRef.current = page.last_read_message_id;
         setReceiptState({ unreadCount: page.unread_count, firstUnreadMessageId: page.first_unread_message_id, lastReadMessageId: page.last_read_message_id, peerDeliveredMessageId: page.peer_delivered_message_id, peerReadMessageId: page.peer_read_message_id });
         unsubscribe = transport.subscribe(nextContext.conversation.id, page.next_cursor, (event) => {
@@ -140,7 +149,8 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
     const session = loadAuthSession();
     if ((!text && !media.length) || !context?.can_send || !session || busy) return;
 
-    const clientMessageId = crypto.randomUUID();
+    const clientMessageId = retryMessageId ?? crypto.randomUUID();
+    setRetryMessageId(clientMessageId);
     const optimisticMediaUrls = media.map((file) => URL.createObjectURL(file));
     const optimisticMessage = conversation ? {
       id: `pending-${clientMessageId}`,
@@ -159,6 +169,7 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
         ? await sendConversationMessage(session.accessToken, conversation.id, text, clientMessageId, media)
         : await sendMessageToUser(session.accessToken, username!, text, clientMessageId, media);
       if (optimisticMessage) setMessages((current) => mergeMessages(current.filter((message) => message.id !== optimisticMessage.id), [sent]));
+      setRetryMessageId(null);
       optimisticMediaUrls.forEach((url) => URL.revokeObjectURL(url));
       const nextContext = conversation
         ? await getChatContextById(session.accessToken, conversation.id)

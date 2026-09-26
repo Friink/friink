@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-24T22:19:59Z
+**Last edited:** 2026-09-26T12:53:21Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -33,14 +33,14 @@ missing evidence can be filled in.
 ### WEB-R-001 — Account Switcher Uses Device-Scoped Slots
 
 - **Status:** Active
-- **Effective:** 2026-09-07T00:00:00Z
+- **Effective:** 2026-09-26T12:53:21Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
-- **File(s):** `api/app/routers/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
+- **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
 
 - **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
-- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. Opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is `1`, the API reports the switcher disabled and the web app hides its add/switch menu. This does not block ordinary sign-in or silently revoke existing slots; a normal login at capacity may remain un-slotted. With a larger limit, opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
 
 ### WEB-R-002 — OTP Flags Are API-Owned Runtime Configuration
 
@@ -407,13 +407,13 @@ missing evidence can be filled in.
 
 - **Status:** Active
 - **Effective:** Not recorded
-- **Related units:** [account-access](units/account-access.md)
+- **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
 - **File(s):** `web/lib/auth.ts`, `web/lib/api-origin.ts`, `web/components/app-shell-route.tsx`
 
-- **What:** This is the single authoritative model for all future web authentication/session work. Authenticated requests send the current access token and refresh only after a `401 TOKEN_EXPIRED`; they retry the original request exactly once with the refreshed token. No request proactively refreshes before receiving a 401. Only an explicit 401 returned by the refresh exchange clears local session state and redirects to `/login`.
-- **Edge cases:** Network, timeout, CORS, 403, 5xx, malformed-response, and other original-request failures never refresh or clear the session and remain retryable errors. Refresh network/timeout/CORS/5xx/malformed failures also preserve the session. Refreshes are coordinated across tabs with the browser Web Locks API when available and a shared browser-storage lease/result fallback, so followers wait for and reuse the leader's result. The backend's generic `REFRESH_TOKEN_INVALID` response remains unable to distinguish theft from a bypassed legitimate race; coordination prevents the normal browser race before it reaches the server. Each environment uses only its configured API origin; no cross-environment fallback is allowed for any request. Auth/session logic must not be changed without explicit human approval; future auth prompts must reference this rule and obtain sign-off before implementation.
+- **What:** Web access JWTs are held in memory and also issued as short-lived HttpOnly access cookies scoped to the account slot; the JWT carries its `sid`, and API authentication verifies the referenced session remains active. On full document entry, the client reads `/auth/me` using the slot access cookie and does not rotate the refresh cookie while that access credential is valid. A `401 TOKEN_EXPIRED` or missing access cookie triggers one slot-captured, coordinated refresh exchange and one retry. Refresh-token family reuse detection remains enabled. Authenticated requests use the in-memory bearer token when available; cookie-authenticated unsafe requests require an allowed Origin. No bearer credential is written to browser-readable persistent storage or sent in cross-tab messages.
+- **Edge cases:** A public-site visit with no valid remembered session stays public; when one or more valid sessions exist, Friink restores the most recently used one. Protected routes validate the session before rendering authenticated data/actions. A confirmed terminal failure presents an explanation for the cause and waits for the user's acknowledgment before changing accounts. After acknowledgment, Friink validates remembered sessions in descending last-use order and activates the first valid candidate, or returns to the public site if none remain. It never silently switches accounts after a terminal failure. Timeouts, network, CORS, 403, 5xx, malformed responses, and other ambiguous failures do not change identity and remain retryable in recovery. Refresh coordination uses the same captured slot for lock and request, and followers revalidate with their own slot access cookie rather than rotate again. Each environment uses only its configured API origin. Changes are locally implemented; staging acceptance remains required under [BUG-AUTH-003](bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session). Auth/session logic must not be changed without explicit human approval; future auth prompts must reference this rule and obtain sign-off before implementation.
 
 ### AUTH-R-009 — OTP Verification Timeout Recovery
 
@@ -430,14 +430,14 @@ missing evidence can be filled in.
 ### AUTH-R-010 — Multiple Account Switching
 
 - **Status:** Active
-- **Effective:** 2026-09-24T21:58:14Z
+- **Effective:** 2026-09-26T11:40:24Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
 - **File(s):** `docs/archives/auth-and-session.md`, `web/components/side-drawer.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`
 
-- **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds that account to the current browser profile. The account-switcher menu remains available with the current account and `Add account`, and switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
-- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared server-side security state, or cross-account data access. Device slots and account sessions are server-authoritative. Switching validates an opaque slot and its device/session state; it never trusts a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only. Browser refresh locks, coordination results, and cached user metadata are slot-scoped. The active slot has an origin-shared localStorage value plus a per-tab sessionStorage override, and the auth BroadcastChannel is shared but filters messages by active slot. OTP completion for another account must preserve an existing `friink_device_id`; it must not replace the browser device identity and hide prior slots.
+- **What:** After authentication, the web side drawer will provide `Add account`. It opens a design-system modal that reuses the login/signup fields and actions, supports both login and signup, and follows the email → OTP → password → profile signup sequence. A successful authentication adds and selects that account across the browser client. The account-switcher menu remains available with the current account and `Add account`, and switches only among accounts registered on that device. The switcher limit is controlled server-side by `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`, defaulting to four; this does not limit account creation.
+- **Security boundary:** Accounts remain fully independent identities; there is no account-to-account link, merged profile, shared server-side security state, or cross-account data access. Device slots and account sessions are server-authoritative. Switching validates an opaque slot and its device/session state; it never trusts a client-supplied user ID, email, or username. Refresh credentials stay HttpOnly on web and in platform secure storage on mobile. Account lists expose safe display metadata only. Browser refresh locks, coordination results, and cached user metadata are slot-scoped. One origin-shared `localStorage` active slot is authoritative; adding or switching accounts updates it, and other open tabs reload to restore that selected slot. OTP completion for another account must preserve an existing `friink_device_id`; it must not replace the browser device identity and hide prior slots.
 - **Compatibility:** This is an additive extension to the current one-account session path. Existing password, signup OTP, JWT, refresh rotation, terminal-versus-ambiguous failure, logout, and revocation rules remain in force. Mobile-specific requirements are deferred in `docs/archives/auth-and-session-mobile.md`.
 
 ### AUTH-R-011 — Login Route Is Signed-Out Only
@@ -467,14 +467,14 @@ missing evidence can be filled in.
 ### AUTH-R-013 — Account Switcher UX
 
 - **Status:** Active
-- **Effective:** 2026-09-06T16:52:53Z
-- **Related units:** [account-access](units/account-access.md)
+- **Effective:** 2026-09-26T12:53:21Z
+- **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
-- **File(s):** `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `docs/archives/auth-and-session.md`
+- **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/archives/auth-and-session.md`
 
 - **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
-- **Edge cases:** The selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging, are removed from the device list, and switch automatically. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A normal successful switch updates the in-memory app shell and remounts it for the new user without a browser-level reload; removing the active account may reload the browser after automatically switching to the most recently used remaining account.
+- **Edge cases:** With `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the account menu and its add/switch controls are hidden while ordinary sign-in and logout remain available. Otherwise, the selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging; after the user acknowledges that the session ended, Friink removes the unavailable account from the device list and activates the most recently used valid remembered account, or returns to public when none remain. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful add or switch selects that account client-wide; other tabs reload and restore it. Removing the active account may reload the browser after automatically switching to the most recently used remaining account.
 
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 
@@ -774,27 +774,27 @@ missing evidence can be filled in.
 ### AUTH-R-038 — Web Session Persistence
 
 - **Status:** Active
-- **Effective:** 2026-08-27T00:00:00Z
+- **Effective:** 2026-09-26T11:40:24Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/lib/auth.ts`, `web/components/public-header.tsx`, `web/app/login/login-client.tsx`
+- **File(s):** `web/lib/auth.ts`, `web/components/public-header.tsx`, `web/app/login/login-client.tsx`, `api/app/routers/auth.py`
 
-- **What:** The web client stores only safe authenticated account metadata and remembered-account summaries in slot-scoped browser storage; the short-lived access token remains in memory and refresh credentials remain HTTP-only cookies. Logout clears the current slot's cached metadata and in-memory session without clearing other remembered-account summaries.
+- **What:** The web client stores only safe authenticated account metadata and remembered-account summaries in slot-scoped browser storage. Access JWTs remain in memory and in short-lived, slot-scoped HttpOnly cookies; refresh credentials remain HttpOnly cookies. One shared selected-slot key controls the active account across the browser client; adding or switching accounts updates that key, and other open tabs reload to restore the selected slot. Logout clears the current slot's cached metadata and session cookies without clearing other remembered-account summaries.
 - **Edge cases:** `loadPersistedAuthSession()` intentionally ignores the local demo email `demo@friink.local` so the public landing page does not redirect for demo sessions. Slot-scoped coordination and cached summaries must not store access/refresh tokens, token hashes, passwords, OTPs, internal UUIDs, or device secrets in browser-readable storage.
 
 ### AUTH-R-040 — Session Restoration Has Explicit Recovery UX
 
 - **Status:** Active
-- **Effective:** 2026-09-16T20:03:49Z
-- **Related units:** [account-access](units/account-access.md), [profiles](units/profiles.md)
+- **Effective:** 2026-09-26T12:37:37Z
+- **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `api/app/services/auth_errors.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public and authenticated route entry use the shared `restoreAuthSessionForEntry()` bootstrap contract. While refresh runs, the loading surface says “Reconnecting…” and “Just a moment while we get you back in.” Cached safe user metadata is presentation-only; authenticated effects require a successful in-memory refresh. The public landing route remains behind explicit loading/recovery, redirects after successful refresh, responds to cross-tab restoration, and offers retry on recoverable failures. A terminal refresh failure preserves the selected account as safe recovery context and offers sign-in as that account plus a remembered-account modal. The modal lists the current account first, then other accounts by recency. Switching from recovery requires explicit selection; only that slot is refreshed and the shell changes after success.
-- **Edge cases:** Recoverable failures retain retry and do not clear account state. Terminal failures clear in-memory credentials but retain safe profile metadata and selected-slot context; no other account is attempted automatically. The account list scrolls inside the capped modal, not the recovery page. Refresh-token rotation and reuse detection remain authoritative. Refresh coordination and request headers use the same captured account slot; stale ordinary responses cannot replace a later active slot.
-- **Verification:** Implementation updated locally; automated tests and staging browser acceptance remain pending.
+- **What:** Public route content renders immediately. A non-blocking `/auth/entry-status` hint treats any non-empty access or refresh cookie, including cookies for other remembered-account slots when the selected slot is missing or stale, as a reason to attempt restoration; this hint does not establish that a session is valid. A public-site visit with no valid remembered session stays public. If one or more remembered sessions validate, Friink restores the most recently used one. Authenticated route entry validates `/auth/me` with the slot access cookie, then refreshes only when access is expired or absent. Cached safe user metadata is presentation-only; private data/actions require server validation. When a known session has ended, Friink explains the cause and waits for acknowledgment before falling back to the most recently used valid remembered session, or returning to public when none remain. Expiry or another terminal cause is also explained; Friink does not silently switch accounts. A termination notice is shown once per browser client: other open tabs wait for acknowledgment and then follow the same account or public-site result. If the tab presenting the notice closes, another tab can take over.
+- **Edge cases:** Timeouts/network/CORS/5xx/malformed responses never prove that a session ended, never change account identity, and remain retryable. Ambiguous recovery retains retry, sign-in, explicit account choice, and logout actions. The account-choice list scrolls inside its modal. Refresh-token reuse detection remains active. Refresh coordination and request headers use the same captured slot; cross-tab followers validate using their own slot access cookie, and stale responses cannot replace a later active slot.
+- **Verification:** Web TypeScript and API syntax checks pass. A focused API session-revocation test reached its passing assertion but pytest reported a Windows temporary-SQLite cleanup error during teardown. Multi-tab browser acceptance and staging acceptance remain pending.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 

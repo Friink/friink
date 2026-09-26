@@ -126,10 +126,72 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
             _delete_user(user_id)
 
 
+def test_refresh_retry_with_same_operation_id_replays_same_cookie() -> None:
+    suffix = uuid.uuid4().hex
+    email = f"refresh-retry-{suffix}@example.com"
+    username = f"retry_{suffix[:24]}"
+    password = "Strong-pass9!"
+    signup_client = TestClient(app)
+    user_id: uuid.UUID | None = None
+
+    try:
+        signup = signup_client.post(
+            "/auth/signup",
+            json={
+                "email": email,
+                "username": username,
+                "display_name": "Refresh Retry Test",
+                "password": password,
+                "date_of_birth": "1990-01-01",
+            },
+        )
+        assert signup.status_code == 201, signup.text
+        old_token = signup_client.cookies.get(REFRESH_COOKIE_NAME)
+        assert old_token
+        with get_session_factory()() as session:
+            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
+        original_row = _rows(user_id)[0]
+        operation_id = f"test-{uuid.uuid4().hex}"
+
+        first_client = TestClient(app)
+        first_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
+        first = first_client.post(
+            "/auth/refresh",
+            headers={"X-Friink-Refresh-Operation-Id": operation_id},
+        )
+        assert first.status_code == 200, first.text
+        assert set(first.json()) == {"access_token", "token_type", "account_slot"}
+        replacement = first.cookies.get(REFRESH_COOKIE_NAME)
+        assert replacement and replacement != old_token
+
+        # Simulate losing the first response's Set-Cookie delivery: each retry
+        # presents the stale parent cookie and must recover the same child.
+        for _ in range(2):
+            retry_client = TestClient(app)
+            retry_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
+            retry = retry_client.post(
+                "/auth/refresh",
+                headers={"X-Friink-Refresh-Operation-Id": operation_id},
+            )
+            assert retry.status_code == 200, retry.text
+            assert retry.cookies.get(REFRESH_COOKIE_NAME) == replacement
+
+        rows = [row for row in _rows(user_id) if row.family_id == original_row.family_id]
+        active_rows = [row for row in rows if row.revoked_at is None and row.rotated_at is None]
+        updated_parent = next(row for row in rows if row.id == original_row.id)
+        assert len(rows) == 2
+        assert len(active_rows) == 1
+        assert updated_parent.rotation_operation_id == operation_id
+        assert active_rows[0].derivation_key_id
+    finally:
+        if user_id is not None:
+            _delete_user(user_id)
+
+
 def test_session_management_lists_current_and_revokes_independently() -> None:
     suffix = uuid.uuid4().hex
     email = f"managed-session-{suffix}@example.com"
-    username = f"managed_session_{suffix[:22]}"
+    username = f"managed_session_{suffix[:15]}"
     password = "Strong-pass9!"
     signup_client = TestClient(app)
     user_id: uuid.UUID | None = None

@@ -73,6 +73,7 @@ class MessageMediaResponse(BaseModel):
 class MessageResponse(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
+    client_message_id: str
     sender_id: str
     content: str
     created_at: datetime

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+import base64
 import hashlib
+import hmac
 import secrets
 import uuid
 
@@ -26,17 +28,41 @@ def hash_refresh_token(raw_token: str) -> bytes:
     return hashlib.sha256(raw_token.encode("utf-8")).digest()
 
 
+def derive_rotated_refresh_token(raw_token: str, parent: RefreshToken, key_id: str, key: str) -> str:
+    """Derive a stable successor so a committed rotation can be replayed safely."""
+    payload = (
+        b"friink-refresh-rotation:v1\0"
+        + key_id.encode("utf-8")
+        + b"\0"
+        + parent.id.bytes
+        + parent.family_id.bytes
+        + raw_token.encode("utf-8")
+    )
+    digest = hmac.new(key.encode("utf-8"), payload, hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
 def hash_device_identifier(raw_identifier: str) -> bytes:
     return hashlib.sha256(raw_identifier.encode("utf-8")).digest()
 
 
-def issue_refresh_token(session: Session, user_id: uuid.UUID, settings: Settings, family_id: uuid.UUID | None = None, session_id: uuid.UUID | None = None) -> IssuedRefreshToken:
-    raw_token = secrets.token_urlsafe(32)
+def issue_refresh_token(
+    session: Session,
+    user_id: uuid.UUID,
+    settings: Settings,
+    family_id: uuid.UUID | None = None,
+    session_id: uuid.UUID | None = None,
+    *,
+    raw_token: str | None = None,
+    derivation_key_id: str | None = None,
+) -> IssuedRefreshToken:
+    raw_token = raw_token or secrets.token_urlsafe(32)
     record = RefreshToken(
         user_id=user_id,
         session_id=session_id,
         family_id=family_id or uuid.uuid4(),
         token_hash=hash_refresh_token(raw_token),
+        derivation_key_id=derivation_key_id,
         expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days),
     )
     session.add(record)

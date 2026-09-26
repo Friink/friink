@@ -24,7 +24,13 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
-def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta, security_epoch: int = 0) -> str:
+def create_token(
+    user_id: uuid.UUID,
+    token_type: str,
+    expires_delta: timedelta,
+    security_epoch: int = 0,
+    session_id: uuid.UUID | None = None,
+) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
@@ -34,6 +40,8 @@ def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta, 
         "exp": int((now + expires_delta).timestamp()),
         "security_epoch": security_epoch,
     }
+    if session_id is not None:
+        payload["sid"] = str(session_id)
     return jwt.encode(
         payload,
         settings.jwt_signing_key,
@@ -42,9 +50,19 @@ def create_token(user_id: uuid.UUID, token_type: str, expires_delta: timedelta, 
     )
 
 
-def create_access_token(user_id: uuid.UUID, security_epoch: int = 0) -> str:
+def create_access_token(
+    user_id: uuid.UUID,
+    security_epoch: int = 0,
+    session_id: uuid.UUID | None = None,
+) -> str:
     settings = get_settings()
-    return create_token(user_id, "access", timedelta(minutes=settings.access_token_expire_minutes), security_epoch)
+    return create_token(
+        user_id,
+        "access",
+        timedelta(minutes=settings.access_token_expire_minutes),
+        security_epoch,
+        session_id,
+    )
 
 
 def classify_jwt_error(error: jwt.PyJWTError) -> AuthErrorCode:

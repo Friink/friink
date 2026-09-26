@@ -5,7 +5,7 @@ requests, and the visibility and access consequences of those relationships.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-23T01:03:06Z
+**Last edited:** 2026-09-24T22:49:16Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -45,7 +45,10 @@ The owner's private Connections surface includes All, Followers, Following, and
 Requests. Public owners and other users' Connections surfaces include only All,
 Followers, and Following. Incoming requests provide Accept and Reject actions.
 Profile actions show Follow, Following, Pending, or the appropriate unavailable
-state based on server status.
+state based on server status. When a non-Requests view has no connections to
+show, its empty state says “No people here yet.” and “Your connections will
+appear here.” The Requests empty state retains “No pending requests.” and
+“Incoming follow requests will appear here.”
 
 ## Technical contract
 

@@ -13,6 +13,7 @@ from app.models.auth_session import AuthSession
 from app.models.user import User
 from app.services.security import hash_password
 from app.services.session_service import revoke_auth_session
+from app.routers.auth import access_cookie_name
 
 
 def _settings(**overrides) -> Settings:
@@ -70,6 +71,77 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_slot_access_cookie_survives_reload_without_refresh_and_honors_revocation() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    password = "Strong1!pass"
+    user_id = uuid.uuid4()
+    email = f"phase4-cookie-{uuid.uuid4().hex}@example.com"
+    username = f"phase4_cookie_{uuid.uuid4().hex[:12]}"
+    with get_session_factory()() as session:
+        session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+        session.commit()
+
+    try:
+        signed_out = TestClient(app).get("/auth/entry-status")
+        assert signed_out.status_code == 200
+        assert signed_out.json() == {"session_available": False}
+        client = TestClient(app)
+        login = client.post("/auth/login", json={"identifier": email, "password": password})
+        assert login.status_code == 200, login.text
+        slot = login.json()["account_slot"]
+        refresh_cookie = client.cookies.get(f"friink_refresh_{slot}")
+        access_cookie = client.cookies.get(access_cookie_name(slot))
+        assert refresh_cookie and access_cookie
+
+        entry = client.get("/auth/entry-status", headers={"X-Friink-Account-Slot": slot})
+        assert entry.status_code == 200 and entry.json() == {"session_available": True}
+
+        # The public entry guard must see slot cookies even after the selected
+        # slot header is missing or points at a slot without cookies. In either
+        # case, restoration can validate and choose the next active session.
+        slot_cookie_client = TestClient(app)
+        slot_cookie_client.cookies.set(access_cookie_name(slot), access_cookie)
+        slot_cookie_client.cookies.set(f"friink_refresh_{slot}", refresh_cookie)
+        unselected_entry = slot_cookie_client.get("/auth/entry-status")
+        assert unselected_entry.status_code == 200
+        assert unselected_entry.json() == {"session_available": True}
+        stale_selection_entry = slot_cookie_client.get(
+            "/auth/entry-status",
+            headers={"X-Friink-Account-Slot": str(uuid.uuid4())},
+        )
+        assert stale_selection_entry.status_code == 200
+        assert stale_selection_entry.json() == {"session_available": True}
+
+        cross_site_logout = client.post(
+            "/auth/logout",
+            headers={"X-Friink-Account-Slot": slot, "Origin": "https://attacker.example"},
+        )
+        assert cross_site_logout.status_code == 403, cross_site_logout.text
+        restored = client.get("/auth/me", headers={"X-Friink-Account-Slot": slot})
+        assert restored.status_code == 200, restored.text
+        assert restored.json()["email"] == email
+        assert client.cookies.get(f"friink_refresh_{slot}") == refresh_cookie
+
+        with get_session_factory()() as session:
+            from app.models.account_session_slot import AccountSessionSlot
+            account_slot = session.get(AccountSessionSlot, uuid.UUID(slot))
+            assert account_slot is not None
+            auth_session_id = account_slot.auth_session_id
+            auth_session = session.get(AuthSession, auth_session_id)
+            assert auth_session is not None
+            revoke_auth_session(session, auth_session, "remote_revocation")
+            session.commit()
+
+        rejected = client.get("/auth/me", headers={"X-Friink-Account-Slot": slot})
+        assert rejected.status_code == 401, rejected.text
+        assert rejected.json()["detail"]["code"] == "SESSION_TERMINATED"
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id == user_id))
             session.commit()
         app.dependency_overrides.clear()
 
@@ -473,11 +545,47 @@ def test_stale_revoked_slot_does_not_block_add_account() -> None:
         assert [item["account_slot"] for item in accounts.json()] == [first.json()["account_slot"]]
         availability = client.get("/auth/accounts/add-availability", headers={"Authorization": f"Bearer {first.json()['access_token']}", "X-Friink-Account-Slot": first.json()["account_slot"]})
         assert availability.status_code == 200, availability.text
-        assert availability.json() == {"allowed": True}
+        assert availability.json() == {"allowed": True, "switcher_enabled": True}
 
         third = client.post("/auth/login", json={"identifier": emails[2], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
         assert third.status_code == 200, third.text
         assert third.json()["account_slot"]
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id.in_(users)))
+            session.commit()
+        app.dependency_overrides.clear()
+
+
+def test_single_slot_limit_disables_switcher_but_preserves_normal_login() -> None:
+    app.dependency_overrides[get_settings] = lambda: _settings(MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1)
+    password = "Strong1!pass"
+    users = []
+    accounts = []
+    for label in ("one", "two"):
+        user_id = uuid.uuid4()
+        email = f"phase4-single-slot-{label}-{uuid.uuid4().hex}@example.com"
+        username = f"phase4_single_slot_{label}_{uuid.uuid4().hex[:12]}"
+        users.append(user_id)
+        accounts.append((email, username))
+        with get_session_factory()() as session:
+            session.add(User(id=user_id, email=email, username=username, username_key=username.casefold(), password_hash=hash_password(password), date_of_birth=date(1990, 1, 1), is_verified=True))
+            session.commit()
+    try:
+        client = TestClient(app)
+        first = client.post("/auth/login", json={"identifier": accounts[0][0], "password": password})
+        assert first.status_code == 200, first.text
+        headers = {"Authorization": f"Bearer {first.json()['access_token']}", "X-Friink-Account-Slot": first.json()["account_slot"]}
+        availability = client.get("/auth/accounts/add-availability", headers=headers)
+        assert availability.status_code == 200, availability.text
+        assert availability.json() == {"allowed": False, "switcher_enabled": False}
+
+        add_account = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password}, headers={"X-Friink-Account-Flow": "add-account"})
+        assert add_account.status_code == 409, add_account.text
+
+        normal_login = client.post("/auth/login", json={"identifier": accounts[1][0], "password": password})
+        assert normal_login.status_code == 200, normal_login.text
+        assert normal_login.json()["account_slot"] is None
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(users)))

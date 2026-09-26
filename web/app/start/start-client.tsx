@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginScreen } from '@/components/login-screen';
-import { loadAuthSession, refreshAuthSession } from '@/lib/auth';
+import { hasSessionForEntry, loadAuthSession, restoreAuthSessionForEntry } from '@/lib/auth';
 
 export function StartClient() {
   const router = useRouter();
@@ -20,8 +20,9 @@ export function StartClient() {
       return;
     }
 
-    refreshAuthSession()
-      .then(() => router.replace('/home'))
+    hasSessionForEntry()
+      .then((available) => available ? restoreAuthSessionForEntry() : null)
+      .then((session) => session ? router.replace('/home') : setSessionChecked(true))
       .catch(() => setSessionChecked(true));
   }, [router]);
 

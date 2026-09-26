@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-09-23T21:44:20Z
+**Last edited:** 2026-09-25T01:20:58Z
 
 ## Repository and runtime boundaries
 
@@ -30,6 +30,18 @@ through `NEXT_PUBLIC_API_BASE_URL`.
 
 ## Shared layout and navigation
 
+- Authenticated page components still mount `AppShellRoute` at the page
+  level. The root layout now wraps routes in `AppShellStateProvider`, which
+  preserves account-scoped shell state across those remounts. `AppShellRoute`
+  initializes synchronously from the in-memory session to avoid the ordinary
+  navigation restore flash. The `AppShell` instance still remounts, and
+  route-owned operations are not all made resumable/idempotent; see
+  [BUG-NAV-001](bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
+- Authenticated entry restores `/auth/me` from a slot-scoped HttpOnly access
+  cookie bound to an active server-side session (`sid`). Refresh rotation is
+  reactive to an expired/missing access cookie. Public routes render before
+  their non-blocking entry-status check. See
+  [Account Access](units/account-access.md).
 - The shared visible app content column and contextual floating composer use `--space-content-col` with a `720px` tablet/desktop cap. The inline gutter is outside that cap: `16px` on desktop and `8px` on mobile.
 - The floating composer is available on feed and supported contextual surfaces and is intentionally hidden on profile pages.
 - The global Header owns the Chat link between Search and Notifications. It routes to `/chats` and shows an unread dot when a conversation has new messages. The drawer contains the remaining personal and network navigation.
