@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-26T12:53:21Z
+**Last edited:** 2026-09-27T13:30:24Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -269,14 +269,25 @@ or switching accounts updates the shared selected-slot key. Other open tabs
 reload when that key changes, then restore and render only the selected slot.
 Legacy tab-local slot values do not override the shared selection.
 
-The public landing page renders immediately. A non-blocking entry-status
-request treats any access or refresh cookie, including cookies scoped to other
-account slots, only as a hint to try restoration; it does not establish that a
-session is valid or call refresh merely to decide whether public content can
-render. If no valid remembered session exists, the visitor remains on the
-public site. When one or more sessions validate, the client restores its most
-recently used account. Protected app routes remain authoritative before
-exposing private data or actions.
+The web app uses the nonnegative integer `friink_session_hint` cookie only to
+choose public-site routing. Saving a session, including after an access-token
+refresh, writes `1` and renews its 30-day expiry. Clearing a session keeps it at
+`1` when another remembered account slot remains, and writes `0` when none
+remain. The `/` server page redirects to `/home` only for a valid positive
+integer; zero, missing, or invalid values render the public route. The legacy
+`/subscriptions` URL permanently redirects to `/settings/subscription`. The
+cookie contains no credential or account identifier and never grants access.
+
+When the hint is absent, public content renders immediately and the existing
+non-blocking `/auth/entry-status` request remains as a compatibility path for
+sessions created before this hint was introduced. That API response treats any
+access or refresh cookie, including cookies scoped to other account slots,
+only as a reason to try restoration; it does not establish that a session is
+valid or call refresh merely to decide whether public content can render. If no
+valid remembered session exists, the visitor remains on the public site. When
+one or more sessions validate, the client restores its most recently used
+account. Protected app routes remain authoritative before exposing private
+data or actions.
 
 #### Multi-account terminal-session recovery
 
@@ -451,6 +462,10 @@ the release is considered complete.
 - [x] **ACCESS-AC-031** A public landing visit with no session renders without
       a blocking restore screen or refresh exchange; protected routes still
       reject unauthenticated requests.
+- [x] **ACCESS-AC-041** A nonnegative integer web-origin redirect hint sends
+      `/` to `/home` only when its value is greater than zero; zero or invalid
+      values leave the public content rendered. `/subscriptions` redirects to
+      the in-app Subscription settings route.
 - [ ] **ACCESS-AC-032** When the current session is confirmed ended, the app
       waits for acknowledgment, then validates remembered accounts in
       most-recent-use order; invalid candidates are skipped without crossing
@@ -497,12 +512,14 @@ be revoked individually or through `Log out other sessions`.
 `Add account` opens the existing login/signup modal. The current account remains
 active until new authentication, session, and slot establishment succeed.
 
-When the API reports `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the web app hides
-the account-switcher control and its add/switch menu. Ordinary sign-in and
-logout remain available. The API still enforces the one-slot limit; existing
-remembered slots are not silently revoked if the configured limit is lowered.
-If the device is already at capacity, a normal login remains possible but may
-create an un-slotted session that is not remembered by the account switcher.
+When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the web app hides the account
+switcher only when one account is available on the device. If multiple accounts
+were already remembered before the limit was lowered, the switcher remains
+available so the user can move between them; `Add account` is hidden because
+the API reports that no additional account can be added. Existing remembered
+slots are not silently revoked. Ordinary sign-in and logout remain available.
+If the device is at capacity, a normal login may create an un-slotted session
+that is not remembered by the account switcher.
 
 Selecting a remembered account shows a spinner, disables competing account
 actions, validates the slot, and updates the shell in place. Removing or
@@ -525,9 +542,10 @@ control remains visible when account labels are long.
   lifecycle state server-side.
 - **ACCESS-R-026:** The default slot limit is four; the operational range is
   one through sixteen and limits remembered slots, not account creation. When
-  the limit is one, the API reports the switcher as disabled and the web UI
-  hides account add/switch controls. This does not block ordinary sign-in or
-  silently revoke existing slots.
+  the limit is one, the API disables account addition. The web app hides the
+  Add account action when capacity is reached and hides the switcher only when
+  there is at most one available account. Existing multiple slots remain
+  switchable if the limit is lowered; ordinary sign-in remains available.
 - **ACCESS-R-027:** Adding an already remembered account reuses its slot.
 - **ACCESS-R-028:** Switching refreshes account-scoped shell, feed,
   notifications, drafts, and active-session state.
@@ -537,7 +555,8 @@ control remains visible when account labels are long.
   or the public site.
 - `GET /auth/accounts` returns safe device-scoped summaries.
 - `GET /auth/accounts/add-availability` reports whether another account may be
-  added and whether account-switcher UI is enabled by the server configuration.
+  added and whether the switcher should be shown, based on the configured limit
+  and the number of accounts already available on the device.
 - `POST /auth/accounts/switch` accepts an opaque slot.
 - `DELETE /auth/accounts/{account_slot}` removes a remembered slot.
 
@@ -548,9 +567,12 @@ control remains visible when account labels are long.
 - [ ] **ACCESS-AC-021** Failed switching preserves the current account.
 - [ ] **ACCESS-AC-022** Add-account preserves the existing device identity.
 - [ ] **ACCESS-AC-023** The slot limit blocks additions without breaking login.
-- [ ] **ACCESS-AC-039** With the configured slot limit set to one, the API
-      reports the switcher disabled and the web app hides its add/switch menu;
-      ordinary sign-in and logout remain available.
+- [ ] **ACCESS-AC-039** With the configured slot limit set to one and one
+      available account, the API reports switching disabled and the web app
+      hides the switcher; ordinary sign-in and logout remain available.
+- [ ] **ACCESS-AC-040** If the limit is lowered to one while multiple accounts
+      are already remembered, switching remains available and Add account is
+      hidden; the server continues enforcing the one-account addition limit.
 - [ ] **ACCESS-AC-024** Active logout follows the correct fallback.
 - [ ] **ACCESS-AC-025** Reload and cross-tab updates do not leak account state.
 - [ ] **ACCESS-AC-035** Adding an account makes it the selected account in all
@@ -702,7 +724,7 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-R-032 | Refresh keys and requests use one captured slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-R-033 | Refresh recency commits with token rotation | Planned account-list ordering verification | Implemented locally — staging pending |
 | ACCESS-R-034/035 | Add/switch and acknowledged termination converge client-wide; notice owner can be replaced | Multi-tab browser matrix | Implemented locally — staging pending |
-| ACCESS-R-026/AC-039 | Configurable slot limit disables switcher UI at one | Single-slot API test and browser check | Implemented locally — browser/staging pending |
+| ACCESS-R-026/AC-039/AC-040 | Single-slot limit blocks additions but preserves switching across existing accounts | Single-slot and lowered-limit API tests; browser check | Implemented locally — browser/staging pending |
 | ACCESS-R-029 | Failed operations preserve active account | Account isolation tests | Implemented |
 | ACCESS-R-030 | Logout fallback | Active-slot logout test | Implemented |
 | ACCESS-R-014/015 | Token lifetime and refresh contract | Configuration/token tests | Documented — MIG-001 |
@@ -711,6 +733,7 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
 | ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
+| ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
 
 ### Release gates
 
@@ -774,10 +797,17 @@ logs.
 
 ## Changelog
 
-- 2026-09-26T12:53:21Z — The API now reports when the configured remembered
-  account limit disables account switching; the web drawer hides the switcher
-  and add/switch controls in that case. Ordinary sign-in and logout remain
-  available.
+- 2026-09-26T13:07:02Z — The account limit now controls additions independently
+  from switching: when lowered to one, existing multiple remembered accounts
+  remain switchable while Add account is hidden; the switcher is hidden only
+  when one account is available.
+- 2026-09-27T13:07:53Z — Kept the redirect cookie at `1` while another remembered
+  slot remains, refreshed its 30-day expiry on session saves (including token
+  refresh), and wrote `0` when clearing the last remembered slot.
+- 2026-09-26T13:44:23Z — Verified both public entry routes return `200` without
+  the hint and redirect to `/home` with it; TypeScript check passes.
+- 2026-09-26T13:10:43Z — Clarified that switcher availability is based on both
+  the configured limit and the number of accounts available on the device.
 
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records changes specific to this unit.

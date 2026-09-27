@@ -1379,10 +1379,16 @@ async def account_add_availability(
 ) -> AccountAddAvailabilityResponse:
     await _ensure_current_account_slot(request, response, current_user, session, settings)
     raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
+    slots = list_slots(session, raw_device)
+    remembered_user_ids = {slot.user_id for slot, _user in slots}
+    available_account_count = len(remembered_user_ids | {current_user.id})
 
     return AccountAddAvailabilityResponse(
-        allowed=len(list_slots(session, raw_device)) < settings.max_remembered_accounts_per_device,
-        switcher_enabled=settings.max_remembered_accounts_per_device > 1,
+        allowed=len(slots) < settings.max_remembered_accounts_per_device,
+        switcher_enabled=(
+            settings.max_remembered_accounts_per_device > 1
+            or available_account_count > 1
+        ),
     )
 
 

@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-26T11:45:38Z
+**Last edited:** 2026-09-26T22:50:19Z
 
 ## Instructions for agents
 
@@ -147,6 +147,23 @@ session survives.
   - `@admin` then received a new refresh token at `20:57:11.404`; the refresh
     event was recorded at `20:57:12.226`, consistent with fallback reaching
     admin after the other accounts could not be restored.
+- **Additional staging database audit (2026-09-26 UTC):** Read-only aggregate
+  queries found 37 refresh-token families marked `reuse_detected` since
+  September 1, spanning 32 linked sessions and 6 accounts. Four affected
+  families still link to session rows marked active; 31 families link to 28
+  revoked sessions, and two have no session row. The newest reuse revocation
+  occurred at `13:34:45.652`; the linked session was marked
+  `replaced_device_slot` at `13:35:14.276`. Of 24 session rows then marked
+  active, 8 had no current unrevoked, unrotated, unexpired refresh-token row.
+  This confirms persisted refresh-family revocations and session/token-state
+  mismatches, but it does not explain which browser action presented the stale
+  token or caused slot replacement.
+- **Local log availability:** `.codex-local-logs/api.log` was last written on
+  2026-09-18 and contains standard Uvicorn request/status lines, not detailed
+  auth lifecycle events. It includes overlapping successful `/auth/refresh`
+  requests, but has no timestamps or operation IDs to correlate them with the
+  staging revocations. No live local terminal output or staging HTTP log stream
+  was available during this audit.
 - **Confirmed in API behavior:** Re-presenting a rotated token after its
   single-use grace has been consumed revokes its token family and returns a
   terminal `401 REFRESH_TOKEN_INVALID`; this reuse protection remains enabled.
@@ -180,7 +197,9 @@ session survives.
   does not retain every HTTP refresh failure or browser request identifier.
   The transient reconnect screen may be related to a lost response, but that
   link is not proven by the stored events. Neon cold start alone is not
-  established as the cause.
+  established as the cause. The new aggregate counts confirm this is not an
+  isolated refresh family, but still do not distinguish concurrent tabs,
+  interrupted responses, or another stale-cookie retry as the trigger.
 
 ### Earlier partial mitigations
 
@@ -252,10 +271,11 @@ accounts.
 
 The database stores durable `refresh` and `refresh_reuse_detected` security
 events, but not every HTTP error or client request ID. Detailed token-lifecycle
-stdout events require `AUTH_DEBUG_LOGGING_ENABLED`; never copy raw cookies,
-refresh tokens, token hashes, or internal UUIDs into this register. The
-staging evidence establishes reuse and family revocation, not the client-side
-origin of the duplicate requests.
+stdout events require `AUTH_DEBUG_LOGGING_ENABLED`; the local request log
+available during the 2026-09-26 audit was stale and did not contain these
+events. Never copy raw cookies, refresh tokens, token hashes, or internal UUIDs
+into this register. The staging evidence establishes reuse and family
+revocation, not the client-side origin of the duplicate requests.
 
 ### Related documentation and implementation
 

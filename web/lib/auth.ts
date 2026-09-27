@@ -1,6 +1,7 @@
 import { fetchApi } from '@/lib/api-origin';
 import { compressImage } from '@/lib/image-compression';
 import { PresignedMediaUploadError, uploadPresignedMedia, type PresignedMediaUpload } from '@/lib/media-upload';
+import { clearSessionEntryHint, setSessionEntryHint } from '@/lib/session-entry-hint';
 
 export type AuthUser = {
   id: string;
@@ -566,6 +567,7 @@ export async function confirmAccountDeletion(accessToken: string, challengeToken
 
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
+  if (session.user.email !== DEFAULT_DEMO_EMAIL) setSessionEntryHint();
   installAuthCoordinationListener();
   clearSessionTermination();
   const previousAccountSlot = inMemoryAuthSession?.accountSlot;
@@ -601,6 +603,10 @@ export function clearAuthSession() {
   installAuthCoordinationListener();
   authSessionGeneration += 1;
   const accountSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
+  const hasOtherRememberedSessions = getRememberedAccountSummaries()
+    .some((account) => account.accountSlot !== accountSlot);
+  if (hasOtherRememberedSessions) setSessionEntryHint(1);
+  else clearSessionEntryHint();
   inMemoryAuthSession = null;
   if (accountSlot) window.localStorage.removeItem(`${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}`);
   window.localStorage.removeItem(AUTH_SESSION_KEY);

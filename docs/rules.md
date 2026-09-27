@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-26T12:53:21Z
+**Last edited:** 2026-09-26T13:44:23Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -33,14 +33,14 @@ missing evidence can be filled in.
 ### WEB-R-001 — Account Switcher Uses Device-Scoped Slots
 
 - **Status:** Active
-- **Effective:** 2026-09-26T12:53:21Z
+- **Effective:** 2026-09-26T13:07:02Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web/API
 - **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `api/app/services/account_slots.py`, `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `web/components/app-shell-route.tsx`
 
 - **What:** Remembered accounts are server-side slots bound to one device cookie. The default maximum is 4 accounts, configurable from 1 through 16 with `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE`; lowering the value does not silently revoke existing slots.
-- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is `1`, the API reports the switcher disabled and the web app hides its add/switch menu. This does not block ordinary sign-in or silently revoke existing slots; a normal login at capacity may remain un-slotted. With a larger limit, opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
+- **Edge cases:** Add-account reuses an existing valid slot, refuses additions at the limit, and preserves the current account on failed authentication, list, or switch requests. When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` is `1`, Add account is unavailable. Existing multiple remembered accounts remain switchable if the limit is lowered; the switcher is hidden only when at most one account is available. This does not block ordinary sign-in or silently revoke existing slots; a normal login at capacity may remain un-slotted. Opening the selector shows the cached device-scoped list immediately, or the current account as a safe fallback when no cache exists, while one deduplicated async refresh runs; add, switch, and logout operations must refresh the list immediately afterward. A failed refresh leaves the cached/current account usable and exposes a subtle retry action. Active logout revokes only the matching account slot and falls back to the most-recent remaining slot, or the public site when none remain.
 
 ### WEB-R-002 — OTP Flags Are API-Owned Runtime Configuration
 
@@ -467,14 +467,14 @@ missing evidence can be filled in.
 ### AUTH-R-013 — Account Switcher UX
 
 - **Status:** Active
-- **Effective:** 2026-09-26T12:53:21Z
+- **Effective:** 2026-09-26T13:07:02Z
 - **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
 - **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/archives/auth-and-session.md`
 
 - **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
-- **Edge cases:** With `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the account menu and its add/switch controls are hidden while ordinary sign-in and logout remain available. Otherwise, the selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging; after the user acknowledges that the session ended, Friink removes the unavailable account from the device list and activates the most recently used valid remembered account, or returns to public when none remain. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. Reaching the server limit keeps Add account usable while the API remains authoritative. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful add or switch selects that account client-wide; other tabs reload and restore it. Removing the active account may reload the browser after automatically switching to the most recently used remaining account.
+- **Edge cases:** When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, Add account is hidden; the switcher stays visible while multiple accounts are already available and is hidden when there is at most one. Ordinary sign-in and logout remain available. Otherwise, the selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner with `Updating accounts…`; a failed refresh preserves the cached/current account and shows a retry action. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging; after the user acknowledges that the session ended, Friink removes the unavailable account from the device list and activates the most recently used valid remembered account, or returns to public when none remain. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. The API remains authoritative for Add account availability. During an account switch, the selected row shows a spinner and all account rows, logout actions, and Add account are disabled until the request succeeds or fails. A successful add or switch selects that account client-wide; other tabs reload and restore it. Removing the active account may reload the browser after automatically switching to the most recently used remaining account.
 
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 
@@ -786,15 +786,15 @@ missing evidence can be filled in.
 ### AUTH-R-040 — Session Restoration Has Explicit Recovery UX
 
 - **Status:** Active
-- **Effective:** 2026-09-26T12:37:37Z
+- **Effective:** 2026-09-26T13:41:19Z
 - **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md), [profiles](units/profiles.md)
 - **Source:** Current implementation
 - **Platform:** Web only
-- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `api/app/routers/auth.py`, `api/app/services/auth_errors.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
+- **File(s):** `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `api/app/routers/auth.py`, `api/app/services/auth_errors.py`, `web/app/login/login-client.tsx`, `web/components/login-screen.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`
 
-- **What:** Public route content renders immediately. A non-blocking `/auth/entry-status` hint treats any non-empty access or refresh cookie, including cookies for other remembered-account slots when the selected slot is missing or stale, as a reason to attempt restoration; this hint does not establish that a session is valid. A public-site visit with no valid remembered session stays public. If one or more remembered sessions validate, Friink restores the most recently used one. Authenticated route entry validates `/auth/me` with the slot access cookie, then refreshes only when access is expired or absent. Cached safe user metadata is presentation-only; private data/actions require server validation. When a known session has ended, Friink explains the cause and waits for acknowledgment before falling back to the most recently used valid remembered session, or returning to public when none remain. Expiry or another terminal cause is also explained; Friink does not silently switch accounts. A termination notice is shown once per browser client: other open tabs wait for acknowledgment and then follow the same account or public-site result. If the tab presenting the notice closes, another tab can take over.
+- **What:** The public-entry redirect hint is a nonnegative integer cookie named `friink_session_hint` on the web origin. `/` redirects to `/home` when the value is a valid integer greater than zero; zero, missing, negative, or malformed values render the public route. The legacy `/subscriptions` URL permanently redirects to `/settings/subscription`. Saving a session, including after an access-token refresh, writes `1` and renews the 30-day expiry. Clearing a session keeps the hint at `1` when another remembered account slot remains; it writes `0` when none remain. The cookie is only a redirect mechanism and does not establish, validate, or authorize a session. When the hint is absent or zero, public content renders immediately and the non-blocking `/auth/entry-status` compatibility check remains available for legacy clients. A public-site visit with no valid remembered session stays public. If one or more remembered sessions validate, Friink restores the most recently used one. Authenticated route entry validates `/auth/me` with the slot access cookie, then refreshes only when access is expired or absent. Cached safe user metadata is presentation-only; private data/actions require server validation. When a known session has ended, Friink explains the cause and waits for acknowledgment before falling back to the most recently used valid remembered session, or returning to public when none remain. Expiry or another terminal cause is also explained; Friink does not silently switch accounts. A termination notice is shown once per browser client: other open tabs wait for acknowledgment and then follow the same account or public-site result. If the tab presenting the notice closes, another tab can take over.
 - **Edge cases:** Timeouts/network/CORS/5xx/malformed responses never prove that a session ended, never change account identity, and remain retryable. Ambiguous recovery retains retry, sign-in, explicit account choice, and logout actions. The account-choice list scrolls inside its modal. Refresh-token reuse detection remains active. Refresh coordination and request headers use the same captured slot; cross-tab followers validate using their own slot access cookie, and stale responses cannot replace a later active slot.
-- **Verification:** Web TypeScript and API syntax checks pass. A focused API session-revocation test reached its passing assertion but pytest reported a Windows temporary-SQLite cleanup error during teardown. Multi-tab browser acceptance and staging acceptance remain pending.
+- **Verification:** Public-route redirect behavior uses the positive-integer hint; session save/clear call sites update the hint according to remaining remembered slots. Multi-tab browser and staging acceptance remain pending.
 
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
@@ -1372,14 +1372,14 @@ missing evidence can be filled in.
 ### CLIENT-R-006 — Public Pages Use Explicit Session Routing
 
 - **Status:** Active
-- **Effective:** 2026-09-01T00:00:00Z
-- **Related units:** [feed](units/feed.md)
+- **Effective:** 2026-09-26T13:41:19Z
+- **Related units:** [account-access](units/account-access.md), [session-handling](units/session-handling.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web only
-- **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/lib/auth.ts`
+- **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/components/public-header.tsx`, `web/components/public-route-guard.tsx`, `web/lib/auth.ts`, `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`
 
-- **What:** The public landing page checks for an existing non-demo session before rendering its content. A successful refresh routes authenticated visitors to `/home`; confirmed signed-out visitors may remain on the landing page. `/subscriptions` remains accessible without authentication.
-- **Edge cases:** The landing route shows explicit loading and recoverable-error states during session checking; it does not silently treat network, timeout, CORS, or server failures as signed out. Demo sessions are not treated as signed-in public sessions.
+- **What:** The nonnegative integer web-origin `friink_session_hint` redirects `/` to `/home` before public content renders when positive. The legacy `/subscriptions` URL redirects to `/settings/subscription`. Session saves (including access-token refreshes) write `1` and renew its 30-day expiry; clearing a session keeps `1` if another remembered slot remains, otherwise writes `0`. This cookie is only a redirect hint and contains no credential. The authenticated route performs authoritative session restoration. Without a positive hint, public content renders immediately and `PublicRouteGuard` retains the non-blocking `/auth/entry-status` compatibility check for existing API-host cookies; confirmed signed-out visitors remain public.
+- **Edge cases:** A stale hint never authenticates the visitor; `/home` validates the session and uses normal recovery or public fallback. Ambiguous network failures remain retryable and do not infer sign-out. Demo sessions do not set the hint or redirect public visitors.
 
 ### CLIENT-R-007 — Public Header Uses Signed-In Account Menu
 
@@ -1414,7 +1414,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/landing.module.css`
 
-- **What:** The public landing page includes a concise Plans section and links to `/subscriptions` for the full Free, Pro, and Pro+ comparison. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
+- **What:** The public landing page includes a concise Plans section whose comparison link opens the in-app `/settings/subscription` plan comparison. The legacy `/subscriptions` URL permanently redirects there. Free signup links to `/login`; paid plan cards display `Coming soon` until billing and checkout are implemented.
 - **Edge cases:** This page does not create subscriptions, process payments, or grant paid entitlements. The displayed plan benefits and prices are marketing content and must be updated with the subscription implementation before paid launch.
 
 ### CLIENT-R-010 — Subscription Settings Shows The Server-Resolved Plan And Available Plans
@@ -1426,7 +1426,7 @@ missing evidence can be filled in.
 - **Platform:** Web only
 - **File(s):** `web/components/app-shell.tsx`, `web/components/account-screens.tsx`, `web/app/settings/[tab]/page.tsx`, `web/app/subscriptions/page.tsx`, `web/app/globals.css`
 
-- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the server-resolved effective plan's name, price, status, and expiry (or no expiration), followed by divider-bounded Free, Pro, and Pro+ plan rows. The active plan is marked `Current`; paid plan actions display disabled `Coming soon` states while billing is inactive. Plan rows present the implemented PRD benefits: Free includes unlimited posts/replies/quotes, mutual-follower chat, and professional use; Pro adds message requests, profile view count, 512-character posts, and directory listing for registered professionals; Pro+ adds profile/post analytics, feed profile boost, and fewer ads. Billing and self-service plan changes are not active.
+- **What:** Authenticated Settings includes a dedicated `/settings/subscription` tab showing the server-resolved effective plan's name, price, status, and expiry (or no expiration), followed by divider-bounded Free, Pro, and Pro+ plan rows. The active plan is marked `Current`; paid plan actions display disabled `Coming soon` states while billing is inactive. Plan rows present the implemented PRD benefits: Free includes unlimited posts/replies/quotes, mutual-follower chat, and professional use; Pro adds message requests, profile view count, 512-character posts, and directory listing for registered professionals; Pro+ adds profile/post analytics, feed profile boost, and fewer ads. `/subscriptions` permanently redirects to this in-app tab. Billing and self-service plan changes are not active.
 - **Edge cases:** The comparison is presentation-only even though the API entitlement foundation exists; this tab does not process upgrades, payments, cancellations, or paid access. The authenticated screen does not repeat the public availability note because each paid row already communicates `Coming soon`.
 
 ### CLIENT-R-011 — Landing Newsletter Uses Zoho Form Submission

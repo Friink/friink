@@ -1,5 +1,131 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T13:30:24Z — Move Full Plan Comparison To App Settings
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Remove the public subscription plans page because plan comparison now lives in the app.
+- Changes Made: Replaced the `/subscriptions` page with a permanent redirect to `/settings/subscription` and updated the landing-page comparison link. Updated subscription, account-access, active-rule, and design-contract documentation.
+- Files: `web/app/subscriptions/page.tsx`, `web/app/page.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `docs/units/subscriptions.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted route/reference review and `git diff --check` passed; no tests run.
+
+## 2026-09-27T13:07:53Z — Keep Redirect Hint Until Last Remembered Slot
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Refresh the public redirect cookie on access-token updates and keep it positive until the final remembered session ends.
+- Changes Made: Confirmed session saves already write `1` and renew the 30-day cookie expiry, including refresh results. `clearAuthSession` now writes `1` if another remembered account slot remains and `0` otherwise. Updated account-access and active-rule descriptions. Session validation, refresh behavior, and fallback behavior were not changed.
+- Files: `web/lib/auth.ts`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted source review and `git diff --check` passed; no tests run.
+
+## 2026-09-27T11:57:14Z — Make Public-Entry Hint A Nonnegative Integer
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the public-site redirect hint as an integer cookie, scoped only to redirecting public routes.
+- Changes Made: The hint writer now accepts nonnegative safe integers, defaults to `1`, and writes `0` when cleared. `/` and `/subscriptions` redirect only when the cookie is a valid positive integer. Updated the active rule and account-access acceptance description to make the redirect-only scope explicit.
+- Files: `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted source review completed and `git diff --check` passed; no auth/session behavior was changed.
+
+## 2026-09-26T22:50:19Z — Record Session-Stability Log and DB Audit
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the local and staging evidence gathered for randomly terminating sessions.
+- Changes Made: Updated BUG-AUTH-003 with read-only staging aggregates showing 37 refresh families marked `reuse_detected` across 32 sessions and 6 accounts, four linked active session rows, eight active session rows without a current usable refresh token, and the latest reuse-to-slot-replacement sequence. Recorded that the available local Uvicorn log is stale and lacks timestamps/request IDs; the browser-side replay trigger remains unconfirmed.
+- Files: `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed existing API/frontend refresh handling and `git diff --check` passed. Staging database queries ran in a read-only transaction; no database or application data was changed.
+
+## 2026-09-26T13:46:26Z — Tighten Top-Bar Counter Pill Padding
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Give top-bar counter text 2px of horizontal padding on each side.
+- Changes Made: Reduced shared message and notification counter-pill horizontal padding from 4px to 2px and updated both design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` and targeted CSS/documentation checks passed.
+
+## 2026-09-26T13:44:23Z — Add Fast Public-Entry Session Hint
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Add a browser-specific cookie hint so public entry can route signed-in clients to Home without waiting for an API status round trip.
+- Changes Made: Successful saved sessions set a non-sensitive, 30-day web-origin hint; clearing local auth removes it. Server-rendered `/` and `/subscriptions` redirect to `/home` when the hint is present. `/home` remains responsible for session validation, and the prior `/auth/entry-status` path remains when the hint is absent.
+- Files: `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`, `web/lib/auth.ts`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`, `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed. Local HTTP requests returned `200` without the hint and `307` to `/home` with it on both public routes. Staging acceptance remains pending.
+
+## 2026-09-26T13:33:29Z — Center Top-Bar Counter Text Vertically
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Vertically center the notification and message counter-pill text.
+- Changes Made: Set the counter text line height to the 16px pill height and explicitly centered text horizontally; updated both design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted CSS and whitespace checks pending.
+
+## 2026-09-26T13:32:36Z — Set Active Tab Labels to Bold White
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Change active tabs to bold white text instead of accent-colored text.
+- Changes Made: Updated shared, Settings, Profile, and Connections active tab labels to white and bold, retaining existing accent underlines. Updated product and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted CSS and whitespace checks pending.
+
+## 2026-09-26T13:29:03Z — Adjust Top-Bar Logo and Title Sizes
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Set the top-bar logo height to 38px and page-title text to 18px.
+- Changes Made: Reduced only the logo artwork height and desktop/mobile page-title font sizes; left the 40px control rail and existing 20px icon glyphs unchanged. Updated design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted style and whitespace checks pending.
+
+## 2026-09-26T13:22:52Z — Run Local Apps Against Staging Database
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Run the frontend and backend locally with staging database configuration and update production DB if needed.
+- Changes Made: Started Next.js locally on port 3000 with its API origin set to the local API on port 8001. Started Uvicorn on port 8001 using `api/.env.staging`. Confirmed production and staging at Alembic head `20260925_0059`; production `alembic check` reported no new upgrade operations, so no migration was applied.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web root, API `/health`, and API `/health/db` returned HTTP 200. Both local server sessions remain running. Production migration status and drift were checked read-only.
+
+## 2026-09-26T13:15:19Z — Update Top-Bar Count Pill Styling
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Remove the top-bar counter-pill border and keep its text white in every theme.
+- Changes Made: Removed the unread-count pill border and set the count text to fixed white; updated product and implementation design documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted CSS and whitespace checks pending.
+
+## 2026-09-26T13:13:46Z — Reduce Top-Bar Icon Size
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Change top-bar icons to 20px.
+- Changes Made: Reduced the signed-in TopBar menu, back, action, and expanded-search glyphs to 20px while keeping 40px control hit areas. Updated the product-level and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Whitespace and targeted style checks pending.
+
+## 2026-09-26T13:10:43Z — Verify Account Session Documentation Coverage
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Confirm that the work completed in this session is reflected in documentation.
+- Changes Made: Audited the account-access, session-handling, and active-rule documentation against the current session behavior. Clarified that account-switcher visibility uses both the configured limit and available account count.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the eight session-handling UX points, account-access limit/switching behavior, matching active rules, and prior work history are present in the relevant docs and logs. Whitespace check pending.
+
+## 2026-09-26T13:07:02Z — Preserve Switching After Lowering Account Limit
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Keep the switcher available when multiple accounts are already remembered even if the configured maximum is lowered to one.
+- Changes Made: The availability endpoint now independently reports whether adding is allowed and whether switching should remain visible based on the effective account count. The drawer hides Add account at capacity and hides the switcher only when one or fewer accounts are available. Added regression coverage and updated active rules and account-access docs.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`, `web/components/side-drawer.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed. Both focused API tests reached their passing assertions; pytest then exited non-zero because Windows could not unlink its temporary SQLite database (`WinError 32`). Browser and staging acceptance remain pending.
+
 ## 2026-09-26T12:53:21Z — Hide Account Switcher When Slot Limit Is One
 
 - Agent: Codex
