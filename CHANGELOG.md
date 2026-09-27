@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-27T13:07:53Z
+- [public-entry] Refresh the redirect hint on session saves, including access
+  token refreshes, and keep it positive when another remembered slot remains;
+  write zero when clearing the last remembered slot.
+
+## 2026-09-27T11:57:14Z
+- [public-entry] Changed the web-origin redirect hint to a nonnegative integer:
+  public routes redirect only for valid positive values; zero and invalid values
+  render the public site. The cookie remains a redirect mechanism only.
+
 ## 2026-09-26T22:50:19Z
 - [account-access] Added a read-only staging audit to BUG-AUTH-003: refresh
   reuse family counts, active session/token mismatches, latest slot-replacement

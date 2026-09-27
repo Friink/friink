@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T13:07:53Z — Keep Redirect Hint Until Last Remembered Slot
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Refresh the public redirect cookie on access-token updates and keep it positive until the final remembered session ends.
+- Changes Made: Confirmed session saves already write `1` and renew the 30-day cookie expiry, including refresh results. `clearAuthSession` now writes `1` if another remembered account slot remains and `0` otherwise. Updated account-access and active-rule descriptions. Session validation, refresh behavior, and fallback behavior were not changed.
+- Files: `web/lib/auth.ts`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted source review and `git diff --check` passed; no tests run.
+
+## 2026-09-27T11:57:14Z — Make Public-Entry Hint A Nonnegative Integer
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the public-site redirect hint as an integer cookie, scoped only to redirecting public routes.
+- Changes Made: The hint writer now accepts nonnegative safe integers, defaults to `1`, and writes `0` when cleared. `/` and `/subscriptions` redirect only when the cookie is a valid positive integer. Updated the active rule and account-access acceptance description to make the redirect-only scope explicit.
+- Files: `web/lib/session-entry-hint.ts`, `web/lib/public-session-entry.ts`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted source review completed and `git diff --check` passed; no auth/session behavior was changed.
+
 ## 2026-09-26T22:50:19Z — Record Session-Stability Log and DB Audit
 
 - Agent: Codex

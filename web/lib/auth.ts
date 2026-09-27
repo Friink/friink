@@ -600,10 +600,13 @@ export function loadPersistedAuthSession(): AuthSession | null {
 
 export function clearAuthSession() {
   if (typeof window === 'undefined') return;
-  clearSessionEntryHint();
   installAuthCoordinationListener();
   authSessionGeneration += 1;
   const accountSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
+  const hasOtherRememberedSessions = getRememberedAccountSummaries()
+    .some((account) => account.accountSlot !== accountSlot);
+  if (hasOtherRememberedSessions) setSessionEntryHint(1);
+  else clearSessionEntryHint();
   inMemoryAuthSession = null;
   if (accountSlot) window.localStorage.removeItem(`${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}`);
   window.localStorage.removeItem(AUTH_SESSION_KEY);

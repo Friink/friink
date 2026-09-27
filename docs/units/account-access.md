@@ -269,14 +269,14 @@ or switching accounts updates the shared selected-slot key. Other open tabs
 reload when that key changes, then restore and render only the selected slot.
 Legacy tab-local slot values do not override the shared selection.
 
-After successful sign-in or session restoration, the web app sets a
-non-sensitive `friink_session_hint=1` cookie on the web origin. It contains no
-credential or account identifier and only signals that restoration should be
-attempted. The `/` and `/subscriptions` server pages check this hint before
-rendering and immediately redirect to `/home` when it is present. `/home`
-validates the session normally; a stale hint therefore reaches the established
-recovery flow and never grants access. `saveAuthSession` refreshes the hint for
-30 days, while `clearAuthSession` removes it when the client clears auth.
+The web app uses the nonnegative integer `friink_session_hint` cookie only to
+choose public-site routing. Saving a session, including after an access-token
+refresh, writes `1` and renews its 30-day expiry. Clearing a session keeps it at
+`1` when another remembered account slot remains, and writes `0` when none
+remain. The `/` and `/subscriptions` server pages redirect to `/home` only for
+a valid positive integer; zero, missing, or invalid values render the public
+route. The cookie contains no credential or account identifier and never
+grants access.
 
 When the hint is absent, public content renders immediately and the existing
 non-blocking `/auth/entry-status` request remains as a compatibility path for
@@ -462,9 +462,9 @@ the release is considered complete.
 - [x] **ACCESS-AC-031** A public landing visit with no session renders without
       a blocking restore screen or refresh exchange; protected routes still
       reject unauthenticated requests.
-- [x] **ACCESS-AC-041** A web-origin session hint redirects `/` and
-      `/subscriptions` to `/home` before rendering; without the hint, public
-      content renders and the client keeps the entry-status compatibility path.
+- [x] **ACCESS-AC-041** A nonnegative integer web-origin redirect hint sends
+      `/` and `/subscriptions` to `/home` only when its value is greater than
+      zero; zero or invalid values leave the public content rendered.
 - [ ] **ACCESS-AC-032** When the current session is confirmed ended, the app
       waits for acknowledgment, then validates remembered accounts in
       most-recent-use order; invalid candidates are skipped without crossing
@@ -800,9 +800,9 @@ logs.
   from switching: when lowered to one, existing multiple remembered accounts
   remain switchable while Add account is hidden; the switcher is hidden only
   when one account is available.
-- 2026-09-26T13:41:19Z — Added a non-sensitive web-origin session hint that
-  immediately redirects public entry to `/home`; retained `/auth/entry-status`
-  as a compatibility check when the hint is absent.
+- 2026-09-27T13:07:53Z — Kept the redirect cookie at `1` while another remembered
+  slot remains, refreshed its 30-day expiry on session saves (including token
+  refresh), and wrote `0` when clearing the last remembered slot.
 - 2026-09-26T13:44:23Z — Verified both public entry routes return `200` without
   the hint and redirect to `/home` with it; TypeScript check passes.
 - 2026-09-26T13:10:43Z — Clarified that switcher availability is based on both
