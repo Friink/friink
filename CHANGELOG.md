@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-27T22:03:33Z
+- [account-access] Show account-switch failures in the shared toast stack with
+  the copy “Couldn’t switch accounts. Please try again.” Documented the
+  failure feedback in the Account Access unit.
+
 ## 2026-09-27T21:46:21Z
 - [account-access] Corrected account-switch source/destination slot handling so
   a target failure cannot be treated as termination of the active session.

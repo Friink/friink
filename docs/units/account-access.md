@@ -651,8 +651,9 @@ slots are not silently revoked. Ordinary sign-in and logout remain available.
 If the device is at capacity, a normal login may create an un-slotted session
 that is not remembered by the account switcher.
 
-Selecting a remembered account shows a spinner, disables competing account
-actions, validates the slot, and updates the shell in place. Removing or
+Selecting a remembered account sends a switch request, validates the slot, and
+updates the shell in place. If switching fails, the current account remains
+active and a toast says, “Couldn’t switch accounts. Please try again.” Removing or
 logging out the active account selects the most-recent remaining valid account,
 or returns to the public site when none remain.
 

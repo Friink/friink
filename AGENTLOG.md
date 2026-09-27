@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T22:03:33Z — Toast Account-Switch Failures
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Show a toast when switching accounts fails and choose the copy.
+- Changes Made: Connected SideDrawer switch failures to the shared app-shell
+  toast stack and used “Couldn’t switch accounts. Please try again.” Updated
+  the Account Access unit behavior description.
+- Files: `web/components/side-drawer.tsx`, `web/components/app-shell.tsx`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` passed in
+  `web/`; `git diff --check` passed (Git reported expected LF-to-CRLF notices).
+
 ## 2026-09-27T21:46:21Z — Prevent Account-Switch And Public-Entry Recovery Loops
 
 - Agent: Codex

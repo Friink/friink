@@ -1152,6 +1152,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
           onAccountChange={onUserChange}
+          onToast={addToast}
         />
 
         <TopBar

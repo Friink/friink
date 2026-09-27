@@ -17,6 +17,7 @@ type SideDrawerProps = {
   onToggleCollapsed: () => void;
   onLogout: () => void;
   onAccountChange?: (user: AuthUser) => void;
+  onToast?: (message: string) => void;
 };
 
 function getInitials(value: string) {
@@ -32,7 +33,7 @@ function getInitials(value: string) {
   );
 }
 
-export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout, onAccountChange }: SideDrawerProps) {
+export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout, onAccountChange, onToast }: SideDrawerProps) {
   const ref = useRef<HTMLElement | null>(null);
   const hoverExpansionExitPending = useRef(false);
   const [hoverExpanded, setHoverExpanded] = useState(false);
@@ -178,7 +179,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       saveAuthSession(next);
       onAccountChange?.(next.user);
     } catch {
-      setAccountNotice('We could not switch accounts. Please try again.');
+      onToast?.('Couldn’t switch accounts. Please try again.');
     } finally {
       setAccountBusy(false);
       setAccountSwitchingUsername(null);
