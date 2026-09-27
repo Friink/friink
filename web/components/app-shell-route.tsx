@@ -7,6 +7,7 @@ import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import type { AppearanceMode } from '@/components/account-screens';
 import { acknowledgeSessionTermination, AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
+import { clearSessionEntryHint } from '@/lib/session-entry-hint';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -113,6 +114,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         router.replace('/home');
       } else {
         clearAuthSession();
+        clearSessionEntryHint();
         setTermination(null);
         setRecoveryChoice(false);
         router.replace('/');

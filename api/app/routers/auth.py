@@ -1417,7 +1417,10 @@ async def switch_account(
     auth_session = session.get(AuthSession, slot.auth_session_id)
     if not target or target.lifecycle_status != "active" or not auth_session or auth_session.revoked_at is not None:
         log_account_switch_event(result="failure", reason="slot_unavailable")
-        raise HTTPException(status_code=401, detail=auth_error_detail("This account session is no longer available.", AuthErrorCode.SESSION_NOT_FOUND))
+        # The source session was authenticated by get_current_user. An
+        # unavailable destination must not be reported as source-session
+        # termination, which would make the client clear the active session.
+        raise HTTPException(status_code=404, detail="Account session not found.")
     slot.last_used_at = datetime.now(UTC)
     issued_refresh = issue_refresh_token(session, target.id, settings, session_id=auth_session.id)
     access_token = create_access_token(target.id, target.security_epoch, auth_session.id)

@@ -58,6 +58,20 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         assert accounts.status_code == 200, accounts.text
         assert {item["account_slot"] for item in accounts.json()} == {first_slot, second_slot}
         assert [item["account_slot"] for item in accounts.json() if item["active"]] == [second_slot]
+        # The slot header binds the source bearer session. The destination is
+        # carried in the request body; sending it in the header is rejected.
+        wrong_source = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": first_slot},
+            headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": first_slot},
+        )
+        assert wrong_source.status_code == 401, wrong_source.text
+        assert wrong_source.json()["detail"]["code"] == "SESSION_NOT_FOUND"
+        source_still_valid = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot},
+        )
+        assert source_still_valid.status_code == 200, source_still_valid.text
         switched = client.post("/auth/accounts/switch", json={"account_slot": first_slot}, headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert switched.status_code == 200, switched.text
         assert switched.json()["user"]["email"] == seeded[0].email
@@ -289,7 +303,13 @@ def test_inactive_account_slot_is_hidden_and_cannot_be_switched_to() -> None:
             json={"account_slot": second_json["account_slot"]},
             headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_json["account_slot"]},
         )
-        assert switched.status_code == 401, switched.text
+        assert switched.status_code == 404, switched.text
+        assert "code" not in switched.json().get("detail", {})
+        source_still_valid = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_json["account_slot"]},
+        )
+        assert source_still_valid.status_code == 200, source_still_valid.text
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id.in_(users)))
