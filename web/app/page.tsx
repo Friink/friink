@@ -122,7 +122,7 @@ export default async function HomePage() {
                 <span className={styles.planComingSoon}>Coming soon</span>
               </article>
             </div>
-            <Link href="/subscriptions" className={styles.plansLink}>Compare all plans <span aria-hidden="true">→</span></Link>
+            <Link href="/settings/subscription" className={styles.plansLink}>Compare all plans <span aria-hidden="true">→</span></Link>
           </div>
         </section>
 

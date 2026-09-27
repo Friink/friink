@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-26T13:32:36Z
+**Last edited:** 2026-09-27T13:30:24Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -353,6 +353,10 @@ changes profile display only and must not imply Friink registration,
 directory eligibility, or paid access. Expiry and revocation messaging must
 explain the resulting
 return to Free without implying a payment event when billing is unavailable.
+
+The full Free, Pro, and Pro+ comparison lives in Settings. The public landing
+page may show a concise Plans summary linked to `/settings/subscription`; it
+does not expose a separate public plans page.
 Both profile badges use the shared accent-colored compact pill treatment,
 including inside the side drawer, and remain icon-only with accessible labels.
 

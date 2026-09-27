@@ -7,7 +7,7 @@ ownership, shared layout contracts, component contracts, and known
 implementation constraints.
 
 **Status:** Active
-**Last edited:** 2026-09-24T19:55:59Z
+**Last edited:** 2026-09-27T13:30:24Z
 **Product design authority:** [`docs/design-system.md`](../../docs/design-system.md)
 **Token authority:** [`web/theme.config.ts`](../../web/theme.config.ts)
 **Shared styling authority:** [`web/app/globals.css`](../../web/app/globals.css)
@@ -537,7 +537,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Content Rule**: Simple settings may use title/subtitle/trailing only; richer settings may place forms or control groups in the `ListRow` body area below the subtitle.
 - **Expanded Row Rule**: An expanded setting renders its title and summary once in the shared row header; the control body must not repeat the setting title as a second visible field label. Inputs remain accessible through native labels or `aria-label` attributes.
 - **Profile Tab Rule**: `Name`, `Username`, `About`, and the private `Date of birth` field live in the Profile tab as distinct rows, each with its own dedicated update control and status messaging. Date of birth is editable for the existing server-side age requirement but is not shown on the public profile in this phase. Username changes check availability before submission; username identity is case-insensitive and stored/displayed canonically in lowercase.
-- **Subscription Tab Rule**: Settings includes a dedicated Subscription tab showing the server-resolved current plan first with only its name, price, and access status, followed by a divider-bounded comparison of Friink Free, Pro, and Pro+. The comparison uses the shared settings-row/action-rail treatment; the current plan is marked `Current`, while paid plans remain non-action `Coming soon` states until billing is active. The public `/subscriptions` page remains available for the broader marketing comparison.
+- **Subscription Tab Rule**: Settings includes a dedicated Subscription tab showing the server-resolved current plan first with only its name, price, and access status, followed by a divider-bounded comparison of Friink Free, Pro, and Pro+. The comparison uses the shared settings-row/action-rail treatment; the current plan is marked `Current`, while paid plans remain non-action `Coming soon` states until billing is active. The landing page may show a concise Plans summary linked to the in-app comparison; the legacy `/subscriptions` URL redirects to `/settings/subscription`.
 - **Inline Field Rule**: Single-line editable profile fields such as `Name` and `Username` place their update button on the same row as the input. Multi-line fields such as `About` may keep their action below the field.
 - **Settings Action Rail Rule**: Editable controls render below the title/description, while the save tick remains in the row's right-side action rail. About and other multiline fields reserve horizontal space for that rail.
 - **Settings Three-Column Rule**: Every settings row uses three columns: a `3rem × 3rem` rounded setting icon on the far left, the shared `ListRow` title/summary/body content in the middle, and a `3rem × 3rem` right-side action control. The leading icon and right-side action align to the same top edge and height; the middle column is shrinkable so fields and descriptions do not push the action rail off-screen.
@@ -556,15 +556,14 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 ### Public Header and Plans (`web/components/public-header.tsx`, `web/app/page.tsx`, `web/app/subscriptions/page.tsx`)
 - Public marketing surfaces are governed by the same light/dark theme contract: every explicit light-theme foreground, background, border, and interactive-state color must have a matching dark-mode override.
-- The landing page and `/subscriptions` reuse `Header`; public pages must not duplicate site navigation markup.
+- The landing page uses `Header`; public pages must not duplicate site navigation markup. The legacy `/subscriptions` route redirects and renders no public page.
 - `Header` detects the persisted authenticated session on the client. Signed-out users see a primary `Get started` CTA linking to `/start` and a secondary `Login` action linking to `/login`; signed-in users see their current profile picture as an account-menu trigger. The shared `ActionMenu` positions the public account menu directly below the avatar with a 2px gap and 2px right offset, stays above the public header, and uses explicit light/dark public-surface colors. Its menu header shows the display name and secondary `@username`, followed by Feed (`fa-house` → `/home`), Settings (`fa-gear` → `/settings`), and Log out (`fa-right-from-bracket`). Public headers do not show a redundant Home link because the Friink logo already links to `/`.
 - The progressive `/start` route remains feature-flagged; when disabled, it falls back to `/login`. Both public authentication actions remain visible at desktop and mobile widths, with compact button sizing on narrow screens rather than hiding either action.
-- The `/subscriptions` page uses the same landing-page surface and dark-mode treatment as the landing page, including the shared navigation, cards, borders, text colors, and backgrounds.
-- Public plan-card text, including feature lists and prices, must use the dark-theme foreground token in dark mode; no light-theme hardcoded foreground may remain visible on dark card surfaces.
-- Public plan links, including hover and keyboard-focus states, must remain readable against dark-mode surfaces.
-- The landing page includes a concise three-card Plans section with a `Compare all plans` link to `/subscriptions`.
+- Public landing plan-card text, including feature lists and prices, must use the dark-theme foreground token in dark mode; no light-theme hardcoded foreground may remain visible on dark card surfaces.
+- Public landing plan links, including hover and keyboard-focus states, must remain readable against dark-mode surfaces.
+- The landing page includes a concise three-card Plans section with a `Compare all plans` link to `/settings/subscription`.
 - Landing section order is Hero, Development progress, Our vision, Plans, then Newsletter so visitors understand Friink before seeing pricing.
-- `/subscriptions` is the full public plan-comparison surface for Friink Free, Friink Pro, and Friink Pro+.
+- `/subscriptions` is a compatibility redirect to `/settings/subscription`; the full Friink Free, Pro, and Pro+ comparison is in app Settings.
 - Paid cards use a non-action `Coming soon` state until billing exists; the Free card links to `/login`.
 - Plan cards use the landing visual language: `8px` corners, shared green brand accent, responsive one-column-to-three-column layout, and dark-mode equivalents.
 

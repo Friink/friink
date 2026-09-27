@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-27T13:30:24Z
+- [subscriptions] Removed the public plans comparison page. The landing-page
+  comparison link opens Settings, and legacy `/subscriptions` requests
+  permanently redirect to `/settings/subscription`.
+
 ## 2026-09-27T13:07:53Z
 - [public-entry] Refresh the redirect hint on session saves, including access
   token refreshes, and keep it positive when another remembered slot remains;

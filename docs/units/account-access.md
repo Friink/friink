@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-26T13:44:23Z
+**Last edited:** 2026-09-27T13:30:24Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -273,10 +273,10 @@ The web app uses the nonnegative integer `friink_session_hint` cookie only to
 choose public-site routing. Saving a session, including after an access-token
 refresh, writes `1` and renews its 30-day expiry. Clearing a session keeps it at
 `1` when another remembered account slot remains, and writes `0` when none
-remain. The `/` and `/subscriptions` server pages redirect to `/home` only for
-a valid positive integer; zero, missing, or invalid values render the public
-route. The cookie contains no credential or account identifier and never
-grants access.
+remain. The `/` server page redirects to `/home` only for a valid positive
+integer; zero, missing, or invalid values render the public route. The legacy
+`/subscriptions` URL permanently redirects to `/settings/subscription`. The
+cookie contains no credential or account identifier and never grants access.
 
 When the hint is absent, public content renders immediately and the existing
 non-blocking `/auth/entry-status` request remains as a compatibility path for
@@ -463,8 +463,9 @@ the release is considered complete.
       a blocking restore screen or refresh exchange; protected routes still
       reject unauthenticated requests.
 - [x] **ACCESS-AC-041** A nonnegative integer web-origin redirect hint sends
-      `/` and `/subscriptions` to `/home` only when its value is greater than
-      zero; zero or invalid values leave the public content rendered.
+      `/` to `/home` only when its value is greater than zero; zero or invalid
+      values leave the public content rendered. `/subscriptions` redirects to
+      the in-app Subscription settings route.
 - [ ] **ACCESS-AC-032** When the current session is confirmed ended, the app
       waits for acknowledgment, then validates remembered accounts in
       most-recent-use order; invalid candidates are skipped without crossing

@@ -5,7 +5,7 @@ the boundary between informational plans and future billing.
 
 **Status:** Partial — informational plans, server-resolved summaries, manual staff assignment, and server entitlement enforcement are active; billing is not active
 **Tier:** Standard  
-**Last edited:** 2026-09-22T12:33:44Z
+**Last edited:** 2026-09-27T13:30:24Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -18,7 +18,7 @@ Chat may consume the server-resolved entitlement for its paid request policy.
 - [Chat](./chat.md) — consumes paid-tier request eligibility.
 - [Settings](./settings.md) — shows the current plan and compares available plans.
 - [Staff Admin](./staff-admin.md) — owns current administrative assignments.
-- [Design System](../design-system.md) — owns public plan-card presentation.
+- [Design System](../design-system.md) — owns shared plan presentation.
 
 ## Plan definitions
 
@@ -83,12 +83,13 @@ declared for future feature APIs and do not yet have domain surfaces.
 
 ## UX and flows
 
-The public `/subscriptions` surface compares Friink Free, Pro, and Pro+. The
-Settings Subscription tab shows a compact current-plan summary first, then
-repeats the plan comparison in the authenticated settings context. The summary
-contains the plan name, price, and access status; plan rows contain the feature
-details and available action state. No checkout, payment, or self-service
-billing flow is active.
+The Settings Subscription tab shows a compact current-plan summary first,
+followed by the Friink Free, Pro, and Pro+ comparison. The summary contains the
+plan name, price, and access status; plan rows contain feature details and
+available action state. The public landing page may link to these plans, while
+the legacy `/subscriptions` URL permanently redirects to
+`/settings/subscription`. No checkout, payment, or self-service billing flow
+is active.
 
 Until billing exists, a superadmin may manually promote a user from Free to Pro
 or Pro+, change Pro and Pro+ assignments, or return a paid assignment to Free.
@@ -236,7 +237,7 @@ administrative assignment behavior. Billing provider integration is not present.
 
 ## Acceptance criteria
 
-- [ ] Public plans clearly indicate unavailable paid actions.
+- [ ] In-app plan comparison clearly indicates unavailable paid actions.
 - [ ] Current plan is server-resolved and displayed consistently.
 - [ ] Paid status cannot be fabricated by the client.
 - [ ] Chat entitlement checks remain server-authoritative.

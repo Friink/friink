@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T13:30:24Z — Move Full Plan Comparison To App Settings
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Remove the public subscription plans page because plan comparison now lives in the app.
+- Changes Made: Replaced the `/subscriptions` page with a permanent redirect to `/settings/subscription` and updated the landing-page comparison link. Updated subscription, account-access, active-rule, and design-contract documentation.
+- Files: `web/app/subscriptions/page.tsx`, `web/app/page.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `docs/units/subscriptions.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted route/reference review and `git diff --check` passed; no tests run.
+
 ## 2026-09-27T13:07:53Z — Keep Redirect Hint Until Last Remembered Slot
 
 - Agent: Codex
