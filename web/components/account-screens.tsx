@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ListRow } from '@/components/list-row';
 import { PageSurface } from '@/components/page-surface';
-import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getMySubscription, getReadReceiptPreference, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, listPushSubscriptions, loadAuthSession, respondToLoginApproval, revokeAuthSession, revokeOtherAuthSessions, revokePushSubscription, saveAuthSession, savePushSubscription, setDeactivationFallbackSlots, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval, type PushSubscription, type SubscriptionSummary } from '@/lib/auth';
+import { AuthApiError, changePassword, checkUsernameAvailability, clearAuthSession, confirmAccountDeletion, deactivateAccount, getCurrentUser, getMySubscription, getReadReceiptPreference, getRememberedAccountSummaries, listAccounts, listAuthSessions, listPendingLoginApprovals, listBlockedUsers, listPushSubscriptions, loadAuthSession, respondToLoginApproval, restoreAccountSession, revokeAuthSession, revokeOtherAuthSessions, revokePushSubscription, saveAuthSession, savePushSubscription, startAccountDeletion, startEmailChange, unblockUser, updateCurrentUser, updateReadReceiptPreference, uploadProfilePicture, verifyEmailChange, type AuthUser, type BlockedUser, type ManagedAuthSession, type PendingLoginApproval, type PushSubscription, type SubscriptionSummary } from '@/lib/auth';
 import type { ToastInput, ToastMessage } from '@/components/toast-stack';
 import { compressImage, ImageCompressionError, validateImageFile } from '@/lib/image-compression';
 import { createCroppedImage, getImageDimensions, type CropPixels } from '@/lib/crop-image';
@@ -479,24 +479,46 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     }
   }
 
+  async function getOtherAvailableAccountSlots(accessToken: string) {
+    try {
+      const accounts = await listAccounts(accessToken);
+      return accounts
+        .filter((account) => !account.active && account.available && account.accountSlot)
+        .sort((left, right) => right.lastUsedAt.localeCompare(left.lastUsedAt))
+        .map((account) => account.accountSlot);
+    } catch {
+      return getRememberedAccountSummaries()
+        .filter((account) => account.available && account.accountSlot)
+        .sort((left, right) => right.lastUsedAt.localeCompare(left.lastUsedAt))
+        .map((account) => account.accountSlot);
+    }
+  }
+
+  async function finishLifecycleLogout(accountSlots: string[]) {
+    clearAuthSession();
+    for (const accountSlot of accountSlots) {
+      try {
+        const restoredSession = await restoreAccountSession(accountSlot);
+        saveAuthSession(restoredSession);
+        window.location.assign('/home');
+        return;
+      } catch {
+        // Skip sessions that are no longer valid and try the next remembered account.
+      }
+    }
+    clearAuthSession();
+    window.location.assign('/');
+  }
+
   async function handleDeactivate() {
     const session = loadAuthSession();
     if (!session || !lifecyclePassword) return setLifecycleStatus('Enter your current password to continue.');
     if (!window.confirm('Deactivate your account? Your sessions will end, public content will be unavailable, and uncancelled subscriptions may still be charged.')) return;
     setLifecycleBusy(true); setLifecycleStatus('');
     try {
-      let fallbackSlots: string[] = [];
-      try {
-        const accounts = await listAccounts(session.accessToken);
-        fallbackSlots = accounts.filter((account) => !account.active && account.available).map((account) => account.accountSlot);
-      } catch {
-        // Deactivation still succeeds; the confirmation page will offer the
-        // public site when no recoverable account slot was captured.
-      }
+      const fallbackSlots = await getOtherAvailableAccountSlots(session.accessToken);
       await deactivateAccount(session.accessToken, lifecyclePassword);
-      setDeactivationFallbackSlots(fallbackSlots);
-      clearAuthSession();
-      window.location.assign('/account-deactivated');
+      await finishLifecycleLogout(fallbackSlots);
     }
     catch (error) {
       if (error instanceof AuthApiError && error.status === 429 && error.cooldownSeconds) {
@@ -516,10 +538,10 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     if (!session || !lifecyclePassword) return setLifecycleStatus('Enter your current password to continue.');
     setLifecycleBusy(true); setLifecycleStatus('');
     try {
+      const fallbackSlots = await getOtherAvailableAccountSlots(session.accessToken);
       const challenge = await startAccountDeletion(session.accessToken, lifecyclePassword);
       if (!challenge.challenge_required) {
-        clearAuthSession();
-        window.location.assign('/account-deleted');
+        await finishLifecycleLogout(fallbackSlots);
         return;
       }
       setDeletionToken(challenge.challenge_token ?? '');
@@ -533,7 +555,7 @@ export function SettingsScreen({ user, appearance, onAppearanceChange, accentCol
     const session = loadAuthSession();
     if (!session || !deletionToken || !/^[A-Za-z0-9]{6}$/.test(deletionOtp)) return setLifecycleStatus('Enter the 6-character verification code.');
     setLifecycleBusy(true); setLifecycleStatus('');
-    try { await confirmAccountDeletion(session.accessToken, deletionToken, deletionOtp); clearAuthSession(); window.location.assign('/account-deleted'); }
+    try { const fallbackSlots = await getOtherAvailableAccountSlots(session.accessToken); await confirmAccountDeletion(session.accessToken, deletionToken, deletionOtp); await finishLifecycleLogout(fallbackSlots); }
     catch (error) { setLifecycleStatus(error instanceof Error ? error.message : 'Could not confirm deletion.'); }
     finally { setLifecycleBusy(false); }
   }

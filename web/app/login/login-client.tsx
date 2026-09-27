@@ -42,6 +42,12 @@ export function LoginClient() {
       return;
     }
 
+    if (new URLSearchParams(window.location.search).get('session_recovery') === '1') {
+      setInitialMessage('Your session ended. Log in to continue.');
+      setSessionChecked(true);
+      return;
+    }
+
     hasSessionForEntry()
       .then((available) => available ? restoreAuthSessionForEntry() : null)
       .then((restored) => {

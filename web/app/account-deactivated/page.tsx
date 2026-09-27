@@ -40,6 +40,7 @@ export default function AccountDeactivatedPage() {
         title="Account Deactivated"
         onClose={() => void handleReturn()}
         closeLabel="Okay"
+        closeOnBackdrop={false}
         className="account-deactivated-modal"
         actions={<button className="button-primary" type="button" onClick={() => void handleReturn()} disabled={isRestoring}>{isRestoring ? 'Please wait...' : 'Okay'}</button>}
       >

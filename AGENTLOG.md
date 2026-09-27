@@ -1,5 +1,122 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T18:12:04Z — Add Network Failure Recovery Page
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement the agreed network-failure recovery UX: a full-page network message, immediate manual Refresh, and continued background restoration.
+- Changes Made: Updated Error Handling and Account Access requirements first, then added a distinct network classification for fetch failures. The app now shows a full-page “We can’t connect” state on the first detected network failure, runs non-overlapping background restoration every 30 seconds, and lets the user manually retry without reloading the page. A selected remembered account is retained and retried if the connection fails during explicit account restoration. Other ambiguous failures retain four attempts at ten-second intervals. Updated AUTH-R-008/AUTH-R-040; no auth, token, or server validation logic changed.
+- Files: `web/lib/session-recovery.ts`, `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/[username]/chat/chat-client.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `tsc --noEmit` passed. Targeted ESLint for `session-recovery.ts` and `session-recovery-screen.tsx` passed. ESLint across all edited web files reported React hook rule errors/warnings in route components; browser/staging acceptance and tests were not run. `git diff --check` passed.
+
+## 2026-09-27T17:32:35Z — Implement Session Recovery UX
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the agreed in-app session-recovery UX while leaving authentication and token behavior unchanged.
+- Changes Made: Added four total session restore attempts with ten-second intervals for ambiguous failures; cause-specific, non-backdrop-dismissible terminal modals; explicit restore-or-login choice for ordinary expiry; immediate lifecycle logout followed by another valid remembered session or public-site fallback; and Home after switching. Applied recovery across app-shell, public entry, profile, post, username-chat, and login routes. Lifecycle fallback uses server account discovery with safe remembered-account metadata as a fallback source. Updated AUTH-R-008/AUTH-R-040 and the Account Access, Account Lifecycle, and Error Handling units. No changes to server auth, token issuance/validation, or refresh semantics.
+- Files: `web/lib/session-recovery.ts`, `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/components/modal.tsx`, `web/components/account-screens.tsx`, `web/app/login/login-client.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/[username]/chat/chat-client.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `docs/units/account-lifecycle.md`, `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed. Targeted `npx eslint` produced no output and was stopped after hanging, so lint is unverified. Browser/staging acceptance and tests were not run.
+
+## 2026-09-27T16:30:31Z — Clarify Lifecycle Session-Failure Destinations
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Confirm the distinction between user-initiated deactivation/deletion and discovering the ended session from another client, including login versus public-site destination.
+- Changes Made: Refined Error Handling so ordinary expiry/unavailable refresh credentials use restore-or-login, while deactivation/pending deletion logs the account out on the initiating client and falls back to another valid remembered session or the public site. Other clients see the lifecycle cause before the same fallback. Added a note to verify pending-deletion all-client revocation against Account Lifecycle implementation. No auth/session implementation changed.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the category-specific fallback matrix and ran `git diff --check`; passed. No tests run because no code changed.
+
+## 2026-09-27T16:13:24Z — Clarify Planned UX Enhancement Against AUTH-R-008
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Clarify that AUTH-R-008 records the old session recovery UX and the restore-or-login choice intentionally enhances it.
+- Changes Made: Reframed the Error Handling known-limitation note: the planned UX is an intentional enhancement to the current behavior, and AUTH-R-008 should be updated when implementation makes the new behavior active. No application/auth behavior changed.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the revised rule relationship and ran `git diff --check`; passed. No tests run because no code changed.
+
+## 2026-09-27T16:07:42Z — Finalize Session Recovery UX Requirements
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the user's decisions on retry timing, refresh-token availability, post-switch destination, modal fallback UX, route coverage, and keeping recovery within its originating product surface.
+- Changes Made: Updated the planned Error Handling unit with four total ambiguous recovery attempts spaced 10 seconds apart; defined a missing or expired refresh token as making that remembered session unrestorable; set Home as the destination after switching accounts; added an in-app restore-or-login choice when a valid remembered session exists and direct login otherwise; specified equivalent Okay and close-button behavior with no backdrop dismissal; extended consistent session recovery across public root, app-shell, profile, post, username-chat, and login entry points; and recorded no external-surface handoff. No auth/session implementation or active rules changed.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed requirement/acceptance criteria and traceability updates; `git diff --check` passed. Confirmed 8 unique EH-REQ requirements and 12 unique EH-AC acceptance criteria (20 IDs total). No tests run because no code changed.
+
+## 2026-09-27T15:43:26Z — Refine Session Validity And Recovery Decisions
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Incorporate the user's answers about what makes another session valid, the fallback order, cached app-shell rendering, and clarify retry/validation decisions.
+- Changes Made: Documented API validation of the opaque HttpOnly refresh-token cookie against its SHA-256 database hash and associated session/account state; noted the current missing-cookie slot compatibility path as open. Recorded the preferred order (valid remembered session, login, public site), cached app-shell rendering behind a blocking modal, and a pending recommendation for four total attempts only on ambiguous failures. Removed the unrelated future-scope prompt.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Documented the accepted fallback priority, cached-shell behavior, API-side token validation, and the retry recommendation as pending; `git diff --check` passed. No tests run because no code changed.
+
+## 2026-09-27T15:04:42Z — Record Session Error Presentation Flows
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the user's six proposed session error experiences and identify remaining UX decisions without implementing them.
+- Changes Made: Added draft copy and behavior for technical recovery, generic expiry/unavailable session, remote termination, security revocation, deactivation, and pending deletion. Technical recovery now describes a no-controls background attempt followed by “Take me back”; the five confirmed failure classes use Okay-only modals and app-selected next state. Added open questions around session meaning, recovery exhaustion, and surface-boundary interactions. No implementation or active rule changed.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the six case descriptions, proposed copy, open UX decisions, and updated acceptance/traceability rows; `git diff --check` passed. No tests run because no code changed.
+
+## 2026-09-27T14:52:22Z — Define Error Display Types
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Add full-page errors, toasts, and modals as the shared display types and create templates for those types.
+- Changes Made: Added three reusable template definitions to the Error Handling draft, limited the shared template catalog to those types, and added acceptance criteria, verification rows, and open selection questions. No active rules or product behavior changed.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the three template definitions, unique requirement/acceptance IDs, and traceability rows; `git diff --check` passed. No tests run because no code changed.
+
+## 2026-09-27T14:48:53Z — Define Error Surface Boundary
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Assess whether error handling should remain within the public-site, web-app, or native mobile surface, then record the boundary if sound.
+- Changes Made: Added the proposed cross-product surface boundary to the Error Handling unit, including the prohibition on ordinary error flows opening an iframe or external browser. Added a draft requirement, acceptance criterion, test-matrix row, and open question for explicit exceptions. No active rule or product behavior changed.
+- Files: `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the new proposed requirement, acceptance criterion, traceability, and test matrix; `git diff --check` passed. No tests run because no code changed.
+
+## 2026-09-27T14:43:07Z — Start Error Handling Requirements Unit
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Create a template-based document for refining canonical error-handling requirements as the user provides them.
+- Changes Made: Added a planned Error Handling unit, registered it in the documentation viewer and README, and linked it from Account Access. Recorded the user's initial request to present session recovery in modals that preserve app context, with failure categories and unresolved details clearly marked as draft. No application behavior or active rule changed.
+- Files: `docs/units/error-handling.md`, `docs/index.html`, `docs/README.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed all template sections, local unit links, README entry, and viewer registry/search registration; `git diff --check` passed. No tests run because no code changed.
+
+## 2026-09-27T14:33:44Z — Archive Retired Session Handling Note
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Move the retired session-handling note to archives and update documentation navigation.
+- Changes Made: Moved `docs/units/session-handling.md` to `docs/archives/session-handling.md`, corrected the archive-relative links, and registered the archived page in the documentation viewer so it remains searchable. Active session behavior remains documented in Account Access; no application code changed.
+- Files: `docs/archives/session-handling.md`, `docs/index.html`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Confirmed the file is at the archive path, the old unit path is absent, the viewer registry includes the archived page, and `git diff --check` passes. No tests run because no code changed.
+
+## 2026-09-27T14:18:22Z — Consolidate Session Handling Documentation
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Move all session-handling notes into relevant template-based documentation while retaining the original file.
+- Changes Made: Consolidated the session hint, route-specific recovery paths, technical/terminal/lifecycle failure cases, and cross-tab notice behavior in Account Access. Removed active-rule references to the retired short-form unit and retained `session-handling.md` as a deprecated pointer. No application code, auth behavior, or session behavior changed.
+- Files: `docs/units/account-access.md`, `docs/units/session-handling.md`, `docs/rules.md`, `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Consolidated content and active cross-references reviewed; `git diff --check` passed. No tests run because no code changed.
+
+## 2026-09-27T14:06:18Z — Document Public-Entry Session Recovery Loop
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record the recent session-hint and recovery discussion in relevant documentation before revisiting implementation.
+- Changes Made: Updated Session Handling, Account Access, AUTH-R-040, and the bug register with current hint semantics, the independent public guard path, the potential terminal-recovery loop, the failure-case flows, and the unresolved browser-specific evidence. No application code or auth/session behavior changed.
+- Files: `docs/units/session-handling.md`, `docs/units/account-access.md`, `docs/rules.md`, `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the touched documentation against the current routing and recovery flow; `git diff --check` passed. No tests run because no code changed.
+
 ## 2026-09-27T13:30:24Z — Move Full Plan Comparison To App Settings
 
 - Agent: Codex

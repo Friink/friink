@@ -16,6 +16,8 @@ This folder contains Friink’s product and engineering documentation.
 - [Architecture](architecture.md) — repository boundaries, runtime shape, and cross-cutting implementation patterns.
 - [Notes](notes.md) — retained implementation notes and historical context.
 - [Units](units/) — complete documentation for each major product area.
+- [Error Handling](units/error-handling.md) — draft shared error and recovery
+  requirements, starting with session failures.
 - [Archives](archives/) — historical and non-standard documents kept for reference.
 
 ## Unit documents
@@ -27,4 +29,4 @@ limitations, implementation status, and rebuild guidance.
 Start from [Home](index.html) for the product overview, then open the relevant
 unit document from the documentation viewer.
 
-**Last edited:** 2026-09-12T22:10:13Z
+**Last edited:** 2026-09-27T14:43:07Z

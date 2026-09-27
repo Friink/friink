@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
-import { AuthApiError, clearAuthSession, getLoginRecoveryPath, getPublicUser, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { clearAuthSession, getPublicUser, getRememberedAccountSummaries, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, loadCachedAuthUser, restoreAccountSession, restoreAuthSessionForEntry, saveAuthSession, type AccountSummary, type ApiPost, type AuthUser } from '@/lib/auth';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -54,7 +55,10 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
   const [profileStatus, setProfileStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
-  const [authRetry, setAuthRetry] = useState(0);
+  const [recoveryAccounts, setRecoveryAccounts] = useState<AccountSummary[]>([]);
+  const [recoveryUsername, setRecoveryUsername] = useState<string | null>(null);
+  const [restoringAccountSlot, setRestoringAccountSlot] = useState<string | null>(null);
+  const [accountRecoveryError, setAccountRecoveryError] = useState<string | null>(null);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -65,30 +69,35 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     }
 
     let active = true;
-    restoreAuthSessionForEntry()
+    const controller = new AbortController();
+    restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal)
       .then((restoredSession) => {
-        if (!active) return;
+        if (!active || controller.signal.aborted) return;
         saveAuthSession(restoredSession);
         setUser(restoredSession.user);
         setSessionError(null);
         setAuthCheckComplete(true);
       })
       .catch((error) => {
-        if (!active) return;
+        if (!active || controller.signal.aborted) return;
         setAuthCheckComplete(true);
         if (isTerminalRefreshFailure(error)) {
-          const deliberateSecurityRevocation = error instanceof AuthApiError && error.code === 'SESSION_REVOKED_SECURITY';
-          setSessionError(deliberateSecurityRevocation ? 'security' : 'expired');
-          router.replace(getLoginRecoveryPath(deliberateSecurityRevocation ? 'security-revocation' : 'expired'));
+          router.replace('/home');
+        } else if (isNetworkRestoreFailure(error)) {
+          router.replace('/home?session_recovery=network');
         } else {
           setSessionError('offline');
+          const cachedUser = loadCachedAuthUser();
+          setRecoveryUsername(cachedUser?.username ?? null);
+          setRecoveryAccounts(getRememberedAccountSummaries());
         }
       });
 
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [authRetry, router]);
+  }, [router]);
 
   useEffect(() => {
     if (!user) return;
@@ -227,9 +236,23 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     router.replace('/');
   }
 
+  async function handleRestoreRememberedAccount(account: AccountSummary) {
+    setRestoringAccountSlot(account.accountSlot);
+    setAccountRecoveryError(null);
+    try {
+      const restored = await restoreAccountSession(account.accountSlot);
+      saveAuthSession(restored);
+      router.replace('/home');
+    } catch {
+      setAccountRecoveryError(`Could not restore @${account.username}. Choose another account or sign in.`);
+    } finally {
+      setRestoringAccountSlot(null);
+    }
+  }
+
   if (!user) {
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" />;
-    return <SessionRecoveryScreen status={sessionError ?? 'offline'} onRetry={() => { setSessionError(null); setAuthCheckComplete(false); setAuthRetry((attempt) => attempt + 1); }} />;
+    return <SessionRecoveryScreen status={sessionError ?? 'offline'} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onTakeMeBack={() => { const candidates = recoveryAccounts.filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase()); if (candidates.length > 0) return; router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { clearAuthSession(); router.replace('/login?session_recovery=1'); }} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
   const profileHandle = username || user.username;

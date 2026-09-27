@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-27T13:30:24Z
+**Last edited:** 2026-09-27T18:12:04Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -25,8 +25,9 @@ while this document owns the underlying access and session semantics.
 
 ## Related units
 
-- [Account Lifecycle](./account-lifecycle.md) — lifecycle states may prevent
-  login, refresh, or switching and may end sessions.
+- [Account Lifecycle](./account-lifecycle.md) — owns deactivation, deletion,
+  pending deletion, and reactivation; this unit records their effects on
+  authentication and session restoration.
 - [Navigation](./navigation.md) — owns the shared TopBar and drawer surfaces
   that expose navigation and account-switcher entry points.
 - [Settings](./settings.md) — exposes password, email, and active-session
@@ -37,10 +38,11 @@ while this document owns the underlying access and session semantics.
   but has a separate step-up boundary.
 - [Design System](../design-system.md) — shared form, modal, loading, error,
   and recovery presentation patterns.
+- [Error Handling](./error-handling.md) — planned cross-product error
+  presentation requirements; this unit remains authoritative for session
+  validity and recovery semantics.
 - [Business Rules](../rules.md) — cross-unit rules are referenced rather than
   duplicated here.
-- [Session Handling](./session-handling.md) — owns the cross-account client
-  entry, ended-session acknowledgment, and multi-tab continuity UX.
 
 ---
 
@@ -289,13 +291,106 @@ one or more sessions validate, the client restores its most recently used
 account. Protected app routes remain authoritative before exposing private
 data or actions.
 
+**Known implementation gap:** rendering the public route does not necessarily
+keep the visitor there. `PublicRouteGuard` can still call `/auth/entry-status`
+with a zero hint. If the endpoint suggests a restore attempt and restoration
+fails terminally, the guard currently routes to `/home` for app recovery. The
+endpoint is not session validation, so zero does not prevent this second
+redirect path. Also, after acknowledged terminal recovery exhausts candidates,
+`clearAuthSession()` bases the hint on remaining cached slot summaries; a stale
+summary can leave it positive and make `/` redirect back to `/home`. This
+confirmed code-path loop is tracked in
+[BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
+The exact state of the browser involved in the reported incident remains
+unverified.
+
+#### Session recovery surfaces and route behavior
+
+This section owns the client experience when session restoration fails; the
+server's session and lifecycle decisions remain authoritative. A technically
+ambiguous error does not mean the session ended. A confirmed terminal result
+identifies the known cause, waits for acknowledgment where required, and then
+attempts valid remembered-account fallback. Lifecycle state and the associated
+reactivation or deletion-cancellation rules belong to
+[Account Lifecycle](./account-lifecycle.md).
+
+Current web entry points do not all present the same recovery surface:
+
+- **Protected app-shell routes** (including Home, Settings, Saved, Directory,
+  Notifications, and app-level Chat) replace the app shell with the full-screen
+  `SessionRecoveryScreen` while restoration is pending or unavailable. An
+  ambiguous failure offers retry and recovery actions. A terminal failure
+  displays a cause-specific notice and waits for acknowledgment before trying
+  remembered slots.
+- **Public root (`/`)** redirects server-side to `/home` when the hint is a
+  positive integer. With zero, missing, or malformed hint it renders the
+  public site, where `PublicRouteGuard` can still call `/auth/entry-status` and
+  attempt restoration. The guard currently routes to `/home` after terminal
+  restore failure, even when the hint was zero.
+- **Profile routes (`/{username}`)** use the standalone recovery screen while
+  loading or on ambiguous failure; confirmed terminal session failure routes
+  to `/login` with a recovery reason.
+- **Post detail routes (`/posts/{postId}` and `/{username}/{postId}`)** route
+  to `/login` on terminal session failure. A post lookup that cannot resolve
+  its target can instead return to `/`.
+- **Username-specific chat (`/{username}/chat`)** routes to `/login` only if
+  restoration for that route fails terminally. This is not the behavior for an
+  ordinary chat API error. A missing or invalid chat context can return to `/`.
+- **Login (`/login`)** attempts restoration on entry. A valid session sends
+  the user to `/home`; a failed attempt leaves the login form and an explanatory
+  message available for signing in again.
+
+These are current implementation facts, not a shared UX contract. In
+particular, several route-specific paths replace the app with a full-screen
+recovery surface or navigate to login/public pages instead of keeping recovery
+on the originating app route. `friink_session_hint` cannot prevent those client
+paths: it is only a routing hint. The confirmed public-entry loop risk—zero
+hint followed by the client guard, or a stale positive hint after fallback—is
+tracked in [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
+The exact cookie, remembered-slot, and API state for the reported browser loop
+is unknown.
+
+Failure cases are distinct:
+
+1. **Technical/ambiguous failure:** timeout, network or CORS failure, `403`,
+   `5xx`, or malformed response does not prove session termination. Entry
+   recovery makes four total attempts, ten seconds apart for non-network
+   ambiguity, without changing identity. A detected network failure immediately
+   shows a full-page in-app network error with **Refresh**; background restore attempts continue every 30 seconds,
+   and **Refresh** starts an immediate attempt without reloading the page.
+   Neither path may overlap another restore request. Do not show account choice
+   or assert session termination until the server responds. Other ambiguous
+   failures retain the in-app **Take me back** recovery page. Public visitors
+   without cached account context remain on the public site.
+2. **Ordinary expiry or unavailable session:** show a cause modal. Okay and
+   close have the same effect; backdrop clicks do not dismiss it. If another
+   remembered session is available, offer that session or Login. Otherwise go
+   to Login. A successfully restored account opens Home.
+3. **Remote logout or security revocation:** show a cause modal and wait for
+   acknowledgment. Then offer another remembered session or Login under the
+   ordinary terminal-session fallback. Never silently switch identity.
+4. **Deactivation or pending deletion:** the initiating client logs out
+   immediately after the lifecycle operation succeeds, then restores another
+   valid remembered session or returns to `/`. Other clients show the lifecycle
+   cause first, then use the same remembered-session-or-public fallback.
+   Lifecycle reactivation or deletion cancellation remains a separate flow.
+
+The cause-specific notice is coordinated across the browser client. Other
+tabs wait for acknowledgment and converge on the same valid fallback account
+or public-site outcome; if the notice-owning tab closes, another tab may take
+over. These mechanics are implemented locally; multi-tab browser and staging
+acceptance remain pending.
+
 #### Multi-account terminal-session recovery
 
-When a current session is confirmed ended, Friink explains the cause and waits
-for the user to acknowledge the notice before changing accounts. After
-acknowledgment, it validates remembered sessions in most-recent-use order and
-never renders a candidate's data before that slot has validated. The recovery
-flow is:
+When a current session is confirmed ended, Friink explains the cause before
+changing identity. For ordinary expiry and security/remote termination, the
+user acknowledges the modal and explicitly chooses another remembered account
+or Login. For deactivation/pending deletion, the initiating client immediately
+logs out after the successful lifecycle operation; another client presents the
+cause first and then automatically tries remaining remembered sessions before
+returning to `/`. Friink never renders a candidate's data before that slot has
+validated. The recovery flow is:
 
 1. Preserve the device-scoped remembered-account summaries locally, without
    storing or replaying passwords.
@@ -303,18 +398,19 @@ flow is:
    account slot. Ordinary refresh results are checked against the still-active
    slot before persistence.
 3. On confirmed terminal failure, clear the in-memory credential for that
-   account and keep only safe recovery context. Explain the known cause (remote
-   termination, deactivation, pending deletion, expiry, or security action) and
-   wait for acknowledgment before trying another remembered slot. A confirmed
-   invalid candidate advances to the next most-recent slot; after acknowledgment,
-   no valid candidate returns the user to the public site.
+   account and keep only safe recovery context. Explain the known cause. For
+   ordinary expiry/security/remote termination, offer explicit account choice
+   or Login; for lifecycle termination, try eligible remembered slots in
+   most-recent-use order and return to the public site if none validates.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
    ambiguous failure does not prove that the session ended. Keep the user in
-   retryable recovery without changing identity.
-5. During ambiguous recovery, the “Choose another remembered account” action
-   remains available in its modal for explicit choice. Its current-account-first
-   ordering is a presentation rule; fallback after acknowledgment follows
-   actual most-recent-use time.
+   retryable recovery without changing identity. During detected network
+   failure, show the full-page network error and allow a manual **Refresh**
+   while background restore continues without overlapping requests.
+5. Ambiguous entry recovery retries four times at ten-second intervals. After
+   exhaustion, **Take me back** opens the remembered-account choice when one is
+   available, with Login as the alternative. A user-selected account is
+   validated before activation.
 6. Show one terminal notice for the browser client. Other open tabs wait for
    acknowledgment, then converge on the same valid fallback account or public
    site. If the tab showing the notice closes before acknowledgment, another
@@ -336,10 +432,11 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 - Use one captured active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
 - A confirmed terminal failure first presents its cause and waits for user
-  acknowledgment. It then tries other remembered accounts by last-use order
-  and validates each slot before committing it. Other terminal causes are also
-  explained and never trigger a silent switch. Ambiguous failures keep the
-  active identity in retryable recovery; they never cause a switch.
+  acknowledgment. For ordinary expiry, remote termination, and security
+  revocation, the user explicitly chooses another remembered account or Login.
+  Lifecycle termination automatically validates remaining remembered accounts
+  in most-recent-use order after the cause is acknowledged. Ambiguous failures
+  keep the active identity in retryable recovery; they never cause a switch.
 - A single tab owns the browser-client termination notice. Other tabs wait for
   acknowledgment and converge after the owner switches to a valid account or
   clears the active selection; if the owner tab closes, another tab can take
@@ -368,8 +465,11 @@ Staging acceptance remains required.
 
 #### Multi-account session continuity policy
 
-When one or more remembered sessions are valid, restore the most recently used
-one. A remembered-account row alone is not proof that its session is valid;
+On public entry, when one or more remembered sessions are valid, restore the
+most recently used one. During ordinary expiry recovery, the user explicitly
+chooses another remembered session or Login. Lifecycle recovery attempts the
+most recently used remaining session after the lifecycle cause is acknowledged.
+A remembered-account row alone is not proof that its session is valid;
 validate each candidate's own slot-scoped session before exposing that
 account's app state. A session is restorable while its refresh token remains
 valid and neither the session nor account has ended. A temporary connection
@@ -379,17 +479,21 @@ problem does not invalidate it and must leave retry available.
   used in the order one, two, three, then three is active and two is next in
   recency order.
 - A user-initiated logout proceeds directly to the next most recently used
-  valid remembered account. For remote termination, deactivation, pending
-  deletion, expiry, or another confirmed terminal failure, explain the cause
-  and wait for acknowledgment before fallback. Continue by recency only when a
-  candidate is confirmed invalid; do not switch identities on timeout, network
-  failure, or another ambiguous/recoverable result.
+  valid remembered account. For ordinary expiry, remote termination, or
+  security revocation, explain the cause and let the user choose another
+  remembered account or Login. For deactivation/pending deletion, explain the
+  cause on other clients and then validate remaining slots by recency; the
+  initiating client logs out immediately after the lifecycle operation
+  succeeds. Never switch identity on timeout, network failure, or another
+  ambiguous/recoverable result.
 - Show the terminal notice once across the browser client. Other tabs wait for
   acknowledgment and then follow the same valid account or public-site result.
   If the notice-owning tab closes, another tab may take over and present it.
-- When the failure is recoverable, keep the user in the app's recovery flow
-  and offer retry, sign-in again, or logout. Do not treat a transient failure
-  as proof that the session ended and do not redirect to the public site.
+- Non-network ambiguous entry recovery makes four total attempts at 10-second intervals.
+  Network failure immediately uses a full-page network error, background restore every 30
+  seconds, and a manual **Refresh** action; other unresolved ambiguous failures show
+  **Take me back**. Do not treat a transient failure as proof that the session
+  ended or silently change identity.
 - If no remembered session validates after confirmed termination or explicit
   logout, clear the selected account and go to the public site. Preserve each
   account's identity boundary and never show one account's state while another
@@ -409,10 +513,14 @@ required before release.
   and rotated within a token family.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
-- **ACCESS-R-031:** A confirmed terminal failure explains its cause and waits
-  for acknowledgment before fallback through remembered accounts in
-  most-recent-use order. Ambiguous failures never switch identity; explicit
-  remembered-account choice remains available in recovery.
+- **ACCESS-R-031:** A confirmed terminal failure explains its cause. Ordinary
+  expiry, remote termination, and security revocation offer explicit choice of
+  another remembered account or Login; deactivation/pending deletion use
+  lifecycle fallback to another valid remembered account or public site.
+  Ambiguous failures never switch identity; non-network entry recovery retries four times
+  at 10-second intervals. Network failure immediately shows a full-page error with manual
+  **Refresh** and background retry every 30 seconds; other unresolved ambiguity
+  offers **Take me back**.
 - **ACCESS-R-032:** Refresh coordination, request headers, and result state use
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
@@ -420,10 +528,12 @@ required before release.
 - **ACCESS-R-034:** Adding or switching accounts updates one client-wide
   selected slot; every other open tab reloads and restores that selection.
 - **ACCESS-R-035:** A confirmed terminated session shows one cause-specific
-  notice across the browser client. After acknowledgment, all tabs converge on
-  the most-recently-used remembered session that validates, or the public site
-  if none validates. If the notice-owning tab closes, another tab can take
-  ownership. Ambiguous failures remain retryable and do not switch.
+  notice across the browser client. Ordinary expiry, remote termination, and
+  security revocation let the user explicitly choose another remembered
+  session or Login. Lifecycle termination validates remaining remembered
+  sessions after acknowledgment and returns to public if none validates. If
+  the notice-owning tab closes, another tab can take ownership. Ambiguous
+  failures remain retryable and do not switch.
 - **ACCESS-R-017:** Refresh is reactive and occurs only after `TOKEN_EXPIRED`
   or a missing/expired access cookie during session restoration.
 - **ACCESS-R-018:** Ambiguous refresh failures preserve local access state.
@@ -446,13 +556,21 @@ the release is considered complete.
       credentials while retaining only safe recovery context.
 - [ ] **ACCESS-AC-017** Rotation and reuse detection are transactional and tested.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
-- [ ] **ACCESS-AC-026** A confirmed terminal failure explains its cause and
-      waits for acknowledgment before trying remembered slots in most-recent-use
-      order; if none validates after acknowledgment, the user returns to public.
+- [ ] **ACCESS-AC-026** A confirmed terminal failure explains its cause.
+      Ordinary expiry/remote termination/security offers another remembered
+      account or Login; lifecycle termination tries remaining valid accounts
+      after acknowledgment and returns to public when none validates.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
 - [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after that
       slot validates successfully.
+- [ ] **ACCESS-AC-042** After all remembered slots fail validation, public
+      entry remains public and does not route back into terminal recovery;
+      zero hint and stale cached summaries are covered.
+- [ ] **ACCESS-AC-043** Session restore failures across protected app, public,
+      profile, post, username-chat, and login entry points provide a coherent
+      recovery path, including the full-page network state, without confusing
+      chat/content failures with session loss.
 - [x] **ACCESS-AC-029** A valid access cookie survives a full reload without
       refresh-cookie rotation; expired access performs one coordinated,
       slot-correct refresh while replay detection remains active.
@@ -466,16 +584,19 @@ the release is considered complete.
       `/` to `/home` only when its value is greater than zero; zero or invalid
       values leave the public content rendered. `/subscriptions` redirects to
       the in-app Subscription settings route.
-- [ ] **ACCESS-AC-032** When the current session is confirmed ended, the app
-      waits for acknowledgment, then validates remembered accounts in
-      most-recent-use order; invalid candidates are skipped without crossing
-      account data boundaries.
-- [x] **ACCESS-AC-033** A timeout, network error, or other ambiguous session
-      failure does not change accounts or redirect to the public site; recovery
-      offers retry, sign-in again, and logout.
-- [ ] **ACCESS-AC-034** When no remembered session validates after an
-      acknowledged termination, the user returns to the public site. An
-      explicit user-initiated logout may proceed directly to that fallback.
+- [ ] **ACCESS-AC-032** Ordinary expiry, remote termination, and security
+      revocation require explicit restore-or-login choice. Lifecycle recovery
+      validates remaining accounts in most-recent-use order after the cause is
+      acknowledged; invalid candidates are skipped without crossing account
+      data boundaries.
+- [ ] **ACCESS-AC-033** An ambiguous entry failure never changes identity,
+      retries four times at 10-second intervals, then offers **Take me back**.
+      Public visitors without remembered auth context remain on the public
+      site.
+- [ ] **ACCESS-AC-034** If no remembered account is available after ordinary
+      expiry, go to Login. If lifecycle fallback has no valid account, return
+      to the public site. Explicit logout may proceed directly to its existing
+      fallback.
 - [ ] **ACCESS-AC-038** A terminal cause is explained to the user, including
       remote termination, deactivation, pending deletion, expiry, or a security
       action; no terminal failure silently changes accounts.
@@ -734,6 +855,8 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
+| ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: zero hint, stale positive hint, entry-status true/false, terminal restore | Open — diagnosis documented; no change made |
+| ACCESS-AC-043 | Recovery behavior is coherent across route entry points | Browser matrix for app shell, public root, profile, post, username-chat, login | Open — current route differences documented |
 
 ### Release gates
 
@@ -804,6 +927,9 @@ logs.
 - 2026-09-27T13:07:53Z — Kept the redirect cookie at `1` while another remembered
   slot remains, refreshed its 30-day expiry on session saves (including token
   refresh), and wrote `0` when clearing the last remembered slot.
+- 2026-09-27T14:18:22Z — Consolidated cross-route session recovery behavior,
+  public-entry hint semantics, and multi-tab notice handling into this unit;
+  recorded route-specific differences and the BUG-AUTH-007 loop risk.
 - 2026-09-26T13:44:23Z — Verified both public entry routes return `200` without
   the hint and redirect to `/home` with it; TypeScript check passes.
 - 2026-09-26T13:10:43Z — Clarified that switcher availability is based on both
@@ -854,7 +980,7 @@ project-wide history. This section records changes specific to this unit.
   reloads other tabs into the selected account. Confirmed termination now
   falls back to the most-recent valid slot or returns to public when none
   validate; transient failures remain in recovery. Staging acceptance pending.
-- 2026-09-26T12:44:44Z — Matched the session UX to
-  [`session-handling.md`](./session-handling.md): terminal causes are explained,
-  fallback waits for acknowledgment, one tab owns the notice, and another tab
-  can take over if it closes. Browser and staging acceptance remain pending.
+- 2026-09-26T12:44:44Z — Matched terminal session UX to the cross-tab contract:
+  terminal causes are explained, fallback waits for acknowledgment, one tab
+  owns the notice, and another tab can take over if it closes. Browser and
+  staging acceptance remain pending.

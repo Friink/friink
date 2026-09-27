@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearAuthSessionForRecovery, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -13,6 +14,7 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
 
     async function checkSession() {
       if (loadAuthSession()) {
@@ -22,21 +24,18 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
       const cachedUser = loadCachedAuthUser();
       try {
         if (!await hasSessionForEntry()) return;
-        await restoreAuthSessionForEntry();
-        if (!active) return;
+        await restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal);
+        if (!active || controller.signal.aborted) return;
         router.replace('/home');
       } catch (error) {
-        if (!active) return;
+        if (!active || controller.signal.aborted) return;
         if (isTerminalRefreshFailure(error)) {
           clearAuthSessionForRecovery(error);
           router.replace('/home');
           return;
         }
         if (cachedUser) {
-          // A previously authenticated visitor stays in the app's retryable
-          // recovery state during a network outage. Signed-out visitors have
-          // no cached active identity and keep seeing public content.
-          router.replace('/home');
+          router.replace(isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
         }
       }
     }
@@ -44,6 +43,7 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
     void checkSession();
     return () => {
       active = false;
+      controller.abort();
     };
   }, [router]);
 

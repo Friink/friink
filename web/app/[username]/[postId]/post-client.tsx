@@ -6,7 +6,9 @@ import { AppShell } from '@/components/app-shell';
 import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
 import { PostUnavailableState } from '@/components/post-unavailable-state';
-import { clearAuthSession, createPost, getLoginRecoveryPath, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 
@@ -103,7 +105,7 @@ export function PostClient({ postId }: PostClientProps) {
           }
           if (active) setAncestors(chain);
         })
-        .catch(() => { if (active) setPostUnavailable(true); });
+        .catch((error) => { if (!active) return; if (isTerminalRefreshFailure(error)) router.replace('/home'); else setPostUnavailable(true); });
       listPostReplies(postId)
         .then((items) => { if (active) setReplies(items.map(mapApiPost)); })
         .catch(() => { if (active) setReplies([]); });
@@ -112,15 +114,18 @@ export function PostClient({ postId }: PostClientProps) {
     if (session) {
       void loadPost(session);
     } else {
-      restoreAuthSessionForEntry()
+      const controller = new AbortController();
+      restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal)
         .then((restoredSession) => {
           if (!active) return;
           saveAuthSession(restoredSession);
           void loadPost(restoredSession);
         })
         .catch((error) => {
-          if (active && isTerminalRefreshFailure(error)) router.replace(getLoginRecoveryPath());
+          if (!active || controller.signal.aborted) return;
+          router.replace(isTerminalRefreshFailure(error) ? '/home' : isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
         });
+      return () => { active = false; controller.abort(); };
     }
 
     return () => { active = false; };
@@ -163,7 +168,7 @@ export function PostClient({ postId }: PostClientProps) {
     }
   }
 
-  if (!user) return null;
+  if (!user) return <SessionRecoveryScreen status="loading" />;
 
   if (!post) {
     return postUnavailable ? (
