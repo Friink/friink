@@ -12,9 +12,10 @@ type ModalProps = {
   closeLabel?: string;
   backLabel?: string;
   className?: string;
+  closeOnBackdrop?: boolean;
 };
 
-export function Modal({ title, children, actions, onClose, onBack, closeLabel = 'Close', backLabel = 'Back', className = '' }: ModalProps) {
+export function Modal({ title, children, actions, onClose, onBack, closeLabel = 'Close', backLabel = 'Back', className = '', closeOnBackdrop = true }: ModalProps) {
   const titleId = useId();
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
@@ -31,7 +32,7 @@ export function Modal({ title, children, actions, onClose, onBack, closeLabel = 
   }, [onClose]);
 
   const modal = (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div className="modal-backdrop" onMouseDown={(event) => { if (closeOnBackdrop && event.target === event.currentTarget) onClose(); }}>
       <section className={`modal-dialog${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="modal-header">
           {onBack ? <button className="modal-back" type="button" aria-label={backLabel} title={backLabel} onClick={onBack}><i className="fa-solid fa-arrow-left" aria-hidden="true" /></button> : <span className="modal-back-placeholder" aria-hidden="true" />}

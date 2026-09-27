@@ -66,6 +66,14 @@ loading, error, retry, focus, and keyboard-accessible states. A failed
 operation preserves the usable current state. A pending deletion screen clearly
 distinguishes cancellation from ordinary sign-in.
 
+After a successful deactivation or deletion confirmation, the initiating web
+client immediately ends the affected account session and restores another
+valid remembered account if available; otherwise it returns to the public site.
+Other clients show a cause-specific in-app notice before attempting that same
+fallback. Session restore remains subject to Account Access validation. This
+presentation and routing behavior is specified in
+[Error Handling](./error-handling.md#ux-and-surfaces).
+
 ### Subscription interaction
 
 Deactivated and pending-deletion accounts remain visible to staff for context,

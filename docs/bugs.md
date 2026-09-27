@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-26T22:50:19Z
+**Last edited:** 2026-09-27T14:18:22Z
 
 ## Instructions for agents
 
@@ -73,6 +73,83 @@ Copy this template for a new defect and replace every placeholder:
 ```
 
 ## Defect entries
+
+## BUG-AUTH-007 — Terminal session recovery can loop between public site and app
+
+- **Status:** Diagnosed
+- **Reported/updated:** 2026-09-27T14:06:18Z
+- **Affected area:** Public root routing, public route guard, terminal session recovery, remembered-account hint cookie
+- **Environment:** User report; browser-specific cookie and API trace unavailable
+- **Severity:** high
+
+### Bug summary
+
+After a terminal session failure, a visitor can be sent between the public site
+and app recovery. The user cannot reliably reach the login form to sign in again.
+
+### Reproduction
+1. Open the public site with a stale positive `friink_session_hint`, or with a
+   zero hint while `/auth/entry-status` indicates that restoration should be
+   attempted.
+2. Let session restoration fail terminally, producing the “This account
+   session ended” notice, or acknowledge that notice after protected-app entry.
+3. If no remembered slot validates, return to `/` and observe whether public
+   entry immediately sends the browser back to `/home` and recovery.
+
+### Expected behavior
+
+Once no remembered session validates, the visitor can remain on the public
+site and choose login. The redirect hint is only a routing optimization and
+cannot force repeated entry into a known-failed recovery path.
+
+### Actual behavior
+
+Two code paths can re-enter app recovery. A positive hint makes server-rendered
+`/` redirect to `/home` before session validation. With a zero hint, the public
+page's `PublicRouteGuard` can still request `/auth/entry-status`, attempt
+restoration, and route to `/home` on terminal failure. In app recovery, the
+acknowledgment fallback can find no valid slot, clear the current auth state,
+and return to `/`; `clearAuthSession()` can nevertheless retain a positive
+hint when another cached slot summary exists.
+
+### Root cause
+- **Confirmed:** The hint reflects saved-session/cache state, not validated
+  session state. `/auth/entry-status` also prompts a restore attempt rather
+  than validating a session. The public guard's terminal restore path routes
+  to `/home`; app recovery's hint calculation can remain positive based on a
+  remembered summary that no longer restores. These independent paths can
+  sustain the redirect loop.
+- **Open questions:** The reported browser's exact hint value, remembered-slot
+  summaries, `/auth/entry-status` response, and restore API responses were not
+  captured. Therefore this is a confirmed implementation-level loop risk, not
+  proof of which path triggered the specific incident.
+
+### Proposed fix
+
+Review only public-entry redirect and recovery routing so a conclusively failed
+restore can reach public/login without re-entry. Keep the hint as a redirect
+mechanism; do not change authentication or session validation as part of this
+bug unless separately authorized.
+
+### Tests and verification
+- **Required:** Browser checks for positive, zero, missing, and malformed hint;
+  entry-status positive/negative; terminal and ambiguous restore; stale and
+  valid remembered slots; login reachable after all candidates fail.
+- **Completed:** None — diagnosis only. No code changes made.
+
+### Noteworthy
+
+This finding does not establish that the hint cookie itself ended or invalidated
+a session. The hint does not grant access. The subscription route migration is
+unrelated. Auth/session behavior remains outside the scope of this diagnosis.
+
+### Related documentation and implementation
+- [Account Access](units/account-access.md)
+- [Active session and recovery rule](rules.md#auth-r-040--session-restoration-has-explicit-recovery-ux)
+- `web/lib/public-session-entry.ts`
+- `web/components/public-route-guard.tsx`
+- `web/components/app-shell-route.tsx`
+- `web/lib/auth.ts`
 
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 

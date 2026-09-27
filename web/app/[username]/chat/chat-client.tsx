@@ -3,10 +3,12 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
+import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { Composer } from '@/components/composer';
 import { ChatMediaGallery } from '@/components/chat-media-gallery';
 import { ProfileCard } from '@/components/profile-card';
-import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, getLoginRecoveryPath, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { restoreWithSessionRetries } from '@/lib/session-recovery';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 import { useAppShellState } from '@/components/app-shell-state-provider';
@@ -46,22 +48,18 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     let unsubscribe: () => void = () => undefined;
 
     async function loadConversation() {
       let session = loadAuthSession();
       if (!session) {
         try {
-          session = await restoreAuthSessionForEntry();
+          session = await restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal);
           saveAuthSession(session);
         } catch (nextError) {
-          if (cancelled) return;
-          if (isTerminalRefreshFailure(nextError)) {
-            const reason = nextError.code === 'SESSION_REVOKED_SECURITY' ? 'security-revocation' : 'expired';
-            router.replace(getLoginRecoveryPath(reason));
-          } else {
-            setError(nextError instanceof Error ? nextError.message : 'Could not restore your session.');
-          }
+          if (cancelled || controller.signal.aborted) return;
+          router.replace(isTerminalRefreshFailure(nextError) ? '/home' : '/home?session_recovery=offline');
           return;
         }
       }
@@ -97,6 +95,10 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
         });
       } catch (nextError) {
         if (!cancelled) {
+          if (isTerminalRefreshFailure(nextError)) {
+            router.replace('/home');
+            return;
+          }
           setChatAccessDenied(nextError instanceof AuthApiError && nextError.status === 403);
           setError(nextError instanceof Error ? nextError.message : 'Could not load this conversation.');
         }
@@ -107,6 +109,7 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
 
     return () => {
       cancelled = true;
+      controller.abort();
       unsubscribe();
     };
   }, [conversationId, router, username]);
@@ -205,7 +208,7 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
     }
   }
 
-  if (!user) return null;
+  if (!user) return <SessionRecoveryScreen status="loading" />;
 
   const participant = context?.participant || conversation?.participant;
   const displayName = participant?.display_name || participant?.username || (username ? `@${username}` : 'Chat');

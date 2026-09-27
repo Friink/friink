@@ -1,5 +1,77 @@
 # Changelog
 
+## 2026-09-27T17:32:35Z
+- [web/session-recovery] Implemented four total restore attempts at 10-second
+  intervals for ambiguous failures; cause-specific in-app modals; explicit
+  restore-or-login after ordinary expiry; lifecycle fallback to another valid
+  session or the public site; and Home after account switching. Applied the
+  flow to app-shell, public, profile, post, username-chat, and login entry
+  points. Updated AUTH-R-008/AUTH-R-040 and Account Access, Account Lifecycle,
+  and Error Handling docs. No server auth, token, or session-validation logic
+  changed. Browser and staging acceptance remain pending.
+
+## 2026-09-27T16:30:31Z
+- [error-handling] Distinguished ordinary session expiry from account
+  deactivation/pending-deletion recovery. Lifecycle actions log out the
+  initiating account and route to another valid session or public; other
+  clients see the cause before the same fallback. Login remains the ordinary
+  expiry fallback. Requirements only; no application behavior changed.
+
+## 2026-09-27T16:13:24Z
+- [error-handling] Clarified that the planned restore-or-login choice is an
+  intentional UX enhancement to the current behavior in AUTH-R-008; that rule
+  should be updated when the enhancement is implemented. Documentation only.
+
+## 2026-09-27T16:07:42Z
+- [error-handling] Recorded the agreed session-recovery UX: four attempts at
+  10-second intervals for ambiguous failures, no restoration without a usable
+  refresh token, Home after account switching, restore-or-login choice,
+  equivalent Okay/close actions, consistent web entry-point behavior, and
+  recovery within the originating surface. Requirements only; no auth or
+  application behavior changed.
+
+## 2026-09-27T15:43:26Z
+- [error-handling] Recorded the user's session-validity definition, fallback
+  order, and cached-shell expectation; clarified API-side refresh-cookie
+  validation. Added a recommendation for four total attempts on ambiguous
+  failures only, pending approval. No product behavior changed.
+
+## 2026-09-27T15:04:42Z
+- [error-handling] Documented six session-error presentation flows with draft
+  copy: background recovery and “Take me back” for technical failures, and
+  Okay-only modals for confirmed session/lifecycle failures. Recorded open UX
+  decisions. No product behavior changed.
+
+## 2026-09-27T14:52:22Z
+- [error-handling] Defined full-page, toast, and modal as the only shared
+  error-display types and added a draft template for each. Usage criteria
+  remain open; no product behavior changed.
+
+## 2026-09-27T14:48:53Z
+- [error-handling] Added the proposed core boundary that errors and recovery
+  stay within the originating public-site, web-app, or native mobile surface.
+  No product behavior changed.
+
+## 2026-09-27T14:43:07Z
+- [error-handling] Created a template-based requirements draft, registered it
+  in the documentation viewer, and captured the initial user-proposed session
+  recovery modal requirement. No product behavior changed.
+
+## 2026-09-27T14:33:44Z
+- [docs] Moved the retired Session Handling note into `docs/archives/`, added
+  it to the documentation viewer registry/search, and corrected its links to
+  the canonical Account Access and Account Lifecycle units.
+
+## 2026-09-27T14:18:22Z
+- [account-access] Consolidated session entry, recovery cases, route-specific
+  failure surfaces, and cross-tab behavior into the template-based unit.
+  Retained `session-handling.md` as a deprecated pointer; no code changed.
+
+## 2026-09-27T14:06:18Z
+- [account-access] Documented the confirmed public-entry/session-recovery
+  redirect-loop paths and the unknown browser-specific state as BUG-AUTH-007.
+  Documentation only; no application code or auth behavior changed.
+
 ## 2026-09-27T13:30:24Z
 - [subscriptions] Removed the public plans comparison page. The landing-page
   comparison link opens Settings, and legacy `/subscriptions` requests

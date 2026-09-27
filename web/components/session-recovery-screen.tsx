@@ -6,12 +6,14 @@ import { FriinkLogo } from '@/components/friink-logo';
 import { Modal } from '@/components/modal';
 import type { AccountSummary } from '@/lib/auth';
 
+type SessionRecoveryStatus = 'loading' | 'offline' | 'choice' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
+
 type SessionRecoveryScreenProps = {
-  status: 'loading' | 'offline' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
+  status: SessionRecoveryStatus;
   appearance?: 'light' | 'dark' | 'system';
-  onRetry?: () => void;
   onAcknowledge?: () => void;
-  onLogout?: () => void;
+  onTakeMeBack?: () => void;
+  onChooseLogin?: () => void;
   accounts?: AccountSummary[];
   currentUsername?: string | null;
   restoringAccountSlot?: string | null;
@@ -19,45 +21,102 @@ type SessionRecoveryScreenProps = {
   onRestoreAccount?: (account: AccountSummary) => void;
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onRetry, onAcknowledge, onLogout, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
-  const [showAccounts, setShowAccounts] = useState(false);
-  const orderedAccounts = [...accounts].sort((a, b) => Number(b.active) - Number(a.active) || b.lastUsedAt.localeCompare(a.lastUsedAt));
+const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'offline' | 'choice' | 'waiting'>, { title: string; body: string }> = {
+  expired: { title: 'Session ended', body: 'Your session is no longer active.' },
+  security: { title: 'Session ended', body: 'Your session was ended for security reasons.' },
+  terminated: { title: 'Session ended', body: 'This session was ended from another device.' },
+  deactivated: { title: 'Session ended', body: 'This account was deactivated on another device.' },
+  pending_deletion: { title: 'Session ended', body: 'This account is scheduled for deletion.' },
+};
+
+export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowledge, onTakeMeBack, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
+  const [showChoice, setShowChoice] = useState(false);
+  const availableAccounts = accounts
+    .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== currentUsername?.toLowerCase())
+    .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+
   if (status === 'loading') {
     return (
       <main className="lifecycle-screen" data-theme={appearance} aria-busy="true">
         <section className="lifecycle-card" aria-labelledby="session-loading-title">
           <BrandLockup size="lg" />
-          <h1 id="session-loading-title">Reconnecting…</h1>
-          <p>Just a moment while we get you back in.</p>
+          <h1 id="session-loading-title">We’re having trouble reconnecting.</h1>
+          <p>We’re trying to restore your session.</p>
         </section>
       </main>
     );
   }
 
-  return (
-    <>
+  if (status === 'choice' || (status === 'offline' && showChoice)) {
+    return (
+      <main className="lifecycle-screen" data-theme={appearance}>
+        <Modal
+          title="Continue to Friink"
+          onClose={onChooseLogin ?? (() => undefined)}
+          closeLabel="Continue to login"
+          closeOnBackdrop={false}
+          className="session-recovery-account-modal"
+          actions={<button className="button-secondary" type="button" onClick={onChooseLogin}>Log in</button>}
+        >
+          <p>Choose a remembered account to continue, or log in.</p>
+          {availableAccounts.length > 0 && onRestoreAccount ? (
+            <div className="session-recovery-accounts" role="group" aria-label="Remembered accounts" aria-busy={!!restoringAccountSlot}>
+              {availableAccounts.map((account) => (
+                <button className="session-recovery-account" type="button" key={account.accountSlot} disabled={!!restoringAccountSlot} onClick={() => onRestoreAccount(account)}>
+                  <Image src={account.profilePictureUrl || '/media/profile.jpg'} alt="" width={32} height={32} sizes="32px" unoptimized />
+                  <span>@{account.username}</span>
+                  {restoringAccountSlot === account.accountSlot ? <i className="fa-solid fa-spinner fa-spin" aria-label="Restoring account" /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {accountError ? <p className="session-recovery-error" role="alert">{accountError}</p> : null}
+        </Modal>
+      </main>
+    );
+  }
+
+  if (status === 'offline') {
+    return (
       <main className="lifecycle-screen" data-theme={appearance}>
         <Link className="lifecycle-home-link" href="/" aria-label="Return to Friink home"><FriinkLogo /></Link>
         <section className="lifecycle-card" aria-labelledby="session-recovery-title">
           <BrandLockup size="lg" />
-          <h1 id="session-recovery-title">{status === 'waiting' ? 'Session ended' : status === 'offline' ? 'We couldn’t reconnect.' : 'This account session ended.'}</h1>
-          <p>{status === 'offline' ? 'Friink is having trouble reconnecting. Your account has not been signed out.' : status === 'waiting' ? 'Another tab will continue after the session notice is acknowledged.' : status === 'security' ? 'Your session was ended for security reasons.' : status === 'deactivated' ? 'This account was deactivated on another device.' : status === 'pending_deletion' ? 'This account is scheduled for deletion.' : status === 'terminated' ? 'This session was ended from another device.' : status === 'expired' ? 'This session is no longer valid.' : 'Your session has ended.'}</p>
-          <div className={`lifecycle-actions session-recovery-actions${status === 'offline' ? ' session-recovery-actions-offline' : ' session-recovery-actions-terminal'}`}>
-            {status !== 'offline' && status !== 'waiting' && onAcknowledge ? <button className="button-primary" type="button" onClick={onAcknowledge}>Okay</button> : null}
-            {status === 'waiting' ? <span role="status">Waiting for another tab…</span> : null}
-            {status === 'offline' && onRetry ? <button className="button-primary" type="button" onClick={onRetry}>Try again</button> : null}
-            {status === 'offline' ? <Link className="button-secondary" href="/login">Go to login</Link> : null}
-            {status === 'offline' && onLogout ? <button className="button-secondary" type="button" onClick={onLogout} disabled={!!restoringAccountSlot}>Log out</button> : null}
-            {status === 'offline' && accounts.length > 0 && onRestoreAccount ? <button className="button-secondary" type="button" disabled={!!restoringAccountSlot} aria-haspopup="dialog" aria-expanded={showAccounts} onClick={() => setShowAccounts(true)}>Choose another remembered account</button> : null}
+          <h1 id="session-recovery-title">We couldn’t restore your session.</h1>
+          <p>Use the button below to continue.</p>
+          <div className="lifecycle-actions session-recovery-actions session-recovery-actions-terminal">
+            <button className="button-primary" type="button" onClick={() => { if (availableAccounts.length > 0 && onRestoreAccount && onChooseLogin) setShowChoice(true); else onTakeMeBack?.(); }}>Take me back</button>
           </div>
         </section>
       </main>
-      {showAccounts && onRestoreAccount ? <Modal title="Choose another account" onClose={() => setShowAccounts(false)} closeLabel="Close remembered accounts" className="session-recovery-account-modal" actions={<button className="button-secondary" type="button" disabled={!!restoringAccountSlot} onClick={() => setShowAccounts(false)}>Cancel</button>}>
-        <div className="session-recovery-accounts" role="group" aria-label="Remembered accounts" aria-busy={!!restoringAccountSlot}>
-          {orderedAccounts.map((account) => <button className={`session-recovery-account${account.active ? ' session-recovery-account-current' : ''}`} type="button" key={account.accountSlot} disabled={!!restoringAccountSlot} onClick={() => onRestoreAccount(account)}><Image src={account.profilePictureUrl || '/media/profile.jpg'} alt="" width={32} height={32} sizes="32px" unoptimized/><span>@{account.username}{account.active ? ' (current)' : ''}</span>{restoringAccountSlot === account.accountSlot ? <i className="fa-solid fa-spinner fa-spin" aria-label="Restoring account" /> : account.active ? <i className="fa-solid fa-check" aria-label="Current account" /> : null}</button>)}
-        </div>
-        {accountError ? <p className="session-recovery-error" role="alert">{accountError}</p> : null}
-      </Modal> : null}
-    </>
+    );
+  }
+
+  if (status === 'waiting') {
+    return (
+      <main className="lifecycle-screen" data-theme={appearance} aria-live="polite">
+        <section className="lifecycle-card" aria-labelledby="session-waiting-title">
+          <BrandLockup size="lg" />
+          <h1 id="session-waiting-title">Session ended</h1>
+          <p>Another tab will continue after the session notice is acknowledged.</p>
+        </section>
+      </main>
+    );
+  }
+
+  const message = messages[status];
+  return (
+    <main className="lifecycle-screen" data-theme={appearance}>
+      <Modal
+        title={message.title}
+        onClose={onAcknowledge ?? (() => undefined)}
+        closeLabel="Close session notice"
+        closeOnBackdrop={false}
+        className="session-recovery-account-modal"
+        actions={<button className="button-primary" type="button" onClick={onAcknowledge}>Okay</button>}
+      >
+        <p>{message.body}</p>
+      </Modal>
+    </main>
   );
 }
