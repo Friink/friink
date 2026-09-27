@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T23:00:46Z — Coordinate Account Switching Across Tabs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Fix the account switcher getting stuck when multiple staging tabs are open.
+- Changes Made: Added a browser-wide exclusive lock around account-switch requests, moved source-session lookup and successful session persistence inside that lock, and made entry restoration retry when the selected account changes during `/auth/me`. Updated the Account Access rule/acceptance matrix, architecture notes, and BUG-AUTH-008. Kept the observed multi-tab feed error as a separate unresolved diagnosis.
+- Files: `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `docs/units/account-access.md`, `docs/rules.md`, `docs/architecture.md`, `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` passed in `web/`; staging multi-tab acceptance is pending. The reported Home feed error remains undiagnosed.
+
 ## 2026-09-27T22:03:33Z — Toast Account-Switch Failures
 
 - Agent: Codex

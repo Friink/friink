@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-27T23:00:46Z
+- [account-access] Serialize account switches across tabs and retry session
+  restoration when the browser-wide selected account changes mid-request.
+  Documented the behavior and recorded the staging multi-tab defect; staging
+  acceptance remains pending.
+
 ## 2026-09-27T22:03:33Z
 - [account-access] Show account-switch failures in the shared toast stack with
   the copy “Couldn’t switch accounts. Please try again.” Documented the

@@ -74,6 +74,78 @@ Copy this template for a new defect and replace every placeholder:
 
 ## Defect entries
 
+## BUG-AUTH-008 — Account switching can race across open tabs
+
+- **Status:** Fix implemented locally; staging acceptance pending
+- **Reported/updated:** 2026-09-27T23:00:46Z
+- **Affected area:** Account switching and session restoration across browser tabs
+- **Environment:** Staging; multiple tabs in one browser profile
+- **Severity:** medium
+
+### Bug summary
+
+With multiple Friink tabs open, account switching can fail or leave the
+switcher unavailable until the extra tabs are closed and the page is reloaded.
+
+### Reproduction
+1. Sign in to two remembered accounts in one browser profile.
+2. Open the app in several tabs.
+3. Switch accounts repeatedly from one or more tabs, or refresh the tabs while
+   the selected account is changing.
+4. Observe the switcher become disabled or a tab fail to restore the selected
+   account. Closing the extra tabs and reloading restores normal behavior.
+
+### Expected behavior
+
+Switches serialize across tabs, and every tab converges on the selected
+account. A restore response for an earlier selection cannot replace a newer
+selection.
+
+### Actual behavior
+
+The selected account is shared across the browser and other tabs reload when it
+changes. Before this fix, refreshes coordinated token rotation per account
+slot, but account-switch requests had no shared lock. A tab could begin a
+switch from stale in-memory state while another tab was also switching.
+
+### Root cause
+- **Confirmed:** `switchAccount()` did not coordinate simultaneous cross-tab
+  switches. Successful `/auth/me` restoration also saved its captured slot
+  without checking whether the browser-wide selected slot had changed during
+  the request.
+- **Open questions:** The exact request ordering in the staging reproduction
+  was not captured. The reported `Could not load home feed` error with three or
+  four tabs may be a separate transport or server-load issue and remains
+  undiagnosed.
+
+### Resolution in progress
+
+Switches now use a browser-wide exclusive lock, read the source session after
+the lock is acquired, and save the destination selection before releasing the
+lock. Session restoration retries when its selected slot changes while
+`/auth/me` is pending. The source code is updated locally; staging acceptance
+has not been run.
+
+### Tests and verification
+- **Required:** Repeated and simultaneous switches in both directions with two
+  or more staging tabs; confirm every tab converges and the switcher remains
+  usable. Separately capture the HTTP status for feed failures with three or
+  four tabs.
+- **Completed:** Web TypeScript check passed. Multi-tab browser and staging
+  verification remain pending.
+
+### Noteworthy
+
+This change does not alter JWT lifetime, refresh-token rotation, or server-side
+authorization. The lock coordinates only browser tab operations. The feed
+failure is tracked as an open diagnosis and is not claimed as fixed here.
+
+### Related documentation and implementation
+- [Account Access](units/account-access.md)
+- [Account selection rule](rules.md#auth-r-041--account-switching-is-serialized-across-tabs)
+- `web/lib/auth.ts`
+- `web/components/side-drawer.tsx`
+
 ## BUG-AUTH-007 — Terminal session recovery can loop between public site and app
 
 - **Status:** Fix implemented locally; staging acceptance pending

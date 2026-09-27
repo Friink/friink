@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-09-25T01:20:58Z
+**Last edited:** 2026-09-27T23:00:46Z
 
 ## Repository and runtime boundaries
 
@@ -41,6 +41,10 @@ through `NEXT_PUBLIC_API_BASE_URL`.
   cookie bound to an active server-side session (`sid`). Refresh rotation is
   reactive to an expired/missing access cookie. Public routes render before
   their non-blocking entry-status check. See
+  [Account Access](units/account-access.md).
+- Account switches use one browser-wide exclusive lock. A restore that returns
+  after the selected slot changed retries against the new slot, so stale
+  cross-tab responses cannot reclaim the previous account. See
   [Account Access](units/account-access.md).
 - The shared visible app content column and contextual floating composer use `--space-content-col` with a `720px` tablet/desktop cap. The inline gutter is outside that cap: `16px` on desktop and `8px` on mobile.
 - The floating composer is available on feed and supported contextual surfaces and is intentionally hidden on profile pages.

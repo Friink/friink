@@ -796,6 +796,18 @@ missing evidence can be filled in.
 - **Edge cases:** Timeouts/network/CORS/5xx/malformed responses never prove that a session ended and never change account identity. Network failures immediately show a full-page error with manual **Refresh** and background restore every 30 seconds; account choice waits until the server can validate a session. Refresh-token reuse detection remains active. Refresh coordination and request headers use the same captured slot; cross-tab followers validate using their own slot access cookie, and stale responses cannot replace a later active slot. Browser/staging acceptance for the updated recovery UX remains pending.
 - **Verification:** Public-route redirect behavior uses the positive-integer hint; session save/clear call sites update the hint according to remaining remembered slots. Multi-tab browser and staging acceptance remain pending.
 
+### AUTH-R-041 — Account Switching Is Serialized Across Tabs
+
+- **Status:** Active
+- **Effective:** 2026-09-27T23:00:46Z
+- **Related units:** [account-access](units/account-access.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/lib/auth.ts`, `web/components/side-drawer.tsx`
+
+- **What:** Account-switch operations use a browser-wide exclusive lock. A waiting switch reads the current in-memory session only after acquiring the lock, then commits the new selected slot before releasing it. Session entry validates the captured slot and retries if another tab changes the selected slot while `/auth/me` is in flight, preventing an old response from restoring its account over a newer selection.
+- **Edge cases:** Web Locks are used where available, with a bounded local-storage lease fallback. The coordination record contains only a tab owner and lease expiry; access and refresh credentials remain in memory or HttpOnly cookies. Other tabs continue to reload after the selected slot changes. Multi-tab staging acceptance remains required.
+
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
 - **Status:** Active
@@ -1781,6 +1793,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [account-access](units/account-access.md) | ACCESS-R-028 | Switching refreshes account-scoped shell, feed, |
 | [account-access](units/account-access.md) | ACCESS-R-029 | Failed list, add, switch, logout, refresh, or slot operations |
 | [account-access](units/account-access.md) | ACCESS-R-030 | Active logout selects the most-recent remaining valid slot |
+| [account-access](units/account-access.md) | ACCESS-R-044 | Concurrent switches serialize and stale restore responses cannot replace the selected slot. |
 | [account-lifecycle](units/account-lifecycle.md) | LIFE-R-001 | Profile setup resumes until complete; optional steps remain |
 | [account-lifecycle](units/account-lifecycle.md) | LIFE-R-002 | Deactivation requires the current password, ends all |
 | [account-lifecycle](units/account-lifecycle.md) | LIFE-R-003 | Deletion requires current-password confirmation followed by a |

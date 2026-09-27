@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-27T18:12:04Z
+**Last edited:** 2026-09-27T23:00:46Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -533,6 +533,10 @@ item.
   slot in `X-Friink-Account-Slot` and the destination slot in the request body.
   An unavailable destination must not be reported as termination of the valid
   source session or clear it in the client.
+- **ACCESS-R-044:** Account switches are serialized across tabs. A switch reads
+  its source session after acquiring the shared lock, commits the selected slot
+  before releasing it, and restores retry when the selected slot changes during
+  `/auth/me` validation so a stale response cannot reclaim the prior account.
 - **ACCESS-R-035:** A confirmed terminated session shows one cause-specific
   notice across the browser client. Ordinary expiry, remote termination, and
   security revocation let the user explicitly choose another remembered
@@ -710,6 +714,9 @@ control remains visible when account labels are long.
       tabs after the add succeeds.
 - [ ] **ACCESS-AC-036** Switching accounts in one tab updates every open tab;
       tabs reload and no stale tab-local value can select a different account.
+- [ ] **ACCESS-AC-045** Simultaneous account switches across tabs serialize;
+      after selection changes, tabs converge on the selected account and a
+      restore response for the previous slot cannot overwrite it.
 - [ ] **ACCESS-AC-037** Across open tabs, only one tab presents the termination
       notice; other tabs wait for acknowledgment, then converge on the same
       most-recent valid account or public site. If the notice tab closes,
@@ -862,6 +869,7 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-AC-027 | Requests and refresh coordination use the selected slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
 | ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-R-044/AC-045 | Concurrent switches serialize and stale restore responses cannot replace the selected slot | Two-tab simultaneous switch and reload matrix | Implemented locally — staging pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
 | ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: zero hint, stale positive hint, entry-status true/false, terminal restore | Implemented locally — staging browser pending |

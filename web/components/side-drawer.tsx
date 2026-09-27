@@ -7,7 +7,7 @@ import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import { BetaBadge } from '@/components/design/beta-badge';
 import type { AuthUser } from '@/lib/auth';
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { getAccountAddAvailability, listAccounts, loadAuthSession, removeAccount, saveAuthSession, switchAccount, type AccountSummary } from '@/lib/auth';
+import { getAccountAddAvailability, listAccounts, loadAuthSession, removeAccount, switchAccount, type AccountSummary } from '@/lib/auth';
 
 type SideDrawerProps = {
   user: AuthUser;
@@ -175,8 +175,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     setAccountBusy(true);
     setAccountSwitchingUsername(account.username);
     try {
-      const next = await switchAccount(session.accessToken, account.accountSlot);
-      saveAuthSession(next);
+      const next = await switchAccount(account.accountSlot);
       onAccountChange?.(next.user);
     } catch {
       onToast?.('Couldn’t switch accounts. Please try again.');
@@ -195,8 +194,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       if (removeTarget.active) {
         const remaining = accounts.filter((item) => item.accountSlot !== removeTarget.accountSlot).sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
         if (remaining[0]) {
-          const next = await switchAccount(session.accessToken, remaining[0].accountSlot);
-          saveAuthSession(next);
+          const next = await switchAccount(remaining[0].accountSlot);
           onAccountChange?.(next.user);
           window.location.reload();
           return;
