@@ -190,8 +190,8 @@ outside this session-error requirement.
 Agreed copy and behavior by error:
 
 1. **Technical/ambiguous recovery failure — in-app page.** While recovery is
-   being attempted, show: “We’re having trouble reconnecting. We’re trying to
-   restore your session.” Show no controls during this attempt. Non-network
+   being attempted, show: “Reconnecting…” and “We’re getting your session
+   ready.” Show no controls during this attempt. Non-network
    ambiguous failures retry at most four times total, with 10 seconds between
    attempts. A confirmed terminal result stops retries immediately. If all four
    attempts fail ambiguously, update the copy to: “We couldn’t restore your
@@ -854,3 +854,6 @@ project-wide history. This section records requirements added to this unit.
   **Refresh** and non-overlapping background restoration every 30 seconds.
   Network errors remain ambiguous and do not show account-choice or terminal
   session UX until the server responds.
+- 2026-09-27T20:23:09Z — Updated the initial session-recovery loading copy to
+  “Reconnecting…” / “We’re getting your session ready.” to avoid implying a
+  network problem before one has been identified.

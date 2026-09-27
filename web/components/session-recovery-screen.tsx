@@ -42,8 +42,8 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowl
       <main className="lifecycle-screen" data-theme={appearance} aria-busy="true">
         <section className="lifecycle-card" aria-labelledby="session-loading-title">
           <BrandLockup size="lg" />
-          <h1 id="session-loading-title">We’re having trouble reconnecting.</h1>
-          <p>We’re trying to restore your session.</p>
+          <h1 id="session-loading-title">Reconnecting…</h1>
+          <p>We’re getting your session ready.</p>
         </section>
       </main>
     );

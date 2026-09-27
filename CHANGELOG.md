@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-27T20:23:09Z
+- [error-handling] Replaced the initial session-recovery loading copy with
+  “Reconnecting…” and “We’re getting your session ready.” The dedicated
+  network-failure copy is unchanged.
+
 ## 2026-09-27T18:12:04Z
 - [web/session-recovery] Documented then implemented a dedicated full-page
   network failure state. It appears on the first detected fetch/network error,

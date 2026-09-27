@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T20:23:09Z — Clarify Session Recovery Loading Copy
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Replace the session-recovery loading message with the agreed concise, reassuring copy.
+- Changes Made: Changed the loading-state headline to “Reconnecting…” and supporting text to “We’re getting your session ready.” Updated the Error Handling unit history and changelog. Network-error copy and recovery behavior remain unchanged.
+- Files: `web/components/session-recovery-screen.tsx`, `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the updated loading state and documentation; `git diff --check` passed. No tests run because this was a copy-only change.
+
 ## 2026-09-27T18:12:04Z — Add Network Failure Recovery Page
 
 - Agent: Codex
