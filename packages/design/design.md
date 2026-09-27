@@ -22,6 +22,10 @@ implementation constraints.
   `web/app/globals.css`.
 - Logged-in TSX components provide structure, state, semantic classes,
   behavior, and accessibility; they do not define visual design.
+- The shared `CountPill` component in `web/components/design/count-pill.tsx`
+  renders unread counts in the signed-in TopBar. It hides zero, displays 1–9,
+  and caps values above 9 at `9+`; `.count-pill` owns its shared pill geometry
+  and colors in `web/app/globals.css`.
 - Page-specific CSS, CSS Modules, route-only stylesheets, and JSX inline
   styles are not permitted for the logged-in app.
 - The public landing stylesheet remains a separate public-site concern.

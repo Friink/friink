@@ -76,8 +76,8 @@ Copy this template for a new defect and replace every placeholder:
 
 ## BUG-AUTH-007 — Terminal session recovery can loop between public site and app
 
-- **Status:** Diagnosed
-- **Reported/updated:** 2026-09-27T14:06:18Z
+- **Status:** Fix implemented locally; staging acceptance pending
+- **Reported/updated:** 2026-09-27T21:44:24Z
 - **Affected area:** Public root routing, public route guard, terminal session recovery, remembered-account hint cookie
 - **Environment:** User report; browser-specific cookie and API trace unavailable
 - **Severity:** high
@@ -124,18 +124,21 @@ hint when another cached slot summary exists.
   captured. Therefore this is a confirmed implementation-level loop risk, not
   proof of which path triggered the specific incident.
 
-### Proposed fix
+### Resolution in progress
 
-Review only public-entry redirect and recovery routing so a conclusively failed
-restore can reach public/login without re-entry. Keep the hint as a redirect
-mechanism; do not change authentication or session validation as part of this
-bug unless separately authorized.
+After the public guard receives a confirmed terminal restore failure, it now
+clears the redirect-only `friink_session_hint` and stays on the public route.
+When app recovery exhausts all remembered candidates, it also clears the hint
+before returning to `/`. Neither path routes a known-unrestorable session
+straight back into `/home`. Authentication, token validation, and fallback
+authorization are unchanged.
 
 ### Tests and verification
 - **Required:** Browser checks for positive, zero, missing, and malformed hint;
   entry-status positive/negative; terminal and ambiguous restore; stale and
   valid remembered slots; login reachable after all candidates fail.
-- **Completed:** None — diagnosis only. No code changes made.
+- **Completed locally:** Targeted TypeScript check passed. Real staging browser
+  acceptance remains pending.
 
 ### Noteworthy
 
@@ -153,8 +156,8 @@ unrelated. Auth/session behavior remains outside the scope of this diagnosis.
 
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
-- **Status:** In progress
-- **Reported/updated:** 2026-09-26T11:45:38Z
+- **Status:** Resolved
+- **Reported/updated:** 2026-09-27T20:36:01Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
 - **Severity:** high
@@ -203,12 +206,13 @@ transient failure must remain retryable and must not change accounts.
 
 ### Actual behavior
 
-The app now issues a short-lived, HttpOnly access cookie scoped to each
-remembered account slot. A reload validates it through `/auth/me`; a still-valid
-cookie restores without rotating the refresh cookie. Refresh runs only when
-access is expired or absent. In-app route transitions can remount page-level
-shell components, but do not inherently rotate the token when the in-memory
-session survives.
+The app issues a short-lived, HttpOnly access cookie scoped to each remembered
+account slot. A reload validates it through `/auth/me`; a still-valid cookie
+restores the session without rotating the refresh cookie. Refresh runs only
+when access is expired or absent. In-app route transitions can remount
+page-level shell components, but do not inherently rotate the token when the
+in-memory session survives. The updated implementation is deployed to staging
+as of 2026-09-27, confirmed by the user.
 
 ### Root cause
 
@@ -250,9 +254,9 @@ session survives.
   the replacement cookie: the browser can retain the old cookie and retry it.
   The exact request and response timing still needs capture in the browser
   network trace.
-- **Confirmed in web implementation:** Full document entry without an
-  in-memory session calls the refresh endpoint. The documented reactive-refresh
-  rule does not currently describe this bootstrap exception; see AUTH-R-008.
+- **Historical implementation (superseded):** Full document entry previously
+  called the refresh endpoint without first validating the slot access cookie.
+  The current cookie-first behavior is documented in AUTH-R-008.
 - **Confirmed from user reports:** Repeated browser reloads can lead to a
   recovery screen, public/login screen, or a later successful `/home` visit.
   Production and staging have both been reported affected.
@@ -278,6 +282,18 @@ session survives.
   isolated refresh family, but still do not distinguish concurrent tabs,
   interrupted responses, or another stale-cookie retry as the trigger.
 
+### Resolution
+
+The session bootstrap now validates the slot-scoped HttpOnly access cookie
+through `/auth/me` before refreshing. A valid access cookie avoids refresh-token
+rotation on normal reloads. Refresh coordination captures one account slot,
+validates the response against the active slot, and revalidates followers with
+their own access cookie. The user confirmed the latest implementation is
+deployed to staging. The historical trigger for repeated stale-token
+presentations remains unknown; this resolution records the implementation
+update and staging deployment, not a conclusive reconstruction of those past
+requests.
+
 ### Earlier partial mitigations
 
 1. Capture the active account slot once and use that exact value for both the
@@ -290,28 +306,29 @@ session survives.
    order, while ambiguous failures still require explicit recovery.
 3. Persist restored-slot recency during refresh transactions.
 
-Those earlier changes improved account selection and stale-response
-isolation. The present local implementation adds access cookies to stop normal
-reload rotation. The historical stale-token replay origin remains unknown.
+Those earlier changes improved account selection and stale-response isolation.
+The resolved implementation adds access cookies to stop normal reload rotation.
+The historical stale-token replay origin remains unknown.
 
-### Implemented local changes and remaining acceptance
+### Implemented changes
 
 Slot-scoped access cookies, session-bound JWT `sid` validation, cookie-first
 entry restoration, captured-slot refresh coordination, cross-tab revalidation,
 Origin checks for cookie-authenticated writes, and confirmed-terminal
-most-recent-account fallback are implemented locally. Account addition and
+most-recent-account fallback are implemented. Account addition and
 switching now propagate one client-wide selected account to other tabs; when
 no remembered session validates after confirmed termination, the app returns
 to the public site. Refresh family-reuse detection remains enabled. Focused API
-and frontend checks pass as recorded in the handoff; browser/staging acceptance
-is still required. The evidence above
+and frontend checks pass as recorded in the handoff. Full concurrent/lost-response
+browser coverage remains useful follow-up verification. The evidence above
 does not determine the origin of the historical repeated refresh requests, so
 the refresh-replay origin remains unknown; the cross-tab account-selection
 failure is separately confirmed in the web implementation.
 
-### Staging acceptance still required
+### Follow-up verification
 
-Verify with production-parity cookie/security settings: repeated reloads do
+The original staging acceptance matrix, retained for future regression checks,
+was: verify with production-parity cookie/security settings: repeated reloads do
 not rotate a valid session's refresh credential; expired access refreshes once;
 multi-tab, reload-during-refresh, and lost-response cases preserve family
 reuse detection; account fallback uses last-use order; unsafe cookie-auth
@@ -461,8 +478,8 @@ the staging replay sequence remains unknown.
 
 ## BUG-AUTH-005 — Failed account switch shows sign-in for the previous account
 
-- **Status:** Open
-- **Reported/updated:** 2026-09-25T01:35:14Z
+- **Status:** Fix implemented locally; staging acceptance pending
+- **Reported/updated:** 2026-09-27T21:44:24Z
 - **Affected area:** Remembered-account switching and session-recovery identity
 - **Environment:** Staging; browser with `@admin` active while switching to
   `@muflah`
@@ -498,21 +515,24 @@ as @admin,” alongside Log out and Choose another remembered account.
 
 ### Root cause
 
-- **Confirmed:** The staging screenshot shows `@admin` as the sign-in identity
-  after the user attempted to switch to `@muflah` and that attempt failed.
-- **Open questions:** The screenshot alone does not establish which request
-  failed, whether the failure was terminal or transient, whether `@admin`'s
-  session was still valid at that moment, or which account slot/username the
-  recovery code received. Trace the switch request and the error/context passed
-  into recovery before assigning a code-level cause.
+- **Confirmed in code:** `switchAccount()` sent the destination slot in
+  `X-Friink-Account-Slot`, but the API dependency validates that header against
+  the source bearer JWT's user and auth session. A cross-account switch
+  therefore failed before the switch handler ran. The resulting
+  `SESSION_NOT_FOUND` was classified as terminal by the generic authenticated
+  request handler, which cleared the source session and opened recovery.
+- **Confirmed in code:** If the switch handler did run and found an unavailable
+  destination, it also returned `401 SESSION_NOT_FOUND`, which incorrectly
+  described destination failure as source-session termination.
+- **Open questions:** Staging browser acceptance must still confirm the exact
+  request/response sequence and visible behavior after deployment.
 
-### Proposed fix
+### Resolution in progress
 
-Trace account-switch failure handling end to end. Keep a still-valid active
-account active when a different target slot fails. If the UI enters recovery,
-derive its identity from the failed target slot and preserve the previous
-active account separately; do not build the sign-in action from stale active
-account metadata.
+The web client now identifies the source slot in the header and sends the
+destination only in the request body. An unavailable destination returns a
+non-terminal `404`, preserving a valid source session. The switcher can show a
+target-specific retryable failure without invoking session recovery.
 
 Non-goals: silently retrying with credentials for either account or changing
 the remembered-account list order.
@@ -524,8 +544,10 @@ the remembered-account list order.
   target-specific error. Also test a confirmed terminal target session and
   verify any sign-in action names the target account. Cover transient errors
   and ensure they do not clear or mislabel the source session.
-- **Completed:** Staging screenshot and user reproduction report only; no
-  source trace or fix has been performed for this entry.
+- **Completed locally:** Targeted API tests cover the source/destination slot
+  contract, ensure a mismatched source header does not invalidate the valid
+  source, and ensure an unavailable destination leaves the source usable.
+  Staging browser acceptance remains pending.
 
 ### Noteworthy
 

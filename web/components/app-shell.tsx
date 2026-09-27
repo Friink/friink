@@ -7,7 +7,6 @@ import { ConnectionsScreen } from '@/components/connections-screen';
 import { SettingsScreen, type AppearanceMode } from '@/components/account-screens';
 import { ProfileScreen, type ProfileTab } from '@/components/profile-screen';
 import { SavedScreen } from '@/components/saved-screen';
-import { Header } from '@/components/header';
 import { NavigationBar } from '@/components/navigationbar';
 import { TopBar } from '@/components/top-bar';
 import type { ActionMenuItem } from '@/components/action-menu';
@@ -1172,15 +1171,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onNavigate={navigateTo}
           onBack={() => router.back()}
           onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
-        />
-
-          <Header
-          onNavigate={navigateTo}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={() => persistSidebarCollapsed(!sidebarCollapsed)}
-            notificationCount={unreadNotificationCount}
-            notifications={notifications}
-            hasUnreadMessages={hasUnreadMessages}
         />
 
         <section className="main-panel">

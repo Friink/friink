@@ -56,7 +56,10 @@ the established search, chat-unread, and notification interactions.
   notifications use the unread notification count. Counts 1–9 display
   directly; counts above 9 display `9+`. Pills are 16px high with 12px text
   and a 1px surface-colored border. The search-filter active state retains its
-  separate presence dot.
+  separate presence dot. Both counters render through the shared `CountPill`
+  component, which hides zero, displays 1–9 directly, and caps larger values
+  at `9+`. The legacy signed-in Header is retired; the public landing page has
+  its own separate public header.
 - Contextual mode provides a history-aware Back control, the page title, and
   the shared Search control beside the existing three-dot ActionMenu populated
   by shell-owned menu items. The search route keeps Back and ActionMenu while
@@ -65,8 +68,7 @@ the established search, chat-unread, and notification interactions.
   and leaves every drawer destination inactive because a post is not one of
   the drawer's sections.
 - All controls use the existing navigation callbacks and server-authoritative
-  unread state. The legacy Header remains mounted but visually hidden for
-  rollback safety; NavigationBar and Tabs remain rendered and functional.
+  unread state. NavigationBar and Tabs remain rendered and functional.
 - The drawer presents the signed-in user's avatar and `@username` as one
   profile destination, with a separate account dropdown on its right. Long
   usernames truncate with an ellipsis and cannot overlap the switcher.

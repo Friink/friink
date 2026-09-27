@@ -123,6 +123,8 @@ contract rather than repeated here.
 - Avatars are circular.
 - Pills are reserved for compact status or count indicators where the shape
   communicates the meaning.
+- Compact unread counters use the shared CountPill component. It hides zero,
+  displays counts 1–9 directly, and caps larger counts at `9+`.
 - Destructive or high-consequence actions should not be made visually casual.
 
 ### Separation and elevation

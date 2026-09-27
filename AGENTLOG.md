@@ -1,5 +1,49 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T21:46:21Z — Prevent Account-Switch And Public-Entry Recovery Loops
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Fix the staging account-switch failure and terminal recovery
+  loop, then test the change on staging.
+- Changes Made: Changed web account-switch requests to identify the source slot
+  in `X-Friink-Account-Slot` while keeping the destination in the request body.
+  Unavailable destinations now return a non-terminal 404 instead of
+  `SESSION_NOT_FOUND`, preserving a valid source session. A public-route
+  terminal restore failure clears the routing hint and remains on the public
+  route. Updated BUG-AUTH-005/007, active rules, and Account Access behavior.
+- Files: `web/lib/auth.ts`, `web/components/public-route-guard.tsx`,
+  `web/components/app-shell-route.tsx`, `api/app/routers/auth.py`,
+  `api/tests/test_phase4_accounts.py`,
+  `docs/bugs.md`, `docs/rules.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Web TypeScript check and two targeted API tests passed
+  using a task-isolated SQLite database. Before deployment, the real staging
+  browser reproduced a `Session ended` modal at `/home/explore`.
+  After pushing the fix, the user's staging Chrome tab reloaded successfully
+  as `@muflah` without the terminal modal. Its switcher currently contains
+  only `@muflah`, so cross-account acceptance is waiting for the user to
+  authenticate `@muflahulfurqan` in the Add account dialog; the real
+  authenticated switch request/response remains pending.
+
+## 2026-09-27T20:43:36Z — Share TopBar Count Pill Component
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Replace the duplicate message and notification badge markup with one reusable pill component while preserving count behavior.
+- Changes Made: Added `CountPill` with hidden zero, direct 1–9 labels, and a `9+` cap. Reused it for TopBar chat and notification actions, retaining the `hasUnreadMessages` fallback. Removed the visually hidden signed-in Header from the app shell and updated navigation, notification, and design-system contracts. The public header is separate and unchanged.
+- Files: `web/components/design/count-pill.tsx`, `web/components/top-bar.tsx`, `web/components/app-shell.tsx`, `web/components/header.tsx` (retired), `web/app/globals.css`, `docs/units/navigation.md`, `docs/units/notifications.md`, `docs/design-system.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Source review and `git diff --check` completed. No tests run.
+
+## 2026-09-27T20:36:01Z — Close Reload Session-Stability Bug
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Close BUG-AUTH-003 with a note that the implementation was updated and is running on staging.
+- Changes Made: Marked BUG-AUTH-003 resolved; corrected stale notes that said reloads directly refreshed without validating the access cookie; documented the cookie-first reload implementation and staging deployment confirmed by the user. Preserved uncertainty about the historical stale-token replay trigger and retained the original full browser matrix as follow-up verification. Updated AUTH-R-008 and Account Access references.
+- Files: `docs/bugs.md`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Reviewed the current session restore implementation and documentation references; `git diff --check` passed. No auth code or tests changed.
+
 ## 2026-09-27T20:23:09Z — Clarify Session Recovery Loading Copy
 
 - Agent: Codex

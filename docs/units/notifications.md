@@ -45,7 +45,9 @@ meaning that causes a notification.
 
 ## UX and flows
 
-The TopBar bell shows an unread indicator and count pill. Its compact dropdown uses a
+The TopBar bell shows the unread count through the shared CountPill component:
+zero is hidden, counts 1–9 display directly, and counts above 9 display `9+`.
+Its compact dropdown uses a
 shared contextual surface, measures its rendered top edge, remains within the
 current viewport, shows at most eight rendered rows at once, and scrolls only its
 unread list after the eighth row while keeping the destination footer visible.
