@@ -1647,8 +1647,7 @@ textarea {
   background: var(--color-paper);
 }
 
-/* Keep the legacy shell components mounted for safe rollback while the TopBar preview is evaluated. */
-.app-shell > .app-layout > .topbar,
+/* The shared TopBar replaces the legacy mobile page navigation. */
 .app-shell .mobile-page-navigation {
   display: none;
 }
@@ -2351,33 +2350,11 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   outline: none;
 }
 
-.topbar-chat-dot {
-  position: absolute;
-  top: 0.15rem;
-  right: 0.15rem;
-  width: 0.45rem;
-  height: 0.45rem;
-  border: 2px solid var(--color-chrome);
-  border-radius: 50%;
-  background: var(--color-accent);
-}
-
 .topbar-notification-wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-}
-
-.topbar-bell-dot {
-  position: absolute;
-  top: 0.15rem;
-  right: 0.15rem;
-  width: 0.45rem;
-  height: 0.45rem;
-  border: 2px solid var(--color-chrome);
-  border-radius: 50%;
-  background: var(--color-accent);
 }
 
 .topbar-notification-dropdown {
@@ -2446,18 +2423,6 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 
 .topbar-notification-dropdown .contextual-dropdown-footer:not(.has-count) {
   justify-content: flex-end;
-}
-
-.topbar-notification-count {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.6rem;
-  border-radius: 999px;
-  padding: 0 0.6rem;
-  color: var(--color-paper);
-  background: var(--color-accent);
-  font-size: var(--text-xs);
-  font-weight: 700;
 }
 
 @media (max-width: 767px) {
@@ -5858,20 +5823,21 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   background: var(--color-accent);
 }
 
-.topbar-preview-message-dot,
-.topbar-preview-notification-dot {
+.count-pill {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  top: 0;
-  right: 0;
   width: auto;
   min-width: 16px;
   height: 16px;
-  border: 0;
+  border: 1px solid var(--color-paper);
   border-radius: 999px;
   padding: 0 2px;
   color: #ffffff;
+  background: var(--color-accent);
   font-size: 12px;
   font-weight: 700;
   line-height: 16px;

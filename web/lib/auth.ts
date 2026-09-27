@@ -1304,7 +1304,10 @@ export async function getAccountAddAvailability(accessToken: string): Promise<{ 
 }
 
 export async function switchAccount(accessToken: string, accountSlot: string): Promise<AuthSession> {
-  const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'X-Friink-Account-Slot': accountSlot }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
+  // The header identifies the source session and must match the bearer JWT.
+  // The request body identifies the destination account slot.
+  const sourceSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
+  const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, ...(sourceSlot ? { 'X-Friink-Account-Slot': sourceSlot } : {}) }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
   return mapTokenResponse(response);
 }
 

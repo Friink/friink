@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import type { Screen } from '@/lib/data';
 import { ContextualDropdown } from '@/components/contextual-dropdown';
+import { CountPill } from '@/components/design/count-pill';
 import type { NotificationItem } from '@/components/notifications-screen';
 import { formatRelativeTime } from '@/lib/time';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -227,12 +228,12 @@ export function TopBar({ title, sidebarCollapsed, notificationCount = 0, unreadM
             {searchControl}
             <a className="topbar-preview-action" href="/chats" onClick={(event) => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onNavigate('messages'); }} aria-label={unreadMessageCount > 0 ? `Chat, ${unreadMessageCount} unread messages` : hasUnreadMessages ? 'Chat, new message' : 'Chat'} title="Chat">
               <i className="fa-regular fa-envelope" aria-hidden="true" />
-              {unreadMessageCount > 0 ? <span className="topbar-preview-dot topbar-preview-message-dot" aria-hidden="true">{unreadMessageCount > 9 ? '9+' : unreadMessageCount}</span> : hasUnreadMessages ? <span className="topbar-preview-dot topbar-preview-message-dot" aria-hidden="true">1</span> : null}
+              <CountPill count={unreadMessageCount > 0 ? unreadMessageCount : hasUnreadMessages ? 1 : 0} />
             </a>
             <div className="topbar-preview-notifications" ref={notificationRef}>
               <button className="topbar-preview-action" type="button" onClick={() => { setNotificationsOpen((open) => !open); setSearchOpen(false); }} aria-expanded={notificationsOpen} aria-label={`${notificationCount} notifications`} title="Notifications">
                 <i className="fa-regular fa-bell" aria-hidden="true" />
-                {notificationCount > 0 ? <span className="topbar-preview-dot topbar-preview-notification-dot" aria-hidden="true">{notificationCount > 9 ? '9+' : notificationCount}</span> : null}
+                <CountPill count={notificationCount} />
               </button>
               {notificationsOpen ? <ContextualDropdown className="topbar-preview-notification-dropdown" ariaLabel="Recent notifications" items={unreadNotifications.map((notification) => <div key={notification.id} className="topbar-notification-item is-unread"><button className="topbar-notification-item-button" type="button" onClick={() => { setNotificationsOpen(false); if (notification.href) router.push(notification.href); else onNavigate('notifications'); }}><span className="topbar-notification-item-copy"><strong>{notification.name}</strong><span>{notification.text}</span></span><time dateTime={notification.createdAt}>{formatRelativeTime(notification.createdAt)}</time></button></div>)} footer={<button className="topbar-notification-all" type="button" onClick={() => { setNotificationsOpen(false); onNavigate('notifications'); }}>All Notifications</button>} /> : null}
             </div>

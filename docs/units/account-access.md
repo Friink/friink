@@ -291,15 +291,15 @@ one or more sessions validate, the client restores its most recently used
 account. Protected app routes remain authoritative before exposing private
 data or actions.
 
-**Known implementation gap:** rendering the public route does not necessarily
-keep the visitor there. `PublicRouteGuard` can still call `/auth/entry-status`
-with a zero hint. If the endpoint suggests a restore attempt and restoration
-fails terminally, the guard currently routes to `/home` for app recovery. The
-endpoint is not session validation, so zero does not prevent this second
-redirect path. Also, after acknowledged terminal recovery exhausts candidates,
-`clearAuthSession()` bases the hint on remaining cached slot summaries; a stale
-summary can leave it positive and make `/` redirect back to `/home`. This
-confirmed code-path loop is tracked in
+**Implementation update (staging verification pending):** the authenticated API sometimes indicates that
+session restoration may be attempted from `/auth/entry-status`; a positive
+`friink_session_hint` also routes `/` to `/home` before session validation.
+The hint and entry-status response are not proof that a session is valid. A
+confirmed terminal failure from `PublicRouteGuard` now clears the hint and
+leaves the visitor on the public route, avoiding an immediate return to
+`/home`. App recovery also clears the hint after every remembered candidate
+has failed before returning to `/`. Staging acceptance is pending. The history
+of this loop is tracked in
 [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
 The exact state of the browser involved in the reported incident remains
 unverified.
@@ -325,8 +325,9 @@ Current web entry points do not all present the same recovery surface:
 - **Public root (`/`)** redirects server-side to `/home` when the hint is a
   positive integer. With zero, missing, or malformed hint it renders the
   public site, where `PublicRouteGuard` can still call `/auth/entry-status` and
-  attempt restoration. The guard currently routes to `/home` after terminal
-  restore failure, even when the hint was zero.
+  attempt restoration. On terminal failure the guard clears the redirect hint
+  and remains on the public route; network and other ambiguous failures retain
+  retryable recovery behavior.
 - **Profile routes (`/{username}`)** use the standalone recovery screen while
   loading or on ambiguous failure; confirmed terminal session failure routes
   to `/login` with a recovery reason.
@@ -454,14 +455,15 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 #### Refresh stability and failure handling
 
 [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
-tracks reload-time refresh rotation and intermittent session loss. It is now
-locally implemented with a short-lived HTTP-only access cookie per slot, so a
-normal reload reuses a valid access credential without rotating the refresh
-cookie. Refresh rotation is reactive to access expiry and retains the API's
+records the previously reported reload-time refresh rotation and session loss;
+the fix is implemented and deployed to staging. A short-lived HTTP-only access
+cookie per slot lets a normal reload reuse a valid access credential without
+rotating the refresh cookie. Refresh rotation is reactive to access expiry and retains the API's
 bounded retry grace and family-reuse detection. Cookie-authenticated unsafe
 requests enforce allowed-Origin checks. A tab that observes another tab's
 refresh revalidates with its own slot access cookie instead of rotating again.
-Staging acceptance remains required.
+The historical cause of the stale-token replays remains unknown; see the bug
+record for details.
 
 #### Multi-account session continuity policy
 
@@ -499,11 +501,11 @@ problem does not invalidate it and must leave retry available.
   account's identity boundary and never show one account's state while another
   account is still being validated.
 
-This continuity policy is implemented locally; staging acceptance remains
-open. The behavior and remaining checks are tracked by
+This continuity policy is implemented and deployed to staging. The resolved
+reload-stability change is tracked by
 [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session).
-The behavior is implemented locally; multi-account staging acceptance is
-required before release.
+The broader multi-account continuity matrix remains a release verification
+item.
 
 #### Business rules and contract
 
@@ -527,6 +529,10 @@ required before release.
   transaction as token rotation.
 - **ACCESS-R-034:** Adding or switching accounts updates one client-wide
   selected slot; every other open tab reloads and restores that selection.
+- **ACCESS-R-043:** Account-switch requests identify the authenticated source
+  slot in `X-Friink-Account-Slot` and the destination slot in the request body.
+  An unavailable destination must not be reported as termination of the valid
+  source session or clear it in the client.
 - **ACCESS-R-035:** A confirmed terminated session shows one cause-specific
   notice across the browser client. Ordinary expiry, remote termination, and
   security revocation let the user explicitly choose another remembered
@@ -571,6 +577,9 @@ the release is considered complete.
       profile, post, username-chat, and login entry points provide a coherent
       recovery path, including the full-page network state, without confusing
       chat/content failures with session loss.
+- [ ] **ACCESS-AC-044** A failed switch to another account keeps the valid
+      source account active and reports the destination failure without opening
+      terminal session recovery.
 - [x] **ACCESS-AC-029** A valid access cookie survives a full reload without
       refresh-cookie rotation; expired access performs one coordinated,
       slot-correct refresh while replay detection remains active.
@@ -642,8 +651,9 @@ slots are not silently revoked. Ordinary sign-in and logout remain available.
 If the device is at capacity, a normal login may create an un-slotted session
 that is not remembered by the account switcher.
 
-Selecting a remembered account shows a spinner, disables competing account
-actions, validates the slot, and updates the shell in place. Removing or
+Selecting a remembered account sends a switch request, validates the slot, and
+updates the shell in place. If switching fails, the current account remains
+active and a toast says, “Couldn’t switch accounts. Please try again.” Removing or
 logging out the active account selects the most-recent remaining valid account,
 or returns to the public site when none remain.
 
@@ -766,11 +776,10 @@ The priority reliability proposal and deferred workstreams are:
    Ambiguous failures remain retryable, and explicit account choice remains
    available for that recovery state.
 5. **Reload-time token stability and public entry.** The access-cookie and
-   cookie-first restoration changes are deployed to staging, but user
-   reproduction shows that interrupting reload during restoration can end the
-   session. The refresh retry proposal above must be implemented and accepted
-   under BUG-AUTH-003 and BUG-AUTH-006; public-entry acceptance remains tracked
-   under BUG-AUTH-002.
+   cookie-first restoration changes are deployed to staging and BUG-AUTH-003
+   is resolved. The historical trigger for interrupted refresh remains
+   unknown; the retry proposal above is tracked separately under BUG-AUTH-006.
+   Public-entry acceptance remains tracked under BUG-AUTH-002.
 6. **Defer client-bound session validation.** The proposed security change was
    for every authenticated client context (for example, a browser profile or
    mobile app installation) to have a reusable opaque client identifier, with
@@ -855,8 +864,9 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
-| ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: zero hint, stale positive hint, entry-status true/false, terminal restore | Open — diagnosis documented; no change made |
+| ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: zero hint, stale positive hint, entry-status true/false, terminal restore | Implemented locally — staging browser pending |
 | ACCESS-AC-043 | Recovery behavior is coherent across route entry points | Browser matrix for app shell, public root, profile, post, username-chat, login | Open — current route differences documented |
+| ACCESS-AC-044 | A failed target switch preserves the valid source | Two-account staging browser switch in both directions; dead-target failure preserves source | Implemented locally — staging authenticated switch pending |
 
 ### Release gates
 

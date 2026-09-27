@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-09-27T22:03:33Z
+- [account-access] Show account-switch failures in the shared toast stack with
+  the copy “Couldn’t switch accounts. Please try again.” Documented the
+  failure feedback in the Account Access unit.
+
+## 2026-09-27T21:46:21Z
+- [account-access] Corrected account-switch source/destination slot handling so
+  a target failure cannot be treated as termination of the active session.
+  Public entry now clears a stale redirect hint and remains public after a
+  confirmed terminal restore failure. Targeted API tests and web type-check
+  passed; a staging reload recovered `@muflah`, while two-account switch
+  acceptance awaits re-authenticating the second staging account.
+
+## 2026-09-27T20:43:36Z
+- [navigation] Extracted message and notification count pills into the shared
+  `CountPill` component and retired the hidden signed-in Header implementation.
+  Preserved zero hiding, 1–9 labels, the `9+` cap, and the message unread
+  fallback. Updated navigation and design contracts.
+
+## 2026-09-27T20:36:01Z
+- [account-access] Closed BUG-AUTH-003 as resolved after updating session
+  bootstrap to validate the slot access cookie before refreshing. Recorded
+  that the current implementation is deployed to staging per user confirmation;
+  the trigger for historical stale-token replays remains unknown.
+
+## 2026-09-27T20:23:09Z
+- [error-handling] Replaced the initial session-recovery loading copy with
+  “Reconnecting…” and “We’re getting your session ready.” The dedicated
+  network-failure copy is unchanged.
+
 ## 2026-09-27T18:12:04Z
 - [web/session-recovery] Documented then implemented a dedicated full-page
   network failure state. It appears on the first detected fetch/network error,
