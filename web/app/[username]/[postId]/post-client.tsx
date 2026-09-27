@@ -8,7 +8,7 @@ import { PostDetailScreen } from '@/components/post-detail-screen';
 import { PostUnavailableState } from '@/components/post-unavailable-state';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
-import { restoreWithSessionRetries } from '@/lib/session-recovery';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
 
@@ -123,7 +123,7 @@ export function PostClient({ postId }: PostClientProps) {
         })
         .catch((error) => {
           if (!active || controller.signal.aborted) return;
-          router.replace(isTerminalRefreshFailure(error) ? '/home' : '/home?session_recovery=offline');
+          router.replace(isTerminalRefreshFailure(error) ? '/home' : isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
         });
       return () => { active = false; controller.abort(); };
     }

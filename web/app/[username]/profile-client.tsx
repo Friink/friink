@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { clearAuthSession, getPublicUser, getRememberedAccountSummaries, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, loadCachedAuthUser, restoreAccountSession, restoreAuthSessionForEntry, saveAuthSession, type AccountSummary, type ApiPost, type AuthUser } from '@/lib/auth';
-import { restoreWithSessionRetries } from '@/lib/session-recovery';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
 
 type ProfileClientProps = {
@@ -83,6 +83,8 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
         setAuthCheckComplete(true);
         if (isTerminalRefreshFailure(error)) {
           router.replace('/home');
+        } else if (isNetworkRestoreFailure(error)) {
+          router.replace('/home?session_recovery=network');
         } else {
           setSessionError('offline');
           const cachedUser = loadCachedAuthUser();

@@ -7,7 +7,7 @@ requirements to refine.
 
 **Status:** Partial  
 **Tier:** Full  
-**Last edited:** 2026-09-27T17:32:35Z  
+**Last edited:** 2026-09-27T18:12:04Z
 **Platforms:** Web, API, and future clients  
 **Canonical sources:** This draft; active subsystem behavior remains owned by the relevant unit documents.
 
@@ -187,33 +187,44 @@ failures use an in-app modal. The visitor remains within the originating
 product surface; ordinary content errors such as a post that does not exist are
 outside this session-error requirement.
 
-Proposed copy and behavior by error:
+Agreed copy and behavior by error:
 
 1. **Technical/ambiguous recovery failure — in-app page.** While recovery is
    being attempted, show: “We’re having trouble reconnecting. We’re trying to
-   restore your session.” Show no controls during this attempt. Retry at most
-   four times total, with 10 seconds between attempts. A confirmed terminal
-   result stops retries immediately. If all four attempts fail ambiguously,
-   update the copy to: “We couldn’t restore your session. Use the button below
-   to continue.” Show **Take me back**. Continue to the fallback flow below.
-2. **Expired or unavailable session — modal.** Message: “Your session is no
+   restore your session.” Show no controls during this attempt. Non-network
+   ambiguous failures retry at most four times total, with 10 seconds between
+   attempts. A confirmed terminal result stops retries immediately. If all four
+   attempts fail ambiguously, update the copy to: “We couldn’t restore your
+   session. Use the button below to continue.” Show **Take me back**. Continue
+   to the fallback flow below. A detected network failure immediately enters
+   the dedicated network state described next.
+2. **Network unavailable during restoration — full-page in-app error.** Show
+   “We can’t connect” and “Check your connection. We’ll keep trying to restore
+   your session.” Provide a **Refresh** button that immediately retries session
+  restoration without reloading the whole page. Schedule background retries
+  every 30 seconds; do not overlap a manual and background request. Keep this
+  page until the server responds. Do not show a
+   remembered-account chooser or claim the session ended while validation is
+   unavailable. A successful restore resumes the app; an authoritative
+   terminal result enters its cause-specific flow.
+3. **Expired or unavailable session — modal.** Message: “Your session is no
    longer active.” Show **Okay** and a close button. Either action acknowledges
    the message and triggers the same fallback flow; clicking outside does not
    close the modal.
-3. **Remote logout/termination — modal.** Message: “This session was ended
+4. **Remote logout/termination — modal.** Message: “This session was ended
    from another device.” Show **Okay** and a close button. Either action
    acknowledges the message and triggers the same fallback flow; clicking
    outside does not close the modal.
-4. **Security revocation — modal.** Message: “Your session was ended for
+5. **Security revocation — modal.** Message: “Your session was ended for
    security reasons.” Show **Okay** and a close button. Either action
    acknowledges the message and triggers the same fallback flow; clicking
    outside does not close the modal.
-5. **Account deactivation — modal.** Message: “This account was deactivated,
+6. **Account deactivation — modal.** Message: “This account was deactivated,
    so this session has ended.” Show **Okay** and a close button. Either action
    acknowledges the message and triggers the same fallback flow; clicking
    outside does not close the modal. Reactivation remains governed by Account
    Lifecycle.
-6. **Pending deletion — modal.** Message: “This account is scheduled for
+7. **Pending deletion — modal.** Message: “This account is scheduled for
    deletion, so this session has ended.” Show **Okay** and a close button.
    Either action acknowledges the message and triggers the same fallback flow;
    clicking outside does not close the modal. Cancellation/reactivation
@@ -239,12 +250,11 @@ Proposed copy and behavior by error:
 
 The public-entry redirect hint alone never proves that a session is valid.
 
-The app shell and its available cached view may render beneath a recovery
-modal. Keep the modal in front and prevent background interaction while the
-user is resolving the error. Cached rendering does not prove a session is
-valid or authorize API actions. These are draft copy and interaction
-requirements. The listed web session-recovery behavior is implemented locally;
-browser acceptance is pending.
+The app shell and its available cached view may remain available while the
+network recovery page is shown; cached rendering does not prove a session is
+valid or authorize API actions. Network failure is ambiguous, never a terminal
+session result. The listed web session-recovery behavior is implemented
+locally; browser acceptance is pending.
 
 #### User flows
 
@@ -316,8 +326,9 @@ These are proposed requirements, not active rules in `docs/rules.md`.
   lifecycle restrictions; recovery actions follow the owning unit's behavior.
 - **EH-REQ-003 — Avoid duplicate recovery work:** Route changes introduced only
   to display an error should not cause redundant session/status/restore calls.
-  Technical recovery makes at most four total attempts, 10 seconds apart, for
-  ambiguous/temporary failures only; a confirmed terminal result stops retries.
+  Non-network technical recovery makes at most four total attempts, 10 seconds
+  apart; a detected network failure immediately uses its dedicated page and
+  retry path. A confirmed terminal result stops retries.
 - **EH-REQ-006 — Define a restorable session by its refresh credential:** For
   fallback, the app selects another remembered session only when the API
   accepts its refresh credential and associated session/account state. The
@@ -412,9 +423,15 @@ browser acceptance is completed.
   public-site, web-app, or native mobile surface, without opening an iframe or
   external browser for ordinary error handling.
 - [ ] **EH-AC-008** Technical recovery initially runs without controls, makes
-  at most four total attempts 10 seconds apart for ambiguous failures, stops
-  immediately on a confirmed terminal result, then updates copy and offers
+  at most four total attempts 10 seconds apart for non-network ambiguous
+  failures, stops immediately on a confirmed terminal result, then updates
+  copy and offers
   **Take me back** if all attempts fail.
+- [ ] **EH-AC-013** A network failure during restoration shows a full-page
+  network error immediately with **Refresh**, starts background attempts every
+  30 seconds,
+  deduplicates concurrent attempts, and does not offer account choice or claim
+  termination until the server responds.
 - [ ] **EH-AC-009** Expiry, remote termination, security revocation,
   deactivation, and pending deletion each show a cause-specific modal with
   **Okay** and a close button; either action starts the same fallback flow and
@@ -436,8 +453,12 @@ browser acceptance is completed.
 Refer to [`testing.md`](../testing.md) for shared testing standards.
 
 - [ ] Technical restoration initially runs without controls, retries no more
-  than four times at 10-second intervals, and then changes copy and reveals
+  than four times at 10-second intervals for non-network ambiguous failures,
+  and then changes copy and reveals
   **Take me back** if all attempts remain unresolved.
+- [ ] Network loss during restoration shows the full-page network state;
+  the first detected failure shows the page; **Refresh** starts an immediate restore request, background retries continue
+  every 30 seconds without overlap, and success resumes the app.
 - [ ] Each confirmed expiry, remote termination, security, deactivation, and
   pending-deletion cause shows its specified modal; **Okay** and close have
   identical outcomes, and backdrop clicks do not dismiss it.
@@ -719,6 +740,7 @@ cookies, or sensitive account values.
 | EH-AC-006 | Template catalog has exactly three shared types | Documentation/component inventory review | Planned |
 | EH-AC-007 | Templates preserve originating product surface | Public/web/mobile surface matrix | Planned |
 | EH-AC-008 | Background recovery and Take me back behavior | Recovery success/failure and remembered-session browser matrix | Implemented locally; acceptance pending |
+| EH-AC-013 | Network recovery page, background retry, and manual refresh | Offline/online browser and request-overlap matrix | Implemented locally; acceptance pending |
 | EH-AC-009 | Cause-specific modal with equivalent Okay/close acknowledgment | Expiry/termination/security/lifecycle browser matrix | Implemented locally; acceptance pending |
 | EH-AC-010 | Fallback session is API-validated | Refresh-cookie and account-slot recovery matrix | Implemented locally; acceptance pending |
 | EH-AC-011 | Fallback destination follows failure context | Session and lifecycle destination matrix | Implemented locally; acceptance pending |
@@ -762,10 +784,12 @@ verified in staging before production.
 
 The web session-recovery behavior described in this unit is implemented
 locally across the public guard, app shell, profile/post/chat route clients,
-login route, and lifecycle actions. Browser and staging acceptance remain
-pending. Shared error templates and non-session error categories remain
-unimplemented. AUTH-R-008 records the active web session and refresh contract;
-the recovery UX does not change its token or server-validation rules.
+login route, and lifecycle actions. Network failures show a dedicated page,
+continue background checks every 30 seconds, and expose an immediate manual
+refresh. Browser and staging acceptance remain pending. Shared error templates
+and non-session error categories remain unimplemented. AUTH-R-008 records the
+active web session and refresh contract; the recovery UX does not change its
+token or server-validation rules.
 
 ## 11. Rebuild checklist
 
@@ -825,3 +849,8 @@ project-wide history. This section records requirements added to this unit.
   restore-or-login for ordinary expiry, lifecycle fallback to another valid
   session or public, and Home after account switching. Server auth and token
   behavior were unchanged; browser acceptance remains pending.
+- 2026-09-27T18:12:04Z — Added a dedicated full-page network recovery state
+  shown immediately on the first detected network failure, with manual
+  **Refresh** and non-overlapping background restoration every 30 seconds.
+  Network errors remain ambiguous and do not show account-choice or terminal
+  session UX until the server responds.

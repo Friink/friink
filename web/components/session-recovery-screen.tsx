@@ -6,13 +6,15 @@ import { FriinkLogo } from '@/components/friink-logo';
 import { Modal } from '@/components/modal';
 import type { AccountSummary } from '@/lib/auth';
 
-type SessionRecoveryStatus = 'loading' | 'offline' | 'choice' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
+type SessionRecoveryStatus = 'loading' | 'network' | 'offline' | 'choice' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
 
 type SessionRecoveryScreenProps = {
   status: SessionRecoveryStatus;
   appearance?: 'light' | 'dark' | 'system';
   onAcknowledge?: () => void;
   onTakeMeBack?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
   onChooseLogin?: () => void;
   accounts?: AccountSummary[];
   currentUsername?: string | null;
@@ -21,7 +23,7 @@ type SessionRecoveryScreenProps = {
   onRestoreAccount?: (account: AccountSummary) => void;
 };
 
-const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'offline' | 'choice' | 'waiting'>, { title: string; body: string }> = {
+const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'offline' | 'choice' | 'waiting'>, { title: string; body: string }> = {
   expired: { title: 'Session ended', body: 'Your session is no longer active.' },
   security: { title: 'Session ended', body: 'Your session was ended for security reasons.' },
   terminated: { title: 'Session ended', body: 'This session was ended from another device.' },
@@ -29,7 +31,7 @@ const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'offline' | 'c
   pending_deletion: { title: 'Session ended', body: 'This account is scheduled for deletion.' },
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowledge, onTakeMeBack, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
+export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowledge, onTakeMeBack, onRefresh, isRefreshing = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
   const [showChoice, setShowChoice] = useState(false);
   const availableAccounts = accounts
     .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== currentUsername?.toLowerCase())
@@ -42,6 +44,23 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowl
           <BrandLockup size="lg" />
           <h1 id="session-loading-title">We’re having trouble reconnecting.</h1>
           <p>We’re trying to restore your session.</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (status === 'network') {
+    return (
+      <main className="lifecycle-screen" data-theme={appearance} aria-live="polite" aria-busy={isRefreshing}>
+        <section className="lifecycle-card" aria-labelledby="session-network-title">
+          <BrandLockup size="lg" />
+          <h1 id="session-network-title">We can’t connect</h1>
+          <p>Check your connection. We’ll keep trying to restore your session.</p>
+          <div className="lifecycle-actions session-recovery-actions session-recovery-actions-terminal">
+            <button className="button-primary" type="button" onClick={onRefresh} disabled={isRefreshing}>
+              {isRefreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
         </section>
       </main>
     );

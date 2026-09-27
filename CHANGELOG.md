@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-27T18:12:04Z
+- [web/session-recovery] Documented then implemented a dedicated full-page
+  network failure state. It appears on the first detected fetch/network error,
+  exposes **Refresh** for an immediate restore attempt, and retries in the
+  background every 30 seconds without overlapping requests. Other ambiguous
+  failures retain the four-attempt flow. No auth/token logic changed.
+
 ## 2026-09-27T17:32:35Z
 - [web/session-recovery] Implemented four total restore attempts at 10-second
   intervals for ambiguous failures; cause-specific in-app modals; explicit

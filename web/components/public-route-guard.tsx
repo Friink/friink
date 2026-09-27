@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearAuthSessionForRecovery, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
-import { restoreWithSessionRetries } from '@/lib/session-recovery';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -35,7 +35,7 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
           return;
         }
         if (cachedUser) {
-          router.replace('/home?session_recovery=offline');
+          router.replace(isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
         }
       }
     }

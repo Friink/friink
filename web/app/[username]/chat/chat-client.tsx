@@ -8,7 +8,7 @@ import { Composer } from '@/components/composer';
 import { ChatMediaGallery } from '@/components/chat-media-gallery';
 import { ProfileCard } from '@/components/profile-card';
 import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
-import { restoreWithSessionRetries } from '@/lib/session-recovery';
+import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
 import { useAppShellState } from '@/components/app-shell-state-provider';
@@ -59,7 +59,7 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
           saveAuthSession(session);
         } catch (nextError) {
           if (cancelled || controller.signal.aborted) return;
-          router.replace(isTerminalRefreshFailure(nextError) ? '/home' : '/home?session_recovery=offline');
+          router.replace(isTerminalRefreshFailure(nextError) ? '/home' : isNetworkRestoreFailure(nextError) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
           return;
         }
       }

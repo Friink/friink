@@ -1,7 +1,12 @@
-import { isTerminalRefreshFailure } from '@/lib/auth';
+import { AuthApiError, isTerminalRefreshFailure } from '@/lib/auth';
 
 const MAX_RESTORE_ATTEMPTS = 4;
 const RESTORE_RETRY_DELAY_MS = 10_000;
+
+export function isNetworkRestoreFailure(error: unknown): boolean {
+  const message = error instanceof AuthApiError ? error.detail : error instanceof Error ? error.message : '';
+  return /failed to fetch|networkerror|network request failed|fetch failed|load failed|internet disconnected/i.test(message);
+}
 
 function waitForRetry(signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -35,7 +40,7 @@ export async function restoreWithSessionRetries<T>(
     try {
       return await restore();
     } catch (error) {
-      if (isTerminalRefreshFailure(error) || attempt === MAX_RESTORE_ATTEMPTS) throw error;
+      if (isTerminalRefreshFailure(error) || isNetworkRestoreFailure(error) || attempt === MAX_RESTORE_ATTEMPTS) throw error;
       await waitForRetry(signal);
     }
   }

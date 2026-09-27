@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-27T14:18:22Z
+**Last edited:** 2026-09-27T18:12:04Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -354,9 +354,14 @@ Failure cases are distinct:
 
 1. **Technical/ambiguous failure:** timeout, network or CORS failure, `403`,
    `5xx`, or malformed response does not prove session termination. Entry
-   recovery makes four total attempts, ten seconds apart, without changing
-   identity. After exhaustion, an in-app page offers **Take me back**. Public
-   visitors without cached account context remain on the public site.
+   recovery makes four total attempts, ten seconds apart for non-network
+   ambiguity, without changing identity. A detected network failure immediately
+   shows a full-page in-app network error with **Refresh**; background restore attempts continue every 30 seconds,
+   and **Refresh** starts an immediate attempt without reloading the page.
+   Neither path may overlap another restore request. Do not show account choice
+   or assert session termination until the server responds. Other ambiguous
+   failures retain the in-app **Take me back** recovery page. Public visitors
+   without cached account context remain on the public site.
 2. **Ordinary expiry or unavailable session:** show a cause modal. Okay and
    close have the same effect; backdrop clicks do not dismiss it. If another
    remembered session is available, offer that session or Login. Otherwise go
@@ -399,7 +404,9 @@ validated. The recovery flow is:
    most-recent-use order and return to the public site if none validates.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
    ambiguous failure does not prove that the session ended. Keep the user in
-   retryable recovery without changing identity.
+   retryable recovery without changing identity. During detected network
+   failure, show the full-page network error and allow a manual **Refresh**
+   while background restore continues without overlapping requests.
 5. Ambiguous entry recovery retries four times at ten-second intervals. After
    exhaustion, **Take me back** opens the remembered-account choice when one is
    available, with Login as the alternative. A user-selected account is
@@ -482,10 +489,11 @@ problem does not invalidate it and must leave retry available.
 - Show the terminal notice once across the browser client. Other tabs wait for
   acknowledgment and then follow the same valid account or public-site result.
   If the notice-owning tab closes, another tab may take over and present it.
-- Ambiguous entry recovery makes four total attempts at 10-second intervals.
-  After exhaustion, **Take me back** offers a remembered-account choice or
-  Login when another account is available. Do not treat a transient failure as
-  proof that the session ended or silently change identity.
+- Non-network ambiguous entry recovery makes four total attempts at 10-second intervals.
+  Network failure immediately uses a full-page network error, background restore every 30
+  seconds, and a manual **Refresh** action; other unresolved ambiguous failures show
+  **Take me back**. Do not treat a transient failure as proof that the session
+  ended or silently change identity.
 - If no remembered session validates after confirmed termination or explicit
   logout, clear the selected account and go to the public site. Preserve each
   account's identity boundary and never show one account's state while another
@@ -509,8 +517,10 @@ required before release.
   expiry, remote termination, and security revocation offer explicit choice of
   another remembered account or Login; deactivation/pending deletion use
   lifecycle fallback to another valid remembered account or public site.
-  Ambiguous failures never switch identity; entry recovery retries four times
-  at 10-second intervals before offering **Take me back**.
+  Ambiguous failures never switch identity; non-network entry recovery retries four times
+  at 10-second intervals. Network failure immediately shows a full-page error with manual
+  **Refresh** and background retry every 30 seconds; other unresolved ambiguity
+  offers **Take me back**.
 - **ACCESS-R-032:** Refresh coordination, request headers, and result state use
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
@@ -559,7 +569,8 @@ the release is considered complete.
       zero hint and stale cached summaries are covered.
 - [ ] **ACCESS-AC-043** Session restore failures across protected app, public,
       profile, post, username-chat, and login entry points provide a coherent
-      recovery path without confusing chat/content failures with session loss.
+      recovery path, including the full-page network state, without confusing
+      chat/content failures with session loss.
 - [x] **ACCESS-AC-029** A valid access cookie survives a full reload without
       refresh-cookie rotation; expired access performs one coordinated,
       slot-correct refresh while replay detection remains active.

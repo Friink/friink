@@ -1,5 +1,14 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T18:12:04Z — Add Network Failure Recovery Page
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement the agreed network-failure recovery UX: a full-page network message, immediate manual Refresh, and continued background restoration.
+- Changes Made: Updated Error Handling and Account Access requirements first, then added a distinct network classification for fetch failures. The app now shows a full-page “We can’t connect” state on the first detected network failure, runs non-overlapping background restoration every 30 seconds, and lets the user manually retry without reloading the page. A selected remembered account is retained and retried if the connection fails during explicit account restoration. Other ambiguous failures retain four attempts at ten-second intervals. Updated AUTH-R-008/AUTH-R-040; no auth, token, or server validation logic changed.
+- Files: `web/lib/session-recovery.ts`, `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/components/public-route-guard.tsx`, `web/app/[username]/profile-client.tsx`, `web/app/posts/[postId]/post-client.tsx`, `web/app/[username]/[postId]/post-client.tsx`, `web/app/[username]/chat/chat-client.tsx`, `docs/rules.md`, `docs/units/account-access.md`, `docs/units/error-handling.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `tsc --noEmit` passed. Targeted ESLint for `session-recovery.ts` and `session-recovery-screen.tsx` passed. ESLint across all edited web files reported React hook rule errors/warnings in route components; browser/staging acceptance and tests were not run. `git diff --check` passed.
+
 ## 2026-09-27T17:32:35Z — Implement Session Recovery UX
 
 - Agent: Codex
