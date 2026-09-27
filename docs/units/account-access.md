@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-27T23:00:46Z
+**Last edited:** 2026-09-27T23:12:02Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -194,7 +194,9 @@ creates a session and opens the authenticated app. Unknown identifiers and
 incorrect passwords use the same generic result. Progressive cooldowns preserve
 the identifier, clear the password, disable submission, and show server-
 provided remaining time. A full lock uses exactly `Your account is locked.
-Contact support.`
+Contact support.` Network-level request failures use the friendly copy,
+“We couldn’t reach Friink just now. Please try again.” The form does not show
+raw browser fetch errors or present a network failure as a password rejection.
 
 #### Business rules
 
@@ -221,6 +223,8 @@ delivery failure cannot change the authentication result.
 - [ ] **ACCESS-AC-007** Unknown identifiers do not reveal account existence.
 - [ ] **ACCESS-AC-008** Cooldown and full-lock copy remain distinct.
 - [ ] **ACCESS-AC-009** Security-event failure cannot fail a successful login.
+- [ ] **ACCESS-AC-046** Network-level auth failures use friendly retry copy and
+      do not expose raw browser fetch errors.
 
 ### 4.3 Risk verification and login approval
 
@@ -853,14 +857,20 @@ credentials, cookies, IPs, or internal identifiers.
 
 ### Traceability matrix
 
+**Staging smoke check — 2026-09-27 (user-reported):** Login and ordinary
+account switching passed. The cross-tab account-switch fix is committed on the
+staging branch, but its multi-tab regression has not been tested on staging;
+multi-tab acceptance remains pending.
+
 | ID | Requirement | Verification | Status |
 |---|---|---|---|
 | ACCESS-R-017 | Reactive refresh after expiry | Web auth refresh tests | Implemented |
 | ACCESS-R-018 | Recoverable refresh preserves access | Token resilience tests | Implemented |
+| ACCESS-AC-046 | Auth network errors use friendly copy | Simulated fetch rejection in auth form | Implemented locally |
 | ACCESS-R-031 | Cause-specific notice waits for acknowledgment before terminal fallback; ambiguity remains retryable | Account recovery and browser matrix | Implemented locally — staging pending |
 | ACCESS-R-032 | Refresh keys and requests use one captured slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-R-033 | Refresh recency commits with token rotation | Planned account-list ordering verification | Implemented locally — staging pending |
-| ACCESS-R-034/035 | Add/switch and acknowledged termination converge client-wide; notice owner can be replaced | Multi-tab browser matrix | Implemented locally — staging pending |
+| ACCESS-R-034/035 | Add/switch and acknowledged termination converge client-wide; notice owner can be replaced | Multi-tab browser matrix | Ordinary account switching passed (user-reported); multi-tab staging pending |
 | ACCESS-R-026/AC-039/AC-040 | Single-slot limit blocks additions but preserves switching across existing accounts | Single-slot and lowered-limit API tests; browser check | Implemented locally — browser/staging pending |
 | ACCESS-R-029 | Failed operations preserve active account | Account isolation tests | Implemented |
 | ACCESS-R-030 | Logout fallback | Active-slot logout test | Implemented |
@@ -868,8 +878,8 @@ credentials, cookies, IPs, or internal identifiers.
 | ACCESS-AC-026/032/034 | Acknowledged terminal failure falls back by recency or returns to public site | Account recovery browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-027 | Requests and refresh coordination use the selected slot | Planned cross-tab isolation verification | Implemented locally — staging pending |
 | ACCESS-AC-028 | Explicit recovery changes account only after selected-slot success | Planned recovery-flow verification | Implemented locally — staging pending |
-| ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Implemented locally — staging pending |
-| ACCESS-R-044/AC-045 | Concurrent switches serialize and stale restore responses cannot replace the selected slot | Two-tab simultaneous switch and reload matrix | Implemented locally — staging pending |
+| ACCESS-AC-035/036 | Add and switch update the client-wide selected account | Multi-tab browser matrix | Ordinary account switching passed (user-reported); multi-tab staging pending |
+| ACCESS-R-044/AC-045 | Concurrent switches serialize and stale restore responses cannot replace the selected slot | Two-tab simultaneous switch and reload matrix | Patch committed; multi-tab staging test pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
 | ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: zero hint, stale positive hint, entry-status true/false, terminal restore | Implemented locally — staging browser pending |

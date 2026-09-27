@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-27T13:30:24Z
+**Last edited:** 2026-09-27T23:14:24Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -125,6 +125,8 @@ contract rather than repeated here.
   communicates the meaning.
 - Compact unread counters use the shared CountPill component. It hides zero,
   displays counts 1–9 directly, and caps larger counts at `9+`.
+- Unread count pills are 16px high with 10px text, 2px vertical and 6px
+  horizontal padding, an 8px corner radius, and a 1px surface-colored border.
 - Destructive or high-consequence actions should not be made visually casual.
 
 ### Separation and elevation

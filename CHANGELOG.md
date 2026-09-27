@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-27T23:14:24Z
+- [navigation] Updated the shared unread-count pill to an 8px corner radius,
+  16px height, 10px type, and 2px vertical / 6px horizontal padding. Synced
+  the navigation and design contracts.
+
+## 2026-09-27T23:12:02Z
+- [account-access] Recorded the user-reported staging pass for login and
+  ordinary account switching. Kept the cross-tab regression marked untested,
+  updated BUG-AUTH-008 to reflect the staging-branch patch, and aligned the
+  TopBar pill design contract with the implemented 16px CSS pill.
+
+## 2026-09-27T23:04:31Z
+- [account-access] Replace raw browser fetch errors on auth forms with
+  “We couldn’t reach Friink just now. Please try again.” Server-returned
+  authentication messages remain unchanged.
+
 ## 2026-09-27T23:00:46Z
 - [account-access] Serialize account switches across tabs and retry session
   restoration when the browser-wide selected account changes mid-request.

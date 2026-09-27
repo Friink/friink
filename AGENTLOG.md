@@ -1,5 +1,32 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-27T23:14:24Z — Refine Count Pill Geometry
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Set the count pill corner radius, height, type size, and padding.
+- Changes Made: Set the shared pill to 8px corners, 16px height, 10px bold type, 2px vertical padding, and 6px horizontal padding. Updated product and implementation design documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `docs/units/navigation.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-27T23:12:02Z — Record Staging Smoke Check And Pill Contract
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain the shared unread-count pill design and record staging login/account-switch results.
+- Changes Made: Recorded the user-reported staging smoke check, kept multi-tab acceptance pending, updated BUG-AUTH-008 to reflect the staging-branch commit, and corrected the TopBar pill contract to match its CSS.
+- Files: `docs/units/account-access.md`, `docs/bugs.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused diffs reviewed; `git diff --check` passed.
+
+## 2026-09-27T23:04:31Z — Replace Raw Auth Network Error Copy
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Improve the raw browser network error shown on the sign-in form.
+- Changes Made: Mapped transport failures without an HTTP response to “We couldn’t reach Friink just now. Please try again.” Kept server-returned credential and lifecycle errors unchanged. Updated the Account Access unit and active rules.
+- Files: `web/components/login-screen.tsx`, `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted web TypeScript check and `git diff --check` passed.
+
 ## 2026-09-27T23:00:46Z — Coordinate Account Switching Across Tabs
 
 - Agent: Codex

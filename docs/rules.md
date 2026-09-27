@@ -808,6 +808,18 @@ missing evidence can be filled in.
 - **What:** Account-switch operations use a browser-wide exclusive lock. A waiting switch reads the current in-memory session only after acquiring the lock, then commits the new selected slot before releasing it. Session entry validates the captured slot and retries if another tab changes the selected slot while `/auth/me` is in flight, preventing an old response from restoring its account over a newer selection.
 - **Edge cases:** Web Locks are used where available, with a bounded local-storage lease fallback. The coordination record contains only a tab owner and lease expiry; access and refresh credentials remain in memory or HttpOnly cookies. Other tabs continue to reload after the selected slot changes. Multi-tab staging acceptance remains required.
 
+### AUTH-R-042 — Auth Forms Hide Raw Network Errors
+
+- **Status:** Active
+- **Effective:** 2026-09-27T23:04:31Z
+- **Related units:** [account-access](units/account-access.md), [error-handling](units/error-handling.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/login-screen.tsx`, `web/lib/auth.ts`
+
+- **What:** When an authentication request fails without an HTTP response, the auth form displays “We couldn’t reach Friink just now. Please try again.” instead of exposing the browser's raw fetch error.
+- **Edge cases:** This message describes a communication failure, not invalid credentials or confirmed session termination. Server-returned authentication errors keep their existing domain-specific copy.
+
 ### AUTH-R-039 — Profile Identity Blocks Link To Profiles
 
 - **Status:** Active

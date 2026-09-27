@@ -5834,13 +5834,13 @@ body:has(.lifecycle-screen[data-theme='dark']) .session-recovery-account-modal {
   min-width: 16px;
   height: 16px;
   border: 1px solid var(--color-paper);
-  border-radius: 999px;
-  padding: 0 2px;
+  border-radius: 8px;
+  padding: 2px 6px;
   color: #ffffff;
   background: var(--color-accent);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 10px;
   text-align: center;
 }
 

@@ -76,8 +76,8 @@ Copy this template for a new defect and replace every placeholder:
 
 ## BUG-AUTH-008 — Account switching can race across open tabs
 
-- **Status:** Fix implemented locally; staging acceptance pending
-- **Reported/updated:** 2026-09-27T23:00:46Z
+- **Status:** Patch committed to the staging branch; multi-tab staging acceptance pending
+- **Reported/updated:** 2026-09-27T23:12:02Z
 - **Affected area:** Account switching and session restoration across browser tabs
 - **Environment:** Staging; multiple tabs in one browser profile
 - **Severity:** medium
@@ -123,16 +123,19 @@ switch from stale in-memory state while another tab was also switching.
 Switches now use a browser-wide exclusive lock, read the source session after
 the lock is acquired, and save the destination selection before releasing the
 lock. Session restoration retries when its selected slot changes while
-`/auth/me` is pending. The source code is updated locally; staging acceptance
-has not been run.
+`/auth/me` is pending. The patch is committed as `854860c` on the staging
+branch. The user reports that login and ordinary account switching passed on
+staging; the multi-tab regression itself has not been tested there.
 
 ### Tests and verification
 - **Required:** Repeated and simultaneous switches in both directions with two
   or more staging tabs; confirm every tab converges and the switcher remains
   usable. Separately capture the HTTP status for feed failures with three or
   four tabs.
-- **Completed:** Web TypeScript check passed. Multi-tab browser and staging
-  verification remain pending.
+- **Completed:** Web TypeScript check passed. User-reported staging smoke check
+  passed for login and ordinary account switching.
+- **Pending:** Multi-tab browser and staging verification. Separately capture
+  the HTTP status for feed failures with three or four tabs.
 
 ### Noteworthy
 
