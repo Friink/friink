@@ -231,8 +231,8 @@ unrelated. Auth/session behavior remains outside the scope of this diagnosis.
 
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
-- **Status:** Resolved
-- **Reported/updated:** 2026-09-27T20:36:01Z
+- **Status:** In progress — session stability failed again on staging
+- **Reported/updated:** 2026-09-28T00:31:17Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
 - **Severity:** high
@@ -314,6 +314,50 @@ as of 2026-09-27, confirmed by the user.
   This confirms persisted refresh-family revocations and session/token-state
   mismatches, but it does not explain which browser action presented the stale
   token or caused slot replacement.
+- **Additional failed staging session-stability check (2026-09-27 UTC):** The
+  user reported that `@muflah` could not be restored in both Chrome and Firefox
+  and received “Could not restore @muflah. Choose another account or sign in.”
+  The staging database contains matching `refresh_reuse_detected` events at
+  `23:52:23.068Z` for Chrome and `23:57:07.859Z` for Firefox. In Chrome, the
+  presented token had been rotated at `21:49:07.490Z`; in Firefox, it had been
+  rotated at `23:23:34.401Z`. Those presentations were roughly 2 hours and 34
+  minutes after rotation, respectively, far beyond staging's 60-second grace.
+  The API revoked each refresh-token family for `reuse_detected`. Both linked
+  auth-session rows still had `revoked_at = NULL`, so the durable evidence is
+  refresh-family invalidation rather than explicit session revocation. GitHub's
+  successful Vercel staging checks identify the tested build as `199fe90`
+  (completed around `23:17Z`); the later `3f0514c` checks completed around
+  `00:20Z`, after the incidents. That later commit changes terminal recovery
+  UI/docs, not `web/lib/auth.ts` or API auth code. The database proves that
+  stale rotated refresh tokens reached the API and triggered reuse protection,
+  but it does not identify which tab/request held or resent them, or whether a
+  cookie update was lost or overwritten.
+- **Possible stale-cookie path, not established as the cause:** A standard
+  login writes the same raw refresh token to both the generic
+  `friink_refresh_token` cookie and the account-slot cookie. Slot-scoped
+  refresh reads and updates the slot cookie, not the generic cookie. A refresh
+  request without `X-Friink-Account-Slot` could therefore send the old generic
+  value. However, the normal web restore and refresh path passes the account
+  slot, and `requestApi` fills it from the active slot when absent. The stale
+  generic-cookie explanation is therefore a lower-confidence edge case, not
+  the leading explanation for ordinary app requests. The database proves
+  previously rotated refresh-token values reached the API, but neither its
+  events nor current auth logging records the selected cookie name,
+  slot-header presence, tab/request ordering, or whether the browser received
+  and retained the preceding `Set-Cookie`. A failed or overwritten cookie
+  update, an overlapping request using an older cookie snapshot, and other
+  stale-cookie paths remain unresolved.
+- **Production and Android scope:** A read-only production database check
+  found ten `refresh_reuse_detected` events for `@muflah` in the prior 90 days.
+  This includes an Android session event on 2026-09-16 (stored browser
+  metadata: Samsung Internet / Android); the latest production event, on
+  2026-09-27, is associated with Chrome / Windows. This confirms the same
+  refresh-reuse failure class in production and on an Android session, but it
+  does not identify the exact device for the user's reported Chrome-on-Android
+  incident or prove malicious access. Staging's two 2026-09-27 events remain
+  associated with Chrome and Firefox. The event records do not capture the
+  request's cookie/header source, so they cannot distinguish a browser storage
+  failure from concurrent legitimate refresh requests or token theft.
 - **Local log availability:** `.codex-local-logs/api.log` was last written on
   2026-09-18 and contains standard Uvicorn request/status lines, not detailed
   auth lifecycle events. It includes overlapping successful `/auth/refresh`
@@ -359,15 +403,18 @@ as of 2026-09-27, confirmed by the user.
 
 ### Resolution
 
-The session bootstrap now validates the slot-scoped HttpOnly access cookie
-through `/auth/me` before refreshing. A valid access cookie avoids refresh-token
+The session bootstrap validates the slot-scoped HttpOnly access cookie through
+`/auth/me` before refreshing. A valid access cookie avoids refresh-token
 rotation on normal reloads. Refresh coordination captures one account slot,
 validates the response against the active slot, and revalidates followers with
-their own access cookie. The user confirmed the latest implementation is
-deployed to staging. The historical trigger for repeated stale-token
-presentations remains unknown; this resolution records the implementation
-update and staging deployment, not a conclusive reconstruction of those past
-requests.
+their own access cookie. GitHub Vercel checks show the failed staging run used
+`199fe90`; the later `3f0514c` build completed after the reported incidents and
+changes recovery UI, not refresh-cookie coordination. Since the failure
+occurred on the build that already included the cookie-first and refresh
+coordination changes, those changes have not passed the session-stability
+gate. Keep this bug open until the stale-token replay origin is captured and
+the multi-tab/reload/lost-response staging matrix passes. The trigger for the
+replayed stale tokens remains unknown.
 
 ### Earlier partial mitigations
 

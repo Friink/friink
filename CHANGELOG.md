@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-28T00:43:23Z
+- [account-access] Expanded BUG-AUTH-003 with read-only production evidence:
+  repeated refresh-token reuse for @muflah, including an Android session.
+  Narrowed the generic-cookie explanation because normal restore requests send
+  the slot header; the exact stale-cookie source remains unknown.
+
+## 2026-09-28T00:31:17Z
+- [account-access] Reopened BUG-AUTH-003 after staging showed refresh-token
+  reuse in Chrome and Firefox. Recorded the matching API family revocations,
+  active session rows, the build/deployment window, and a likely stale generic
+  cookie path from code review; the exact request path remains unconfirmed.
+
 ## 2026-09-28T00:00:36Z
 - [account-access] Labeled the terminal recovery modal's secondary action
   **Close** to match its X control. Adjusted the shared count pill's line box

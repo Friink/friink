@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-28T00:43:23Z — Compare Production Refresh Reuse And Reassess Cookie Hypothesis
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Clarify whether the session failure came from the JWT cookie, whether longer expiries help, and whether the Android single-account report indicates the same problem.
+- Changes Made: Queried production security events read-only and found ten refresh-reuse events for @muflah in the prior 90 days, including an Android session event. The latest production event was associated with Chrome/Windows. Rechecked current client/server paths: normal remembered-account restore and refresh pass the slot header, and `requestApi` fills it from the active slot. Downgraded the generic-cookie path from likely cause to lower-confidence edge case. Recorded that the proven failure is a previously rotated refresh-token value reaching the API, while the source (lost/overwritten cookie update, concurrent stale request, other cookie path, or theft) remains unknown. Documented production and Android scope without equating reuse detection with proof of compromise.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Production database read-only query and code-path inspection completed; `git diff --check` passed. No auth code or tests changed.
+
+## 2026-09-28T00:31:17Z — Reopen Session Stability Bug From Staging Evidence
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Diagnose the staging session-stability failure for @muflah using the database and determine which build was tested.
+- Changes Made: Queried the staging database read-only and found refresh_reuse_detected events for Chrome at 23:52:23Z and Firefox at 23:57:07Z. Both presented rotated tokens beyond the 60-second grace; each family was revoked while its auth-session row remained active. GitHub Vercel checks place the tested build at 199fe90 and the later recovery-UI build 3f0514c after the incident. Code review found a likely stale-generic-cookie path: login sets both generic and slot cookies, while slot refresh updates only the slot cookie. The events replay the original login tokens, which is consistent with this path, but the stored evidence does not show whether those requests omitted the slot header. Reopened BUG-AUTH-003 and recorded the failed staging check and this unconfirmed hypothesis.
+- Files: `docs/bugs.md`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Read-only staging queries and GitHub commit-status lookup completed; `git diff --check` passed. No code or tests changed.
+
 ## 2026-09-28T00:00:36Z — Align Recovery Action And Count Pill Text
 
 - Agent: Codex

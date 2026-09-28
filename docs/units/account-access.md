@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-27T23:52:30Z
+**Last edited:** 2026-09-28T00:43:23Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -935,8 +935,14 @@ logs.
   same-operation requests and refresh-family row count. The staging schema is
   migrated; API/web deployment and browser verification remain required.
 - Staging session reliability is not accepted: interrupting page reload during
-  session restoration can end the session. The local retry implementation and
-  its verification gate are tracked in BUG-AUTH-003 and BUG-AUTH-006.
+  session restoration can end the session, and the 2026-09-27 run lost
+  `@muflah` in Chrome and Firefox after the API detected stale refresh-token
+  reuse in both browsers. Production also has repeated refresh-reuse events
+  for this account, including an Android session. Normal web restoration sends
+  the account-slot header, so the generic-cookie path is not established as the
+  cause. The exact source of the stale presentations remains unknown. The
+  local retry implementation and its verification gate are tracked in
+  BUG-AUTH-003 and BUG-AUTH-006.
 - Open staging verification: Add account previously reported a full
   remembered-account limit while the browser showed only one account; the
   local fix and regression test are recorded in [`docs/notes.md`](../notes.md).
