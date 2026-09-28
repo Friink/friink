@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-27T23:14:24Z
+**Last edited:** 2026-09-28T00:00:36Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -125,8 +125,9 @@ contract rather than repeated here.
   communicates the meaning.
 - Compact unread counters use the shared CountPill component. It hides zero,
   displays counts 1–9 directly, and caps larger counts at `9+`.
-- Unread count pills are 16px high with 10px text, 2px vertical and 6px
-  horizontal padding, an 8px corner radius, and a 1px surface-colored border.
+- Unread count pills are 16px high with 10px text centered horizontally and
+  vertically, 2px vertical and 6px horizontal padding, an 8px corner radius,
+  and a 1px surface-colored border.
 - Destructive or high-consequence actions should not be made visually casual.
 
 ### Separation and elevation
@@ -245,19 +246,18 @@ The exact widths, heights, breakpoints, and token names are defined in
 
 ### Session recovery
 
-- Terminal refresh failure identifies the account needing sign-in when safe
-  cached metadata is available and offers an explicit remembered-account
-  choice.
-- Remembered accounts open in the shared modal; the recovery page itself stays
-  a fixed-height surface. Put the current account first, followed by the other
-  accounts in most-recent order. Each row shows a safe avatar and username,
-  and progress identifies the account currently being restored.
-- A selection refreshes only that slot. On failure, keep the visitor on the
-  recovery surface and explain that they can choose again or sign in. Never
-  cycle through remembered identities without explicit selection.
-- Recoverable connection failures retain “Try again” and may offer the same
-  explicit account choice. Do not claim the account has been signed out for an
-  ambiguous network failure.
+- Confirmed terminal session failures share a modal titled **Session ended**
+  with neutral copy: “Your session has ended. Choose how you’d like to
+  continue.” Show available remembered accounts in most-recent order, each
+  with a safe avatar and username. Selecting an account validates only that
+  slot, and progress identifies the account currently being restored.
+- **Add account** opens the existing login/signup modal. **Cancel** and the
+  close button try remembered accounts in most-recent-use order, then return to
+  the public site if none can be restored. The shared modal can show no
+  account rows when no other remembered account is available.
+- Network failures retain the full-page connection state and **Refresh**
+  action. Do not show terminal account choices or claim the account has ended
+  while session validation is unavailable.
 - Recovery actions share one centered width; paired actions form equal-width
   columns and the account-choice action aligns to that group width.
 

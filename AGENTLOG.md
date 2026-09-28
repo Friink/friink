@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-28T00:00:36Z — Align Recovery Action And Count Pill Text
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Review whether the recovery modal action should say Close and center unread pill text vertically.
+- Changes Made: Changed the recovery modal's secondary action label from Cancel to Close, matching the X control's behavior. Changed `.count-pill` line-height to 16px so its text line box aligns with the full pill height; preserved the specified geometry and padding. Updated the existing design contracts without adding a new product rule.
+- Files: `web/components/session-recovery-screen.tsx`, `web/app/globals.css`, `docs/design-system.md`, `docs/units/navigation.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` and `git diff --check` passed. Local in-app browser confirmed the modal labels. The TopBar was not available in this local browser session, so the pill alignment change is CSS-reviewed but not visually confirmed here.
+
+## 2026-09-27T23:52:30Z — Simplify Terminal Session Recovery Modal
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement the neutral session-ended modal UX with account recovery and add-account actions.
+- Changes Made: Replaced cause-specific terminal copy and acknowledgment with a shared neutral `Session ended` modal. The modal lists available remembered accounts, validates a selected account, opens the existing login/signup modal through Add account, and sends Cancel/close through most-recent-account fallback before returning public with redirect hint zero. Added busy/error feedback and themed the modal surface. Updated active rules and Account Access, Account Lifecycle, Error Handling, design-system, and implementation design documentation.
+- Files: `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/app/globals.css`, `docs/rules.md`, `docs/design-system.md`, `docs/units/account-access.md`, `docs/units/account-lifecycle.md`, `docs/units/error-handling.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` passed, `git diff --check` passed, and the local in-app browser showed the updated neutral modal and actions. Staging acceptance remains pending; no test suite run.
+
 ## 2026-09-27T23:14:24Z — Refine Count Pill Geometry
 
 - Agent: Codex

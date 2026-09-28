@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-28T00:00:36Z
+- [account-access] Labeled the terminal recovery modal's secondary action
+  **Close** to match its X control. Adjusted the shared count pill's line box
+  to use its full height for vertical text alignment; the component dimensions
+  and padding are unchanged.
+
+## 2026-09-27T23:52:30Z
+- [account-access] Replaced cause-specific terminal-session dialogs with a
+  neutral Session ended modal, remembered-account choices, Add account, and
+  Cancel/close fallback. Documented the UX across Account Access, Account
+  Lifecycle, Error Handling, and the design contracts.
+
 ## 2026-09-27T23:14:24Z
 - [navigation] Updated the shared unread-count pill to an 8px corner radius,
   16px height, 10px type, and 2px vertical / 6px horizontal padding. Synced
