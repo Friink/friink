@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-29T22:03:18Z
+- [account-access] Implemented BUG-AUTH-011 request-correlated refresh
+  diagnostics. API responses now include an opaque request ID; every refresh
+  request records a structured, redacted runtime outcome with deployment,
+  route, status/failure class, and slot-cookie/header presence. Updated Account
+  Access, Error Handling, and the bug register. Local endpoint verification
+  covers success and invalid-token failure; staging log access/retention remain
+  pending. The focused pytest assertion passed; its Windows SQLite fixture
+  cleanup then raised the existing file-lock `PermissionError`.
+
+## 2026-09-29T21:50:21Z
+- [account-access] Implemented BUG-AUTH-010: account switches reuse the
+  destination slot's validated active refresh cookie and issue only an access
+  token. Missing or unusable cookies are repaired after locking and validating
+  the destination session; existing families are not bulk-revoked. Added API
+  regression coverage and updated active rules, account-access docs, and the
+  bug register. The focused test passed, but pytest's Windows SQLite cleanup
+  raised its known file-lock `PermissionError`; staging acceptance is pending.
+
 ## 2026-09-29T21:33:43Z
 - [account-access] Implemented BUG-AUTH-009 recovery ownership synchronization
   and serialized user actions through the shared account-operation lock.

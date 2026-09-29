@@ -1,5 +1,54 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-29T22:03:18Z — Implement BUG-AUTH-011 Refresh Diagnostics
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement request-correlated, redacted diagnostics for
+  refresh failures.
+- Changes Made: Added a generated request ID to API responses and exposed it
+  through CORS. Every refresh request now emits a structured runtime event with
+  deployment SHA, route, status, safe auth failure class, selected-slot-header
+  presence, and expected refresh-cookie presence. Existing classified auth
+  failures also include request ID and slot/cookie booleans. No request bodies,
+  credential values, hashes, slot values, or user IDs are logged. Added an API
+  endpoint regression test and updated Account Access, Error Handling, and
+  BUG-AUTH-011 docs. No auth acceptance behavior changed.
+- Files: `api/app/main.py`, `api/app/services/auth_debug.py`,
+  `api/app/routers/auth.py`, `api/tests/test_auth_debug.py`, `docs/bugs.md`,
+  `docs/units/account-access.md`, `docs/units/error-handling.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: The focused API endpoint test passed. It verified the
+  real refresh response statuses/shapes and matched both success and failure
+  request IDs to captured structured runtime events, while checking that the
+  slot value and invalid token are absent. `py_compile` and `git diff --check`
+  passed. After the test passed, pytest's Windows SQLite fixture cleanup raised
+  its existing file-lock `PermissionError`; staging runtime log access and
+  retention remain unverified.
+
+# 2026-09-29T21:50:21Z — Implement BUG-AUTH-010 Switch Refresh Reuse
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the first not-yet-implemented bug, BUG-AUTH-010.
+- Changes Made: Updated `POST /auth/accounts/switch` to validate and lock the
+  destination auth session, reuse a matching active/unexpired destination slot
+  refresh cookie, and issue only an access token for ordinary switches. An
+  absent, stale, revoked, rotated, or mismatched destination cookie is repaired
+  after validation; existing refresh families are not bulk-revoked. Added
+  repeated-switch family-count and missing-cookie repair coverage. Updated
+  active account-access rules, the Account Access unit, and BUG-AUTH-010's
+  implementation and closure notes.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`,
+  `docs/bugs.md`, `docs/units/account-access.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: The focused API test passed, including successful
+  switch response shape, repeated switches without active-token growth, missing
+  destination-cookie repair, and a subsequent refresh request. Pytest then
+  exited with a Windows SQLite fixture cleanup `PermissionError` in
+  `api/tests/conftest.py:69`; the session/test assertion itself passed.
+  Staging acceptance remains pending.
+
 # 2026-09-29T21:33:43Z — Implement BUG-AUTH-009 Recovery Handoff
 
 - Agent: Codex

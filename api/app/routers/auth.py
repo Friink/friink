@@ -581,6 +581,11 @@ async def refresh(
             settings=settings,
             request_path=str(request.url.path),
             request_method=request.method,
+            request_id=getattr(request.state, "request_id", None),
+            slot_header_present=bool(account_slot),
+            slot_cookie_present=bool(
+                request.cookies.get(f"friink_refresh_{account_slot}" if account_slot else REFRESH_COOKIE_NAME)
+            ),
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -596,6 +601,11 @@ async def refresh(
             settings=settings,
             request_path=str(request.url.path),
             request_method=request.method,
+            request_id=getattr(request.state, "request_id", None),
+            slot_header_present=bool(account_slot),
+            slot_cookie_present=bool(
+                request.cookies.get(f"friink_refresh_{account_slot}" if account_slot else REFRESH_COOKIE_NAME)
+            ),
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -775,6 +785,11 @@ async def refresh(
             settings=settings,
             request_path=str(request.url.path),
             request_method=request.method,
+            request_id=getattr(request.state, "request_id", None),
+            slot_header_present=bool(account_slot),
+            slot_cookie_present=bool(
+                request.cookies.get(f"friink_refresh_{account_slot}" if account_slot else REFRESH_COOKIE_NAME)
+            ),
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -1437,7 +1452,13 @@ async def switch_account(
         log_account_switch_event(result="failure", reason="slot_not_found")
         raise HTTPException(status_code=404, detail="Account session not found.")
     target = session.get(User, slot.user_id)
-    auth_session = session.get(AuthSession, slot.auth_session_id)
+    # Serialize exceptional refresh-cookie repair for this remembered session.
+    # Ordinary switches reuse the slot's existing active refresh credential.
+    auth_session = session.execute(
+        select(AuthSession)
+        .where(AuthSession.id == slot.auth_session_id)
+        .with_for_update()
+    ).scalar_one_or_none()
     if not target or target.lifecycle_status != "active" or not auth_session or auth_session.revoked_at is not None:
         log_account_switch_event(result="failure", reason="slot_unavailable")
         # The source session was authenticated by get_current_user. An
@@ -1445,10 +1466,33 @@ async def switch_account(
         # termination, which would make the client clear the active session.
         raise HTTPException(status_code=404, detail="Account session not found.")
     slot.last_used_at = datetime.now(UTC)
-    issued_refresh = issue_refresh_token(session, target.id, settings, session_id=auth_session.id)
+    refresh_cookie_name = f"friink_refresh_{payload.account_slot}"
+    destination_refresh_token = request.cookies.get(refresh_cookie_name)
+    destination_refresh_record = (
+        get_refresh_token(session, destination_refresh_token)
+        if destination_refresh_token
+        else None
+    )
+    destination_refresh_is_usable = bool(
+        destination_refresh_record
+        and destination_refresh_record.user_id == target.id
+        and destination_refresh_record.session_id == auth_session.id
+        and destination_refresh_record.revoked_at is None
+        and destination_refresh_record.rotated_at is None
+        and destination_refresh_record.expires_at > datetime.now(UTC)
+    )
+    repaired_refresh_token = None
+    if not destination_refresh_is_usable:
+        # Missing, stale, or mismatched slot cookies are repaired only after
+        # validating and locking the destination slot's active auth session.
+        # Existing families are left intact because another tab may be using one.
+        repaired_refresh_token = issue_refresh_token(
+            session, target.id, settings, session_id=auth_session.id
+        ).raw_token
     access_token = create_access_token(target.id, target.security_epoch, auth_session.id)
     await commit(session)
-    set_account_refresh_cookie(response, payload.account_slot, issued_refresh.raw_token, settings)
+    if repaired_refresh_token:
+        set_account_refresh_cookie(response, payload.account_slot, repaired_refresh_token, settings)
     set_access_cookie(response, access_token, settings, payload.account_slot)
     log_account_switch_event(result="success", reason="switched")
     return TokenResponse(access_token=access_token, user=user_response(target, settings), account_slot=payload.account_slot)

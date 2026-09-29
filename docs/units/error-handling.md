@@ -7,7 +7,7 @@ requirements to refine.
 
 **Status:** Partial  
 **Tier:** Full  
-**Last edited:** 2026-09-29T21:33:43Z
+**Last edited:** 2026-09-29T22:03:18Z
 **Platforms:** Web, API, and future clients  
 **Canonical sources:** This draft; active subsystem behavior remains owned by the relevant unit documents.
 
@@ -108,6 +108,9 @@ while preserving their current context where safe.
 
 - Error copy and diagnostics must not expose credentials, tokens, internal
   identifiers, or sensitive account state.
+- API refresh diagnostics correlate a response and runtime event with an opaque
+  request ID. They record only safe failure classes and cookie/header presence
+  booleans; request IDs do not identify a user or grant access.
 - A recovery modal may overlay the app shell rendered from cached client data.
   Block background interaction while it is active; cached display is not proof
   of session validity and does not authorize protected API actions.
@@ -816,6 +819,9 @@ token or server-validation rules.
 - [ ] Deployment and migration complete, if applicable
 
 ## Changelog
+
+- 2026-09-29T22:03:18Z — Documented the redacted request-ID contract used by
+  refresh diagnostics. No user-facing error or recovery behavior changed.
 
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records requirements added to this unit.

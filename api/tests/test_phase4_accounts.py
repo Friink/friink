@@ -3,7 +3,7 @@ import uuid
 from datetime import date
 
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from api.index import app
 from app.config import Settings, get_settings
@@ -11,6 +11,7 @@ from app.db import get_session_factory
 from app.models.account_session_slot import AccountSessionSlot
 from app.models.auth_session import AuthSession
 from app.models.user import User
+from app.models.refresh_token import RefreshToken
 from app.services.security import hash_password
 from app.services.session_service import revoke_auth_session
 from app.routers.auth import access_cookie_name
@@ -53,6 +54,8 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         second_json = second.json()
         second_slot = second_json["account_slot"]
         assert first_slot != second_slot
+        first_refresh_cookie = client.cookies.get(f"friink_refresh_{first_slot}")
+        assert first_refresh_cookie
         assert "friink_refresh_token=" not in second.headers.get("set-cookie", "")
         accounts = client.get("/auth/accounts", headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert accounts.status_code == 200, accounts.text
@@ -75,7 +78,58 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         switched = client.post("/auth/accounts/switch", json={"account_slot": first_slot}, headers={"Authorization": f"Bearer {second_json['access_token']}", "X-Friink-Account-Slot": second_slot})
         assert switched.status_code == 200, switched.text
         assert switched.json()["user"]["email"] == seeded[0].email
-        assert f"friink_refresh_{first_slot}=" in switched.headers.get("set-cookie", "")
+        assert f"friink_refresh_{first_slot}=" not in switched.headers.get("set-cookie", "")
+        assert client.cookies.get(f"friink_refresh_{first_slot}") == first_refresh_cookie
+        with get_session_factory()() as session:
+            first_auth_session_id = session.execute(
+                select(AccountSessionSlot.auth_session_id).where(AccountSessionSlot.id == uuid.UUID(first_slot))
+            ).scalar_one()
+            family_count_before = len(session.execute(
+                select(RefreshToken.family_id).distinct().where(
+                    RefreshToken.user_id == users[0],
+                    RefreshToken.session_id == first_auth_session_id,
+                    RefreshToken.revoked_at.is_(None),
+                    RefreshToken.rotated_at.is_(None),
+                )
+            ).all())
+        for _ in range(2):
+            back = client.post(
+                "/auth/accounts/switch",
+                json={"account_slot": second_slot},
+                headers={"Authorization": f"Bearer {switched.json()['access_token']}", "X-Friink-Account-Slot": first_slot},
+            )
+            assert back.status_code == 200, back.text
+            switched_back = client.post(
+                "/auth/accounts/switch",
+                json={"account_slot": first_slot},
+                headers={"Authorization": f"Bearer {back.json()['access_token']}", "X-Friink-Account-Slot": second_slot},
+            )
+            assert switched_back.status_code == 200, switched_back.text
+        with get_session_factory()() as session:
+            family_count_after = len(session.execute(
+                select(RefreshToken.family_id).distinct().where(
+                    RefreshToken.user_id == users[0],
+                    RefreshToken.session_id == first_auth_session_id,
+                    RefreshToken.revoked_at.is_(None),
+                    RefreshToken.rotated_at.is_(None),
+                )
+            ).all())
+        assert family_count_after == family_count_before
+        client.cookies.delete(f"friink_refresh_{first_slot}")
+        moved_away = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": second_slot},
+            headers={"Authorization": f"Bearer {switched_back.json()['access_token']}", "X-Friink-Account-Slot": first_slot},
+        )
+        assert moved_away.status_code == 200, moved_away.text
+        repaired = client.post(
+            "/auth/accounts/switch",
+            json={"account_slot": first_slot},
+            headers={"Authorization": f"Bearer {moved_away.json()['access_token']}", "X-Friink-Account-Slot": second_slot},
+        )
+        assert repaired.status_code == 200, repaired.text
+        assert f"friink_refresh_{first_slot}=" in repaired.headers.get("set-cookie", "")
+        assert client.cookies.get(f"friink_refresh_{first_slot}")
         refreshed = client.post("/auth/refresh", headers={"X-Friink-Account-Slot": first_slot})
         assert refreshed.status_code == 200, refreshed.text
         removed = client.delete(f"/auth/accounts/{second_slot}", headers={"Authorization": f"Bearer {first_json['access_token']}", "X-Friink-Account-Slot": first_slot})

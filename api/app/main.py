@@ -1,8 +1,11 @@
 import hashlib
 import logging
+from uuid import uuid4
 
 import psycopg
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
@@ -20,6 +23,7 @@ from app.routers.subscriptions import router as subscriptions_router
 from app.routers.progressive_auth import router as progressive_auth_router
 from app.routers.professional_registration import router as professional_registration_router
 from app.routers.search import router as search_router
+from app.services.auth_debug import log_refresh_request_result
 
 settings = get_settings()
 logger = logging.getLogger("friink.auth")
@@ -51,6 +55,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Friink-Request-Id"],
 )
 app.include_router(auth_router)
 app.include_router(connections_router)
@@ -66,6 +71,50 @@ app.include_router(subscriptions_router)
 app.include_router(progressive_auth_router)
 app.include_router(professional_registration_router)
 app.include_router(search_router)
+
+
+@app.exception_handler(HTTPException)
+async def capture_safe_failure_class(request: Request, exc: HTTPException):
+    detail = exc.detail
+    code = detail.get("code") if isinstance(detail, dict) else None
+    if (
+        isinstance(code, str)
+        and 1 <= len(code) <= 64
+        and code.isascii()
+        and code.replace("_", "").isalnum()
+    ):
+        request.state.failure_code = code
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def attach_request_id_to_unhandled_error(request: Request, _exc: Exception):
+    response = PlainTextResponse("Internal Server Error", status_code=500)
+    request_id = getattr(request.state, "request_id", None)
+    if request_id:
+        response.headers["X-Friink-Request-Id"] = request_id
+    return response
+
+
+@app.middleware("http")
+async def add_request_correlation(request: Request, call_next):
+    request_id = uuid4().hex
+    request.state.request_id = request_id
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        if request.url.path == "/auth/refresh":
+            log_refresh_request_result(
+                request=request,
+                status_code=500,
+                exception_type=type(exc).__name__,
+            )
+        raise
+
+    response.headers["X-Friink-Request-Id"] = request_id
+    if request.url.path == "/auth/refresh":
+        log_refresh_request_result(request=request, status_code=response.status_code)
+    return response
 
 
 @app.get("/")

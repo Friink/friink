@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T21:33:43Z
+**Last edited:** 2026-09-29T22:03:18Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -294,6 +294,14 @@ valid remembered session exists, the visitor remains on the public site. When
 one or more sessions validate, the client restores its most recently used
 account. Protected app routes remain authoritative before exposing private
 data or actions.
+
+Each API request receives an opaque `X-Friink-Request-Id` response header, which
+browser clients can read through CORS. Every refresh request emits a structured
+runtime outcome correlated by that ID, including deployment SHA, route, HTTP
+status, safe failure class, and booleans for selected-slot-header and expected
+refresh-cookie presence. The logs never include credentials, token hashes, raw
+slot values, or user identifiers. These diagnostics support investigation only;
+they do not change session decisions.
 
 **Implementation update (browser/staging verification pending):** the authenticated API sometimes indicates that
 session restoration may be attempted from `/auth/entry-status`; a positive
@@ -685,10 +693,16 @@ If the device is at capacity, a normal login may create an un-slotted session
 that is not remembered by the account switcher.
 
 Selecting a remembered account sends a switch request, validates the slot, and
-updates the shell in place. If switching fails, the current account remains
-active and a toast says, “Couldn’t switch accounts. Please try again.” Removing or
-logging out the active account selects the most-recent remaining valid account,
-or returns to the public site when none remain.
+updates the shell in place. The API validates the destination slot's device,
+user, active session, and lifecycle state. It reuses the destination slot's
+active, unexpired HttpOnly refresh cookie and issues only a new access token.
+If that cookie is absent, expired, rotated, revoked, or belongs to another
+session, the API repairs it only after locking and validating the destination
+session; it does not revoke other refresh families because another tab may be
+using one. If switching fails, the current account remains active and a toast
+says, “Couldn’t switch accounts. Please try again.” Removing or logging out
+the active account selects the most-recent remaining valid account, or returns
+to the public site when none remain.
 
 The account switcher header includes an accessible `Beta` badge. This is a
 disclosure that the account-switching experience is still being stabilized; it
@@ -889,8 +903,8 @@ findings open. These are bug records, not changes to active authentication
 rules:
 
 - [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): implemented locally with synchronized owner state, a serialized recovery action, and a **Continue here** action for waiting tabs. Multi-tab acceptance remains pending.
-- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): each successful switch currently creates a new destination refresh-token family. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
-- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): database audit rows do not capture every failed refresh or correlate a request with its slot-cookie context. The exact incident failure code remains unknown.
+- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): implemented locally; ordinary switches reuse the validated destination refresh cookie. Missing or unusable cookies use a locked, session-validated repair path. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
+- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted request-correlated refresh diagnostics are implemented locally. Staging runtime log access and retention still need verification; the historical incident's exact failure remains unknown.
 - [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
 
 The staging DB audit found `@muflahulfurqan`'s session active after the report;
@@ -1066,6 +1080,16 @@ logs.
 - [ ] Run automated and manual verification for all acceptance criteria.
 
 ## Changelog
+
+- 2026-09-29T22:03:18Z — Added per-request response correlation IDs and
+  structured, redacted runtime outcomes for refresh requests. Local endpoint
+  verification covers success and invalid-token failure; staging log access
+  and retention remain pending.
+
+- 2026-09-29T21:50:21Z — Account switching now reuses a validated active
+  destination refresh cookie and only repairs it after locking and validating
+  the destination session. Repeated-switch API regression coverage passes;
+  staging acceptance remains pending.
 
 - 2026-09-26T13:07:02Z — The account limit now controls additions independently
   from switching: when lowered to one, existing multiple remembered accounts

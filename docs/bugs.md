@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Active triage plan
-**Last edited:** 2026-09-29T21:33:43Z
+**Last edited:** 2026-09-29T22:03:18Z
 
 ## Instructions for agents
 
@@ -51,8 +51,8 @@ acceptance is separate from a local implementation or code review.
 | [BUG-AUTH-006](#bug-auth-006--refresh-grace-replay-forks-token-family) | Confirmed API defect; deterministic retry fix exists locally, but staging deployment/acceptance is pending. | Deploy the fix with the API build recorded; test concurrent, same-operation, different-operation, lost-response, and stale-after-grace paths. | Staging proves one active child per family for retries, while unrelated stale reuse still revokes the family; record build and row/event evidence. |
 | [BUG-AUTH-008](#bug-auth-008--account-switching-can-race-across-open-tabs) | Still actionable by report: the switcher became disabled after switching with several tabs. Cross-tab lock patch exists, but the failure state and current-build reproduction are not captured. | Reproduce on the identified staging build; capture each tab's selected slot/busy state and switch request status/duration. Distinguish a pending request from stale UI or recovery overlay before patching. | Repeat switches succeed and controls recover after success, failure, and timeout in multiple tabs; capture the feed-load HTTP status separately or split that symptom into its own bug. If absent on current build, record the same scenario and close as not reproduced. |
 | [BUG-AUTH-009](#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative) | The code-level failure and user-reported Close issue are addressed locally; staging ownership behavior still needs acceptance. | Verify notice synchronization, takeover from the waiting screen, serialized recovery against account switching/logout, and the modal close busy state in multiple tabs. | Owner and waiter states, Close/X, account selection, and Add account each complete once and converge across tabs; no enabled action is inert. |
-| [BUG-AUTH-010](#bug-auth-010--account-switches-accumulate-active-refresh-token-families) | Confirmed code and staging-data behavior: successful switches accumulate active refresh-token families. It is not proven to have caused session loss. | Approve and implement the destination-cookie/family behavior in the entry: reuse the validated destination refresh credential or use a serialized, session-validated repair path. Do not bulk-revoke existing families before in-flight and rollback behavior is understood. | Repeated switches do not add families; missing/stale destination cookie and concurrent refresh remain recoverable and slot-isolated; verify existing sessions and revocation still behave correctly. |
-| [BUG-AUTH-011](#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics) | Confirmed observability gap: DB records cannot explain every failed HTTP refresh; existing runtime warning lacks request/slot correlation. | Add redacted request-correlated API diagnostics and verify staging runtime log access/retention. | Representative success and failure requests correlate by request ID, route, deployment, slot-header/cookie-presence, and safe failure class, with no secrets logged. |
+| [BUG-AUTH-010](#bug-auth-010--account-switches-accumulate-active-refresh-token-families) | Fix implemented locally: switches reuse the validated destination refresh cookie; absent or unusable cookies use a locked, session-validated repair path. Existing families are not bulk-revoked. | Deploy/identify the API build; verify repeated switches, missing/stale cookies, concurrent refresh, slot isolation, and revocation. | Repeated switches do not add families; repair remains recoverable and slot-isolated; record staging build and database evidence. |
+| [BUG-AUTH-011](#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics) | Correlated, redacted request diagnostics are implemented locally and covered by endpoint tests. | Deploy/identify the API build; verify staging runtime log access and retention. | Representative success and failure requests correlate by response request ID, route, deployment, slot-header/cookie-presence, and safe failure class, with no secrets logged. |
 | [BUG-AUTH-007](#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app) | Fix implemented locally; current staging acceptance pending. | Deploy/identify the changed web build and exercise stale positive, zero, absent, and malformed hints with valid/invalid alternate accounts and terminal/transient failures. | Each case follows the documented in-app/public fallback with no loop; record build and observed route. |
 | [BUG-AUTH-005](#bug-auth-005--failed-account-switch-shows-sign-in-for-the-previous-account) | Fix implemented locally; staging acceptance pending. | Fail a target-account switch while the source remains valid; also test terminal target failure and transient failure. | Source stays active for a non-terminal target failure; any recovery action names the target, never the unrelated source. |
 | [BUG-AUTH-004](#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher) | Fix implemented locally; staging acceptance pending. | Restore a non-first remembered slot through normal and grace refresh branches, then inspect account-list order. | Restored account becomes first/current; failed refresh does not change recency; explicit switching still updates order. |
@@ -65,9 +65,9 @@ acceptance is separate from a local implementation or code review.
 1. Record the current staging web and API deployment SHAs and confirm the
    configured token lifetimes. Do not compare an incident to an unidentified
    build.
-2. Add and verify BUG-AUTH-011 diagnostics before relying on future auth
-   failures for root-cause evidence. Existing bugs can still be checked using
-   currently available browser and runtime data.
+2. Deploy BUG-AUTH-011 and confirm staging runtime log access/retention before
+   relying on future auth failures for root-cause evidence. Existing bugs can
+   still be checked using currently available browser and runtime data.
 3. Run the session stability group (BUG-AUTH-003 and BUG-AUTH-006), then the
    multi-tab switch/recovery group (BUG-AUTH-008 and BUG-AUTH-009). BUG-AUTH-009
    now has a local implementation awaiting the ownership acceptance matrix. Keep
@@ -313,16 +313,16 @@ token remains valid.
 
 ## BUG-AUTH-010 — Account switches accumulate active refresh-token families
 
-- **Status:** Diagnosed; API/cookie design and staging acceptance pending
-- **Reported/updated:** 2026-09-29T14:22:19Z
+- **Status:** Implemented locally; staging acceptance pending
+- **Reported/updated:** 2026-09-29T21:50:21Z
 - **Affected area:** Account-switch API and slot-scoped refresh cookies
 - **Environment:** Staging; remembered accounts switched repeatedly
 - **Severity:** medium
 
 ### Bug summary
 
-Each successful account switch currently creates a new refresh-token family for
-the destination session, while earlier families for that session remain active.
+Each successful account switch created a new refresh-token family for the
+destination session, while earlier families for that session remained active.
 
 ### Reproduction
 1. Sign in to two remembered accounts on one device.
@@ -338,37 +338,43 @@ repaired only after the device slot and session are validated.
 
 ### Actual behavior
 
-`POST /auth/accounts/switch` calls `issue_refresh_token()` without an existing
-family ID and sets the newly issued token as the destination slot cookie. The
-previous family is not revoked by the switch route. The staging database audit
-found 13 unrevoked, unexpired refresh-token families attached to
+Before the local fix, `POST /auth/accounts/switch` issued a new refresh token
+and overwrote the destination slot cookie on each switch. The previous family
+was not revoked by the switch route. The staging database audit found 13
+unrevoked, unexpired refresh-token families attached to
 `@muflahulfurqan`'s active slot session at the time of the audit.
 
 ### Root cause
-- **Confirmed:** The switch endpoint creates a fresh family on each successful
-  switch and does not revoke earlier families for that auth session. The
-  staging rows confirm multiple active families on one session.
+- **Confirmed:** The former switch endpoint created a fresh family on each
+  successful switch and did not revoke earlier families for that auth session.
+  The staging rows confirm multiple active families on one session.
 - **Open questions:** The rows do not prove that this accumulation caused the
   reported recovery screen. `@muflahulfurqan` remained active and was switched
-  to successfully after the incident. The appropriate handling of a missing
-  or stale destination cookie during concurrent switching still needs design.
+  to successfully after the incident. Staging must still verify the repair
+  path when a destination cookie is stale and refresh is concurrent.
 
 ### Proposed fix
 
-Prefer the destination slot's existing valid refresh cookie and make switching
-issue only the access credential. If a refresh cookie needs repair, use one
-validated, serialized recovery path. Do not revoke all existing families as a
-first step: account for in-flight requests and verify rollback behavior before
-cleaning up previously issued rows.
+The switch endpoint now locks and validates the destination auth session, then
+checks that the destination slot's HttpOnly refresh cookie belongs to the same
+user and session and is active and unexpired. It reuses that credential without
+issuing a refresh token. If the cookie is missing or unusable, it creates a
+replacement only after destination validation. Existing families are not
+bulk-revoked because other tabs may still be using them.
 
 ### Tests and verification
-- **Required:** Repeat switches in both directions and verify the active
-  family count does not grow per switch. Cover an absent cookie, stale cookie,
-  concurrent refresh, multiple tabs, and revocation of the account session.
-  Confirm cookies remain slot-scoped and a switch cannot authorize another
-  account.
-- **Completed:** Read-only code review and staging DB query confirmed family
-  accumulation; no API changes or tests have been run for this finding.
+- **Required:** On staging, repeat switches in both directions and verify the
+  active family count does not grow per switch. Cover an absent cookie, stale
+  cookie, concurrent refresh, multiple tabs, and revocation of the account
+  session. Confirm cookies remain slot-scoped and a switch cannot authorize
+  another account.
+- **Completed locally:** The API now reuses a validated destination refresh
+  cookie and only repairs it after locking and validating the destination
+  session. The focused account-switch API test passes, including repeated
+  switches, unchanged destination cookie, stable active-token count, and a
+  successful refresh response. The pytest process then reported its existing
+  Windows SQLite cleanup `PermissionError`; test cleanup did not complete
+  cleanly. Staging acceptance remains pending.
 
 ### Noteworthy
 
@@ -386,8 +392,8 @@ separate safe rollout decision.
 
 ## BUG-AUTH-011 — Refresh failures lack enough correlated diagnostics
 
-- **Status:** Open — staging API log trace required
-- **Reported/updated:** 2026-09-29T14:22:19Z
+- **Status:** Implemented locally; staging log access/retention verification pending
+- **Reported/updated:** 2026-09-29T22:03:18Z
 - **Affected area:** API auth-failure logging and session incident diagnosis
 - **Environment:** Staging and any environment where request-level auth traces are needed
 - **Severity:** medium
@@ -412,18 +418,18 @@ safe failure classification without exposing credentials.
 
 ### Actual behavior
 
-The database query for the 2026-09-29 incident showed no refresh-reuse event for
-either account. It could not reveal the failed HTTP status/code or which
-slot-scoped cookie was present. The API already emits `auth_failure_classified`
-warnings, but the incident's Vercel runtime logs were not available to this
-audit, and the current failure log lacks a request correlation ID and
-slot/cookie-presence context.
+At report time, the database query for the 2026-09-29 incident showed no
+refresh-reuse event for either account. It could not reveal the failed HTTP
+status/code or which slot-scoped cookie was present. The API already emitted
+`auth_failure_classified` warnings, but the incident's Vercel runtime logs were
+not available to this audit. Those prior failure logs lacked a request
+correlation ID and slot/cookie-presence context.
 
 ### Root cause
 - **Confirmed:** Database security events do not persist every HTTP refresh
-  failure or client request ID. Current API failure logs omit a request ID,
-  account-slot context, and whether the expected slot cookie was present. Raw
-  credential values must not be logged.
+  failure or client request ID. Before this fix, API failure logs omitted a
+  request ID, account-slot context, and whether the expected slot cookie was
+  present. Raw credential values must not be logged.
 - **Open questions:** The failure code and response from the reported request
   remain unknown until staging API runtime logs for the incident are retrieved.
   It is not yet established whether logging configuration or retention also
@@ -431,20 +437,28 @@ slot/cookie-presence context.
 
 ### Proposed fix
 
-Add structured, correlated API diagnostics for refresh/auth failures: request
-ID, deployment SHA, flow/route, failure code, slot-header presence, expected
-slot-cookie presence, and safe server-side token/session state. Keep diagnostics
-redacted and staging-first. Do not add raw JWTs, refresh tokens, cookies, token
-hashes, or unnecessary personal data. Prefer runtime logs unless a retention
-need justifies a narrowly scoped durable audit with an explicit retention rule.
+The API now generates an opaque request ID for each request, returns it in
+`X-Friink-Request-Id`, and exposes that response header through CORS. Every
+`POST /auth/refresh` request emits a structured runtime event with request ID,
+deployment SHA, route, HTTP status, safe failure class, slot-header presence,
+and expected slot-cookie presence. Recognized auth failures retain their
+existing explicit error code and now include the same correlation/context
+fields. No token, cookie, token hash, slot value, or user identifier is logged.
+Staging runtime access and retention still need verification; no durable audit
+record was added.
 
 ### Tests and verification
-- **Required:** Generate representative missing, invalid, expired, rotated,
-  revoked-session, and successful refresh requests in staging. Confirm each
-  request can be correlated across client/API logs and that no secret values
-  appear. Retrieve the exact 2026-09-29 time window if platform retention allows.
-- **Completed:** Read-only staging DB audit; it did not identify the failed
-  request. Current `auth_failure_classified` implementation reviewed.
+- **Required:** Verify representative missing, invalid, expired, rotated,
+  revoked-session, and successful refresh requests in staging. Confirm the
+  response request ID matches the runtime event and that no secret values
+  appear. Verify runtime log access and retention; retrieve the exact
+  2026-09-29 time window if platform retention allows.
+- **Completed locally:** Endpoint verification captured both a successful
+  refresh (`200`) and an invalid-token failure (`401`, `REFRESH_TOKEN_INVALID`).
+  Both response IDs matched their structured runtime events, including route,
+  deployment SHA, slot-header/cookie presence, and safe failure class. Tests
+  confirmed the slot value and invalid token were absent from the events.
+  Staging log access/retention remains unverified.
 
 ### Noteworthy
 

@@ -1,10 +1,16 @@
 import json
+import uuid
+from datetime import date
 
 from fastapi.testclient import TestClient
 
 from api.index import app
 from app.config import Settings, get_settings
+from app.db import get_session_factory
+from app.models.user import User
 from app.services import auth_debug
+from app.services.security import hash_password
+from sqlalchemy import delete
 
 
 def test_account_diagnostics_are_structured_and_secret_free(monkeypatch, caplog) -> None:
@@ -38,6 +44,78 @@ def test_token_diagnostics_do_not_emit_internal_identifiers(monkeypatch, caplog)
     for event in events[-2:]:
         assert not {"user_id", "token_id", "family_id"}.intersection(event)
         assert "raw-token" not in json.dumps(event)
+
+
+def test_refresh_requests_return_correlated_redacted_success_and_failure(monkeypatch, caplog) -> None:
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        _env_file=None,
+        JWT_SECRET_KEY="refresh-diagnostics-test-secret",
+        ENVIRONMENT="test",
+        FRONTEND_URL="http://localhost:3000",
+        LOGIN_RISK_OTP_ENABLED=False,
+    )
+    monkeypatch.setenv("VERCEL_GIT_COMMIT_SHA", "diagnostics-test-sha")
+    caplog.set_level("INFO", logger="friink.auth")
+    user_id = uuid.uuid4()
+    email = f"refresh-diagnostics-{uuid.uuid4().hex}@example.com"
+    username = f"refresh_diag_{uuid.uuid4().hex[:12]}"
+    password = "Strong1!pass"
+    with get_session_factory()() as session:
+        session.add(
+            User(
+                id=user_id,
+                email=email,
+                username=username,
+                username_key=username.casefold(),
+                password_hash=hash_password(password),
+                date_of_birth=date(1990, 1, 1),
+                is_verified=True,
+            )
+        )
+        session.commit()
+
+    try:
+        client = TestClient(app)
+        login = client.post("/auth/login", json={"identifier": email, "password": password})
+        assert login.status_code == 200, login.text
+        slot = login.json()["account_slot"]
+
+        refreshed = client.post("/auth/refresh", headers={"X-Friink-Account-Slot": slot})
+        assert refreshed.status_code == 200, refreshed.text
+        success_request_id = refreshed.headers.get("X-Friink-Request-Id")
+        assert success_request_id
+
+        invalid_token = "diagnostic-only-invalid-refresh-token"
+        client.cookies.set(f"friink_refresh_{slot}", invalid_token)
+        failed = client.post("/auth/refresh", headers={"X-Friink-Account-Slot": slot})
+        assert failed.status_code == 401, failed.text
+        assert failed.json()["detail"]["code"] == "REFRESH_TOKEN_INVALID"
+        failure_request_id = failed.headers.get("X-Friink-Request-Id")
+        assert failure_request_id
+
+        events = [
+            json.loads(record.message)
+            for record in caplog.records
+            if record.name == "friink.auth" and '"event": "auth_refresh_request"' in record.message
+        ]
+        success = next(event for event in events if event["request_id"] == success_request_id)
+        failure = next(event for event in events if event["request_id"] == failure_request_id)
+        assert success["status_code"] == 200
+        assert success["failure_class"] == "success"
+        assert success["slot_header_present"] is True
+        assert success["expected_slot_cookie_present"] is True
+        assert failure["status_code"] == 401
+        assert failure["failure_class"] == "REFRESH_TOKEN_INVALID"
+        assert failure["deployment_sha"] == "diagnostics-test-sha"
+        assert failure["slot_header_present"] is True
+        assert failure["expected_slot_cookie_present"] is True
+        assert slot not in json.dumps(events)
+        assert invalid_token not in json.dumps(events)
+    finally:
+        with get_session_factory()() as session:
+            session.execute(delete(User).where(User.id == user_id))
+            session.commit()
+        app.dependency_overrides.clear()
 
 
 def test_auth_diagnostics_endpoint_requires_token_and_reports_effective_flags() -> None:
