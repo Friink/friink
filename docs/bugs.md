@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Active triage plan
-**Last edited:** 2026-09-29T22:29:32Z
+**Last edited:** 2026-09-29T22:41:14Z
 
 ## Instructions for agents
 
@@ -59,6 +59,7 @@ acceptance is separate from a local implementation or code review.
 | [BUG-AUTH-002](#bug-auth-002--public-landing-blocks-while-checking-for-a-session) | Current code appears to render public content immediately and probe in the background; report may already be fixed. Staging/production-equivalent acceptance is pending. | Verify no-session public entry and valid/invalid remembered-session behavior on current staging build, including network failure. | Public page is never blocked by session probing; protected routes still restore/reject correctly. If already true, close as superseded by the recorded guard change. |
 | [BUG-NAV-001](#bug-nav-001--route-changes-remount-the-app-shell-and-may-discard-in-progress-work) | Historical report; provider mitigates many route-state losses and restoration flash. No specific remaining lost operation has been confirmed. | Later, reproduce a specific in-app route transition and named user operation; inspect state and completion feedback. Keep tab closure separate. | If no user-visible loss or flash reproduces, close as superseded with tested build/routes. Otherwise narrow to the operation that fails. |
 | [BUG-OPS-001](#bug-ops-001--closing-a-tab-can-leave-an-in-flight-operations-outcome-unknown) | Newly recorded from user clarification: closing the initiating tab may end the request or leave its server outcome unknown to the user; no cross-tab result recovery has been verified. | Later, reproduce a mutation with tab closure before send, during processing, and after server commit but before response. Identify operation-specific idempotency and result-recovery behavior. | On reopening another tab, the user can determine whether the operation committed and retry safely without duplicating it; document which operation classes are covered. |
+| [BUG-LOAD-001](#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads) | Newly reported; code confirms overlapping reads and missing general retries, but no request evidence ties them to the multi-tab failure. | Reproduce with several tabs; capture failed Home/profile request URLs, statuses, response bodies, timings, and deployed SHAs. | Reproduction identifies affected endpoints and failure response; transient failures have a clear recovery path and multi-tab load succeeds on current staging build. |
 | [BUG-CHAT-002](#bug-chat-002--new-chat-people-search-reports-unavailable-on-staging) | Stale report: screenshot confirms the error at report time, but current endpoint/build has not been rechecked. | Reproduce `/chats/new` on current staging and capture the people-search status/body and API runtime error for both a match and no-match query. | Search returns eligible matches, empty results, and retryable errors as specified without loosening privacy/eligibility. If no longer reproducible, close with build/query/result evidence. |
 
 ### Execution order
@@ -79,7 +80,8 @@ acceptance is separate from a local implementation or code review.
    result; a pass for one does not close the others.
 5. Reproduce or close BUG-NAV-001, then investigate BUG-OPS-001's tab-close
    outcome and recovery behavior separately from in-app navigation. Reproduce
-   or close BUG-CHAT-002 against the current build. Patch only verified gaps.
+   BUG-LOAD-001 with request evidence, then reproduce or close BUG-CHAT-002
+   against the current build. Patch only verified gaps.
 
 ### Closure record
 
@@ -1577,3 +1579,82 @@ been recorded.
 - [`NewChatScreen`](../web/components/new-chat-screen.tsx)
 - [`GET /chat/people`](../api/app/routers/chat.py)
 - [`searchChatPeople`](../web/lib/auth.ts)
+
+## BUG-LOAD-001 — Multiple tabs can intermittently fail Home and profile loads
+
+- **Status:** Needs reproduction — multi-tab symptom reported; failing request and cause are unknown
+- **Reported/updated:** 2026-09-29T22:41:14Z
+- **Affected area:** Home feed and profile bootstrap/content requests
+- **Environment:** Web; browser, deployment, and number of tabs not yet recorded
+- **Severity:** medium
+
+### Bug summary
+
+With Friink open in multiple tabs, some tabs intermittently show “Could not
+load the Home feed.” The user reports similar failures on profiles, so the
+issue may affect shared or concurrent data-loading paths.
+
+### Reproduction
+
+1. Open the app in multiple tabs in the same browser profile.
+2. Load Home in some tabs and profile pages in others.
+3. Record which pages fail and capture each failed request's URL, status,
+   response body, and timing from the browser Network panel.
+
+### Expected behavior
+
+Home and profile data should load across open tabs. If a request fails
+transiently, the page should expose a recovery action and retry successfully.
+
+### Actual behavior
+
+Some Home tabs display “Could not load the Home feed.” Similar failures are
+reported for profile pages. No exact failed request, response, browser, or
+deployed build has been captured.
+
+### Root cause
+
+- **Confirmed in current web code:** Each AppShell mount starts a global posts
+  prefetch, including on profile routes. HomeScreen starts its own initial feed
+  request, so Home may issue overlapping reads. Profile identity, tab content,
+  and follower/following statistics requests are launched independently after
+  authentication. The API client automatically retries only once after a
+  `401 TOKEN_EXPIRED`; it does not generally retry network, timeout, or server
+  failures. A Home initial-load failure shows text without a retry control, and
+  its polling path does not retry while the feed is empty.
+- **Open questions:** The failing endpoint and status, whether concurrent tabs
+  trigger rate limiting or another server-side condition, and whether failures
+  correlate with request volume are unknown. The confirmed request fanout is
+  not evidence that it caused this report.
+
+### Proposed fix
+
+Use captured request evidence to identify the failing layer. Then address
+unnecessary duplicate requests or endpoint capacity if confirmed, and provide
+an explicit retry path for initial feed and profile failures. Preserve
+authentication and authorization behavior.
+
+### Tests and verification
+
+- **Required:** Reproduce on a build with recorded web/API SHAs; capture the
+  failed request and response; repeat single-tab and multi-tab Home/profile
+  loads; verify recoverable failures can be retried and successful loads render
+  correctly.
+- **Completed:** Code-path review only. No staging reproduction or request
+  status/body evidence yet; no tests run.
+
+### Noteworthy
+
+The frontend launches several reads independently; there is no guaranteed
+serial order among Home feed or profile data requests after authentication.
+Authentication/session restoration may precede private data loading when no
+in-memory session is available. The exact cause remains unconfirmed.
+
+### Related documentation and implementation
+
+- [Feed unit](units/feed.md)
+- [Profiles unit](units/profiles.md)
+- [`AppShell`](../web/components/app-shell.tsx)
+- [`HomeScreen`](../web/components/home-screen.tsx)
+- [`ProfileClient`](../web/app/[username]/profile-client.tsx)
+- [`requestApi`](../web/lib/auth.ts)

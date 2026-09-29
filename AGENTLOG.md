@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-29T22:41:14Z — Record Multi-Tab Home And Profile Load Bug
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain page loading order and retry behavior for reported
+  intermittent Home feed and profile failures across multiple tabs; record the
+  newly reported bug for later investigation.
+- Changes Made: Added BUG-LOAD-001 with confirmed request-fanout and retry
+  observations while keeping its cause open pending captured request evidence.
+  Updated Feed and Profiles unit docs with the current loading/retry behavior.
+  No application behavior changed.
+- Files: `docs/bugs.md`, `docs/units/feed.md`, `docs/units/profiles.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Reviewed documented behavior against current web
+  request paths. Documentation link/syntax check and `git diff --check`
+  pending; no tests run.
+
 # 2026-09-29T22:29:32Z — Record Navigation And Closed-Tab Operation Bugs
 
 - Agent: Codex

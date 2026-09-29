@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-22T23:41:02Z
+**Last edited:** 2026-09-29T22:41:14Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -71,6 +71,14 @@ without forcing a synchronous render from an effect.
 Feed responses are currently returned through the posts API (`FeedPageResponse`)
 and consumed by `home-screen.tsx`, `feed-post.tsx`, and profile screens. Cursor
 pagination and update endpoints remain server-authoritative.
+
+On Home, the shell's posts prefetch and the screen's initial feed request run
+independently and may overlap. The generic API client retries once only when
+authentication refreshes after `401 TOKEN_EXPIRED`; other failures are not
+automatically retried. An initial Home load failure currently displays an
+error without a retry control, and empty-feed polling does not retry that
+failure. This implementation gap and a reported multi-tab load failure are
+tracked in [BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads).
 
 ## Acceptance criteria
 

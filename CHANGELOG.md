@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-29T22:41:14Z
+- [feed/profiles] Recorded BUG-LOAD-001 for intermittent Home and profile
+  loading failures reported with multiple tabs. Documented the observed
+  request fanout and retry behavior; root cause remains unconfirmed pending
+  request status/body and current-build reproduction. No application behavior
+  changed and no tests run.
+
 ## 2026-09-29T22:29:32Z
 - [docs/navigation] Clarified BUG-NAV-001 as an unconfirmed in-app route-state
   concern and added BUG-OPS-001 for uncertain mutation outcomes after the

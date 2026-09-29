@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-23T22:00:31Z
+**Last edited:** 2026-09-29T22:41:14Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -113,6 +113,14 @@ email. The user API contracts are `GET/POST /professional-registration`,
 Web implementation is centered in `ProfileScreen`, `ProfileCard`, and dynamic
 `web/app/[username]` routes. Public-user resolution is API-backed. Profile
 picture upload uses the shared media contract.
+
+After authentication is available, profile identity, selected-tab content,
+and follower/following statistics load through independent requests; they do
+not have a guaranteed serial order. The API client only automatically retries
+once after an expired-token refresh, not general network or server failures.
+Initial profile-data failures currently resolve to unavailable or empty states
+without a general retry action. Multi-tab Home/profile failures are tracked in
+[BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads).
 
 ## Acceptance criteria
 
