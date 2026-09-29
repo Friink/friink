@@ -7,7 +7,7 @@ requirements to refine.
 
 **Status:** Partial  
 **Tier:** Full  
-**Last edited:** 2026-09-29T14:22:19Z
+**Last edited:** 2026-09-29T21:33:43Z
 **Platforms:** Web, API, and future clients  
 **Canonical sources:** This draft; active subsystem behavior remains owned by the relevant unit documents.
 
@@ -211,9 +211,10 @@ Agreed copy and behavior by error:
    neutral copy: “Your session has ended. Choose how you’d like to continue.”
    List available remembered accounts, when any exist. Selecting one validates
    that account before switching. **Add account** opens the existing login and
-   signup flow. **Cancel** and the close button attempt remembered accounts in
+   signup flow. **Close** and the close icon attempt remembered accounts in
    most-recent-use order; if none can be restored, return to the public site
-   with the redirect hint set to zero. Clicking outside does not close the
+   with the redirect hint set to zero. A waiting tab offers **Continue here**
+   to take over recovery through the shared account-operation lock. Clicking outside does not close the
    modal. Lifecycle reactivation and deletion cancellation remain governed by
    Account Lifecycle.
 
@@ -221,7 +222,7 @@ Agreed copy and behavior by error:
 
 - **Confirmed terminal result:** The shared session-ended modal lists
   available remembered accounts. The user can select one, add an account, or
-  use Cancel/close to try remembered accounts in most-recent-use order. If no
+  use Close or the close icon to try remembered accounts in most-recent-use order. If no
   account can be restored, return to the public site with the redirect hint
   set to zero. Restoring another session opens Home because the original route
   may not be accessible to that account.
@@ -231,7 +232,7 @@ Agreed copy and behavior by error:
   the public site if none is available. Other clients lose access to that
   account's sessions; when they next enter the app, show the shared
   session-ended modal, then let them choose another valid remembered session,
-  add an account, or use Cancel/close to restore a fallback or return public.
+  add an account, or use Close or the close icon to restore a fallback or return public.
   Do not send the user to ordinary login for the
   deactivated/deletion-pending account; its lifecycle-owned reactivation or
   deletion-cancellation flow applies if the person later chooses to sign in.
@@ -277,9 +278,10 @@ acceptance remains pending.
   surface.
 - On a confirmed failure, the shared **Session ended** modal shows neutral
   copy and any available remembered accounts. Selecting an account validates
-  and switches to it; **Add account** opens login/signup. **Cancel** and close
+  and switches to it; **Add account** opens login/signup. **Close** and the close icon
   try remembered accounts by recency, then return public with redirect hint
-  zero if none can be restored. Successful account switching opens Home.
+  zero if none can be restored. Waiting tabs offer **Continue here**. Successful
+  account switching opens Home.
 
 **Alternate paths:**
 
@@ -288,8 +290,9 @@ acceptance remains pending.
   offered.
 - Confirmed expiry, remote logout, security revocation, deactivation, and
   pending deletion share the neutral **Session ended** modal. It lists
-  available remembered accounts, offers **Add account**, and uses Cancel/close
-  for remembered-account fallback or public-site return; clicking outside
+  available remembered accounts, offers **Add account**, and uses the Close
+  button or close icon for remembered-account fallback or public-site return;
+  clicking outside
   does not close it.
 - Deactivation or pending deletion uses the Account Lifecycle recovery path
   where sign-in requires reactivation or deletion cancellation.
@@ -302,7 +305,7 @@ acceptance remains pending.
   ambiguous.
 - Do not change session validity, token refresh, or lifecycle state through
   presentation-only logic.
-- Cancel and the close button have identical effects. Clicking outside does
+- Close and the close icon have identical effects. Clicking outside does
   not dismiss the modal. Focus behavior follows the shared design-system
   dialog contract.
 
@@ -332,7 +335,7 @@ These are proposed requirements, not active rules in `docs/rules.md`.
   not a fallback candidate.
 - **EH-REQ-007 — Choose fallback by failure context:** All confirmed terminal
   sessions use one neutral modal with available remembered-account choices and
-  Add account. Selecting a remembered account validates it; Cancel/close try
+  Add account. Selecting a remembered account validates it; Close or the close icon try
   accounts by recency, then return to the public site with redirect hint zero
   if none restores. Deactivation or pending deletion still logs the account
   out on the initiating client and does not route directly to ordinary login
@@ -430,13 +433,13 @@ browser acceptance is completed.
   termination until the server responds.
 - [ ] **EH-AC-009** Confirmed terminal causes share a neutral **Session ended**
   modal with available remembered-account rows, **Add account**, and equivalent
-  Cancel/close fallback behavior; clicking outside does not dismiss it.
+  Close or the close icon fallback behavior; clicking outside does not dismiss it.
 - [ ] **EH-AC-010** A remembered session is restorable only while its refresh
   token is present, unexpired, and accepted with the associated session/account
   state by the API.
 - [ ] **EH-AC-011** All confirmed terminal failures use the shared recovery
   modal. Deactivation/pending deletion still logs out the initiating client;
-  Cancel/close validate remembered accounts by recency and return public with
+  Close or the close icon validate remembered accounts by recency and return public with
   redirect hint zero if none can be restored. Switching accounts opens Home.
 - [ ] **EH-AC-012** Session-error recovery is consistent across the public
   root, app-shell, profile, post, username-chat, and login entry points while
@@ -455,9 +458,9 @@ Refer to [`testing.md`](../testing.md) for shared testing standards.
   every 30 seconds without overlap, and success resumes the app.
 - [ ] Each confirmed terminal cause shows the same neutral **Session ended**
   modal, with zero or more available remembered-account rows, **Add account**,
-  and Cancel/close fallback; backdrop clicks do not dismiss it.
+  and Close or the close icon fallback; backdrop clicks do not dismiss it.
 - [ ] Selecting a remembered account validates it before switching; Add
-  account reuses login/signup; Cancel/close try accounts by recency, then
+  account reuses login/signup; Close or the close icon try accounts by recency, then
   return to the public site with redirect hint zero if none can be restored.
   Switching accounts opens Home.
 - [ ] Ambiguous failures remain retryable and do not clear or switch identity.
@@ -467,7 +470,7 @@ Refer to [`testing.md`](../testing.md) for shared testing standards.
   and associated session/account state are accepted by the API.
 - [ ] Deactivated and pending-deletion accounts preserve their lifecycle
   handling while using the shared neutral terminal modal.
-- [ ] Modal keyboard, focus, Cancel/close equivalence, backdrop behavior, and
+- [ ] Modal keyboard, focus, Close or the close icon equivalence, backdrop behavior, and
   background privacy are verified.
 - [ ] API/status/restore request counts are checked for duplicate calls.
 - [ ] Public-site, web-app, and mobile-app errors do not escape into another
@@ -494,11 +497,12 @@ Refer to [`testing.md`](../testing.md) for shared testing standards.
 - The hint-zero terminal handoff is implemented locally; browser/staging
   acceptance is pending. The original implementation/rule conflict remains
   recorded in [the migration conflict register](../archives/migration.md).
-- Multi-tab terminal recovery can show stale owner controls: Close may silently
-  no-op after lease ownership moves, and the waiting view has no acknowledge
-  action. Track this in [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative);
-  browser/staging ownership acceptance is required before treating the handoff
-  contract as verified.
+- Multi-tab terminal recovery now synchronizes owner changes and offers
+  **Continue here** from the waiting view; recovery actions share the account
+  operation lock. The local implementation for
+  [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative)
+  still needs browser/staging acceptance with multiple tabs and backgrounded
+  owners. The bug register records its closure evidence and related auth work.
 
 #### Open questions
 
@@ -747,7 +751,7 @@ cookies, token hashes, or unnecessary personal data.
 | EH-AC-007 | Templates preserve originating product surface | Public/web/mobile surface matrix | Planned |
 | EH-AC-008 | Background recovery and Take me back behavior | Recovery success/failure and remembered-session browser matrix | Implemented locally; acceptance pending |
 | EH-AC-013 | Network recovery page, background retry, and manual refresh | Offline/online browser and request-overlap matrix | Implemented locally; acceptance pending |
-| EH-AC-009 | Neutral Session ended modal with account options and equivalent Cancel/close fallback | Expiry/termination/security/lifecycle browser matrix | Implemented locally; acceptance pending |
+| EH-AC-009 | Neutral Session ended modal with account options and equivalent Close or the close icon fallback | Expiry/termination/security/lifecycle browser matrix | Implemented locally; acceptance pending |
 | EH-AC-010 | Fallback session is API-validated | Refresh-cookie and account-slot recovery matrix | Implemented locally; acceptance pending |
 | EH-AC-011 | Fallback destination follows failure context | Session and lifecycle destination matrix | Implemented locally; acceptance pending |
 | EH-AC-014 | Hint-zero terminal failure hands off to shared in-app recovery when another remembered session may exist | Public-root tests for valid selected slot, terminal selected slot plus valid alternate, no valid candidates, ambiguous failure, and multi-tab ownership | Implemented locally — browser/staging acceptance pending |
@@ -757,9 +761,9 @@ cookies, token hashes, or unnecessary personal data.
 | Area | Scenario | Expected result | Verification |
 |---|---|---|---|
 | UX | Technical session recovery | In-app page runs recovery without controls, then offers Take me back if unresolved | Browser |
-| UX | Confirmed terminal session | Neutral copy, available account rows, Add account, Cancel/close fallback; backdrop does not dismiss | Browser |
+| UX | Confirmed terminal session | Neutral copy, available account rows, Add account, Close or the close icon fallback; backdrop does not dismiss | Browser |
 | UX | Deactivation or pending deletion | Lifecycle behavior remains correct under shared neutral copy; backdrop does not dismiss | Browser |
-| Fallback | Confirmed terminal session | Select or add an account; Cancel/close validate by recency, then return public with hint zero | Browser/API |
+| Fallback | Confirmed terminal session | Select or add an account; Close or the close icon validate by recency, then return public with hint zero | Browser/API |
 | Lifecycle | Deactivation/pending deletion on initiating client | Log out immediately; switch to another valid session or go public | Browser/API |
 | Lifecycle | Deactivation/pending deletion observed on another client | Explain cause, acknowledge, then switch to another valid session or go public | Browser/API |
 | Routing | Recovery from public root, profile, post, username chat, login, and app-shell routes | Same cause classification and fallback policy without leaving originating surface | Browser |
@@ -869,5 +873,5 @@ project-wide history. This section records requirements added to this unit.
   network problem before one has been identified.
 - 2026-09-27T23:52:30Z — Replaced cause-specific terminal dialogs with one
   neutral **Session ended** modal, available remembered-account rows, Add
-  account, and Cancel/close fallback. Updated active recovery requirements;
+  account, and Close or the close icon fallback. Updated active recovery requirements;
   staging acceptance remains pending.

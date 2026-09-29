@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-28T00:00:36Z
+**Last edited:** 2026-09-29T21:33:43Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -251,10 +251,13 @@ The exact widths, heights, breakpoints, and token names are defined in
   continue.” Show available remembered accounts in most-recent order, each
   with a safe avatar and username. Selecting an account validates only that
   slot, and progress identifies the account currently being restored.
-- **Add account** opens the existing login/signup modal. **Cancel** and the
-  close button try remembered accounts in most-recent-use order, then return to
+- **Add account** opens the existing login/signup modal. **Close** and the
+  close icon try remembered accounts in most-recent-use order, then return to
   the public site if none can be restored. The shared modal can show no
-  account rows when no other remembered account is available.
+  account rows when no other remembered account is available. When another tab
+  owns recovery, the waiting screen offers **Continue here** so the user can
+  take over from the current tab. Recovery controls stay disabled while a
+  restore or fallback is already running.
 - Network failures retain the full-page connection state and **Refresh**
   action. Do not show terminal account choices or claim the account has ended
   while session validation is unavailable.

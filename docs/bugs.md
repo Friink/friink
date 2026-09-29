@@ -1,7 +1,7 @@
 # Friink bug register
 
-**Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-29T14:22:19Z
+**Status:** Active triage plan
+**Last edited:** 2026-09-29T21:33:43Z
 
 ## Instructions for agents
 
@@ -22,9 +22,71 @@ Every entry must include:
 - Anything noteworthy, related documentation, and linked implementation work.
 
 Use UTC timestamps with seconds and a `Z` suffix. Prefer these statuses:
-`Open`, `Diagnosed`, `In progress`, `Blocked`, `Resolved`, and `Closed`.
+`Open`, `Needs reproduction`, `Diagnosed`, `In progress`, `Blocked`,
+`Resolved`, and `Closed`.
 Keep proposed fixes here until implementation is actually made; then update the
 entry with the shipped change and verification result.
+
+## Current validity and closure plan
+
+A report is not automatically a patch request. Before implementing an open
+item, check whether its symptom still exists on the current staging web/API
+build. Record the deployed SHAs, reproduction steps, outcome, and relevant
+request/response evidence. If it no longer reproduces, close it as
+**Not reproduced on [build]** or **Superseded by [change]**, and record what
+was checked. Do not leave a stale bug open just because its original report
+exists, and do not infer a fix from one successful happy-path test.
+
+For a partial reproduction, split out any distinct remaining symptom rather
+than silently broadening the old issue. For an inconclusive run, keep the bug
+open as **Needs reproduction** and state the missing evidence. An item is
+closed only when its individual closure evidence below is recorded; staging
+acceptance is separate from a local implementation or code review.
+
+### Open and awaiting-acceptance items
+
+| ID | Current validity assessment | Next work | Closure evidence |
+|---|---|---|---|
+| [BUG-AUTH-003](#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session) | Still actionable: historical reuse revocations are confirmed; the exact browser trigger is unknown. User reports short-term stability at a 5-minute access lifetime, but the 1-day refresh lifetime and full multi-tab/reload case are not validated. | Confirm deployed API/web SHAs and the 1-day refresh setting; run the reload, concurrent-tab, interrupted-response, and account-fallback matrix. Use BUG-AUTH-011 diagnostics if the failure recurs. | All matrix cases pass on the recorded staging build and the user-reported 1-day check is recorded. If the original symptom does not reproduce across that matrix, close as not reproduced on that build while retaining the historical reuse evidence and unknown trigger. |
+| [BUG-AUTH-006](#bug-auth-006--refresh-grace-replay-forks-token-family) | Confirmed API defect; deterministic retry fix exists locally, but staging deployment/acceptance is pending. | Deploy the fix with the API build recorded; test concurrent, same-operation, different-operation, lost-response, and stale-after-grace paths. | Staging proves one active child per family for retries, while unrelated stale reuse still revokes the family; record build and row/event evidence. |
+| [BUG-AUTH-008](#bug-auth-008--account-switching-can-race-across-open-tabs) | Still actionable by report: the switcher became disabled after switching with several tabs. Cross-tab lock patch exists, but the failure state and current-build reproduction are not captured. | Reproduce on the identified staging build; capture each tab's selected slot/busy state and switch request status/duration. Distinguish a pending request from stale UI or recovery overlay before patching. | Repeat switches succeed and controls recover after success, failure, and timeout in multiple tabs; capture the feed-load HTTP status separately or split that symptom into its own bug. If absent on current build, record the same scenario and close as not reproduced. |
+| [BUG-AUTH-009](#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative) | The code-level failure and user-reported Close issue are addressed locally; staging ownership behavior still needs acceptance. | Verify notice synchronization, takeover from the waiting screen, serialized recovery against account switching/logout, and the modal close busy state in multiple tabs. | Owner and waiter states, Close/X, account selection, and Add account each complete once and converge across tabs; no enabled action is inert. |
+| [BUG-AUTH-010](#bug-auth-010--account-switches-accumulate-active-refresh-token-families) | Confirmed code and staging-data behavior: successful switches accumulate active refresh-token families. It is not proven to have caused session loss. | Approve and implement the destination-cookie/family behavior in the entry: reuse the validated destination refresh credential or use a serialized, session-validated repair path. Do not bulk-revoke existing families before in-flight and rollback behavior is understood. | Repeated switches do not add families; missing/stale destination cookie and concurrent refresh remain recoverable and slot-isolated; verify existing sessions and revocation still behave correctly. |
+| [BUG-AUTH-011](#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics) | Confirmed observability gap: DB records cannot explain every failed HTTP refresh; existing runtime warning lacks request/slot correlation. | Add redacted request-correlated API diagnostics and verify staging runtime log access/retention. | Representative success and failure requests correlate by request ID, route, deployment, slot-header/cookie-presence, and safe failure class, with no secrets logged. |
+| [BUG-AUTH-007](#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app) | Fix implemented locally; current staging acceptance pending. | Deploy/identify the changed web build and exercise stale positive, zero, absent, and malformed hints with valid/invalid alternate accounts and terminal/transient failures. | Each case follows the documented in-app/public fallback with no loop; record build and observed route. |
+| [BUG-AUTH-005](#bug-auth-005--failed-account-switch-shows-sign-in-for-the-previous-account) | Fix implemented locally; staging acceptance pending. | Fail a target-account switch while the source remains valid; also test terminal target failure and transient failure. | Source stays active for a non-terminal target failure; any recovery action names the target, never the unrelated source. |
+| [BUG-AUTH-004](#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher) | Fix implemented locally; staging acceptance pending. | Restore a non-first remembered slot through normal and grace refresh branches, then inspect account-list order. | Restored account becomes first/current; failed refresh does not change recency; explicit switching still updates order. |
+| [BUG-AUTH-002](#bug-auth-002--public-landing-blocks-while-checking-for-a-session) | Current code appears to render public content immediately and probe in the background; report may already be fixed. Staging/production-equivalent acceptance is pending. | Verify no-session public entry and valid/invalid remembered-session behavior on current staging build, including network failure. | Public page is never blocked by session probing; protected routes still restore/reject correctly. If already true, close as superseded by the recorded guard change. |
+| [BUG-NAV-001](#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work) | May be partly superseded: a root shell-state provider now retains many states across route remounts. Whether the restoration flash or any user-visible lost operation remains is unknown. | Reproduce representative app navigation and inspect the current URL transition, shell state, drafts, pending sends, and async mutation feedback. Keep full reload separate. | If no reported loss/flash remains, close with tested routes/build and the provider change. Otherwise narrow the bug to the state/operation that still fails and patch that contract. |
+| [BUG-CHAT-002](#bug-chat-002--new-chat-people-search-reports-unavailable-on-staging) | Stale report: screenshot confirms the error at report time, but current endpoint/build has not been rechecked. | Reproduce `/chats/new` on current staging and capture the people-search status/body and API runtime error for both a match and no-match query. | Search returns eligible matches, empty results, and retryable errors as specified without loosening privacy/eligibility. If no longer reproducible, close with build/query/result evidence. |
+
+### Execution order
+
+1. Record the current staging web and API deployment SHAs and confirm the
+   configured token lifetimes. Do not compare an incident to an unidentified
+   build.
+2. Add and verify BUG-AUTH-011 diagnostics before relying on future auth
+   failures for root-cause evidence. Existing bugs can still be checked using
+   currently available browser and runtime data.
+3. Run the session stability group (BUG-AUTH-003 and BUG-AUTH-006), then the
+   multi-tab switch/recovery group (BUG-AUTH-008 and BUG-AUTH-009). BUG-AUTH-009
+   now has a local implementation awaiting the ownership acceptance matrix. Keep
+   BUG-AUTH-010's family-count check separate from causal claims about session
+   loss.
+4. Complete staging acceptance for the already implemented route/switch fixes
+   (BUG-AUTH-002, 004, 005, and 007). Close each independently with its own
+   result; a pass for one does not close the others.
+5. Reproduce or close the navigation and chat reports (BUG-NAV-001 and
+   BUG-CHAT-002) against the current build. Patch only symptoms that remain.
+
+### Closure record
+
+For each closure, add a dated result under that bug's **Tests and
+verification**: disposition (`fixed`, `not reproduced`, or `superseded`), exact
+build/environment, steps, observed result, and any linked request or test
+evidence. Preserve the original report and diagnosis for history. An item that
+still needs a missing log, build identity, or user reproduction stays open;
+do not label it resolved based only on an inferred cause or a local patch.
 
 ## Entry template
 
@@ -33,7 +95,7 @@ Copy this template for a new defect and replace every placeholder:
 ```markdown
 ## BUG-[AREA]-[NUMBER] — [Short title]
 
-- **Status:** Open | Diagnosed | In progress | Blocked | Resolved | Closed
+- **Status:** Open | Needs reproduction | Diagnosed | In progress | Blocked | Resolved | Closed
 - **Reported/updated:** YYYY-MM-DDTHH:mm:ssZ
 - **Affected area:** [Product area and routes/components]
 - **Environment:** [development | staging | production | all; browser/device if relevant]
@@ -159,8 +221,8 @@ failure is tracked as an open diagnosis and is not claimed as fixed here.
 
 ## BUG-AUTH-009 — Session-ended recovery ownership can leave Close inoperative
 
-- **Status:** Diagnosed at code level; staging ownership sequence not captured
-- **Reported/updated:** 2026-09-29T14:22:19Z
+- **Status:** Fix implemented locally; multi-tab acceptance pending
+- **Reported/updated:** 2026-09-29T21:33:43Z
 - **Affected area:** Web session recovery notice, acknowledgement, and fallback across tabs
 - **Environment:** Staging; multiple tabs in one browser profile
 - **Severity:** high
@@ -212,20 +274,35 @@ acquire recovery safely or route to the active recovery operation, and avoid a
 silent no-op. Keep fallback idempotent so duplicate user actions cannot change
 the selected account twice. Preserve API session validation and token rules.
 
+### Resolution implemented locally
+
+Recovery notice writes now notify the current tab and synchronize owner state
+through same-tab events and cross-tab storage events. Claims and user recovery
+actions share the account-selection lock with switch/logout operations. A user
+can continue from a waiting tab, and either Close control enters the serialized
+recovery action instead of returning early because that tab lost ownership.
+The modal close control is disabled while a restore/fallback is already
+running. Token issuance, expiry, API session validation, and fallback ordering
+are unchanged.
+
 ### Tests and verification
 - **Required:** With several staging tabs, trigger terminal recovery; test owner
   foreground/background, owner close, simultaneous takeover, Close/X from each
   visible state, account selection, Add account, and fallback completion. Confirm
-  exactly one effective recovery operation and convergence in all tabs.
-- **Completed:** Read-only review of the current UI and notice/lease code;
-  staging behavior is user-reported and the exact ownership sequence is not
-  instrumented.
+  exactly one effective recovery operation and convergence in all tabs. Confirm
+  the close control is visibly disabled while an operation cannot be cancelled.
+- **Completed locally:** Implemented owner synchronization, serialized claims
+  and recovery actions, waiting-tab continuation, and close busy state.
+  `npx tsc --noEmit --incremental false` passed. No automated tests or
+  browser/staging acceptance run for this change.
 
 ### Noteworthy
 
-The waiting screen has no acknowledge button by design; acknowledgment currently
-belongs to the owner modal's Close action or account selection. This defect is
-separate from whether a remembered account's refresh token remains valid.
+The waiting screen now offers **Continue here**, which safely claims the
+recovery action under the shared account-operation lock. Staging acceptance is
+still needed, especially for backgrounded owners and browsers without Web
+Locks. This defect is separate from whether a remembered account's refresh
+token remains valid.
 
 ### Related documentation and implementation
 - [Account Access](units/account-access.md)
@@ -1068,8 +1145,8 @@ verify each behavior.
 
 ## BUG-AUTH-002 — Public landing blocks while checking for a session
 
-- **Status:** In progress
-- **Reported/updated:** 2026-09-26T11:14:22Z
+- **Status:** Likely fixed in current code; staging acceptance pending
+- **Reported/updated:** 2026-09-29T14:40:13Z
 - **Affected area:** Public landing route `/`, `PublicRouteGuard`, refresh-session recovery
 - **Environment:** Production, staging, and local; reproduced in an incognito/private window with no account session
 - **Severity:** medium
@@ -1157,8 +1234,8 @@ are different.
 
 ## BUG-NAV-001 — Route changes remount the app shell and discard in-progress work
 
-- **Status:** In progress
-- **Reported/updated:** 2026-09-24T22:54:37Z
+- **Status:** Needs reproduction — the root shell-state provider may have superseded part of the original report
+- **Reported/updated:** 2026-09-29T14:40:13Z
 - **Affected area:** Authenticated App Router navigation, shared shell, and
   operations owned by screen components
 - **Environment:** Production user report; code path exists in the current web
@@ -1337,8 +1414,8 @@ while the chat list uses the more complete `AppShellRoute` recovery path.
 
 ## BUG-CHAT-002 — New-chat people search reports unavailable on staging
 
-- **Status:** Open
-- **Reported/updated:** 2026-09-23T23:03:28Z
+- **Status:** Needs reproduction — the report predates the current staging build
+- **Reported/updated:** 2026-09-29T14:40:13Z
 - **Affected area:** New-chat discovery at `/chats/new`, people-search API
 - **Environment:** Staging; user-reported during staging acceptance testing
 - **Severity:** medium

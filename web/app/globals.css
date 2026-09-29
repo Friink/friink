@@ -3171,6 +3171,11 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
   grid-column: 3;
 }
 
+.modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .modal-body {
   flex: 1 1 auto;
   min-height: 0;

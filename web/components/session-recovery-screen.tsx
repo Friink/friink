@@ -15,6 +15,7 @@ type SessionRecoveryScreenProps = {
   onCancelRecovery?: () => void;
   onAddAccountAuthenticated?: (user: AuthUser) => void;
   onTakeMeBack?: () => void;
+  onContinueRecovery?: () => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
   isContinuingRecovery?: boolean;
@@ -34,7 +35,7 @@ const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'o
   pending_deletion: { title: 'Session ended' },
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
+export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onContinueRecovery, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
   const [showChoice, setShowChoice] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const availableAccounts = accounts
@@ -131,7 +132,12 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
         <section className="lifecycle-card" aria-labelledby="session-waiting-title">
           <BrandLockup size="lg" />
           <h1 id="session-waiting-title">Session ended</h1>
-          <p>Another tab will continue after the session notice is acknowledged.</p>
+          <p>Continue recovery in this tab, or return to the tab already handling it.</p>
+          <div className="lifecycle-actions session-recovery-actions session-recovery-actions-terminal">
+            <button className="button-primary" type="button" onClick={onContinueRecovery} disabled={isContinuingRecovery}>
+              {isContinuingRecovery ? 'Continuing…' : 'Continue here'}
+            </button>
+          </div>
         </section>
       </main>
     );
@@ -145,6 +151,7 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
         onClose={onCancelRecovery ?? (() => undefined)}
         closeLabel="Continue without this session"
         closeOnBackdrop={false}
+        closeDisabled={isContinuingRecovery || !!restoringAccountSlot}
         className="session-recovery-account-modal"
         actions={<>
           <button className="button-secondary" type="button" onClick={onCancelRecovery} disabled={isContinuingRecovery || !!restoringAccountSlot}>Close</button>

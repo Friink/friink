@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-28T00:00:36Z
+**Last edited:** 2026-09-29T14:40:13Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -177,6 +177,10 @@ persisted, and their operations have not all been audited for cancellation,
 resume, or idempotency. Full document reloads also discard the in-memory
 provider. BUG-NAV-001 remains open for those remaining cases and route-level
 acceptance; see [the bug record](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
+Because the provider may have removed part of the originally reported impact,
+the next step is to reproduce each claimed flash/lost operation on the current
+staging build. Close any part that no longer reproduces with its tested build
+and route evidence; keep full-document reload behavior separate.
 
 ## Acceptance criteria
 

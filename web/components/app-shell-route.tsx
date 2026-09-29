@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
-import { acknowledgeSessionTermination, AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import { clearSessionEntryHint } from '@/lib/session-entry-hint';
 import type { Screen } from '@/lib/data';
@@ -44,6 +44,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const networkRestoreAccountSlot = useRef<string | null>(null);
   const networkRestoreTerminationId = useRef<string | null>(null);
   const retryNetworkRecoveryRef = useRef<() => void>(() => undefined);
+  const completeTerminatedSessionRef = useRef<(id: string, failedSlot?: string | null) => Promise<void>>(async () => undefined);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
   const { handleLogout, logoutError } = useAppAccountLogout((nextUser) => {
     setUser(nextUser);
@@ -92,35 +93,105 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
 
   useEffect(() => {
     if (!termination) return;
-    const timer = window.setInterval(() => {
-      renewSessionTerminationLease(termination.id);
+    const syncTerminationOwner = () => {
       const notice = getSessionTerminationNotice();
-      if (!notice || notice.id !== termination.id) return;
-      if (notice.ownerTabId !== undefined && notice.leaseUntil <= Date.now()) {
-        const claimed = claimSessionTermination(termination.id);
-        if (claimed && isSessionTerminationOwner(termination.id)) {
-          setTermination((current) => current?.id === termination.id ? { ...current, owner: true } : current);
-          if (claimed.acknowledged) {
-            if (notice.cause === 'deactivated' || notice.cause === 'pending_deletion') {
-              void completeTerminatedSession(termination.id, notice.accountSlot);
+      if (!notice) {
+        const currentSession = loadAuthSession();
+        if (currentSession) {
+          setUser(currentSession.user);
+          setSessionReady(true);
+          setSessionError(null);
+          setAuthCheckComplete(true);
+        } else {
+          setTermination(null);
+          setSessionError('offline');
+          setRecoveryAccounts(getRememberedAccountSummaries());
+          setAuthCheckComplete(true);
+        }
+        return;
+      }
+      if (notice.id !== termination.id) {
+        setTermination({ id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) });
+        return;
+      }
+      const owner = isSessionTerminationOwner(termination.id);
+      setTermination((current) => current?.id === termination.id && current.owner !== owner
+        ? { ...current, cause: notice.cause, owner }
+        : current);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'friink-session-termination') syncTerminationOwner();
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('friink-session-termination-updated', syncTerminationOwner);
+    const timer = window.setInterval(() => {
+      const notice = getSessionTerminationNotice();
+      if (!notice || notice.id !== termination.id) {
+        syncTerminationOwner();
+        return;
+      }
+      syncTerminationOwner();
+      if (isSessionTerminationOwner(termination.id)) {
+        renewSessionTerminationLease(termination.id);
+      } else if (notice.leaseUntil <= Date.now()) {
+        void claimSessionTermination(termination.id).then((claimed) => {
+          syncTerminationOwner();
+          if (claimed && isSessionTerminationOwner(termination.id)) {
+            if (claimed.acknowledged) {
+              if (notice.cause === 'deactivated' || notice.cause === 'pending_deletion') {
+                void completeTerminatedSessionRef.current(termination.id, notice.accountSlot);
+              }
             }
           }
-        }
+        });
       }
     }, 2000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('friink-session-termination-updated', syncTerminationOwner);
+    };
   }, [termination]);
 
-  async function completeTerminatedSession(id: string, failedSlot?: string | null) {
+  const completeTerminatedSession = useCallback(async (id: string, failedSlot?: string | null) => {
     if (sessionRecoveryInFlight.current) return;
     sessionRecoveryInFlight.current = true;
     setIsContinuingRecovery(true);
     try {
-      const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
-      clearSessionTermination(id);
+      const action = await runSessionTerminationAction(id, async () => {
+        const notice = getSessionTerminationNotice();
+        const fallback = await restoreRememberedAccountWithFallback(
+          failedSlot ? [failedSlot] : notice?.accountSlot ? [notice.accountSlot] : [],
+        );
+        if (fallback) saveAuthSession(fallback);
+        else {
+          clearAuthSession();
+          clearSessionEntryHint();
+        }
+        clearSessionTermination(id);
+        return fallback;
+      });
+      if (!action.performed) {
+        const currentNotice = getSessionTerminationNotice();
+        if (currentNotice) {
+          setTermination({ id: currentNotice.id, cause: currentNotice.cause, owner: isSessionTerminationOwner(currentNotice.id) });
+        } else {
+          const currentSession = loadAuthSession();
+          if (currentSession) {
+            setUser(currentSession.user);
+            setSessionReady(true);
+            setSessionError(null);
+            setAuthCheckComplete(true);
+          } else {
+            setTermination(null);
+            router.replace('/');
+          }
+        }
+        return;
+      }
+      const fallback = action.result ?? null;
       networkRestoreTerminationId.current = null;
       if (fallback) {
-        saveAuthSession(fallback);
         setUser(fallback.user);
         setSessionReady(true);
         setSessionError(null);
@@ -144,7 +215,11 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       sessionRecoveryInFlight.current = false;
       setIsContinuingRecovery(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    completeTerminatedSessionRef.current = completeTerminatedSession;
+  }, [completeTerminatedSession]);
 
   retryNetworkRecoveryRef.current = () => {
     if (networkRestoreInFlight.current) return;
@@ -210,9 +285,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   function cancelSessionRecovery() {
     if (sessionRecoveryInFlight.current || restoringAccountSlot) return;
     if (termination) {
-      if (!termination.owner || !isSessionTerminationOwner(termination.id)) return;
       const notice = getSessionTerminationNotice();
-      acknowledgeSessionTermination(termination.id);
       void completeTerminatedSession(
         termination.id,
         notice?.accountSlot ?? recoveryAccounts.find((account) => account.username.toLowerCase() === recoveryUsername?.toLowerCase())?.accountSlot,
@@ -231,6 +304,12 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     clearAuthSession();
     clearSessionEntryHint();
     router.replace('/');
+  }
+
+  function continueWaitingRecovery() {
+    if (!termination || sessionRecoveryInFlight.current || restoringAccountSlot) return;
+    const notice = getSessionTerminationNotice();
+    void completeTerminatedSession(termination.id, notice?.accountSlot);
   }
 
   function completeRecoveryAddAccount(user: AuthUser) {
@@ -375,16 +454,38 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
 
   async function handleRestoreRememberedAccount(account: AccountSummary) {
     if (restoringAccountSlot || sessionRecoveryInFlight.current) return;
-    if (termination && termination.owner && isSessionTerminationOwner(termination.id)) {
-      acknowledgeSessionTermination(termination.id);
-    }
     setRestoringAccountSlot(account.accountSlot);
     setAccountRecoveryError(null);
     try {
-      const restoredSession = await restoreAccountSession(account.accountSlot);
-      if (termination) clearSessionTermination(termination.id);
+      const restore = async () => {
+        const restoredSession = await restoreAccountSession(account.accountSlot);
+        saveAuthSession(restoredSession);
+        if (termination) clearSessionTermination(termination.id);
+        return restoredSession;
+      };
+      const action = termination
+        ? await runSessionTerminationAction(termination.id, restore)
+        : { performed: true, result: await restore() };
+      if (!action.performed || !action.result) {
+        const currentNotice = getSessionTerminationNotice();
+        if (currentNotice) {
+          setTermination({ id: currentNotice.id, cause: currentNotice.cause, owner: isSessionTerminationOwner(currentNotice.id) });
+        } else {
+          const currentSession = loadAuthSession();
+          if (currentSession) {
+            setUser(currentSession.user);
+            setSessionReady(true);
+            setSessionError(null);
+            setAuthCheckComplete(true);
+          } else {
+            setTermination(null);
+            router.replace('/');
+          }
+        }
+        return;
+      }
+      const restoredSession = action.result;
       networkRestoreTerminationId.current = null;
-      saveAuthSession(restoredSession);
       setUser(restoredSession.user);
       setSessionReady(true);
       setSessionError(null);
@@ -409,7 +510,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
     const status = recoveryChoice ? 'choice' : sessionError === 'network' ? 'network' : sessionError === 'offline' ? 'offline' : termination ? (termination.owner ? termination.cause : 'waiting') : sessionError ?? 'offline';
     const candidates = getRememberedAccountSummaries().filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase());
-    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
+    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
   return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;

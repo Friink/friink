@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T14:22:19Z
+**Last edited:** 2026-09-29T21:33:43Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -317,7 +317,7 @@ server's session and lifecycle decisions remain authoritative. A technically
 ambiguous error does not mean the session ended. A confirmed terminal result
 shows a blocking `Session ended` modal with neutral copy, available remembered
 accounts, and Add account. Selecting a remembered account validates that slot
-before continuing. Cancel and close restore the most recently used valid
+before continuing. Close and the close icon restore the most recently used valid
 remembered account, or clear the redirect hint and return to the public site
 when none remains. Lifecycle state and the associated reactivation or
 deletion-cancellation rules belong to
@@ -332,7 +332,7 @@ Current web entry points do not all present the same recovery surface:
   opens a `Session ended` modal with the neutral copy “Your session has ended.
   Choose how you’d like to continue.” Available remembered accounts appear
   below the copy. Selecting one validates and restores it; Add account opens
-  the existing login/signup modal. Cancel and close restore the most recently
+  the existing login/signup modal. Close and the close icon restore the most recently
   used valid remembered account, or clear the session hint and return to the
   public site when none remains.
 - **Public root (`/`)** redirects server-side to `/home` when the hint is a
@@ -378,7 +378,7 @@ Failure cases are distinct:
    without cached account context remain on the public site.
 2. **Confirmed terminal session:** show the shared neutral `Session ended`
    modal with available remembered-account choices and Add account. Selecting
-   an account validates it before switching. Cancel/close tries the
+   an account validates it before switching. Close or the close icon tries the
    most-recent valid fallback and returns to the public site with redirect
    hint zero if none restores. Never silently switch identity.
 3. **Remote logout or security revocation:** use the same session-ended modal
@@ -387,21 +387,22 @@ Failure cases are distinct:
    immediately after the lifecycle operation succeeds, then restores another
    valid remembered session or returns to `/`. Other clients show the lifecycle
    neutral session-ended modal first, then use the same account choices,
-   Add account, or Cancel/close fallback.
+   Add account, or Close or the close icon fallback.
    Lifecycle reactivation or deletion cancellation remains a separate flow.
 
 The session-ended modal is coordinated across the browser client. Other tabs
-wait while the notice-owning tab acts, then converge on the same restored
-account or public-site outcome; if the owner closes before acting, another tab
-may take over. Multi-tab browser and staging acceptance remain pending.
+show a waiting screen with **Continue here**, and can take over recovery through
+the shared account-operation lock. All tabs converge on the same restored
+account or public-site outcome. Multi-tab browser and staging acceptance remain
+pending.
 
 #### Multi-account terminal-session recovery
 
 When a current session is confirmed ended, Friink shows the neutral copy
 “Your session has ended. Choose how you’d like to continue.” Available
 remembered accounts appear as choices, and Add account opens the existing
-login/signup modal. Cancel and close try remembered accounts in most-recent-use
-order, then return to `/` with the redirect hint set to zero if none can be
+login/signup modal. The Close and the close icon try remembered accounts in
+most-recent-use order, then return to `/` with the redirect hint set to zero if none can be
 restored. For deactivation/pending deletion, the initiating client immediately
 logs out after the successful lifecycle operation; another client uses these
 same recovery choices. Friink never renders a candidate's data before that
@@ -414,8 +415,9 @@ slot has validated. The recovery flow is:
    slot before persistence.
 3. On confirmed terminal failure, clear the in-memory credential for that
    account and keep only safe recovery context. Show neutral session-ended
-   copy and available account choices. Add account reuses login/signup; Cancel
-   and close validate fallback sessions by recency before returning public.
+   copy and available account choices. Add account reuses login/signup; Close
+   and the close icon validate fallback sessions by recency before returning
+   public.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
    ambiguous failure does not prove that the session ended. Keep the user in
    retryable recovery without changing identity. During detected network
@@ -425,10 +427,10 @@ slot has validated. The recovery flow is:
    exhaustion, **Take me back** opens the remembered-account choice when one is
    available, with Login as the alternative. A user-selected account is
    validated before activation.
-6. Show one terminal modal for the browser client. Other open tabs wait while
-   the owner acts, then converge on the same restored account or public site.
-   If the tab showing the modal closes before acting, another tab can take
-   ownership and show it.
+6. Show the terminal modal in the owner tab. Other tabs show a waiting screen
+   with **Continue here**; ownership changes synchronize across tabs, and
+   user-triggered takeover shares the account-operation lock with switch/logout.
+   All tabs converge on the same restored account or public site.
 
 This flow applies when a session ends remotely, an account is deactivated or
 scheduled for deletion, or another terminal session failure is confirmed.
@@ -456,7 +458,7 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
   refresh request, and verify it is still active before saving the response.
 - A confirmed terminal failure presents the neutral `Session ended` modal.
   Selecting a listed remembered account validates that slot before switching;
-  Add account reuses the existing login/signup flow. Cancel and close attempt
+  Add account reuses the existing login/signup flow. Close and the close icon attempt
   valid remembered accounts in most-recent-use order, then return to the public
   site with the redirect hint set to zero when none can be restored. Ambiguous
   failures keep the active identity in retryable recovery; they never cause a
@@ -494,7 +496,7 @@ record for details.
 
 On public entry, when one or more remembered sessions are valid, restore the
 most recently used one. During terminal recovery, users can select an available
-remembered account or Add account. Cancel and close try the most recently used
+remembered account or Add account. Close and the close icon try the most recently used
 remaining session before returning to the public site.
 A remembered-account row alone is not proof that its session is valid;
 validate each candidate's own slot-scoped session before exposing that
@@ -507,14 +509,13 @@ problem does not invalidate it and must leave retry available.
   recency order.
 - A user-initiated logout proceeds directly to the next most recently used
   valid remembered account. Terminal recovery shows the neutral session-ended
-  modal with available remembered accounts and Add account. Cancel and close
+  modal with available remembered accounts and Add account. Close and the close icon
   validate remaining slots by recency; the
   initiating client logs out immediately after the lifecycle operation
   succeeds. Never switch identity on timeout, network failure, or another
   ambiguous/recoverable result.
-- Show the terminal modal once across the browser client. Other tabs wait while
-  the owner acts, then follow the same restored account or public-site result.
-  If the owner tab closes, another tab may take over and present it.
+- Show the terminal modal in the owner tab. Waiting tabs offer **Continue here**
+  to take over; all tabs follow the same restored account or public-site result.
 - Non-network ambiguous entry recovery makes four total attempts at 10-second intervals.
   Network failure immediately uses a full-page network error, background restore every 30
   seconds, and a manual **Refresh** action; other unresolved ambiguous failures show
@@ -541,7 +542,7 @@ item.
   records a durable security event, subject to bounded retry grace.
 - **ACCESS-R-031:** A confirmed terminal failure presents the neutral
   `Session ended` modal with available remembered accounts and Add account.
-  Selecting an account validates it before switching. Cancel and close restore
+  Selecting an account validates it before switching. Close and the close icon restore
   the most recently used valid account or return to the public site with the
   redirect hint set to zero. Ambiguous failures never silently switch identity;
   non-network entry recovery retries four times at 10-second intervals.
@@ -564,7 +565,7 @@ item.
   `/auth/me` validation so a stale response cannot reclaim the prior account.
 - **ACCESS-R-035:** A confirmed terminated session shows one neutral
   session-ended modal across the browser client. Users can restore a listed
-  remembered account or Add account; Cancel and close validate remaining
+  remembered account or Add account; Close and the close icon validate remaining
   sessions by recency and return to public if none validates. If the owner tab
   closes, another tab can take ownership. Ambiguous failures remain retryable
   and do not switch.
@@ -592,7 +593,7 @@ the release is considered complete.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
 - [ ] **ACCESS-AC-026** Confirmed terminal failures show neutral recovery copy,
       available remembered accounts, and Add account. Selecting an account
-      validates it; Cancel/close restore the most recently used valid account
+      validates it; Close or the close icon restore the most recently used valid account
       or return to the public site with the redirect hint set to zero.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
@@ -610,7 +611,7 @@ the release is considered complete.
       terminal session recovery.
 - [ ] **ACCESS-AC-047** The session-ended modal uses the same neutral copy with
       zero or more available account rows, reuses the login/signup Add account
-      flow, and routes Cancel/close to the most recent valid account or the
+      flow, and routes Close or the close icon to the most recent valid account or the
       public site with a zero redirect hint.
 - [x] **ACCESS-AC-029** A valid access cookie survives a full reload without
       refresh-cookie rotation; expired access performs one coordinated,
@@ -755,10 +756,11 @@ control remains visible when account labels are long.
 - [ ] **ACCESS-AC-045** Simultaneous account switches across tabs serialize;
       after selection changes, tabs converge on the selected account and a
       restore response for the previous slot cannot overwrite it.
-- [ ] **ACCESS-AC-037** Across open tabs, only one tab presents the termination
-      modal; other tabs wait while the owner acts, then converge on the same
-      restored account or public site. If the notice tab closes, another tab can
-      take over. Transient failures preserve recovery.
+- [ ] **ACCESS-AC-037** Across open tabs, only the current owner presents the
+      termination modal; waiting tabs offer **Continue here**. Owner changes
+      synchronize, takeover shares the account-operation lock, and all tabs
+      converge on the same restored account or public site. Transient failures
+      preserve recovery.
 
 #### Test scenarios
 
@@ -880,13 +882,13 @@ Local refresh-token regression coverage exists, but it does not replace the
 staging and real-browser acceptance above. No schema change is required by the
 two approved route-consistency patches.
 
-### Newly recorded staging defects — 2026-09-29
+#### Newly recorded staging defects — 2026-09-29
 
-The latest multi-tab session-recovery report leaves three account-access
+The latest multi-tab session-recovery report leaves four related account-access
 findings open. These are bug records, not changes to active authentication
 rules:
 
-- [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): the 8-second localStorage owner lease can leave stale owner UI; the waiting view has no acknowledge action, and a stale modal can silently ignore Close.
+- [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): implemented locally with synchronized owner state, a serialized recovery action, and a **Continue here** action for waiting tabs. Multi-tab acceptance remains pending.
 - [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): each successful switch currently creates a new destination refresh-token family. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
 - [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): database audit rows do not capture every failed refresh or correlate a request with its slot-cookie context. The exact incident failure code remains unknown.
 - [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
@@ -895,7 +897,8 @@ The staging DB audit found `@muflahulfurqan`'s session active after the report;
 `@muflah`'s old session was replaced by the fresh login that followed. Do not
 infer that both server sessions expired. Proposed auth/cookie changes require
 multi-tab staging acceptance and must preserve server-side slot/session
-validation.
+validation. The current validity assessments, ordering, and per-bug closure
+evidence are maintained in the [bug register triage plan](../bugs.md#current-validity-and-closure-plan).
 
 ## 5. Cross-subunit behavior
 

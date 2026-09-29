@@ -1,5 +1,54 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-29T21:33:43Z — Implement BUG-AUTH-009 Recovery Handoff
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the session-ended recovery ownership and Close
+  behavior planned for BUG-AUTH-009.
+- Changes Made: Synchronized recovery ownership through same-tab events and
+  cross-tab storage updates. Serialized claims, terminal fallback, and selected
+  remembered-account restore with the shared account-operation lock used by
+  switching and logout. A waiting tab now offers **Continue here**; stale Close
+  actions enter the same serialized operation, and the modal close controls
+  disable while restoration is active. Updated Account Access, Error Handling,
+  product/design implementation docs, and BUG-AUTH-009. No token issuance,
+  expiry, or API validation behavior changed.
+- Files: `web/lib/auth.ts`, `web/components/app-shell-route.tsx`,
+  `web/components/session-recovery-screen.tsx`, `web/components/modal.tsx`,
+  `web/app/globals.css`, `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/error-handling.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` and
+  `git diff --check` passed. Focused ESLint passed with the repository's
+  existing `set-state-in-effect` and `refs` rules suppressed; one existing
+  `initialScreen` dependency warning remains. No automated tests or browser/staging
+  acceptance run. Do not close the bug until the documented multi-tab staging
+  matrix passes.
+
+# 2026-09-29T14:40:13Z — Refine Open Bug Validity And Closure Plan
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Plan undeveloped bug fixes, identify stale/invalid reports,
+  and define how to close each issue with evidence.
+- Changes Made: Added a per-bug validity assessment, next action, and closure
+  evidence table to `docs/bugs.md`; documented current-build reproduction as a
+  gate before patching and explicit dispositions for not reproduced/superseded
+  reports. Added a dependency-ordered execution plan. Marked BUG-AUTH-002 as
+  likely fixed pending acceptance, and BUG-NAV-001 / BUG-CHAT-002 as needing a
+  fresh reproduction because newer code/builds may have superseded their
+  reports. Linked the plan from Account Access, Error Handling, Navigation,
+  and Chat docs. No application code or auth behavior changed.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/error-handling.md`, `docs/units/navigation.md`,
+  `docs/units/chat.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Read repository instructions, docs guidance, unit docs,
+  current rules, and the bug register. Reviewed relevant current implementation
+  references. `git diff --check` passed; no tests run because this is a
+  documentation-only planning change. Staging bugs were not re-tested during
+  this task.
+
 # 2026-09-29T14:22:19Z — Record Multi-Tab Session Recovery Findings
 
 - Agent: Codex
@@ -17,8 +66,9 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Files: `docs/bugs.md`, `docs/units/account-access.md`,
   `docs/units/error-handling.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
 - Verification Status: Documentation content reviewed against current auth/API
-  implementation and read-only staging DB findings. Markdown links and
-  `git diff --check` verification pending. No tests run; documentation-only.
+  implementation and read-only staging DB findings. Changed relative targets and
+  BUG-AUTH anchors resolved; `git diff --check` passed. No tests run;
+  documentation-only.
 
 # 2026-09-29T13:58:48Z — Implement Shared Logout And Hint-Zero Recovery
 

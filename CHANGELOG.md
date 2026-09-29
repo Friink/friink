@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-29T21:33:43Z
+- [account-access] Implemented BUG-AUTH-009 recovery ownership synchronization
+  and serialized user actions through the shared account-operation lock.
+  Waiting tabs can continue recovery; modal close controls disable during an
+  active restore. Updated session-recovery design and bug documentation. Token
+  handling and server-side validation are unchanged. TypeScript check passed;
+  browser/staging acceptance remains pending.
+
+## 2026-09-29T14:40:13Z
+- [docs/bugs] Added a validity triage and closure plan for every unresolved
+  register item, separating confirmed defects from local fixes awaiting staging
+  acceptance and reports that need a current-build reproduction. Ordered the
+  work by evidence/dependency, documented when to close a non-reproducing or
+  superseded bug, and linked the account-access, error-handling, navigation,
+  and chat unit docs. No application behavior changed.
+
 ## 2026-09-29T14:22:19Z
 - [account-access] Recorded the latest multi-tab staging session-recovery
   findings as BUG-AUTH-009 through BUG-AUTH-011; reopened BUG-AUTH-008 with
