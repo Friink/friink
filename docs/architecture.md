@@ -36,7 +36,7 @@ through `NEXT_PUBLIC_API_BASE_URL`.
   initializes synchronously from the in-memory session to avoid the ordinary
   navigation restore flash. The `AppShell` instance still remounts, and
   route-owned operations are not all made resumable/idempotent; see
-  [BUG-NAV-001](bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
+  [BUG-NAV-001](bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-may-discard-in-progress-work).
 - Authenticated entry restores `/auth/me` from a slot-scoped HttpOnly access
   cookie bound to an active server-side session (`sid`). Refresh rotation is
   reactive to an expired/missing access cookie. Public routes render before

@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-29T14:40:13Z
+**Last edited:** 2026-09-29T22:29:32Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -113,11 +113,12 @@ the established search, chat-unread, and notification interactions.
   automatic cross-account recovery and persists restored-slot recency. Staging
   acceptance remains pending; the broader reload-time session instability is
   still open under [BUG-AUTH-003](../bugs.md#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session).
-- **Open shell defect:** Page routes currently instantiate `AppShellRoute`
-  independently. Route changes can therefore show a session-restoration flash,
-  remount the shell, and discard in-progress screen state. The planned
-  persistent-layout and operation-survival work is tracked as
-  [BUG-NAV-001](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
+- **Open shell question:** Page routes still instantiate `AppShellRoute`
+  independently, but synchronous session initialization mitigates the
+  restoration flash and a root provider preserves many shell values. Whether a
+  user-visible operation or draft is still lost during in-app navigation has
+  not been reproduced; track it under
+  [BUG-NAV-001](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-may-discard-in-progress-work).
 - The active drawer row uses a neutral gray fill and theme-appropriate text.
   Its icon is `#111111` in light mode and `#f0f0f0` in dark mode.
 - The Profile identity row does not receive the active destination's gray fill,
@@ -176,11 +177,18 @@ components still remount. Some route-owned forms and mutation feedback are not
 persisted, and their operations have not all been audited for cancellation,
 resume, or idempotency. Full document reloads also discard the in-memory
 provider. BUG-NAV-001 remains open for those remaining cases and route-level
-acceptance; see [the bug record](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work).
+acceptance; see [the bug record](../bugs.md#bug-nav-001--route-changes-remount-the-app-shell-and-may-discard-in-progress-work).
 Because the provider may have removed part of the originally reported impact,
 the next step is to reproduce each claimed flash/lost operation on the current
 staging build. Close any part that no longer reproduces with its tested build
-and route evidence; keep full-document reload behavior separate.
+and route evidence; keep full-document reload and tab-close behavior separate.
+
+The provider's state exists only in the current browser tab's memory. Closing
+that tab removes its drafts and in-flight UI feedback. It does not guarantee
+that an API request will be canceled before reaching the server, nor does it
+guarantee that a response will be received after the server processes it.
+Recovery of an operation's result from another tab is tracked separately in
+[BUG-OPS-001](../bugs.md#bug-ops-001--closing-a-tab-can-leave-an-in-flight-operations-outcome-unknown).
 
 ## Acceptance criteria
 

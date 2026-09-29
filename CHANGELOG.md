@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-29T22:29:32Z
+- [docs/navigation] Clarified BUG-NAV-001 as an unconfirmed in-app route-state
+  concern and added BUG-OPS-001 for uncertain mutation outcomes after the
+  initiating tab closes. Linked both issues from the Navigation unit and
+  triage plan. Recorded that the new issue needs endpoint-specific reproduction
+  before selecting an implementation. Documentation-only; no tests run.
+
 ## 2026-09-29T22:03:18Z
 - [account-access] Implemented BUG-AUTH-011 request-correlated refresh
   diagnostics. API responses now include an opaque request ID; every refresh

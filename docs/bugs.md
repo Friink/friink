@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Active triage plan
-**Last edited:** 2026-09-29T22:03:18Z
+**Last edited:** 2026-09-29T22:29:32Z
 
 ## Instructions for agents
 
@@ -57,7 +57,8 @@ acceptance is separate from a local implementation or code review.
 | [BUG-AUTH-005](#bug-auth-005--failed-account-switch-shows-sign-in-for-the-previous-account) | Fix implemented locally; staging acceptance pending. | Fail a target-account switch while the source remains valid; also test terminal target failure and transient failure. | Source stays active for a non-terminal target failure; any recovery action names the target, never the unrelated source. |
 | [BUG-AUTH-004](#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher) | Fix implemented locally; staging acceptance pending. | Restore a non-first remembered slot through normal and grace refresh branches, then inspect account-list order. | Restored account becomes first/current; failed refresh does not change recency; explicit switching still updates order. |
 | [BUG-AUTH-002](#bug-auth-002--public-landing-blocks-while-checking-for-a-session) | Current code appears to render public content immediately and probe in the background; report may already be fixed. Staging/production-equivalent acceptance is pending. | Verify no-session public entry and valid/invalid remembered-session behavior on current staging build, including network failure. | Public page is never blocked by session probing; protected routes still restore/reject correctly. If already true, close as superseded by the recorded guard change. |
-| [BUG-NAV-001](#bug-nav-001--route-changes-remount-the-app-shell-and-discard-in-progress-work) | May be partly superseded: a root shell-state provider now retains many states across route remounts. Whether the restoration flash or any user-visible lost operation remains is unknown. | Reproduce representative app navigation and inspect the current URL transition, shell state, drafts, pending sends, and async mutation feedback. Keep full reload separate. | If no reported loss/flash remains, close with tested routes/build and the provider change. Otherwise narrow the bug to the state/operation that still fails and patch that contract. |
+| [BUG-NAV-001](#bug-nav-001--route-changes-remount-the-app-shell-and-may-discard-in-progress-work) | Historical report; provider mitigates many route-state losses and restoration flash. No specific remaining lost operation has been confirmed. | Later, reproduce a specific in-app route transition and named user operation; inspect state and completion feedback. Keep tab closure separate. | If no user-visible loss or flash reproduces, close as superseded with tested build/routes. Otherwise narrow to the operation that fails. |
+| [BUG-OPS-001](#bug-ops-001--closing-a-tab-can-leave-an-in-flight-operations-outcome-unknown) | Newly recorded from user clarification: closing the initiating tab may end the request or leave its server outcome unknown to the user; no cross-tab result recovery has been verified. | Later, reproduce a mutation with tab closure before send, during processing, and after server commit but before response. Identify operation-specific idempotency and result-recovery behavior. | On reopening another tab, the user can determine whether the operation committed and retry safely without duplicating it; document which operation classes are covered. |
 | [BUG-CHAT-002](#bug-chat-002--new-chat-people-search-reports-unavailable-on-staging) | Stale report: screenshot confirms the error at report time, but current endpoint/build has not been rechecked. | Reproduce `/chats/new` on current staging and capture the people-search status/body and API runtime error for both a match and no-match query. | Search returns eligible matches, empty results, and retryable errors as specified without loosening privacy/eligibility. If no longer reproducible, close with build/query/result evidence. |
 
 ### Execution order
@@ -76,8 +77,9 @@ acceptance is separate from a local implementation or code review.
 4. Complete staging acceptance for the already implemented route/switch fixes
    (BUG-AUTH-002, 004, 005, and 007). Close each independently with its own
    result; a pass for one does not close the others.
-5. Reproduce or close the navigation and chat reports (BUG-NAV-001 and
-   BUG-CHAT-002) against the current build. Patch only symptoms that remain.
+5. Reproduce or close BUG-NAV-001, then investigate BUG-OPS-001's tab-close
+   outcome and recovery behavior separately from in-app navigation. Reproduce
+   or close BUG-CHAT-002 against the current build. Patch only verified gaps.
 
 ### Closure record
 
@@ -1246,22 +1248,24 @@ are different.
 - [`AppShellRoute`](../web/components/app-shell-route.tsx)
 - [`Auth session helpers`](../web/lib/auth.ts)
 
-## BUG-NAV-001 — Route changes remount the app shell and discard in-progress work
+## BUG-NAV-001 — Route changes remount the app shell and may discard in-progress work
 
-- **Status:** Needs reproduction — the root shell-state provider may have superseded part of the original report
-- **Reported/updated:** 2026-09-29T14:40:13Z
+- **Status:** Needs reproduction — no specific remaining lost operation has been confirmed
+- **Reported/updated:** 2026-09-29T22:29:32Z
 - **Affected area:** Authenticated App Router navigation, shared shell, and
   operations owned by screen components
-- **Environment:** Production user report; code path exists in the current web
-  implementation
+- **Environment:** Historical production report; originating user/session and
+  a concrete route/action reproduction are not identified in the repository
 - **Severity:** high
 
 ### Bug summary
 
-Navigating between app pages flashes the session-restoration screen before the
-new page appears. The old app shell and screen subtree unmount during the route
-change, so local operation/form state can be discarded and an in-progress
-operation may fail or become impossible to continue.
+The original report described a session-restoration flash and possible loss of
+screen-local work while navigating between app pages. The restoration flash is
+mitigated locally. No particular remaining form, post, settings action, or
+other operation has been identified as losing work; this record tracks only
+possible loss during in-app route changes. Tab closure is tracked separately in
+[BUG-OPS-001](#bug-ops-001--closing-a-tab-can-leave-an-in-flight-operations-outcome-unknown).
 
 ### Reproduction
 
@@ -1269,10 +1273,9 @@ operation may fail or become impossible to continue.
 2. Start an operation or enter work whose progress is held in the current
    screen/component state.
 3. Navigate to another authenticated route using app navigation.
-4. Observe a brief “Reconnecting…” screen, then the destination page; return to
-   the original route and observe that local progress is gone. If the operation
-   was tied to the unmounted component, verify whether it was canceled or left
-   without visible completion state.
+4. Check for a restore-screen flash, lost form/draft state, missing completion
+   feedback, or a duplicate/canceled mutation when returning. Record the exact
+   route and action; a generic shell remount alone is not proof of user impact.
 
 ### Expected behavior
 
@@ -1282,14 +1285,13 @@ restoration when its in-memory session is already available.
 
 ### Actual behavior
 
-Every route page still creates an `AppShellRoute`, but it now initializes from
-the in-memory session synchronously, so the normal authenticated transition no
-longer shows a restore screen. A root `AppShellStateProvider` preserves
-account-scoped shell state across page-level remounts, and the chat client
-preserves draft/pending-send state with API idempotency keyed by
-`client_message_id`. The `AppShell` instance itself still remounts, some
-route-owned forms and mutation feedback are not retained, and reloads still
-discard provider memory.
+Every route page still creates an `AppShellRoute`, but it initializes from the
+in-memory session synchronously, so ordinary authenticated route transitions
+do not show a restore screen. A root `AppShellStateProvider` preserves many
+account-scoped values across page-level remounts, and chat retries use
+`client_message_id` idempotency. The `AppShell` instance itself still remounts.
+The register has not established whether any remaining route-owned form or
+mutation feedback is actually lost in current use.
 
 ### Root cause
 
@@ -1299,23 +1301,21 @@ discard provider memory.
 - **Fixed locally:** `AppShellRoute` initializes from the already available
   in-memory session, avoiding the loading screen on ordinary in-app navigation.
 - **Confirmed:** `AppShell` owns route and screen state below that page-level
-  boundary; replacing the page unmounts it. In-flight UI work scoped to those
-  components may be canceled or lose its completion state.
-- **Open questions:** Which user operations are canceled server-side, which
-  continue but lose their UI state, and which should survive an intentional
-  route change versus a full browser reload require operation-by-operation
-  verification.
+  boundary; replacing the page unmounts it. Some route-owned component state is
+  therefore reset on navigation.
+- **Open questions:** No concrete user action with lost state or feedback has
+  been reproduced. Determine whether any such loss matters during ordinary
+  in-app navigation; full tab closure and reload behavior belong to separate
+  issue records.
 
 ### Implemented local mitigation and remaining work
 
 The local mitigation adds a root state provider and synchronous session
 initialization, and makes chat retries idempotent. It does not keep a single
-`AppShell` instance mounted or cover every route-owned mutation. Audit
-remaining operation owners, move any navigation-surviving work above the page
-boundary or make it resumable/idempotent, and define which draft state may
-survive a full document reload. Verify all routes, browser back/forward,
-mobile navigation, active operations, and account switching without changing
-identity.
+`AppShell` instance mounted. Later work should first reproduce a user-visible
+loss during client-side route changes, then patch that operation's state
+contract if needed. Do not conflate this with full tab closure, which is tracked
+in BUG-OPS-001.
 
 Non-goals: persist access or refresh credentials in JavaScript-readable
 storage, or keep every route-specific screen mounted indefinitely.
@@ -1323,21 +1323,21 @@ storage, or keep every route-specific screen mounted indefinitely.
 ### Tests and verification
 
 - **Required:** Verify no restoration flash during client-side navigation with
-  a valid in-memory session; verify shell state survives route changes; exercise
-  representative pending and completed operations across route transitions;
-  verify reload recovery separately; verify no duplicate mutation after retry.
+  a valid in-memory session and confirm whether any named user operation loses
+  state or completion feedback during route transitions. Keep full tab closure
+  and reload cases separate.
 - **Completed locally:** `npx tsc --noEmit` passes; root provider and synchronous
   session initialization were source-reviewed. Local browser navigation from
   Explore to Following retained the authenticated shell without a restore
   screen. Chat retry idempotency has a focused API test. A full App Router
-  navigation/operation matrix has not been run, so this bug remains open for
-  acceptance and remaining operation-specific fixes.
+  navigation/operation matrix has not been run, and no concrete remaining
+  loss has been identified. Reproduce a named symptom or close as superseded.
 
 ### Noteworthy
 
 Persistent shell state alone cannot preserve a browser operation across a true
-document reload. Each operation needs an explicit navigation/reload survival
-contract. Authentication token stability is tracked separately in
+document reload or closed tab. Cross-tab outcome recovery is tracked separately
+in BUG-OPS-001. Authentication token stability is tracked separately in
 BUG-AUTH-003.
 
 ### Related documentation and implementation
@@ -1347,6 +1347,85 @@ BUG-AUTH-003.
 - [`AppShellRoute`](../web/components/app-shell-route.tsx)
 - [`AppShell`](../web/components/app-shell.tsx)
 - [Home route](../web/app/home/%5Btab%5D/page.tsx)
+
+## BUG-OPS-001 — Closing a tab can leave an in-flight operation's outcome unknown
+
+- **Status:** Needs reproduction — recorded for later investigation
+- **Reported/updated:** 2026-09-29T22:27:28Z
+- **Affected area:** Web API mutations and recovery of their outcomes across tabs
+- **Environment:** Web browsers; operation and close timing not yet recorded
+- **Severity:** medium
+
+### Bug summary
+
+When a user closes the tab that submitted an API mutation before its response
+is shown, the request may stop before reaching the API or the API may finish
+after the tab is gone. A new tab does not automatically know which result
+occurred, leaving the user unsure whether retrying is safe.
+
+### Reproduction
+
+1. In one tab, start a mutation that shows a loading state.
+2. Close that tab before the response arrives, testing closure before send,
+   while the server is processing, and after the server commits but before the
+   browser receives the response.
+3. Open Friink in another tab and inspect whether the action's result is
+   available and whether a retry would duplicate the mutation.
+
+### Expected behavior
+
+After reopening Friink, the user can determine whether the operation completed
+and can safely retry when it did not. The product may use operation-specific
+idempotency and a durable result/status lookup; the mechanism remains undecided.
+
+### Actual behavior
+
+The browser may terminate a request when its tab closes, or the API may process
+and commit a request whose response the browser can no longer display. Friink's
+in-memory shell state is scoped to the open tab and disappears when that tab
+closes. Chat sends have a stable client message ID for retry deduplication, but
+there is no general operation receipt/status recovery contract documented for
+other mutations. Exact behavior depends on request timing and endpoint.
+
+### Root cause
+
+- **Confirmed:** Closing a tab removes its in-memory UI state and response
+  handler; a separate tab does not share the root React state provider.
+- **Open questions:** Which endpoints finish after tab closure, which transports
+  the browser cancels, and which operations already have endpoint-specific
+  idempotency or a way to query the result have not been audited.
+
+### Proposed fix
+
+First audit representative mutations and reproduce the timing cases. Define
+which actions need durable operation IDs, safe retries, and result/status lookup
+after reopening. Implement only the operation-specific contract needed to let
+users resolve an ambiguous outcome. Do not assume every request should run as a
+background job after its tab closes.
+
+Non-goals: guarantee delivery of a request that never reached the API, or add a
+single generic job system before the operation requirements are known.
+
+### Tests and verification
+
+- **Required:** For representative supported mutations, verify tab close before
+  dispatch, during server processing, and after commit but before response.
+  Reopen a second tab and verify success/failure recovery and duplicate-safe
+  retry. Record endpoint, browser, request/response status, and persistence or
+  idempotency evidence without logging credentials.
+- **Completed:** None — recorded for later reproduction and design.
+
+### Noteworthy
+
+This is separate from BUG-NAV-001, which covers client-side route transitions
+while the original tab remains open. The browser/API may have an ambiguous
+outcome even when the server-side operation itself is correct.
+
+### Related documentation and implementation
+- [Navigation unit](units/navigation.md)
+- [`AppShellStateProvider`](../web/components/app-shell-state-provider.tsx)
+- [`createPost()`](../web/lib/auth.ts)
+- [`ChatClient`](../web/app/%5Busername%5D/chat/chat-client.tsx)
 
 ## BUG-CHAT-001 — Individual chat refresh redirects to login
 

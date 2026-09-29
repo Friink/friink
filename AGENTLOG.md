@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-29T22:29:32Z — Record Navigation And Closed-Tab Operation Bugs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record both the in-app navigation concern and the separate
+  closed-tab operation outcome concern as bugs for later investigation.
+- Changes Made: Narrowed BUG-NAV-001 to in-app route transitions and clarified
+  that no specific remaining loss is confirmed. Added BUG-OPS-001 for uncertain
+  API mutation outcomes when the initiating tab closes, including timing-based
+  reproduction and operation-specific idempotency/result-recovery questions.
+  Updated the navigation unit and bug triage plan. No application behavior
+  changed.
+- Files: `docs/bugs.md`, `docs/units/navigation.md`, `docs/architecture.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation reviewed against current shell provider,
+  post submission flow, and existing chat idempotency notes. `git diff --check`
+  passed; no tests run for this documentation-only change.
+
 # 2026-09-29T22:03:18Z — Implement BUG-AUTH-011 Refresh Diagnostics
 
 - Agent: Codex
