@@ -640,18 +640,31 @@ async def refresh(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Refresh recovery is temporarily unavailable.",
                 )
+        within_reuse_grace = (
+            token_record.rotated_at is not None
+            and (now - token_record.rotated_at).total_seconds() <= settings.refresh_token_reuse_grace_seconds
+        )
+        same_operation_can_recover = (
+            same_refresh_operation and recoverable_refresh_token is not None
+        )
         grace_is_valid = (
             token_record.rotated_at is not None
             and token_record.revoked_at is None
-            and (same_refresh_operation or token_record.reuse_grace_used_at is None)
-            and (now - token_record.rotated_at).total_seconds() <= settings.refresh_token_reuse_grace_seconds
+            and (
+                same_operation_can_recover
+                or (
+                    within_reuse_grace
+                    and (recoverable_refresh_token is not None or token_record.reuse_grace_used_at is None)
+                )
+            )
             and replacement is not None
             and replacement.rotated_at is None
             and replacement.revoked_at is None
             and replacement.expires_at > now
         )
         if grace_is_valid:
-            token_record.reuse_grace_used_at = token_record.reuse_grace_used_at or now
+            if within_reuse_grace:
+                token_record.reuse_grace_used_at = token_record.reuse_grace_used_at or now
             user = session.get(User, token_record.user_id)
             auth_session = session.get(AuthSession, token_record.session_id) if token_record.session_id else None
             if user and user.lifecycle_status != "active":
@@ -675,7 +688,11 @@ async def refresh(
                 slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
                 if slot:
                     slot.last_used_at = now
-            if same_refresh_operation and recoverable_refresh_token is not None:
+            if recoverable_refresh_token is not None:
+                # Deterministic successors make a retry idempotent: the same
+                # parent always returns the one child already stored for it.
+                # Exact operation retries may recover beyond the normal grace;
+                # other operation IDs are accepted only during that window.
                 replay_refresh_token = recoverable_refresh_token
             else:
                 # Compatibility path for rows rotated before deterministic
@@ -694,12 +711,18 @@ async def refresh(
             access_token = create_access_token(user.id, user.security_epoch, token_record.session_id)
             await commit(session)
             log_refresh_token_event(
-                event="auth_refresh_token_grace_replayed",
+                event="auth_refresh_token_retry_recovered",
                 flow="refresh_exchange",
                 token_id=str(token_record.id),
                 family_id=str(token_record.family_id),
                 user_id=str(user.id),
-                reason="immediately_previous_token",
+                reason=(
+                    "same_operation"
+                    if same_refresh_operation
+                    else "deterministic_successor_retry"
+                    if recoverable_refresh_token is not None
+                    else "legacy_grace_replay"
+                ),
             )
             if account_slot:
                 set_account_refresh_cookie(response, account_slot, replay_refresh_token, settings)

@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-28T00:43:23Z
+**Last edited:** 2026-09-29T12:09:15Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -454,10 +454,12 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
   acknowledgment and converge after the owner switches to a valid account or
   clears the active selection; if the owner tab closes, another tab can take
   over.
-- Retain refresh-token reuse detection and its current security boundary while
-  correcting client-side refresh coordination. Any broader retry grace or
-  server-side idempotency behavior needs a separate security review for lost
-  responses and duplicate requests.
+- Keep refresh retries idempotent without weakening stale-token detection:
+  while its deterministic successor remains active, the original recorded
+  operation ID can recover that same child after grace; any operation ID can
+  recover that same child within the configured grace window; a different
+  operation ID after grace still revokes the family. Legacy rows without a
+  deterministic successor retain one-time grace recovery.
 - Persist a successful restore's `last_used_at` update in the same transaction
   as the refresh rotation, so the server's account-list order reflects recency.
 
@@ -760,15 +762,17 @@ The priority reliability proposal and deferred workstreams are:
 1. **Make refresh retries recoverable (implemented locally; staging pending;
    BUG-AUTH-003 and BUG-AUTH-006).** A refresh request that has committed its
    rotation must be safely retryable if the browser reload interrupts delivery
-   of the response cookie. A retry within the bounded recovery period must
-   recover the same committed result and must not create another independently
-   usable token in the family. The API now derives each rotated successor with
+   of the response cookie. A retry must recover the same committed result and
+   must not create another independently usable token in the family. The API
+   derives each rotated successor with
    a keyed HMAC from its parent token and records the derivation key ID on the
    successor row. The API accepts a refresh operation ID and records it on the
    rotated parent. A retry with that same ID can reproduce and resend the same
-   successor during the grace period; only the SHA-256 hash is stored. Keep the
-   referenced JWT key ID configured through the grace period. Calls without an
-   operation ID retain the one-time legacy grace behavior. The web app now
+   active successor after grace; any retry during grace receives that same
+   deterministic child even if its operation ID differs. Only the SHA-256 hash
+   is stored. Keep the referenced JWT key ID configured while the successor
+   remains active. Legacy rows without a derivation key retain the one-time
+   grace behavior. The web app now
    persists the operation ID per account slot before sending the request,
    reuses it after an interrupted or ambiguous refresh, and sends it in
    `X-Friink-Refresh-Operation-Id`, while retaining one captured account slot
@@ -931,9 +935,24 @@ logs.
   and Add account, one notice owner across tabs with takeover, captured per-slot
   client coordination, and persisted refresh recency. Multi-tab
   browser verification and staging acceptance remain pending.
-- The refresh-retry change has local API regression coverage for repeated
-  same-operation requests and refresh-family row count. The staging schema is
-  migrated; API/web deployment and browser verification remain required.
+- The refresh-retry change has local API regression coverage for recovery
+  after grace, multiple operation IDs receiving the same child within grace,
+  and different-operation replay revocation after grace. API deployment and
+  browser verification remain required; no schema change is part of this fix.
+- A local API integration check used a test-only one-second access-token
+  lifetime and completed three sequential expiry/refresh rotations. This did
+  not reproduce refresh reuse; concurrent tabs, interrupted responses, and
+  real-browser cookie persistence remain outside that check.
+- API code review and isolated SQLite reproductions confirmed two retry defects:
+  same-operation recovery after grace revoked the family, while a different
+  operation ID inside grace replaced the deterministic child. Both paths are
+  fixed locally and regression-tested: the original operation recovers the
+  active child after grace, and all retries during grace receive that same
+  child. Different operation IDs after grace still trigger reuse revocation.
+  Incident records do not include operation IDs, so they cannot prove the exact
+  sequence for each historical session loss. The non-atomic localStorage lock
+  fallback remains a possible source of competing IDs in browsers without Web
+  Locks, but it was not reproduced in a browser.
 - Staging session reliability is not accepted: interrupting page reload during
   session restoration can end the session, and the 2026-09-27 run lost
   `@muflah` in Chrome and Firefox after the API detected stale refresh-token

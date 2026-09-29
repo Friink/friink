@@ -1,5 +1,32 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-29T12:09:15Z — Make Refresh Recovery Idempotent
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Patch the confirmed refresh-session failure paths.
+- Changes Made: API retries with the recorded operation ID now recover its still-active deterministic successor after the normal grace period. During grace, deterministic rows return that same successor for retries with any operation ID, so overlapping requests cannot revoke/replace the first child. Different operation IDs after grace still trigger family reuse revocation; legacy rows without a derivation key keep one-time grace recovery. Recovery logs now report a distinct event and reason without exposing token material. Extended the focused refresh test and updated AUTH-R-008, Account Access, BUG-AUTH-003, and BUG-AUTH-006. No schema change.
+- Files: `api/app/routers/auth.py`, `api/tests/test_refresh_token_rotation.py`, `docs/rules.md`, `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The full refresh-token test module passed (`4 passed`) against a unique temporary SQLite DB with OTP disabled for the test run. `git diff --check` passed. No staging deployment or browser acceptance performed.
+
+## 2026-09-29T11:45:50Z — Reproduce Refresh Recovery Failure Paths
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Inspect the auth/session code for a concrete cause of refresh reuse and session loss.
+- Changes Made: Reproduced two API failure paths using isolated SQLite and temporary tests that were removed after the run: (1) rotate a refresh token, wait beyond a one-second grace, then retry the old cookie with the same operation ID; API returns `401 REFRESH_TOKEN_INVALID` and revokes the family; (2) rotate with operation A, replay within grace with operation B, then operation A's child returns `401 SESSION_TERMINATED`. Identified the browser's no-Web-Locks fallback as a non-atomic localStorage lease that could permit competing tab owners, but did not reproduce that browser race. Confirmed the deployed incident commit `199fe90` has the same auth source as current HEAD. Updated BUG-AUTH-003 and Account Access evidence. These are reproduced code paths, not proof of the operation IDs used in historical incidents.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Both local targeted diagnostics passed (`2 passed`); the earlier one-second sequential rotation test passed (`1 passed`); `git diff --check` passed. No auth implementation changed and no staging deployment was performed.
+
+## 2026-09-29T11:23:02Z — Exercise Refresh With One-Second Access JWTs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Temporarily reduce access-token lifetime to one second and test the refresh behavior locally.
+- Changes Made: Added an API integration test that changes the cached Settings object only within the test to a one-second access JWT lifetime with zero clock skew. In an isolated SQLite database, it expires the JWT three times in sequence, confirms `/auth/me` rejects each expired token, and confirms each refresh succeeds, rotates the refresh cookie, and restores authenticated access. No environment file or deployed configuration was changed. Recorded that sequential expiry alone does not reproduce BUG-AUTH-003; concurrent requests and real-browser cookie persistence remain untested.
+- Files: `api/tests/test_refresh_token_rotation.py`, `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted pytest passed (`1 passed`); `git diff --check` passed. The test used an isolated SQLite database; no production/staging database was used.
+
 ## 2026-09-28T00:43:23Z — Compare Production Refresh Reuse And Reassess Cookie Hypothesis
 
 - Agent: Codex

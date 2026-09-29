@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-29T12:09:15Z
+- [account-access] Made deterministic refresh retries idempotent: the recorded
+  operation recovers its active child after grace, retries during grace reuse
+  that child across operation IDs, and unrelated stale retries after grace
+  still revoke the family. Added local regression coverage and updated the auth
+  rules, account-access unit, and bug records. Staging deployment remains
+  pending.
+
+## 2026-09-29T11:45:50Z
+- [account-access] Reproduced two refresh-rotation failure paths against an
+  isolated SQLite API: a same-operation retry after grace revokes the family,
+  and a different-operation retry within grace invalidates the first child.
+  Recorded the non-atomic localStorage lock fallback as an unverified browser-
+  dependent race hypothesis. No auth behavior changed.
+
+## 2026-09-29T11:23:02Z
+- [account-access] Added a local API regression check that expires access JWTs
+  after one second and completes three sequential refresh rotations. The
+  sequential short-expiry path passed; this does not cover concurrent clients
+  or browser cookie persistence.
+
 ## 2026-09-28T00:43:23Z
 - [account-access] Expanded BUG-AUTH-003 with read-only production evidence:
   repeated refresh-token reuse for @muflah, including an Android session.

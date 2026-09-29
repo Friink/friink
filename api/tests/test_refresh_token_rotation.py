@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import time
 import uuid
 
 import jwt
@@ -34,7 +35,8 @@ def _login(client: TestClient, email: str, password: str) -> str:
     return refresh_token
 
 
-def test_refresh_rotation_reuse_logout_legacy() -> None:
+def test_refresh_rotation_reuse_logout_legacy(monkeypatch) -> None:
+    monkeypatch.setattr(get_settings(), "refresh_token_reuse_grace_seconds", 1)
     suffix = uuid.uuid4().hex
     email = f"session-{suffix}@example.com"
     username = f"session_{suffix[:24]}"
@@ -83,7 +85,15 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
         repeated_client = TestClient(app)
         repeated_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
         repeated_reuse = repeated_client.post("/auth/refresh")
-        assert repeated_reuse.status_code == 401, repeated_reuse.text
+        assert repeated_reuse.status_code == 200, repeated_reuse.text
+        assert repeated_reuse.cookies.get(REFRESH_COOKIE_NAME) == new_token
+
+        with get_session_factory()() as session:
+            parent = session.get(RefreshToken, old_row.id)
+            assert parent
+            parent.rotated_at = datetime.now(UTC) - timedelta(seconds=2)
+            session.commit()
+
         duplicate_reuse_client = TestClient(app)
         duplicate_reuse_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
         duplicate_reuse = duplicate_reuse_client.post("/auth/refresh")
@@ -126,7 +136,9 @@ def test_refresh_rotation_reuse_logout_legacy() -> None:
             _delete_user(user_id)
 
 
-def test_refresh_retry_with_same_operation_id_replays_same_cookie() -> None:
+def test_refresh_retries_reuse_one_deterministic_child(monkeypatch) -> None:
+    settings = get_settings()
+    monkeypatch.setattr(settings, "refresh_token_reuse_grace_seconds", 1)
     suffix = uuid.uuid4().hex
     email = f"refresh-retry-{suffix}@example.com"
     username = f"retry_{suffix[:24]}"
@@ -164,14 +176,39 @@ def test_refresh_retry_with_same_operation_id_replays_same_cookie() -> None:
         replacement = first.cookies.get(REFRESH_COOKIE_NAME)
         assert replacement and replacement != old_token
 
-        # Simulate losing the first response's Set-Cookie delivery: each retry
-        # presents the stale parent cookie and must recover the same child.
-        for _ in range(2):
+        # A same-operation retry must recover the committed child even after
+        # the ordinary grace period, if that child is still the active token.
+        with get_session_factory()() as session:
+            parent = session.get(RefreshToken, original_row.id)
+            assert parent
+            parent.rotated_at = datetime.now(UTC) - timedelta(seconds=2)
+            session.commit()
+
+        retry_client = TestClient(app)
+        retry_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
+        retry = retry_client.post(
+            "/auth/refresh",
+            headers={"X-Friink-Refresh-Operation-Id": operation_id},
+        )
+        assert retry.status_code == 200, retry.text
+        assert retry.cookies.get(REFRESH_COOKIE_NAME) == replacement
+        assert next(row for row in _rows(user_id) if row.id == original_row.id).reuse_grace_used_at is None
+
+        # Separate tabs can create distinct operation IDs for the same stale
+        # cookie during the grace window. They must all receive the same child,
+        # rather than revoking it and issuing competing replacements.
+        for retry_operation_id in (f"test-{uuid.uuid4().hex}", f"test-{uuid.uuid4().hex}"):
+            with get_session_factory()() as session:
+                parent = session.get(RefreshToken, original_row.id)
+                assert parent
+                parent.rotated_at = datetime.now(UTC)
+                session.commit()
+
             retry_client = TestClient(app)
             retry_client.cookies.set(REFRESH_COOKIE_NAME, old_token)
             retry = retry_client.post(
                 "/auth/refresh",
-                headers={"X-Friink-Refresh-Operation-Id": operation_id},
+                headers={"X-Friink-Refresh-Operation-Id": retry_operation_id},
             )
             assert retry.status_code == 200, retry.text
             assert retry.cookies.get(REFRESH_COOKIE_NAME) == replacement
@@ -182,7 +219,87 @@ def test_refresh_retry_with_same_operation_id_replays_same_cookie() -> None:
         assert len(rows) == 2
         assert len(active_rows) == 1
         assert updated_parent.rotation_operation_id == operation_id
+        assert updated_parent.reuse_grace_used_at is not None
         assert active_rows[0].derivation_key_id
+
+        # Replay detection remains active after grace for a different
+        # operation ID, even when the parent has a deterministic successor.
+        with get_session_factory()() as session:
+            parent = session.get(RefreshToken, original_row.id)
+            assert parent
+            parent.rotated_at = datetime.now(UTC) - timedelta(seconds=2)
+            session.commit()
+        unrelated_retry = TestClient(app)
+        unrelated_retry.cookies.set(REFRESH_COOKIE_NAME, old_token)
+        rejected = unrelated_retry.post(
+            "/auth/refresh",
+            headers={"X-Friink-Refresh-Operation-Id": f"test-{uuid.uuid4().hex}"},
+        )
+        assert rejected.status_code == 401, rejected.text
+        assert rejected.json()["detail"]["code"] == "REFRESH_TOKEN_INVALID"
+        assert all(row.revoked_at is not None for row in _rows(user_id) if row.family_id == original_row.family_id)
+    finally:
+        if user_id is not None:
+            _delete_user(user_id)
+
+
+def test_one_second_access_token_expiry_refreshes_successfully(monkeypatch) -> None:
+    """Exercise access expiry and refresh using a test-only one-second JWT."""
+    settings = get_settings()
+    monkeypatch.setattr(settings, "access_token_expire_minutes", 1 / 60)
+    monkeypatch.setattr(settings, "jwt_clock_skew_seconds", 0)
+
+    suffix = uuid.uuid4().hex
+    email = f"one-second-expiry-{suffix}@example.com"
+    username = f"one_sec_{suffix[:20]}"
+    password = "Strong-pass9!"
+    client = TestClient(app)
+    user_id: uuid.UUID | None = None
+
+    try:
+        signup = client.post(
+            "/auth/signup",
+            json={
+                "email": email,
+                "username": username,
+                "display_name": "Short Expiry Test",
+                "password": password,
+                "date_of_birth": "1990-01-01",
+            },
+        )
+        assert signup.status_code == 201, signup.text
+        access_token = signup.json()["access_token"]
+        refresh_token = client.cookies.get(REFRESH_COOKIE_NAME)
+        assert refresh_token
+
+        with get_session_factory()() as session:
+            user_id = session.execute(select(User.id).where(User.email == email)).scalar_one()
+
+        valid = client.get("/auth/me", headers={"Authorization": f"Bearer {access_token}"})
+        assert valid.status_code == 200, valid.text
+
+        # JWT exp is encoded to whole seconds, so wait beyond each one-second
+        # lifetime and assert expiration with clock skew disabled above.
+        for _ in range(3):
+            time.sleep(2)
+            expired = client.get("/auth/me", headers={"Authorization": f"Bearer {access_token}"})
+            assert expired.status_code == 401, expired.text
+
+            # Seed a fresh client's cookie jar with the latest refresh value so
+            # the API sees the same rotation chain after every expiry.
+            refresh_client = TestClient(app)
+            refresh_client.cookies.set(REFRESH_COOKIE_NAME, refresh_token)
+            refreshed = refresh_client.post("/auth/refresh")
+            assert refreshed.status_code == 200, refreshed.text
+            next_refresh_token = refreshed.cookies.get(REFRESH_COOKIE_NAME)
+            assert next_refresh_token and next_refresh_token != refresh_token
+            access_token = refreshed.json()["access_token"]
+            restored = refresh_client.get(
+                "/auth/me",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            assert restored.status_code == 200, restored.text
+            refresh_token = next_refresh_token
     finally:
         if user_id is not None:
             _delete_user(user_id)
