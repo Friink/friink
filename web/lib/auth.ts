@@ -1319,6 +1319,62 @@ async function withAccountSelectionLock<T>(operation: () => Promise<T>): Promise
   return withAccountSelectionLease(operation);
 }
 
+export type ActiveAccountLogoutResult =
+  | { kind: 'logged-out' }
+  | { kind: 'restored'; session: AuthSession }
+  | { kind: 'recovery' }
+  | { kind: 'selection-changed' };
+
+export type ActiveAccountLogoutOptions = { serverSessionAlreadyEnded?: boolean };
+
+/** Serialize server logout and fallback with account switches across tabs. */
+export async function logoutActiveAccountWithFallback(
+  options: ActiveAccountLogoutOptions = {},
+): Promise<ActiveAccountLogoutResult> {
+  return withAccountSelectionLock(async () => {
+    const session = loadAuthSession();
+    if (!session) {
+      clearAuthSession();
+      return { kind: 'logged-out' };
+    }
+    if (session.accountSlot !== activeAccountSlot()) return { kind: 'selection-changed' };
+
+    // Account removal already revoked this session; all other logout paths
+    // must confirm server logout before changing local state.
+    if (!options.serverSessionAlreadyEnded) {
+      await logout(session.accessToken, session.accountSlot);
+    }
+    try {
+      window.sessionStorage.removeItem(`friink-setup-dismissed-${session.user.id}`);
+    } catch {
+      // This dismissal preference is nonessential; continue with logout.
+    }
+
+    let fallback: AuthSession | null;
+    try {
+      fallback = await restoreRememberedAccountWithFallback(
+        session.accountSlot ? [session.accountSlot] : [],
+      );
+    } catch {
+      // Logout succeeded, so preserve the ended slot only as recovery context;
+      // the shared modal excludes it while retrying the other accounts.
+      clearAuthSessionForRecovery(new AuthApiError('Session ended', 401, 'SESSION_TERMINATED'));
+      return { kind: 'recovery' };
+    }
+
+    if (fallback) {
+      saveAuthSession(fallback);
+      return { kind: 'restored', session: fallback };
+    }
+
+    clearAuthSession();
+    // Cached slot summaries can outlive server sessions. Do not let those
+    // stale summaries turn an exhausted fallback back into app entry.
+    clearSessionEntryHint();
+    return { kind: 'logged-out' };
+  });
+}
+
 async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promise<T> {
   if (typeof window === 'undefined') return operation();
 

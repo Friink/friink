@@ -6,7 +6,7 @@ complete artifact per unit that can guide product decisions, implementation,
 testing, and a future rebuild of Friink.
 
 **Status:** Active  
-**Last edited:** 2026-09-12  
+**Last edited:** 2026-09-29T13:03:33Z
 **Scope:** `docs/units/`
 
 ## Core operating rule
@@ -204,6 +204,8 @@ the migration record preserves what was found and how it was handled.
 | ID | Unit | Date | Conflict | Evidence | Recommended resolution | Status |
 |---|---|---|---|---|---|---|
 | MIG-001 | account-access | 2026-09-12 | Active `RULES.md` said refresh tokens default to 14 days, while the API settings and example environment default to 30 days. | `RULES.md` — `JWT Sessions`; `api/app/config.py` — `refresh_token_expire_days`; `api/.env.example` — `REFRESH_TOKEN_EXPIRE_DAYS`; archived session progress | Keep the existing 30-day implementation and align the active documentation to it. | Documented |
+| MIG-002 | account-access | 2026-09-29T12:35:50Z | The active logout contract requires revoking only the active slot and falling back to the most-recent valid remembered account or public site, but profile, post-detail, username-post, and username-chat logout callbacks clear local auth and route to `/` without calling the server logout endpoint or trying fallback. | `web/components/app-shell-route.tsx` — shared server-backed logout; `web/app/[username]/profile-client.tsx`; `web/app/posts/[postId]/post-client.tsx`; `web/app/[username]/[postId]/post-client.tsx`; `web/app/[username]/chat/chat-client.tsx` — direct local-clear callbacks | Route every authenticated logout control through the shared operation; retain active session and show retryable feedback on request failure; preserve other remembered slots. User approved this behavior; `useAppAccountLogout` now implements it locally on all listed surfaces. Route-matrix/browser/staging verification remains pending under ACCESS-AC-048. | Implemented |
+| MIG-003 | account-access / error-handling | 2026-09-29T13:03:33Z | When the redirect hint is zero, `PublicRouteGuard` tries the selected slot; a confirmed terminal failure clears the hint and stays public without checking another remembered slot. This can take a user out of the app while another account session may still be valid, contrary to the approved continuity intent. | `web/components/public-route-guard.tsx` — terminal catch clears hint and returns; `web/lib/auth.ts` — entry restoration uses active slot; protected `AppShellRoute` already presents shared terminal recovery and remembered-account fallback | Preserve the terminal notice and route into shared app-shell recovery; validate alternatives through the existing slot restore flow, keep ambiguous errors retryable, and return public only when no candidate validates. User approved implementation; the public guard now hands off terminal failures to shared app recovery. Public-entry/browser/staging verification remains pending under ACCESS-AC-049. | Implemented |
 
 Allowed statuses are `Open`, `Decision needed`, `Approved`, `Implemented`,
 `Documented`, and `Rejected`.

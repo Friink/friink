@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Draft register — format pending team refinement
-**Last edited:** 2026-09-27T14:18:22Z
+**Last edited:** 2026-09-29T14:22:19Z
 
 ## Instructions for agents
 
@@ -76,8 +76,8 @@ Copy this template for a new defect and replace every placeholder:
 
 ## BUG-AUTH-008 — Account switching can race across open tabs
 
-- **Status:** Patch committed to the staging branch; multi-tab staging acceptance pending
-- **Reported/updated:** 2026-09-27T23:12:02Z
+- **Status:** Reopened — the multi-tab failure was reported again after the cross-tab lock patch; exact cause pending
+- **Reported/updated:** 2026-09-29T14:22:19Z
 - **Affected area:** Account switching and session restoration across browser tabs
 - **Environment:** Staging; multiple tabs in one browser profile
 - **Severity:** medium
@@ -104,19 +104,25 @@ selection.
 ### Actual behavior
 
 The selected account is shared across the browser and other tabs reload when it
-changes. Before this fix, refreshes coordinated token rotation per account
-slot, but account-switch requests had no shared lock. A tab could begin a
-switch from stale in-memory state while another tab was also switching.
+changes. The earlier implementation had no cross-tab switch lock; the current
+code serializes switches and reloads/restores tabs when selection changes. In
+the latest staging report, after switching once among multiple open tabs, the
+switcher became disabled. The currently observed busy flag is local to each
+SideDrawer instance, while the operation lock is browser-wide. The logs and
+request timing needed to identify why the control remained unavailable were
+not captured.
 
 ### Root cause
-- **Confirmed:** `switchAccount()` did not coordinate simultaneous cross-tab
-  switches. Successful `/auth/me` restoration also saved its captured slot
-  without checking whether the browser-wide selected slot had changed during
-  the request.
-- **Open questions:** The exact request ordering in the staging reproduction
-  was not captured. The reported `Could not load home feed` error with three or
-  four tabs may be a separate transport or server-load issue and remains
-  undiagnosed.
+- **Confirmed:** The earlier cross-tab race was present and has a lock/recheck
+  implementation in the current branch. The new report confirms the user-visible
+  disabled-switcher symptom still occurs with multiple tabs. Busy state is
+  currently local to a mounted drawer; `switchAccount()` serializes the request
+  across tabs.
+- **Open questions:** The latest switch request, its duration/result, active
+  selection, and per-tab busy state were not captured. It is not yet known
+  whether the disabled control represents a still-running request, stale local
+  state, a session-recovery overlay, or another failure. The earlier feed-load
+  failure with three or four tabs remains separately undiagnosed.
 
 ### Resolution in progress
 
@@ -129,13 +135,15 @@ staging; the multi-tab regression itself has not been tested there.
 
 ### Tests and verification
 - **Required:** Repeated and simultaneous switches in both directions with two
-  or more staging tabs; confirm every tab converges and the switcher remains
-  usable. Separately capture the HTTP status for feed failures with three or
-  four tabs.
-- **Completed:** Web TypeScript check passed. User-reported staging smoke check
-  passed for login and ordinary account switching.
-- **Pending:** Multi-tab browser and staging verification. Separately capture
-  the HTTP status for feed failures with three or four tabs.
+  or more staging tabs; record request start/end, selected slot, response status,
+  and each tab’s busy state. Confirm controls recover after success, failure,
+  and timeout. Separately capture the HTTP status for feed failures with three
+  or four tabs.
+- **Completed:** Web TypeScript check passed. An earlier user-reported staging
+  smoke check passed for login and ordinary switching; the latest user report
+  reproduces the multi-tab disabled-switcher symptom.
+- **Pending:** Diagnose the latest multi-tab failure and complete staging
+  verification. Feed failure status remains uncaptured.
 
 ### Noteworthy
 
@@ -149,6 +157,231 @@ failure is tracked as an open diagnosis and is not claimed as fixed here.
 - `web/lib/auth.ts`
 - `web/components/side-drawer.tsx`
 
+## BUG-AUTH-009 — Session-ended recovery ownership can leave Close inoperative
+
+- **Status:** Diagnosed at code level; staging ownership sequence not captured
+- **Reported/updated:** 2026-09-29T14:22:19Z
+- **Affected area:** Web session recovery notice, acknowledgement, and fallback across tabs
+- **Environment:** Staging; multiple tabs in one browser profile
+- **Severity:** high
+
+### Bug summary
+
+When recovery ownership changes between tabs, a tab can continue showing an
+owner modal while its Close and X handlers silently do nothing. Other tabs can
+remain on a waiting screen with no action to acknowledge the notice.
+
+### Reproduction
+1. Sign in to two remembered accounts and open the app in several tabs.
+2. Cause a terminal session result in one tab, then let another tab take over
+   after the owner is backgrounded or delayed.
+3. Observe a waiting screen in some tabs and a Session ended modal in others.
+4. Try Close in the modal after ownership has moved; Add account may still open
+   the login flow.
+
+### Expected behavior
+
+A user can acknowledge recovery from the visible recovery UI, or the UI clearly
+identifies the tab that can do so. Ownership changes are reflected promptly and
+cannot leave an enabled but ineffective action.
+
+### Actual behavior
+
+The waiting screen says another tab will continue after acknowledgment but has
+no button. The modal's Close and X both use the same handler. That handler
+returns silently if the tab's stored owner state is false or its tab ID no
+longer matches the shared notice.
+
+### Root cause
+- **Confirmed in current web code:** The termination notice uses an 8-second
+  localStorage lease. Claiming is a read followed by a write, and the component
+  only sets its local `owner` state to true after a claim; it does not track a
+  later ownership loss. `cancelSessionRecovery()` silently returns when the
+  current tab is no longer the owner. The waiting screen has no acknowledge
+  action.
+- **Open questions:** The staging browser did not capture notice contents,
+  ownership transitions, or which tab handled the first terminal response.
+  This code path explains how Close can no-op, but the exact incident ordering
+  and whether all tabs truly held the same notice ID are unverified.
+
+### Proposed fix
+
+Use a cross-tab recovery operation with a reliable ownership/acknowledgment
+hand-off. Synchronize notice ownership changes into each tab, make Close either
+acquire recovery safely or route to the active recovery operation, and avoid a
+silent no-op. Keep fallback idempotent so duplicate user actions cannot change
+the selected account twice. Preserve API session validation and token rules.
+
+### Tests and verification
+- **Required:** With several staging tabs, trigger terminal recovery; test owner
+  foreground/background, owner close, simultaneous takeover, Close/X from each
+  visible state, account selection, Add account, and fallback completion. Confirm
+  exactly one effective recovery operation and convergence in all tabs.
+- **Completed:** Read-only review of the current UI and notice/lease code;
+  staging behavior is user-reported and the exact ownership sequence is not
+  instrumented.
+
+### Noteworthy
+
+The waiting screen has no acknowledge button by design; acknowledgment currently
+belongs to the owner modal's Close action or account selection. This defect is
+separate from whether a remembered account's refresh token remains valid.
+
+### Related documentation and implementation
+- [Account Access](units/account-access.md)
+- [Error Handling](units/error-handling.md)
+- `web/components/session-recovery-screen.tsx`
+- `web/components/app-shell-route.tsx`
+- `web/lib/auth.ts`
+
+## BUG-AUTH-010 — Account switches accumulate active refresh-token families
+
+- **Status:** Diagnosed; API/cookie design and staging acceptance pending
+- **Reported/updated:** 2026-09-29T14:22:19Z
+- **Affected area:** Account-switch API and slot-scoped refresh cookies
+- **Environment:** Staging; remembered accounts switched repeatedly
+- **Severity:** medium
+
+### Bug summary
+
+Each successful account switch currently creates a new refresh-token family for
+the destination session, while earlier families for that session remain active.
+
+### Reproduction
+1. Sign in to two remembered accounts on one device.
+2. Switch between them repeatedly.
+3. Inspect refresh-token families attached to the destination account session.
+
+### Expected behavior
+
+Switching an account should not create unbounded, independently usable refresh
+credentials for the same remembered session. The destination slot's existing
+valid refresh cookie should remain usable; a missing/invalid cookie should be
+repaired only after the device slot and session are validated.
+
+### Actual behavior
+
+`POST /auth/accounts/switch` calls `issue_refresh_token()` without an existing
+family ID and sets the newly issued token as the destination slot cookie. The
+previous family is not revoked by the switch route. The staging database audit
+found 13 unrevoked, unexpired refresh-token families attached to
+`@muflahulfurqan`'s active slot session at the time of the audit.
+
+### Root cause
+- **Confirmed:** The switch endpoint creates a fresh family on each successful
+  switch and does not revoke earlier families for that auth session. The
+  staging rows confirm multiple active families on one session.
+- **Open questions:** The rows do not prove that this accumulation caused the
+  reported recovery screen. `@muflahulfurqan` remained active and was switched
+  to successfully after the incident. The appropriate handling of a missing
+  or stale destination cookie during concurrent switching still needs design.
+
+### Proposed fix
+
+Prefer the destination slot's existing valid refresh cookie and make switching
+issue only the access credential. If a refresh cookie needs repair, use one
+validated, serialized recovery path. Do not revoke all existing families as a
+first step: account for in-flight requests and verify rollback behavior before
+cleaning up previously issued rows.
+
+### Tests and verification
+- **Required:** Repeat switches in both directions and verify the active
+  family count does not grow per switch. Cover an absent cookie, stale cookie,
+  concurrent refresh, multiple tabs, and revocation of the account session.
+  Confirm cookies remain slot-scoped and a switch cannot authorize another
+  account.
+- **Completed:** Read-only code review and staging DB query confirmed family
+  accumulation; no API changes or tests have been run for this finding.
+
+### Noteworthy
+
+This is confirmed token-family accumulation, not proof that the refresh token
+expired or that the session was revoked during the reported incident. Existing
+families may remain until expiration or session revocation; cleanup requires a
+separate safe rollout decision.
+
+### Related documentation and implementation
+- [Account Access](units/account-access.md)
+- [Refresh-family replay bug](#bug-auth-006--refresh-grace-replay-forks-token-family)
+- `api/app/routers/auth.py`
+- `api/app/services/session_service.py`
+- `api/app/models/refresh_token.py`
+
+## BUG-AUTH-011 — Refresh failures lack enough correlated diagnostics
+
+- **Status:** Open — staging API log trace required
+- **Reported/updated:** 2026-09-29T14:22:19Z
+- **Affected area:** API auth-failure logging and session incident diagnosis
+- **Environment:** Staging and any environment where request-level auth traces are needed
+- **Severity:** medium
+
+### Bug summary
+
+The durable database audit does not record every failed refresh response or
+correlate it with the selected account slot and browser request, preventing an
+exact diagnosis from database records alone.
+
+### Reproduction
+1. Cause an auth or refresh request to fail terminally.
+2. Inspect `security_events` and refresh-token rows.
+3. Observe that successful refreshes and reuse detections are durable, while
+   missing-cookie, invalid-cookie, and session-state failures are not represented
+   there as a complete request trace.
+
+### Expected behavior
+
+A staging incident can be traced to a request, deployment, selected slot, and
+safe failure classification without exposing credentials.
+
+### Actual behavior
+
+The database query for the 2026-09-29 incident showed no refresh-reuse event for
+either account. It could not reveal the failed HTTP status/code or which
+slot-scoped cookie was present. The API already emits `auth_failure_classified`
+warnings, but the incident's Vercel runtime logs were not available to this
+audit, and the current failure log lacks a request correlation ID and
+slot/cookie-presence context.
+
+### Root cause
+- **Confirmed:** Database security events do not persist every HTTP refresh
+  failure or client request ID. Current API failure logs omit a request ID,
+  account-slot context, and whether the expected slot cookie was present. Raw
+  credential values must not be logged.
+- **Open questions:** The failure code and response from the reported request
+  remain unknown until staging API runtime logs for the incident are retrieved.
+  It is not yet established whether logging configuration or retention also
+  contributed to their unavailability.
+
+### Proposed fix
+
+Add structured, correlated API diagnostics for refresh/auth failures: request
+ID, deployment SHA, flow/route, failure code, slot-header presence, expected
+slot-cookie presence, and safe server-side token/session state. Keep diagnostics
+redacted and staging-first. Do not add raw JWTs, refresh tokens, cookies, token
+hashes, or unnecessary personal data. Prefer runtime logs unless a retention
+need justifies a narrowly scoped durable audit with an explicit retention rule.
+
+### Tests and verification
+- **Required:** Generate representative missing, invalid, expired, rotated,
+  revoked-session, and successful refresh requests in staging. Confirm each
+  request can be correlated across client/API logs and that no secret values
+  appear. Retrieve the exact 2026-09-29 time window if platform retention allows.
+- **Completed:** Read-only staging DB audit; it did not identify the failed
+  request. Current `auth_failure_classified` implementation reviewed.
+
+### Noteworthy
+
+`AUTH_DEBUG_LOGGING_ENABLED` controls supplementary token-lifecycle stdout
+messages. The standard `auth_failure_classified` warning is emitted regardless
+of that flag, but neither output is a durable database record. This bug tracks
+observability; it does not change how the API accepts or rejects a session.
+
+### Related documentation and implementation
+- [Account Access](units/account-access.md)
+- [Refresh stability bug](#bug-auth-003--reload-refreshes-can-destabilize-or-change-the-active-session)
+- `api/app/services/auth_debug.py`
+- `api/app/routers/auth.py`
+
 ## BUG-AUTH-007 — Terminal session recovery can loop between public site and app
 
 - **Status:** Fix implemented locally; staging acceptance pending
@@ -159,8 +392,9 @@ failure is tracked as an open diagnosis and is not claimed as fixed here.
 
 ### Bug summary
 
-After a terminal session failure, a visitor can be sent between the public site
-and app recovery. The user cannot reliably reach the login form to sign in again.
+After a terminal session failure from public entry, a visitor could be sent
+between the public site and app recovery even if another remembered account
+could still be restored.
 
 ### Reproduction
 1. Open the public site with a stale positive `friink_session_hint`, or with a
@@ -173,11 +407,12 @@ and app recovery. The user cannot reliably reach the login form to sign in again
 
 ### Expected behavior
 
-Once no remembered session validates, the visitor can remain on the public
-site and choose login. The redirect hint is only a routing optimization and
+If another remembered session validates, recovery keeps the user in Friink.
+Once no remembered session validates, the visitor remains on the public site
+and can choose login. The redirect hint is only a routing optimization and
 cannot force repeated entry into a known-failed recovery path.
 
-### Actual behavior
+### Actual behavior before the fix
 
 Two code paths can re-enter app recovery. A positive hint makes server-rendered
 `/` redirect to `/home` before session validation. With a zero hint, the public
@@ -199,21 +434,23 @@ hint when another cached slot summary exists.
   captured. Therefore this is a confirmed implementation-level loop risk, not
   proof of which path triggered the specific incident.
 
-### Resolution in progress
+### Resolution implemented locally
 
 After the public guard receives a confirmed terminal restore failure, it now
-clears the redirect-only `friink_session_hint` and stays on the public route.
-When app recovery exhausts all remembered candidates, it also clears the hint
-before returning to `/`. Neither path routes a known-unrestorable session
-straight back into `/home`. Authentication, token validation, and fallback
-authorization are unchanged.
+clears the redirect-only `friink_session_hint` and hands off to shared app
+recovery. That flow tries remembered accounts and keeps the user in Friink
+when one validates. When app recovery exhausts all remembered candidates, it
+clears the hint before returning to `/`. Authentication, token validation,
+and fallback authorization are unchanged.
 
 ### Tests and verification
 - **Required:** Browser checks for positive, zero, missing, and malformed hint;
   entry-status positive/negative; terminal and ambiguous restore; stale and
   valid remembered slots; login reachable after all candidates fail.
-- **Completed locally:** Targeted TypeScript check passed. Real staging browser
-  acceptance remains pending.
+- **Completed locally:** Targeted TypeScript check passed after the route
+  changes. Real browser/staging acceptance remains pending; local Next dev
+  server startup was blocked by `spawn EPERM`, so no browser acceptance was
+  performed in this turn.
 
 ### Noteworthy
 
@@ -231,8 +468,9 @@ unrelated. Auth/session behavior remains outside the scope of this diagnosis.
 
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
-- **Status:** In progress — session stability failed again on staging
-- **Reported/updated:** 2026-09-29T12:09:15Z
+- **Status:** In progress — user reports stability with a five-minute access
+  token lifetime; one-day refresh-token validation is pending
+- **Reported/updated:** 2026-09-29T13:03:33Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
 - **Severity:** high
@@ -288,6 +526,12 @@ when access is expired or absent. In-app route transitions can remount
 page-level shell components, but do not inherently rotate the token when the
 in-memory session survives. The updated implementation is deployed to staging
 as of 2026-09-27, confirmed by the user.
+
+**Latest user report (2026-09-29):** Session behavior is currently stable with
+a five-minute access-token lifetime. Validation with a one-day refresh-token
+lifetime is planned for 2026-09-30; that result is pending. This is an interim
+stability report, not confirmation that the historical refresh-reuse trigger
+is identified or that the full reload/multi-tab/lost-response matrix passes.
 
 ### Root cause
 
@@ -426,6 +670,32 @@ as of 2026-09-27, confirmed by the user.
   isolated refresh family, but still do not distinguish concurrent tabs,
   interrupted responses, or another stale-cookie retry as the trigger.
 
+### Staging audit — 2026-09-29 multi-tab recovery incident
+
+The screenshot time (18:31 Pakistan time) corresponds to approximately
+13:31 UTC. A read-only staging database query at 14:05 UTC found:
+
+- `@muflah`'s older Chrome/Windows auth session was last active at 12:40:29 UTC.
+  It was revoked at 13:37:00 UTC with `replaced_device_slot`, immediately after
+  a fresh login session was created at 13:36:58 UTC. The new login was recorded
+  at 13:37:02 UTC. This shows the old session was replaced by the subsequent
+  login; it does not show a refresh-token expiry or reuse revocation at 13:31.
+- `@muflahulfurqan`'s remembered session remained active, had a successful
+  refresh recorded at 13:22:58 UTC, and received another refresh-token row at
+  13:38:36 UTC. Its slot was used again at 13:38:38 UTC, consistent with the
+  user's later successful switch.
+- No `refresh_reuse_detected` event was found for either account during the
+  incident window. The database does not retain every failed HTTP response or
+  the cookie/header sent by each browser request, so it cannot identify the
+  terminal response that first opened recovery.
+
+This evidence does not support the hypothesis that both accounts' server
+sessions died. It supports an active alternate session and a new `@muflah`
+login after the reported screen. See BUG-AUTH-009 for the recovery ownership
+failure, BUG-AUTH-010 for refresh-family accumulation, and BUG-AUTH-011 for the
+request-level diagnostics needed to identify the original API failure. The
+exact API response remains unconfirmed until staging runtime logs are reviewed.
+
 ### Resolution
 
 The session bootstrap validates the slot-scoped HttpOnly access cookie through
@@ -440,9 +710,13 @@ coordination changes, those changes had not passed the session-stability gate.
 The API retry correction is implemented locally: identical committed
 operations now recover the same still-active child beyond grace; competing
 operation IDs in grace return the same child; unrelated stale retries after
-grace still revoke the family. Keep this bug open until the change is deployed
-to staging and the multi-tab/reload/lost-response matrix passes. The exact
-trigger for the historical stale-token presentations remains unknown.
+grace still revoke the family. The user's five-minute stability report does
+not establish whether that local API retry correction is deployed or prove the
+historical stale-token trigger. Validation with a one-day refresh-token
+lifetime is planned for 2026-09-30. Keep this bug open until deployment/build
+state is confirmed and the one-day and broader multi-tab/reload/lost-response
+checks pass. The exact trigger for the historical stale-token presentations
+remains unknown.
 
 ### Earlier partial mitigations
 

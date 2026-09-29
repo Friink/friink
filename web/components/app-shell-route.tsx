@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
-import { acknowledgeSessionTermination, AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, logout, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { acknowledgeSessionTermination, AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import { clearSessionEntryHint } from '@/lib/session-entry-hint';
 import type { Screen } from '@/lib/data';
@@ -28,7 +29,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   // metadata is hydrated in the effect below after React has mounted.
   const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
   const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
-  const [logoutError, setLogoutError] = useState<string | null>(null);
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'network' | 'offline' | 'expired' | 'security' | null>(null);
   const [termination, setTermination] = useState<{ id: string; cause: SessionTerminationCause; owner: boolean } | null>(null);
@@ -45,6 +45,17 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const networkRestoreTerminationId = useRef<string | null>(null);
   const retryNetworkRecoveryRef = useRef<() => void>(() => undefined);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
+  const { handleLogout, logoutError } = useAppAccountLogout((nextUser) => {
+    setUser(nextUser);
+    if (nextUser) {
+      setSessionReady(true);
+      setSessionError(null);
+      setAuthCheckComplete(true);
+      return;
+    }
+    setSessionReady(false);
+    setAuthCheckComplete(false);
+  });
 
   useEffect(() => {
     try {
@@ -361,39 +372,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         }
       });
   }, [refreshCurrentUser, router]);
-
-  async function handleLogout() {
-    const session = loadAuthSession();
-    if (!session) {
-      clearAuthSession();
-      router.replace('/');
-      return;
-    }
-    setLogoutError(null);
-    try {
-      await logout(session.accessToken, session.accountSlot);
-      if (typeof window !== 'undefined') window.sessionStorage.removeItem(`friink-setup-dismissed-${session.user.id}`);
-      const fallback = await restoreRememberedAccountWithFallback(session.accountSlot ? [session.accountSlot] : []);
-      if (fallback) {
-        saveAuthSession(fallback);
-        setUser(fallback.user);
-        setSessionReady(true);
-        setSessionError(null);
-        setAuthCheckComplete(true);
-      } else {
-        clearAuthSession();
-        router.replace('/');
-      }
-    } catch {
-      if (loadAuthSession()) {
-        setLogoutError('Could not log out. Your account is still active; please try again.');
-      } else {
-        setSessionError('offline');
-        setRecoveryAccounts(getRememberedAccountSummaries());
-        setAuthCheckComplete(true);
-      }
-    }
-  }
 
   async function handleRestoreRememberedAccount(account: AccountSummary) {
     if (restoringAccountSlot || sessionRecoveryInFlight.current) return;

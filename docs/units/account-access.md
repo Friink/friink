@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T12:09:15Z
+**Last edited:** 2026-09-29T14:22:19Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -295,18 +295,20 @@ one or more sessions validate, the client restores its most recently used
 account. Protected app routes remain authoritative before exposing private
 data or actions.
 
-**Implementation update (staging verification pending):** the authenticated API sometimes indicates that
+**Implementation update (browser/staging verification pending):** the authenticated API sometimes indicates that
 session restoration may be attempted from `/auth/entry-status`; a positive
 `friink_session_hint` also routes `/` to `/home` before session validation.
 The hint and entry-status response are not proof that a session is valid. A
 confirmed terminal failure from `PublicRouteGuard` now clears the hint and
-leaves the visitor on the public route, avoiding an immediate return to
-`/home`. App recovery also clears the hint after every remembered candidate
-has failed before returning to `/`. Staging acceptance is pending. The history
+hands off to the shared app-shell recovery flow. The recovery modal validates
+remembered alternatives and keeps the user in Friink when one is usable;
+app recovery returns public only after no candidate restores. The behavior is
+implemented locally; browser/staging acceptance remains pending. The history
 of this loop is tracked in
 [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
 The exact state of the browser involved in the reported incident remains
-unverified.
+unverified. See ACCESS-AC-049 and MIG-003 for the public-entry acceptance
+matrix.
 
 #### Session recovery surfaces and route behavior
 
@@ -433,6 +435,15 @@ scheduled for deletion, or another terminal session failure is confirmed.
 Explicit logout is user-initiated and proceeds directly to the newest valid
 remaining slot or public site; removing a slot ends that remembered session.
 The slot-aware API validates fallback candidates without a schema change.
+The shared app-shell logout path and the profile, post-detail, username-post,
+and username-chat drawer controls now use the same server-backed operation.
+The shared hook revokes only the selected server session, then restores the
+most-recent valid remembered account or returns public. A failed logout request
+preserves the current local account context and shows retryable feedback. If
+logout succeeds but fallback is ambiguous, shared session recovery excludes
+the ended slot and lets the user retry or choose another account. The change is
+implemented locally; route/failure/cross-tab acceptance remains pending under
+ACCESS-AC-048 and MIG-002.
 Prior staging testing confirmed refresh-token reuse and observed the earlier
 silent-fallback behavior. Its duplicate-request origin remains unknown. Both
 defects and local fixes are tracked in
@@ -726,6 +737,16 @@ control remains visible when account labels are long.
       are already remembered, switching remains available and Add account is
       hidden; the server continues enforcing the one-account addition limit.
 - [ ] **ACCESS-AC-024** Active logout follows the correct fallback.
+- [ ] **ACCESS-AC-048** Every in-app logout control uses the shared logout
+      operation: successful server logout selects the most-recent valid
+      remembered account or returns to the public site; a failed request keeps
+      the active session and shows retryable feedback; other remembered
+      accounts remain available.
+- [ ] **ACCESS-AC-049** With a zero or missing redirect hint, a terminal
+      failure restoring the selected slot enters shared app recovery. If
+      another remembered session validates, the user can continue in the app;
+      return to public only after no remembered session can be restored.
+      Ambiguous/network failures remain retryable in the app.
 - [ ] **ACCESS-AC-025** Reload and cross-tab updates do not leak account state.
 - [ ] **ACCESS-AC-035** Adding an account makes it the selected account in all
       tabs after the add succeeds.
@@ -755,81 +776,126 @@ control remains visible when account labels are long.
   on different slots, delayed refresh responses, and required OTP/device
   challenge after sign-in.
 
-#### Implementation plan and rollout status
+#### Pending verification
 
-The priority reliability proposal and deferred workstreams are:
+These items have implementation or user-reported progress; they are acceptance
+checks, not all new code projects:
 
-1. **Make refresh retries recoverable (implemented locally; staging pending;
-   BUG-AUTH-003 and BUG-AUTH-006).** A refresh request that has committed its
-   rotation must be safely retryable if the browser reload interrupts delivery
-   of the response cookie. A retry must recover the same committed result and
-   must not create another independently usable token in the family. The API
-   derives each rotated successor with
-   a keyed HMAC from its parent token and records the derivation key ID on the
-   successor row. The API accepts a refresh operation ID and records it on the
-   rotated parent. A retry with that same ID can reproduce and resend the same
-   active successor after grace; any retry during grace receives that same
-   deterministic child even if its operation ID differs. Only the SHA-256 hash
-   is stored. Keep the referenced JWT key ID configured while the successor
-   remains active. Legacy rows without a derivation key retain the one-time
-   grace behavior. The web app now
-   persists the operation ID per account slot before sending the request,
-   reuses it after an interrupted or ambiguous refresh, and sends it in
-   `X-Friink-Refresh-Operation-Id`, while retaining one captured account slot
-   and cross-tab coordination.
-   HttpOnly cookie names, scope, and browser-readable storage are unchanged.
-   Verify reload interruption before and after the API commit, response loss,
-   concurrent same-slot tabs, and repeated stale-token presentation; each case
-   must leave at most one usable refresh token per family and preserve the
-   selected account. Staging acceptance is still required.
-2. **Defer the Add account limit mismatch investigation.** Compare the same
-   browser's `friink_device_id` context across `GET /auth/accounts`,
-   `GET /auth/accounts/add-availability`, and the final Add account login
-   request. Inspect the configured `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE` value
-   and redacted account-slot logs. Reproduce after repeated refreshes, normal
-   login, switching, and logout. The fix must preserve the active account when
-   an Add account attempt fails and must prove that refreshes do not create
-   duplicate slots. Resume after refresh stability is verified.
-3. **Synchronize active account selection across tabs (implemented locally;
-   staging pending).** The shared active-slot key is authoritative. Adding or
-   switching accounts updates it, and other tabs reload to restore that slot.
-   Broader isolation of unrelated page-owned state remains a separate follow-up;
-   captured-slot refresh coordination and explicit logout/removal fallback
-   remain required.
-4. **Terminal-session recovery (implemented locally; browser/staging
-   acceptance pending).** A terminal failure displays its cause and waits for
-   acknowledgment before fallback by last use. Other tabs wait for the same
-   acknowledgment, and a waiting tab can take over if the notice tab closes.
-   Ambiguous failures remain retryable, and explicit account choice remains
-   available for that recovery state.
-5. **Reload-time token stability and public entry.** The access-cookie and
-   cookie-first restoration changes are deployed to staging and BUG-AUTH-003
-   is resolved. The historical trigger for interrupted refresh remains
-   unknown; the retry proposal above is tracked separately under BUG-AUTH-006.
-   Public-entry acceptance remains tracked under BUG-AUTH-002.
-6. **Defer client-bound session validation.** The proposed security change was
-   for every authenticated client context (for example, a browser profile or
-   mobile app installation) to have a reusable opaque client identifier, with
-   every auth session associated with that client. The conceptual per-user
-   “userspace” is only a collection of that user's sessions; it does not need
-   its own database entity. Each login creates a disposable session UUID, while
-   logging out and back in from the same client may reuse its client identifier
-   and create a new session UUID. Session validation would confirm both the
-   active session ID and proof of its associated client credential; a public
-   client identifier alone would not authorize requests. The contract would be
-   client-type-neutral and would not rely on a hardware fingerprint. Define
-   issuance, rotation/recovery, multi-tab behavior, and mobile secure storage
-   before implementation. Add migration and replay-from-another-client
-   verification requirements. Defer this until the refresh flow is stable; it
-   is not part of the current session repair. Current ordinary access-token
-   validation checks the JWT and active `sid` without requiring the
-   recognized-device cookie.
+1. **Refresh and reload stability (BUG-AUTH-003/006).** The deterministic API
+   retry fix and regression coverage are in the current local code, but the
+   agent log does not confirm that fix has been deployed to staging. The user
+   reports stability with a five-minute access-token lifetime; the one-day
+   refresh-token check is planned for 2026-09-30. Confirm the tested build, then
+   complete reload interruption, lost-response, same-slot multi-tab, and
+   refresh-expiry checks. Historical stale-token cause remains unproven.
+2. **Multi-tab account switching.** Browser-wide switch serialization and
+   shared selected-slot restoration are implemented. One user-reported staging
+   smoke check passed ordinary login and switching, but the multi-tab regression
+   remains untested and later reports of the switcher becoming disabled or
+   intermittent remain unresolved. Verify repeated and simultaneous switches,
+   both directions, and convergence across open tabs.
+3. **Terminal-session recovery.** The neutral modal, remembered-account
+   selection, Add account, cross-tab notice ownership, and fallback flow are
+   implemented locally. Complete the route and multi-tab browser/staging
+   matrix, including lifecycle failure and recovery.
+4. **Remembered-account limit (ACCESS-AC-039/040).** The availability and
+   switcher-visibility fix is implemented locally, with regression coverage
+   added. The focused test reached its assertions, but pytest exited non-zero
+   during Windows SQLite temporary-file cleanup (`WinError 32`), so its run was
+   not clean. The earlier mismatch investigation is no longer pending; staging
+   acceptance of the one-slot and lowered-limit cases remains open. See
+   [`docs/notes.md`](../notes.md#add-account-limit-mismatch-after-refresh).
 
-The deferred Add-account and broader account-state workstreams remain recorded
-for later resumption. The focused refresh-token test module, web type-check,
-targeted lint, and whitespace check pass locally. The staging migration is
-applied and Alembic reports no schema drift. API/web deployment and browser
-acceptance remain required before release.
+#### Implemented follow-up patches; acceptance pending
+
+Both changes reuse the existing session/logout and restore operations. They do
+not change token format, expiry, rotation, cookie scope, or server-side
+session validation. Logout intentionally revokes the selected session when
+the user requests logout; the public-entry recovery change only changes
+routing after a confirmed terminal restore result.
+
+1. **Shared logout handling (ACCESS-AC-048; MIG-002).**
+
+   **Implementation:**
+
+   - `useAppAccountLogout` is shared by the app shell, profile, post-detail,
+     username-post, and username-chat surfaces.
+   - It calls the existing server logout endpoint for only the active slot and
+     preserves other remembered slots. If the active-account removal control
+     already revoked the session through its endpoint, the shared flow skips a
+     duplicate logout request and proceeds to fallback.
+   - After success, it restores the most-recent valid remembered slot and
+     opens Home. If no slot remains usable, it returns to the public site with
+     redirect hint zero.
+   - If the logout request fails or its result is ambiguous, it preserves the
+     current local account context and shows retryable feedback. If logout
+     succeeded but fallback is ambiguous, it opens shared recovery with the
+     ended slot excluded.
+
+   **Acceptance gate:** Exercise logout from all four listed surfaces with
+   another valid slot, with no alternate slot, and with server/network failure.
+   Also remove the active slot when it is the last account. Confirm each
+   selected session is revoked once, other slots remain usable, failures retain
+   the current account, and duplicate clicks or another tab cannot trigger
+   conflicting fallback.
+
+2. **Hint-zero terminal recovery (ACCESS-AC-049; MIG-003).**
+
+   **Implementation:**
+
+   - The public-entry guard distinguishes a confirmed terminal failure from
+     valid, ambiguous, and network results.
+   - For a terminal result, it preserves the termination reason, sets the
+     redirect hint to zero, and hands off to shared app-shell recovery. The
+     hint or cookie presence is never treated as proof of session validity.
+   - Shared recovery validates other remembered slots through the existing
+     restore flow in most-recent-use order. Ambiguous/network outcomes remain
+     retryable; protected data is not rendered until a slot validates.
+   - The user stays in the app if an alternate slot validates. App recovery
+     returns public with hint zero only after all candidates are confirmed
+     unrestorable.
+
+   **Acceptance gate:** Cover a valid selected slot (no handoff), terminal
+   selected slot plus valid alternate, no valid candidates, ambiguous/network
+   failure, and multiple tabs. Confirm the handoff cannot loop between public
+   and app routes, duplicate restore calls do not race, the notice survives the
+   handoff, and valid alternatives are never skipped.
+
+**Session-stability impact:** The implementation does not change the
+refresh/rotation mechanism or its expiry settings. Logout intentionally ends
+the selected session; normal refresh and other remembered sessions are not
+changed. Hint-zero recovery changes routing only after a confirmed terminal
+result. The remaining risk is route orchestration, fallback, and cross-tab
+behavior, so both need the listed browser/staging acceptance before release.
+
+#### Deferred proposals
+
+- Broader isolation of page-owned client state across account switches remains
+  a separate follow-up; it is not part of the two approved patches above.
+- Client-bound session validation remains a deferred security-design project
+  until refresh stability is established. It needs a separate design and
+  approval before implementation and is not a current release gate.
+
+Local refresh-token regression coverage exists, but it does not replace the
+staging and real-browser acceptance above. No schema change is required by the
+two approved route-consistency patches.
+
+### Newly recorded staging defects — 2026-09-29
+
+The latest multi-tab session-recovery report leaves three account-access
+findings open. These are bug records, not changes to active authentication
+rules:
+
+- [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): the 8-second localStorage owner lease can leave stale owner UI; the waiting view has no acknowledge action, and a stale modal can silently ignore Close.
+- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): each successful switch currently creates a new destination refresh-token family. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
+- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): database audit rows do not capture every failed refresh or correlate a request with its slot-cookie context. The exact incident failure code remains unknown.
+- [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
+
+The staging DB audit found `@muflahulfurqan`'s session active after the report;
+`@muflah`'s old session was replaced by the fresh login that followed. Do not
+infer that both server sessions expired. Proposed auth/cookie changes require
+multi-tab staging acceptance and must preserve server-side slot/session
+validation.
 
 ## 5. Cross-subunit behavior
 
@@ -854,7 +920,8 @@ acceptance remain required before release.
 - Web access client: `web/lib/auth.ts`.
 - Login UI: `web/components/login-screen.tsx`.
 - Account menu and shell: `web/components/side-drawer.tsx`,
-  `app-shell.tsx`, and `app-shell-route.tsx`.
+  `app-shell.tsx`, `app-shell-route.tsx`, and
+  `web/components/use-app-account-logout.ts`.
 
 ### Storage and persistence
 
@@ -902,6 +969,8 @@ multi-tab acceptance remains pending.
 | ACCESS-AC-043 | Recovery behavior is coherent across route entry points | Browser matrix for app shell, public root, profile, post, username-chat, login | Open — current route differences documented |
 | ACCESS-AC-044 | A failed target switch preserves the valid source | Two-account staging browser switch in both directions; dead-target failure preserves source | Implemented locally — staging authenticated switch pending |
 | ACCESS-AC-047 | Terminal recovery modal offers remembered-account restore and Add account; cancel/close restore fallback or return public with hint zero | Single/multiple-account browser matrix; add-account and multi-tab recovery | Implemented locally — staging pending |
+| ACCESS-AC-048 | All authenticated-route logout controls share server logout, fallback, and retryable failure behavior | Route matrix for app shell, profile, post detail, username post, and username chat; no-alternate and failed-request cases | Implemented locally — browser/staging acceptance pending |
+| ACCESS-AC-049 | Hint-zero terminal recovery enters shared app recovery and keeps a valid alternate session in the app | Public-root matrix: selected valid, selected terminal plus valid alternate, none valid, ambiguous/network fallback, and multi-tab | Implemented locally — browser/staging acceptance pending |
 
 ### Release gates
 
@@ -953,7 +1022,12 @@ logs.
   sequence for each historical session loss. The non-atomic localStorage lock
   fallback remains a possible source of competing IDs in browsers without Web
   Locks, but it was not reproduced in a browser.
-- Staging session reliability is not accepted: interrupting page reload during
+- Latest user report: the session is currently stable with a five-minute
+  access-token lifetime. Validation of a one-day refresh-token lifetime is
+  planned for 2026-09-30; it has not yet been reported as complete. BUG-AUTH-003
+  remains open while that check and the broader refresh stability matrix are
+  pending.
+- Earlier staging evidence showed that interrupting page reload during
   session restoration can end the session, and the 2026-09-27 run lost
   `@muflah` in Chrome and Firefox after the API detected stale refresh-token
   reuse in both browsers. Production also has repeated refresh-reuse events
@@ -965,6 +1039,10 @@ logs.
 - Open staging verification: Add account previously reported a full
   remembered-account limit while the browser showed only one account; the
   local fix and regression test are recorded in [`docs/notes.md`](../notes.md).
+- Logout consistency is implemented locally through a shared hook on the app
+  shell, profile, post-detail, username-post, and username-chat surfaces.
+  Route/failure/cross-tab browser and staging acceptance remains open under
+  ACCESS-AC-048/MIG-002.
 
 ## 9. Rebuild checklist
 
@@ -1004,6 +1082,19 @@ logs.
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records changes specific to this unit.
 
+- 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
+  server-backed logout and fallback operation; serialized it with account
+  switching across tabs. Active-account removal reuses fallback without a
+  duplicate logout request. Public-root terminal restore now enters shared app
+  recovery when the hint is zero. Token and refresh mechanics are unchanged;
+  browser/staging acceptance remains pending.
+- 2026-09-29T13:22:21Z — Expanded both approved post-stability patches into
+  implementation plans, acceptance gates, and a refresh-stability impact
+  assessment. No application behavior changed.
+- 2026-09-29T13:16:23Z — Reconciled pending work against active rules, the bug
+  register, and implementation history. Reclassified the account-limit
+  mismatch as locally fixed with staging acceptance pending; separated open
+  verification, the two approved post-stability patches, and deferred proposals.
 - 2026-09-12 — Migrated account-access behavior from archived documents, active
   rules, and implementation evidence; resolved `MIG-001` by aligning the active
   rule to the existing 30-day implementation.

@@ -15,7 +15,7 @@ type SideDrawerProps = {
   collapsed: boolean;
   onNavigate: (screen: Screen) => void;
   onToggleCollapsed: () => void;
-  onLogout: () => void;
+  onLogout: (options?: { serverSessionAlreadyEnded?: boolean }) => void | Promise<void>;
   onAccountChange?: (user: AuthUser) => void;
   onToast?: (message: string) => void;
 };
@@ -199,7 +199,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           window.location.reload();
           return;
         }
-        onLogout();
+        await onLogout({ serverSessionAlreadyEnded: true });
         return;
       }
       setAccounts((items) => items.filter((item) => item.accountSlot !== removeTarget.accountSlot));

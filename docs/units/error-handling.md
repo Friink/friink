@@ -7,7 +7,7 @@ requirements to refine.
 
 **Status:** Partial  
 **Tier:** Full  
-**Last edited:** 2026-09-27T23:52:30Z
+**Last edited:** 2026-09-29T14:22:19Z
 **Platforms:** Web, API, and future clients  
 **Canonical sources:** This draft; active subsystem behavior remains owned by the relevant unit documents.
 
@@ -242,7 +242,12 @@ The app shell and its available cached view may remain available while the
 network recovery page is shown; cached rendering does not prove a session is
 valid or authorize API actions. Network failure is ambiguous, never a terminal
 session result. The listed web session-recovery behavior is implemented
-locally; browser acceptance is pending.
+locally; browser acceptance is pending. `PublicRouteGuard` now clears the hint
+and hands a confirmed terminal restore failure to shared app-shell recovery.
+Account choices are validated there; a valid alternate keeps the user in the
+app, and recovery returns public only after no candidate restores. This
+implementation is tracked by EH-AC-014 and MIG-003; public-entry and multi-tab
+acceptance remains pending.
 
 #### User flows
 
@@ -342,9 +347,13 @@ These are proposed requirements, not active rules in `docs/rules.md`.
 - **EH-REQ-008 — Use the same session-recovery flow across web entry points:**
   Session failures from the public root, app-shell, profile, post,
   username-chat, and login entry points use the same cause classification and
-  fallback policy while respecting EH-REQ-004's surface boundary. A public-site
-  failure stays on the public site; app recovery does not hand off to an
-  external browser or another product surface.
+  fallback policy while respecting EH-REQ-004's surface boundary. Ordinary
+  public-site failures stay on the public site. The implemented hint-zero
+  session handoff is a narrow exception: when the public root checks remembered
+  app credentials and confirms the selected session ended, it enters shared
+  web-app recovery to find another valid account. Recovery never hands off to
+  an external browser or unrelated product surface. Browser/staging acceptance
+  remains pending.
 #### State behavior
 
 - **Pending:** show a non-blocking or blocking progress state only as the
@@ -482,6 +491,14 @@ Refer to [`testing.md`](../testing.md) for shared testing standards.
 - See [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app)
   for the reported public-entry loop; the exact reported browser state remains
   unverified.
+- The hint-zero terminal handoff is implemented locally; browser/staging
+  acceptance is pending. The original implementation/rule conflict remains
+  recorded in [the migration conflict register](../archives/migration.md).
+- Multi-tab terminal recovery can show stale owner controls: Close may silently
+  no-op after lease ownership moves, and the waiting view has no acknowledge
+  action. Track this in [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative);
+  browser/staging ownership acceptance is required before treating the handoff
+  contract as verified.
 
 #### Open questions
 
@@ -699,8 +716,13 @@ count impact must be measured; it is not assumed.
 
 ### Observability
 
-No new logging is specified. Diagnostics must not contain secrets, tokens,
-cookies, or sensitive account values.
+The API emits `auth_failure_classified` warnings, while the database stores
+only selected durable security events and does not record every failed refresh
+request. The latest staging incident therefore could not be tied to an exact
+failure code or slot-cookie context from DB rows alone. See
+[BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics)
+for the proposed staging-first correlation fields. Never log raw tokens,
+cookies, token hashes, or unnecessary personal data.
 
 ## 8. Testing and verification
 
@@ -728,6 +750,7 @@ cookies, or sensitive account values.
 | EH-AC-009 | Neutral Session ended modal with account options and equivalent Cancel/close fallback | Expiry/termination/security/lifecycle browser matrix | Implemented locally; acceptance pending |
 | EH-AC-010 | Fallback session is API-validated | Refresh-cookie and account-slot recovery matrix | Implemented locally; acceptance pending |
 | EH-AC-011 | Fallback destination follows failure context | Session and lifecycle destination matrix | Implemented locally; acceptance pending |
+| EH-AC-014 | Hint-zero terminal failure hands off to shared in-app recovery when another remembered session may exist | Public-root tests for valid selected slot, terminal selected slot plus valid alternate, no valid candidates, ambiguous failure, and multi-tab ownership | Implemented locally — browser/staging acceptance pending |
 
 ### Test matrix
 
@@ -793,6 +816,9 @@ token or server-validation rules.
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records requirements added to this unit.
 
+- 2026-09-29T13:51:18Z — Implemented the hint-zero terminal handoff from the
+  public route guard into shared app-shell recovery. Alternate sessions are
+  validated there; browser/staging acceptance remains pending.
 - 2026-09-27T14:43:07Z — Created the draft unit and recorded the initial
   user-proposed session recovery modal requirement. No implementation behavior
   changed.
