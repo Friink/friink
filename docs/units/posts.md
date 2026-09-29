@@ -6,7 +6,7 @@ permalinks.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-23T00:52:12Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -84,6 +84,10 @@ The post options menu exposes `Delete post` only to the post owner. Deletion
 requires confirmation, calls the authenticated delete endpoint, and removes the
 post from the current feed or returns from its detail route after success.
 
+On direct post-page reload, the app frame may appear while entry validation is
+pending, but post details, replies, and actions remain hidden until the
+server-authorized post request succeeds. See [Account Access](./account-access.md#startup-experience).
+
 ## Acceptance criteria
 
 - [ ] **POSTS-AC-001** Post, reply, and quote payloads enforce their kinds.
@@ -92,6 +96,9 @@ post from the current feed or returns from its detail route after success.
 - [ ] **POSTS-AC-004** Like and Save toggles are unique and retry-safe.
 - [ ] **POSTS-AC-005** Media failure does not leave half-created posts.
 - [x] **POSTS-AC-006** Owners can delete their posts from the post options menu.
+- [ ] **POSTS-AC-007** A direct post reload may show the app frame while
+      session validation runs, but post details, replies, and actions remain
+      hidden until their server-authorized requests succeed.
 
 ## Known limitations
 

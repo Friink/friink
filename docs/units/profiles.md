@@ -6,7 +6,7 @@ actions.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-29T22:41:14Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -122,6 +122,12 @@ Initial profile-data failures currently resolve to unavailable or empty states
 without a general retry action. Multi-tab Home/profile failures are tracked in
 [BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads).
 
+On hard reload, the app frame renders from a safe cached identity while
+session validation runs, or as a neutral placeholder when no identity is
+cached. Profile content and actions remain in a pending state until session
+validation and their server-authorized requests succeed; cached protected
+profile data is not shown during that interval. See [Account Access](./account-access.md#startup-experience).
+
 ## Acceptance criteria
 
 - [ ] **PROFILE-AC-001** Unknown profiles never render synthetic content.
@@ -129,6 +135,9 @@ without a general retry action. Multi-tab Home/profile failures are tracked in
 - [ ] **PROFILE-AC-003** Profile tabs respect author-scoped visibility.
 - [ ] **PROFILE-AC-004** Profile identity blocks use the shared pattern.
 - [ ] **PROFILE-AC-005** Profile-picture failure preserves the confirmed image.
+- [ ] **PROFILE-AC-006** A profile reload may show the app frame during
+      session validation, but private profile data and actions remain hidden
+      until their server-authorized requests succeed.
 
 ## Known limitations
 

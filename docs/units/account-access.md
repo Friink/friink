@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T22:03:18Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -275,6 +275,19 @@ or switching accounts updates the shared selected-slot key. Other open tabs
 reload when that key changes, then restore and render only the selected slot.
 Legacy tab-local slot values do not override the shared selection.
 
+##### Startup experience
+
+On a hard reload, show the
+signed-in application frame immediately when a safe cached user summary exists.
+Do not show cached protected feed, profile, or conversation data, or enable
+account actions, until an authenticated API request succeeds. The HttpOnly
+slot cookie remains authoritative for API access. A terminal API response
+replaces the frame with session recovery; a network failure keeps private data
+hidden and offers retry. After non-network ambiguous retries are exhausted,
+**Take me back** opens the existing recovery fallback. Routes with no cached
+summary may show a neutral app frame while identity is restored. Staff-only
+surfaces remain gated by a server-confirmed staff role.
+
 The web app uses the nonnegative integer `friink_session_hint` cookie only to
 choose public-site routing. Saving a session, including after an access-token
 refresh, writes `1` and renews its 30-day expiry. Clearing a session keeps it at
@@ -427,10 +440,11 @@ slot has validated. The recovery flow is:
    and the close icon validate fallback sessions by recency before returning
    public.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
-   ambiguous failure does not prove that the session ended. Keep the user in
-   retryable recovery without changing identity. During detected network
-   failure, show the full-page network error and allow a manual **Refresh**
-   while background restore continues without overlapping requests.
+  ambiguous failure does not prove that the session ended. Keep the user in
+  retryable recovery without changing identity. With cached identity, keep the
+  inert app frame and private content hidden while showing **Try again**;
+  without cached identity, show the standalone network error. The shared app
+  route continues background restore without overlapping requests.
 5. Ambiguous entry recovery retries four times at ten-second intervals. After
    exhaustion, **Take me back** opens the remembered-account choice when one is
    available, with Login as the alternative. A user-selected account is
@@ -524,11 +538,13 @@ problem does not invalidate it and must leave retry available.
   ambiguous/recoverable result.
 - Show the terminal modal in the owner tab. Waiting tabs offer **Continue here**
   to take over; all tabs follow the same restored account or public-site result.
-- Non-network ambiguous entry recovery makes four total attempts at 10-second intervals.
-  Network failure immediately uses a full-page network error, background restore every 30
-  seconds, and a manual **Refresh** action; other unresolved ambiguous failures show
-  **Take me back**. Do not treat a transient failure as proof that the session
-  ended or silently change identity.
+- Non-network ambiguous entry recovery makes four total attempts at 10-second
+  intervals. A cached identity keeps the inert app frame and hides private
+  content while offering **Try again**; the shared app route also retries
+  network failures every 30 seconds. Without a cached identity, show the
+  standalone network error. Other unresolved ambiguous failures show **Take me
+  back**. Do not treat a transient failure as proof that the session ended or
+  silently change identity.
 - If no remembered session validates after confirmed termination or explicit
   logout, clear the selected account and go to the public site. Preserve each
   account's identity boundary and never show one account's state while another
@@ -554,9 +570,11 @@ item.
   the most recently used valid account or return to the public site with the
   redirect hint set to zero. Ambiguous failures never silently switch identity;
   non-network entry recovery retries four times at 10-second intervals.
-  Network failure immediately shows a full-page error with manual **Refresh**
-  and background retry every 30 seconds; other unresolved ambiguity offers
-  **Take me back**.
+  When a safe cached identity exists, entry validation keeps the inert app
+  frame visible with private content hidden and offers **Try again** on
+  network/ambiguous failure; the shared app route retries network failures in
+  the background every 30 seconds. With no cached identity, recovery shows the
+  standalone error state. Other unresolved ambiguity offers **Take me back**.
 - **ACCESS-R-032:** Refresh coordination, request headers, and result state use
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
@@ -762,6 +780,14 @@ control remains visible when account labels are long.
       another remembered session validates, the user can continue in the app;
       return to public only after no remembered session can be restored.
       Ambiguous/network failures remain retryable in the app.
+- [ ] **ACCESS-AC-050** A hard reload with a cached user summary renders the
+      app frame before session restoration completes, without rendering cached
+      protected data or enabling authenticated actions. Successful API
+      responses reveal their authorized content; terminal results enter the
+      existing recovery flow, while ambiguous/network results keep private
+      content hidden and expose retry.
+- [ ] **ACCESS-AC-051** Staff-only pages do not render staff content or actions
+      until the server confirms the current user's staff permission.
 - [ ] **ACCESS-AC-025** Reload and cross-tab updates do not leak account state.
 - [ ] **ACCESS-AC-035** Adding an account makes it the selected account in all
       tabs after the add succeeds.

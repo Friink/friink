@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { FriinkLogo } from '@/components/friink-logo';
+import { AppEntryFrame } from '@/components/app-entry-frame';
 import { LoginScreen } from '@/components/login-screen';
 import { Modal } from '@/components/modal';
 import type { AccountSummary, AuthUser } from '@/lib/auth';
@@ -53,15 +54,7 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
   }
 
   if (status === 'loading') {
-    return (
-      <main className="lifecycle-screen" data-theme={appearance} aria-busy="true">
-        <section className="lifecycle-card" aria-labelledby="session-loading-title">
-          <BrandLockup size="lg" />
-          <h1 id="session-loading-title">Reconnecting…</h1>
-          <p>We’re getting your session ready.</p>
-        </section>
-      </main>
-    );
+    return <AppEntryFrame appearance={appearance} />;
   }
 
   if (status === 'network') {

@@ -7,7 +7,7 @@ requirements to refine.
 
 **Status:** Partial  
 **Tier:** Full  
-**Last edited:** 2026-09-29T22:03:18Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Platforms:** Web, API, and future clients  
 **Canonical sources:** This draft; active subsystem behavior remains owned by the relevant unit documents.
 
@@ -192,21 +192,27 @@ outside this session-error requirement.
 
 Agreed copy and behavior by error:
 
-1. **Technical/ambiguous recovery failure — in-app page.** While recovery is
-   being attempted, show: “Reconnecting…” and “We’re getting your session
-   ready.” Show no controls during this attempt. Non-network
+1. **Technical/ambiguous recovery failure — app entry frame or recovery
+   page.** While validation is pending, show the app frame immediately. With a
+   cached safe identity, show the familiar shell with controls inert and route
+   content hidden; without cached identity, show a neutral app-frame
+   placeholder. Cached identity is presentation-only and never authorizes
+   protected content or actions. Non-network
    ambiguous failures retry at most four times total, with 10 seconds between
    attempts. A confirmed terminal result stops retries immediately. If all four
    attempts fail ambiguously, update the copy to: “We couldn’t restore your
    session. Use the button below to continue.” Show **Take me back**. Continue
    to the fallback flow below. A detected network failure immediately enters
-   the dedicated network state described next.
-2. **Network unavailable during restoration — full-page in-app error.** Show
-   “We can’t connect” and “Check your connection. We’ll keep trying to restore
-   your session.” Provide a **Refresh** button that immediately retries session
-  restoration without reloading the whole page. Schedule background retries
-  every 30 seconds; do not overlap a manual and background request. Keep this
-  page until the server responds. Do not show a
+   the dedicated network state described next. After the bounded retry flow,
+   show **Take me back** to enter existing recovery.
+2. **Network unavailable during restoration — retryable entry state.** With a
+   cached identity, keep the inert app frame visible, keep private route data
+   hidden, and provide retry; the shared app route retries in the background
+   every 30 seconds. Without cached identity, show the standalone recovery
+   state with “We can’t connect” and “Check your connection. We’ll keep trying
+   to restore your session.” Provide **Refresh** to retry without reloading the
+   page. Do not overlap manual and background requests. Keep the state until
+   the server responds. Do not show a
    remembered-account chooser or claim the session ended while validation is
    unavailable. A successful restore resumes the app; an authoritative
    terminal result enters the shared session-ended flow.
@@ -242,10 +248,10 @@ Agreed copy and behavior by error:
 
 The public-entry redirect hint alone never proves that a session is valid.
 
-The app shell and its available cached view may remain available while the
-network recovery page is shown; cached rendering does not prove a session is
-valid or authorize API actions. Network failure is ambiguous, never a terminal
-session result. The listed web session-recovery behavior is implemented
+The cached safe identity may remain visible in the inert app frame during
+network recovery; cached rendering does not prove a session is valid or
+authorize API actions. Network failure is ambiguous, never a terminal session
+result. The listed web session-recovery behavior is implemented
 locally; browser acceptance is pending. `PublicRouteGuard` now clears the hint
 and hands a confirmed terminal restore failure to shared app-shell recovery.
 Account choices are validated there; a valid alternate keeps the user in the
@@ -326,8 +332,9 @@ These are proposed requirements, not active rules in `docs/rules.md`.
 - **EH-REQ-003 — Avoid duplicate recovery work:** Route changes introduced only
   to display an error should not cause redundant session/status/restore calls.
   Non-network technical recovery makes at most four total attempts, 10 seconds
-  apart; a detected network failure immediately uses its dedicated page and
-  retry path. A confirmed terminal result stops retries.
+  apart; a detected network failure keeps the cached-identity app frame
+  retryable with private content hidden, or shows the standalone recovery
+  state when no identity is cached. A confirmed terminal result stops retries.
 - **EH-REQ-006 — Define a restorable session by its refresh credential:** For
   fallback, the app selects another remembered session only when the API
   accepts its refresh credential and associated session/account state. The
@@ -376,6 +383,11 @@ These are proposed requirements, not active rules in `docs/rules.md`.
   and route to the lifecycle-owned action.
 - **Recovery unavailable:** preserve enough context for a later retry and do
   not silently switch accounts.
+- **Entry validation pending:** the signed-in frame may render from a safe
+  cached identity, but protected route content and actions remain hidden until
+  an authenticated API request succeeds. A terminal result replaces the frame
+  with the existing recovery flow. A network/ambiguous result keeps protected
+  content hidden and exposes retry without mislabeling the session as ended.
 
 #### Data requirements
 
@@ -429,11 +441,16 @@ browser acceptance is completed.
   failures, stops immediately on a confirmed terminal result, then updates
   copy and offers
   **Take me back** if all attempts fail.
-- [ ] **EH-AC-013** A network failure during restoration shows a full-page
-  network error immediately with **Refresh**, starts background attempts every
-  30 seconds,
-  deduplicates concurrent attempts, and does not offer account choice or claim
-  termination until the server responds.
+- [ ] **EH-AC-013** A network failure during restoration keeps the inert app
+  frame visible when a safe cached identity exists and exposes **Try again**;
+  the shared app route also retries in the background every 30 seconds. With
+  no cached identity, show the standalone network error with **Refresh**.
+  Deduplicate attempts and do not offer account choice or claim termination
+  until the server responds.
+- [ ] **EH-AC-015** A cached identity can render the app frame while entry
+  validation runs, but cached protected content/actions remain unavailable
+  until a protected API response authorizes them; terminal and ambiguous
+  failures transition to the matching recovery state.
 - [ ] **EH-AC-009** Confirmed terminal causes share a neutral **Session ended**
   modal with available remembered-account rows, **Add account**, and equivalent
   Close or the close icon fallback behavior; clicking outside does not dismiss it.
@@ -753,11 +770,12 @@ cookies, token hashes, or unnecessary personal data.
 | EH-AC-006 | Template catalog has exactly three shared types | Documentation/component inventory review | Planned |
 | EH-AC-007 | Templates preserve originating product surface | Public/web/mobile surface matrix | Planned |
 | EH-AC-008 | Background recovery and Take me back behavior | Recovery success/failure and remembered-session browser matrix | Implemented locally; acceptance pending |
-| EH-AC-013 | Network recovery page, background retry, and manual refresh | Offline/online browser and request-overlap matrix | Implemented locally; acceptance pending |
+| EH-AC-013 | Cached-identity frame with hidden content and retry; standalone network state without cache | Offline/online browser and request-overlap matrix | Implemented locally; acceptance pending |
 | EH-AC-009 | Neutral Session ended modal with account options and equivalent Close or the close icon fallback | Expiry/termination/security/lifecycle browser matrix | Implemented locally; acceptance pending |
 | EH-AC-010 | Fallback session is API-validated | Refresh-cookie and account-slot recovery matrix | Implemented locally; acceptance pending |
 | EH-AC-011 | Fallback destination follows failure context | Session and lifecycle destination matrix | Implemented locally; acceptance pending |
 | EH-AC-014 | Hint-zero terminal failure hands off to shared in-app recovery when another remembered session may exist | Public-root tests for valid selected slot, terminal selected slot plus valid alternate, no valid candidates, ambiguous failure, and multi-tab ownership | Implemented locally — browser/staging acceptance pending |
+| EH-AC-015 | Cached identity shows an inert app frame while session/content remains server-gated | Hard reload with valid, expired, revoked, and unavailable sessions on shell/profile/post/chat routes | Implemented locally — browser/staging acceptance pending |
 
 ### Test matrix
 
@@ -798,9 +816,11 @@ verified in staging before production.
 
 The web session-recovery behavior described in this unit is implemented
 locally across the public guard, app shell, profile/post/chat route clients,
-login route, and lifecycle actions. Network failures show a dedicated page,
-continue background checks every 30 seconds, and expose an immediate manual
-refresh. Browser and staging acceptance remain pending. Shared error templates
+login route, and lifecycle actions. App entry shows an immediate safe frame;
+network failures preserve that inert frame when a cached identity exists, or
+show the standalone recovery state otherwise. The shared app route continues
+background checks every 30 seconds and exposes retry. Browser and staging
+acceptance remain pending. Shared error templates
 and non-session error categories remain unimplemented. AUTH-R-008 records the
 active web session and refresh contract; the recovery UX does not change its
 token or server-validation rules.

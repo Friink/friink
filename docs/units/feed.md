@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-29T22:41:14Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -80,6 +80,11 @@ error without a retry control, and empty-feed polling does not retry that
 failure. This implementation gap and a reported multi-tab load failure are
 tracked in [BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads).
 
+On a hard reload, the app frame appears before session
+restoration finishes. Feed content must still come from a successful,
+server-authorized feed request; cached protected posts are not used to fill the
+pending state. See [Account Access](./account-access.md#startup-experience).
+
 ## Acceptance criteria
 
 - [ ] **FEED-AC-001** Explore and Following membership are distinct.
@@ -87,6 +92,9 @@ tracked in [BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermitten
 - [ ] **FEED-AC-003** Pagination and updates are cursor-safe and duplicate-safe.
 - [ ] **FEED-AC-004** Feed errors preserve usable state and allow recovery.
 - [ ] **FEED-AC-005** Profile feeds use author-scoped data.
+- [ ] **FEED-AC-006** On reload, the app frame may appear before session
+      validation completes, but protected feed items appear only after a
+      successful server-authorized feed request.
 
 ## Known limitations
 

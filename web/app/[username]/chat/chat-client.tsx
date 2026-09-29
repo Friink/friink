@@ -32,11 +32,12 @@ function mergeMessages(current: ApiMessage[], incoming: ApiMessage[]) {
 
 export function ChatClient({ username, conversationId }: ChatClientProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
   const { handleLogout, logoutError } = useAppAccountLogout(setUser);
   const chatIdentity = user?.id ?? loadAuthSession()?.user.id ?? loadCachedAuthUser()?.id ?? 'chat-recovery';
   const chatKey = conversationId ?? username?.toLocaleLowerCase() ?? 'new';
   const [context, setContext] = useState<ApiChatContext | null>(null);
+  const [contextLoading, setContextLoading] = useState(true);
   const conversation = context?.conversation ?? null;
   const [messages, setMessages] = useAppShellState<ApiMessage[]>(chatIdentity, `chatMessages:${chatKey}`, []);
   const [draft, setDraft] = useAppShellState(chatIdentity, `chatDraft:${chatKey}`, '');
@@ -44,30 +45,44 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
   const [error, setError] = useAppShellState<string | null>(chatIdentity, `chatError:${chatKey}`, null);
   const [retryMessageId, setRetryMessageId] = useAppShellState<string | null>(chatIdentity, `chatRetryMessage:${chatKey}`, null);
   const [chatAccessDenied, setChatAccessDenied] = useState(false);
+  const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const [entryCanTakeMeBack, setEntryCanTakeMeBack] = useState(false);
   const [receiptState, setReceiptState] = useState<ReceiptState>({ unreadCount: 0, firstUnreadMessageId: null, lastReadMessageId: null, peerDeliveredMessageId: null, peerReadMessageId: null });
   const lastReadMessageRef = useRef<string | null>(null);
   const initiallyScrolledConversationRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setContextLoading(true);
+    setEntryError(null);
     const controller = new AbortController();
     let unsubscribe: () => void = () => undefined;
 
     async function loadConversation() {
       let session = loadAuthSession();
       if (!session) {
+        const cachedUser = loadCachedAuthUser();
+        if (cachedUser) setUser(cachedUser);
         try {
           session = await restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal);
           saveAuthSession(session);
         } catch (nextError) {
           if (cancelled || controller.signal.aborted) return;
-          router.replace(isTerminalRefreshFailure(nextError) ? '/home' : isNetworkRestoreFailure(nextError) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
+          if (isTerminalRefreshFailure(nextError)) { setUser(null); setSessionReady(false); router.replace('/home'); }
+          else if (loadCachedAuthUser()) {
+            setEntryError(isNetworkRestoreFailure(nextError) ? 'We can’t connect to confirm your session. Your conversation is hidden.' : 'We couldn’t confirm your session. Your conversation is hidden.');
+            setEntryCanTakeMeBack(!isNetworkRestoreFailure(nextError));
+          }
+          else router.replace(isNetworkRestoreFailure(nextError) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
           return;
         }
       }
 
       if (cancelled) return;
       setUser(session.user);
+      setSessionReady(true);
+      setEntryError(null);
       const transport = new PollingChatTransport(session.accessToken);
 
       try {
@@ -80,7 +95,10 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
           return;
         }
         setContext(nextContext);
-        if (!nextContext.conversation) return;
+        if (!nextContext.conversation) {
+          setContextLoading(false);
+          return;
+        }
         const page = await transport.loadMessages(nextContext.conversation.id);
         if (cancelled) return;
         setMessages((current) => {
@@ -95,14 +113,18 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
           setMessages((current) => mergeMessages(current, event.page.items));
           setReceiptState((current) => ({ ...current, unreadCount: event.page.unread_count, firstUnreadMessageId: event.page.first_unread_message_id, peerDeliveredMessageId: event.page.peer_delivered_message_id, peerReadMessageId: event.page.peer_read_message_id }));
         });
+        setContextLoading(false);
       } catch (nextError) {
         if (!cancelled) {
           if (isTerminalRefreshFailure(nextError)) {
+            setUser(null);
+            setSessionReady(false);
             router.replace('/home');
             return;
           }
           setChatAccessDenied(nextError instanceof AuthApiError && nextError.status === 403);
           setError(nextError instanceof Error ? nextError.message : 'Could not load this conversation.');
+          setContextLoading(false);
         }
       }
     }
@@ -204,6 +226,8 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
       setError(nextError instanceof Error ? nextError.message : 'Could not accept this request.');
     }
   }
+
+  if (user && (!sessionReady || contextLoading)) return <AppShell user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen="messages" showTabs={false} showFloatingBar={false} entryPending entryMessage={entryError} onRetryEntry={() => window.location.reload()} onTakeMeBackEntry={entryCanTakeMeBack ? () => router.replace('/home?session_recovery=offline') : undefined} />;
 
   if (!user) return <SessionRecoveryScreen status="loading" />;
 

@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-29T21:33:43Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -314,6 +314,11 @@ contextual composer remains 1rem from the last message on every viewport.
 - Every action that starts asynchronous work communicates that work visibly.
 - Loading prevents duplicate activation until the operation settles.
 - Loading, transport failure, and policy-based disabled states are distinct.
+- On a signed-in page reload, the app frame may appear from a safe cached
+  identity while the server validates the session. Keep protected content and
+  account actions behind successful API authorization; use placeholders in the
+  content area rather than a full-screen reconnecting page for this pending
+  state.
 
 ### Empty states
 
