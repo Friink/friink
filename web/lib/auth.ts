@@ -285,6 +285,21 @@ const SESSION_TERMINATION_KEY = 'friink-session-termination';
 const SESSION_TAB_ID_KEY = 'friink-session-tab-id';
 const SESSION_TERMINATION_LEASE_MS = 8000;
 
+function publishSessionTerminationNotice(notice: SessionTerminationNotice) {
+  try {
+    window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify(notice));
+  } catch {
+    // Recovery remains available in this tab when shared storage is blocked.
+  }
+  window.dispatchEvent(new CustomEvent('friink-session-termination-updated', { detail: { id: notice.id } }));
+}
+
+function withSessionTerminationLock<T>(operation: () => Promise<T>): Promise<T> {
+  // Share the cross-tab critical section used by switching and logout, so a
+  // recovery action cannot race either account-selection operation.
+  return withAccountSelectionLock(operation);
+}
+
 function sessionTabId(): string {
   let tabId = window.sessionStorage.getItem(SESSION_TAB_ID_KEY);
   if (!tabId) {
@@ -304,14 +319,17 @@ export function getSessionTerminationNotice(): SessionTerminationNotice | null {
   }
 }
 
-export function claimSessionTermination(id: string): SessionTerminationNotice | null {
-  const notice = getSessionTerminationNotice();
-  if (!notice || notice.id !== id) return null;
-  const tabId = sessionTabId();
-  if (notice.ownerTabId !== tabId && notice.leaseUntil > Date.now()) return notice;
-  const claimed = { ...notice, ownerTabId: tabId, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS };
-  window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify(claimed));
-  return getSessionTerminationNotice();
+export async function claimSessionTermination(id: string): Promise<SessionTerminationNotice | null> {
+  return withSessionTerminationLock(async () => {
+    const notice = getSessionTerminationNotice();
+    if (!notice || notice.id !== id) return null;
+    const tabId = sessionTabId();
+    if (notice.ownerTabId !== tabId && notice.leaseUntil > Date.now()) return notice;
+    const claimed = { ...notice, ownerTabId: tabId, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS };
+    publishSessionTerminationNotice(claimed);
+    const confirmed = getSessionTerminationNotice();
+    return confirmed;
+  });
 }
 
 export function isSessionTerminationOwner(id: string): boolean {
@@ -322,18 +340,33 @@ export function isSessionTerminationOwner(id: string): boolean {
 export function renewSessionTerminationLease(id: string): void {
   const notice = getSessionTerminationNotice();
   if (!notice || notice.id !== id || notice.ownerTabId !== sessionTabId()) return;
-  window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify({ ...notice, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS }));
+  publishSessionTerminationNotice({ ...notice, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS });
 }
 
-export function acknowledgeSessionTermination(id: string): void {
-  const notice = getSessionTerminationNotice();
-  if (!notice || notice.id !== id || notice.ownerTabId !== sessionTabId()) return;
-  window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify({ ...notice, acknowledged: true, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS }));
+/** Claim and serialize a user-initiated recovery action across app tabs. */
+export async function runSessionTerminationAction<T>(id: string, action: () => Promise<T>): Promise<{ performed: boolean; result?: T }> {
+  return withSessionTerminationLock(async () => {
+    const notice = getSessionTerminationNotice();
+    if (!notice || notice.id !== id) return { performed: false };
+    const ownerTabId = sessionTabId();
+    publishSessionTerminationNotice({
+      ...notice,
+      ownerTabId,
+      acknowledged: true,
+      leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS,
+    });
+    const claimed = getSessionTerminationNotice();
+    if (!claimed || claimed.id !== id || claimed.ownerTabId !== ownerTabId) return { performed: false };
+    return { performed: true, result: await action() };
+  });
 }
 
 export function clearSessionTermination(id?: string): void {
   const notice = getSessionTerminationNotice();
-  if (!id || notice?.id === id) window.localStorage.removeItem(SESSION_TERMINATION_KEY);
+  if (!id || notice?.id === id) {
+    window.localStorage.removeItem(SESSION_TERMINATION_KEY);
+    window.dispatchEvent(new CustomEvent('friink-session-termination-updated', { detail: { id: notice?.id ?? id ?? null } }));
+  }
 }
 
 type ApiErrorBody = {
@@ -633,7 +666,7 @@ function preserveFailedAuthContext(error: unknown) {
   let notice = getSessionTerminationNotice();
   if (!notice || notice.leaseUntil <= Date.now()) {
     notice = { id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`, ownerTabId: sessionTabId(), accountSlot: accountSlot ?? null, cause, acknowledged: false, leaseUntil: Date.now() + SESSION_TERMINATION_LEASE_MS };
-    try { window.localStorage.setItem(SESSION_TERMINATION_KEY, JSON.stringify(notice)); } catch { /* Continue with in-tab recovery if storage is unavailable. */ }
+    publishSessionTerminationNotice(notice);
   }
   const detail = { accountSlot: accountSlot ?? null, cause: notice.cause, terminationId: notice.id, ownerTabId: notice.ownerTabId };
   authBroadcastChannel?.postMessage({ type: 'session-expired', ...detail });
@@ -1317,6 +1350,62 @@ async function withAccountSelectionLock<T>(operation: () => Promise<T>): Promise
   }
 
   return withAccountSelectionLease(operation);
+}
+
+export type ActiveAccountLogoutResult =
+  | { kind: 'logged-out' }
+  | { kind: 'restored'; session: AuthSession }
+  | { kind: 'recovery' }
+  | { kind: 'selection-changed' };
+
+export type ActiveAccountLogoutOptions = { serverSessionAlreadyEnded?: boolean };
+
+/** Serialize server logout and fallback with account switches across tabs. */
+export async function logoutActiveAccountWithFallback(
+  options: ActiveAccountLogoutOptions = {},
+): Promise<ActiveAccountLogoutResult> {
+  return withAccountSelectionLock(async () => {
+    const session = loadAuthSession();
+    if (!session) {
+      clearAuthSession();
+      return { kind: 'logged-out' };
+    }
+    if (session.accountSlot !== activeAccountSlot()) return { kind: 'selection-changed' };
+
+    // Account removal already revoked this session; all other logout paths
+    // must confirm server logout before changing local state.
+    if (!options.serverSessionAlreadyEnded) {
+      await logout(session.accessToken, session.accountSlot);
+    }
+    try {
+      window.sessionStorage.removeItem(`friink-setup-dismissed-${session.user.id}`);
+    } catch {
+      // This dismissal preference is nonessential; continue with logout.
+    }
+
+    let fallback: AuthSession | null;
+    try {
+      fallback = await restoreRememberedAccountWithFallback(
+        session.accountSlot ? [session.accountSlot] : [],
+      );
+    } catch {
+      // Logout succeeded, so preserve the ended slot only as recovery context;
+      // the shared modal excludes it while retrying the other accounts.
+      clearAuthSessionForRecovery(new AuthApiError('Session ended', 401, 'SESSION_TERMINATED'));
+      return { kind: 'recovery' };
+    }
+
+    if (fallback) {
+      saveAuthSession(fallback);
+      return { kind: 'restored', session: fallback };
+    }
+
+    clearAuthSession();
+    // Cached slot summaries can outlive server sessions. Do not let those
+    // stale summaries turn an exhausted fallback back into app entry.
+    clearSessionEntryHint();
+    return { kind: 'logged-out' };
+  });
 }
 
 async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promise<T> {

@@ -7,7 +7,8 @@ import { Composer } from '@/components/composer';
 import { PostDetailScreen } from '@/components/post-detail-screen';
 import { PostUnavailableState } from '@/components/post-unavailable-state';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
-import { clearAuthSession, createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { useAppAccountLogout } from '@/components/use-app-account-logout';
+import { createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
@@ -75,6 +76,7 @@ function mapApiPost(post: ApiPost): Post {
 export function PostClient({ postId }: PostClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const { handleLogout, logoutError } = useAppAccountLogout(setUser);
   const [post, setPost] = useState<Post | null>(null);
   const [replies, setReplies] = useState<Post[]>([]);
   const [ancestors, setAncestors] = useState<Post[]>([]);
@@ -131,11 +133,6 @@ export function PostClient({ postId }: PostClientProps) {
     return () => { active = false; };
   }, [postId, router]);
 
-  function handleLogout() {
-    clearAuthSession();
-    router.replace('/');
-  }
-
   async function handleSend(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user || !composeContext) return;
@@ -171,7 +168,7 @@ export function PostClient({ postId }: PostClientProps) {
 
   if (!post) {
     return postUnavailable ? (
-      <AppShell user={user} onLogout={handleLogout} initialScreen="post" showTabs={false} showFloatingBar={false}>
+      <AppShell user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen="post" showTabs={false} showFloatingBar={false}>
         <PostUnavailableState />
       </AppShell>
     ) : null;
@@ -181,6 +178,7 @@ export function PostClient({ postId }: PostClientProps) {
     <AppShell
       user={user}
       onLogout={handleLogout}
+      logoutError={logoutError}
       initialScreen="post"
       showTabs={false}
       showFloatingBar={Boolean(composeContext)}

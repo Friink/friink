@@ -4,10 +4,11 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import { Composer } from '@/components/composer';
 import { ChatMediaGallery } from '@/components/chat-media-gallery';
 import { ProfileCard } from '@/components/profile-card';
-import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, clearAuthSession, getChatContext, getChatContextById, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
+import { acceptChatRequest, AuthApiError, CHAT_MESSAGE_MAX_LENGTH, getChatContext, getChatContextById, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, sendConversationMessage, sendMessageToUser, type ApiChatContext, type ApiMessage, type AuthUser } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import { PollingChatTransport } from '@/lib/chat-transport';
 import { formatRelativeTime } from '@/lib/time';
@@ -32,6 +33,7 @@ function mergeMessages(current: ApiMessage[], incoming: ApiMessage[]) {
 export function ChatClient({ username, conversationId }: ChatClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const { handleLogout, logoutError } = useAppAccountLogout(setUser);
   const chatIdentity = user?.id ?? loadAuthSession()?.user.id ?? loadCachedAuthUser()?.id ?? 'chat-recovery';
   const chatKey = conversationId ?? username?.toLocaleLowerCase() ?? 'new';
   const [context, setContext] = useState<ApiChatContext | null>(null);
@@ -192,11 +194,6 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
     }
   }
 
-  function handleLogout() {
-    clearAuthSession();
-    router.replace('/');
-  }
-
   async function handleAcceptRequest() {
     const session = loadAuthSession();
     if (!session || !conversation) return;
@@ -228,6 +225,7 @@ export function ChatClient({ username, conversationId }: ChatClientProps) {
     <AppShell
       user={user}
       onLogout={handleLogout}
+      logoutError={logoutError}
       initialScreen="messages"
       showTabs={false}
       floatingBarContent={<Composer draft={draft} onDraftChange={setDraft} onSend={sendMessage} multiline enableMentions enableMedia mediaTargetLabel="message" maxLength={CHAT_MESSAGE_MAX_LENGTH} showCount placeholder={context?.composer_placeholder || 'Write a message...'} disabled={!context?.can_send || chatAccessDenied} disabledPlaceholder={context?.composer_placeholder || 'Chat unavailable'} busy={busy} />}

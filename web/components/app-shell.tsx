@@ -66,7 +66,7 @@ import {
 
 type AppShellProps = {
   user: AuthUser;
-  onLogout: () => void;
+  onLogout: (options?: { serverSessionAlreadyEnded?: boolean }) => void | Promise<void>;
   logoutError?: string | null;
   initialScreen?: Screen;
   initialSearchQuery?: string;

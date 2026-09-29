@@ -1,5 +1,96 @@
 # Changelog
 
+## 2026-09-29T22:41:14Z
+- [feed/profiles] Recorded BUG-LOAD-001 for intermittent Home and profile
+  loading failures reported with multiple tabs. Documented the observed
+  request fanout and retry behavior; root cause remains unconfirmed pending
+  request status/body and current-build reproduction. No application behavior
+  changed and no tests run.
+
+## 2026-09-29T22:29:32Z
+- [docs/navigation] Clarified BUG-NAV-001 as an unconfirmed in-app route-state
+  concern and added BUG-OPS-001 for uncertain mutation outcomes after the
+  initiating tab closes. Linked both issues from the Navigation unit and
+  triage plan. Recorded that the new issue needs endpoint-specific reproduction
+  before selecting an implementation. Documentation-only; no tests run.
+
+## 2026-09-29T22:03:18Z
+- [account-access] Implemented BUG-AUTH-011 request-correlated refresh
+  diagnostics. API responses now include an opaque request ID; every refresh
+  request records a structured, redacted runtime outcome with deployment,
+  route, status/failure class, and slot-cookie/header presence. Updated Account
+  Access, Error Handling, and the bug register. Local endpoint verification
+  covers success and invalid-token failure; staging log access/retention remain
+  pending. The focused pytest assertion passed; its Windows SQLite fixture
+  cleanup then raised the existing file-lock `PermissionError`.
+
+## 2026-09-29T21:50:21Z
+- [account-access] Implemented BUG-AUTH-010: account switches reuse the
+  destination slot's validated active refresh cookie and issue only an access
+  token. Missing or unusable cookies are repaired after locking and validating
+  the destination session; existing families are not bulk-revoked. Added API
+  regression coverage and updated active rules, account-access docs, and the
+  bug register. The focused test passed, but pytest's Windows SQLite cleanup
+  raised its known file-lock `PermissionError`; staging acceptance is pending.
+
+## 2026-09-29T21:33:43Z
+- [account-access] Implemented BUG-AUTH-009 recovery ownership synchronization
+  and serialized user actions through the shared account-operation lock.
+  Waiting tabs can continue recovery; modal close controls disable during an
+  active restore. Updated session-recovery design and bug documentation. Token
+  handling and server-side validation are unchanged. TypeScript check passed;
+  browser/staging acceptance remains pending.
+
+## 2026-09-29T14:40:13Z
+- [docs/bugs] Added a validity triage and closure plan for every unresolved
+  register item, separating confirmed defects from local fixes awaiting staging
+  acceptance and reports that need a current-build reproduction. Ordered the
+  work by evidence/dependency, documented when to close a non-reproducing or
+  superseded bug, and linked the account-access, error-handling, navigation,
+  and chat unit docs. No application behavior changed.
+
+## 2026-09-29T14:22:19Z
+- [account-access] Recorded the latest multi-tab staging session-recovery
+  findings as BUG-AUTH-009 through BUG-AUTH-011; reopened BUG-AUTH-008 with
+  the disabled-switcher report and added the read-only DB evidence to
+  BUG-AUTH-003. Updated Account Access and Error Handling docs. No application
+  code, auth behavior, or tests changed.
+
+## 2026-09-29T13:58:48Z
+- [account-access] Routed authenticated logout controls through a shared,
+  server-backed handler serialized with account switches; added zero-hint
+  terminal recovery handoff to shared app recovery. Updated active rules, unit
+  docs, BUG-AUTH-007, and migration status. Token mechanics unchanged; browser
+  and staging acceptance pending.
+
+## 2026-09-29T13:22:21Z
+- [docs/account-access] Expanded the two approved post-stability auth patches
+  into implementation plans and acceptance gates. Documented that neither
+  changes refresh/token mechanics; logout intentionally revokes the selected
+  session. No application behavior changed.
+
+## 2026-09-29T13:16:23Z
+- [docs/account-access] Reconciled the implementation plan against active
+  rules and agent history. The Add-account limit fix is implemented locally
+  with staging acceptance pending; recorded its test runner's SQLite cleanup
+  failure. Separated verification items, two approved patches after session-
+  stability validation, and deferred proposals. No code or active rules changed.
+
+## 2026-09-29T13:03:33Z
+- [docs/account-access] Documented two approved route-recovery follow-ups,
+  both deferred until refresh/cookie stability is validated: shared server-backed
+  logout across authenticated routes (MIG-002), and handoff from hint-zero
+  terminal public entry into shared app recovery (MIG-003). Updated the refresh
+  stability bug with the user's report of stability at a five-minute access
+  lifetime and the one-day refresh lifetime check planned for 2026-09-30. No
+  application behavior changed.
+
+## 2026-09-29T12:35:50Z
+- [docs/account-access] Recorded the approved plan to route every authenticated
+  logout control through the shared server-backed operation, including
+  remembered-account fallback and retryable failure behavior. Added ACCESS-AC-048
+  and migration note MIG-002. No application behavior changed.
+
 ## 2026-09-29T12:09:15Z
 - [account-access] Made deterministic refresh retries idempotent: the recorded
   operation recovers its active child after grace, retries during grace reuse

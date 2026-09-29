@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-25T01:20:58Z
+**Last edited:** 2026-09-29T14:40:13Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -155,7 +155,11 @@ The current conversation-list rows still show the username as part of the
 full ProfileCard. A follow-up mobile-first refinement is proposed to omit the
 username from list rows, giving the latest message more room; usernames remain
 available in the conversation header and profile view. This proposal is not
-implemented yet.
+implemented yet. The staging report that new-chat people search was unavailable
+is tracked as [BUG-CHAT-002](../bugs.md#bug-chat-002--new-chat-people-search-reports-unavailable-on-staging).
+It needs a fresh check against the current build before any code change: capture
+the search request's status and response for both matching and empty queries,
+then fix only the failing layer while preserving search visibility rules.
 
 ## Planned evolution: ID-based conversations and group-ready backend
 

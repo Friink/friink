@@ -33,6 +33,7 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
         if (isTerminalRefreshFailure(error)) {
           clearAuthSessionForRecovery(error);
           clearSessionEntryHint();
+          router.replace('/home/explore');
           return;
         }
         if (cachedUser) {

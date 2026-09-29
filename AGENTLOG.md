@@ -1,5 +1,274 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-29T22:41:14Z — Record Multi-Tab Home And Profile Load Bug
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain page loading order and retry behavior for reported
+  intermittent Home feed and profile failures across multiple tabs; record the
+  newly reported bug for later investigation.
+- Changes Made: Added BUG-LOAD-001 with confirmed request-fanout and retry
+  observations while keeping its cause open pending captured request evidence.
+  Updated Feed and Profiles unit docs with the current loading/retry behavior.
+  No application behavior changed.
+- Files: `docs/bugs.md`, `docs/units/feed.md`, `docs/units/profiles.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Reviewed documented behavior against current web
+  request paths. Documentation link/syntax check and `git diff --check`
+  pending; no tests run.
+
+# 2026-09-29T22:29:32Z — Record Navigation And Closed-Tab Operation Bugs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record both the in-app navigation concern and the separate
+  closed-tab operation outcome concern as bugs for later investigation.
+- Changes Made: Narrowed BUG-NAV-001 to in-app route transitions and clarified
+  that no specific remaining loss is confirmed. Added BUG-OPS-001 for uncertain
+  API mutation outcomes when the initiating tab closes, including timing-based
+  reproduction and operation-specific idempotency/result-recovery questions.
+  Updated the navigation unit and bug triage plan. No application behavior
+  changed.
+- Files: `docs/bugs.md`, `docs/units/navigation.md`, `docs/architecture.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation reviewed against current shell provider,
+  post submission flow, and existing chat idempotency notes. `git diff --check`
+  passed; no tests run for this documentation-only change.
+
+# 2026-09-29T22:03:18Z — Implement BUG-AUTH-011 Refresh Diagnostics
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement request-correlated, redacted diagnostics for
+  refresh failures.
+- Changes Made: Added a generated request ID to API responses and exposed it
+  through CORS. Every refresh request now emits a structured runtime event with
+  deployment SHA, route, status, safe auth failure class, selected-slot-header
+  presence, and expected refresh-cookie presence. Existing classified auth
+  failures also include request ID and slot/cookie booleans. No request bodies,
+  credential values, hashes, slot values, or user IDs are logged. Added an API
+  endpoint regression test and updated Account Access, Error Handling, and
+  BUG-AUTH-011 docs. No auth acceptance behavior changed.
+- Files: `api/app/main.py`, `api/app/services/auth_debug.py`,
+  `api/app/routers/auth.py`, `api/tests/test_auth_debug.py`, `docs/bugs.md`,
+  `docs/units/account-access.md`, `docs/units/error-handling.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: The focused API endpoint test passed. It verified the
+  real refresh response statuses/shapes and matched both success and failure
+  request IDs to captured structured runtime events, while checking that the
+  slot value and invalid token are absent. `py_compile` and `git diff --check`
+  passed. After the test passed, pytest's Windows SQLite fixture cleanup raised
+  its existing file-lock `PermissionError`; staging runtime log access and
+  retention remain unverified.
+
+# 2026-09-29T21:50:21Z — Implement BUG-AUTH-010 Switch Refresh Reuse
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the first not-yet-implemented bug, BUG-AUTH-010.
+- Changes Made: Updated `POST /auth/accounts/switch` to validate and lock the
+  destination auth session, reuse a matching active/unexpired destination slot
+  refresh cookie, and issue only an access token for ordinary switches. An
+  absent, stale, revoked, rotated, or mismatched destination cookie is repaired
+  after validation; existing refresh families are not bulk-revoked. Added
+  repeated-switch family-count and missing-cookie repair coverage. Updated
+  active account-access rules, the Account Access unit, and BUG-AUTH-010's
+  implementation and closure notes.
+- Files: `api/app/routers/auth.py`, `api/tests/test_phase4_accounts.py`,
+  `docs/bugs.md`, `docs/units/account-access.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: The focused API test passed, including successful
+  switch response shape, repeated switches without active-token growth, missing
+  destination-cookie repair, and a subsequent refresh request. Pytest then
+  exited with a Windows SQLite fixture cleanup `PermissionError` in
+  `api/tests/conftest.py:69`; the session/test assertion itself passed.
+  Staging acceptance remains pending.
+
+# 2026-09-29T21:33:43Z — Implement BUG-AUTH-009 Recovery Handoff
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the session-ended recovery ownership and Close
+  behavior planned for BUG-AUTH-009.
+- Changes Made: Synchronized recovery ownership through same-tab events and
+  cross-tab storage updates. Serialized claims, terminal fallback, and selected
+  remembered-account restore with the shared account-operation lock used by
+  switching and logout. A waiting tab now offers **Continue here**; stale Close
+  actions enter the same serialized operation, and the modal close controls
+  disable while restoration is active. Updated Account Access, Error Handling,
+  product/design implementation docs, and BUG-AUTH-009. No token issuance,
+  expiry, or API validation behavior changed.
+- Files: `web/lib/auth.ts`, `web/components/app-shell-route.tsx`,
+  `web/components/session-recovery-screen.tsx`, `web/components/modal.tsx`,
+  `web/app/globals.css`, `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/error-handling.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` and
+  `git diff --check` passed. Focused ESLint passed with the repository's
+  existing `set-state-in-effect` and `refs` rules suppressed; one existing
+  `initialScreen` dependency warning remains. No automated tests or browser/staging
+  acceptance run. Do not close the bug until the documented multi-tab staging
+  matrix passes.
+
+# 2026-09-29T14:40:13Z — Refine Open Bug Validity And Closure Plan
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Plan undeveloped bug fixes, identify stale/invalid reports,
+  and define how to close each issue with evidence.
+- Changes Made: Added a per-bug validity assessment, next action, and closure
+  evidence table to `docs/bugs.md`; documented current-build reproduction as a
+  gate before patching and explicit dispositions for not reproduced/superseded
+  reports. Added a dependency-ordered execution plan. Marked BUG-AUTH-002 as
+  likely fixed pending acceptance, and BUG-NAV-001 / BUG-CHAT-002 as needing a
+  fresh reproduction because newer code/builds may have superseded their
+  reports. Linked the plan from Account Access, Error Handling, Navigation,
+  and Chat docs. No application code or auth behavior changed.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/error-handling.md`, `docs/units/navigation.md`,
+  `docs/units/chat.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Read repository instructions, docs guidance, unit docs,
+  current rules, and the bug register. Reviewed relevant current implementation
+  references. `git diff --check` passed; no tests run because this is a
+  documentation-only planning change. Staging bugs were not re-tested during
+  this task.
+
+# 2026-09-29T14:22:19Z — Record Multi-Tab Session Recovery Findings
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Record the multi-tab session recovery, refresh-family,
+  diagnostic, and switcher findings as bugs.
+- Changes Made: Added BUG-AUTH-009 for stale recovery ownership and the
+  inoperative Close path, BUG-AUTH-010 for refresh-family accumulation on
+  account switching, and BUG-AUTH-011 for missing request-correlated auth
+  diagnostics. Reopened BUG-AUTH-008 with the latest multi-tab disabled-switcher
+  report and updated BUG-AUTH-003 with the read-only staging DB timeline: the
+  `@muflahulfurqan` session remained active; `@muflah`'s old session was
+  replaced after a fresh login. Updated Account Access and Error Handling
+  documents. No application code or active auth rules changed.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`,
+  `docs/units/error-handling.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation content reviewed against current auth/API
+  implementation and read-only staging DB findings. Changed relative targets and
+  BUG-AUTH anchors resolved; `git diff --check` passed. No tests run;
+  documentation-only.
+
+# 2026-09-29T13:58:48Z — Implement Shared Logout And Hint-Zero Recovery
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Implement the shared server-backed logout behavior across
+  authenticated routes and hand off zero-hint terminal public entry to shared
+  session recovery.
+- Changes Made: Added a shared logout hook used by the app shell, profile,
+  post-detail, username-post, and username-chat routes. Logout and fallback
+  serialize with account switching, preserve local context if the logout
+  request fails, and present shared recovery if confirmed logout is followed
+  by ambiguous fallback. Active-account removal reuses the fallback handler
+  without sending a duplicate logout request. Public-root terminal restore now
+  clears the hint and routes to app recovery. Updated active rules, Account
+  Access/Error Handling docs, BUG-AUTH-007, and migration status. Token
+  expiry/rotation and API endpoints are unchanged; no deployment performed.
+- Files: `web/components/use-app-account-logout.ts`,
+  `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/side-drawer.tsx`, `web/components/public-route-guard.tsx`,
+  `web/lib/auth.ts`, the profile/post/chat client routes, `docs/rules.md`,
+  `docs/units/account-access.md`, `docs/units/error-handling.md`,
+  `docs/bugs.md`, `docs/archives/migration.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed. ESLint passed for the new
+  shared hook and public route guard. Wider focused lint reported existing
+  React setState-in-effect errors in route components and the existing raw
+  `/cp` anchor rule in SideDrawer. `npm run dev` could not start in this
+  sandbox (`spawn EPERM`), so no in-app browser
+  acceptance was possible; no Chrome was used. `git diff --check` passed after
+  the documentation updates. Staging/browser acceptance pending.
+
+# 2026-09-29T13:22:21Z — Plan Post-Stability Auth Follow-Ups
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Create actionable plans for the shared logout and hint-zero
+  recovery patches, and assess their effect on the stabilized session flow.
+- Changes Made: Expanded ACCESS-AC-048/MIG-002 and ACCESS-AC-049/MIG-003 in
+  the Account Access unit with implementation steps, failure behavior,
+  acceptance matrices, and explicit guardrails that token expiry, rotation,
+  cookies, and server validation remain unchanged. Documented that logout
+  intentionally revokes the selected session and that remaining risks are
+  route/fallback/cross-tab orchestration. No application code or active rules
+  changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` and manual review of affected unit,
+  error-handling contract, migration notes, testing and deployment gates; no
+  tests run because this is documentation-only.
+
+# 2026-09-29T13:16:23Z — Reconcile Account Access Pending Work
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Compare the Account Access implementation plan against
+  active rules, changelog, agent history, and bug/notes evidence to identify
+  actual pending work and documentation drift.
+- Changes Made: Reorganized Account Access into acceptance still pending,
+  two approved post-stability patches, and deferred proposals. Corrected the
+  Add-account limit mismatch from a deferred investigation to an implemented
+  local fix with staging acceptance pending, consistent with the 2026-09-26
+  implementation/log and `docs/notes.md`. Recorded that refresh retry code is
+  locally fixed but its staging deployment is unconfirmed; separated user-
+  reported five-minute stability from the one-day refresh check and full
+  acceptance. Clarified that one ordinary staging switch pass does not resolve
+  later reports of intermittent/disabled switching or the untested multi-tab
+  regression. Recorded the exact non-zero pytest outcome for the remembered-
+  account limit regression (assertions reached; Windows SQLite cleanup failed
+  with `WinError 32`). No application code or active rules changed.
+- Files: `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; reviewed workstream statuses
+  against `docs/rules.md`, recent `AGENTLOG.md`/`CHANGELOG.md` entries, and the
+  account-limit note. No tests run because this is documentation-only.
+
+# 2026-09-29T13:03:33Z — Plan Logout And Hint-Zero Recovery Follow-Ups
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document two planned session UX patches for after the refresh
+  cookie fix and update the refresh-stability bug with the latest user report.
+- Changes Made: Added ACCESS-AC-049 and EH-AC-014 for handing a confirmed
+  terminal failure from zero/missing-hint public entry into shared app-shell
+  recovery, where another valid account can keep the user in Friink. Recorded
+  this implementation/rule conflict as MIG-003. Updated MIG-002 and the logout
+  plan to defer implementation until refresh/cookie stability is validated.
+  Updated BUG-AUTH-003 and Account Access with the user's report of stability
+  under a five-minute access-token lifetime and a one-day refresh-token check
+  planned for 2026-09-30. The bug remains open; its historical trigger and the
+  full session matrix are not confirmed. No application code or active rules
+  changed.
+- Files: `docs/units/account-access.md`, `docs/units/error-handling.md`,
+  `docs/archives/migration.md`, `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed and evidence paths were
+  checked against the repository; no tests run because this was a
+  documentation-only update.
+
+# 2026-09-29T12:35:50Z — Plan Shared Logout Handling Across Routes
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the approved logout-handler behavior as a planned
+  change before implementation.
+- Changes Made: Updated the Account Access unit to distinguish the existing
+  app-shell logout flow from profile, post-detail, username-post, and
+  username-chat callbacks that clear local auth directly. Added planned
+  acceptance criterion ACCESS-AC-048, route-matrix verification criteria, and
+  migration conflict MIG-002. The plan calls for server logout, fallback to the
+  most-recent valid remembered account or public site, preservation of other
+  slots, and retryable feedback while preserving the active session on failure.
+  No application code or active rules changed.
+- Files: `docs/units/account-access.md`, `docs/archives/migration.md`,
+  `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; reviewed the changed unit and
+  migration entries for consistent IDs and linked evidence. No tests were run
+  because this was a documentation-only change.
+
 ## 2026-09-29T12:09:15Z — Make Refresh Recovery Idempotent
 
 - Agent: Codex

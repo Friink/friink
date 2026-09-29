@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
+import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import { clearAuthSession, getPublicUser, getRememberedAccountSummaries, isTerminalRefreshFailure, listFollowers, listFollowing, listLikedPosts, listUserPosts, listUserReplies, loadAuthSession, loadCachedAuthUser, restoreAccountSession, restoreAuthSessionForEntry, saveAuthSession, type AccountSummary, type ApiPost, type AuthUser } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
@@ -44,6 +45,7 @@ function mapApiPost(post: ApiPost): Post {
 export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const { handleLogout, logoutError } = useAppAccountLogout(setUser);
   const [profileUser, setProfileUser] = useState<AuthUser | null>(null);
   const [profileStats, setProfileStats] = useState<{ followers: number; following: number } | null>(null);
   const [profilePosts, setProfilePosts] = useState<Post[]>([]);
@@ -231,11 +233,6 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     };
   }, [user, username]);
 
-  function handleLogout() {
-    clearAuthSession();
-    router.replace('/');
-  }
-
   async function handleRestoreRememberedAccount(account: AccountSummary) {
     setRestoringAccountSlot(account.accountSlot);
     setAccountRecoveryError(null);
@@ -276,6 +273,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
       onLoadMoreProfileLikedPosts={() => { void loadLikedPosts(); }}
       profileConnectionsBasePath={profileConnectionsBasePath}
       onLogout={handleLogout}
+      logoutError={logoutError}
       initialScreen="profile"
       profileTab={initialTab}
       onProfileTabChange={(tab) => router.push(`/${encodeURIComponent(profileHandle)}/${tab}`)}
