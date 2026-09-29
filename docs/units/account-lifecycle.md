@@ -5,7 +5,7 @@ deactivation, deletion, reactivation, and pending-deletion states.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-12T16:20:00Z  
+**Last edited:** 2026-09-27T23:52:30Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -69,9 +69,11 @@ distinguishes cancellation from ordinary sign-in.
 After a successful deactivation or deletion confirmation, the initiating web
 client immediately ends the affected account session and restores another
 valid remembered account if available; otherwise it returns to the public site.
-Other clients show a cause-specific in-app notice before attempting that same
-fallback. Session restore remains subject to Account Access validation. This
-presentation and routing behavior is specified in
+Other clients show the neutral Account Access `Session ended` modal with
+available remembered accounts and Add account. Selecting a remembered account
+validates it; Cancel and close attempt the most recently used valid fallback,
+then return to the public site if none can be restored. Session restore remains
+subject to Account Access validation. This presentation and routing behavior is specified in
 [Error Handling](./error-handling.md#ux-and-surfaces).
 
 ### Subscription interaction

@@ -74,6 +74,81 @@ Copy this template for a new defect and replace every placeholder:
 
 ## Defect entries
 
+## BUG-AUTH-008 — Account switching can race across open tabs
+
+- **Status:** Patch committed to the staging branch; multi-tab staging acceptance pending
+- **Reported/updated:** 2026-09-27T23:12:02Z
+- **Affected area:** Account switching and session restoration across browser tabs
+- **Environment:** Staging; multiple tabs in one browser profile
+- **Severity:** medium
+
+### Bug summary
+
+With multiple Friink tabs open, account switching can fail or leave the
+switcher unavailable until the extra tabs are closed and the page is reloaded.
+
+### Reproduction
+1. Sign in to two remembered accounts in one browser profile.
+2. Open the app in several tabs.
+3. Switch accounts repeatedly from one or more tabs, or refresh the tabs while
+   the selected account is changing.
+4. Observe the switcher become disabled or a tab fail to restore the selected
+   account. Closing the extra tabs and reloading restores normal behavior.
+
+### Expected behavior
+
+Switches serialize across tabs, and every tab converges on the selected
+account. A restore response for an earlier selection cannot replace a newer
+selection.
+
+### Actual behavior
+
+The selected account is shared across the browser and other tabs reload when it
+changes. Before this fix, refreshes coordinated token rotation per account
+slot, but account-switch requests had no shared lock. A tab could begin a
+switch from stale in-memory state while another tab was also switching.
+
+### Root cause
+- **Confirmed:** `switchAccount()` did not coordinate simultaneous cross-tab
+  switches. Successful `/auth/me` restoration also saved its captured slot
+  without checking whether the browser-wide selected slot had changed during
+  the request.
+- **Open questions:** The exact request ordering in the staging reproduction
+  was not captured. The reported `Could not load home feed` error with three or
+  four tabs may be a separate transport or server-load issue and remains
+  undiagnosed.
+
+### Resolution in progress
+
+Switches now use a browser-wide exclusive lock, read the source session after
+the lock is acquired, and save the destination selection before releasing the
+lock. Session restoration retries when its selected slot changes while
+`/auth/me` is pending. The patch is committed as `854860c` on the staging
+branch. The user reports that login and ordinary account switching passed on
+staging; the multi-tab regression itself has not been tested there.
+
+### Tests and verification
+- **Required:** Repeated and simultaneous switches in both directions with two
+  or more staging tabs; confirm every tab converges and the switcher remains
+  usable. Separately capture the HTTP status for feed failures with three or
+  four tabs.
+- **Completed:** Web TypeScript check passed. User-reported staging smoke check
+  passed for login and ordinary account switching.
+- **Pending:** Multi-tab browser and staging verification. Separately capture
+  the HTTP status for feed failures with three or four tabs.
+
+### Noteworthy
+
+This change does not alter JWT lifetime, refresh-token rotation, or server-side
+authorization. The lock coordinates only browser tab operations. The feed
+failure is tracked as an open diagnosis and is not claimed as fixed here.
+
+### Related documentation and implementation
+- [Account Access](units/account-access.md)
+- [Account selection rule](rules.md#auth-r-041--account-switching-is-serialized-across-tabs)
+- `web/lib/auth.ts`
+- `web/components/side-drawer.tsx`
+
 ## BUG-AUTH-007 — Terminal session recovery can loop between public site and app
 
 - **Status:** Fix implemented locally; staging acceptance pending
@@ -156,8 +231,8 @@ unrelated. Auth/session behavior remains outside the scope of this diagnosis.
 
 ## BUG-AUTH-003 — Reload refreshes can destabilize or change the active session
 
-- **Status:** Resolved
-- **Reported/updated:** 2026-09-27T20:36:01Z
+- **Status:** In progress — session stability failed again on staging
+- **Reported/updated:** 2026-09-29T12:09:15Z
 - **Affected area:** Web session bootstrap, refresh-token rotation, account-slot coordination, and remembered-account recovery
 - **Environment:** Production and staging user reports; prior staging API/database evidence; remembered accounts in one browser profile
 - **Severity:** high
@@ -239,6 +314,50 @@ as of 2026-09-27, confirmed by the user.
   This confirms persisted refresh-family revocations and session/token-state
   mismatches, but it does not explain which browser action presented the stale
   token or caused slot replacement.
+- **Additional failed staging session-stability check (2026-09-27 UTC):** The
+  user reported that `@muflah` could not be restored in both Chrome and Firefox
+  and received “Could not restore @muflah. Choose another account or sign in.”
+  The staging database contains matching `refresh_reuse_detected` events at
+  `23:52:23.068Z` for Chrome and `23:57:07.859Z` for Firefox. In Chrome, the
+  presented token had been rotated at `21:49:07.490Z`; in Firefox, it had been
+  rotated at `23:23:34.401Z`. Those presentations were roughly 2 hours and 34
+  minutes after rotation, respectively, far beyond staging's 60-second grace.
+  The API revoked each refresh-token family for `reuse_detected`. Both linked
+  auth-session rows still had `revoked_at = NULL`, so the durable evidence is
+  refresh-family invalidation rather than explicit session revocation. GitHub's
+  successful Vercel staging checks identify the tested build as `199fe90`
+  (completed around `23:17Z`); the later `3f0514c` checks completed around
+  `00:20Z`, after the incidents. That later commit changes terminal recovery
+  UI/docs, not `web/lib/auth.ts` or API auth code. The database proves that
+  stale rotated refresh tokens reached the API and triggered reuse protection,
+  but it does not identify which tab/request held or resent them, or whether a
+  cookie update was lost or overwritten.
+- **Possible stale-cookie path, not established as the cause:** A standard
+  login writes the same raw refresh token to both the generic
+  `friink_refresh_token` cookie and the account-slot cookie. Slot-scoped
+  refresh reads and updates the slot cookie, not the generic cookie. A refresh
+  request without `X-Friink-Account-Slot` could therefore send the old generic
+  value. However, the normal web restore and refresh path passes the account
+  slot, and `requestApi` fills it from the active slot when absent. The stale
+  generic-cookie explanation is therefore a lower-confidence edge case, not
+  the leading explanation for ordinary app requests. The database proves
+  previously rotated refresh-token values reached the API, but neither its
+  events nor current auth logging records the selected cookie name,
+  slot-header presence, tab/request ordering, or whether the browser received
+  and retained the preceding `Set-Cookie`. A failed or overwritten cookie
+  update, an overlapping request using an older cookie snapshot, and other
+  stale-cookie paths remain unresolved.
+- **Production and Android scope:** A read-only production database check
+  found ten `refresh_reuse_detected` events for `@muflah` in the prior 90 days.
+  This includes an Android session event on 2026-09-16 (stored browser
+  metadata: Samsung Internet / Android); the latest production event, on
+  2026-09-27, is associated with Chrome / Windows. This confirms the same
+  refresh-reuse failure class in production and on an Android session, but it
+  does not identify the exact device for the user's reported Chrome-on-Android
+  incident or prove malicious access. Staging's two 2026-09-27 events remain
+  associated with Chrome and Firefox. The event records do not capture the
+  request's cookie/header source, so they cannot distinguish a browser storage
+  failure from concurrent legitimate refresh requests or token theft.
 - **Local log availability:** `.codex-local-logs/api.log` was last written on
   2026-09-18 and contains standard Uvicorn request/status lines, not detailed
   auth lifecycle events. It includes overlapping successful `/auth/refresh`
@@ -248,6 +367,31 @@ as of 2026-09-27, confirmed by the user.
 - **Confirmed in API behavior:** Re-presenting a rotated token after its
   single-use grace has been consumed revokes its token family and returns a
   terminal `401 REFRESH_TOKEN_INVALID`; this reuse protection remains enabled.
+- **Confirmed API defects, fixed locally:** A local isolated SQLite API
+  reproduction showed that retrying a committed refresh with the same
+  operation ID after the one-second test grace returned
+  `401 REFRESH_TOKEN_INVALID` and revoked the family. Another reproduction
+  showed that a different operation ID inside grace revoked the existing
+  deterministic child and issued a competing child. The API now recovers the
+  same active deterministic child for the recorded operation ID after grace,
+  returns that same child for any operation ID during grace, and continues to
+  revoke the family for a different operation ID after grace. Regression
+  coverage exercises all three outcomes. Staging and production records do not
+  contain operation IDs, so we cannot prove which exact path occurred in each
+  historical incident.
+- **Additional client coordination concern (browser-dependent):** When the
+  browser lacks the Web Locks API, the web client falls back to a
+  `localStorage` read/publish/read lease. Those operations are not atomic, so
+  simultaneous tabs could both believe they own refresh and send different
+  operation IDs. This is a code-level race hypothesis; the reported Chrome and
+  Firefox clients normally use Web Locks, and no browser reproduction has
+  established this fallback as the cause.
+- **Local short-expiry check (2026-09-29):** An isolated SQLite API integration
+  test issued one-second access JWTs, let each expire, and completed three
+  sequential refresh rotations successfully. This confirms that frequent
+  sequential access-token expiry alone does not reproduce the refresh-reuse
+  failure. It does not exercise concurrent tabs, interrupted/lost responses,
+  or a real browser's cookie persistence.
 - **Confirmed from user reproduction:** Repeatedly reloading and interrupting
   session restoration can end the session. This is consistent with interrupting
   a refresh exchange after its database commit but before the browser receives
@@ -284,15 +428,21 @@ as of 2026-09-27, confirmed by the user.
 
 ### Resolution
 
-The session bootstrap now validates the slot-scoped HttpOnly access cookie
-through `/auth/me` before refreshing. A valid access cookie avoids refresh-token
+The session bootstrap validates the slot-scoped HttpOnly access cookie through
+`/auth/me` before refreshing. A valid access cookie avoids refresh-token
 rotation on normal reloads. Refresh coordination captures one account slot,
 validates the response against the active slot, and revalidates followers with
-their own access cookie. The user confirmed the latest implementation is
-deployed to staging. The historical trigger for repeated stale-token
-presentations remains unknown; this resolution records the implementation
-update and staging deployment, not a conclusive reconstruction of those past
-requests.
+their own access cookie. GitHub Vercel checks show the failed staging run used
+`199fe90`; the later `3f0514c` build completed after the reported incidents and
+changes recovery UI, not refresh-cookie coordination. Since the failure
+occurred on the build that already included the cookie-first and refresh
+coordination changes, those changes had not passed the session-stability gate.
+The API retry correction is implemented locally: identical committed
+operations now recover the same still-active child beyond grace; competing
+operation IDs in grace return the same child; unrelated stale retries after
+grace still revoke the family. Keep this bug open until the change is deployed
+to staging and the multi-tab/reload/lost-response matrix passes. The exact
+trigger for the historical stale-token presentations remains unknown.
 
 ### Earlier partial mitigations
 
@@ -382,17 +532,17 @@ revocation, not the client-side origin of the duplicate requests.
 
 ## BUG-AUTH-006 — Refresh grace replay forks token family
 
-- **Status:** In progress
-- **Reported/updated:** 2026-09-26T10:39:52Z
+- **Status:** In progress — fixed locally; staging acceptance pending
+- **Reported/updated:** 2026-09-29T12:09:15Z
 - **Affected area:** API refresh-token rotation and retry-grace handling
 - **Environment:** All environments running the current implementation
 - **Severity:** High
 
 ### Bug summary
 
-A concurrent or retried refresh request presenting a just-rotated token can
+A concurrent or retried refresh request presenting a just-rotated token could
 cause the API to issue a second active replacement in the same refresh-token
-family. This makes one session family contain multiple usable refresh tokens.
+family. The local fix returns the existing deterministic child instead.
 
 ### Reproduction
 
@@ -434,34 +584,32 @@ and bounded family-reuse detection.
 
 ### Local implementation and remaining acceptance
 
-Normal refresh now derives the successor deterministically with keyed HMAC
-using the parent token, row/family IDs, and the configured signing-key ID. The
-  child row stores its derivation-key ID alongside the SHA-256 token hash, and
-  the parent stores the refresh operation ID supplied by the client. A grace retry with the same
-operation ID can reconstruct and resend the same cookie without creating a
-second row. Stale-token retries without a matching operation ID retain the
-one-time legacy grace path; stale-token use after the window still revokes the
-family. Existing pre-change rows retain that compatibility path. The refresh
-audit event is now written after the rotation transaction commits, and the
-legacy grace branch uses the correct revocation helper arguments. Migration
-`20260925_0059` is applied to staging and Alembic reports no schema drift; the
-API/web code remains local pending deployment and browser acceptance.
+Normal refresh derives the successor deterministically with keyed HMAC using
+the parent token, row/family IDs, and configured signing-key ID. The child row
+stores its derivation-key ID alongside the SHA-256 token hash, and the parent
+stores the refresh operation ID supplied by the client. The fix returns this
+same active child for matching operation retries even after grace, and for any
+operation ID during grace; a different operation ID after grace still revokes
+the family. This prevents competing children without disabling replay
+detection. Existing rows without a deterministic successor retain their
+one-time legacy grace behavior. The refresh audit event is written after the
+rotation transaction commits. Regression coverage passes locally; API
+deployment and browser acceptance remain pending.
 
 ### Tests and verification
 
-- **Required:** Cover concurrent presentations of one refresh token and a
-  successful rotation whose response is lost. After grace recovery, verify
-  repeated retries carrying the same operation ID return the same replacement
-  and leave at most one usable refresh token in the family; verify stale-token
-  use after grace still revokes the family. Verify key retention through the
-  grace period and migration compatibility for pre-change rows.
-- **Completed:** The focused refresh-token test module passes all three tests
-  on disposable SQLite, including a real FastAPI request/response check and
-  repeated same-operation retries returning the same refresh cookie with one
-  active token in the family. Python compilation and `git diff --check` pass;
-  web TypeScript and targeted lint checks pass. The staging schema is at the
-  migration head with no Alembic drift; staging API/web acceptance remains
-  pending.
+- **Required:** On staging, verify concurrent same-slot refreshes, response
+  loss/reload recovery after the normal grace period, different-operation
+  retries within grace, and unrelated stale-token reuse after grace. Confirm
+  one usable refresh token per family and that session switching remains
+  stable. Verify migration compatibility for rows without deterministic
+  successors.
+- **Completed locally:** The focused refresh-token test module passes on
+  disposable SQLite, including a real FastAPI request/response check for
+  matching-operation recovery after grace, multiple different operation IDs
+  receiving the same child within grace, and reuse revocation after grace.
+  Staging schema remains at its migration head; API deployment and browser
+  acceptance are pending.
 
 ### Noteworthy
 

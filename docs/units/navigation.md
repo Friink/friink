@@ -6,7 +6,7 @@ NavigationBar, drawer, or tabs.
 
 **Status:** Active  
 **Tier:** Minimal  
-**Last edited:** 2026-09-25T01:20:58Z
+**Last edited:** 2026-09-28T00:00:36Z
 **Platforms:** Web  
 **Canonical sources:** [Product rules](../rules.md), [Design system](../design-system.md), [Design implementation contract](../../packages/design/design.md)
 
@@ -54,8 +54,10 @@ the established search, chat-unread, and notification interactions.
   queries to `/search/{query}`. Chat and Notifications show top-right count
   pills: unread messages are summed across conversations, and unread
   notifications use the unread notification count. Counts 1–9 display
-  directly; counts above 9 display `9+`. Pills are 16px high with 12px text
-  and a 1px surface-colored border. The search-filter active state retains its
+  directly; counts above 9 display `9+`. Pills are 16px high, use 10px text,
+  centered vertically and horizontally, 2px vertical and 6px horizontal
+  padding, an 8px corner radius, and a 1px surface-colored border. The
+  search-filter active state retains its
   separate presence dot. Both counters render through the shared `CountPill`
   component, which hides zero, displays 1–9 directly, and caps larger values
   at `9+`. The legacy signed-in Header is retired; the public landing page has

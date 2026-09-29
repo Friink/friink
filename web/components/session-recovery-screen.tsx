@@ -3,18 +3,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BrandLockup } from '@/components/design/brand-lockup';
 import { FriinkLogo } from '@/components/friink-logo';
+import { LoginScreen } from '@/components/login-screen';
 import { Modal } from '@/components/modal';
-import type { AccountSummary } from '@/lib/auth';
+import type { AccountSummary, AuthUser } from '@/lib/auth';
 
 type SessionRecoveryStatus = 'loading' | 'network' | 'offline' | 'choice' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
 
 type SessionRecoveryScreenProps = {
   status: SessionRecoveryStatus;
   appearance?: 'light' | 'dark' | 'system';
-  onAcknowledge?: () => void;
+  onCancelRecovery?: () => void;
+  onAddAccountAuthenticated?: (user: AuthUser) => void;
   onTakeMeBack?: () => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  isContinuingRecovery?: boolean;
   onChooseLogin?: () => void;
   accounts?: AccountSummary[];
   currentUsername?: string | null;
@@ -23,19 +26,30 @@ type SessionRecoveryScreenProps = {
   onRestoreAccount?: (account: AccountSummary) => void;
 };
 
-const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'offline' | 'choice' | 'waiting'>, { title: string; body: string }> = {
-  expired: { title: 'Session ended', body: 'Your session is no longer active.' },
-  security: { title: 'Session ended', body: 'Your session was ended for security reasons.' },
-  terminated: { title: 'Session ended', body: 'This session was ended from another device.' },
-  deactivated: { title: 'Session ended', body: 'This account was deactivated on another device.' },
-  pending_deletion: { title: 'Session ended', body: 'This account is scheduled for deletion.' },
+const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'offline' | 'choice' | 'waiting'>, { title: string }> = {
+  expired: { title: 'Session ended' },
+  security: { title: 'Session ended' },
+  terminated: { title: 'Session ended' },
+  deactivated: { title: 'Session ended' },
+  pending_deletion: { title: 'Session ended' },
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowledge, onTakeMeBack, onRefresh, isRefreshing = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
+export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
   const [showChoice, setShowChoice] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
   const availableAccounts = accounts
     .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== currentUsername?.toLowerCase())
     .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+
+  if (showAddAccount) {
+    return (
+      <main className="lifecycle-screen" data-theme={appearance}>
+        <Modal title="Add account" onClose={() => setShowAddAccount(false)} closeLabel="Return to session options" className="account-auth-modal">
+          <LoginScreen mode="account-modal" onAuthenticated={(user) => { setShowAddAccount(false); onAddAccountAuthenticated?.(user); }} />
+        </Modal>
+      </main>
+    );
+  }
 
   if (status === 'loading') {
     return (
@@ -128,13 +142,29 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onAcknowl
     <main className="lifecycle-screen" data-theme={appearance}>
       <Modal
         title={message.title}
-        onClose={onAcknowledge ?? (() => undefined)}
-        closeLabel="Close session notice"
+        onClose={onCancelRecovery ?? (() => undefined)}
+        closeLabel="Continue without this session"
         closeOnBackdrop={false}
         className="session-recovery-account-modal"
-        actions={<button className="button-primary" type="button" onClick={onAcknowledge}>Okay</button>}
+        actions={<>
+          <button className="button-secondary" type="button" onClick={onCancelRecovery} disabled={isContinuingRecovery || !!restoringAccountSlot}>Close</button>
+          <button className="button-primary" type="button" onClick={() => setShowAddAccount(true)} disabled={isContinuingRecovery || !!restoringAccountSlot}>Add account</button>
+        </>}
       >
-        <p>{message.body}</p>
+        <p className="session-recovery-copy">Your session has ended. Choose how you’d like to continue.</p>
+        {availableAccounts.length > 0 && onRestoreAccount ? (
+          <div className="session-recovery-accounts" role="group" aria-label="Available accounts" aria-busy={!!restoringAccountSlot}>
+            {availableAccounts.map((account) => (
+              <button className="session-recovery-account" type="button" key={account.accountSlot} disabled={!!restoringAccountSlot || isContinuingRecovery} onClick={() => onRestoreAccount(account)}>
+                <Image src={account.profilePictureUrl || '/media/profile.jpg'} alt="" width={32} height={32} sizes="32px" unoptimized />
+                <span>@{account.username}</span>
+                {restoringAccountSlot === account.accountSlot ? <i className="fa-solid fa-spinner fa-spin" aria-label="Restoring account" /> : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {isContinuingRecovery ? <p role="status">Checking your other accounts…</p> : null}
+        {accountError ? <p className="session-recovery-error" role="alert">{accountError}</p> : null}
       </Modal>
     </main>
   );

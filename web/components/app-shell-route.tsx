@@ -37,9 +37,12 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const [restoringAccountSlot, setRestoringAccountSlot] = useState<string | null>(null);
   const [accountRecoveryError, setAccountRecoveryError] = useState<string | null>(null);
   const [recoveryChoice, setRecoveryChoice] = useState(false);
+  const [isContinuingRecovery, setIsContinuingRecovery] = useState(false);
   const [networkRefreshing, setNetworkRefreshing] = useState(false);
   const networkRestoreInFlight = useRef(false);
+  const sessionRecoveryInFlight = useRef(false);
   const networkRestoreAccountSlot = useRef<string | null>(null);
+  const networkRestoreTerminationId = useRef<string | null>(null);
   const retryNetworkRecoveryRef = useRef<() => void>(() => undefined);
   const [appearance, setAppearance] = useState<AppearanceMode>('system');
 
@@ -89,8 +92,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           if (claimed.acknowledged) {
             if (notice.cause === 'deactivated' || notice.cause === 'pending_deletion') {
               void completeTerminatedSession(termination.id, notice.accountSlot);
-            } else {
-              setRecoveryChoice(true);
             }
           }
         }
@@ -100,9 +101,13 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }, [termination]);
 
   async function completeTerminatedSession(id: string, failedSlot?: string | null) {
+    if (sessionRecoveryInFlight.current) return;
+    sessionRecoveryInFlight.current = true;
+    setIsContinuingRecovery(true);
     try {
       const fallback = await restoreRememberedAccountWithFallback(failedSlot ? [failedSlot] : []);
       clearSessionTermination(id);
+      networkRestoreTerminationId.current = null;
       if (fallback) {
         saveAuthSession(fallback);
         setUser(fallback.user);
@@ -120,9 +125,13 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         router.replace('/');
       }
     } catch (error) {
+      networkRestoreTerminationId.current = id;
       setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
       setRecoveryAccounts(getRememberedAccountSummaries());
       setAuthCheckComplete(true);
+    } finally {
+      sessionRecoveryInFlight.current = false;
+      setIsContinuingRecovery(false);
     }
   }
 
@@ -132,7 +141,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     setNetworkRefreshing(true);
     void (async () => {
       try {
-        if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') {
+        if (termination && (networkRestoreTerminationId.current === termination.id || termination.cause === 'deactivated' || termination.cause === 'pending_deletion')) {
           const notice = getSessionTerminationNotice();
           await completeTerminatedSession(termination.id, notice?.accountSlot);
           return;
@@ -141,7 +150,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         const restoredSession = selectedSlot
           ? await restoreAccountSession(selectedSlot)
           : await restoreAuthSessionForEntry();
+        if (termination) clearSessionTermination(termination.id);
         if (selectedSlot) saveAuthSession(restoredSession);
+        networkRestoreTerminationId.current = null;
         networkRestoreAccountSlot.current = null;
         setUser(restoredSession.user);
         setSessionReady(true);
@@ -185,23 +196,43 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     return () => window.clearInterval(timer);
   }, [sessionError]);
 
-  function acknowledgeTermination() {
-    if (termination && (!termination.owner || !isSessionTerminationOwner(termination.id))) return;
-    const notice = termination ? getSessionTerminationNotice() : null;
-    if (termination) acknowledgeSessionTermination(termination.id);
-    if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') {
-      void completeTerminatedSession(termination.id, notice?.accountSlot);
+  function cancelSessionRecovery() {
+    if (sessionRecoveryInFlight.current || restoringAccountSlot) return;
+    if (termination) {
+      if (!termination.owner || !isSessionTerminationOwner(termination.id)) return;
+      const notice = getSessionTerminationNotice();
+      acknowledgeSessionTermination(termination.id);
+      void completeTerminatedSession(
+        termination.id,
+        notice?.accountSlot ?? recoveryAccounts.find((account) => account.username.toLowerCase() === recoveryUsername?.toLowerCase())?.accountSlot,
+      );
       return;
     }
 
-    const fallbackAccounts = getRememberedAccountSummaries().filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase());
-    if (fallbackAccounts.length > 0) {
-      setRecoveryChoice(true);
-    } else {
-      if (termination) clearSessionTermination(termination.id);
-      clearAuthSession();
-      router.replace('/login?session_recovery=1');
+    const fallbackAccounts = getRememberedAccountSummaries()
+      .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase())
+      .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+    if (fallbackAccounts[0]) {
+      void handleRestoreRememberedAccount(fallbackAccounts[0]);
+      return;
     }
+
+    clearAuthSession();
+    clearSessionEntryHint();
+    router.replace('/');
+  }
+
+  function completeRecoveryAddAccount(user: AuthUser) {
+    if (termination) clearSessionTermination(termination.id);
+    networkRestoreTerminationId.current = null;
+    setUser(user);
+    setSessionReady(true);
+    setSessionError(null);
+    setTermination(null);
+    setRecoveryChoice(false);
+    setAuthCheckComplete(true);
+    setRecoveryUsername(null);
+    router.replace('/home');
   }
 
   useEffect(() => {
@@ -365,10 +396,16 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }
 
   async function handleRestoreRememberedAccount(account: AccountSummary) {
+    if (restoringAccountSlot || sessionRecoveryInFlight.current) return;
+    if (termination && termination.owner && isSessionTerminationOwner(termination.id)) {
+      acknowledgeSessionTermination(termination.id);
+    }
     setRestoringAccountSlot(account.accountSlot);
     setAccountRecoveryError(null);
     try {
       const restoredSession = await restoreAccountSession(account.accountSlot);
+      if (termination) clearSessionTermination(termination.id);
+      networkRestoreTerminationId.current = null;
       saveAuthSession(restoredSession);
       setUser(restoredSession.user);
       setSessionReady(true);
@@ -394,7 +431,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
     const status = recoveryChoice ? 'choice' : sessionError === 'network' ? 'network' : sessionError === 'offline' ? 'offline' : termination ? (termination.owner ? termination.cause : 'waiting') : sessionError ?? 'offline';
     const candidates = getRememberedAccountSummaries().filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase());
-    return <SessionRecoveryScreen status={status} appearance={appearance} onAcknowledge={acknowledgeTermination} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
+    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
   return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;

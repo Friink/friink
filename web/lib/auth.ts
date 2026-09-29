@@ -61,6 +61,9 @@ const AUTH_SESSION_USER_PREFIX = 'friink-auth-session-user:';
 const DEACTIVATION_FALLBACK_SLOT_KEY = 'friink-deactivation-fallback-slot';
 const REFRESH_COORDINATION_KEY = 'friink-auth-refresh-coordination';
 const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
+const ACCOUNT_SELECTION_LOCK_NAME = 'friink-account-selection-lock';
+const ACCOUNT_SELECTION_LEASE_KEY = 'friink-account-selection-lease';
+const ACCOUNT_SELECTION_LEASE_MS = 30000;
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
 const REFRESH_LEASE_MS = 20000;
 const REFRESH_RESULT_TTL_MS = 3000;
@@ -773,14 +776,16 @@ export async function refreshAuthSession(accountSlot: string | null = activeAcco
 /** Restore the in-memory session required by any authenticated route entry. */
 export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
   const currentSession = loadAuthSession();
-  if (currentSession) return currentSession;
   const accountSlot = activeAccountSlot();
+  if (currentSession?.accountSlot === accountSlot) return currentSession;
   try {
     const user = await getCurrentUser('', accountSlot ?? undefined, true);
+    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
     const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: accountSlot ?? undefined };
     saveAuthSession(restoredSession);
     return restoredSession;
   } catch (error) {
+    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
     const refreshedSession = loadAuthSession();
     if (refreshedSession && refreshedSession.accountSlot === accountSlot) return refreshedSession;
     if (!isTerminalRefreshFailure(error)) throw error;
@@ -1303,12 +1308,98 @@ export async function getAccountAddAvailability(accessToken: string): Promise<{ 
   return requestApi<{ allowed: boolean; switcher_enabled: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
 }
 
-export async function switchAccount(accessToken: string, accountSlot: string): Promise<AuthSession> {
-  // The header identifies the source session and must match the bearer JWT.
-  // The request body identifies the destination account slot.
-  const sourceSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
-  const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, ...(sourceSlot ? { 'X-Friink-Account-Slot': sourceSlot } : {}) }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
-  return mapTokenResponse(response);
+type AccountSelectionLease = { ownerId: string; expiresAt: number };
+
+async function withAccountSelectionLock<T>(operation: () => Promise<T>): Promise<T> {
+  if (supportsCrossTabLock()) {
+    const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
+    return lockManager.request(ACCOUNT_SELECTION_LOCK_NAME, { mode: 'exclusive' }, operation);
+  }
+
+  return withAccountSelectionLease(operation);
+}
+
+async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promise<T> {
+  if (typeof window === 'undefined') return operation();
+
+  const ownerId = `${tabId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let acquired = false;
+  try {
+    while (!acquired) {
+      const rawLease = window.localStorage.getItem(ACCOUNT_SELECTION_LEASE_KEY);
+      let lease: AccountSelectionLease | null = null;
+      try {
+        lease = rawLease ? JSON.parse(rawLease) as AccountSelectionLease : null;
+      } catch {
+        lease = null;
+      }
+
+      const leaseIsValid = Boolean(
+        lease
+        && typeof lease.ownerId === 'string'
+        && Number.isFinite(lease.expiresAt)
+        && lease.expiresAt > Date.now(),
+      );
+      if (!leaseIsValid) {
+        window.localStorage.setItem(ACCOUNT_SELECTION_LEASE_KEY, JSON.stringify({ ownerId, expiresAt: Date.now() + ACCOUNT_SELECTION_LEASE_MS } satisfies AccountSelectionLease));
+        await new Promise((resolve) => window.setTimeout(resolve, 50));
+        const claimed = window.localStorage.getItem(ACCOUNT_SELECTION_LEASE_KEY);
+        try {
+          const confirmed = claimed ? JSON.parse(claimed) as AccountSelectionLease : null;
+          acquired = Boolean(confirmed?.ownerId === ownerId && confirmed.expiresAt > Date.now());
+        } catch {
+          acquired = false;
+        }
+      }
+      if (!acquired) await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+  } catch {
+    // If browser storage is unavailable, keep the operation usable in this tab.
+    return operation();
+  }
+
+  const renewLease = () => {
+    try {
+      const current = window.localStorage.getItem(ACCOUNT_SELECTION_LEASE_KEY);
+      if (!current || (JSON.parse(current) as AccountSelectionLease).ownerId !== ownerId) return;
+      window.localStorage.setItem(ACCOUNT_SELECTION_LEASE_KEY, JSON.stringify({ ownerId, expiresAt: Date.now() + ACCOUNT_SELECTION_LEASE_MS } satisfies AccountSelectionLease));
+    } catch {
+      // The lease expires on its own if it cannot be renewed.
+    }
+  };
+  const renewalId = window.setInterval(renewLease, Math.floor(ACCOUNT_SELECTION_LEASE_MS / 3));
+  try {
+    return await operation();
+  } finally {
+    window.clearInterval(renewalId);
+    try {
+      const current = window.localStorage.getItem(ACCOUNT_SELECTION_LEASE_KEY);
+      if (current && (JSON.parse(current) as AccountSelectionLease).ownerId === ownerId) {
+        window.localStorage.removeItem(ACCOUNT_SELECTION_LEASE_KEY);
+      }
+    } catch {
+      // Ignore storage cleanup failures; the lease has a bounded lifetime.
+    }
+  }
+}
+
+export async function switchAccount(accountSlot: string): Promise<AuthSession> {
+  return withAccountSelectionLock(async () => {
+    // Read and validate the source only after acquiring the browser-wide lock;
+    // another tab may have completed a switch while this request was waiting.
+    const session = loadAuthSession();
+    const sourceSlot = session?.accountSlot ?? null;
+    if (!session || sourceSlot !== activeAccountSlot()) {
+      throw new AuthApiError('The active account changed. Please try switching again.', 0);
+    }
+
+    // The header identifies the source session and must match the bearer JWT.
+    // The request body identifies the destination account slot.
+    const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${session.accessToken}`, ...(sourceSlot ? { 'X-Friink-Account-Slot': sourceSlot } : {}) }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
+    const nextSession = await mapTokenResponse(response);
+    saveAuthSession(nextSession);
+    return nextSession;
+  });
 }
 
 export async function removeAccount(accessToken: string, accountSlot: string): Promise<void> {

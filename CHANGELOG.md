@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-09-29T12:09:15Z
+- [account-access] Made deterministic refresh retries idempotent: the recorded
+  operation recovers its active child after grace, retries during grace reuse
+  that child across operation IDs, and unrelated stale retries after grace
+  still revoke the family. Added local regression coverage and updated the auth
+  rules, account-access unit, and bug records. Staging deployment remains
+  pending.
+
+## 2026-09-29T11:45:50Z
+- [account-access] Reproduced two refresh-rotation failure paths against an
+  isolated SQLite API: a same-operation retry after grace revokes the family,
+  and a different-operation retry within grace invalidates the first child.
+  Recorded the non-atomic localStorage lock fallback as an unverified browser-
+  dependent race hypothesis. No auth behavior changed.
+
+## 2026-09-29T11:23:02Z
+- [account-access] Added a local API regression check that expires access JWTs
+  after one second and completes three sequential refresh rotations. The
+  sequential short-expiry path passed; this does not cover concurrent clients
+  or browser cookie persistence.
+
+## 2026-09-28T00:43:23Z
+- [account-access] Expanded BUG-AUTH-003 with read-only production evidence:
+  repeated refresh-token reuse for @muflah, including an Android session.
+  Narrowed the generic-cookie explanation because normal restore requests send
+  the slot header; the exact stale-cookie source remains unknown.
+
+## 2026-09-28T00:31:17Z
+- [account-access] Reopened BUG-AUTH-003 after staging showed refresh-token
+  reuse in Chrome and Firefox. Recorded the matching API family revocations,
+  active session rows, the build/deployment window, and a likely stale generic
+  cookie path from code review; the exact request path remains unconfirmed.
+
+## 2026-09-28T00:00:36Z
+- [account-access] Labeled the terminal recovery modal's secondary action
+  **Close** to match its X control. Adjusted the shared count pill's line box
+  to use its full height for vertical text alignment; the component dimensions
+  and padding are unchanged.
+
+## 2026-09-27T23:52:30Z
+- [account-access] Replaced cause-specific terminal-session dialogs with a
+  neutral Session ended modal, remembered-account choices, Add account, and
+  Cancel/close fallback. Documented the UX across Account Access, Account
+  Lifecycle, Error Handling, and the design contracts.
+
+## 2026-09-27T23:14:24Z
+- [navigation] Updated the shared unread-count pill to an 8px corner radius,
+  16px height, 10px type, and 2px vertical / 6px horizontal padding. Synced
+  the navigation and design contracts.
+
+## 2026-09-27T23:12:02Z
+- [account-access] Recorded the user-reported staging pass for login and
+  ordinary account switching. Kept the cross-tab regression marked untested,
+  updated BUG-AUTH-008 to reflect the staging-branch patch, and aligned the
+  TopBar pill design contract with the implemented 16px CSS pill.
+
+## 2026-09-27T23:04:31Z
+- [account-access] Replace raw browser fetch errors on auth forms with
+  “We couldn’t reach Friink just now. Please try again.” Server-returned
+  authentication messages remain unchanged.
+
+## 2026-09-27T23:00:46Z
+- [account-access] Serialize account switches across tabs and retry session
+  restoration when the browser-wide selected account changes mid-request.
+  Documented the behavior and recorded the staging multi-tab defect; staging
+  acceptance remains pending.
+
 ## 2026-09-27T22:03:33Z
 - [account-access] Show account-switch failures in the shared toast stack with
   the copy “Couldn’t switch accounts. Please try again.” Documented the

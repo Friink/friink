@@ -733,6 +733,9 @@ export function LoginScreen({ onAuthenticated, mode = 'page', initialMessage, in
 }
 
 function getAuthErrorMessage(error: unknown) {
+  if (error instanceof AuthApiError && error.status === 0) {
+    return 'We couldn’t reach Friink just now. Please try again.';
+  }
   return error instanceof Error && error.message ? error.message : AUTH_FAILURE_MESSAGE;
 }
 

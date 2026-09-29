@@ -1,5 +1,104 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+## 2026-09-29T12:09:15Z — Make Refresh Recovery Idempotent
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Patch the confirmed refresh-session failure paths.
+- Changes Made: API retries with the recorded operation ID now recover its still-active deterministic successor after the normal grace period. During grace, deterministic rows return that same successor for retries with any operation ID, so overlapping requests cannot revoke/replace the first child. Different operation IDs after grace still trigger family reuse revocation; legacy rows without a derivation key keep one-time grace recovery. Recovery logs now report a distinct event and reason without exposing token material. Extended the focused refresh test and updated AUTH-R-008, Account Access, BUG-AUTH-003, and BUG-AUTH-006. No schema change.
+- Files: `api/app/routers/auth.py`, `api/tests/test_refresh_token_rotation.py`, `docs/rules.md`, `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: The full refresh-token test module passed (`4 passed`) against a unique temporary SQLite DB with OTP disabled for the test run. `git diff --check` passed. No staging deployment or browser acceptance performed.
+
+## 2026-09-29T11:45:50Z — Reproduce Refresh Recovery Failure Paths
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Inspect the auth/session code for a concrete cause of refresh reuse and session loss.
+- Changes Made: Reproduced two API failure paths using isolated SQLite and temporary tests that were removed after the run: (1) rotate a refresh token, wait beyond a one-second grace, then retry the old cookie with the same operation ID; API returns `401 REFRESH_TOKEN_INVALID` and revokes the family; (2) rotate with operation A, replay within grace with operation B, then operation A's child returns `401 SESSION_TERMINATED`. Identified the browser's no-Web-Locks fallback as a non-atomic localStorage lease that could permit competing tab owners, but did not reproduce that browser race. Confirmed the deployed incident commit `199fe90` has the same auth source as current HEAD. Updated BUG-AUTH-003 and Account Access evidence. These are reproduced code paths, not proof of the operation IDs used in historical incidents.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Both local targeted diagnostics passed (`2 passed`); the earlier one-second sequential rotation test passed (`1 passed`); `git diff --check` passed. No auth implementation changed and no staging deployment was performed.
+
+## 2026-09-29T11:23:02Z — Exercise Refresh With One-Second Access JWTs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Temporarily reduce access-token lifetime to one second and test the refresh behavior locally.
+- Changes Made: Added an API integration test that changes the cached Settings object only within the test to a one-second access JWT lifetime with zero clock skew. In an isolated SQLite database, it expires the JWT three times in sequence, confirms `/auth/me` rejects each expired token, and confirms each refresh succeeds, rotates the refresh cookie, and restores authenticated access. No environment file or deployed configuration was changed. Recorded that sequential expiry alone does not reproduce BUG-AUTH-003; concurrent requests and real-browser cookie persistence remain untested.
+- Files: `api/tests/test_refresh_token_rotation.py`, `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted pytest passed (`1 passed`); `git diff --check` passed. The test used an isolated SQLite database; no production/staging database was used.
+
+## 2026-09-28T00:43:23Z — Compare Production Refresh Reuse And Reassess Cookie Hypothesis
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Clarify whether the session failure came from the JWT cookie, whether longer expiries help, and whether the Android single-account report indicates the same problem.
+- Changes Made: Queried production security events read-only and found ten refresh-reuse events for @muflah in the prior 90 days, including an Android session event. The latest production event was associated with Chrome/Windows. Rechecked current client/server paths: normal remembered-account restore and refresh pass the slot header, and `requestApi` fills it from the active slot. Downgraded the generic-cookie path from likely cause to lower-confidence edge case. Recorded that the proven failure is a previously rotated refresh-token value reaching the API, while the source (lost/overwritten cookie update, concurrent stale request, other cookie path, or theft) remains unknown. Documented production and Android scope without equating reuse detection with proof of compromise.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Production database read-only query and code-path inspection completed; `git diff --check` passed. No auth code or tests changed.
+
+## 2026-09-28T00:31:17Z — Reopen Session Stability Bug From Staging Evidence
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Diagnose the staging session-stability failure for @muflah using the database and determine which build was tested.
+- Changes Made: Queried the staging database read-only and found refresh_reuse_detected events for Chrome at 23:52:23Z and Firefox at 23:57:07Z. Both presented rotated tokens beyond the 60-second grace; each family was revoked while its auth-session row remained active. GitHub Vercel checks place the tested build at 199fe90 and the later recovery-UI build 3f0514c after the incident. Code review found a likely stale-generic-cookie path: login sets both generic and slot cookies, while slot refresh updates only the slot cookie. The events replay the original login tokens, which is consistent with this path, but the stored evidence does not show whether those requests omitted the slot header. Reopened BUG-AUTH-003 and recorded the failed staging check and this unconfirmed hypothesis.
+- Files: `docs/bugs.md`, `docs/rules.md`, `docs/units/account-access.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Read-only staging queries and GitHub commit-status lookup completed; `git diff --check` passed. No code or tests changed.
+
+## 2026-09-28T00:00:36Z — Align Recovery Action And Count Pill Text
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Review whether the recovery modal action should say Close and center unread pill text vertically.
+- Changes Made: Changed the recovery modal's secondary action label from Cancel to Close, matching the X control's behavior. Changed `.count-pill` line-height to 16px so its text line box aligns with the full pill height; preserved the specified geometry and padding. Updated the existing design contracts without adding a new product rule.
+- Files: `web/components/session-recovery-screen.tsx`, `web/app/globals.css`, `docs/design-system.md`, `docs/units/navigation.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` and `git diff --check` passed. Local in-app browser confirmed the modal labels. The TopBar was not available in this local browser session, so the pill alignment change is CSS-reviewed but not visually confirmed here.
+
+## 2026-09-27T23:52:30Z — Simplify Terminal Session Recovery Modal
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement the neutral session-ended modal UX with account recovery and add-account actions.
+- Changes Made: Replaced cause-specific terminal copy and acknowledgment with a shared neutral `Session ended` modal. The modal lists available remembered accounts, validates a selected account, opens the existing login/signup modal through Add account, and sends Cancel/close through most-recent-account fallback before returning public with redirect hint zero. Added busy/error feedback and themed the modal surface. Updated active rules and Account Access, Account Lifecycle, Error Handling, design-system, and implementation design documentation.
+- Files: `web/components/session-recovery-screen.tsx`, `web/components/app-shell-route.tsx`, `web/app/globals.css`, `docs/rules.md`, `docs/design-system.md`, `docs/units/account-access.md`, `docs/units/account-lifecycle.md`, `docs/units/error-handling.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` passed, `git diff --check` passed, and the local in-app browser showed the updated neutral modal and actions. Staging acceptance remains pending; no test suite run.
+
+## 2026-09-27T23:14:24Z — Refine Count Pill Geometry
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Set the count pill corner radius, height, type size, and padding.
+- Changes Made: Set the shared pill to 8px corners, 16px height, 10px bold type, 2px vertical padding, and 6px horizontal padding. Updated product and implementation design documentation.
+- Files: `web/app/globals.css`, `docs/design-system.md`, `docs/units/navigation.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed.
+
+## 2026-09-27T23:12:02Z — Record Staging Smoke Check And Pill Contract
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain the shared unread-count pill design and record staging login/account-switch results.
+- Changes Made: Recorded the user-reported staging smoke check, kept multi-tab acceptance pending, updated BUG-AUTH-008 to reflect the staging-branch commit, and corrected the TopBar pill contract to match its CSS.
+- Files: `docs/units/account-access.md`, `docs/bugs.md`, `packages/design/design.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Focused diffs reviewed; `git diff --check` passed.
+
+## 2026-09-27T23:04:31Z — Replace Raw Auth Network Error Copy
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Improve the raw browser network error shown on the sign-in form.
+- Changes Made: Mapped transport failures without an HTTP response to “We couldn’t reach Friink just now. Please try again.” Kept server-returned credential and lifecycle errors unchanged. Updated the Account Access unit and active rules.
+- Files: `web/components/login-screen.tsx`, `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Targeted web TypeScript check and `git diff --check` passed.
+
+## 2026-09-27T23:00:46Z — Coordinate Account Switching Across Tabs
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Fix the account switcher getting stuck when multiple staging tabs are open.
+- Changes Made: Added a browser-wide exclusive lock around account-switch requests, moved source-session lookup and successful session persistence inside that lock, and made entry restoration retry when the selected account changes during `/auth/me`. Updated the Account Access rule/acceptance matrix, architecture notes, and BUG-AUTH-008. Kept the observed multi-tab feed error as a separate unresolved diagnosis.
+- Files: `web/lib/auth.ts`, `web/components/side-drawer.tsx`, `docs/units/account-access.md`, `docs/rules.md`, `docs/architecture.md`, `docs/bugs.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: `npm exec -- tsc --noEmit --incremental false` passed in `web/`; staging multi-tab acceptance is pending. The reported Home feed error remains undiagnosed.
+
 ## 2026-09-27T22:03:33Z — Toast Account-Switch Failures
 
 - Agent: Codex
