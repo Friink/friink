@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-30T00:00:17Z — Synchronize Active Rules With Current UI Implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/rules.md` so it matches the implementation
+  changes made during the session.
+- Changes Made: Corrected the shared TopBar and CountPill contract, including
+  10px text, 16px height, 2px/6px padding, and 8px radius; recorded that the
+  signed-in Header is retired; and documented Close/X recovery equivalence,
+  waiting-tab Continue here takeover, shared ownership synchronization, and
+  restore-action locking. Corrected the active chat-unread rule to reference
+  TopBar and CountPill instead of the retired Header and unread dot.
+- Files: `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; active rule text was
+  reviewed against the current CountPill, TopBar, and session-recovery code.
+
 # 2026-09-29T23:52:46Z — Align Recovery Documentation With App Frame
 
 - Agent: Codex

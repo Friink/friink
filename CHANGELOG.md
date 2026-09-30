@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-30T00:00:17Z
+- [documentation] Synchronized `docs/rules.md` with the current signed-in
+  TopBar and CountPill implementation, including 10px counter text, 16px
+  pill geometry, retired signed-in Header behavior, and serialized terminal
+  session-recovery ownership with Close/X and Continue here semantics. Also
+  corrected the active chat-unread rule to reference TopBar and CountPill.
+
 ## 2026-09-29T23:52:46Z
 - [documentation] Aligned Error Handling and AUTH-R-008 with the implemented
   cached app-frame session-validation flow, including inert controls, hidden
