@@ -1,5 +1,64 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-09-30T00:00:17Z — Synchronize Active Rules With Current UI Implementation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Update `docs/rules.md` so it matches the implementation
+  changes made during the session.
+- Changes Made: Corrected the shared TopBar and CountPill contract, including
+  10px text, 16px height, 2px/6px padding, and 8px radius; recorded that the
+  signed-in Header is retired; and documented Close/X recovery equivalence,
+  waiting-tab Continue here takeover, shared ownership synchronization, and
+  restore-action locking. Corrected the active chat-unread rule to reference
+  TopBar and CountPill instead of the retired Header and unread dot.
+- Files: `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; active rule text was
+  reviewed against the current CountPill, TopBar, and session-recovery code.
+
+# 2026-09-29T23:52:46Z — Align Recovery Documentation With App Frame
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Verify that the immediate app-frame session-validation work
+  was fully documented.
+- Changes Made: Updated the Error Handling unit and AUTH-R-008 wording to
+  describe cached-identity retryable frames, neutral uncached placeholders,
+  hidden protected content, and the existing standalone recovery state. No
+  application behavior changed.
+- Files: `docs/units/error-handling.md`, `docs/rules.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; documentation references
+  and acceptance IDs were reviewed.
+
+# 2026-09-29T23:48:44Z — Render App Frame During Session Validation
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement immediate app-frame rendering during
+  session restoration while protecting private content and actions, then update
+  active rules.
+- Changes Made: Added a neutral app-entry frame for uncached identity and an
+  inert shell mode for cached identity. Shared app routes, profile routes, post
+  details, and direct chats keep route content hidden until session validation;
+  profile/post/chat data then loads through the existing server-authorized
+  requests. Added retryable status for cached-identity restoration failures.
+  Updated Account Access, Error Handling, Feed, Profiles, Posts, Chat, Design
+  System, and AUTH-R-040 to match implemented behavior. No API, token, or
+  authorization contract changed.
+- Files: `web/components/app-entry-frame.tsx`,
+  `web/components/session-recovery-screen.tsx`, `web/components/app-shell.tsx`,
+  `web/components/app-shell-route.tsx`, `web/app/[username]/profile-client.tsx`,
+  `web/app/posts/[postId]/post-client.tsx`,
+  `web/app/[username]/chat/chat-client.tsx`, `web/app/globals.css`,
+  `docs/rules.md`, `docs/design-system.md`, `docs/units/account-access.md`,
+  `docs/units/error-handling.md`, `docs/units/feed.md`,
+  `docs/units/profiles.md`, `docs/units/posts.md`, `docs/units/chat.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` and
+  `git diff --check` passed. Reviewed the new Account Access anchors and
+  acceptance-criterion IDs. No tests run; browser and staging acceptance
+  remain pending.
+
 # 2026-09-29T22:41:14Z — Record Multi-Tab Home And Profile Load Bug
 
 - Agent: Codex

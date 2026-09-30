@@ -8,7 +8,7 @@ import { PostDetailScreen } from '@/components/post-detail-screen';
 import { PostUnavailableState } from '@/components/post-unavailable-state';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { useAppAccountLogout } from '@/components/use-app-account-logout';
-import { createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
+import { createPost, getPost, isTerminalRefreshFailure, listPostReplies, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry, saveAuthSession, type ApiPost, type AuthUser } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Post } from '@/lib/data';
 import { getPostPathForPost } from '@/lib/post-path';
@@ -75,7 +75,7 @@ function mapApiPost(post: ApiPost): Post {
 
 export function PostClient({ postId }: PostClientProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
   const { handleLogout, logoutError } = useAppAccountLogout(setUser);
   const [post, setPost] = useState<Post | null>(null);
   const [replies, setReplies] = useState<Post[]>([]);
@@ -85,6 +85,9 @@ export function PostClient({ postId }: PostClientProps) {
   const [composeContext, setComposeContext] = useState<{ kind: 'reply' | 'quote'; post: Post } | null>(null);
   const [reactionError, setReactionError] = useState('');
   const [postUnavailable, setPostUnavailable] = useState(false);
+  const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const [entryCanTakeMeBack, setEntryCanTakeMeBack] = useState(false);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -92,6 +95,7 @@ export function PostClient({ postId }: PostClientProps) {
     const loadPost = async (activeSession: NonNullable<typeof session>) => {
       if (!active) return;
       setUser(activeSession.user);
+      setSessionReady(true);
       getPost(postId)
         .then(async (apiPost) => {
           if (!active) return;
@@ -107,7 +111,7 @@ export function PostClient({ postId }: PostClientProps) {
           }
           if (active) setAncestors(chain);
         })
-        .catch((error) => { if (!active) return; if (isTerminalRefreshFailure(error)) router.replace('/home'); else setPostUnavailable(true); });
+        .catch((error) => { if (!active) return; if (isTerminalRefreshFailure(error)) { setUser(null); setSessionReady(false); router.replace('/home'); } else setPostUnavailable(true); });
       listPostReplies(postId)
         .then((items) => { if (active) setReplies(items.map(mapApiPost)); })
         .catch(() => { if (active) setReplies([]); });
@@ -116,6 +120,8 @@ export function PostClient({ postId }: PostClientProps) {
     if (session) {
       void loadPost(session);
     } else {
+      const cachedUser = loadCachedAuthUser();
+      if (cachedUser) setUser(cachedUser);
       const controller = new AbortController();
       restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal)
         .then((restoredSession) => {
@@ -125,7 +131,12 @@ export function PostClient({ postId }: PostClientProps) {
         })
         .catch((error) => {
           if (!active || controller.signal.aborted) return;
-          router.replace(isTerminalRefreshFailure(error) ? '/home' : isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
+          if (isTerminalRefreshFailure(error)) { setUser(null); setSessionReady(false); router.replace('/home'); }
+          else if (loadCachedAuthUser()) {
+            setEntryError(isNetworkRestoreFailure(error) ? 'We can’t connect to confirm your session. Your private post data is hidden.' : 'We couldn’t confirm your session. Your private post data is hidden.');
+            setEntryCanTakeMeBack(!isNetworkRestoreFailure(error));
+          }
+          else router.replace(isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
         });
       return () => { active = false; controller.abort(); };
     }
@@ -163,6 +174,8 @@ export function PostClient({ postId }: PostClientProps) {
       setBusy(false);
     }
   }
+
+  if (user && (!sessionReady || (!post && !postUnavailable))) return <AppShell user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen="post" showTabs={false} showFloatingBar={false} entryPending entryMessage={entryError} onRetryEntry={() => window.location.reload()} onTakeMeBackEntry={entryCanTakeMeBack ? () => router.replace('/home?session_recovery=offline') : undefined} />;
 
   if (!user) return <SessionRecoveryScreen status="loading" />;
 

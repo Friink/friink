@@ -29,6 +29,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   // metadata is hydrated in the effect below after React has mounted.
   const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
   const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
+  const [currentUserReady, setCurrentUserReady] = useState(() => !refreshCurrentUser);
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
   const [sessionError, setSessionError] = useState<'network' | 'offline' | 'expired' | 'security' | null>(null);
   const [termination, setTermination] = useState<{ id: string; cause: SessionTerminationCause; owner: boolean } | null>(null);
@@ -363,6 +364,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     const session = loadAuthSession();
     if (!session) {
       const cachedUser = loadCachedAuthUser();
+      if (cachedUser) setUser(cachedUser);
       const recoveryQuery = new URLSearchParams(window.location.search).get('session_recovery');
       if (recoveryQuery === 'offline' || recoveryQuery === 'network') {
         window.history.replaceState(window.history.state, '', '/home');
@@ -387,6 +389,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           if (controller.signal.aborted) return;
           setUser(restoredSession.user);
           setSessionReady(true);
+          setCurrentUserReady(true);
           setSessionError(null);
           setAuthCheckComplete(true);
         })
@@ -396,6 +399,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           setAuthCheckComplete(true);
           if (isTerminalRefreshFailure(error)) {
             clearAuthSessionForRecovery(error);
+            setUser(null);
+            setCurrentUserReady(false);
             const terminationNotice = getSessionTerminationNotice();
             setRecoveryUsername(cachedUser?.username ?? null);
             setRecoveryAccounts(getRememberedAccountSummaries());
@@ -405,7 +410,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
             setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
             setRecoveryUsername(cachedUser?.username ?? null);
             setRecoveryAccounts(getRememberedAccountSummaries());
-            setUser(null);
           }
         });
       return () => controller.abort();
@@ -430,6 +434,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         }
         saveAuthSession({ ...session, user: currentUser });
         setUser(currentUser);
+        setCurrentUserReady(true);
       })
       .catch((error) => {
         // requestApi owns refresh. A terminal refresh clears in-memory auth
@@ -448,6 +453,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         } else if (error instanceof AuthApiError && error.status === 401) {
           // Session recovery is presented by this route; do not escape to a
           // separate login page solely because a protected request failed.
+          setSessionError('offline');
+        } else {
+          setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
         }
       });
   }, [refreshCurrentUser, router]);
@@ -486,8 +494,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       }
       const restoredSession = action.result;
       networkRestoreTerminationId.current = null;
-      setUser(restoredSession.user);
-      setSessionReady(true);
+        setUser(restoredSession.user);
+        setSessionReady(true);
+        setCurrentUserReady(true);
       setSessionError(null);
       setAuthCheckComplete(true);
       router.replace('/home');
@@ -506,6 +515,49 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     }
   }
 
+  async function retryCurrentUser() {
+    if (networkRestoreInFlight.current) return;
+    networkRestoreInFlight.current = true;
+    setNetworkRefreshing(true);
+    try {
+      const session = loadAuthSession();
+      const currentUser = session
+        ? await getCurrentUser(session.accessToken)
+        : (await restoreAuthSessionForEntry()).user;
+      if (initialScreen === 'control-panel' && !currentUser.isStaff) {
+        router.replace('/home');
+        return;
+      }
+      const latestSession = loadAuthSession();
+      if (latestSession) saveAuthSession({ ...latestSession, user: currentUser });
+      setUser(currentUser);
+      setSessionReady(true);
+      setCurrentUserReady(true);
+      setSessionError(null);
+    } catch (error) {
+      if (isTerminalRefreshFailure(error)) {
+        clearAuthSessionForRecovery(error);
+        setUser(null);
+        setSessionReady(false);
+        setCurrentUserReady(false);
+      } else {
+        setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
+      }
+    } finally {
+      networkRestoreInFlight.current = false;
+      setNetworkRefreshing(false);
+    }
+  }
+
+  if (user && (!sessionReady || !currentUserReady)) {
+    const entryMessage = sessionError === 'network'
+      ? 'We can’t confirm your session because Friink cannot connect.'
+      : sessionError === 'offline'
+        ? 'We couldn’t confirm your session. Your private content is still hidden.'
+        : null;
+    return <AppShell key={`${user.id}-restoring`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} entryPending entryMessage={entryMessage} entryRetrying={networkRefreshing} onRetryEntry={() => refreshCurrentUser ? void retryCurrentUser() : retryNetworkRecoveryRef.current()} onTakeMeBackEntry={sessionError === 'offline' ? cancelSessionRecovery : undefined} />;
+  }
+
   if (!user) {
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
     const status = recoveryChoice ? 'choice' : sessionError === 'network' ? 'network' : sessionError === 'offline' ? 'offline' : termination ? (termination.owner ? termination.cause : 'waiting') : sessionError ?? 'offline';
@@ -513,5 +565,5 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
-  return <AppShell key={`${user.id}-${sessionReady ? 'ready' : 'restoring'}`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
+  return <AppShell key={`${user.id}-ready`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
 }

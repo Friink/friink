@@ -92,6 +92,11 @@ type AppShellProps = {
   initialSavedSection?: 'posts' | 'profiles';
   profileTab?: ProfileTab;
   onProfileTabChange?: (tab: ProfileTab) => void;
+  entryPending?: boolean;
+  entryMessage?: string | null;
+  entryRetrying?: boolean;
+  onRetryEntry?: () => void;
+  onTakeMeBackEntry?: () => void;
 };
 
 type ComposeContext =
@@ -112,7 +117,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', initialSearchQuery, profileUser, profilePosts, profileReplies = [], children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange }: AppShellProps) {
+export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', initialSearchQuery, profileUser, profilePosts, profileReplies = [], children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange, entryPending = false, entryMessage, entryRetrying = false, onRetryEntry, onTakeMeBackEntry }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -542,6 +547,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   }
 
   useEffect(() => {
+    if (entryPending) return;
     listPosts({ limit: 40 })
       .then((page) => {
         setPosts(page.items.map(mapApiPost));
@@ -549,7 +555,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       .catch(() => {
         // Keep the timeline empty when the API is not running.
       });
-  }, []);
+  }, [entryPending]);
 
   useEffect(() => {
     const session = loadAuthSession();
@@ -1140,6 +1146,32 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   useEffect(() => {
     document.documentElement.style.setProperty('--color-accent', accentColor);
   }, [accentColor]);
+
+  if (entryPending) {
+    return (
+      <main className="app-shell" data-theme={appearance} aria-busy="true">
+        <div className="app-layout" inert>
+          <SideDrawer user={user} activeScreen={sidebarActiveScreen} collapsed={sidebarCollapsed} onNavigate={navigateTo} onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)} onLogout={onLogout} onAccountChange={onUserChange} onToast={addToast} />
+          <TopBar title={getPageTitle(activeScreen)} isHome={activeScreen === 'home'} sidebarCollapsed={sidebarCollapsed} isSearchPage={activeScreen === 'search'} initialSearchQuery={initialSearchQuery} searchFilter={searchFilter} searchScope={activeScreen === 'messages' ? 'messages' : 'global'} notificationCount={0} unreadMessageCount={0} notifications={[]} hasUnreadMessages={false} backDisabled menuItems={[]} onNavigate={navigateTo} onBack={() => undefined} onToggleSidebar={() => undefined} />
+          <section className="main-panel">
+            <div className="main-content app-entry-content" aria-hidden="true">
+              <span className="app-entry-line app-entry-line-medium" />
+              <span className="app-entry-line app-entry-line-long" />
+              <span className="app-entry-line" />
+              <span className="app-entry-line app-entry-line-short" />
+            </div>
+          </section>
+        </div>
+        {entryMessage ? (
+          <section className="app-entry-notice" role="alert">
+            <p>{entryMessage}</p>
+            {onRetryEntry ? <button className="button-primary" type="button" onClick={onRetryEntry} disabled={entryRetrying}>{entryRetrying ? 'Checking…' : 'Try again'}</button> : null}
+            {onTakeMeBackEntry ? <button className="button-secondary" type="button" onClick={onTakeMeBackEntry}>Take me back</button> : null}
+          </section>
+        ) : <p className="sr-only" role="status">Loading your page.</p>}
+      </main>
+    );
+  }
 
   return (
     <main className="app-shell" data-theme={appearance}>

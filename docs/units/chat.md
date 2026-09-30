@@ -5,7 +5,7 @@ settings, and policy-aware access between Friink users.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T14:40:13Z
+**Last edited:** 2026-09-29T23:48:44Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -59,8 +59,10 @@ owns follow relationships; [Blocking](./blocking.md) can restrict chat access.
   1rem gap after the last message across viewport sizes.
 - **CHAT-R-011:** Direct conversation pages restore the authenticated session
   through the shared refresh flow when a full browser refresh clears the
-  in-memory access session. A terminal refresh failure routes to login; a
-  successful refresh keeps the user on the requested conversation.
+  in-memory access session. The app frame may render during restoration, but
+  conversation data and actions remain hidden until an authorized request
+  succeeds. A terminal refresh failure routes to recovery; success keeps the
+  user on the requested conversation.
 - **CHAT-R-012:** Chat messages may include up to eight images. The shared
   composer prepares them with the post-media JPEG preset before authenticated
   chat-media upload and confirmation; text-only and media-only messages are
@@ -115,6 +117,12 @@ preserved and no inner chat scrollbar is rendered. Shared shell bottom padding
 is removed for this route so it does not compound the message-list reservation;
 the final message remains 1rem above the floating composer.
 
+On a direct conversation-page reload, the app frame appears from a safe cached
+identity while session validation runs, or as a neutral placeholder when no
+identity is cached. Conversation details, messages, receipts, and composer
+actions remain hidden until session validation and the authorized chat and
+message requests succeed. See [Account Access](./account-access.md#startup-experience).
+
 ## Technical contract
 
 REST endpoints live in `api/app/routers/chat.py`; the web transport uses
@@ -135,6 +143,9 @@ archive. Read operations use per-user cursors and server checks.
 - [ ] **CHAT-AC-006** Blocking preserves required read-only history behavior.
 - [ ] **CHAT-AC-007** A conversation-list timeout or transport failure shows a
   recoverable error state with Try again.
+- [ ] **CHAT-AC-012** A direct conversation reload may show the app frame while
+      session validation runs, but conversation data and actions remain hidden
+      until an authenticated chat request succeeds.
 - [x] **CHAT-AC-008** Conversation rows use one full ProfileCard, expose the
   latest message/date/unread-or-receipt stack in the middle, and provide Mute,
   Archive, and Block through one overflow action menu.

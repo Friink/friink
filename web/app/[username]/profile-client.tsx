@@ -44,7 +44,7 @@ function mapApiPost(post: ApiPost): Post {
 
 export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientProps) {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
   const { handleLogout, logoutError } = useAppAccountLogout(setUser);
   const [profileUser, setProfileUser] = useState<AuthUser | null>(null);
   const [profileStats, setProfileStats] = useState<{ followers: number; following: number } | null>(null);
@@ -56,7 +56,9 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
   const [likedLoading, setLikedLoading] = useState(false);
   const [profileStatus, setProfileStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
-  const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | null>(null);
+  const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
+  const [sessionError, setSessionError] = useState<'offline' | 'expired' | 'security' | 'network' | null>(null);
+  const [entryRetrying, setEntryRetrying] = useState(false);
   const [recoveryAccounts, setRecoveryAccounts] = useState<AccountSummary[]>([]);
   const [recoveryUsername, setRecoveryUsername] = useState<string | null>(null);
   const [restoringAccountSlot, setRestoringAccountSlot] = useState<string | null>(null);
@@ -66,9 +68,13 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     const session = loadAuthSession();
     if (session) {
       setUser(session.user);
+      setSessionReady(true);
       setAuthCheckComplete(true);
       return;
     }
+
+    const cachedUser = loadCachedAuthUser();
+    if (cachedUser) setUser(cachedUser);
 
     let active = true;
     const controller = new AbortController();
@@ -77,6 +83,7 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
         if (!active || controller.signal.aborted) return;
         saveAuthSession(restoredSession);
         setUser(restoredSession.user);
+        setSessionReady(true);
         setSessionError(null);
         setAuthCheckComplete(true);
       })
@@ -84,9 +91,17 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
         if (!active || controller.signal.aborted) return;
         setAuthCheckComplete(true);
         if (isTerminalRefreshFailure(error)) {
+          setUser(null);
+          setSessionReady(false);
           router.replace('/home');
         } else if (isNetworkRestoreFailure(error)) {
-          router.replace('/home?session_recovery=network');
+          if (cachedUser) {
+            setSessionError('network');
+            setRecoveryUsername(cachedUser.username);
+            setRecoveryAccounts(getRememberedAccountSummaries());
+          } else {
+            router.replace('/home?session_recovery=network');
+          }
         } else {
           setSessionError('offline');
           const cachedUser = loadCachedAuthUser();
@@ -245,6 +260,31 @@ export function ProfileClient({ username, initialTab = 'posts' }: ProfileClientP
     } finally {
       setRestoringAccountSlot(null);
     }
+  }
+
+  async function retryEntryRestore() {
+    if (entryRetrying) return;
+    setEntryRetrying(true);
+    try {
+      const restored = await restoreAuthSessionForEntry();
+      saveAuthSession(restored);
+      setUser(restored.user);
+      setSessionReady(true);
+      setSessionError(null);
+      setAuthCheckComplete(true);
+    } catch (error) {
+      if (isTerminalRefreshFailure(error)) {
+        router.replace('/home');
+      } else {
+        setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
+      }
+    } finally {
+      setEntryRetrying(false);
+    }
+  }
+
+  if (user && !sessionReady) {
+    return <AppShell user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen="profile" entryPending entryMessage={sessionError ? 'We couldn’t confirm your session. Your private profile data is still hidden.' : null} entryRetrying={entryRetrying} onRetryEntry={() => void retryEntryRestore()} onTakeMeBackEntry={sessionError === 'offline' ? () => { setUser(null); setSessionReady(false); setAuthCheckComplete(true); } : undefined} />;
   }
 
   if (!user) {

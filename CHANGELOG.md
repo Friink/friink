@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-30T00:00:17Z
+- [documentation] Synchronized `docs/rules.md` with the current signed-in
+  TopBar and CountPill implementation, including 10px counter text, 16px
+  pill geometry, retired signed-in Header behavior, and serialized terminal
+  session-recovery ownership with Close/X and Continue here semantics. Also
+  corrected the active chat-unread rule to reference TopBar and CountPill.
+
+## 2026-09-29T23:52:46Z
+- [documentation] Aligned Error Handling and AUTH-R-008 with the implemented
+  cached app-frame session-validation flow, including inert controls, hidden
+  protected content, retry behavior, and the uncached recovery state.
+
+## 2026-09-29T23:48:44Z
+- [session UX] Replaced the blocking reconnect screen during app entry with
+  the signed-in shell from cached safe identity, or a neutral shell placeholder
+  when no identity is cached. Pending frames are inert and contain no route
+  data; profile, post, and chat details remain hidden until session and
+  server-authorized data requests succeed. Network failures retain retryable
+  entry UI when cached identity is available. Updated account-access,
+  error-handling, feed, profile, post, chat, design-system, and active rule
+  documentation. TypeScript check passed; staging/browser acceptance pending.
+
 ## 2026-09-29T22:41:14Z
 - [feed/profiles] Recorded BUG-LOAD-001 for intermittent Home and profile
   loading failures reported with multiple tabs. Documented the observed
