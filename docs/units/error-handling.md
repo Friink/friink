@@ -781,7 +781,7 @@ cookies, token hashes, or unnecessary personal data.
 
 | Area | Scenario | Expected result | Verification |
 |---|---|---|---|
-| UX | Technical session recovery | In-app page runs recovery without controls, then offers Take me back if unresolved | Browser |
+| UX | Technical session recovery | Cached identity shows an inert app frame with protected content hidden while recovery runs; without cache, a standalone recovery state appears. Bounded ambiguity offers Take me back if unresolved | Browser |
 | UX | Confirmed terminal session | Neutral copy, available account rows, Add account, Close or the close icon fallback; backdrop does not dismiss | Browser |
 | UX | Deactivation or pending deletion | Lifecycle behavior remains correct under shared neutral copy; backdrop does not dismiss | Browser |
 | Fallback | Confirmed terminal session | Select or add an account; Close or the close icon validate by recency, then return public with hint zero | Browser/API |
