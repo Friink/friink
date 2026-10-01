@@ -1,5 +1,23 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T23:35:40Z — Decouple Shell Readiness From Home Feed Prefetch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the intermittent entry state where a slow or failed Home
+  feed request made the shell appear not to load after session validation.
+- Changes Made: Kept the first Home feed request overlapped with session and
+  user hydration, but removed it from the app-shell readiness gate. `HomeScreen`
+  now stays in its loading state while the route-level prefetch is pending,
+  consumes a successful prefetched page without a duplicate request, and falls
+  back to its normal feed request when prefetch fails. Updated the active feed,
+  account-access, and rules documentation.
+- Files: `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/home-screen.tsx`, `docs/units/account-access.md`,
+  `docs/units/feed.md`, `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web `npx tsc --noEmit` passed. Focused diff validation
+  follows. No push performed.
+
 # 2026-10-01T23:25:09Z — Extend Cross-Tab Refresh Coordination Window
 
 - Agent: Codex

@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-10-01T23:03:44Z
+**Last edited:** 2026-10-01T23:35:40Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -79,10 +79,13 @@ and consumed by `home-screen.tsx`, `feed-post.tsx`, and profile screens. Cursor
 pagination and update endpoints remain server-authoritative.
 
 On Home, the route shell starts the initial feed request immediately after
-`/auth/session` validates the slot, overlapping it with user hydration.
-`HomeScreen` consumes the successful page supplied by the shell, avoiding two
-overlapping `/posts` reads during app entry. A failed prefetch is not an entry
-failure: `HomeScreen` falls back to its normal request and feed error state.
+`/auth/session` validates the slot, overlapping it with user hydration. The
+shell becomes interactive when session and current-user readiness complete; it
+does not wait for the feed request. While the prefetch is pending,
+`HomeScreen` owns the loading state. `HomeScreen` consumes the successful page
+supplied by the shell, avoiding two overlapping `/posts` reads during app
+entry. A failed prefetch is not an entry failure: `HomeScreen` falls back to
+its normal request and feed error state.
 The shell-owned prefetch remains available on non-Home surfaces that use the
 shared post state for existing fallback data.
 The generic API client retries once only when authentication refreshes after

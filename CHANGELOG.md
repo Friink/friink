@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-01T23:35:40Z
+- [session entry/feed] Decoupled shell readiness from the initial Home feed
+  request. The shell now becomes interactive after session/current-user
+  readiness, while Home shows its own loading state during prefetch and falls
+  back to the normal feed request if prefetch fails.
+- [documentation] Synchronized the active account-access, feed, and rules
+  contracts with the new shell/feed boundary.
+
 ## 2026-10-01T23:25:09Z
 - [session stability] Extended per-slot browser refresh coordination to a
   45-second lease and 60-second successful-result publication window. This

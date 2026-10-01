@@ -300,11 +300,13 @@ signed-in application frame immediately when a safe cached user summary exists.
 Do not show cached protected feed, profile, or conversation data, or enable
 account actions, until an authenticated API request succeeds. On Home, once
 `/auth/session` validates the selected slot, the first Explore or Following
-feed request starts immediately in parallel with user hydration. The shell
-remains inert until both session validation and that feed request settle; a
-successful response is passed to `HomeScreen` so it does not issue a duplicate
-initial request. If the prefetch fails, Home falls back to its existing feed
-load and preserves the normal feed error behavior. The HttpOnly slot cookie
+feed request starts immediately in parallel with user hydration. Session and
+current-user readiness control when the shell becomes interactive; the shell
+does not wait for the feed request. While the prefetch is pending,
+`HomeScreen` owns its loading state. A successful response is passed to
+`HomeScreen` so it does not issue a duplicate initial request; if the prefetch
+fails, Home falls back to its existing feed load and preserves the normal feed
+error behavior. The HttpOnly slot cookie
 remains authoritative for API access. A terminal API response
 replaces the frame with session recovery; a network failure keeps private data
 hidden and offers retry. After non-network ambiguous retries are exhausted,

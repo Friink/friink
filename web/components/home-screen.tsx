@@ -21,6 +21,7 @@ type HomeScreenProps = {
   posts?: Post[];
   initialFeed?: ApiFeedPage | null;
   initialFeedFilter?: 'all' | 'following';
+  initialFeedPending?: boolean;
   accountId?: string;
   activeFilter?: 'all' | 'following';
   onFilterChange?: (id: string) => void;
@@ -197,7 +198,7 @@ function getTopVisiblePostId() {
   return partiallyVisible?.dataset.feedPostId ?? null;
 }
 
-export function HomeScreen({ posts = [], initialFeed = null, initialFeedFilter = 'all', accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
+export function HomeScreen({ posts = [], initialFeed = null, initialFeedFilter = 'all', initialFeedPending = false, accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
   void onFilterChange;
   const initialSeedPosts = useMemo(() => dedupeAndSortPosts(initialFeed?.items.map(mapApiPost) ?? posts), [initialFeed, posts]);
   const [feedPosts, setFeedPosts] = useState<Post[]>(initialSeedPosts);
@@ -379,6 +380,10 @@ export function HomeScreen({ posts = [], initialFeed = null, initialFeedFilter =
     hasMoreRef.current = true;
     setHasMore(true);
     setRestoreAnchorId(null);
+    if (initialFeedPending && !initialFeedConsumedRef.current) {
+      setLoadingInitial(true);
+      return;
+    }
     if (initialFeed && !initialFeedConsumedRef.current && initialFeedFilter === activeFilter) {
       initialFeedConsumedRef.current = true;
       updateFeedPage(initialFeed, dedupeAndSortPosts(initialFeed.items.map(mapApiPost)));
@@ -386,7 +391,7 @@ export function HomeScreen({ posts = [], initialFeed = null, initialFeedFilter =
       return;
     }
     void loadInitialFeed();
-  }, [activeFilter, accountId, initialFeed, initialFeedFilter]);
+  }, [activeFilter, accountId, initialFeed, initialFeedFilter, initialFeedPending]);
 
   useEffect(() => {
     if (activeFilter === 'all' && feedPostsRef.current.length === 0 && initialSeedPosts.length > 0) {

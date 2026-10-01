@@ -98,6 +98,7 @@ type AppShellProps = {
   entryRetrying?: boolean;
   initialHomeFeed?: ApiFeedPage | null;
   initialHomeFeedFilter?: 'all' | 'following';
+  initialHomeFeedPending?: boolean;
   onRetryEntry?: () => void;
   onTakeMeBackEntry?: () => void;
 };
@@ -120,7 +121,7 @@ function getInitials(username: string) {
   );
 }
 
-export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', initialSearchQuery, profileUser, profilePosts, profileReplies = [], children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange, entryPending = false, entryMessage, entryRetrying = false, initialHomeFeed = null, initialHomeFeedFilter = 'all', onRetryEntry, onTakeMeBackEntry }: AppShellProps) {
+export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', initialSearchQuery, profileUser, profilePosts, profileReplies = [], children, floatingBarContent, showTabs, showFloatingBar = true, onUserChange, profileStats, profileLikedPosts: profileLikedPostsProp, profileLikedPostsHasMore = false, profileLikedPostsLoading = false, onLoadMoreProfileLikedPosts, profileConnectionsBasePath, connectionsUsername, initialConnectionsFilter = 'all', initialHomeFilter = 'all', initialMessagesTab = 'all', initialSettingsTab = 'general', initialSavedSection = 'posts', profileTab = 'posts', onProfileTabChange, entryPending = false, entryMessage, entryRetrying = false, initialHomeFeed = null, initialHomeFeedFilter = 'all', initialHomeFeedPending = false, onRetryEntry, onTakeMeBackEntry }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -1367,6 +1368,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       posts={posts}
                       initialFeed={initialHomeFeed}
                       initialFeedFilter={initialHomeFeedFilter}
+                      initialFeedPending={initialHomeFeedPending}
                       accountId={user.id}
                       activeFilter={homeFilter}
                       onFilterChange={(id) => handleHomeFilterChange(id as 'all' | 'following')}
