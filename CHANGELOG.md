@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-01T21:46:07Z
+- [deployment] Removed the stale `AccountSessionSlot` import from Alembic
+  metadata loading. The cleanup migration can now run after the dedicated slot
+  model has been removed.
+
 ## 2026-10-01T21:38:56Z
 - [auth/database] Simplified account switching so slots are transient views over
   existing device-bound `auth_sessions` rows. Removed the dedicated

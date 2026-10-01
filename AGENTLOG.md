@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T21:46:07Z — Remove Stale Alembic Slot Import
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the Vercel predeploy failure after removing the
+  dedicated account-slot model.
+- Changes Made: Removed the stale `AccountSessionSlot` import from
+  `api/alembic/env.py`, allowing Alembic metadata loading to proceed with the
+  retired table cleanup migration.
+- Files: `api/alembic/env.py`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Alembic/application Python compilation and
+  `git diff --check` passed. No push performed.
+
 # 2026-10-01T21:38:56Z — Derive Account Slots From Existing Auth Sessions
 
 - Agent: Codex
