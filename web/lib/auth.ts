@@ -1153,6 +1153,7 @@ async function performRefresh(generation: number, operationId: string, slot: str
     headers: {
       ...(slot ? { 'X-Friink-Account-Slot': slot } : {}),
       'X-Friink-Refresh-Operation-Id': operationId,
+      'X-Friink-Client-Tab-Id': tabId,
     },
     authContext: 'refresh_exchange',
     skipAuthRefresh: true,

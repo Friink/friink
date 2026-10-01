@@ -52,7 +52,7 @@ acceptance is separate from a local implementation or code review.
 | [BUG-AUTH-008](#bug-auth-008--account-switching-can-race-across-open-tabs) | Still actionable by report: the switcher became disabled after switching with several tabs. Cross-tab lock patch exists, but the failure state and current-build reproduction are not captured. | Reproduce on the identified staging build; capture each tab's selected slot/busy state and switch request status/duration. Distinguish a pending request from stale UI or recovery overlay before patching. | Repeat switches succeed and controls recover after success, failure, and timeout in multiple tabs; capture the feed-load HTTP status separately or split that symptom into its own bug. If absent on current build, record the same scenario and close as not reproduced. |
 | [BUG-AUTH-009](#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative) | The code-level failure and user-reported Close issue are addressed locally; staging ownership behavior still needs acceptance. | Verify notice synchronization, takeover from the waiting screen, serialized recovery against account switching/logout, and the modal close busy state in multiple tabs. | Owner and waiter states, Close/X, account selection, and Add account each complete once and converge across tabs; no enabled action is inert. |
 | [BUG-AUTH-010](#bug-auth-010--account-switches-accumulate-active-refresh-token-families) | Fix implemented locally: switches reuse the validated destination refresh cookie; absent or unusable cookies use a locked, session-validated repair path. Existing families are not bulk-revoked. | Deploy/identify the API build; verify repeated switches, missing/stale cookies, concurrent refresh, slot isolation, and revocation. | Repeated switches do not add families; repair remains recoverable and slot-isolated; record staging build and database evidence. |
-| [BUG-AUTH-011](#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics) | Correlated, redacted request diagnostics are implemented locally and covered by endpoint tests. | Deploy/identify the API build; verify staging runtime log access and retention. | Representative success and failure requests correlate by response request ID, route, deployment, slot-header/cookie-presence, and safe failure class, with no secrets logged. |
+| [BUG-AUTH-011](#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics) | Correlated, redacted runtime and durable refresh-attempt diagnostics are implemented locally. | Apply migration, deploy/identify the API build, and verify durable rows plus runtime log access. | Representative success and failure requests correlate by request/operation ID, route, deployment, slot/cookie-presence, and safe failure class, with no secrets logged. |
 | [BUG-AUTH-007](#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app) | Fix implemented locally; current staging acceptance pending. | Deploy/identify the changed web build and exercise stale positive, zero, absent, and malformed hints with valid/invalid alternate accounts and terminal/transient failures. | Each case follows the documented in-app/public fallback with no loop; record build and observed route. |
 | [BUG-AUTH-005](#bug-auth-005--failed-account-switch-shows-sign-in-for-the-previous-account) | Fix implemented locally; staging acceptance pending. | Fail a target-account switch while the source remains valid; also test terminal target failure and transient failure. | Source stays active for a non-terminal target failure; any recovery action names the target, never the unrelated source. |
 | [BUG-AUTH-004](#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher) | Fix implemented locally; staging acceptance pending. | Restore a non-first remembered slot through normal and grace refresh branches, then inspect account-list order. | Restored account becomes first/current; failed refresh does not change recency; explicit switching still updates order. |
@@ -396,7 +396,7 @@ separate safe rollout decision.
 
 ## BUG-AUTH-011 — Refresh failures lack enough correlated diagnostics
 
-- **Status:** Implemented locally; staging log access/retention verification pending
+- **Status:** Migration applied in production; application deployment and staging verification pending
 - **Reported/updated:** 2026-09-29T22:03:18Z
 - **Affected area:** API auth-failure logging and session incident diagnosis
 - **Environment:** Staging and any environment where request-level auth traces are needed
@@ -424,10 +424,11 @@ safe failure classification without exposing credentials.
 
 At report time, the database query for the 2026-09-29 incident showed no
 refresh-reuse event for either account. It could not reveal the failed HTTP
-status/code or which slot-scoped cookie was present. The API already emitted
-`auth_failure_classified` warnings, but the incident's Vercel runtime logs were
-not available to this audit. Those prior failure logs lacked a request
-correlation ID and slot/cookie-presence context.
+status/code or which slot-scoped cookie was present. Before the durable
+diagnostic migration, the API emitted `auth_failure_classified` warnings, but
+the incident's Vercel runtime logs were not available to this audit. Those
+prior failure logs lacked a request correlation ID and slot/cookie-presence
+context.
 
 ### Root cause
 - **Confirmed:** Database security events do not persist every HTTP refresh
@@ -443,20 +444,21 @@ correlation ID and slot/cookie-presence context.
 
 The API now generates an opaque request ID for each request, returns it in
 `X-Friink-Request-Id`, and exposes that response header through CORS. Every
-`POST /auth/refresh` request emits a structured runtime event with request ID,
-deployment SHA, route, HTTP status, safe failure class, slot-header presence,
-and expected slot-cookie presence. Recognized auth failures retain their
-existing explicit error code and now include the same correlation/context
-fields. No token, cookie, token hash, slot value, or user identifier is logged.
-Staging runtime access and retention still need verification; no durable audit
-record was added.
+`POST /auth/refresh` request emits a structured runtime event and persists one
+redacted `auth_refresh_attempts` row with request/operation correlation,
+hashed tab/slot identifiers, known session context, deployment, outcome,
+status, failure class, and duration. No token, cookie, token hash, raw slot,
+raw tab identifier, or credential is stored. Durable persistence is
+best-effort, so diagnostic failure cannot change an authentication result.
+Migration execution, runtime access, and retention still need verification.
 
 ### Tests and verification
-- **Required:** Verify representative missing, invalid, expired, rotated,
-  revoked-session, and successful refresh requests in staging. Confirm the
-  response request ID matches the runtime event and that no secret values
-  appear. Verify runtime log access and retention; retrieve the exact
-  2026-09-29 time window if platform retention allows.
+- **Required:** Apply the migration and verify representative missing,
+  invalid, expired, rotated, revoked-session, and successful refresh requests
+  in staging. Confirm the response request ID matches both the runtime event
+  and durable row, operation/tab correlation is present when supplied, and no
+  secret values appear. Verify runtime log access and retention; retrieve the
+  exact 2026-09-29 time window if platform retention allows.
 - **Completed locally:** Endpoint verification captured both a successful
   refresh (`200`) and an invalid-token failure (`401`, `REFRESH_TOKEN_INVALID`).
   Both response IDs matched their structured runtime events, including route,
@@ -467,8 +469,8 @@ record was added.
 ### Noteworthy
 
 `AUTH_DEBUG_LOGGING_ENABLED` controls supplementary token-lifecycle stdout
-messages. The standard `auth_failure_classified` warning is emitted regardless
-of that flag, but neither output is a durable database record. This bug tracks
+messages. The standard `auth_failure_classified` warning and the durable
+refresh-attempt row are emitted independently of that flag. This bug tracks
 observability; it does not change how the API accepts or rejects a session.
 
 ### Related documentation and implementation

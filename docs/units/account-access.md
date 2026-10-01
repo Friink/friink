@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T23:48:44Z
+**Last edited:** 2026-10-01T18:34:51Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -312,9 +312,12 @@ Each API request receives an opaque `X-Friink-Request-Id` response header, which
 browser clients can read through CORS. Every refresh request emits a structured
 runtime outcome correlated by that ID, including deployment SHA, route, HTTP
 status, safe failure class, and booleans for selected-slot-header and expected
-refresh-cookie presence. The logs never include credentials, token hashes, raw
-slot values, or user identifiers. These diagnostics support investigation only;
-they do not change session decisions.
+refresh-cookie presence. The API also persists a redacted row in
+`auth_refresh_attempts` for each refresh request, including request and
+operation IDs, hashed tab/slot identifiers, session context when known, result,
+status, failure code, deployment, and duration. The record never includes
+credentials, cookies, token hashes, raw slot values, or raw tab identifiers;
+diagnostic persistence is best-effort and never changes session decisions.
 
 **Implementation update (browser/staging verification pending):** the authenticated API sometimes indicates that
 session restoration may be attempted from `/auth/entry-status`; a positive
@@ -937,7 +940,7 @@ rules:
 
 - [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): implemented locally with synchronized owner state, a serialized recovery action, and a **Continue here** action for waiting tabs. Multi-tab acceptance remains pending.
 - [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): implemented locally; ordinary switches reuse the validated destination refresh cookie. Missing or unusable cookies use a locked, session-validated repair path. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
-- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted request-correlated refresh diagnostics are implemented locally. Staging runtime log access and retention still need verification; the historical incident's exact failure remains unknown.
+- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted runtime and durable refresh-attempt diagnostics are implemented locally. Migration/deployment verification and the historical incident's exact failure remain open.
 - [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
 
 The staging DB audit found `@muflahulfurqan`'s session active after the report;

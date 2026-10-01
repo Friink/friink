@@ -1,5 +1,26 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T18:32:06Z — Persist Redacted Refresh Diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep multi-tab refresh diagnosis permanently in production
+  data and log related events without storing credentials.
+- Changes Made: Added the `auth_refresh_attempts` model and Alembic migration;
+  persisted best-effort redacted outcomes for every `/auth/refresh` request;
+  added request operation and hashed client-tab correlation; captured known
+  user/session context; and updated the account-access and auth bug contracts.
+- Files: `api/app/models/auth_refresh_attempt.py`, `api/app/models/__init__.py`,
+  `api/alembic/env.py`, `api/alembic/versions/20261001_0060_auth_refresh_attempts.py`,
+  `api/app/services/auth_refresh_diagnostics.py`, `api/app/main.py`,
+  `api/app/config.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`,
+  `docs/units/account-access.md`, `docs/bugs.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: API `compileall`, web `npx tsc --noEmit --incremental
+  false`, migration syntax review, and `git diff --check` passed. Production
+  migration `20261001_0060` applied and verified at Alembic head; table is empty
+  until the application code is deployed. No full build or test suite run.
+
 # 2026-10-01T18:10:14Z — Recover Multi-Tab Account Switcher Locks
 
 - Agent: Codex

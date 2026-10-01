@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-01T18:32:06Z
+- [auth observability] Added a durable, redacted `auth_refresh_attempts`
+  record and migration for every refresh request, correlated by request,
+  operation, hashed tab/slot identifiers, deployment, outcome, failure class,
+  and duration. Added the browser tab ID to refresh correlation headers while
+  keeping credentials and raw identifiers out of persistence. Applied the
+  additive migration to production; the table remains empty until the API
+  build is deployed.
+
 ## 2026-10-01T18:10:14Z
 - [account access] Fixed the multi-tab account-switcher lock behavior by
   separating switch/remove/add busy states, keeping Add account available

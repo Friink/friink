@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import time
 from uuid import uuid4
 
 import psycopg
@@ -7,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from app.config import get_settings
 from app.routers.auth import router as auth_router
@@ -24,6 +26,7 @@ from app.routers.progressive_auth import router as progressive_auth_router
 from app.routers.professional_registration import router as professional_registration_router
 from app.routers.search import router as search_router
 from app.services.auth_debug import log_refresh_request_result
+from app.services.auth_refresh_diagnostics import record_refresh_attempt
 
 settings = get_settings()
 logger = logging.getLogger("friink.auth")
@@ -100,10 +103,13 @@ async def attach_request_id_to_unhandled_error(request: Request, _exc: Exception
 async def add_request_correlation(request: Request, call_next):
     request_id = uuid4().hex
     request.state.request_id = request_id
+    if request.url.path == "/auth/refresh":
+        request.state.refresh_started_at = time.perf_counter()
     try:
         response = await call_next(request)
     except Exception as exc:
         if request.url.path == "/auth/refresh":
+            await run_in_threadpool(record_refresh_attempt, request=request, status_code=500, exception_type=type(exc).__name__)
             log_refresh_request_result(
                 request=request,
                 status_code=500,
@@ -113,6 +119,7 @@ async def add_request_correlation(request: Request, call_next):
 
     response.headers["X-Friink-Request-Id"] = request_id
     if request.url.path == "/auth/refresh":
+        await run_in_threadpool(record_refresh_attempt, request=request, status_code=response.status_code)
         log_refresh_request_result(request=request, status_code=response.status_code)
     return response
 
