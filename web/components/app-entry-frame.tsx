@@ -24,10 +24,12 @@ export function AppEntryFrame({
       <section className="app-entry-main" aria-hidden="true">
         <header className="app-entry-topbar"><span className="app-entry-line app-entry-line-short" /></header>
         <div className="app-entry-content">
-          <span className="app-entry-line app-entry-line-medium" />
-          <span className="app-entry-line" />
-          <span className="app-entry-line app-entry-line-long" />
-          <span className="app-entry-line app-entry-line-short" />
+          <div className="app-entry-placeholder">
+            <span className="app-entry-line app-entry-line-medium" />
+            <span className="app-entry-line" />
+            <span className="app-entry-line app-entry-line-long" />
+            <span className="app-entry-line app-entry-line-short" />
+          </div>
         </div>
       </section>
       {message ? (

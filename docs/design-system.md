@@ -319,8 +319,9 @@ contextual composer remains 1rem from the last message on every viewport.
   account actions behind successful API authorization; use a quiet, branded
   content-area placeholder rather than a full-screen reconnecting page for this
   pending state. The shared placeholder follows the app content width and
-  spacing, uses neutral paper/line surfaces with a restrained accent cue, and
-  keeps the cached shell inert until validation succeeds.
+  spacing, keeps its loading lines inside one neutral paper/line content box,
+  uses a restrained accent cue, and keeps the cached shell inert until
+  validation succeeds.
 
 ### Empty states
 

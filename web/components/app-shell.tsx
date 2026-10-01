@@ -1155,10 +1155,12 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           <TopBar title={getPageTitle(activeScreen)} isHome={activeScreen === 'home'} sidebarCollapsed={sidebarCollapsed} isSearchPage={activeScreen === 'search'} initialSearchQuery={initialSearchQuery} searchFilter={searchFilter} searchScope={activeScreen === 'messages' ? 'messages' : 'global'} notificationCount={0} unreadMessageCount={0} notifications={[]} hasUnreadMessages={false} backDisabled menuItems={[]} onNavigate={navigateTo} onBack={() => undefined} onToggleSidebar={() => undefined} />
           <section className="main-panel">
             <div className="main-content app-entry-content" aria-hidden="true">
-              <span className="app-entry-line app-entry-line-medium" />
-              <span className="app-entry-line app-entry-line-long" />
-              <span className="app-entry-line" />
-              <span className="app-entry-line app-entry-line-short" />
+              <div className="app-entry-placeholder">
+                <span className="app-entry-line app-entry-line-medium" />
+                <span className="app-entry-line app-entry-line-long" />
+                <span className="app-entry-line" />
+                <span className="app-entry-line app-entry-line-short" />
+              </div>
             </div>
           </section>
         </div>

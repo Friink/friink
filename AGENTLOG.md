@@ -16,6 +16,22 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Verification Status: `git diff --check` passed; targeted CSS and
   documentation review completed. No build or tests run.
 
+# 2026-10-01T17:12:00Z — Keep Validation Skeleton Lines Inside Content Box
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Explain and correct the rectangle/line relationship visible
+  in the session-validation loading state.
+- Changes Made: Replaced the standalone pseudo-element rectangle with a
+  semantic shared placeholder wrapper containing all loading lines. Added
+  higher-specificity app-entry sizing so the content box stays capped instead
+  of being expanded by the generic main-content rule.
+- Files: `web/components/app-entry-frame.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `docs/design-system.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted DOM/CSS review
+  completed. No build or tests run.
+
 # 2026-09-30T00:00:17Z — Synchronize Active Rules With Current UI Implementation
 
 - Agent: Codex

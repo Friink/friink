@@ -7,6 +7,12 @@
   respects reduced-motion preferences. Updated the loading-state design and
   account-access contracts.
 
+## 2026-10-01T17:12:00Z
+- [session UX] Corrected the validation skeleton hierarchy so its loading
+  lines render inside one capped content box instead of beside a standalone
+  rectangle. The shared app-entry width now also wins over the generic
+  main-content width rule.
+
 ## 2026-09-30T00:00:17Z
 - [documentation] Synchronized `docs/rules.md` with the current signed-in
   TopBar and CountPill implementation, including 10px counter text, 16px
