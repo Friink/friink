@@ -6,7 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, listPosts, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Screen } from '@/lib/data';
 
@@ -39,7 +39,10 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const [recoveryChoice, setRecoveryChoice] = useState(false);
   const [isContinuingRecovery, setIsContinuingRecovery] = useState(false);
   const [networkRefreshing, setNetworkRefreshing] = useState(false);
+  const [entryHomeFeed, setEntryHomeFeed] = useState<ApiFeedPage | null>(null);
+  const [entryHomeFeedReady, setEntryHomeFeedReady] = useState(() => initialScreen !== 'home' || Boolean(loadAuthSession()));
   const networkRestoreInFlight = useRef(false);
+  const entryHomeFeedPromise = useRef<Promise<ApiFeedPage | null> | null>(null);
   const sessionRecoveryInFlight = useRef(false);
   const networkRestoreAccountSlot = useRef<string | null>(null);
   const networkRestoreTerminationId = useRef<string | null>(null);
@@ -70,6 +73,23 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       // Keep the system preference when the cookie cannot be read.
     }
   }, []);
+
+  const startEntryHomeFeed = useCallback((accountSlot: string) => {
+    if (initialScreen !== 'home' || entryHomeFeedPromise.current) return;
+    setEntryHomeFeedReady(false);
+    const promise = listPosts({
+      limit: 20,
+      feed: initialHomeFilter === 'following' ? 'following' : 'explore',
+      accountSlot,
+    })
+      .then((page) => {
+        setEntryHomeFeed(page);
+        return page;
+      })
+      .catch(() => null)
+      .finally(() => setEntryHomeFeedReady(true));
+    entryHomeFeedPromise.current = promise;
+  }, [initialHomeFilter, initialScreen]);
 
   useEffect(() => {
     function handleSessionExpired(event: Event) {
@@ -379,7 +399,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       }
 
       const controller = new AbortController();
-      restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal)
+      restoreWithSessionRetries(() => restoreAuthSessionForEntry(startEntryHomeFeed), controller.signal)
         .then((restoredSession) => {
           if (controller.signal.aborted) return;
           setUser(restoredSession.user);
@@ -453,7 +473,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
         }
       });
-  }, [refreshCurrentUser, router]);
+  }, [refreshCurrentUser, router, startEntryHomeFeed]);
 
   async function handleRestoreRememberedAccount(account: AccountSummary) {
     if (restoringAccountSlot || sessionRecoveryInFlight.current) return;
@@ -544,13 +564,13 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     }
   }
 
-  if (user && (!sessionReady || !currentUserReady)) {
+  if (user && (!sessionReady || !currentUserReady || !entryHomeFeedReady)) {
     const entryMessage = sessionError === 'network'
       ? 'We can’t confirm your session because Friink cannot connect.'
       : sessionError === 'offline'
         ? 'We couldn’t confirm your session. Your private content is still hidden.'
         : null;
-    return <AppShell key={`${user.id}-restoring`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} entryPending entryMessage={entryMessage} entryRetrying={networkRefreshing} onRetryEntry={() => refreshCurrentUser ? void retryCurrentUser() : retryNetworkRecoveryRef.current()} onTakeMeBackEntry={sessionError === 'offline' ? cancelSessionRecovery : undefined} />;
+    return <AppShell key={`${user.id}-restoring`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} initialHomeFeed={entryHomeFeed} initialHomeFeedFilter={initialHomeFilter} entryPending entryMessage={entryMessage} entryRetrying={networkRefreshing} onRetryEntry={() => refreshCurrentUser ? void retryCurrentUser() : retryNetworkRecoveryRef.current()} onTakeMeBackEntry={sessionError === 'offline' ? cancelSessionRecovery : undefined} />;
   }
 
   if (!user) {
@@ -560,5 +580,5 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
   }
 
-  return <AppShell key={`${user.id}-ready`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} />;
+  return <AppShell key={`${user.id}-ready`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} initialHomeFeed={entryHomeFeed} initialHomeFeedFilter={initialHomeFilter} />;
 }

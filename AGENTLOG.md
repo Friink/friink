@@ -1,5 +1,35 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T23:03:44Z — Overlap Home Feed With Session Entry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the initial Home loading gap by fetching feed content
+  while session validation and user hydration are in progress.
+- Changes Made: After `/auth/session` validates the selected slot,
+  `AppShellRoute` starts the initial Explore or Following feed request in
+  parallel with user hydration. `HomeScreen` consumes a successful prefetched
+  page without issuing a duplicate request; a failed prefetch falls back to
+  its existing load. Updated the active account-access, feed, and rules docs.
+- Files: `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/home-screen.tsx`, `web/lib/auth.ts`,
+  `docs/units/account-access.md`, `docs/units/feed.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and diff review pending. No
+  push performed.
+
+# 2026-10-01T22:54:36Z — Reconcile Active Switch Destination Rule
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify that the implementation changes were fully reflected
+  in the active documentation and logs.
+- Changes Made: Corrected the stale `AUTH-R-040` sentence that still said
+  account switching opens Home. The active rule now records selector loading,
+  current-URL preservation, and same-URL reload after successful switching.
+- Files: `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation references reviewed; no push performed.
+
 # 2026-10-01T22:52:08Z — Rehydrate Cross-Tab Refresh Followers
 
 - Agent: Codex

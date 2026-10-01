@@ -19,6 +19,8 @@ const LAST_VIEWED_POST_KEY = 'friink-home-last-viewed-post';
 
 type HomeScreenProps = {
   posts?: Post[];
+  initialFeed?: ApiFeedPage | null;
+  initialFeedFilter?: 'all' | 'following';
   accountId?: string;
   activeFilter?: 'all' | 'following';
   onFilterChange?: (id: string) => void;
@@ -195,12 +197,12 @@ function getTopVisiblePostId() {
   return partiallyVisible?.dataset.feedPostId ?? null;
 }
 
-export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
+export function HomeScreen({ posts = [], initialFeed = null, initialFeedFilter = 'all', accountId, activeFilter = 'all', onFilterChange, onReply, onQuote, onPostUpdated, onPostDeleted, onReactionError, injectedPost, onInjectedPostConsumed }: HomeScreenProps) {
   void onFilterChange;
-  const initialSeedPosts = useMemo(() => dedupeAndSortPosts(posts), [posts]);
+  const initialSeedPosts = useMemo(() => dedupeAndSortPosts(initialFeed?.items.map(mapApiPost) ?? posts), [initialFeed, posts]);
   const [feedPosts, setFeedPosts] = useState<Post[]>(initialSeedPosts);
   const [hasMore, setHasMore] = useState(true);
-  const [loadingInitial, setLoadingInitial] = useState(initialSeedPosts.length === 0);
+  const [loadingInitial, setLoadingInitial] = useState(!initialFeed && initialSeedPosts.length === 0);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -217,6 +219,7 @@ export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilt
   const refreshingRef = useRef(false);
   const interactionActiveRef = useRef(false);
   const pendingPrependRef = useRef<Post[]>([]);
+  const initialFeedConsumedRef = useRef(false);
   const scrollIdleTimeoutRef = useRef<number | null>(null);
   const persistTimeoutRef = useRef<number | null>(null);
   const pollIntervalRef = useRef<number | null>(null);
@@ -376,8 +379,14 @@ export function HomeScreen({ posts = [], accountId, activeFilter = 'all', onFilt
     hasMoreRef.current = true;
     setHasMore(true);
     setRestoreAnchorId(null);
+    if (initialFeed && !initialFeedConsumedRef.current && initialFeedFilter === activeFilter) {
+      initialFeedConsumedRef.current = true;
+      updateFeedPage(initialFeed, dedupeAndSortPosts(initialFeed.items.map(mapApiPost)));
+      setLoadingInitial(false);
+      return;
+    }
     void loadInitialFeed();
-  }, [activeFilter, accountId]);
+  }, [activeFilter, accountId, initialFeed, initialFeedFilter]);
 
   useEffect(() => {
     if (activeFilter === 'all' && feedPostsRef.current.length === 0 && initialSeedPosts.length > 0) {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-01T23:03:44Z
+- [session entry/feed] Start the first Home Explore or Following feed request
+  immediately after `/auth/session` validates the selected slot, overlapping
+  user hydration. Successful pages are passed into `HomeScreen` without a
+  duplicate request; failed prefetches fall back to the existing Home load.
+- [documentation] Updated the active account-access, feed, and rule contracts
+  for the coordinated entry flow.
+
+## 2026-10-01T22:54:36Z
+- [documentation] Corrected the active session-recovery rule so successful
+  account switches are documented as reloading the current URL rather than
+  navigating to `/home`.
+
 ## 2026-10-01T22:52:08Z
 - [session recovery] Fixed cross-tab refresh followers reusing stale local
   access tokens after another tab completed a refresh. Followers now

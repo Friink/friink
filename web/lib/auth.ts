@@ -808,22 +808,23 @@ export async function refreshAuthSession(accountSlot: string | null = activeAcco
 }
 
 /** Restore the in-memory session required by any authenticated route entry. */
-export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
+export async function restoreAuthSessionForEntry(onSessionValidated?: (accountSlot: string) => void): Promise<AuthSession> {
   const currentSession = loadAuthSession();
   const accountSlot = activeAccountSlot();
   if (currentSession?.accountSlot === accountSlot) return currentSession;
   try {
     const sessionStatus = await getSessionStatus(accountSlot);
+    onSessionValidated?.(sessionStatus.account_slot);
     const cachedUser = loadCachedAuthUser();
     const user = cachedUser?.id === sessionStatus.user_id
       ? cachedUser
       : await getCurrentUser('', accountSlot ?? undefined, true);
-    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
+    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry(onSessionValidated);
     const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: sessionStatus.account_slot };
     saveAuthSession(restoredSession);
     return restoredSession;
   } catch (error) {
-    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
+    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry(onSessionValidated);
     const refreshedSession = loadAuthSession();
     if (refreshedSession && refreshedSession.accountSlot === accountSlot) return refreshedSession;
     if (!isTerminalRefreshFailure(error)) throw error;
@@ -2000,7 +2001,7 @@ export async function searchContent(accessToken: string, query: string, scope: '
   });
 }
 
-export async function listPosts(input: { cursor?: string; limit?: number; feed?: 'explore' | 'following' } = {}): Promise<ApiFeedPage> {
+export async function listPosts(input: { cursor?: string; limit?: number; feed?: 'explore' | 'following'; accountSlot?: string } = {}): Promise<ApiFeedPage> {
   const search = new URLSearchParams();
   if (input.cursor) {
     search.set('cursor', input.cursor);
@@ -2014,10 +2015,15 @@ export async function listPosts(input: { cursor?: string; limit?: number; feed?:
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';
   const session = loadAuthSession();
+  const accountSlot = input.accountSlot ?? session?.accountSlot;
+  const usableSession = session && (!accountSlot || session.accountSlot === accountSlot) ? session : null;
   return requestApi<ApiFeedPage>(`/posts${suffix}`, {
     method: 'GET',
-    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
-    authContext: session ? 'authenticated_request' : undefined,
+    headers: {
+      ...(usableSession?.accessToken ? { Authorization: `Bearer ${usableSession.accessToken}` } : {}),
+      ...(accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : {}),
+    },
+    authContext: usableSession || accountSlot ? 'authenticated_request' : undefined,
   });
 }
 
