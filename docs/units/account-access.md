@@ -540,7 +540,8 @@ problem does not invalidate it and must leave retry available.
   to take over; all tabs follow the same restored account or public-site result.
 - Non-network ambiguous entry recovery makes four total attempts at 10-second
   intervals. A cached identity keeps the inert app frame and hides private
-  content while offering **Try again**; the shared app route also retries
+  content while showing the shared quiet branded content placeholder and
+  offering **Try again**; the shared app route also retries
   network failures every 30 seconds. Without a cached identity, show the
   standalone network error. Other unresolved ambiguous failures show **Take me
   back**. Do not treat a transient failure as proof that the session ended or

@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T17:09:36Z — Align Session Validation Placeholder With Design Language
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the loading content shown while the backend validates
+  the session follow Friink's design language.
+- Changes Made: Reworked the shared app-entry placeholder to follow the app
+  content width and spacing, use restrained neutral paper/line surfaces with
+  a small accent cue, and provide a subtle reduced-motion-aware pulse. Kept
+  protected content and actions behind the existing inert shell boundary.
+  Updated the design-system and Account Access contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted CSS and
+  documentation review completed. No build or tests run.
+
 # 2026-09-30T00:00:17Z — Synchronize Active Rules With Current UI Implementation
 
 - Agent: Codex

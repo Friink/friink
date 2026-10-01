@@ -316,9 +316,11 @@ contextual composer remains 1rem from the last message on every viewport.
 - Loading, transport failure, and policy-based disabled states are distinct.
 - On a signed-in page reload, the app frame may appear from a safe cached
   identity while the server validates the session. Keep protected content and
-  account actions behind successful API authorization; use placeholders in the
-  content area rather than a full-screen reconnecting page for this pending
-  state.
+  account actions behind successful API authorization; use a quiet, branded
+  content-area placeholder rather than a full-screen reconnecting page for this
+  pending state. The shared placeholder follows the app content width and
+  spacing, uses neutral paper/line surfaces with a restrained accent cue, and
+  keeps the cached shell inert until validation succeeds.
 
 ### Empty states
 

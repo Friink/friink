@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01T17:09:36Z
+- [session UX] Aligned the session-validation loading placeholder with the
+  shared Friink design language: it now follows the app content rhythm,
+  uses restrained neutral and accent surfaces, preserves the inert shell, and
+  respects reduced-motion preferences. Updated the loading-state design and
+  account-access contracts.
+
 ## 2026-09-30T00:00:17Z
 - [documentation] Synchronized `docs/rules.md` with the current signed-in
   TopBar and CountPill implementation, including 10px counter text, 16px
