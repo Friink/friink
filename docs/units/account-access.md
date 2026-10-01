@@ -719,7 +719,12 @@ If that cookie is absent, expired, rotated, revoked, or belongs to another
 session, the API repairs it only after locking and validating the destination
 session; it does not revoke other refresh families because another tab may be
 using one. If switching fails, the current account remains active and a toast
-says, “Couldn’t switch accounts. Please try again.” Removing or logging out
+says, “Couldn’t switch accounts. Please try again.” A switch that remains
+blocked for 15 seconds aborts with retryable feedback and clears the local busy
+state. While switching, competing account rows and logout actions are disabled,
+but Add account remains available as an independent flow. Open tabs refresh
+their selector state after account-selection events and when they regain focus.
+Removing or logging out
 the active account selects the most-recent remaining valid account, or returns
 to the public site when none remain.
 
@@ -746,8 +751,9 @@ control remains visible when account labels are long.
 - **ACCESS-R-027:** Adding an already remembered account reuses its slot.
 - **ACCESS-R-028:** Switching refreshes account-scoped shell, feed,
   notifications, drafts, and active-session state.
-- **ACCESS-R-029:** Failed list, add, switch, logout, refresh, or slot operations
-  preserve the active account and expose retryable feedback.
+- **ACCESS-R-029:** Failed list, add, switch, logout, or slot operations
+  preserve the active account and expose retryable feedback. A stalled account
+  switch aborts after 15 seconds and clears its local busy state.
 - **ACCESS-R-030:** Active logout selects the most-recent remaining valid slot
   or the public site.
 - `GET /auth/accounts` returns safe device-scoped summaries.

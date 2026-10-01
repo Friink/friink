@@ -153,6 +153,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   const [followers, setFollowers] = useAppShellState<Connection[]>(user.id, 'followers', []);
   const [following, setFollowing] = useAppShellState<Connection[]>(user.id, 'following', []);
   const [requestActionBusyId, setRequestActionBusyId] = useAppShellState<string | null>(user.id, 'requestActionBusyId', null);
+  const [unfollowBusyHandle, setUnfollowBusyHandle] = useAppShellState<string | null>(user.id, 'unfollowBusyHandle', null);
   const [removeFollowerBusyHandle, setRemoveFollowerBusyHandle] = useAppShellState<string | null>(user.id, 'removeFollowerBusyHandle', null);
   const [toasts, setToasts] = useAppShellState<ToastMessage[]>(user.id, 'toasts', []);
   const [homeFilter, setHomeFilter] = useAppShellState<'all' | 'following'>(user.id, `homeFilter:${initialHomeFilter}`, initialHomeFilter);
@@ -1175,6 +1176,25 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     );
   }
 
+  async function handleUnfollowConnection(username: string) {
+    const session = loadAuthSession();
+    if (!session || unfollowBusyHandle) return;
+
+    setUnfollowBusyHandle(`@${username}`);
+    try {
+      const status = await getConnectionStatus(session.accessToken, username);
+      if (status.state !== 'following' || !status.request?.id) {
+        throw new Error('This connection is no longer available to unfollow.');
+      }
+      await removeConnection(session.accessToken, status.request.id);
+      setFollowing((current) => current.filter((connection) => connection.handle !== `@${username}`));
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Could not unfollow this person.');
+    } finally {
+      setUnfollowBusyHandle(null);
+    }
+  }
+
   return (
     <main className="app-shell" data-theme={appearance}>
       <div className="app-layout">
@@ -1390,7 +1410,9 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
                       onAcceptRequest={handleAcceptRequest}
                       onRejectRequest={handleRejectRequest}
                       onCancelRequest={handleCancelSentRequest}
+                      onUnfollow={viewingOtherConnections ? undefined : handleUnfollowConnection}
                       onRemoveFollower={viewingOtherConnections ? undefined : handleRemoveFollower}
+                      unfollowBusyHandle={unfollowBusyHandle}
                       removeFollowerBusyHandle={removeFollowerBusyHandle}
                     />
                   )}

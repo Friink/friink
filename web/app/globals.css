@@ -2158,10 +2158,10 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   align-items: center;
   min-height: 1.15rem;
   padding: 0 0.4rem;
-  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-line));
+  border: 0;
   border-radius: var(--radius-sm);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: #ffffff;
   font-size: 0.625rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -3728,10 +3728,10 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
   z-index: 2;
   display: inline-grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: var(--space-top-tabs-height);
+  height: var(--space-top-tabs-height);
   border: 0;
-  border-radius: 50%;
+  border-radius: 0;
   color: var(--color-ink);
   background: var(--color-paper);
   font-size: 0.65rem;
@@ -6115,9 +6115,13 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
   gap: 0.5rem;
 }
 
-.connection-accept {
-  padding: 0.5rem 0.75rem;
+.connection-request-section-title {
+  margin: 1rem 1rem 0.5rem;
+  color: var(--color-muted);
   font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Feed */

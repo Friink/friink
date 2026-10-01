@@ -1,5 +1,70 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T18:10:14Z — Recover Multi-Tab Account Switcher Locks
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix account-switcher controls becoming locked across
+  multiple tabs, including Add account.
+- Changes Made: Replaced the broad local account busy flag with scoped switch,
+  remove, and add operation states. Add account remains available during a
+  switch; competing account rows and logout actions remain protected. Added a
+  15-second abortable timeout to cross-tab switching, retryable timeout copy,
+  and selector refreshes on account events and focus. Updated active account
+  access and design contracts.
+- Files: `web/lib/auth.ts`, `web/components/side-drawer.tsx`,
+  `docs/units/account-access.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed and
+  `git diff --check` passed. No full build or tests run.
+
+# 2026-10-01T17:52:07Z — Standardize Beta Badge Across Themes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use one accent-colored Beta badge treatment for light and
+  dark themes with white text.
+- Changes Made: Changed the shared Beta badge from an accent-tinted surface to
+  a solid `--color-accent` surface with white text and no border. Updated the
+  product and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted theme-token review
+  completed. No build or tests run.
+
+# 2026-10-01T17:45:00Z — Implement Contextual Connections Controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement contextual connection and request controls across
+  the Connections tabs.
+- Changes Made: Added relationship-aware Unfollow and Remove follower actions;
+  mutual rows can show both. Grouped Requests into Incoming and Sent, changed
+  incoming actions to accept/tick and reject/cross, retained cancel/cross for
+  sent requests, and removed redundant request subtitles. Reused existing
+  server-authoritative client actions and kept controls off other users'
+  connection directories.
+- Files: `web/components/connections-screen.tsx`,
+  `web/components/app-shell.tsx`, `web/app/globals.css`,
+  `docs/units/connections.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted Connections
+  rendering and action-state review completed. No full build or tests run.
+
+# 2026-10-01T17:34:30Z — Square Tab Overflow Arrows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make scrollable tab-bar arrow buttons square, borderless,
+  and the same height as the tab strip.
+- Changes Made: Updated the shared `.tabs__arrow` controls to use the
+  `1.98rem` tab-strip height for both dimensions and removed their corner
+  radius. Updated the product-level and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted CSS and contract
+  review completed. No build or tests run.
+
 # 2026-10-01T17:09:36Z — Align Session Validation Placeholder With Design Language
 
 - Agent: Codex

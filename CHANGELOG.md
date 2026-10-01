@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-01T18:10:14Z
+- [account access] Fixed the multi-tab account-switcher lock behavior by
+  separating switch/remove/add busy states, keeping Add account available
+  during a switch, refreshing open-tab menus after selection events or focus,
+  and aborting stalled account switches after 15 seconds with retryable copy.
+  Updated the active account-access and design contracts.
+
+## 2026-10-01T17:52:07Z
+- [design] Standardized the Beta badge across light and dark themes as a
+  solid accent-color label with white text and no theme-specific variant.
+  Updated the visual design contracts.
+
+## 2026-10-01T17:45:00Z
+- [connections UX] Replaced the generic connection add control with contextual
+  Unfollow and Remove follower actions, including both actions for mutual
+  relationships. Grouped Requests into Incoming and Sent, using tick/cross
+  controls and removing redundant request subtitles.
+
+## 2026-10-01T17:34:30Z
+- [navigation] Updated scrollable tab arrows to square, no-radius controls
+  that match the full height of the shared tab strip. Updated the design
+  contracts.
+
 ## 2026-10-01T17:09:36Z
 - [session UX] Aligned the session-validation loading placeholder with the
   shared Friink design language: it now follows the app content rhythm,

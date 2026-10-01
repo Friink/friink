@@ -56,7 +56,8 @@ contract rather than repeated here.
   text; their underline remains accent-colored.
 - Scrollable tab strips hide the right scroll affordance at the end of the
   strip, and their arrow controls remain contained within the tab-bar height
-  and flush with the strip edges.
+  and flush with the strip edges. The arrows are square, have no corner
+  radius, and fill the full `1.98rem` tab-strip height.
 - Selected tabs use bold white text and the user-configurable accent color for
   the smoothly moving active-tab underline, with a comfortably readable label
   size. The shared tab container also renders a subtle
@@ -68,6 +69,11 @@ contract rather than repeated here.
   accent color.
 - Profile connection actions that include a label use the standard text-button
   layout; icon-only Message and More controls retain `.icon-button` geometry.
+- Connections rows use contextual icon-only controls: Unfollow only when the
+  signed-in user follows the row, Remove follower only when the row follows the
+  signed-in user, and both controls for mutual relationships. Requests group
+  Incoming and Sent rows; incoming rows use accept/tick and reject/cross, while
+  sent rows use cancel/cross without repeating the tab context in subtitles.
 - Search-route refinement uses a funnel icon between the query field and the
   contextual ActionMenu. The funnel opens one shared modal that groups sorting
   and date filtering. Applying changes URL-backed state, reloads results, and
@@ -348,8 +354,9 @@ post exists.
 
 Use a small visible `Beta` badge when an otherwise available feature is still
 being stabilized. The badge is informational only and must not change feature
-permissions or behavior. Features not yet available use the existing
-`Coming soon` or planned treatment.
+permissions or behavior. It uses the same solid `--color-accent` surface with
+white text in both light and dark themes. Features not yet available use the
+existing `Coming soon` or planned treatment.
 
 ### Subscription status and entitlement disclosure
 
