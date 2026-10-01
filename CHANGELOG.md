@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-01T18:38:54Z
+- [database] Applied the durable refresh-diagnostics migration to the
+  development and staging Neon databases without changing branches. Both now
+  report Alembic head `20261001_0060`.
+
 ## 2026-10-01T18:32:06Z
 - [auth observability] Added a durable, redacted `auth_refresh_attempts`
   record and migration for every refresh request, correlated by request,

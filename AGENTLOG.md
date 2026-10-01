@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T18:38:54Z — Migrate Development and Staging Diagnostics Tables
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the refresh-diagnostics database migration to the
+  development and staging databases without changing the branch.
+- Changes Made: Migrated `api/.env.development` from `20260924_0057` through
+  pending revisions `0058` and `0059` to `20261001_0060`; migrated
+  `api/.env.staging` from `20260925_0059` to `20261001_0060`.
+- Files: `CHANGELOG.md` and `AGENTLOG.md`; no source files or branch refs were
+  changed by the database operation.
+- Verification Status: Both databases report Alembic head
+  `20261001_0060`; both `auth_refresh_attempts` tables exist and contain zero
+  rows. Branch remains `main`.
+
 # 2026-10-01T18:32:06Z — Persist Redacted Refresh Diagnostics
 
 - Agent: Codex
