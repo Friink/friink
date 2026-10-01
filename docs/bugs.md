@@ -538,17 +538,16 @@ recovery context rather than proof that the current slot is unavailable. On
 route entry it validates the current slot first; only a fresh terminal response
 may show the session-ended modal and trigger remembered-account fallback.
 
-After the public guard receives a confirmed terminal restore failure, it now
-clears the redirect-only `friink_session_hint` and hands off to shared app
-recovery. That flow tries remembered accounts and keeps the user in Friink
-when one validates. When app recovery exhausts all remembered candidates, it
-clears the hint before returning to `/`. Authentication, token validation,
-and fallback authorization are unchanged.
+The public guard now performs only the non-mutating `/auth/entry-status`
+presence probe and redirects to `/home` without attempting a restore. The app
+shell owns validation, refresh, remembered-account fallback, and terminal
+recovery. The redirect-only `friink_session_hint` path has been removed.
+Authentication, token validation, and fallback authorization are unchanged.
 
 ### Tests and verification
-- **Required:** Browser checks for positive, zero, missing, and malformed hint;
-  entry-status positive/negative; terminal and ambiguous restore; stale and
-  valid remembered slots; login reachable after all candidates fail.
+- **Required:** Browser checks for entry-status positive/negative; terminal and
+  ambiguous restore; stale and valid remembered slots; login reachable after
+  all candidates fail.
 - **Completed locally:** Targeted TypeScript check passed after the route
   changes. Real browser/staging acceptance remains pending; local Next dev
   server startup was blocked by `spawn EPERM`, so no browser acceptance was
@@ -693,6 +692,12 @@ is identified or that the full reload/multi-tab/lost-response matrix passes.
   and retained the preceding `Set-Cookie`. A failed or overwritten cookie
   update, an overlapping request using an older cookie snapshot, and other
   stale-cookie paths remain unresolved.
+- **Current mitigation:** Browser authentication now uses only the selected
+  account-slot refresh and access cookies. The generic cookies are no longer
+  read or issued; login and logout responses expire them for migration. This
+  removes the generic-versus-slot cookie ambiguity from new sessions without
+  changing the account-slot database model. Staging must still verify clean
+  browser login, refresh, logout, and multi-tab behavior after deployment.
 - **Production and Android scope:** A read-only production database check
   found ten `refresh_reuse_detected` events for `@muflah` in the prior 90 days.
   This includes an Android session event on 2026-09-16 (stored browser
@@ -905,6 +910,11 @@ revocation, not the client-side origin of the duplicate requests.
 - [`POST /auth/refresh`](../api/app/routers/auth.py)
 - [Refresh-token reuse model](../api/app/models/refresh_token.py)
 - [Account-slot ordering](../api/app/services/account_slots.py)
+
+Account-slot ordering is now derived from active `auth_sessions` joined to
+`recognized_devices`; the former dedicated `account_session_slots` table is
+retired by migration `20261002_0062` and is not replaced with slot-specific
+database fields.
 
 ## BUG-AUTH-006 — Refresh grace replay forks token family
 
@@ -1196,9 +1206,9 @@ an authenticated session. Protected routes should own session restoration.
 ### Actual behavior
 
 `PublicRouteGuard` now renders its children immediately. It checks the
-lightweight `/auth/entry-status` endpoint in the background and only attempts
-cookie-first validation/redirect when the server reports a session hint.
-Signed-out visits do not make a refresh exchange.
+lightweight `/auth/entry-status` endpoint in the background and redirects to
+`/home` when the server reports a restore cookie. It does not attempt restore
+itself, and signed-out visits do not make a refresh exchange.
 
 ### Root cause
 
@@ -1206,10 +1216,10 @@ Signed-out visits do not make a refresh exchange.
   state and does not gate public children on auth status.
 - **Fixed locally:** Signed-out visits use the non-mutating entry-status hint;
   they do not call refresh.
-- **Fixed locally:** The hint recognizes any non-empty access or refresh
+- **Fixed locally:** Entry-status recognizes any non-empty access or refresh
   cookie, including per-account cookies when the selected-slot value is absent
-  or stale. A positive hint enters normal server validation and remembered
-  session fallback instead of leaving a valid other slot undiscovered.
+  or stale. A positive result enters the app shell, which owns normal server
+  validation and remembered-session fallback.
 - **Confirmed:** Centralizing route restoration made `/` and `/home` share a
   helper, but incorrectly applied authenticated bootstrap as a prerequisite to
   public content.
@@ -1220,9 +1230,9 @@ Signed-out visits do not make a refresh exchange.
 ### Implemented local fix
 
 Render public content immediately and run a non-blocking cookie-presence check.
-If any access or refresh cookie exists, validate the selected slot and use the
-normal remembered-session fallback as needed, then redirect only after
-successful validation. Token stability is covered by BUG-AUTH-003.
+If any access or refresh cookie exists, redirect to the app shell. The app shell
+then validates the selected slot and uses normal remembered-session fallback as
+needed. Token stability is covered by BUG-AUTH-003.
 
 Non-goals: require authentication to view public content or weaken `/home`
 authorization. Session repair and refresh-token safety remain owned by
@@ -1622,13 +1632,15 @@ deployed build has been captured.
 ### Root cause
 
 - **Confirmed in current web code:** Each AppShell mount starts a global posts
-  prefetch, including on profile routes. HomeScreen starts its own initial feed
-  request, so Home may issue overlapping reads. Profile identity, tab content,
-  and follower/following statistics requests are launched independently after
-  authentication. The API client automatically retries only once after a
-  `401 TOKEN_EXPIRED`; it does not generally retry network, timeout, or server
-  failures. A Home initial-load failure shows text without a retry control, and
-  its polling path does not retry while the feed is empty.
+  prefetch on non-Home surfaces. Before the loading optimization, HomeScreen
+  also started its own initial feed request, so Home could issue overlapping
+  reads. Home now skips the shell prefetch and keeps one Home-owned initial
+  request; profile identity, tab content, and follower/following statistics
+  requests are still launched independently after authentication. The API
+  client automatically retries only once after a `401 TOKEN_EXPIRED`; it does
+  not generally retry network, timeout, or server failures. A Home
+  initial-load failure shows text without a retry control, and its polling path
+  does not retry while the feed is empty.
 - **Open questions:** The failing endpoint and status, whether concurrent tabs
   trigger rate limiting or another server-side condition, and whether failures
   correlate with request volume are unknown. The confirmed request fanout is
@@ -1636,10 +1648,10 @@ deployed build has been captured.
 
 ### Proposed fix
 
-Use captured request evidence to identify the failing layer. Then address
-unnecessary duplicate requests or endpoint capacity if confirmed, and provide
-an explicit retry path for initial feed and profile failures. Preserve
-authentication and authorization behavior.
+Use captured request evidence to identify the failing layer. The confirmed
+Home duplicate-read path is now removed; next address endpoint capacity or
+retry behavior only if staging evidence shows the remaining multi-tab failure
+continues. Preserve authentication and authorization behavior.
 
 ### Tests and verification
 
@@ -1652,10 +1664,12 @@ authentication and authorization behavior.
 
 ### Noteworthy
 
-The frontend launches several reads independently; there is no guaranteed
-serial order among Home feed or profile data requests after authentication.
-Authentication/session restoration may precede private data loading when no
-in-memory session is available. The exact cause remains unconfirmed.
+The frontend still launches several reads independently; there is no
+guaranteed serial order among profile data requests after authentication. Home
+now has one initial feed read owned by `HomeScreen`, while
+authentication/session restoration may precede private data loading when no
+in-memory session is available. The exact multi-tab failure cause remains
+unconfirmed.
 
 ### Related documentation and implementation
 

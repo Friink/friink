@@ -1,5 +1,182 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T22:41:32Z — Preserve Account Switcher Context And Loading State
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep account switching on the current page, expose pending
+  work in the selector, and keep the selector open during Add account.
+- Changes Made: Removed the unconditional same-tab `/home` redirect after
+  account selection. Successful switching now reloads the current URL, while
+  account rows keep the selector open and show the switching spinner. Add
+  account now uses the availability discovered during tab initialization,
+  opens without a second discovery request, shows the capacity message in the
+  modal when unavailable, and refreshes the cached list after successful login
+  while leaving the selector open. Updated active account-access rules/docs.
+- Files: `web/components/side-drawer.tsx`,
+  `web/components/app-shell-route.tsx`, `docs/units/account-access.md`,
+  `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web type checking and focused diff review pending. No
+  push performed.
+
+# 2026-10-01T22:28:14Z — Add Lightweight Session Entry Check
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce full profile validation work when opening additional
+  browser tabs without affecting account switching.
+- Changes Made: Added `GET /auth/session`, an authoritative slot validation
+  response containing only the public user ID and slot. Entry restoration now
+  reuses matching safe cached profile metadata and falls back to `/auth/me` on
+  cache miss or mismatch. Login and account switching retain full user
+  hydration. Added focused endpoint coverage and updated active auth docs.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Focused API assertions and web type checking are in
+  progress; the existing Windows SQLite cleanup hook may still return
+  `WinError 32` after tests finish. No push performed.
+
+# 2026-10-01T22:10:50Z — Simplify Account Switcher Discovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce account-switcher calls and prevent menu loading from
+  triggering refresh-token rotation or session recovery.
+- Changes Made: Added `GET /auth/accounts/available`, which inspects usable
+  device-bound slot refresh cookies and returns safe account metadata plus
+  capacity/visibility in one non-mutating response. The drawer now discovers
+  once on app entry, uses cached summaries immediately, removes open/focus and
+  session-event refreshes, and does not auto-refresh expired access tokens for
+  list display. Explicit switch and Add-account flows retain their operations.
+  Preserved the settings list API as a compatibility wrapper and added a real
+  account-discovery integration assertion.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `web/components/side-drawer.tsx`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Focused account tests passed (`14`, JUnit failures `0`),
+  web TypeScript and Python compilation passed, and `git diff --check` passed.
+  Pytest still exits nonzero in the existing Windows SQLite cleanup hook after
+  tests finish (`WinError 32`). No push performed.
+
+# 2026-10-01T21:54:02Z — Simplify Public Session Entry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the fragile public-root redirect hint and accept a
+  brief public-site flash while session entry is checked.
+- Changes Made: Removed `friink_session_hint`, its server redirect helper, and
+  all set/clear call sites. `PublicRouteGuard` now performs only the
+  non-mutating `/auth/entry-status` probe; positive results redirect to `/home`
+  without a duplicate restore. The app shell remains authoritative for session
+  validation, refresh, fallback, and recovery. Updated active rules, account
+  access, and bug-register documentation.
+- Files: `web/app/page.tsx`, `web/components/public-route-guard.tsx`,
+  `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, removed
+  `web/lib/public-session-entry.ts` and `web/lib/session-entry-hint.ts`,
+  `docs/rules.md`, `docs/units/account-access.md`, `docs/bugs.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web TypeScript validation and `git diff --check` passed;
+  stale hint references were removed from active web/docs sources. No push
+  performed.
+
+# 2026-10-01T21:46:07Z — Remove Stale Alembic Slot Import
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the Vercel predeploy failure after removing the
+  dedicated account-slot model.
+- Changes Made: Removed the stale `AccountSessionSlot` import from
+  `api/alembic/env.py`, allowing Alembic metadata loading to proceed with the
+  retired table cleanup migration.
+- Files: `api/alembic/env.py`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Alembic/application Python compilation and
+  `git diff --check` passed. No push performed.
+
+# 2026-10-01T21:38:56Z — Derive Account Slots From Existing Auth Sessions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant account-slot database table and make the
+  account switcher work using the existing session/device schema.
+- Changes Made: Reworked account-slot lookup, creation, ordering, and revocation
+  to wrap active `auth_sessions` bound to `recognized_devices`. Removed the
+  dedicated model dependency, updated password-reset session cleanup and tests,
+  and added migration `20261002_0062` to drop `account_session_slots` without
+  introducing replacement tables, fields, or columns. Updated active rules and
+  account-access/bug documentation.
+- Files: `api/app/services/account_slots.py`,
+  `api/app/models/__init__.py`, `api/app/models/account_session_slot.py`,
+  `api/app/services/password_reset.py`,
+  `api/alembic/versions/20261002_0062_remove_account_session_slots.py`,
+  `api/tests/test_phase4_accounts.py`, `docs/units/account-access.md`,
+  `docs/rules.md`, `docs/bugs.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Focused auth/account tests passed in JUnit output
+  (`22 passed`, `failures=0`); web TypeScript, Python/application and migration
+  compilation, and `git diff --check` passed. Pytest still exits nonzero during
+  the existing Windows SQLite temp-file cleanup hook (`WinError 32`) after the
+  tests finish. No push performed.
+
+# 2026-10-01T21:22:51Z — Require Slot-Scoped Browser Authentication
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant generic refresh-token cookie path while
+  preserving account-slot sessions and the existing database model.
+- Changes Made: Login, refresh, browser access-cookie lookup, session lists,
+  logout, and lifecycle cleanup now use account-slot cookies. Generic refresh
+  and access cookies are no longer issued or read for authentication; responses
+  expire them for migration. Normal login now requires a device-bound slot,
+  including at the remembered-account limit. Updated targeted auth tests and
+  account-access, rules, and bug-register documentation. No database migration
+  was added.
+- Files: `api/app/routers/auth.py`, `api/app/services/account_slots.py`,
+  `api/app/services/auth_debug.py`, `api/app/services/auth_refresh_diagnostics.py`,
+  `web/lib/auth.ts`, targeted auth tests, `docs/units/account-access.md`,
+  `docs/rules.md`, `docs/bugs.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Python compilation passed. Focused account-slot test
+  passed; refresh-rotation tests exercised the new slot-cookie contract, with
+  remaining test-run cleanup blocked by the existing Windows SQLite file-lock
+  in `tests/conftest.py`. Staging browser/API acceptance remains pending.
+
+# 2026-10-01T20:50:41Z — Synchronize Home Feed Rulebook Coverage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete documentation coverage for the Home duplicate-feed
+  request optimization, including the active rulebook.
+- Changes Made: Added active `FEED-R-012` to `docs/rules.md` and the Feed unit,
+  synchronized the rulebook registry, and clarified that the optimization
+  preserves session authorization, recovery, pagination, and non-Home shell
+  prefetch behavior.
+- Files: `docs/rules.md`, `docs/units/feed.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Rule references and implementation file paths reviewed;
+  `git diff --check` passed.
+
+# 2026-10-01T20:43:50Z — Remove Duplicate Home Feed Read
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement the low-risk startup loading
+  optimization after reviewing the session/feed bootstrap scope.
+- Changes Made: Home now skips the shell-level posts prefetch so `HomeScreen`
+  owns the initial feed request. Non-Home routes retain the shell prefetch used
+  by existing shared post-state fallback paths. Updated the Feed unit,
+  architecture guide, and BUG-LOAD-001 notes. The proposed one-request
+  authenticated user-plus-feed bootstrap was not implemented because it would
+  cross the current security-sensitive session boundary.
+- Files: `web/components/app-shell.tsx`, `docs/units/feed.md`,
+  `docs/architecture.md`, `docs/bugs.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed;
+  targeted ESLint passed with 18 existing hook-dependency warnings and no
+  errors; `git diff --check` passed. Browser/network acceptance remains
+  pending. Branch switching to `development` was attempted but blocked by
+  filesystem permission on `.git/index.lock`, so the working checkout remains
+  on `staging`.
+
 # 2026-10-01T20:22:28Z — Complete Session Recovery Rulebook Coverage
 
 - Agent: Codex

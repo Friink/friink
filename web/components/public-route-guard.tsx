@@ -2,9 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { clearAuthSessionForRecovery, hasSessionForEntry, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, restoreAuthSessionForEntry } from '@/lib/auth';
-import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
-import { clearSessionEntryHint } from '@/lib/session-entry-hint';
+import { hasSessionForEntry, loadAuthSession } from '@/lib/auth';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -15,37 +13,23 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
 
   useEffect(() => {
     let active = true;
-    const controller = new AbortController();
 
     async function checkSession() {
       if (loadAuthSession()) {
         router.replace('/home');
         return;
       }
-      const cachedUser = loadCachedAuthUser();
       try {
-        if (!await hasSessionForEntry()) return;
-        await restoreWithSessionRetries(() => restoreAuthSessionForEntry(), controller.signal);
-        if (!active || controller.signal.aborted) return;
-        router.replace('/home');
-      } catch (error) {
-        if (!active || controller.signal.aborted) return;
-        if (isTerminalRefreshFailure(error)) {
-          clearAuthSessionForRecovery(error);
-          clearSessionEntryHint();
-          router.replace('/home/explore');
-          return;
-        }
-        if (cachedUser) {
-          router.replace(isNetworkRestoreFailure(error) ? '/home?session_recovery=network' : '/home?session_recovery=offline');
-        }
+        if (await hasSessionForEntry() && active) router.replace('/home');
+      } catch {
+        // A failed probe leaves the public page in place. The app shell owns
+        // authoritative validation and recovery after a positive probe.
       }
     }
 
     void checkSession();
     return () => {
       active = false;
-      controller.abort();
     };
   }, [router]);
 

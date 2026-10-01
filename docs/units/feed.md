@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-29T23:48:44Z
+**Last edited:** 2026-10-01T20:50:41Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -54,6 +54,10 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
 - **FEED-R-011:** Composer text is held in screen-local memory only. Leaving a
   feed or contextual composer does not restore its previous text from browser
   storage.
+- **FEED-R-012:** Home owns one initial feed request through `HomeScreen`; the
+  shell must not issue a duplicate posts prefetch for the Home route. Non-Home
+  surfaces may retain the shell-owned post-state prefetch used by their current
+  fallback paths.
 
 ## UX and flows
 
@@ -72,13 +76,16 @@ Feed responses are currently returned through the posts API (`FeedPageResponse`)
 and consumed by `home-screen.tsx`, `feed-post.tsx`, and profile screens. Cursor
 pagination and update endpoints remain server-authoritative.
 
-On Home, the shell's posts prefetch and the screen's initial feed request run
-independently and may overlap. The generic API client retries once only when
-authentication refreshes after `401 TOKEN_EXPIRED`; other failures are not
-automatically retried. An initial Home load failure currently displays an
-error without a retry control, and empty-feed polling does not retry that
-failure. This implementation gap and a reported multi-tab load failure are
-tracked in [BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads).
+On Home, `HomeScreen` owns the initial feed request. The shell does not issue
+its separate posts prefetch for the Home route, avoiding two overlapping
+`/posts` reads during app entry. The shell-owned prefetch remains available on
+non-Home surfaces that use the shared post state for existing fallback data.
+The generic API client retries once only when authentication refreshes after
+`401 TOKEN_EXPIRED`; other failures are not automatically retried. An initial
+Home load failure currently displays an error without a retry control, and
+empty-feed polling does not retry that failure. The remaining multi-tab load
+failure is tracked in
+[BUG-LOAD-001](../bugs.md#bug-load-001--multiple-tabs-can-intermittently-fail-home-and-profile-loads).
 
 On a hard reload, the app frame appears before session
 restoration finishes. Feed content must still come from a successful,

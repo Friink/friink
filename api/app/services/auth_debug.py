@@ -25,9 +25,7 @@ def log_refresh_request_result(
 ) -> None:
     """Log a redacted outcome for every refresh request, correlated to its response."""
     account_slot = request.headers.get("X-Friink-Account-Slot")
-    expected_cookie = (
-        f"friink_refresh_{account_slot}" if account_slot else "friink_refresh_token"
-    )
+    expected_cookie = f"friink_refresh_{account_slot}" if account_slot else None
     failure_class = getattr(request.state, "failure_code", None) or (
         "success"
         if status_code < 400
@@ -48,7 +46,7 @@ def log_refresh_request_result(
                 "failure_class": failure_class,
                 "exception_type": exception_type,
                 "slot_header_present": bool(account_slot),
-                "expected_slot_cookie_present": bool(request.cookies.get(expected_cookie)),
+                "expected_slot_cookie_present": bool(expected_cookie and request.cookies.get(expected_cookie)),
                 "server_time": int(datetime.now(UTC).timestamp()),
             }
         )

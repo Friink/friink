@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T18:34:51Z
+**Last edited:** 2026-10-01T22:41:32Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -258,12 +258,30 @@ other cannot overwrite it.
 
 #### UX and flows
 
+Browser authentication is slot-only. Each remembered account has its own
+`friink_refresh_{account_slot}` and `friink_access_{account_slot}` cookie, and
+authenticated browser requests identify that slot with
+`X-Friink-Account-Slot`. The former generic `friink_refresh_token` and
+`friink_access_token` cookies are never issued or read for authentication;
+login responses expire them so existing browsers migrate without a database
+change. A login must receive a valid device-bound slot; when the device is at
+the remembered-account limit, the login is rejected until a slot is removed.
+The shared `friink_device_id` cookie remains the device binding for slot
+validation. A slot is a transient view over an active `auth_sessions` row
+linked to a `recognized_devices` row; the slot value is the existing
+auth-session ID. The retired `account_session_slots` table is removed by
+migration `20261002_0062`, with no replacement table, field, or column and no
+legacy-account data migration requirement.
+
 The web client keeps its access JWT in memory and the API also sets a
 short-lived HttpOnly access cookie for the selected account slot. The JWT is
 bound to its server-side session with `sid`. On full document entry, the app
-validates `/auth/me` with the slot cookie first; a valid access cookie restores
-the user without rotating the refresh cookie. Only an expired or absent access
-cookie causes one slot-captured refresh exchange and a single retried request.
+validates `/auth/session` with the slot cookie first; when the returned public
+user ID matches the safe cached profile for that slot, the tab restores its
+in-memory user without downloading the full profile. A missing or mismatched
+cache falls back to `/auth/me`. The status check never rotates the refresh
+cookie. Only an expired or absent access cookie causes one slot-captured
+refresh exchange and a single retried request.
 Network, timeout, CORS, 403, 5xx, malformed-response, and other ambiguous
 failures preserve the remembered identity and show retryable in-app recovery.
 Cookie-authenticated unsafe API requests enforce allowed-Origin checks.
@@ -288,25 +306,16 @@ hidden and offers retry. After non-network ambiguous retries are exhausted,
 summary may show a neutral app frame while identity is restored. Staff-only
 surfaces remain gated by a server-confirmed staff role.
 
-The web app uses the nonnegative integer `friink_session_hint` cookie only to
-choose public-site routing. Saving a session, including after an access-token
-refresh, writes `1` and renews its 30-day expiry. Clearing a session keeps it at
-`1` when another remembered account slot remains, and writes `0` when none
-remain. The `/` server page redirects to `/home` only for a valid positive
-integer; zero, missing, or invalid values render the public route. The legacy
-`/subscriptions` URL permanently redirects to `/settings/subscription`. The
-cookie contains no credential or account identifier and never grants access.
-
-When the hint is absent, public content renders immediately and the existing
-non-blocking `/auth/entry-status` request remains as a compatibility path for
-sessions created before this hint was introduced. That API response treats any
-access or refresh cookie, including cookies scoped to other account slots,
-only as a reason to try restoration; it does not establish that a session is
-valid or call refresh merely to decide whether public content can render. If no
-valid remembered session exists, the visitor remains on the public site. When
-one or more sessions validate, the client restores its most recently used
-account. Protected app routes remain authoritative before exposing private
-data or actions.
+The public root renders immediately and the client makes one non-blocking
+`/auth/entry-status` request. That API response treats any slot-scoped access or
+refresh cookie, including cookies scoped to other account slots, only as a reason
+to enter `/home`; it does not establish that a session is valid or call refresh.
+The public guard accepts a brief public-site flash before redirecting. The app
+shell owns the single authoritative restore flow: `/auth/session` first, then
+`/auth/me` only when safe cached user metadata cannot be matched; refresh only
+when access is absent or expired, then normal fallback/recovery handling. If no
+valid remembered session exists, the visitor returns to the public site. The
+legacy `/subscriptions` URL permanently redirects to `/settings/subscription`.
 
 Each API request receives an opaque `X-Friink-Request-Id` response header, which
 browser clients can read through CORS. Every refresh request emits a structured
@@ -319,12 +328,11 @@ status, failure code, deployment, and duration. The record never includes
 credentials, cookies, token hashes, raw slot values, or raw tab identifiers;
 diagnostic persistence is best-effort and never changes session decisions.
 
-**Implementation update (browser/staging verification pending):** the authenticated API sometimes indicates that
-session restoration may be attempted from `/auth/entry-status`; a positive
-`friink_session_hint` also routes `/` to `/home` before session validation.
-The hint and entry-status response are not proof that a session is valid. A
-confirmed terminal failure from `PublicRouteGuard` now clears the hint and
-hands off to the shared app-shell recovery flow. The recovery modal validates
+**Implementation update (browser/staging verification pending):** the
+authenticated API indicates whether restoration may be attempted from
+`/auth/entry-status`; a positive response routes `/` to `/home` before session
+validation. The response is not proof that a session is valid. The app shell
+owns terminal and ambiguous recovery. The recovery modal validates
 remembered alternatives and keeps the user in Friink when one is usable;
 app recovery returns public only after no candidate restores. The behavior is
 implemented locally; browser/staging acceptance remains pending. The history
@@ -342,7 +350,7 @@ ambiguous error does not mean the session ended. A confirmed terminal result
 shows a blocking `Session ended` modal with neutral copy, available remembered
 accounts, and Add account. Selecting a remembered account validates that slot
 before continuing. Close and the close icon restore the most recently used valid
-remembered account, or clear the redirect hint and return to the public site
+remembered account, or return to the public site
 when none remains. Lifecycle state and the associated reactivation or
 deletion-cancellation rules belong to
 [Account Lifecycle](./account-lifecycle.md).
@@ -359,12 +367,10 @@ Current web entry points do not all present the same recovery surface:
   the existing login/signup modal. Close and the close icon restore the most recently
   used valid remembered account, or clear the session hint and return to the
   public site when none remains.
-- **Public root (`/`)** redirects server-side to `/home` when the hint is a
-  positive integer. With zero, missing, or malformed hint it renders the
-  public site, where `PublicRouteGuard` can still call `/auth/entry-status` and
-  attempt restoration. On terminal failure the guard clears the redirect hint
-  and remains on the public route; network and other ambiguous failures retain
-  retryable recovery behavior.
+- **Public root (`/`)** renders immediately, where `PublicRouteGuard` calls
+  `/auth/entry-status` in the background. A positive presence result redirects
+  to `/home` without restoring first; the app shell owns validation, refresh,
+  and recovery. A brief public-site flash before redirect is accepted.
 - **Profile routes (`/{username}`)** use the standalone recovery screen while
   loading or on ambiguous failure; confirmed terminal session failure routes
   to `/login` with a recovery reason.
@@ -381,9 +387,8 @@ Current web entry points do not all present the same recovery surface:
 These are current implementation facts, not a shared UX contract. In
 particular, several route-specific paths replace the app with a full-screen
 recovery surface or navigate to login/public pages instead of keeping recovery
-on the originating app route. `friink_session_hint` cannot prevent those client
-paths: it is only a routing hint. The confirmed public-entry loop risk—zero
-hint followed by the client guard, or a stale positive hint after fallback—is
+on the originating app route. The public entry-status probe is only a routing
+signal. The former public-entry loop risk from stale hint state is retired;
 tracked in [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
 The exact cookie, remembered-slot, and API state for the reported browser loop
 is unknown.
@@ -407,7 +412,7 @@ Failure cases are distinct:
    available remembered-account choices and Add account. Selecting an account
    validates it before switching. Close or the close icon tries the
    most-recent valid fallback and returns to the public site with redirect
-   hint zero if none restores. Never silently switch identity.
+   the public site if none restores. Never silently switch identity.
 3. **Remote logout or security revocation:** use the same session-ended modal
    and recovery actions as other confirmed terminal results.
 4. **Deactivation or pending deletion:** the initiating client logs out
@@ -429,7 +434,7 @@ When a current session is confirmed ended, Friink shows the neutral copy
 “Your session has ended. Choose how you’d like to continue.” Available
 remembered accounts appear as choices, and Add account opens the existing
 login/signup modal. The Close and the close icon try remembered accounts in
-most-recent-use order, then return to `/` with the redirect hint set to zero if none can be
+most-recent-use order, then return to `/` if none can be
 restored. For deactivation/pending deletion, the initiating client immediately
 logs out after the successful lifecycle operation; another client uses these
 same recovery choices. Friink never renders a candidate's data before that
@@ -489,7 +494,7 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
   Selecting a listed remembered account validates that slot before switching;
   Add account reuses the existing login/signup flow. Close and the close icon attempt
   valid remembered accounts in most-recent-use order, then return to the public
-  site with the redirect hint set to zero when none can be restored. Ambiguous
+  site when none can be restored. Ambiguous
   failures keep the active identity in retryable recovery; they never cause a
   silent switch.
 - A single tab owns the browser-client termination notice. Other tabs wait for
@@ -576,7 +581,7 @@ item.
   `Session ended` modal with available remembered accounts and Add account.
   Selecting an account validates it before switching. Close and the close icon restore
   the most recently used valid account or return to the public site with the
-  redirect hint set to zero. Ambiguous failures never silently switch identity;
+  public site. Ambiguous failures never silently switch identity;
   non-network entry recovery retries four times at 10-second intervals.
   When a safe cached identity exists, entry validation keeps the inert app
   frame visible with private content hidden and offers **Try again** on
@@ -628,14 +633,14 @@ the release is considered complete.
 - [ ] **ACCESS-AC-026** Confirmed terminal failures show neutral recovery copy,
       available remembered accounts, and Add account. Selecting an account
       validates it; Close or the close icon restore the most recently used valid account
-      or return to the public site with the redirect hint set to zero.
+      or return to the public site.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
 - [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after that
       slot validates successfully.
 - [ ] **ACCESS-AC-042** After all remembered slots fail validation, public
       entry remains public and does not route back into terminal recovery;
-      zero hint and stale cached summaries are covered.
+      stale cached summaries are covered.
 - [ ] **ACCESS-AC-043** Session restore failures across protected app, public,
       profile, post, username-chat, and login entry points provide a coherent
       recovery path, including the full-page network state, without confusing
@@ -646,7 +651,7 @@ the release is considered complete.
 - [ ] **ACCESS-AC-047** The session-ended modal uses the same neutral copy with
       zero or more available account rows, reuses the login/signup Add account
       flow, and routes Close or the close icon to the most recent valid account or the
-      public site with a zero redirect hint.
+      public site when no candidate restores.
 - [x] **ACCESS-AC-029** A valid access cookie survives a full reload without
       refresh-cookie rotation; expired access performs one coordinated,
       slot-correct refresh while replay detection remains active.
@@ -656,10 +661,10 @@ the release is considered complete.
 - [x] **ACCESS-AC-031** A public landing visit with no session renders without
       a blocking restore screen or refresh exchange; protected routes still
       reject unauthenticated requests.
-- [x] **ACCESS-AC-041** A nonnegative integer web-origin redirect hint sends
-      `/` to `/home` only when its value is greater than zero; zero or invalid
-      values leave the public content rendered. `/subscriptions` redirects to
-      the in-app Subscription settings route.
+- [x] **ACCESS-AC-041** The public root renders immediately and performs a
+      non-blocking `/auth/entry-status` presence check; a positive result sends
+      `/` to `/home`, where authoritative restoration begins. `/subscriptions`
+      redirects to the in-app Subscription settings route.
 - [ ] **ACCESS-AC-032** Ordinary expiry, remote termination, and security
       revocation require explicit restore-or-login choice. Lifecycle recovery
       validates remaining accounts in most-recent-use order after the cause is
@@ -715,11 +720,15 @@ were already remembered before the limit was lowered, the switcher remains
 available so the user can move between them; `Add account` is hidden because
 the API reports that no additional account can be added. Existing remembered
 slots are not silently revoked. Ordinary sign-in and logout remain available.
-If the device is at capacity, a normal login may create an un-slotted session
-that is not remembered by the account switcher.
+If the device is at capacity, a normal login is rejected until a remembered
+slot is removed. There is no un-slotted browser session or generic
+refresh-cookie fallback.
 
 Selecting a remembered account sends a switch request, validates the slot, and
-updates the shell in place. The API validates the destination slot's device,
+keeps the selector open with a loader on the selected row while the request is
+pending. After success, the browser reloads the current URL so the new account
+starts with clean account-dependent state; switching does not force `/home`.
+The API validates the destination slot's device,
 user, active session, and lifecycle state. It reuses the destination slot's
 active, unexpired HttpOnly refresh cookie and issues only a new access token.
 If that cookie is absent, expired, rotated, revoked, or belongs to another
@@ -731,7 +740,11 @@ blocked for 15 seconds aborts with retryable feedback and clears the local busy
 state. While switching, competing account rows and logout actions are disabled,
 but Add account remains available as an independent flow. Open tabs refresh
 their selector state after account-selection events and when they regain focus.
-Removing or logging out
+The Add account action opens its modal immediately from the tab-loaded
+availability state; it does not perform a second discovery request on click.
+When capacity is unavailable, the same modal opens with a limit message, and
+the API remains authoritative. The selector remains open behind the modal and
+refreshes its cached list after successful authentication. Removing or logging out
 the active account selects the most-recent remaining valid account, or returns
 to the public site when none remain.
 
@@ -763,10 +776,19 @@ control remains visible when account labels are long.
   switch aborts after 15 seconds and clears its local busy state.
 - **ACCESS-R-030:** Active logout selects the most-recent remaining valid slot
   or the public site.
-- `GET /auth/accounts` returns safe device-scoped summaries.
-- `GET /auth/accounts/add-availability` reports whether another account may be
-  added and whether the switcher should be shown, based on the configured limit
-  and the number of accounts already available on the device.
+- `GET /auth/accounts/available` discovers safe account summaries from usable,
+  device-bound slot refresh cookies without rotating or refreshing them. It
+  also returns Add-account capacity and switcher visibility in the same
+  response. The web app performs this discovery once on app entry, then the
+  switcher uses cached summaries and makes no requests merely to open.
+- `GET /auth/session` validates the selected slot and returns only the
+  authenticated public user ID and slot. It is the lightweight app-entry
+  check; it does not rotate refresh cookies or replace the full user response
+  required by login and account switching.
+- `GET /auth/accounts` remains the access-token-authenticated summary endpoint
+  for existing settings consumers.
+- `GET /auth/accounts/add-availability` remains available for compatibility;
+  the switcher does not call it during normal menu loading.
 - `POST /auth/accounts/switch` accepts an opaque slot.
 - `DELETE /auth/accounts/{account_slot}` removes a remembered slot.
 
@@ -789,8 +811,8 @@ control remains visible when account labels are long.
       remembered account or returns to the public site; a failed request keeps
       the active session and shows retryable feedback; other remembered
       accounts remain available.
-- [ ] **ACCESS-AC-049** With a zero or missing redirect hint, a terminal
-      failure restoring the selected slot enters shared app recovery. If
+- [ ] **ACCESS-AC-049** A terminal failure restoring the selected slot enters
+      shared app recovery. If
       another remembered session validates, the user can continue in the app;
       return to public only after no remembered session can be restored.
       Ambiguous/network failures remain retryable in the app.
@@ -881,8 +903,7 @@ routing after a confirmed terminal restore result.
      already revoked the session through its endpoint, the shared flow skips a
      duplicate logout request and proceeds to fallback.
    - After success, it restores the most-recent valid remembered slot and
-     opens Home. If no slot remains usable, it returns to the public site with
-     redirect hint zero.
+     opens Home. If no slot remains usable, it returns to the public site.
    - If the logout request fails or its result is ambiguous, it preserves the
      current local account context and shows retryable feedback. If logout
      succeeded but fallback is ambiguous, it opens shared recovery with the
@@ -895,21 +916,20 @@ routing after a confirmed terminal restore result.
    the current account, and duplicate clicks or another tab cannot trigger
    conflicting fallback.
 
-2. **Hint-zero terminal recovery (ACCESS-AC-049; MIG-003).**
+2. **Public-entry terminal recovery (ACCESS-AC-049; MIG-003).**
 
    **Implementation:**
 
    - The public-entry guard distinguishes a confirmed terminal failure from
      valid, ambiguous, and network results.
-   - For a terminal result, it preserves the termination reason, sets the
-     redirect hint to zero, and hands off to shared app-shell recovery. The
-     hint or cookie presence is never treated as proof of session validity.
+   - For a terminal result, it preserves the termination reason and hands off
+     to shared app-shell recovery. Cookie presence is never treated as proof
+     of session validity.
    - Shared recovery validates other remembered slots through the existing
      restore flow in most-recent-use order. Ambiguous/network outcomes remain
      retryable; protected data is not rendered until a slot validates.
    - The user stays in the app if an alternate slot validates. App recovery
-     returns public with hint zero only after all candidates are confirmed
-     unrestorable.
+     returns public only after all candidates are confirmed unrestorable.
 
    **Acceptance gate:** Cover a valid selected slot (no handoff), terminal
    selected slot plus valid alternate, no valid candidates, ambiguous/network
@@ -972,7 +992,7 @@ evidence are maintained in the [bug register triage plan](../bugs.md#current-val
 - API boundary: `api/app/routers/auth.py`.
 - Services: `auth.py`, `session_service.py`, `session_ops.py`,
   `account_slots.py`, `login_challenges.py`, and `password_reset.py`.
-- Persistence: user, auth-session, refresh-token, account-slot,
+- Persistence: user, auth-session, refresh-token,
   recognized-device, OTP, challenge, password-reset, and security-event models.
 - Web access client: `web/lib/auth.ts`.
 - Login UI: `web/components/login-screen.tsx`.
@@ -1022,10 +1042,10 @@ multi-tab acceptance remains pending.
 | ACCESS-R-044/AC-045 | Concurrent switches serialize and stale restore responses cannot replace the selected slot | Two-tab simultaneous switch and reload matrix | Patch committed; multi-tab staging test pending |
 | ACCESS-AC-037/038 | Cause notice, acknowledgment, single-tab presentation, and takeover | Multi-tab terminal-session browser matrix | Implemented locally — staging pending |
 | ACCESS-AC-041 | Session hint skips the public entry-status round trip for recognized clients | Hint/no-hint public-route HTTP check | Local HTTP checks pass; staging acceptance pending |
-| ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: zero hint, stale positive hint, entry-status true/false, terminal restore | Implemented locally — staging browser pending |
+| ACCESS-AC-042 | Exhausted terminal recovery reaches public site without re-entry loop | Browser matrix: entry-status true/false, terminal restore | Implemented locally — staging browser pending |
 | ACCESS-AC-043 | Recovery behavior is coherent across route entry points | Browser matrix for app shell, public root, profile, post, username-chat, login | Open — current route differences documented |
 | ACCESS-AC-044 | A failed target switch preserves the valid source | Two-account staging browser switch in both directions; dead-target failure preserves source | Implemented locally — staging authenticated switch pending |
-| ACCESS-AC-047 | Terminal recovery modal offers remembered-account restore and Add account; cancel/close restore fallback or return public with hint zero | Single/multiple-account browser matrix; add-account and multi-tab recovery | Implemented locally — staging pending |
+| ACCESS-AC-047 | Terminal recovery modal offers remembered-account restore and Add account; cancel/close restore fallback or return public when none restores | Single/multiple-account browser matrix; add-account and multi-tab recovery | Implemented locally — staging pending |
 | ACCESS-AC-048 | All authenticated-route logout controls share server logout, fallback, and retryable failure behavior | Route matrix for app shell, profile, post detail, username post, and username chat; no-alternate and failed-request cases | Implemented locally — browser/staging acceptance pending |
 | ACCESS-AC-049 | Hint-zero terminal recovery enters shared app recovery and keeps a valid alternate session in the app | Public-root matrix: selected valid, selected terminal plus valid alternate, none valid, ambiguous/network fallback, and multi-tab | Implemented locally — browser/staging acceptance pending |
 

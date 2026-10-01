@@ -8,11 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.models.password_reset import PasswordResetToken
 from app.models.refresh_token import RefreshToken
-from app.models.account_session_slot import AccountSessionSlot
+from app.models.auth_session import AuthSession
 from app.models.user import User
 from app.services.auth import get_user_by_email
 from app.services.security import hash_password, verify_password
-from app.services.session_service import revoke_refresh_family
+from app.services.session_service import revoke_auth_session, revoke_refresh_family
 from app.services.session_ops import commit
 from app.services.staff import revoke_staff_sessions
 
@@ -73,5 +73,8 @@ async def complete_password_reset(session: Session, token: str, new_password: st
     for family in session.execute(select(RefreshToken.family_id).where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))).scalars().all():
         revoke_refresh_family(session, family, "password_reset", now)
     revoke_staff_sessions(session, user.id, "password_reset")
-    session.execute(update(AccountSessionSlot).where(AccountSessionSlot.user_id == user.id, AccountSessionSlot.revoked_at.is_(None)).values(revoked_at=now))
+    for auth_session in session.execute(
+        select(AuthSession).where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
+    ).scalars():
+        revoke_auth_session(session, auth_session, "password_reset")
     await commit(session)

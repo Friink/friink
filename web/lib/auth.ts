@@ -1,7 +1,6 @@
 import { fetchApi } from '@/lib/api-origin';
 import { compressImage } from '@/lib/image-compression';
 import { PresignedMediaUploadError, uploadPresignedMedia, type PresignedMediaUpload } from '@/lib/media-upload';
-import { clearSessionEntryHint, setSessionEntryHint } from '@/lib/session-entry-hint';
 
 export type AuthUser = {
   id: string;
@@ -96,6 +95,12 @@ type ApiUser = {
   updated_at: string;
   profile_picture_url: string | null;
   profile_picture_updated_at: string | null;
+};
+
+type ApiSessionStatus = {
+  authenticated: boolean;
+  account_slot: string;
+  user_id: string;
 };
 
 type ApiPublicUser = {
@@ -604,7 +609,6 @@ export async function confirmAccountDeletion(accessToken: string, challengeToken
 
 export function saveAuthSession(session: AuthSession) {
   if (typeof window === 'undefined') return;
-  if (session.user.email !== DEFAULT_DEMO_EMAIL) setSessionEntryHint();
   installAuthCoordinationListener();
   clearSessionTermination();
   const previousAccountSlot = inMemoryAuthSession?.accountSlot;
@@ -640,10 +644,6 @@ export function clearAuthSession() {
   installAuthCoordinationListener();
   authSessionGeneration += 1;
   const accountSlot = inMemoryAuthSession?.accountSlot ?? activeAccountSlot();
-  const hasOtherRememberedSessions = getRememberedAccountSummaries()
-    .some((account) => account.accountSlot !== accountSlot);
-  if (hasOtherRememberedSessions) setSessionEntryHint(1);
-  else clearSessionEntryHint();
   inMemoryAuthSession = null;
   if (accountSlot) window.localStorage.removeItem(`${AUTH_SESSION_SLOT_PREFIX}${encodeURIComponent(accountSlot)}`);
   window.localStorage.removeItem(AUTH_SESSION_KEY);
@@ -813,9 +813,13 @@ export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
   const accountSlot = activeAccountSlot();
   if (currentSession?.accountSlot === accountSlot) return currentSession;
   try {
-    const user = await getCurrentUser('', accountSlot ?? undefined, true);
+    const sessionStatus = await getSessionStatus(accountSlot);
+    const cachedUser = loadCachedAuthUser();
+    const user = cachedUser?.id === sessionStatus.user_id
+      ? cachedUser
+      : await getCurrentUser('', accountSlot ?? undefined, true);
     if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
-    const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: accountSlot ?? undefined };
+    const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: sessionStatus.account_slot };
     saveAuthSession(restoredSession);
     return restoredSession;
   } catch (error) {
@@ -1307,24 +1311,13 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
   });
 }
 
-export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
-  const activeSlot = activeAccountSlot();
-  const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string; show_professional_badge: boolean }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
-  const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at, showProfessionalBadge: item.show_professional_badge ?? false }));
+export async function discoverAccounts(): Promise<{ accounts: AccountSummary[]; allowed: boolean; switcherEnabled: boolean }> {
+  const response = await requestApi<{ accounts: Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string; show_professional_badge: boolean }>; allowed: boolean; switcher_enabled: boolean }>('/auth/accounts/available', { method: 'GET', skipAuthRefresh: true });
+  const accounts = response.accounts.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at, showProfessionalBadge: item.show_professional_badge ?? false }));
   cacheAccountSummaries(accounts);
   const currentUser = loadPersistedAuthSession()?.user;
-  const currentAccount = currentUser
-    ? accounts.find((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())
-    : undefined;
-  if (currentAccount && typeof window !== 'undefined') {
-    setActiveAccountSlot(currentAccount.accountSlot);
-    return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
-  }
-  if (currentUser) {
-    // A normal login may be valid without a remembered account slot when the
-    // device is already at its slot cap. Keep that active account visible in
-    // the switcher without inventing a switchable slot for it.
-    return [{
+  if (currentUser && !accounts.some((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())) {
+    accounts.unshift({
       accountSlot: '',
       username: currentUser.username,
       displayName: currentUser.name,
@@ -1333,14 +1326,22 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
       available: true,
       showProfessionalBadge: currentUser.showProfessionalBadge,
       lastUsedAt: '',
-    }, ...accounts.map((account) => ({ ...account, active: false }))];
+    });
   }
-  return accounts;
+  return { accounts, allowed: response.allowed, switcherEnabled: response.switcher_enabled };
 }
 
-export async function getAccountAddAvailability(accessToken: string): Promise<{ allowed: boolean; switcher_enabled: boolean }> {
-  const activeSlot = activeAccountSlot();
-  return requestApi<{ allowed: boolean; switcher_enabled: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
+async function getSessionStatus(accountSlot: string | null): Promise<ApiSessionStatus> {
+  return requestApi<ApiSessionStatus>('/auth/session', {
+    method: 'GET',
+    headers: accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : undefined,
+    authContext: 'authenticated_request',
+    skipAuthRefresh: true,
+  });
+}
+
+export async function listAccounts(_accessToken: string): Promise<AccountSummary[]> {
+  return (await discoverAccounts()).accounts;
 }
 
 type AccountSelectionLease = { ownerId: string; expiresAt: number };
@@ -1415,7 +1416,6 @@ export async function logoutActiveAccountWithFallback(
     clearAuthSession();
     // Cached slot summaries can outlive server sessions. Do not let those
     // stale summaries turn an exhausted fallback back into app entry.
-    clearSessionEntryHint();
     return { kind: 'logged-out' };
   });
 }
@@ -2653,7 +2653,10 @@ async function getApiError(response: Response): Promise<{ message: string; code?
 async function mapTokenResponse(response: ApiTokenResponse, signal?: AbortSignal): Promise<AuthSession> {
   const user = response.user ?? await requestApi<ApiUser>('/auth/me', {
     method: 'GET',
-    headers: { Authorization: `Bearer ${response.access_token}` },
+    headers: {
+      Authorization: `Bearer ${response.access_token}`,
+      ...(response.account_slot ? { 'X-Friink-Account-Slot': response.account_slot } : {}),
+    },
     authContext: 'authenticated_request',
     skipAuthRefresh: true,
     signal,

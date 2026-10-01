@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-10-01T22:41:32Z
+- [account switcher] Preserved the current URL after successful account
+  switches by reloading the same page. The selector stays open with a row
+  loader during switching, and Add account opens immediately from tab-loaded
+  availability without a second discovery call; capacity feedback stays in
+  the modal and the selector remains open after successful add-account login.
+
+## 2026-10-01T22:28:14Z
+- [session entry] Added `GET /auth/session` as a minimal authoritative slot
+  validation response. New tabs now reuse matching safe cached profile metadata
+  after that check and only fetch `/auth/me` when the cache is unavailable or
+  mismatched; account login and switching still use the full user response.
+
+## 2026-10-01T22:10:50Z
+- [account switcher] Added a non-mutating `/auth/accounts/available`
+  discovery response that lists accounts with usable device-bound refresh
+  cookies and returns switcher/add-account state in one call. The switcher now
+  uses cached summaries, stops loading on menu open/focus/session events, and
+  no longer auto-refreshes access tokens while displaying the list.
+
+## 2026-10-01T21:54:02Z
+- [session entry] Removed the `friink_session_hint` cookie and server-side
+  public-root redirect. The public guard now performs only the lightweight
+  `/auth/entry-status` probe and sends positive results to `/home`, leaving all
+  validation, refresh, and recovery to the app shell. Accepted the brief
+  public-site flash during the probe.
+
+## 2026-10-01T21:46:07Z
+- [deployment] Removed the stale `AccountSessionSlot` import from Alembic
+  metadata loading. The cleanup migration can now run after the dedicated slot
+  model has been removed.
+
+## 2026-10-01T21:38:56Z
+- [auth/database] Simplified account switching so slots are transient views over
+  existing device-bound `auth_sessions` rows. Removed the dedicated
+  `account_session_slots` model dependency and added migration `20261002_0062`
+  to drop that table, with no replacement account-switch tables or columns.
+  Updated password-reset cleanup, focused account tests, and active auth docs.
+
+## 2026-10-01T21:22:51Z
+- [auth] Removed the generic refresh/access-cookie authentication path. New
+  browser sessions require a device-bound account slot and use only
+  slot-scoped refresh and access cookies; legacy generic cookies are expired
+  during migration. No database migration was required. Updated the account
+  access contract, active rules, and refresh-reuse bug notes.
+
+## 2026-10-01T20:43:50Z
+- [feed/performance] Removed the Home-route shell feed prefetch so
+  `HomeScreen` owns one initial `/posts` request. Non-Home shell post-state
+  prefetch behavior remains unchanged. Updated the Feed, architecture,
+  implementation rulebook, and bug-register documentation; the broader
+  authenticated user-plus-feed bootstrap remains a separate security-sensitive
+  proposal.
+
+## 2026-10-01T20:50:41Z
+- [documentation] Added active rule `FEED-R-012` to keep the Home initial-feed
+  request ownership and duplicate-prefetch prevention synchronized between the
+  Feed unit and `docs/rules.md`.
+
 ## 2026-10-01T20:22:28Z
 - [documentation] Added the stale cross-tab termination-notice validation
   rule to `docs/rules.md`, completing the rulebook coverage for the session
