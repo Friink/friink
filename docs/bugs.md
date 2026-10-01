@@ -538,17 +538,16 @@ recovery context rather than proof that the current slot is unavailable. On
 route entry it validates the current slot first; only a fresh terminal response
 may show the session-ended modal and trigger remembered-account fallback.
 
-After the public guard receives a confirmed terminal restore failure, it now
-clears the redirect-only `friink_session_hint` and hands off to shared app
-recovery. That flow tries remembered accounts and keeps the user in Friink
-when one validates. When app recovery exhausts all remembered candidates, it
-clears the hint before returning to `/`. Authentication, token validation,
-and fallback authorization are unchanged.
+The public guard now performs only the non-mutating `/auth/entry-status`
+presence probe and redirects to `/home` without attempting a restore. The app
+shell owns validation, refresh, remembered-account fallback, and terminal
+recovery. The redirect-only `friink_session_hint` path has been removed.
+Authentication, token validation, and fallback authorization are unchanged.
 
 ### Tests and verification
-- **Required:** Browser checks for positive, zero, missing, and malformed hint;
-  entry-status positive/negative; terminal and ambiguous restore; stale and
-  valid remembered slots; login reachable after all candidates fail.
+- **Required:** Browser checks for entry-status positive/negative; terminal and
+  ambiguous restore; stale and valid remembered slots; login reachable after
+  all candidates fail.
 - **Completed locally:** Targeted TypeScript check passed after the route
   changes. Real browser/staging acceptance remains pending; local Next dev
   server startup was blocked by `spawn EPERM`, so no browser acceptance was
@@ -1207,9 +1206,9 @@ an authenticated session. Protected routes should own session restoration.
 ### Actual behavior
 
 `PublicRouteGuard` now renders its children immediately. It checks the
-lightweight `/auth/entry-status` endpoint in the background and only attempts
-cookie-first validation/redirect when the server reports a session hint.
-Signed-out visits do not make a refresh exchange.
+lightweight `/auth/entry-status` endpoint in the background and redirects to
+`/home` when the server reports a restore cookie. It does not attempt restore
+itself, and signed-out visits do not make a refresh exchange.
 
 ### Root cause
 
@@ -1217,10 +1216,10 @@ Signed-out visits do not make a refresh exchange.
   state and does not gate public children on auth status.
 - **Fixed locally:** Signed-out visits use the non-mutating entry-status hint;
   they do not call refresh.
-- **Fixed locally:** The hint recognizes any non-empty access or refresh
+- **Fixed locally:** Entry-status recognizes any non-empty access or refresh
   cookie, including per-account cookies when the selected-slot value is absent
-  or stale. A positive hint enters normal server validation and remembered
-  session fallback instead of leaving a valid other slot undiscovered.
+  or stale. A positive result enters the app shell, which owns normal server
+  validation and remembered-session fallback.
 - **Confirmed:** Centralizing route restoration made `/` and `/home` share a
   helper, but incorrectly applied authenticated bootstrap as a prerequisite to
   public content.
@@ -1231,9 +1230,9 @@ Signed-out visits do not make a refresh exchange.
 ### Implemented local fix
 
 Render public content immediately and run a non-blocking cookie-presence check.
-If any access or refresh cookie exists, validate the selected slot and use the
-normal remembered-session fallback as needed, then redirect only after
-successful validation. Token stability is covered by BUG-AUTH-003.
+If any access or refresh cookie exists, redirect to the app shell. The app shell
+then validates the selected slot and uses normal remembered-session fallback as
+needed. Token stability is covered by BUG-AUTH-003.
 
 Non-goals: require authentication to view public content or weaken `/home`
 authorization. Session repair and refresh-token safety remain owned by

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01T21:54:02Z
+- [session entry] Removed the `friink_session_hint` cookie and server-side
+  public-root redirect. The public guard now performs only the lightweight
+  `/auth/entry-status` probe and sends positive results to `/home`, leaving all
+  validation, refresh, and recovery to the app shell. Accepted the brief
+  public-site flash during the probe.
+
 ## 2026-10-01T21:46:07Z
 - [deployment] Removed the stale `AccountSessionSlot` import from Alembic
   metadata loading. The cleanup migration can now run after the dedicated slot

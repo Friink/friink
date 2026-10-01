@@ -1,5 +1,26 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T21:54:02Z — Simplify Public Session Entry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the fragile public-root redirect hint and accept a
+  brief public-site flash while session entry is checked.
+- Changes Made: Removed `friink_session_hint`, its server redirect helper, and
+  all set/clear call sites. `PublicRouteGuard` now performs only the
+  non-mutating `/auth/entry-status` probe; positive results redirect to `/home`
+  without a duplicate restore. The app shell remains authoritative for session
+  validation, refresh, fallback, and recovery. Updated active rules, account
+  access, and bug-register documentation.
+- Files: `web/app/page.tsx`, `web/components/public-route-guard.tsx`,
+  `web/components/app-shell-route.tsx`, `web/lib/auth.ts`, removed
+  `web/lib/public-session-entry.ts` and `web/lib/session-entry-hint.ts`,
+  `docs/rules.md`, `docs/units/account-access.md`, `docs/bugs.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web TypeScript validation and `git diff --check` passed;
+  stale hint references were removed from active web/docs sources. No push
+  performed.
+
 # 2026-10-01T21:46:07Z — Remove Stale Alembic Slot Import
 
 - Agent: Codex

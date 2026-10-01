@@ -8,7 +8,6 @@ import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
 import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
-import { clearSessionEntryHint } from '@/lib/session-entry-hint';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -167,7 +166,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         if (fallback) saveAuthSession(fallback);
         else {
           clearAuthSession();
-          clearSessionEntryHint();
         }
         clearSessionTermination(id);
         return fallback;
@@ -202,7 +200,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         router.replace('/home');
       } else {
         clearAuthSession();
-        clearSessionEntryHint();
         setTermination(null);
         setRecoveryChoice(false);
         router.replace('/');
@@ -303,7 +300,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     }
 
     clearAuthSession();
-    clearSessionEntryHint();
     router.replace('/');
   }
 
