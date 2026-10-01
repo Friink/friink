@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T22:10:50Z
+**Last edited:** 2026-10-01T22:28:14Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -276,9 +276,12 @@ legacy-account data migration requirement.
 The web client keeps its access JWT in memory and the API also sets a
 short-lived HttpOnly access cookie for the selected account slot. The JWT is
 bound to its server-side session with `sid`. On full document entry, the app
-validates `/auth/me` with the slot cookie first; a valid access cookie restores
-the user without rotating the refresh cookie. Only an expired or absent access
-cookie causes one slot-captured refresh exchange and a single retried request.
+validates `/auth/session` with the slot cookie first; when the returned public
+user ID matches the safe cached profile for that slot, the tab restores its
+in-memory user without downloading the full profile. A missing or mismatched
+cache falls back to `/auth/me`. The status check never rotates the refresh
+cookie. Only an expired or absent access cookie causes one slot-captured
+refresh exchange and a single retried request.
 Network, timeout, CORS, 403, 5xx, malformed-response, and other ambiguous
 failures preserve the remembered identity and show retryable in-app recovery.
 Cookie-authenticated unsafe API requests enforce allowed-Origin checks.
@@ -308,7 +311,8 @@ The public root renders immediately and the client makes one non-blocking
 refresh cookie, including cookies scoped to other account slots, only as a reason
 to enter `/home`; it does not establish that a session is valid or call refresh.
 The public guard accepts a brief public-site flash before redirecting. The app
-shell owns the single authoritative restore flow: `/auth/me` first, refresh only
+shell owns the single authoritative restore flow: `/auth/session` first, then
+`/auth/me` only when safe cached user metadata cannot be matched; refresh only
 when access is absent or expired, then normal fallback/recovery handling. If no
 valid remembered session exists, the visitor returns to the public site. The
 legacy `/subscriptions` URL permanently redirects to `/settings/subscription`.
@@ -770,6 +774,10 @@ control remains visible when account labels are long.
   also returns Add-account capacity and switcher visibility in the same
   response. The web app performs this discovery once on app entry, then the
   switcher uses cached summaries and makes no requests merely to open.
+- `GET /auth/session` validates the selected slot and returns only the
+  authenticated public user ID and slot. It is the lightweight app-entry
+  check; it does not rotate refresh cookies or replace the full user response
+  required by login and account switching.
 - `GET /auth/accounts` remains the access-token-authenticated summary endpoint
   for existing settings consumers.
 - `GET /auth/accounts/add-availability` remains available for compatibility;

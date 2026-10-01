@@ -34,6 +34,7 @@ from app.schemas.auth import (
     ProfilePictureUploadUrlResponse,
     PublicUserResponse,
     RefreshResponse,
+    SessionStatusResponse,
     AuthSessionResponse,
     AccountSummaryResponse, AccountSwitchRequest, AccountAddAvailabilityResponse, AccountDiscoveryResponse,
     LoginApprovalResponse, LoginApprovalStatusResponse, LoginApprovalActionRequest,
@@ -1201,6 +1202,24 @@ async def me(
     settings: Settings = Depends(get_settings),
 ) -> UserResponse:
     return user_response(current_user, settings)
+
+
+@router.get("/session", response_model=SessionStatusResponse)
+async def session_status(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+) -> SessionStatusResponse:
+    """Validate the selected slot without serializing the full user profile."""
+    account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    if not account_slot:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=auth_error_detail("Account session is not selected.", AuthErrorCode.REFRESH_TOKEN_MISSING),
+        )
+    return SessionStatusResponse(
+        account_slot=account_slot,
+        user_id=current_user.public_id,
+    )
 
 
 @router.post("/me/deactivate", status_code=status.HTTP_204_NO_CONTENT)

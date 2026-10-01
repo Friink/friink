@@ -301,6 +301,12 @@ class RefreshResponse(BaseModel):
     account_slot: str | None = None
 
 
+class SessionStatusResponse(BaseModel):
+    authenticated: bool = True
+    account_slot: str
+    user_id: str
+
+
 class AccountSummaryResponse(BaseModel):
     account_slot: str
     username: str

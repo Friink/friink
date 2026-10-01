@@ -97,6 +97,12 @@ type ApiUser = {
   profile_picture_updated_at: string | null;
 };
 
+type ApiSessionStatus = {
+  authenticated: boolean;
+  account_slot: string;
+  user_id: string;
+};
+
 type ApiPublicUser = {
   id: string;
   username: string;
@@ -807,9 +813,13 @@ export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
   const accountSlot = activeAccountSlot();
   if (currentSession?.accountSlot === accountSlot) return currentSession;
   try {
-    const user = await getCurrentUser('', accountSlot ?? undefined, true);
+    const sessionStatus = await getSessionStatus(accountSlot);
+    const cachedUser = loadCachedAuthUser();
+    const user = cachedUser?.id === sessionStatus.user_id
+      ? cachedUser
+      : await getCurrentUser('', accountSlot ?? undefined, true);
     if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
-    const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: accountSlot ?? undefined };
+    const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: sessionStatus.account_slot };
     saveAuthSession(restoredSession);
     return restoredSession;
   } catch (error) {
@@ -1319,6 +1329,15 @@ export async function discoverAccounts(): Promise<{ accounts: AccountSummary[]; 
     });
   }
   return { accounts, allowed: response.allowed, switcherEnabled: response.switcher_enabled };
+}
+
+async function getSessionStatus(accountSlot: string | null): Promise<ApiSessionStatus> {
+  return requestApi<ApiSessionStatus>('/auth/session', {
+    method: 'GET',
+    headers: accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : undefined,
+    authContext: 'authenticated_request',
+    skipAuthRefresh: true,
+  });
 }
 
 export async function listAccounts(_accessToken: string): Promise<AccountSummary[]> {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-01T22:28:14Z
+- [session entry] Added `GET /auth/session` as a minimal authoritative slot
+  validation response. New tabs now reuse matching safe cached profile metadata
+  after that check and only fetch `/auth/me` when the cache is unavailable or
+  mismatched; account login and switching still use the full user response.
+
 ## 2026-10-01T22:10:50Z
 - [account switcher] Added a non-mutating `/auth/accounts/available`
   discovery response that lists accounts with usable device-bound refresh

@@ -169,6 +169,10 @@ def test_slot_access_cookie_survives_reload_without_refresh_and_honors_revocatio
         entry = client.get("/auth/entry-status", headers={"X-Friink-Account-Slot": slot})
         assert entry.status_code == 200 and entry.json() == {"session_available": True}
 
+        session_status = client.get("/auth/session", headers={"X-Friink-Account-Slot": slot})
+        assert session_status.status_code == 200, session_status.text
+        assert session_status.json() == {"authenticated": True, "account_slot": slot, "user_id": login.json()["user"]["id"]}
+
         # The public entry guard must see slot cookies even after the selected
         # slot header is missing or points at a slot without cookies. In either
         # case, restoration can validate and choose the next active session.
@@ -204,6 +208,10 @@ def test_slot_access_cookie_survives_reload_without_refresh_and_honors_revocatio
         rejected = client.get("/auth/me", headers={"X-Friink-Account-Slot": slot})
         assert rejected.status_code == 401, rejected.text
         assert rejected.json()["detail"]["code"] == "SESSION_TERMINATED"
+
+        rejected_status = client.get("/auth/session", headers={"X-Friink-Account-Slot": slot})
+        assert rejected_status.status_code == 401, rejected_status.text
+        assert rejected_status.json()["detail"]["code"] == "SESSION_TERMINATED"
     finally:
         with get_session_factory()() as session:
             session.execute(delete(User).where(User.id == user_id))

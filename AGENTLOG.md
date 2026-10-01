@@ -1,5 +1,24 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T22:28:14Z — Add Lightweight Session Entry Check
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce full profile validation work when opening additional
+  browser tabs without affecting account switching.
+- Changes Made: Added `GET /auth/session`, an authoritative slot validation
+  response containing only the public user ID and slot. Entry restoration now
+  reuses matching safe cached profile metadata and falls back to `/auth/me` on
+  cache miss or mismatch. Login and account switching retain full user
+  hydration. Added focused endpoint coverage and updated active auth docs.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Focused API assertions and web type checking are in
+  progress; the existing Windows SQLite cleanup hook may still return
+  `WinError 32` after tests finish. No push performed.
+
 # 2026-10-01T22:10:50Z — Simplify Account Switcher Discovery
 
 - Agent: Codex
