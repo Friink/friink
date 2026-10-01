@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-01T23:25:09Z
+- [session stability] Extended per-slot browser refresh coordination to a
+  45-second lease and 60-second successful-result publication window. This
+  gives slow tabs time to observe the owner’s result and revalidate through
+  their own HttpOnly cookies instead of initiating duplicate refresh calls.
+- [documentation] Recorded the cross-tab coordination timing in the active
+  account-access and authentication rules.
+
 ## 2026-10-01T23:08:19Z
 - [account switcher] Added an idle refresh control to the switcher header;
   it occupies the same slot as the discovery spinner and triggers the existing

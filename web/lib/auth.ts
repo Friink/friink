@@ -65,8 +65,13 @@ const ACCOUNT_SELECTION_LEASE_KEY = 'friink-account-selection-lease';
 const ACCOUNT_SELECTION_LEASE_MS = 30000;
 const ACCOUNT_SELECTION_OPERATION_TIMEOUT_MS = 15000;
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
-const REFRESH_LEASE_MS = 20000;
-const REFRESH_RESULT_TTL_MS = 3000;
+// Refresh coordination must outlive the slowest observed staging refresh.
+// The API request itself times out at 30s; the extra margin lets followers
+// wait for the owner instead of starting a second rotation. The result stays
+// published for the server's 60s refresh-reuse grace window, while followers
+// still continue immediately after they observe success.
+const REFRESH_LEASE_MS = 45000;
+const REFRESH_RESULT_TTL_MS = 60000;
 const refreshPromises = new Map<string, Promise<AuthSession>>();
 let authSessionGeneration = 0;
 const tabId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);

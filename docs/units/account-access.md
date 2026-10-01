@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T22:41:32Z
+**Last edited:** 2026-10-01T23:25:09Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -529,8 +529,13 @@ rotating the refresh cookie. Refresh rotation is reactive to access expiry and r
 bounded retry grace and family-reuse detection. Cookie-authenticated unsafe
 requests enforce allowed-Origin checks. A tab that observes another tab's
 refresh revalidates with its own slot access cookie instead of rotating again.
-The historical cause of the stale-token replays remains unknown; see the bug
-record for details.
+The browser coordination lease now remains open for 45 seconds and a
+successful result remains published for 60 seconds, covering the API's
+30-second request timeout and matching the server's configured refresh-reuse
+grace window. Followers still continue immediately after observing success;
+the longer result lifetime only prevents a second refresh from starting while
+the first result is recoverable. The historical cause of the stale-token
+replays remains unknown; see the bug record for details.
 
 #### Multi-account session continuity policy
 

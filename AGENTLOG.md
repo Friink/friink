@@ -1,5 +1,21 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T23:25:09Z — Extend Cross-Tab Refresh Coordination Window
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent multiple active tabs from starting duplicate refresh
+  requests while another tab is still completing a recoverable refresh.
+- Changes Made: Extended the per-slot browser refresh lease to 45 seconds and
+  the successful coordination-result lifetime to 60 seconds. Followers still
+  revalidate through their own HttpOnly slot cookies; no bearer tokens are
+  shared through JavaScript. Updated the active account-access and auth rules.
+- Files: `web/lib/auth.ts`, `docs/units/account-access.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web `tsc --noEmit` passed. The focused deterministic
+  refresh-replay assertion passed; pytest still exits non-zero during existing
+  Windows SQLite temporary-file cleanup (`WinError 32`). No push performed.
+
 # 2026-10-01T23:08:19Z — Make Account Switcher Busy State Explicit
 
 - Agent: Codex
