@@ -548,7 +548,10 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
   }
 
   useEffect(() => {
-    if (entryPending) return;
+    // HomeScreen owns its initial feed request so the shell does not issue a
+    // second overlapping /posts read during app entry. Other surfaces still
+    // use the shell-owned post state for their existing fallback data.
+    if (entryPending || initialScreen === 'home') return;
     listPosts({ limit: 40 })
       .then((page) => {
         setPosts(page.items.map(mapApiPost));
@@ -556,7 +559,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
       .catch(() => {
         // Keep the timeline empty when the API is not running.
       });
-  }, [entryPending]);
+  }, [entryPending, initialScreen]);
 
   useEffect(() => {
     const session = loadAuthSession();

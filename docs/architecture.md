@@ -48,6 +48,10 @@ through `NEXT_PUBLIC_API_BASE_URL`.
   [Account Access](units/account-access.md).
 - The shared visible app content column and contextual floating composer use `--space-content-col` with a `720px` tablet/desktop cap. The inline gutter is outside that cap: `16px` on desktop and `8px` on mobile.
 - The floating composer is available on feed and supported contextual surfaces and is intentionally hidden on profile pages.
+- Home's initial feed request is owned by `HomeScreen`; `AppShell` skips its
+  shell-level posts prefetch on Home to avoid duplicate `/posts` reads during
+  authenticated entry. Non-Home surfaces retain the shell-owned post-state
+  prefetch used by their existing fallback paths.
 - The global Header owns the Chat link between Search and Notifications. It routes to `/chats` and shows an unread dot when a conversation has new messages. The drawer contains the remaining personal and network navigation.
 - The global drawer places Directory directly beneath Saved and routes it to `/directory`; the surface currently reuses the existing Directory screen component.
 

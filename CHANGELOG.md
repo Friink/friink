@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-01T20:43:50Z
+- [feed/performance] Removed the Home-route shell feed prefetch so
+  `HomeScreen` owns one initial `/posts` request. Non-Home shell post-state
+  prefetch behavior remains unchanged. Updated the Feed, architecture,
+  implementation rulebook, and bug-register documentation; the broader
+  authenticated user-plus-feed bootstrap remains a separate security-sensitive
+  proposal.
+
+## 2026-10-01T20:50:41Z
+- [documentation] Added active rule `FEED-R-012` to keep the Home initial-feed
+  request ownership and duplicate-prefetch prevention synchronized between the
+  Feed unit and `docs/rules.md`.
+
 ## 2026-10-01T20:22:28Z
 - [documentation] Added the stale cross-tab termination-notice validation
   rule to `docs/rules.md`, completing the rulebook coverage for the session

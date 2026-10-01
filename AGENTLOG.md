@@ -1,5 +1,41 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T20:50:41Z — Synchronize Home Feed Rulebook Coverage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Complete documentation coverage for the Home duplicate-feed
+  request optimization, including the active rulebook.
+- Changes Made: Added active `FEED-R-012` to `docs/rules.md` and the Feed unit,
+  synchronized the rulebook registry, and clarified that the optimization
+  preserves session authorization, recovery, pagination, and non-Home shell
+  prefetch behavior.
+- Files: `docs/rules.md`, `docs/units/feed.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Rule references and implementation file paths reviewed;
+  `git diff --check` passed.
+
+# 2026-10-01T20:43:50Z — Remove Duplicate Home Feed Read
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Document and implement the low-risk startup loading
+  optimization after reviewing the session/feed bootstrap scope.
+- Changes Made: Home now skips the shell-level posts prefetch so `HomeScreen`
+  owns the initial feed request. Non-Home routes retain the shell prefetch used
+  by existing shared post-state fallback paths. Updated the Feed unit,
+  architecture guide, and BUG-LOAD-001 notes. The proposed one-request
+  authenticated user-plus-feed bootstrap was not implemented because it would
+  cross the current security-sensitive session boundary.
+- Files: `web/components/app-shell.tsx`, `docs/units/feed.md`,
+  `docs/architecture.md`, `docs/bugs.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed;
+  targeted ESLint passed with 18 existing hook-dependency warnings and no
+  errors; `git diff --check` passed. Browser/network acceptance remains
+  pending. Branch switching to `development` was attempted but blocked by
+  filesystem permission on `.git/index.lock`, so the working checkout remains
+  on `staging`.
+
 # 2026-10-01T20:22:28Z — Complete Session Recovery Rulebook Coverage
 
 - Agent: Codex

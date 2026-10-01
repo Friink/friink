@@ -1622,13 +1622,15 @@ deployed build has been captured.
 ### Root cause
 
 - **Confirmed in current web code:** Each AppShell mount starts a global posts
-  prefetch, including on profile routes. HomeScreen starts its own initial feed
-  request, so Home may issue overlapping reads. Profile identity, tab content,
-  and follower/following statistics requests are launched independently after
-  authentication. The API client automatically retries only once after a
-  `401 TOKEN_EXPIRED`; it does not generally retry network, timeout, or server
-  failures. A Home initial-load failure shows text without a retry control, and
-  its polling path does not retry while the feed is empty.
+  prefetch on non-Home surfaces. Before the loading optimization, HomeScreen
+  also started its own initial feed request, so Home could issue overlapping
+  reads. Home now skips the shell prefetch and keeps one Home-owned initial
+  request; profile identity, tab content, and follower/following statistics
+  requests are still launched independently after authentication. The API
+  client automatically retries only once after a `401 TOKEN_EXPIRED`; it does
+  not generally retry network, timeout, or server failures. A Home
+  initial-load failure shows text without a retry control, and its polling path
+  does not retry while the feed is empty.
 - **Open questions:** The failing endpoint and status, whether concurrent tabs
   trigger rate limiting or another server-side condition, and whether failures
   correlate with request volume are unknown. The confirmed request fanout is
@@ -1636,10 +1638,10 @@ deployed build has been captured.
 
 ### Proposed fix
 
-Use captured request evidence to identify the failing layer. Then address
-unnecessary duplicate requests or endpoint capacity if confirmed, and provide
-an explicit retry path for initial feed and profile failures. Preserve
-authentication and authorization behavior.
+Use captured request evidence to identify the failing layer. The confirmed
+Home duplicate-read path is now removed; next address endpoint capacity or
+retry behavior only if staging evidence shows the remaining multi-tab failure
+continues. Preserve authentication and authorization behavior.
 
 ### Tests and verification
 
@@ -1652,10 +1654,12 @@ authentication and authorization behavior.
 
 ### Noteworthy
 
-The frontend launches several reads independently; there is no guaranteed
-serial order among Home feed or profile data requests after authentication.
-Authentication/session restoration may precede private data loading when no
-in-memory session is available. The exact cause remains unconfirmed.
+The frontend still launches several reads independently; there is no
+guaranteed serial order among profile data requests after authentication. Home
+now has one initial feed read owned by `HomeScreen`, while
+authentication/session restoration may precede private data loading when no
+in-memory session is available. The exact multi-tab failure cause remains
+unconfirmed.
 
 ### Related documentation and implementation
 

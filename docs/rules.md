@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-09-30T00:00:17Z
+**Last edited:** 2026-10-01T20:50:41Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -1181,6 +1181,18 @@ missing evidence can be filled in.
 - **What:** The web Home feed stores the top visible post id in `localStorage` and attempts to restore around that anchor on the next load.
 - **Edge cases:** If the saved anchor fails to load, the client clears it and falls back to a normal feed load. Polling for newer posts runs only while the document is visible and uses a 10-second interval.
 
+### FEED-R-012 — Home Has One Initial Feed Request Owner
+
+- **Status:** Active
+- **Effective:** 2026-10-01T20:50:41Z
+- **Related units:** [feed](units/feed.md), [account-access](units/account-access.md)
+- **Source:** Current implementation
+- **Platform:** Web only
+- **File(s):** `web/components/app-shell.tsx`, `web/components/home-screen.tsx`
+
+- **What:** The Home route's initial feed load is owned by `HomeScreen`. `AppShell` skips its shell-level posts prefetch on Home so authenticated entry does not issue a duplicate `/posts` read. Non-Home surfaces retain the shell-owned post-state prefetch used by their existing fallback paths.
+- **Edge cases:** This optimizes request ownership only; protected feed content still appears only after a successful server-authorized request, and the existing session validation, recovery, cursor pagination, reading-position restore, and feed error behavior remain unchanged.
+
 ### POST-R-013 — Canonical Post URLs Use Author Username And Post ID
 
 - **Status:** Active
@@ -1845,6 +1857,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [feed](units/feed.md) | FEED-R-006 | Feed failures preserve usable content and expose retry rather |
 | [feed](units/feed.md) | FEED-R-007 | The shared post action row anchors its four actions from the left |
 | [feed](units/feed.md) | FEED-R-008 | Post action controls change to the current accent color on hover |
+| [feed](units/feed.md) | FEED-R-012 | Home owns one initial feed request; the shell skips the duplicate Home prefetch. |
 | [media](units/media.md) | MEDIA-R-001 | Post images remain local until submit; up to eight JPEG images |
 | [media](units/media.md) | MEDIA-R-002 | Post preparation targets a 1024px maximum longest edge, |
 | [media](units/media.md) | MEDIA-R-003 | Profile pictures accept JPG/JPEG, PNG, and WebP, require a |
