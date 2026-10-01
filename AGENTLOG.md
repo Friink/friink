@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T23:55:00Z — Align Account Switcher Refresh Glyph
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the idle account-switcher refresh button with the
+  existing top-right refresh spinner and account-control edge.
+- Changes Made: Kept the existing status slot and spinner unchanged; narrowed
+  only the idle refresh button's visual box so its glyph aligns to the same
+  right edge. Updated the shared account-selector design contract and logs.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and diff review pending. No push
+  performed.
+
 # 2026-10-01T23:47:05Z — Make Terminal Recovery Single-Modal
 
 - Agent: Codex

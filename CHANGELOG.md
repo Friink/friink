@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-01T23:55:00Z
+- [account switcher] Aligned the idle refresh glyph to the same right-edge
+  status position as the account-refresh spinner without changing the spinner
+  slot or loading behavior.
+- [documentation] Updated the shared account-selector design contract.
+
 ## 2026-10-01T23:47:05Z
 - [session recovery] Made terminal recovery a single-modal flow. The first
   session-ended modal now discovers remembered accounts in place, shows a
