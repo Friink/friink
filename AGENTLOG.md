@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T19:02:00Z — Align Refresh Diagnostics User Index
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix staging deployment failure from Alembic detecting a
+  missing model-declared refresh-attempt user index.
+- Changes Made: Added migration `20261001_0061` to create
+  `ix_auth_refresh_attempts_user_id`, matching the model's `index=True`
+  declaration. No production migration was run for this follow-up.
+- Files: `api/alembic/versions/20261001_0061_auth_refresh_attempt_user_index.py`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted migration compilation, Alembic head discovery,
+  and `git diff --check` passed. `alembic check` was not run because the
+  production database is intentionally still at `20261001_0060`; the new
+  revision must be applied by the staging deployment. Changes are intentionally
+  uncommitted for the user to merge to staging.
+
 # 2026-10-01T18:48:30Z — Revalidate Current Slot Before Recovery Fallback
 
 - Agent: Codex
