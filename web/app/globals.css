@@ -3276,7 +3276,8 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
 
 .modal-back,
 .modal-close,
-.modal-back-placeholder {
+.modal-back-placeholder,
+.modal-close-placeholder {
   display: inline-grid;
   width: 2rem;
   height: 2rem;
@@ -3296,6 +3297,10 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
 }
 
 .modal-close {
+  grid-column: 3;
+}
+
+.modal-close-placeholder {
   grid-column: 3;
 }
 

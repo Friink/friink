@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T23:25:09Z
+**Last edited:** 2026-10-01T23:47:05Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -355,11 +355,13 @@ matrix.
 This section owns the client experience when session restoration fails; the
 server's session and lifecycle decisions remain authoritative. A technically
 ambiguous error does not mean the session ended. A confirmed terminal result
-shows a blocking `Session ended` modal with neutral copy, available remembered
-accounts, and Add account. Selecting a remembered account validates that slot
-before continuing. Close and the close icon restore the most recently used valid
-remembered account, or return to the public site
-when none remains. Lifecycle state and the associated reactivation or
+shows a blocking `Session ended` modal with neutral copy. The first modal
+discovers remembered accounts in place and shows a loading state while doing
+so; it must not require a second account-choice modal. Available accounts and
+Add account are shown directly. Selecting a remembered account validates that
+slot before continuing. When a usable remembered account exists, Close and the
+close icon are hidden; when none exists, Close/X returns to the public site.
+Lifecycle state and the associated reactivation or
 deletion-cancellation rules belong to
 [Account Lifecycle](./account-lifecycle.md).
 
@@ -372,9 +374,9 @@ Current web entry points do not all present the same recovery surface:
   opens a `Session ended` modal with the neutral copy “Your session has ended.
   Choose how you’d like to continue.” Available remembered accounts appear
   below the copy. Selecting one validates and restores it; Add account opens
-  the existing login/signup modal. Close and the close icon restore the most recently
-  used valid remembered account, or clear the session hint and return to the
-  public site when none remains.
+  the existing login/signup modal. When an available account exists, Close and
+  the close icon are hidden. When none exists, Close and X clear the session
+  hint and return to the public site.
 - **Public root (`/`)** renders immediately, where `PublicRouteGuard` calls
   `/auth/entry-status` in the background. A positive presence result redirects
   to `/home` without restoring first; the app shell owns validation, refresh,
@@ -417,10 +419,10 @@ Failure cases are distinct:
    entering a route with a shared termination notice; the notice is recovery
    context, not proof that the current slot is still unavailable. Only a fresh
    terminal response shows the shared neutral `Session ended` modal with
-   available remembered-account choices and Add account. Selecting an account
-   validates it before switching. Close or the close icon tries the
-   most-recent valid fallback and returns to the public site with redirect
-   the public site if none restores. Never silently switch identity.
+   available remembered-account choices and Add account. The first modal
+   discovers those choices in place. Selecting an account validates it before
+   switching. Close/X is hidden while a usable account is available; otherwise
+   it returns to the public site. Never silently switch identity.
 3. **Remote logout or security revocation:** use the same session-ended modal
    and recovery actions as other confirmed terminal results.
 4. **Deactivation or pending deletion:** the initiating client logs out
@@ -441,9 +443,9 @@ pending.
 When a current session is confirmed ended, Friink shows the neutral copy
 “Your session has ended. Choose how you’d like to continue.” Available
 remembered accounts appear as choices, and Add account opens the existing
-login/signup modal. The Close and the close icon try remembered accounts in
-most-recent-use order, then return to `/` if none can be
-restored. For deactivation/pending deletion, the initiating client immediately
+login/signup modal. The first modal performs this discovery in place. Close/X
+is hidden while a usable remembered account exists and is shown only when none
+exists, in which case it returns to `/`. For deactivation/pending deletion, the initiating client immediately
 logs out after the successful lifecycle operation; another client uses these
 same recovery choices. Friink never renders a candidate's data before that
 slot has validated. The recovery flow is:
@@ -456,9 +458,10 @@ slot has validated. The recovery flow is:
 3. On confirmed terminal failure, clear the in-memory credential for that
    account and keep only safe recovery context. When a pre-existing notice is
    present during route entry, validate the current slot before showing neutral
-   session-ended copy or selecting a fallback. Add account reuses login/signup;
-   Close and the close icon validate fallback sessions by recency before
-   returning public.
+   session-ended copy or selecting a fallback. Discover remembered accounts
+   inside the first recovery modal; Add account reuses login/signup. Hide
+   Close/X while a usable account is available and return public with Close/X
+   when none is available.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
   ambiguous failure does not prove that the session ended. Keep the user in
   retryable recovery without changing identity. With cached identity, keep the
@@ -498,11 +501,11 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 
 - Use one captured active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
-- A confirmed terminal failure presents the neutral `Session ended` modal.
-  Selecting a listed remembered account validates that slot before switching;
-  Add account reuses the existing login/signup flow. Close and the close icon attempt
-  valid remembered accounts in most-recent-use order, then return to the public
-  site when none can be restored. Ambiguous
+- A confirmed terminal failure presents the neutral `Session ended` modal and
+  discovers remembered accounts inside that first modal. Selecting a listed
+  remembered account validates that slot before switching; Add account reuses
+  the existing login/signup flow. Close/X is hidden while a usable account is
+  available and returns to the public site when none exists. Ambiguous
   failures keep the active identity in retryable recovery; they never cause a
   silent switch.
 - A single tab owns the browser-client termination notice. Other tabs wait for
@@ -542,9 +545,10 @@ replays remains unknown; see the bug record for details.
 #### Multi-account session continuity policy
 
 On public entry, when one or more remembered sessions are valid, restore the
-most recently used one. During terminal recovery, users can select an available
-remembered account or Add account. Close and the close icon try the most recently used
-remaining session before returning to the public site.
+most recently used one. During terminal recovery, the first modal discovers and
+shows available remembered accounts, alongside Add account. Close/X is hidden
+while a usable remaining session exists and returns to the public site when none
+is available.
 A remembered-account row alone is not proof that its session is valid;
 validate each candidate's own slot-scoped session before exposing that
 account's app state. A session is restorable while its refresh token remains
@@ -591,10 +595,11 @@ item.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
 - **ACCESS-R-031:** A confirmed terminal failure presents the neutral
-  `Session ended` modal with available remembered accounts and Add account.
-  Selecting an account validates it before switching. Close and the close icon restore
-  the most recently used valid account or return to the public site with the
-  public site. Ambiguous failures never silently switch identity;
+  `Session ended` modal and discovers remembered accounts within that first
+  modal. Available accounts and Add account are shown directly; selecting an
+  account validates it before switching. Close/X is hidden while a usable
+  account is available and returns to the public site when none is available.
+  Ambiguous failures never silently switch identity;
   non-network entry recovery retries four times at 10-second intervals.
   When a safe cached identity exists, entry validation keeps the inert app
   frame visible with private content hidden and offers **Try again** on

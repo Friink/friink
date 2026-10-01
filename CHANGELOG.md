@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-01T23:47:05Z
+- [session recovery] Made terminal recovery a single-modal flow. The first
+  session-ended modal now discovers remembered accounts in place, shows a
+  loading state during discovery, hides Close/X when a usable account exists,
+  and returns to the public site with Close/X only when no account is available.
+- [documentation] Updated the account-access, design-system, rules, and shared
+  Modal contracts.
+
 ## 2026-10-01T23:35:40Z
 - [session entry/feed] Decoupled shell readiness from the initial Home feed
   request. The shell now becomes interactive after session/current-user

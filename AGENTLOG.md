@@ -1,5 +1,26 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T23:47:05Z — Make Terminal Recovery Single-Modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show remembered account recovery choices in the first
+  session-ended modal instead of requiring a misleading Close action followed
+  by a second account-choice modal.
+- Changes Made: Added in-place remembered-account discovery and loading state to
+  terminal recovery. The modal now shows available accounts directly, hides
+  Close/X while a usable account exists, and routes Close/X to the public site
+  when no usable account exists. Extended the shared Modal primitive with an
+  optional hidden close control while preserving its centered header layout.
+  Updated account-access, design-system, rules, changelog, and agent logs.
+- Files: `web/components/modal.tsx`, `web/components/session-recovery-screen.tsx`,
+  `web/components/app-shell-route.tsx`, `web/app/globals.css`,
+  `packages/design/design.md`, `docs/design-system.md`,
+  `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Targeted web TypeScript check and diff review pending.
+  No push performed.
+
 # 2026-10-01T23:35:40Z — Decouple Shell Readiness From Home Feed Prefetch
 
 - Agent: Codex

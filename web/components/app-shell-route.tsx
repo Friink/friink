@@ -6,7 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, listPosts, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, discoverAccounts, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, listPosts, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Screen } from '@/lib/data';
 
@@ -34,6 +34,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const [termination, setTermination] = useState<{ id: string; cause: SessionTerminationCause; owner: boolean } | null>(null);
   const [recoveryUsername, setRecoveryUsername] = useState<string | null>(null);
   const [recoveryAccounts, setRecoveryAccounts] = useState<AccountSummary[]>([]);
+  const [recoveryAccountsLoading, setRecoveryAccountsLoading] = useState(false);
   const [restoringAccountSlot, setRestoringAccountSlot] = useState<string | null>(null);
   const [accountRecoveryError, setAccountRecoveryError] = useState<string | null>(null);
   const [recoveryChoice, setRecoveryChoice] = useState(false);
@@ -44,6 +45,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const networkRestoreInFlight = useRef(false);
   const entryHomeFeedPromise = useRef<Promise<ApiFeedPage | null> | null>(null);
   const sessionRecoveryInFlight = useRef(false);
+  const recoveryAccountsDiscoveryInFlight = useRef(false);
   const networkRestoreAccountSlot = useRef<string | null>(null);
   const networkRestoreTerminationId = useRef<string | null>(null);
   const retryNetworkRecoveryRef = useRef<() => void>(() => undefined);
@@ -60,6 +62,23 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     setSessionReady(false);
     setAuthCheckComplete(false);
   });
+
+  const discoverRecoveryAccounts = useCallback(async () => {
+    if (recoveryAccountsDiscoveryInFlight.current) return;
+    recoveryAccountsDiscoveryInFlight.current = true;
+    setRecoveryAccountsLoading(true);
+    try {
+      const result = await discoverAccounts();
+      setRecoveryAccounts(result.accounts);
+    } catch {
+      // Keep safe local summaries available when the discovery request cannot
+      // complete; the modal still remains a single recovery surface.
+      setRecoveryAccounts(getRememberedAccountSummaries());
+    } finally {
+      recoveryAccountsDiscoveryInFlight.current = false;
+      setRecoveryAccountsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -577,7 +596,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
     const status = recoveryChoice ? 'choice' : sessionError === 'network' ? 'network' : sessionError === 'offline' ? 'offline' : termination ? (termination.owner ? termination.cause : 'waiting') : sessionError ?? 'offline';
     const candidates = getRememberedAccountSummaries().filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase());
-    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} />;
+    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} accountsLoading={recoveryAccountsLoading} onDiscoverAccounts={() => void discoverRecoveryAccounts()} />;
   }
 
   return <AppShell key={`${user.id}-ready`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} initialHomeFeed={entryHomeFeed} initialHomeFeedFilter={initialHomeFilter} initialHomeFeedPending={entryHomeFeedPending} />;
