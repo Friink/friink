@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-01T20:22:28Z
+- [documentation] Added the stale cross-tab termination-notice validation
+  rule to `docs/rules.md`, completing the rulebook coverage for the session
+  recovery fix.
+
+## 2026-10-01T19:02:00Z
+- [database] Added migration `20261001_0061` for the model-declared
+  `auth_refresh_attempts.user_id` index so deployment-time Alembic schema
+  checks remain clean.
+
 ## 2026-10-01T18:48:30Z
 - [session recovery] Fixed route entry trusting a stale shared termination
   notice before validating the current account slot. Reopening the app now
