@@ -551,6 +551,8 @@ async def refresh(
     ):
         raise HTTPException(status_code=400, detail="Invalid refresh operation identifier.")
     account_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    request.state.refresh_operation_id = refresh_operation_id
+    request.state.refresh_account_slot = account_slot
     if account_slot:
         refresh_token = request.cookies.get(f"friink_refresh_{account_slot}")
         slot = get_slot(session, account_slot, request.cookies.get(DEVICE_COOKIE_NAME))
@@ -559,6 +561,8 @@ async def refresh(
         if not refresh_token:
             slot_auth_session = session.get(AuthSession, slot.auth_session_id)
             slot_user = session.get(User, slot.user_id)
+            request.state.refresh_user_id = slot.user_id
+            request.state.refresh_session_id = slot.auth_session_id
             if slot_user and slot_user.lifecycle_status != "active":
                 lifecycle_code = AuthErrorCode.ACCOUNT_PENDING_DELETION if slot_user.lifecycle_status == "pending_deletion" else AuthErrorCode.ACCOUNT_DEACTIVATED
                 lifecycle_message = "This account is scheduled for deletion." if slot_user.lifecycle_status == "pending_deletion" else "This account has been deactivated."
@@ -611,6 +615,8 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Invalid refresh token.", AuthErrorCode.REFRESH_TOKEN_INVALID),
         )
+    request.state.refresh_user_id = token_record.user_id
+    request.state.refresh_session_id = token_record.session_id
 
     now = datetime.now(UTC)
     if token_record.rotated_at is not None or token_record.revoked_at is not None:

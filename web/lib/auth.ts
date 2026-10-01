@@ -64,6 +64,7 @@ const REFRESH_LOCK_NAME = 'friink-auth-refresh-lock';
 const ACCOUNT_SELECTION_LOCK_NAME = 'friink-account-selection-lock';
 const ACCOUNT_SELECTION_LEASE_KEY = 'friink-account-selection-lease';
 const ACCOUNT_SELECTION_LEASE_MS = 30000;
+const ACCOUNT_SELECTION_OPERATION_TIMEOUT_MS = 15000;
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
 const REFRESH_LEASE_MS = 20000;
 const REFRESH_RESULT_TTL_MS = 3000;
@@ -1152,6 +1153,7 @@ async function performRefresh(generation: number, operationId: string, slot: str
     headers: {
       ...(slot ? { 'X-Friink-Account-Slot': slot } : {}),
       'X-Friink-Refresh-Operation-Id': operationId,
+      'X-Friink-Client-Tab-Id': tabId,
     },
     authContext: 'refresh_exchange',
     skipAuthRefresh: true,
@@ -1343,13 +1345,23 @@ export async function getAccountAddAvailability(accessToken: string): Promise<{ 
 
 type AccountSelectionLease = { ownerId: string; expiresAt: number };
 
-async function withAccountSelectionLock<T>(operation: () => Promise<T>): Promise<T> {
-  if (supportsCrossTabLock()) {
-    const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
-    return lockManager.request(ACCOUNT_SELECTION_LOCK_NAME, { mode: 'exclusive' }, operation);
-  }
+async function withAccountSelectionLock<T>(operation: (signal?: AbortSignal) => Promise<T>, timeoutMs = 0): Promise<T> {
+  const controller = timeoutMs > 0 ? new AbortController() : null;
+  const timeoutId = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
+  const signal = controller?.signal;
+  try {
+    if (supportsCrossTabLock()) {
+      const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive'; signal?: AbortSignal }, callback: () => Promise<T>): Promise<T> } }).locks;
+      return await lockManager.request(ACCOUNT_SELECTION_LOCK_NAME, { mode: 'exclusive', signal }, () => operation(signal));
+    }
 
-  return withAccountSelectionLease(operation);
+    return await withAccountSelectionLease(operation, signal);
+  } catch (error) {
+    if (signal?.aborted) throw new AuthApiError('Account switching took too long. Please try again.', 408);
+    throw error;
+  } finally {
+    if (timeoutId !== null) window.clearTimeout(timeoutId);
+  }
 }
 
 export type ActiveAccountLogoutResult =
@@ -1408,13 +1420,14 @@ export async function logoutActiveAccountWithFallback(
   });
 }
 
-async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promise<T> {
-  if (typeof window === 'undefined') return operation();
+async function withAccountSelectionLease<T>(operation: (signal?: AbortSignal) => Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (typeof window === 'undefined') return operation(signal);
 
   const ownerId = `${tabId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let acquired = false;
   try {
     while (!acquired) {
+      if (signal?.aborted) throw new AuthApiError('Account switching took too long. Please try again.', 408);
       const rawLease = window.localStorage.getItem(ACCOUNT_SELECTION_LEASE_KEY);
       let lease: AccountSelectionLease | null = null;
       try {
@@ -1444,7 +1457,7 @@ async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promis
     }
   } catch {
     // If browser storage is unavailable, keep the operation usable in this tab.
-    return operation();
+    return operation(signal);
   }
 
   const renewLease = () => {
@@ -1458,7 +1471,7 @@ async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promis
   };
   const renewalId = window.setInterval(renewLease, Math.floor(ACCOUNT_SELECTION_LEASE_MS / 3));
   try {
-    return await operation();
+    return await operation(signal);
   } finally {
     window.clearInterval(renewalId);
     try {
@@ -1473,7 +1486,7 @@ async function withAccountSelectionLease<T>(operation: () => Promise<T>): Promis
 }
 
 export async function switchAccount(accountSlot: string): Promise<AuthSession> {
-  return withAccountSelectionLock(async () => {
+  return withAccountSelectionLock(async (signal) => {
     // Read and validate the source only after acquiring the browser-wide lock;
     // another tab may have completed a switch while this request was waiting.
     const session = loadAuthSession();
@@ -1484,11 +1497,11 @@ export async function switchAccount(accountSlot: string): Promise<AuthSession> {
 
     // The header identifies the source session and must match the bearer JWT.
     // The request body identifies the destination account slot.
-    const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${session.accessToken}`, ...(sourceSlot ? { 'X-Friink-Account-Slot': sourceSlot } : {}) }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }) });
-    const nextSession = await mapTokenResponse(response);
+    const response = await requestApi<ApiTokenResponse>('/auth/accounts/switch', { method: 'POST', headers: { Authorization: `Bearer ${session.accessToken}`, ...(sourceSlot ? { 'X-Friink-Account-Slot': sourceSlot } : {}) }, authContext: 'authenticated_request', body: JSON.stringify({ account_slot: accountSlot }), signal });
+    const nextSession = await mapTokenResponse(response, signal);
     saveAuthSession(nextSession);
     return nextSession;
-  });
+  }, ACCOUNT_SELECTION_OPERATION_TIMEOUT_MS);
 }
 
 export async function removeAccount(accessToken: string, accountSlot: string): Promise<void> {
@@ -2637,12 +2650,13 @@ async function getApiError(response: Response): Promise<{ message: string; code?
   return { message: `Friink API request failed with ${response.status}.` };
 }
 
-async function mapTokenResponse(response: ApiTokenResponse): Promise<AuthSession> {
+async function mapTokenResponse(response: ApiTokenResponse, signal?: AbortSignal): Promise<AuthSession> {
   const user = response.user ?? await requestApi<ApiUser>('/auth/me', {
     method: 'GET',
     headers: { Authorization: `Bearer ${response.access_token}` },
     authContext: 'authenticated_request',
     skipAuthRefresh: true,
+    signal,
   });
   return {
     accessToken: response.access_token,

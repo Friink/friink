@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-10-01T18:48:30Z
+- [session recovery] Fixed route entry trusting a stale shared termination
+  notice before validating the current account slot. Reopening the app now
+  restores a still-valid session instead of showing failure and silently
+  falling back to another remembered account.
+
+## 2026-10-01T18:38:54Z
+- [database] Applied the durable refresh-diagnostics migration to the
+  development and staging Neon databases without changing branches. Both now
+  report Alembic head `20261001_0060`.
+
+## 2026-10-01T18:32:06Z
+- [auth observability] Added a durable, redacted `auth_refresh_attempts`
+  record and migration for every refresh request, correlated by request,
+  operation, hashed tab/slot identifiers, deployment, outcome, failure class,
+  and duration. Added the browser tab ID to refresh correlation headers while
+  keeping credentials and raw identifiers out of persistence. Applied the
+  additive migration to production; the table remains empty until the API
+  build is deployed.
+
+## 2026-10-01T18:10:14Z
+- [account access] Fixed the multi-tab account-switcher lock behavior by
+  separating switch/remove/add busy states, keeping Add account available
+  during a switch, refreshing open-tab menus after selection events or focus,
+  and aborting stalled account switches after 15 seconds with retryable copy.
+  Updated the active account-access and design contracts.
+
+## 2026-10-01T17:52:07Z
+- [design] Standardized the Beta badge across light and dark themes as a
+  solid accent-color label with white text and no theme-specific variant.
+  Updated the visual design contracts.
+
+## 2026-10-01T17:45:00Z
+- [connections UX] Replaced the generic connection add control with contextual
+  Unfollow and Remove follower actions, including both actions for mutual
+  relationships. Grouped Requests into Incoming and Sent, using tick/cross
+  controls and removing redundant request subtitles.
+
+## 2026-10-01T17:34:30Z
+- [navigation] Updated scrollable tab arrows to square, no-radius controls
+  that match the full height of the shared tab strip. Updated the design
+  contracts.
+
+## 2026-10-01T17:09:36Z
+- [session UX] Aligned the session-validation loading placeholder with the
+  shared Friink design language: it now follows the app content rhythm,
+  uses restrained neutral and accent surfaces, preserves the inert shell, and
+  respects reduced-motion preferences. Updated the loading-state design and
+  account-access contracts.
+
+## 2026-10-01T17:12:00Z
+- [session UX] Corrected the validation skeleton hierarchy so its loading
+  lines render inside one capped content box instead of beside a standalone
+  rectangle. The shared app-entry width now also wins over the generic
+  main-content width rule.
+
 ## 2026-09-30T00:00:17Z
 - [documentation] Synchronized `docs/rules.md` with the current signed-in
   TopBar and CountPill implementation, including 10px counter text, 16px

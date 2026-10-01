@@ -377,10 +377,10 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       const notice = getSessionTerminationNotice();
       if (notice && !notice.acknowledged) {
         setRecoveryUsername(cachedUser?.username ?? null);
-        setRecoveryAccounts(getRememberedAccountSummaries());
-        setTermination({ id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) });
-        setAuthCheckComplete(true);
-        return;
+        // A termination notice is shared recovery context, not proof that
+        // this tab's current slot is still unavailable. Another tab may have
+        // restored or refreshed it after the notice was written. Validate the
+        // current slot before presenting recovery or selecting a fallback.
       }
 
       const controller = new AbortController();

@@ -1,5 +1,6 @@
 from functools import lru_cache
 import json
+import os
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import AnyHttpUrl, Field, model_validator
@@ -72,6 +73,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() in {"production", "prod"}
+
+    @property
+    def deployment_sha(self) -> str:
+        return os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")[:128]
 
     @property
     def jwt_verification_keys(self) -> dict[str, str]:

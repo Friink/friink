@@ -5,7 +5,7 @@ requests, and the visibility and access consequences of those relationships.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-09-24T22:49:16Z
+**Last edited:** 2026-10-01T17:45:00Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -44,6 +44,12 @@ relationships; Chat owns message access after relationship checks.
 The owner's private Connections surface includes All, Followers, Following, and
 Requests. Public owners and other users' Connections surfaces include only All,
 Followers, and Following. Incoming requests provide Accept and Reject actions.
+The All, Followers, and Following tabs expose contextual relationship actions:
+Unfollow is available only when the signed-in user follows the row, Remove
+follower is available only when the row follows the signed-in user, and mutual
+rows may show both. Requests are grouped into Incoming and Sent; incoming rows
+use accept/tick and reject/cross controls, while sent rows use cancel/cross.
+Request rows do not repeat the tab context in redundant subtitles.
 Profile actions show Follow, Following, Pending, or the appropriate unavailable
 state based on server status. When a non-Requests view has no connections to
 show, its empty state says “No people here yet.” and “Your connections will

@@ -1,5 +1,153 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T18:48:30Z — Revalidate Current Slot Before Recovery Fallback
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix a live session opening through a stale session-failure
+  screen and falling back to another remembered account.
+- Changes Made: App-shell route entry now revalidates the current slot before
+  honoring an unacknowledged cross-tab termination notice. Updated the account
+  access contract and BUG-AUTH-011 diagnosis notes.
+- Files: `web/components/app-shell-route.tsx`,
+  `docs/units/account-access.md`, `docs/bugs.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed and
+  `git diff --check` passed. Browser multi-tab acceptance remains pending.
+
+# 2026-10-01T18:38:54Z — Migrate Development and Staging Diagnostics Tables
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Apply the refresh-diagnostics database migration to the
+  development and staging databases without changing the branch.
+- Changes Made: Migrated `api/.env.development` from `20260924_0057` through
+  pending revisions `0058` and `0059` to `20261001_0060`; migrated
+  `api/.env.staging` from `20260925_0059` to `20261001_0060`.
+- Files: `CHANGELOG.md` and `AGENTLOG.md`; no source files or branch refs were
+  changed by the database operation.
+- Verification Status: Both databases report Alembic head
+  `20261001_0060`; both `auth_refresh_attempts` tables exist and contain zero
+  rows. Branch remains `main`.
+
+# 2026-10-01T18:32:06Z — Persist Redacted Refresh Diagnostics
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep multi-tab refresh diagnosis permanently in production
+  data and log related events without storing credentials.
+- Changes Made: Added the `auth_refresh_attempts` model and Alembic migration;
+  persisted best-effort redacted outcomes for every `/auth/refresh` request;
+  added request operation and hashed client-tab correlation; captured known
+  user/session context; and updated the account-access and auth bug contracts.
+- Files: `api/app/models/auth_refresh_attempt.py`, `api/app/models/__init__.py`,
+  `api/alembic/env.py`, `api/alembic/versions/20261001_0060_auth_refresh_attempts.py`,
+  `api/app/services/auth_refresh_diagnostics.py`, `api/app/main.py`,
+  `api/app/config.py`, `api/app/routers/auth.py`, `web/lib/auth.ts`,
+  `docs/units/account-access.md`, `docs/bugs.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: API `compileall`, web `npx tsc --noEmit --incremental
+  false`, migration syntax review, and `git diff --check` passed. Production
+  migration `20261001_0060` applied and verified at Alembic head; table is empty
+  until the application code is deployed. No full build or test suite run.
+
+# 2026-10-01T18:10:14Z — Recover Multi-Tab Account Switcher Locks
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix account-switcher controls becoming locked across
+  multiple tabs, including Add account.
+- Changes Made: Replaced the broad local account busy flag with scoped switch,
+  remove, and add operation states. Add account remains available during a
+  switch; competing account rows and logout actions remain protected. Added a
+  15-second abortable timeout to cross-tab switching, retryable timeout copy,
+  and selector refreshes on account events and focus. Updated active account
+  access and design contracts.
+- Files: `web/lib/auth.ts`, `web/components/side-drawer.tsx`,
+  `docs/units/account-access.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed and
+  `git diff --check` passed. No full build or tests run.
+
+# 2026-10-01T17:52:07Z — Standardize Beta Badge Across Themes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Use one accent-colored Beta badge treatment for light and
+  dark themes with white text.
+- Changes Made: Changed the shared Beta badge from an accent-tinted surface to
+  a solid `--color-accent` surface with white text and no border. Updated the
+  product and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted theme-token review
+  completed. No build or tests run.
+
+# 2026-10-01T17:45:00Z — Implement Contextual Connections Controls
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement contextual connection and request controls across
+  the Connections tabs.
+- Changes Made: Added relationship-aware Unfollow and Remove follower actions;
+  mutual rows can show both. Grouped Requests into Incoming and Sent, changed
+  incoming actions to accept/tick and reject/cross, retained cancel/cross for
+  sent requests, and removed redundant request subtitles. Reused existing
+  server-authoritative client actions and kept controls off other users'
+  connection directories.
+- Files: `web/components/connections-screen.tsx`,
+  `web/components/app-shell.tsx`, `web/app/globals.css`,
+  `docs/units/connections.md`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted Connections
+  rendering and action-state review completed. No full build or tests run.
+
+# 2026-10-01T17:34:30Z — Square Tab Overflow Arrows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make scrollable tab-bar arrow buttons square, borderless,
+  and the same height as the tab strip.
+- Changes Made: Updated the shared `.tabs__arrow` controls to use the
+  `1.98rem` tab-strip height for both dimensions and removed their corner
+  radius. Updated the product-level and implementation design contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted CSS and contract
+  review completed. No build or tests run.
+
+# 2026-10-01T17:09:36Z — Align Session Validation Placeholder With Design Language
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the loading content shown while the backend validates
+  the session follow Friink's design language.
+- Changes Made: Reworked the shared app-entry placeholder to follow the app
+  content width and spacing, use restrained neutral paper/line surfaces with
+  a small accent cue, and provide a subtle reduced-motion-aware pulse. Kept
+  protected content and actions behind the existing inert shell boundary.
+  Updated the design-system and Account Access contracts.
+- Files: `web/app/globals.css`, `docs/design-system.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted CSS and
+  documentation review completed. No build or tests run.
+
+# 2026-10-01T17:12:00Z — Keep Validation Skeleton Lines Inside Content Box
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Explain and correct the rectangle/line relationship visible
+  in the session-validation loading state.
+- Changes Made: Replaced the standalone pseudo-element rectangle with a
+  semantic shared placeholder wrapper containing all loading lines. Added
+  higher-specificity app-entry sizing so the content box stays capped instead
+  of being expanded by the generic main-content rule.
+- Files: `web/components/app-entry-frame.tsx`, `web/components/app-shell.tsx`,
+  `web/app/globals.css`, `docs/design-system.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: `git diff --check` passed; targeted DOM/CSS review
+  completed. No build or tests run.
+
 # 2026-09-30T00:00:17Z — Synchronize Active Rules With Current UI Implementation
 
 - Agent: Codex

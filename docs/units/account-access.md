@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-09-29T23:48:44Z
+**Last edited:** 2026-10-01T18:34:51Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -312,9 +312,12 @@ Each API request receives an opaque `X-Friink-Request-Id` response header, which
 browser clients can read through CORS. Every refresh request emits a structured
 runtime outcome correlated by that ID, including deployment SHA, route, HTTP
 status, safe failure class, and booleans for selected-slot-header and expected
-refresh-cookie presence. The logs never include credentials, token hashes, raw
-slot values, or user identifiers. These diagnostics support investigation only;
-they do not change session decisions.
+refresh-cookie presence. The API also persists a redacted row in
+`auth_refresh_attempts` for each refresh request, including request and
+operation IDs, hashed tab/slot identifiers, session context when known, result,
+status, failure code, deployment, and duration. The record never includes
+credentials, cookies, token hashes, raw slot values, or raw tab identifiers;
+diagnostic persistence is best-effort and never changes session decisions.
 
 **Implementation update (browser/staging verification pending):** the authenticated API sometimes indicates that
 session restoration may be attempted from `/auth/entry-status`; a positive
@@ -397,9 +400,12 @@ Failure cases are distinct:
    or assert session termination until the server responds. Other ambiguous
    failures retain the in-app **Take me back** recovery page. Public visitors
    without cached account context remain on the public site.
-2. **Confirmed terminal session:** show the shared neutral `Session ended`
-   modal with available remembered-account choices and Add account. Selecting
-   an account validates it before switching. Close or the close icon tries the
+2. **Confirmed terminal session:** revalidate the current account slot when
+   entering a route with a shared termination notice; the notice is recovery
+   context, not proof that the current slot is still unavailable. Only a fresh
+   terminal response shows the shared neutral `Session ended` modal with
+   available remembered-account choices and Add account. Selecting an account
+   validates it before switching. Close or the close icon tries the
    most-recent valid fallback and returns to the public site with redirect
    hint zero if none restores. Never silently switch identity.
 3. **Remote logout or security revocation:** use the same session-ended modal
@@ -435,10 +441,11 @@ slot has validated. The recovery flow is:
    account slot. Ordinary refresh results are checked against the still-active
    slot before persistence.
 3. On confirmed terminal failure, clear the in-memory credential for that
-   account and keep only safe recovery context. Show neutral session-ended
-   copy and available account choices. Add account reuses login/signup; Close
-   and the close icon validate fallback sessions by recency before returning
-   public.
+   account and keep only safe recovery context. When a pre-existing notice is
+   present during route entry, validate the current slot before showing neutral
+   session-ended copy or selecting a fallback. Add account reuses login/signup;
+   Close and the close icon validate fallback sessions by recency before
+   returning public.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
   ambiguous failure does not prove that the session ended. Keep the user in
   retryable recovery without changing identity. With cached identity, keep the
@@ -540,7 +547,8 @@ problem does not invalidate it and must leave retry available.
   to take over; all tabs follow the same restored account or public-site result.
 - Non-network ambiguous entry recovery makes four total attempts at 10-second
   intervals. A cached identity keeps the inert app frame and hides private
-  content while offering **Try again**; the shared app route also retries
+  content while showing the shared quiet branded content placeholder and
+  offering **Try again**; the shared app route also retries
   network failures every 30 seconds. Without a cached identity, show the
   standalone network error. Other unresolved ambiguous failures show **Take me
   back**. Do not treat a transient failure as proof that the session ended or
@@ -718,7 +726,12 @@ If that cookie is absent, expired, rotated, revoked, or belongs to another
 session, the API repairs it only after locking and validating the destination
 session; it does not revoke other refresh families because another tab may be
 using one. If switching fails, the current account remains active and a toast
-says, “Couldn’t switch accounts. Please try again.” Removing or logging out
+says, “Couldn’t switch accounts. Please try again.” A switch that remains
+blocked for 15 seconds aborts with retryable feedback and clears the local busy
+state. While switching, competing account rows and logout actions are disabled,
+but Add account remains available as an independent flow. Open tabs refresh
+their selector state after account-selection events and when they regain focus.
+Removing or logging out
 the active account selects the most-recent remaining valid account, or returns
 to the public site when none remain.
 
@@ -745,8 +758,9 @@ control remains visible when account labels are long.
 - **ACCESS-R-027:** Adding an already remembered account reuses its slot.
 - **ACCESS-R-028:** Switching refreshes account-scoped shell, feed,
   notifications, drafts, and active-session state.
-- **ACCESS-R-029:** Failed list, add, switch, logout, refresh, or slot operations
-  preserve the active account and expose retryable feedback.
+- **ACCESS-R-029:** Failed list, add, switch, logout, or slot operations
+  preserve the active account and expose retryable feedback. A stalled account
+  switch aborts after 15 seconds and clears its local busy state.
 - **ACCESS-R-030:** Active logout selects the most-recent remaining valid slot
   or the public site.
 - `GET /auth/accounts` returns safe device-scoped summaries.
@@ -930,7 +944,7 @@ rules:
 
 - [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): implemented locally with synchronized owner state, a serialized recovery action, and a **Continue here** action for waiting tabs. Multi-tab acceptance remains pending.
 - [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): implemented locally; ordinary switches reuse the validated destination refresh cookie. Missing or unusable cookies use a locked, session-validated repair path. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
-- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted request-correlated refresh diagnostics are implemented locally. Staging runtime log access and retention still need verification; the historical incident's exact failure remains unknown.
+- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted runtime and durable refresh-attempt diagnostics are implemented locally. Migration/deployment verification and the historical incident's exact failure remain open.
 - [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
 
 The staging DB audit found `@muflahulfurqan`'s session active after the report;
