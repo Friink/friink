@@ -760,7 +760,10 @@ does not change account limits, authorization, session behavior, or access.
 The menu keeps a viewport-safe fixed width, truncates long account labels before
 the trailing controls, and contains row hover surfaces within its padded bounds.
 Its width is capped at `min(16rem, calc(100vw - 1rem))`; the header status
-control remains visible when account labels are long.
+control remains visible when account labels are long. When idle, that status
+slot is an icon-only refresh button; while discovery is running it becomes the
+shared spinner. Disabled account actions use a not-allowed cursor so a blocked
+click is visually explicit.
 
 #### Business rules and contract
 

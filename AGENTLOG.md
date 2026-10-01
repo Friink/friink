@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T23:08:19Z — Make Account Switcher Busy State Explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make intermittent inactive switcher states clearer and add a
+  manual refresh affordance in the existing header loading slot.
+- Changes Made: Added an icon-only refresh button when account discovery is
+  idle; it becomes the existing spinner while refresh is running and reuses
+  the deduplicated refresh request. Disabled switcher rows and refresh actions
+  now expose a not-allowed cursor. Updated account-access, rules, and design
+  documentation.
+- Files: `web/components/side-drawer.tsx`, `web/app/globals.css`,
+  `docs/units/account-access.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and diff review pending. No
+  push performed.
+
 # 2026-10-01T23:03:44Z — Overlap Home Feed With Session Entry
 
 - Agent: Codex

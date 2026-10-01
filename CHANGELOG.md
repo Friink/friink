@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-01T23:08:19Z
+- [account switcher] Added an idle refresh control to the switcher header;
+  it occupies the same slot as the discovery spinner and triggers the existing
+  deduplicated refresh flow. Disabled switcher actions now use an explicit
+  not-allowed cursor.
+- [documentation] Updated the active account-access, rules, and design
+  contracts for the refresh affordance and blocked-action feedback.
+
 ## 2026-10-01T23:03:44Z
 - [session entry/feed] Start the first Home Explore or Following feed request
   immediately after `/auth/session` validates the selected slot, overlapping
