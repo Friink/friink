@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T22:52:08Z — Rehydrate Cross-Tab Refresh Followers
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent a tab from retrying with a stale in-memory access
+  token after another tab has already refreshed the slot.
+- Changes Made: Shared refresh-success markers now distinguish the tab that
+  performed the refresh from followers. A follower always revalidates through
+  its own HttpOnly slot cookie instead of returning its stale local session;
+  the refresh owner may continue using its in-memory refreshed result.
+- Files: `web/lib/auth.ts` and `AGENTLOG.md`.
+- Verification Status: Web type checking and diff review pending. No push
+  performed.
+
 # 2026-10-01T22:41:32Z — Preserve Account Switcher Context And Loading State
 
 - Agent: Codex

@@ -1078,8 +1078,15 @@ async function coordinateRefreshWithStorageLease(slot: string | null, persist: b
     const existing = readRefreshCoordination(slot);
     if (existing && existing.expiresAt > Date.now()) {
       if (existing.status === 'succeeded') {
-        const sharedSession = loadPersistedAuthSession();
-        if (sharedSession?.accountSlot === slot) return sharedSession;
+        // A success written by another tab cannot update this tab's in-memory
+        // bearer token. Reusing this tab's cached session here would retry the
+        // original request with the expired access token. Only the tab that
+        // owns the success may reuse its local result; followers must
+        // rehydrate through their own shared HttpOnly slot cookie.
+        if (existing.ownerId === tabId) {
+          const sharedSession = loadPersistedAuthSession();
+          if (sharedSession?.accountSlot === slot) return sharedSession;
+        }
         // Access credentials never cross tabs. Rehydrate the just-refreshed
         // slot through its HttpOnly cookie so a waiting tab does not replay
         // the same refresh cookie and rotate the family again.

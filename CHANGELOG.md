@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-01T22:52:08Z
+- [session recovery] Fixed cross-tab refresh followers reusing stale local
+  access tokens after another tab completed a refresh. Followers now
+  revalidate through their own HttpOnly slot cookie; only the refresh owner
+  reuses its in-memory refreshed session.
+
 ## 2026-10-01T22:41:32Z
 - [account switcher] Preserved the current URL after successful account
   switches by reloading the same page. The selector stays open with a row
