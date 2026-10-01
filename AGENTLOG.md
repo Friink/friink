@@ -1,5 +1,19 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T20:22:28Z — Complete Session Recovery Rulebook Coverage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify that rules, design contracts, changelog, and unit
+  documents cover all changes from the session.
+- Changes Made: Added the explicit current-slot revalidation rule for stale
+  cross-tab termination notices to `docs/rules.md`; existing design-system,
+  implementation-design, account-access, connections, bug-register, and log
+  coverage was verified.
+- Files: `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation references verified with targeted search;
+  no new unit document or index entry was required.
+
 # 2026-10-01T19:02:00Z — Align Refresh Diagnostics User Index
 
 - Agent: Codex
