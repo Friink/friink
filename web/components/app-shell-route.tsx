@@ -330,7 +330,6 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       setSessionReady(true);
       setSessionError(null);
       setAuthCheckComplete(true);
-      router.replace('/home');
     }
 
     window.addEventListener('friink-account-switched', handleAccountSwitched);

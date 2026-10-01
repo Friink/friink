@@ -45,6 +45,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const [accountModal, setAccountModal] = useState<'add' | null>(null);
   const [removeTarget, setRemoveTarget] = useState<AccountSummary | null>(null);
   const [accountNotice, setAccountNotice] = useState('');
+  const [accountModalMessage, setAccountModalMessage] = useState('');
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountSwitcherEnabled, setAccountSwitcherEnabled] = useState<boolean | null>(null);
   const [accountAddAllowed, setAccountAddAllowed] = useState(false);
@@ -161,6 +162,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       const next = await switchAccount(account.accountSlot);
       setAccounts((items) => items.map((item) => ({ ...item, active: item.accountSlot === next.accountSlot })));
       onAccountChange?.(next.user);
+      window.location.reload();
     } catch (error) {
       onToast?.(error instanceof Error && error.message.includes('too long')
         ? 'Switching is taking too long. Please try again.'
@@ -205,18 +207,8 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     if (!session || accountOperation === 'add' || accountOperation === 'remove') return;
     setAccountOperation('add');
     try {
-      const discovered = await discoverAccounts();
-      setAccounts(discovered.accounts);
-      setAccountSwitcherEnabled(discovered.switcherEnabled);
-      setAccountAddAllowed(discovered.allowed);
-      if (!discovered.allowed) return;
       setAccountNotice('');
-      setAccountModal('add');
-    } catch {
-      // Availability is a best-effort preflight. Keep the add-account flow
-      // usable when the check is unavailable; the API still enforces the
-      // remembered-account limit during the authenticated add-account login.
-      setAccountNotice('');
+      setAccountModalMessage(accountAddAllowed ? '' : 'You have reached the maximum number of remembered accounts.');
       setAccountModal('add');
     } finally {
       setAccountOperation(null);
@@ -274,13 +266,14 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       trailingAction: account.active ? undefined : () => setRemoveTarget(account),
       trailingAriaLabel: account.active ? undefined : `Log out @${account.username}`,
       disabled: account.active || accountOperation !== null,
-      closeOnClick: !account.active,
+      closeOnClick: false,
       onClick: () => void handleAccountSwitch(account),
     })),
-    ...(accountAddAllowed ? [{
+    ...(accountSwitcherEnabled ? [{
       label: 'Add account',
       icon: 'fa-user-plus',
       disabled: accountOperation === 'add' || accountOperation === 'remove',
+      closeOnClick: false,
       onClick: () => void handleAddAccount(),
     }] : []),
   ];
@@ -396,7 +389,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           <span>Log out</span>
         </button>
       </div>
-      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => setAccountModal(null)}><LoginScreen mode="account-modal" onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); setAccountModal(null); }} /></Modal> : null}
+      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => { setAccountModalMessage(''); setAccountModal(null); }}><LoginScreen mode="account-modal" initialMessage={accountModalMessage} onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); setAccountModalMessage(''); setAccountModal(null); void refreshAccounts(); }} /></Modal> : null}
       {removeTarget ? (
         <Modal
           title="Log out account"

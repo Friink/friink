@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T22:28:14Z
+**Last edited:** 2026-10-01T22:41:32Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -725,7 +725,10 @@ slot is removed. There is no un-slotted browser session or generic
 refresh-cookie fallback.
 
 Selecting a remembered account sends a switch request, validates the slot, and
-updates the shell in place. The API validates the destination slot's device,
+keeps the selector open with a loader on the selected row while the request is
+pending. After success, the browser reloads the current URL so the new account
+starts with clean account-dependent state; switching does not force `/home`.
+The API validates the destination slot's device,
 user, active session, and lifecycle state. It reuses the destination slot's
 active, unexpired HttpOnly refresh cookie and issues only a new access token.
 If that cookie is absent, expired, rotated, revoked, or belongs to another
@@ -737,7 +740,11 @@ blocked for 15 seconds aborts with retryable feedback and clears the local busy
 state. While switching, competing account rows and logout actions are disabled,
 but Add account remains available as an independent flow. Open tabs refresh
 their selector state after account-selection events and when they regain focus.
-Removing or logging out
+The Add account action opens its modal immediately from the tab-loaded
+availability state; it does not perform a second discovery request on click.
+When capacity is unavailable, the same modal opens with a limit message, and
+the API remains authoritative. The selector remains open behind the modal and
+refreshes its cached list after successful authentication. Removing or logging out
 the active account selects the most-recent remaining valid account, or returns
 to the public site when none remain.
 

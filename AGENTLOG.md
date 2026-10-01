@@ -1,5 +1,24 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T22:41:32Z — Preserve Account Switcher Context And Loading State
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Keep account switching on the current page, expose pending
+  work in the selector, and keep the selector open during Add account.
+- Changes Made: Removed the unconditional same-tab `/home` redirect after
+  account selection. Successful switching now reloads the current URL, while
+  account rows keep the selector open and show the switching spinner. Add
+  account now uses the availability discovered during tab initialization,
+  opens without a second discovery request, shows the capacity message in the
+  modal when unavailable, and refreshes the cached list after successful login
+  while leaving the selector open. Updated active account-access rules/docs.
+- Files: `web/components/side-drawer.tsx`,
+  `web/components/app-shell-route.tsx`, `docs/units/account-access.md`,
+  `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web type checking and focused diff review pending. No
+  push performed.
+
 # 2026-10-01T22:28:14Z — Add Lightweight Session Entry Check
 
 - Agent: Codex

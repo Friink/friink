@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01T22:41:32Z
+- [account switcher] Preserved the current URL after successful account
+  switches by reloading the same page. The selector stays open with a row
+  loader during switching, and Add account opens immediately from tab-loaded
+  availability without a second discovery call; capacity feedback stays in
+  the modal and the selector remains open after successful add-account login.
+
 ## 2026-10-01T22:28:14Z
 - [session entry] Added `GET /auth/session` as a minimal authoritative slot
   validation response. New tabs now reuse matching safe cached profile metadata
