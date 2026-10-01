@@ -533,6 +533,11 @@ hint when another cached slot summary exists.
 
 ### Resolution implemented locally
 
+The app-shell route treats an unacknowledged cross-tab termination notice as
+recovery context rather than proof that the current slot is unavailable. On
+route entry it validates the current slot first; only a fresh terminal response
+may show the session-ended modal and trigger remembered-account fallback.
+
 After the public guard receives a confirmed terminal restore failure, it now
 clears the redirect-only `friink_session_hint` and hands off to shared app
 recovery. That flow tries remembered accounts and keeps the user in Friink

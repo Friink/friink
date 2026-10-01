@@ -400,9 +400,12 @@ Failure cases are distinct:
    or assert session termination until the server responds. Other ambiguous
    failures retain the in-app **Take me back** recovery page. Public visitors
    without cached account context remain on the public site.
-2. **Confirmed terminal session:** show the shared neutral `Session ended`
-   modal with available remembered-account choices and Add account. Selecting
-   an account validates it before switching. Close or the close icon tries the
+2. **Confirmed terminal session:** revalidate the current account slot when
+   entering a route with a shared termination notice; the notice is recovery
+   context, not proof that the current slot is still unavailable. Only a fresh
+   terminal response shows the shared neutral `Session ended` modal with
+   available remembered-account choices and Add account. Selecting an account
+   validates it before switching. Close or the close icon tries the
    most-recent valid fallback and returns to the public site with redirect
    hint zero if none restores. Never silently switch identity.
 3. **Remote logout or security revocation:** use the same session-ended modal
@@ -438,10 +441,11 @@ slot has validated. The recovery flow is:
    account slot. Ordinary refresh results are checked against the still-active
    slot before persistence.
 3. On confirmed terminal failure, clear the in-memory credential for that
-   account and keep only safe recovery context. Show neutral session-ended
-   copy and available account choices. Add account reuses login/signup; Close
-   and the close icon validate fallback sessions by recency before returning
-   public.
+   account and keep only safe recovery context. When a pre-existing notice is
+   present during route entry, validate the current slot before showing neutral
+   session-ended copy or selecting a fallback. Add account reuses login/signup;
+   Close and the close icon validate fallback sessions by recency before
+   returning public.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
   ambiguous failure does not prove that the session ended. Keep the user in
   retryable recovery without changing identity. With cached identity, keep the

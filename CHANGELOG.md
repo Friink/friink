@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-01T18:48:30Z
+- [session recovery] Fixed route entry trusting a stale shared termination
+  notice before validating the current account slot. Reopening the app now
+  restores a still-valid session instead of showing failure and silently
+  falling back to another remembered account.
+
 ## 2026-10-01T18:38:54Z
 - [database] Applied the durable refresh-diagnostics migration to the
   development and staging Neon databases without changing branches. Both now

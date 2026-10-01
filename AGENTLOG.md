@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T18:48:30Z — Revalidate Current Slot Before Recovery Fallback
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix a live session opening through a stale session-failure
+  screen and falling back to another remembered account.
+- Changes Made: App-shell route entry now revalidates the current slot before
+  honoring an unacknowledged cross-tab termination notice. Updated the account
+  access contract and BUG-AUTH-011 diagnosis notes.
+- Files: `web/components/app-shell-route.tsx`,
+  `docs/units/account-access.md`, `docs/bugs.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit --incremental false` passed and
+  `git diff --check` passed. Browser multi-tab acceptance remains pending.
+
 # 2026-10-01T18:38:54Z — Migrate Development and Staging Diagnostics Tables
 
 - Agent: Codex
