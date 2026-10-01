@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T18:34:51Z
+**Last edited:** 2026-10-01T21:38:56Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -258,6 +258,21 @@ other cannot overwrite it.
 
 #### UX and flows
 
+Browser authentication is slot-only. Each remembered account has its own
+`friink_refresh_{account_slot}` and `friink_access_{account_slot}` cookie, and
+authenticated browser requests identify that slot with
+`X-Friink-Account-Slot`. The former generic `friink_refresh_token` and
+`friink_access_token` cookies are never issued or read for authentication;
+login responses expire them so existing browsers migrate without a database
+change. A login must receive a valid device-bound slot; when the device is at
+the remembered-account limit, the login is rejected until a slot is removed.
+The shared `friink_device_id` cookie remains the device binding for slot
+validation. A slot is a transient view over an active `auth_sessions` row
+linked to a `recognized_devices` row; the slot value is the existing
+auth-session ID. The retired `account_session_slots` table is removed by
+migration `20261002_0062`, with no replacement table, field, or column and no
+legacy-account data migration requirement.
+
 The web client keeps its access JWT in memory and the API also sets a
 short-lived HttpOnly access cookie for the selected account slot. The JWT is
 bound to its server-side session with `sid`. On full document entry, the app
@@ -300,7 +315,7 @@ cookie contains no credential or account identifier and never grants access.
 When the hint is absent, public content renders immediately and the existing
 non-blocking `/auth/entry-status` request remains as a compatibility path for
 sessions created before this hint was introduced. That API response treats any
-access or refresh cookie, including cookies scoped to other account slots,
+slot-scoped access or refresh cookie, including cookies scoped to other account slots,
 only as a reason to try restoration; it does not establish that a session is
 valid or call refresh merely to decide whether public content can render. If no
 valid remembered session exists, the visitor remains on the public site. When
@@ -715,8 +730,9 @@ were already remembered before the limit was lowered, the switcher remains
 available so the user can move between them; `Add account` is hidden because
 the API reports that no additional account can be added. Existing remembered
 slots are not silently revoked. Ordinary sign-in and logout remain available.
-If the device is at capacity, a normal login may create an un-slotted session
-that is not remembered by the account switcher.
+If the device is at capacity, a normal login is rejected until a remembered
+slot is removed. There is no un-slotted browser session or generic
+refresh-cookie fallback.
 
 Selecting a remembered account sends a switch request, validates the slot, and
 updates the shell in place. The API validates the destination slot's device,
@@ -972,7 +988,7 @@ evidence are maintained in the [bug register triage plan](../bugs.md#current-val
 - API boundary: `api/app/routers/auth.py`.
 - Services: `auth.py`, `session_service.py`, `session_ops.py`,
   `account_slots.py`, `login_challenges.py`, and `password_reset.py`.
-- Persistence: user, auth-session, refresh-token, account-slot,
+- Persistence: user, auth-session, refresh-token,
   recognized-device, OTP, challenge, password-reset, and security-event models.
 - Web access client: `web/lib/auth.ts`.
 - Login UI: `web/components/login-screen.tsx`.

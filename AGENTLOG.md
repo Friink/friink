@@ -1,5 +1,51 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T21:38:56Z — Derive Account Slots From Existing Auth Sessions
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant account-slot database table and make the
+  account switcher work using the existing session/device schema.
+- Changes Made: Reworked account-slot lookup, creation, ordering, and revocation
+  to wrap active `auth_sessions` bound to `recognized_devices`. Removed the
+  dedicated model dependency, updated password-reset session cleanup and tests,
+  and added migration `20261002_0062` to drop `account_session_slots` without
+  introducing replacement tables, fields, or columns. Updated active rules and
+  account-access/bug documentation.
+- Files: `api/app/services/account_slots.py`,
+  `api/app/models/__init__.py`, `api/app/models/account_session_slot.py`,
+  `api/app/services/password_reset.py`,
+  `api/alembic/versions/20261002_0062_remove_account_session_slots.py`,
+  `api/tests/test_phase4_accounts.py`, `docs/units/account-access.md`,
+  `docs/rules.md`, `docs/bugs.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Focused auth/account tests passed in JUnit output
+  (`22 passed`, `failures=0`); web TypeScript, Python/application and migration
+  compilation, and `git diff --check` passed. Pytest still exits nonzero during
+  the existing Windows SQLite temp-file cleanup hook (`WinError 32`) after the
+  tests finish. No push performed.
+
+# 2026-10-01T21:22:51Z — Require Slot-Scoped Browser Authentication
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant generic refresh-token cookie path while
+  preserving account-slot sessions and the existing database model.
+- Changes Made: Login, refresh, browser access-cookie lookup, session lists,
+  logout, and lifecycle cleanup now use account-slot cookies. Generic refresh
+  and access cookies are no longer issued or read for authentication; responses
+  expire them for migration. Normal login now requires a device-bound slot,
+  including at the remembered-account limit. Updated targeted auth tests and
+  account-access, rules, and bug-register documentation. No database migration
+  was added.
+- Files: `api/app/routers/auth.py`, `api/app/services/account_slots.py`,
+  `api/app/services/auth_debug.py`, `api/app/services/auth_refresh_diagnostics.py`,
+  `web/lib/auth.ts`, targeted auth tests, `docs/units/account-access.md`,
+  `docs/rules.md`, `docs/bugs.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Python compilation passed. Focused account-slot test
+  passed; refresh-rotation tests exercised the new slot-cookie contract, with
+  remaining test-run cleanup blocked by the existing Windows SQLite file-lock
+  in `tests/conftest.py`. Staging browser/API acceptance remains pending.
+
 # 2026-10-01T20:50:41Z — Synchronize Home Feed Rulebook Coverage
 
 - Agent: Codex

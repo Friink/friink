@@ -40,7 +40,7 @@ def record_refresh_attempt(
 
     headers = request.headers
     slot = headers.get("X-Friink-Account-Slot")
-    expected_cookie = f"friink_refresh_{slot}" if slot else "friink_refresh_token"
+    expected_cookie = f"friink_refresh_{slot}" if slot else None
     started_at = getattr(request.state, "refresh_started_at", None)
     duration_ms = max(0, int((time.perf_counter() - started_at) * 1000)) if started_at else 0
     settings = get_settings()
@@ -58,7 +58,7 @@ def record_refresh_attempt(
         "exception_type": exception_type,
         "deployment_sha": settings.deployment_sha,
         "slot_header_present": bool(slot),
-        "expected_slot_cookie_present": bool(request.cookies.get(expected_cookie)),
+        "expected_slot_cookie_present": bool(expected_cookie and request.cookies.get(expected_cookie)),
         "duration_ms": duration_ms,
     }
     try:

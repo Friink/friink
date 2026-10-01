@@ -2653,7 +2653,10 @@ async function getApiError(response: Response): Promise<{ message: string; code?
 async function mapTokenResponse(response: ApiTokenResponse, signal?: AbortSignal): Promise<AuthSession> {
   const user = response.user ?? await requestApi<ApiUser>('/auth/me', {
     method: 'GET',
-    headers: { Authorization: `Bearer ${response.access_token}` },
+    headers: {
+      Authorization: `Bearer ${response.access_token}`,
+      ...(response.account_slot ? { 'X-Friink-Account-Slot': response.account_slot } : {}),
+    },
     authContext: 'authenticated_request',
     skipAuthRefresh: true,
     signal,

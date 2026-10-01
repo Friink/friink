@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-01T21:38:56Z
+- [auth/database] Simplified account switching so slots are transient views over
+  existing device-bound `auth_sessions` rows. Removed the dedicated
+  `account_session_slots` model dependency and added migration `20261002_0062`
+  to drop that table, with no replacement account-switch tables or columns.
+  Updated password-reset cleanup, focused account tests, and active auth docs.
+
+## 2026-10-01T21:22:51Z
+- [auth] Removed the generic refresh/access-cookie authentication path. New
+  browser sessions require a device-bound account slot and use only
+  slot-scoped refresh and access cookies; legacy generic cookies are expired
+  during migration. No database migration was required. Updated the account
+  access contract, active rules, and refresh-reuse bug notes.
+
 ## 2026-10-01T20:43:50Z
 - [feed/performance] Removed the Home-route shell feed prefetch so
   `HomeScreen` owns one initial `/posts` request. Non-Home shell post-state

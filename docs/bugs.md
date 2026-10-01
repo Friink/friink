@@ -693,6 +693,12 @@ is identified or that the full reload/multi-tab/lost-response matrix passes.
   and retained the preceding `Set-Cookie`. A failed or overwritten cookie
   update, an overlapping request using an older cookie snapshot, and other
   stale-cookie paths remain unresolved.
+- **Current mitigation:** Browser authentication now uses only the selected
+  account-slot refresh and access cookies. The generic cookies are no longer
+  read or issued; login and logout responses expire them for migration. This
+  removes the generic-versus-slot cookie ambiguity from new sessions without
+  changing the account-slot database model. Staging must still verify clean
+  browser login, refresh, logout, and multi-tab behavior after deployment.
 - **Production and Android scope:** A read-only production database check
   found ten `refresh_reuse_detected` events for `@muflah` in the prior 90 days.
   This includes an Android session event on 2026-09-16 (stored browser
@@ -905,6 +911,11 @@ revocation, not the client-side origin of the duplicate requests.
 - [`POST /auth/refresh`](../api/app/routers/auth.py)
 - [Refresh-token reuse model](../api/app/models/refresh_token.py)
 - [Account-slot ordering](../api/app/services/account_slots.py)
+
+Account-slot ordering is now derived from active `auth_sessions` joined to
+`recognized_devices`; the former dedicated `account_session_slots` table is
+retired by migration `20261002_0062` and is not replaced with slot-specific
+database fields.
 
 ## BUG-AUTH-006 — Refresh grace replay forks token family
 

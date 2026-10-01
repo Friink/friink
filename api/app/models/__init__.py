@@ -15,7 +15,6 @@ from app.models.reserved_username import ReservedUsername
 from app.models.signup_reservation import SignupReservation
 from app.models.recognized_device import RecognizedDevice
 from app.models.security_event import SecurityEvent, SecurityEventType
-from app.models.account_session_slot import AccountSessionSlot
 from app.models.notification_outbox import NotificationChannel, NotificationOutbox, OutboxStatus
 from app.models.login_ip_throttle import LoginIpThrottle
 from app.models.password_reset import PasswordResetToken
@@ -25,4 +24,4 @@ from app.models.subscription import Plan, PlanEntitlement, SubscriptionAssignmen
 from app.models.professional_registration import ProfessionalRegistration
 from app.models.push_subscription import PushSubscription
 
-__all__ = ["AccountSessionSlot", "AuthRefreshAttempt", "AuthSession", "Conversation", "ConversationMember", "ConversationSetting", "ConversationStatus", "ConversationType", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "MessageMedia", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "PushSubscription", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
+__all__ = ["AuthRefreshAttempt", "AuthSession", "Conversation", "ConversationMember", "ConversationSetting", "ConversationStatus", "ConversationType", "EmailChangeRequest", "FollowRequest", "FollowRequestStatus", "LoginChallenge", "LoginIpThrottle", "Message", "MessageMedia", "Notification", "NotificationType", "NotificationChannel", "NotificationOutbox", "OutboxStatus", "OtpCode", "PasswordResetToken", "Post", "PostLike", "PostMedia", "PostSave", "ProfileSave", "ProgressiveAuthFlow", "ProfessionalRegistration", "PushSubscription", "RecognizedDevice", "RefreshToken", "ReservedUsername", "SecurityEvent", "SecurityEventType", "SignupReservation", "User", "UserBlock", "UserEmailHistory", "UserUsernameHistory"]
