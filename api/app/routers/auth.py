@@ -14,6 +14,7 @@ from app.db import get_session
 from app.models.user import User
 from app.models.auth_session import AuthSession
 from app.models.auth_challenge import LoginChallenge
+from app.models.refresh_token import RefreshToken
 from app.models.recognized_device import RecognizedDevice
 from app.schemas.auth import (
     ChangePasswordRequest,
@@ -34,7 +35,7 @@ from app.schemas.auth import (
     PublicUserResponse,
     RefreshResponse,
     AuthSessionResponse,
-    AccountSummaryResponse, AccountSwitchRequest, AccountAddAvailabilityResponse,
+    AccountSummaryResponse, AccountSwitchRequest, AccountAddAvailabilityResponse, AccountDiscoveryResponse,
     LoginApprovalResponse, LoginApprovalStatusResponse, LoginApprovalActionRequest,
     SignupRequest,
     SignupCompleteRequest,
@@ -72,6 +73,7 @@ from app.services.session_service import (
     get_or_create_recognized_device,
     get_refresh_token,
     get_refresh_token_for_update,
+    hash_device_identifier,
     hash_refresh_token,
     issue_refresh_token,
     list_active_auth_sessions,
@@ -1346,6 +1348,73 @@ async def accounts(
         result.append(AccountSummaryResponse(account_slot=str(slot.id), username=user.username, display_name=user.display_name, profile_picture_url=profile_picture_url_for(user, settings), active=slot.user_id == current_user.id, last_used_at=slot.last_used_at, show_professional_badge=user.show_professional_badge))
     log_account_list_event(account_count=len(result), device_cookie_present=request.cookies.get(DEVICE_COOKIE_NAME) is not None)
     return result
+
+
+@router.get("/accounts/available", response_model=AccountDiscoveryResponse)
+async def discover_available_accounts(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+    session: Session = Depends(get_session),
+) -> AccountDiscoveryResponse:
+    """List usable device-bound refresh-cookie accounts without rotating tokens."""
+    raw_device = request.cookies.get(DEVICE_COOKIE_NAME)
+    cookie_prefix = "friink_refresh_"
+    refresh_cookies = {
+        name.removeprefix(cookie_prefix): value
+        for name, value in request.cookies.items()
+        if name.startswith(cookie_prefix) and name != REFRESH_COOKIE_NAME and value
+    }
+    rows: list[tuple[RefreshToken, AuthSession, User]] = []
+    if raw_device and refresh_cookies:
+        now = datetime.now(UTC)
+        token_hashes = [hash_refresh_token(value) for value in refresh_cookies.values()]
+        rows = list(
+            session.execute(
+                select(RefreshToken, AuthSession, User)
+                .join(AuthSession, AuthSession.id == RefreshToken.session_id)
+                .join(User, User.id == AuthSession.user_id)
+                .join(RecognizedDevice, RecognizedDevice.id == AuthSession.device_id)
+                .where(
+                    RefreshToken.token_hash.in_(token_hashes),
+                    RefreshToken.expires_at > now,
+                    RefreshToken.rotated_at.is_(None),
+                    RefreshToken.revoked_at.is_(None),
+                    AuthSession.revoked_at.is_(None),
+                    RecognizedDevice.token_hash == hash_device_identifier(raw_device),
+                    User.lifecycle_status == "active",
+                )
+                .order_by(AuthSession.last_active_at.desc())
+            ).all()
+        )
+
+    selected_slot = request.headers.get(ACCOUNT_SLOT_HEADER)
+    accounts: list[AccountSummaryResponse] = []
+    seen_slots: set[str] = set()
+    for _refresh_token, auth_session, user in rows:
+        slot = str(auth_session.id)
+        if slot in seen_slots or not refresh_cookies.get(slot):
+            continue
+        seen_slots.add(slot)
+        accounts.append(
+            AccountSummaryResponse(
+                account_slot=slot,
+                username=user.username,
+                display_name=user.display_name,
+                profile_picture_url=profile_picture_url_for(user, settings),
+                active=slot == selected_slot,
+                last_used_at=auth_session.last_active_at,
+                show_professional_badge=user.show_professional_badge,
+            )
+        )
+    log_account_list_event(account_count=len(accounts), device_cookie_present=raw_device is not None)
+    return AccountDiscoveryResponse(
+        accounts=accounts,
+        allowed=len(accounts) < settings.max_remembered_accounts_per_device,
+        switcher_enabled=(
+            settings.max_remembered_accounts_per_device > 1
+            or len({account.username for account in accounts}) > 1
+        ),
+    )
 
 
 @router.get("/accounts/add-availability", response_model=AccountAddAvailabilityResponse)

@@ -1,5 +1,28 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-01T22:10:50Z — Simplify Account Switcher Discovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce account-switcher calls and prevent menu loading from
+  triggering refresh-token rotation or session recovery.
+- Changes Made: Added `GET /auth/accounts/available`, which inspects usable
+  device-bound slot refresh cookies and returns safe account metadata plus
+  capacity/visibility in one non-mutating response. The drawer now discovers
+  once on app entry, uses cached summaries immediately, removes open/focus and
+  session-event refreshes, and does not auto-refresh expired access tokens for
+  list display. Explicit switch and Add-account flows retain their operations.
+  Preserved the settings list API as a compatibility wrapper and added a real
+  account-discovery integration assertion.
+- Files: `api/app/routers/auth.py`, `api/app/schemas/auth.py`,
+  `api/tests/test_phase4_accounts.py`, `web/lib/auth.ts`,
+  `web/components/side-drawer.tsx`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Focused account tests passed (`14`, JUnit failures `0`),
+  web TypeScript and Python compilation passed, and `git diff --check` passed.
+  Pytest still exits nonzero in the existing Windows SQLite cleanup hook after
+  tests finish (`WinError 32`). No push performed.
+
 # 2026-10-01T21:54:02Z — Simplify Public Session Entry
 
 - Agent: Codex

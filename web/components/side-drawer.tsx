@@ -7,7 +7,7 @@ import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
 import { BetaBadge } from '@/components/design/beta-badge';
 import type { AuthUser } from '@/lib/auth';
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { getAccountAddAvailability, listAccounts, loadAuthSession, removeAccount, switchAccount, type AccountSummary } from '@/lib/auth';
+import { discoverAccounts, getRememberedAccountSummaries, loadAuthSession, removeAccount, switchAccount, type AccountSummary } from '@/lib/auth';
 
 type SideDrawerProps = {
   user: AuthUser;
@@ -39,7 +39,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
   const ref = useRef<HTMLElement | null>(null);
   const hoverExpansionExitPending = useRef(false);
   const [hoverExpanded, setHoverExpanded] = useState(false);
-  const [accounts, setAccounts] = useState<AccountSummary[]>([]);
+  const [accounts, setAccounts] = useState<AccountSummary[]>(() => getRememberedAccountSummaries());
   const [accountOperation, setAccountOperation] = useState<AccountOperation>(null);
   const [accountSwitchingUsername, setAccountSwitchingUsername] = useState<string | null>(null);
   const [accountModal, setAccountModal] = useState<'add' | null>(null);
@@ -93,37 +93,25 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     if (accountRefreshPromise.current) return accountRefreshPromise.current;
 
     const request = (async () => {
-      let session = loadAuthSession();
-      if (!session) return;
+      if (!loadAuthSession()) return;
       const refreshId = ++accountRefreshId.current;
       setAccountLoading(true);
       setAccountLoadError(false);
       try {
-        for (let attempt = 0; attempt < 2; attempt += 1) {
-          try {
-            const [nextAccounts, availability] = await Promise.all([
-              listAccounts(session.accessToken),
-              getAccountAddAvailability(session.accessToken),
-            ]);
-            if (refreshId !== accountRefreshId.current) return;
-            setAccounts(nextAccounts);
-            setAccountSwitcherEnabled(availability.switcher_enabled);
-            setAccountAddAllowed(availability.allowed);
-            if (!availability.switcher_enabled) {
-              setAccountMenuOpen(false);
-              setAccountModal(null);
-            }
-            setAccountNotice('');
-            return;
-          } catch {
-            if (attempt === 0) {
-              await new Promise((resolve) => window.setTimeout(resolve, 250));
-              session = loadAuthSession() ?? session;
-              continue;
-            }
-            if (refreshId !== accountRefreshId.current) return;
-            setAccountLoadError(true);
+        try {
+          const nextAccounts = await discoverAccounts();
+          if (refreshId !== accountRefreshId.current) return;
+          setAccounts(nextAccounts.accounts);
+          setAccountSwitcherEnabled(nextAccounts.switcherEnabled);
+          setAccountAddAllowed(nextAccounts.allowed);
+          if (!nextAccounts.switcherEnabled) {
+            setAccountMenuOpen(false);
+            setAccountModal(null);
           }
+          setAccountNotice('');
+        } catch {
+          if (refreshId !== accountRefreshId.current) return;
+          setAccountLoadError(true);
         }
       } finally {
         setAccountLoading(false);
@@ -164,28 +152,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     void refreshAccounts();
   }, [refreshAccounts, user.id]);
 
-  useEffect(() => {
-    if (accountSwitcherEnabled !== null) return;
-    const retryAvailabilityOnFocus = () => void refreshAccounts();
-    window.addEventListener('focus', retryAvailabilityOnFocus);
-    return () => window.removeEventListener('focus', retryAvailabilityOnFocus);
-  }, [accountSwitcherEnabled, refreshAccounts]);
-
-  useEffect(() => {
-    const refreshAfterAccountChange = () => {
-      setAccountOperation(null);
-      setAccountSwitchingUsername(null);
-      void refreshAccounts();
-    };
-    const refreshOnFocus = () => void refreshAccounts();
-    window.addEventListener('friink-session-updated', refreshAfterAccountChange);
-    window.addEventListener('focus', refreshOnFocus);
-    return () => {
-      window.removeEventListener('friink-session-updated', refreshAfterAccountChange);
-      window.removeEventListener('focus', refreshOnFocus);
-    };
-  }, [refreshAccounts]);
-
   async function handleAccountSwitch(account: AccountSummary) {
     const session = loadAuthSession();
     if (!session || account.active || accountOperation) return;
@@ -193,6 +159,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     setAccountSwitchingUsername(account.username);
     try {
       const next = await switchAccount(account.accountSlot);
+      setAccounts((items) => items.map((item) => ({ ...item, active: item.accountSlot === next.accountSlot })));
       onAccountChange?.(next.user);
     } catch (error) {
       onToast?.(error instanceof Error && error.message.includes('too long')
@@ -238,10 +205,11 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     if (!session || accountOperation === 'add' || accountOperation === 'remove') return;
     setAccountOperation('add');
     try {
-      const availability = await getAccountAddAvailability(session.accessToken);
-      setAccountSwitcherEnabled(availability.switcher_enabled);
-      setAccountAddAllowed(availability.allowed);
-      if (!availability.allowed) return;
+      const discovered = await discoverAccounts();
+      setAccounts(discovered.accounts);
+      setAccountSwitcherEnabled(discovered.switcherEnabled);
+      setAccountAddAllowed(discovered.allowed);
+      if (!discovered.allowed) return;
       setAccountNotice('');
       setAccountModal('add');
     } catch {
@@ -355,7 +323,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
               return;
             }
             setAccountMenuOpen(true);
-            void refreshAccounts();
           }}
         >
           <span className="sidebar-account-menu-icon" aria-hidden="true">

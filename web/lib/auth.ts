@@ -1301,24 +1301,13 @@ export async function revokeOtherAuthSessions(accessToken: string): Promise<void
   });
 }
 
-export async function listAccounts(accessToken: string): Promise<AccountSummary[]> {
-  const activeSlot = activeAccountSlot();
-  const response = await requestApi<Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string; show_professional_badge: boolean }>>('/auth/accounts', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
-  const accounts = response.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at, showProfessionalBadge: item.show_professional_badge ?? false }));
+export async function discoverAccounts(): Promise<{ accounts: AccountSummary[]; allowed: boolean; switcherEnabled: boolean }> {
+  const response = await requestApi<{ accounts: Array<{ account_slot: string; username: string; display_name: string | null; profile_picture_url: string | null; active: boolean; available: boolean; last_used_at: string; show_professional_badge: boolean }>; allowed: boolean; switcher_enabled: boolean }>('/auth/accounts/available', { method: 'GET', skipAuthRefresh: true });
+  const accounts = response.accounts.map((item) => ({ accountSlot: item.account_slot, username: item.username, displayName: item.display_name, profilePictureUrl: item.profile_picture_url, active: item.active, available: item.available, lastUsedAt: item.last_used_at, showProfessionalBadge: item.show_professional_badge ?? false }));
   cacheAccountSummaries(accounts);
   const currentUser = loadPersistedAuthSession()?.user;
-  const currentAccount = currentUser
-    ? accounts.find((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())
-    : undefined;
-  if (currentAccount && typeof window !== 'undefined') {
-    setActiveAccountSlot(currentAccount.accountSlot);
-    return accounts.map((account) => ({ ...account, active: account.accountSlot === currentAccount.accountSlot }));
-  }
-  if (currentUser) {
-    // A normal login may be valid without a remembered account slot when the
-    // device is already at its slot cap. Keep that active account visible in
-    // the switcher without inventing a switchable slot for it.
-    return [{
+  if (currentUser && !accounts.some((account) => account.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase())) {
+    accounts.unshift({
       accountSlot: '',
       username: currentUser.username,
       displayName: currentUser.name,
@@ -1327,14 +1316,13 @@ export async function listAccounts(accessToken: string): Promise<AccountSummary[
       available: true,
       showProfessionalBadge: currentUser.showProfessionalBadge,
       lastUsedAt: '',
-    }, ...accounts.map((account) => ({ ...account, active: false }))];
+    });
   }
-  return accounts;
+  return { accounts, allowed: response.allowed, switcherEnabled: response.switcher_enabled };
 }
 
-export async function getAccountAddAvailability(accessToken: string): Promise<{ allowed: boolean; switcher_enabled: boolean }> {
-  const activeSlot = activeAccountSlot();
-  return requestApi<{ allowed: boolean; switcher_enabled: boolean }>('/auth/accounts/add-availability', { method: 'GET', headers: { Authorization: `Bearer ${accessToken}`, ...(activeSlot ? { 'X-Friink-Account-Slot': activeSlot } : {}) }, authContext: 'authenticated_request' });
+export async function listAccounts(_accessToken: string): Promise<AccountSummary[]> {
+  return (await discoverAccounts()).accounts;
 }
 
 type AccountSelectionLease = { ownerId: string; expiresAt: number };

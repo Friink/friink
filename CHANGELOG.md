@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01T22:10:50Z
+- [account switcher] Added a non-mutating `/auth/accounts/available`
+  discovery response that lists accounts with usable device-bound refresh
+  cookies and returns switcher/add-account state in one call. The switcher now
+  uses cached summaries, stops loading on menu open/focus/session events, and
+  no longer auto-refreshes access tokens while displaying the list.
+
 ## 2026-10-01T21:54:02Z
 - [session entry] Removed the `friink_session_hint` cookie and server-side
   public-root redirect. The public guard now performs only the lightweight

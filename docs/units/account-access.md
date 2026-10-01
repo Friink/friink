@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T21:54:02Z
+**Last edited:** 2026-10-01T22:10:50Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -765,10 +765,15 @@ control remains visible when account labels are long.
   switch aborts after 15 seconds and clears its local busy state.
 - **ACCESS-R-030:** Active logout selects the most-recent remaining valid slot
   or the public site.
-- `GET /auth/accounts` returns safe device-scoped summaries.
-- `GET /auth/accounts/add-availability` reports whether another account may be
-  added and whether the switcher should be shown, based on the configured limit
-  and the number of accounts already available on the device.
+- `GET /auth/accounts/available` discovers safe account summaries from usable,
+  device-bound slot refresh cookies without rotating or refreshing them. It
+  also returns Add-account capacity and switcher visibility in the same
+  response. The web app performs this discovery once on app entry, then the
+  switcher uses cached summaries and makes no requests merely to open.
+- `GET /auth/accounts` remains the access-token-authenticated summary endpoint
+  for existing settings consumers.
+- `GET /auth/accounts/add-availability` remains available for compatibility;
+  the switcher does not call it during normal menu loading.
 - `POST /auth/accounts/switch` accepts an opaque slot.
 - `DELETE /auth/accounts/{account_slot}` removes a remembered slot.
 

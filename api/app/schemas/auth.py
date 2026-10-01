@@ -321,6 +321,12 @@ class AccountAddAvailabilityResponse(BaseModel):
     switcher_enabled: bool
 
 
+class AccountDiscoveryResponse(BaseModel):
+    accounts: list[AccountSummaryResponse]
+    allowed: bool
+    switcher_enabled: bool
+
+
 class AuthSessionResponse(BaseModel):
     id: uuid.UUID
     device_label: str

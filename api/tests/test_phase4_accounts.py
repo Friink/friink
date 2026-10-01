@@ -53,6 +53,10 @@ def test_multiple_account_slots_switch_refresh_and_remove() -> None:
         second_json = second.json()
         second_slot = second_json["account_slot"]
         assert first_slot != second_slot
+        discovered = client.get("/auth/accounts/available")
+        assert discovered.status_code == 200, discovered.text
+        assert {item["account_slot"] for item in discovered.json()["accounts"]} == {first_slot, second_slot}
+        assert discovered.json()["allowed"] is True
         first_refresh_cookie = client.cookies.get(f"friink_refresh_{first_slot}")
         assert first_refresh_cookie
         assert client.cookies.get("friink_refresh_token") is None
