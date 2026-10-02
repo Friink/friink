@@ -733,7 +733,7 @@ export async function restoreAccountSession(accountSlot: string): Promise<AuthSe
     const user = await getCurrentUser('', accountSlot, true);
     return { accessToken: '', tokenType: 'Bearer', user, accountSlot };
   } catch (error) {
-    if (!(error instanceof AuthApiError) || error.status !== 401 || !['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING'].includes(error.code ?? '')) {
+    if (!(error instanceof AuthApiError) || error.status !== 401 || !['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING', 'SESSION_NOT_FOUND', 'REFRESH_TOKEN_INVALID'].includes(error.code ?? '')) {
       throw error;
     }
     return coordinateRefresh(accountSlot, false, true);
@@ -835,7 +835,7 @@ export async function restoreAuthSessionForEntry(onSessionValidated?: (accountSl
     if (!isTerminalRefreshFailure(error)) throw error;
 
     let terminalFailure = error;
-    if (error instanceof AuthApiError && ['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING'].includes(error.code ?? '')) {
+    if (error instanceof AuthApiError && ['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING', 'SESSION_NOT_FOUND', 'REFRESH_TOKEN_INVALID'].includes(error.code ?? '')) {
       try {
         const restoredSession = await coordinateRefresh(accountSlot, true, true);
         saveAuthSession(restoredSession);
@@ -2605,12 +2605,12 @@ async function requestApi<T>(
 
   if (!response.ok) {
     const apiError = await getApiError(response);
+    const authError = new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
     if (
       !requestInit.skipAuthRefresh &&
       !requestInit.retryingAfterRefresh &&
-      response.status === 401 &&
-      apiError.code === 'TOKEN_EXPIRED' &&
-      requestInit.authContext === 'authenticated_request'
+      requestInit.authContext === 'authenticated_request' &&
+      shouldAttemptCoordinatedRefresh(authError)
     ) {
       const requestSlot = headers.get('X-Friink-Account-Slot') || activeAccountSlot();
       const refreshedSession = await refreshAuthSession(requestSlot);
@@ -2620,7 +2620,6 @@ async function requestApi<T>(
         retryingAfterRefresh: true,
       });
     }
-    const authError = new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
     if (
       !requestInit.skipAuthRefresh &&
       requestInit.authContext === 'authenticated_request' &&
@@ -2722,6 +2721,14 @@ export function isTerminalRefreshFailure(error: unknown): error is AuthApiError 
     || error.code === 'SESSION_TERMINATED'
     || error.code === 'ACCOUNT_DEACTIVATED'
     || error.code === 'ACCOUNT_PENDING_DELETION'
+  );
+}
+
+function shouldAttemptCoordinatedRefresh(error: unknown): error is AuthApiError {
+  return error instanceof AuthApiError && error.status === 401 && (
+    error.code === 'TOKEN_EXPIRED' ||
+    error.code === 'SESSION_NOT_FOUND' ||
+    error.code === 'REFRESH_TOKEN_INVALID'
   );
 }
 

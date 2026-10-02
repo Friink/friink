@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T23:47:05Z
+**Last edited:** 2026-10-02T00:01:48Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -501,6 +501,11 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 
 - Use one captured active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
+- Authenticated requests and cookie-backed entry validation treat
+  `TOKEN_EXPIRED`, `SESSION_NOT_FOUND`, and `REFRESH_TOKEN_INVALID` as one
+  selected-slot coordinated refresh/revalidation opportunity before terminal
+  recovery. Only a failed recovery clears the in-memory session and broadcasts
+  session termination.
 - A confirmed terminal failure presents the neutral `Session ended` modal and
   discovers remembered accounts inside that first modal. Selecting a listed
   remembered account validates that slot before switching; Add account reuses

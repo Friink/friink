@@ -1,7 +1,7 @@
 # Friink bug register
 
 **Status:** Active triage plan
-**Last edited:** 2026-09-29T22:41:14Z
+**Last edited:** 2026-10-02T00:01:48Z
 
 ## Instructions for agents
 
@@ -53,6 +53,7 @@ acceptance is separate from a local implementation or code review.
 | [BUG-AUTH-009](#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative) | The code-level failure and user-reported Close issue are addressed locally; staging ownership behavior still needs acceptance. | Verify notice synchronization, takeover from the waiting screen, serialized recovery against account switching/logout, and the modal close busy state in multiple tabs. | Owner and waiter states, Close/X, account selection, and Add account each complete once and converge across tabs; no enabled action is inert. |
 | [BUG-AUTH-010](#bug-auth-010--account-switches-accumulate-active-refresh-token-families) | Fix implemented locally: switches reuse the validated destination refresh cookie; absent or unusable cookies use a locked, session-validated repair path. Existing families are not bulk-revoked. | Deploy/identify the API build; verify repeated switches, missing/stale cookies, concurrent refresh, slot isolation, and revocation. | Repeated switches do not add families; repair remains recoverable and slot-isolated; record staging build and database evidence. |
 | [BUG-AUTH-011](#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics) | Correlated, redacted runtime and durable refresh-attempt diagnostics are implemented locally. | Apply migration, deploy/identify the API build, and verify durable rows plus runtime log access. | Representative success and failure requests correlate by request/operation ID, route, deployment, slot/cookie-presence, and safe failure class, with no secrets logged. |
+| [BUG-AUTH-012](#bug-auth-012--token-update-races-are-misclassified-as-terminal-session-failures) | Fix implemented locally; staging acceptance pending. | Deploy the web fix and exercise access-token expiry/update with one tab, multiple tabs, and slow cookie-backed revalidation. | Recoverable token-update races retry through the selected slot; only a failed revalidation/refresh shows Session ended. |
 | [BUG-AUTH-007](#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app) | Fix implemented locally; current staging acceptance pending. | Deploy/identify the changed web build and exercise stale positive, zero, absent, and malformed hints with valid/invalid alternate accounts and terminal/transient failures. | Each case follows the documented in-app/public fallback with no loop; record build and observed route. |
 | [BUG-AUTH-005](#bug-auth-005--failed-account-switch-shows-sign-in-for-the-previous-account) | Fix implemented locally; staging acceptance pending. | Fail a target-account switch while the source remains valid; also test terminal target failure and transient failure. | Source stays active for a non-terminal target failure; any recovery action names the target, never the unrelated source. |
 | [BUG-AUTH-004](#bug-auth-004--successfully-restored-account-remains-last-in-the-switcher) | Fix implemented locally; staging acceptance pending. | Restore a non-first remembered slot through normal and grace refresh branches, then inspect account-list order. | Restored account becomes first/current; failed refresh does not change recency; explicit switching still updates order. |
@@ -139,6 +140,94 @@ Copy this template for a new defect and replace every placeholder:
 ```
 
 ## Defect entries
+
+## BUG-AUTH-012 — Token-update races are misclassified as terminal session failures
+
+- **Status:** In progress
+- **Reported/updated:** 2026-10-01T23:59:34Z
+- **Affected area:** Web access-token refresh, cookie-backed session restoration, and authenticated request retry
+- **Environment:** Staging; Chrome; one or more tabs
+- **Severity:** high
+
+### Bug summary
+
+When an access token is updated, a recoverable cookie/token synchronization
+response can be presented as a dead session even though the server-side
+`AuthSession` remains active.
+
+### Reproduction
+
+1. Sign in to `@muflah` on staging and leave the access token near expiry.
+2. Keep the app open while the access token refreshes, with either one tab or
+   additional tabs open.
+3. During or immediately after the update, allow an authenticated request or
+   cookie-backed session validation to run.
+4. Observe the Session ended recovery UI while the staging database still
+   shows an active session and successful refresh operations.
+
+### Expected behavior
+
+The selected slot should revalidate through its HttpOnly cookie and perform one
+coordinated refresh/retry before terminal recovery is shown. A real revoked or
+expired refresh credential must still reach Session ended after recovery fails.
+
+### Actual behavior
+
+The web client treats `SESSION_NOT_FOUND` or `REFRESH_TOKEN_INVALID` from an
+authenticated request or entry revalidation as terminal immediately. It clears
+the in-memory session and broadcasts `session-expired`, even when the slot
+refresh credential and server session are still usable.
+
+### Root cause
+
+- **Confirmed:** `requestApi()` automatically recovers only `TOKEN_EXPIRED`.
+  Other terminal-class 401 responses call `preserveFailedAuthContext()` without
+  a slot-captured refresh/revalidation attempt. `restoreAuthSessionForEntry()`
+  has the same limitation for entry validation. Staging evidence for the
+  4:45–4:49 PKT report showed three successful refreshes, an active Chrome
+  `AuthSession`, and no refresh failure, reuse, or revocation event.
+- **Open questions:** The exact failed endpoint/status from the browser is not
+  durably recorded by the current API diagnostics. The remaining staging
+  acceptance must confirm whether the triggering response is a stale access
+  cookie, a stale request credential, or a short cookie-update visibility race.
+
+### Proposed fix
+
+For an authenticated request or entry validation, retry one time through the
+selected slot when the response is `TOKEN_EXPIRED`, `SESSION_NOT_FOUND`, or
+`REFRESH_TOKEN_INVALID`. The retry uses the existing cross-tab refresh
+coordination and HttpOnly cookies; no access token is shared through browser
+storage or messages. Only a failed coordinated recovery calls
+`preserveFailedAuthContext()` and broadcasts terminal recovery.
+
+### Resolution implemented locally
+
+The shared web request, remembered-account restore, and entry-restore paths now
+apply the same one-recovery boundary for expired/mismatched access responses.
+Server token issuance, refresh rotation, session revocation, and account-switch
+behavior are unchanged. Staging acceptance remains pending.
+
+### Tests and verification
+
+- **Required:** Web type check; one-tab expiry/update; two-tab simultaneous
+  expiry/update; delayed cookie-backed revalidation; real revoked refresh token;
+  and staging verification of the exact 401/status path.
+- **Completed:** Staging database inspection for `@muflah`, 4:45–4:49 PKT:
+  three refresh attempts returned HTTP 200, the Chrome session remained active,
+  and no refresh-reuse or termination event was recorded.
+- **Pending:** Staging browser acceptance and exact failed-endpoint capture.
+
+### Noteworthy
+
+This is separate from account-switcher availability and the public-entry loop.
+The fix must not blindly suppress genuine refresh-token reuse or server-side
+session revocation.
+
+### Related documentation and implementation
+
+- [Account Access](units/account-access.md)
+- [Active authentication rules](rules.md#auth-r-040--session-restoration-has-explicit-recovery-ux)
+- `web/lib/auth.ts`
 
 ## BUG-AUTH-008 — Account switching can race across open tabs
 

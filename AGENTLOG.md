@@ -1,5 +1,22 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-02T00:01:48Z — Recover Token-Update Races Before Session Recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Log and fix the staging symptom where an access-token update
+  produced Session ended while the server session remained active.
+- Changes Made: Added BUG-AUTH-012. Authenticated requests, entry validation,
+  and remembered-account restore now give `SESSION_NOT_FOUND` and
+  `REFRESH_TOKEN_INVALID` one selected-slot coordinated refresh/revalidation
+  and one retry before broadcasting terminal recovery. Genuine failed refresh,
+  revocation, and reuse responses still reach recovery. Updated active auth
+  rules and account-access documentation.
+- Files: `web/lib/auth.ts`, `docs/bugs.md`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Focused web TypeScript check and diff review pending;
+  staging browser acceptance remains pending. No push performed.
+
 # 2026-10-01T23:55:00Z — Align Account Switcher Refresh Glyph
 
 - Agent: Codex

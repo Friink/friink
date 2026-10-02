@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-02T00:01:48Z
+- [session stability] Added one selected-slot coordinated recovery retry for
+  `SESSION_NOT_FOUND` and `REFRESH_TOKEN_INVALID` responses during access-token
+  updates, cookie-backed entry validation, and remembered-account restore.
+  Genuine failed refresh/revocation still reaches terminal recovery.
+- [bug tracking] Logged BUG-AUTH-012 for token-update races being misclassified
+  as dead sessions.
+
 ## 2026-10-01T23:55:00Z
 - [account switcher] Aligned the idle refresh glyph to the same right-edge
   status position as the account-refresh spinner without changing the spinner
