@@ -15769,3 +15769,17 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Changes Made: Added `web/lib/session-manager.ts`, migrated `app-shell-route.tsx` to its session contract, added cross-tab rehydration for session updates, and removed the route's duplicate session-update restore listener. Credential and refresh operations remain delegated to `web/lib/auth.ts` for staging verification.
 - Files: web/lib/session-manager.ts, web/components/app-shell-route.tsx, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
 - Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed. No full build or test suite run.
+## 2026-10-02T01:12:00Z — Add 512-line code-file limit
+
+- Agent: Codex
+- Prompt Summary: Establish a maintainability rule preventing code files from exceeding 512 lines while excluding global CSS and documentation/log files.
+- Changes Made: Added the line-count rule to `AGENTS.md` and recorded the documentation-only policy change.
+- Files: AGENTS.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Rule text reviewed; no build or tests run.
+## 2026-10-02T01:14:33Z — Split session storage and coordination boundaries
+
+- Agent: Codex
+- Prompt Summary: Continue phase two of auth/session decoupling without removing the legacy auth implementation.
+- Changes Made: Added `session-store.ts` and `session-coordination.ts`; updated `session-manager.ts` to use those boundaries and kept legacy auth as the backing adapter. Preserved cross-tab rehydration behavior.
+- Files: web/lib/session-store.ts, web/lib/session-coordination.ts, web/lib/session-manager.ts, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` pending. No full build or test suite run.

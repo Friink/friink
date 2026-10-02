@@ -1,13 +1,12 @@
 import {
   AuthApiError,
-  clearAuthSessionForRecovery as legacyClearAuthSessionForRecovery,
   isTerminalRefreshFailure as legacyIsTerminalRefreshFailure,
-  loadAuthSession as legacyLoadAuthSession,
   restoreAuthSessionForEntry as legacyRestoreAuthSessionForEntry,
-  saveAuthSession as legacySaveAuthSession,
   type AuthSession,
   type AuthUser,
 } from '@/lib/auth';
+import { subscribeToSessionEvents, type SessionCoordinationEvent } from '@/lib/session-coordination';
+import { preserveFailedSession, readSession, writeSession } from '@/lib/session-store';
 
 /**
  * Session-management migration seam.
@@ -26,15 +25,15 @@ export type SessionChange =
 let rehydrationPromise: Promise<AuthSession | null> | null = null;
 
 export function getSession(): AuthSession | null {
-  return legacyLoadAuthSession();
+  return readSession();
 }
 
 export function saveSession(session: AuthSession): void {
-  legacySaveAuthSession(session);
+  writeSession(session);
 }
 
 export function clearSessionForRecovery(error: unknown): void {
-  legacyClearAuthSessionForRecovery(error);
+  preserveFailedSession(error);
 }
 
 export function isTerminalSessionFailure(error: unknown): error is AuthApiError {
@@ -78,9 +77,8 @@ async function rehydrateSession(): Promise<AuthSession | null> {
  * not treated as logout: tabs without an in-memory session rehydrate first.
  */
 export function subscribeToSessionChanges(onChange: (change: SessionChange) => void): () => void {
-  if (typeof window === 'undefined') return () => undefined;
-
-  const handleSessionUpdated = () => {
+  const handleSessionUpdated = async (event: SessionCoordinationEvent) => {
+    if (event.type !== 'updated') return;
     const current = getSession();
     if (current) {
       onChange({ type: 'updated', session: current });
@@ -91,17 +89,10 @@ export function subscribeToSessionChanges(onChange: (change: SessionChange) => v
       if (restored) onChange({ type: 'updated', session: restored });
     });
   };
-
-  const handleSessionExpired = () => {
-    onChange({ type: 'expired', session: null });
-  };
-
-  window.addEventListener('friink-session-updated', handleSessionUpdated);
-  window.addEventListener('friink-session-expired', handleSessionExpired);
-  return () => {
-    window.removeEventListener('friink-session-updated', handleSessionUpdated);
-    window.removeEventListener('friink-session-expired', handleSessionExpired);
-  };
+  return subscribeToSessionEvents((event) => {
+    if (event.type === 'expired') onChange(event);
+    else void handleSessionUpdated(event);
+  });
 }
 
 export type { AuthSession, AuthUser };

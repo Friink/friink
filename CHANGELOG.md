@@ -5718,3 +5718,9 @@ _Last updated: 2026-09-10_
 ## 2026-10-02T01:01:03Z
 
 - Added the first session-management migration seam and moved the app shell onto it. Cross-tab session updates now rehydrate a tab through its own slot cookie instead of leaving the app with a cleared in-memory session; legacy auth remains the credential fallback.
+## 2026-10-02T01:12:00Z
+
+- Added a repository rule limiting code files to 512 lines, excluding `web/app/globals.css`, documentation, changelogs, and agent logs.
+## 2026-10-02T01:14:33Z
+
+- Split the session-manager migration seam into dedicated session storage and cross-tab coordination modules while retaining `auth.ts` as the legacy credential and refresh adapter.

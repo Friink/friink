@@ -30,6 +30,10 @@ repository.
   runtime-only geometry may update documented CSS custom properties through
   refs, but JSX `style` props are not permitted. This applies to `web/`; the
   public site remains outside this cleanup scope.
+- No code file may exceed 512 lines. Split large modules by responsibility
+  before adding more behavior. This limit applies to application, API, test,
+  configuration, and script source files; it does not apply to
+  `web/app/globals.css`, documentation, changelogs, or agent logs.
 
 ## Documentation rules
 
