@@ -254,25 +254,17 @@ The exact widths, heights, breakpoints, and token names are defined in
 
 ### Session recovery
 
-- Confirmed terminal session failures share a modal titled **Session ended**
-  with neutral copy: “Your session has ended. Choose how you’d like to
-  continue.” Show available remembered accounts in most-recent order, each
-  with a safe avatar and username. Selecting an account validates only that
-  slot, and progress identifies the account currently being restored. Account
-  discovery happens inside this first modal and shows the single loading status
-  “Checking your remembered accounts…” only while discovery runs; it disappears
-  when the account list resolves. Recovery must not require a second
-  account-choice modal.
-- **Add account** opens the existing login/signup modal. When a usable
-  remembered account is available, the session-ended modal shows the account
-  rows directly and hides Close/X so the user chooses a recovery action. When
-  no usable remembered account is available, Close/X returns to the public
-  site. When another tab owns recovery, the waiting screen offers **Continue
-  here** so the user can take over from the current tab. Recovery controls stay
-  disabled while a restore or fallback is already running.
-- Network failures retain the full-page connection state and **Refresh**
-  action. Do not show terminal account choices or claim the account has ended
-  while session validation is unavailable.
+- Definitive authentication failures stop after the coordinated refresh
+  attempt and return to the public site. Keep cookie and backend behavior
+  unchanged. A web-only failure marker prevents stale cookies from immediately
+  starting the failed app entry again and remains until site data is cleared; an active local session still routes normally.
+- Network, server, and other ambiguous failures keep private content hidden and
+  retry at most eight times, ten seconds apart. Show the attempt count and a
+  **Go to public site** action while checking. After exhaustion, offer **Try
+  again** and **Go to public site**. Manual retries use the same bounded cycle.
+- Lifecycle-specific recovery remains governed by the account lifecycle
+  contract. Recovery controls stay disabled while an account restore is
+  already running.
 - Recovery actions share one centered width; paired actions form equal-width
   columns and the account-choice action aligns to that group width.
 

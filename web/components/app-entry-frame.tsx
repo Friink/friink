@@ -3,11 +3,13 @@ import { FriinkLogo } from '@/components/friink-logo';
 export function AppEntryFrame({
   message,
   onRetry,
+  onTakeMeBack,
   retrying = false,
   appearance = 'system',
 }: {
   message?: string;
   onRetry?: () => void;
+  onTakeMeBack?: () => void;
   retrying?: boolean;
   appearance?: 'light' | 'dark' | 'system';
 }) {
@@ -36,6 +38,7 @@ export function AppEntryFrame({
         <section className="app-entry-notice" role="alert">
           <p>{message}</p>
           {onRetry ? <button className="button-primary" type="button" onClick={onRetry} disabled={retrying}>{retrying ? 'Checking…' : 'Try again'}</button> : null}
+          {onTakeMeBack ? <button className="button-secondary" type="button" onClick={onTakeMeBack}>Go to public site</button> : null}
         </section>
       ) : null}
     </main>

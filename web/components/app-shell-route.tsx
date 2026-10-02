@@ -6,9 +6,10 @@ import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, claimSessionTermination, clearAuthSession, clearSessionTermination, discoverAccounts, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, listPosts, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreRememberedAccountWithFallback, runSessionTerminationAction, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { AuthApiError, claimSessionTermination, clearAuthSession, clearSessionTermination, discoverAccounts, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, listPosts, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, runSessionTerminationAction, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
 import { clearSessionForRecovery, getSession, isTerminalSessionFailure, restoreSession, saveSession, subscribeToSessionChanges } from '@/lib/session-manager';
-import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
+import { isNetworkRestoreFailure, rememberPublicSessionFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
+import { completeSessionTerminationRecovery } from '@/components/session-termination-recovery';
 import type { Screen } from '@/lib/data';
 
 type AppShellRouteProps = {
@@ -41,6 +42,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const [recoveryChoice, setRecoveryChoice] = useState(false);
   const [isContinuingRecovery, setIsContinuingRecovery] = useState(false);
   const [networkRefreshing, setNetworkRefreshing] = useState(false);
+  const [restoreAttempt, setRestoreAttempt] = useState(1);
   const [entryHomeFeed, setEntryHomeFeed] = useState<ApiFeedPage | null>(null);
   const [entryHomeFeedPending, setEntryHomeFeedPending] = useState(false);
   const networkRestoreInFlight = useRef(false);
@@ -63,6 +65,15 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     setSessionReady(false);
     setAuthCheckComplete(false);
   });
+
+  function goToPublicSite(error?: unknown) {
+    if (error) clearSessionForRecovery(error);
+    clearAuthSession();
+    const notice = getSessionTerminationNotice();
+    if (notice) clearSessionTermination(notice.id);
+    rememberPublicSessionFailure();
+    router.replace('/?session_recovery=failed');
+  }
 
   const discoverRecoveryAccounts = useCallback(async () => {
     if (recoveryAccountsDiscoveryInFlight.current) return;
@@ -202,67 +213,11 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     };
   }, [termination]);
 
-  const completeTerminatedSession = useCallback(async (id: string, failedSlot?: string | null) => {
-    if (sessionRecoveryInFlight.current) return;
-    sessionRecoveryInFlight.current = true;
-    setIsContinuingRecovery(true);
-    try {
-      const action = await runSessionTerminationAction(id, async () => {
-        const notice = getSessionTerminationNotice();
-        const fallback = await restoreRememberedAccountWithFallback(
-          failedSlot ? [failedSlot] : notice?.accountSlot ? [notice.accountSlot] : [],
-        );
-        if (fallback) saveSession(fallback);
-        else {
-          clearAuthSession();
-        }
-        clearSessionTermination(id);
-        return fallback;
-      });
-      if (!action.performed) {
-        const currentNotice = getSessionTerminationNotice();
-        if (currentNotice) {
-          setTermination({ id: currentNotice.id, cause: currentNotice.cause, owner: isSessionTerminationOwner(currentNotice.id) });
-        } else {
-          const currentSession = getSession();
-          if (currentSession) {
-            setUser(currentSession.user);
-            setSessionReady(true);
-            setSessionError(null);
-            setAuthCheckComplete(true);
-          } else {
-            setTermination(null);
-            router.replace('/');
-          }
-        }
-        return;
-      }
-      const fallback = action.result ?? null;
-      networkRestoreTerminationId.current = null;
-      if (fallback) {
-        setUser(fallback.user);
-        setSessionReady(true);
-        setSessionError(null);
-        setTermination(null);
-        setRecoveryChoice(false);
-        setAuthCheckComplete(true);
-        router.replace('/home');
-      } else {
-        clearAuthSession();
-        setTermination(null);
-        setRecoveryChoice(false);
-        router.replace('/');
-      }
-    } catch (error) {
-      networkRestoreTerminationId.current = id;
-      setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
-      setRecoveryAccounts(getRememberedAccountSummaries());
-      setAuthCheckComplete(true);
-    } finally {
-      sessionRecoveryInFlight.current = false;
-      setIsContinuingRecovery(false);
-    }
-  }, [router]);
+  const completeTerminatedSession = useCallback((id: string, failedSlot?: string | null) => completeSessionTerminationRecovery({
+    router, sessionRecoveryInFlight, networkRestoreTerminationId, setIsContinuingRecovery,
+    setTermination, setUser, setSessionReady, setSessionError, setRecoveryChoice,
+    setAuthCheckComplete, setRecoveryAccounts,
+  }, id, failedSlot), [router]);
 
   useEffect(() => {
     completeTerminatedSessionRef.current = completeTerminatedSession;
@@ -280,9 +235,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           return;
         }
         const selectedSlot = networkRestoreAccountSlot.current;
-        const restoredSession = selectedSlot
-          ? await restoreAccountSession(selectedSlot)
-          : await restoreSession();
+        const restoredSession = await restoreWithSessionRetries(() => selectedSlot
+          ? restoreAccountSession(selectedSlot)
+          : restoreSession(), undefined, (nextAttempt) => setRestoreAttempt(nextAttempt));
         if (termination) clearSessionTermination(termination.id);
         if (selectedSlot) saveSession(restoredSession);
         networkRestoreTerminationId.current = null;
@@ -296,16 +251,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         if (selectedSlot) router.replace('/home');
       } catch (error) {
         if (isTerminalSessionFailure(error)) {
-          networkRestoreAccountSlot.current = null;
-          clearSessionForRecovery(error);
-          const notice = getSessionTerminationNotice();
-          setRecoveryUsername(loadCachedAuthUser()?.username ?? null);
-          setRecoveryAccounts(getRememberedAccountSummaries());
-          setTermination(notice ? { id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) } : null);
-          setSessionError(notice ? null : 'expired');
-          setUser(null);
-          setSessionReady(false);
-          setAuthCheckComplete(true);
+          goToPublicSite(error);
         } else {
           if (isNetworkRestoreFailure(error)) {
             setRecoveryChoice(false);
@@ -323,33 +269,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     })();
   };
 
-  useEffect(() => {
-    if (sessionError !== 'network') return;
-    const timer = window.setInterval(() => retryNetworkRecoveryRef.current(), 30_000);
-    return () => window.clearInterval(timer);
-  }, [sessionError]);
-
   function cancelSessionRecovery() {
     if (sessionRecoveryInFlight.current || restoringAccountSlot) return;
-    if (termination) {
-      const notice = getSessionTerminationNotice();
-      void completeTerminatedSession(
-        termination.id,
-        notice?.accountSlot ?? recoveryAccounts.find((account) => account.username.toLowerCase() === recoveryUsername?.toLowerCase())?.accountSlot,
-      );
-      return;
-    }
-
-    const fallbackAccounts = getRememberedAccountSummaries()
-      .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase())
-      .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
-    if (fallbackAccounts[0]) {
-      void handleRestoreRememberedAccount(fallbackAccounts[0]);
-      return;
-    }
-
-    clearAuthSession();
-    router.replace('/');
+    goToPublicSite();
   }
 
   function continueWaitingRecovery() {
@@ -409,7 +331,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       }
 
       const controller = new AbortController();
-      restoreWithSessionRetries(() => restoreSession(startEntryHomeFeed), controller.signal)
+      restoreWithSessionRetries(() => restoreSession(startEntryHomeFeed), controller.signal, (nextAttempt) => setRestoreAttempt(nextAttempt))
         .then((restoredSession) => {
           if (controller.signal.aborted) return;
           setUser(restoredSession.user);
@@ -423,14 +345,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           setSessionReady(false);
           setAuthCheckComplete(true);
           if (isTerminalSessionFailure(error)) {
-            clearSessionForRecovery(error);
-            setUser(null);
-            setCurrentUserReady(false);
-            const terminationNotice = getSessionTerminationNotice();
-            setRecoveryUsername(cachedUser?.username ?? null);
-            setRecoveryAccounts(getRememberedAccountSummaries());
-            if (terminationNotice) setTermination({ id: terminationNotice.id, cause: terminationNotice.cause, owner: isSessionTerminationOwner(terminationNotice.id) });
-            else setSessionError('expired');
+            goToPublicSite(error);
           } else {
             setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
             setRecoveryUsername(cachedUser?.username ?? null);
@@ -451,7 +366,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       return;
     }
 
-    getCurrentUser(session.accessToken)
+    restoreWithSessionRetries(() => getCurrentUser(session.accessToken), undefined, (nextAttempt) => setRestoreAttempt(nextAttempt))
       .then((currentUser) => {
         if (initialScreen === 'control-panel' && !currentUser.isStaff) {
           router.replace('/home');
@@ -465,16 +380,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         // requestApi owns refresh. A terminal refresh clears in-memory auth
         // while preserving safe recovery context; other 401s stay separate.
         if (error instanceof AuthApiError && isTerminalSessionFailure(error)) {
-          const cachedUser = loadCachedAuthUser();
-          setRecoveryUsername(cachedUser?.username ?? null);
-          setRecoveryAccounts(getRememberedAccountSummaries());
-          clearSessionForRecovery(error);
-          const notice = getSessionTerminationNotice();
-          if (notice) setTermination({ id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) });
-          else setSessionError('expired');
-          setUser(null);
-          setSessionReady(false);
-          setAuthCheckComplete(true);
+          goToPublicSite(error);
         } else if (error instanceof AuthApiError && error.status === 401) {
           // Session recovery is presented by this route; do not escape to a
           // separate login page solely because a protected request failed.
@@ -545,10 +451,10 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     networkRestoreInFlight.current = true;
     setNetworkRefreshing(true);
     try {
-      const session = getSession();
-      const currentUser = session
-        ? await getCurrentUser(session.accessToken)
-        : (await restoreSession()).user;
+      const currentUser = await restoreWithSessionRetries(async () => {
+        const session = getSession();
+        return session ? getCurrentUser(session.accessToken) : (await restoreSession()).user;
+      }, undefined, (nextAttempt) => setRestoreAttempt(nextAttempt));
       if (initialScreen === 'control-panel' && !currentUser.isStaff) {
         router.replace('/home');
         return;
@@ -561,10 +467,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       setSessionError(null);
     } catch (error) {
       if (isTerminalSessionFailure(error)) {
-        clearSessionForRecovery(error);
-        setUser(null);
-        setSessionReady(false);
-        setCurrentUserReady(false);
+        goToPublicSite(error);
       } else {
         setSessionError(isNetworkRestoreFailure(error) ? 'network' : 'offline');
       }
@@ -575,19 +478,20 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }
 
   if (user && (!sessionReady || !currentUserReady)) {
-    const entryMessage = sessionError === 'network'
+    const entryMessage = sessionError === null
+      ? `Checking your session. We’ll retry up to 8 times, 10 seconds apart. Attempt ${restoreAttempt} of 8.`
+      : sessionError === 'network'
       ? 'We can’t confirm your session because Friink cannot connect.'
       : sessionError === 'offline'
         ? 'We couldn’t confirm your session. Your private content is still hidden.'
         : null;
-    return <AppShell key={`${user.id}-restoring`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} initialHomeFeed={entryHomeFeed} initialHomeFeedFilter={initialHomeFilter} initialHomeFeedPending={entryHomeFeedPending} entryPending entryMessage={entryMessage} entryRetrying={networkRefreshing} onRetryEntry={() => refreshCurrentUser ? void retryCurrentUser() : retryNetworkRecoveryRef.current()} onTakeMeBackEntry={sessionError === 'offline' ? cancelSessionRecovery : undefined} />;
+    return <AppShell key={`${user.id}-restoring`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} initialHomeFeed={entryHomeFeed} initialHomeFeedFilter={initialHomeFilter} initialHomeFeedPending={entryHomeFeedPending} entryPending entryMessage={entryMessage} entryRetrying={networkRefreshing} onRetryEntry={sessionError ? () => refreshCurrentUser ? void retryCurrentUser() : retryNetworkRecoveryRef.current() : undefined} onTakeMeBackEntry={cancelSessionRecovery} />;
   }
 
   if (!user) {
-    if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} />;
+    if (!authCheckComplete) return <SessionRecoveryScreen status="loading" appearance={appearance} loadingMessage={`Checking your session. Retry ${restoreAttempt} of 8 if needed.`} onTakeMeBack={() => goToPublicSite()} />;
     const status = recoveryChoice ? 'choice' : sessionError === 'network' ? 'network' : sessionError === 'offline' ? 'offline' : termination ? (termination.owner ? termination.cause : 'waiting') : sessionError ?? 'offline';
-    const candidates = getRememberedAccountSummaries().filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== recoveryUsername?.toLowerCase());
-    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={() => { if (termination?.cause === 'deactivated' || termination?.cause === 'pending_deletion') { void completeTerminatedSession(termination.id, getSessionTerminationNotice()?.accountSlot); } else if (candidates.length > 0) setRecoveryChoice(true); else router.replace('/login?session_recovery=1'); }} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} accountsLoading={recoveryAccountsLoading} onDiscoverAccounts={() => void discoverRecoveryAccounts()} />;
+    return <SessionRecoveryScreen status={status} appearance={appearance} onCancelRecovery={cancelSessionRecovery} onContinueRecovery={continueWaitingRecovery} onAddAccountAuthenticated={completeRecoveryAddAccount} isContinuingRecovery={isContinuingRecovery} onRefresh={() => retryNetworkRecoveryRef.current()} isRefreshing={networkRefreshing} onTakeMeBack={cancelSessionRecovery} onChooseLogin={() => { if (termination) clearSessionTermination(termination.id); clearAuthSession(); router.replace('/login?session_recovery=1'); }} accounts={recoveryAccounts} currentUsername={recoveryUsername} restoringAccountSlot={restoringAccountSlot} accountError={accountRecoveryError} onRestoreAccount={handleRestoreRememberedAccount} accountsLoading={recoveryAccountsLoading} onDiscoverAccounts={() => void discoverRecoveryAccounts()} />;
   }
 
   return <AppShell key={`${user.id}-ready`} user={user} onLogout={handleLogout} logoutError={logoutError} initialScreen={initialScreen} initialSearchQuery={initialSearchQuery} onUserChange={setUser} connectionsUsername={connectionsUsername} initialConnectionsFilter={initialConnectionsFilter} initialHomeFilter={initialHomeFilter} initialMessagesTab={initialMessagesTab} initialSettingsTab={initialSettingsTab} initialSavedSection={initialSavedSection} initialHomeFeed={entryHomeFeed} initialHomeFeedFilter={initialHomeFilter} initialHomeFeedPending={entryHomeFeedPending} />;

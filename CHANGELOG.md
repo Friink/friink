@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-10-02T22:06:41Z
+- [web session recovery] Bounded ambiguous session restoration to eight
+  attempts ten seconds apart, with progress, retry, and a public-site exit.
+  Definitive auth failures now return to the public site after the coordinated
+  refresh attempt; a web-only marker prevents stale cookies from looping back
+  into app entry. Cookie and backend behavior are unchanged.
+
+## 2026-10-02T21:04:46Z
+- [auth/session] Reviewed the client and API refresh paths during a five-minute
+  staging observation. The incognito session produced two slot-scoped refresh
+  responses with HTTP 200 and no new 401 through 21:04:46Z, supporting a stale
+  slot/session mapping in the earlier browser over a refresh-rotation failure.
+  One 20:58Z diagnostic row reports HTTP 200 without a slot header or expected
+  cookie, which the checked API source rejects; that runtime/telemetry mismatch
+  remains unresolved.
+
+## 2026-10-02T20:52:08Z
+- [auth diagnostics] Investigated the staging 401 against the recent auth work.
+  The latest staging database refresh record was a single `401
+  SESSION_NOT_FOUND` at 20:23:31Z on deployment `d23932e`; the slot header and
+  expected refresh cookie were present, but no auth-session row matched the
+  stored slot hash. Earlier slotless 401s at 00:12–00:25Z were recorded on
+  `8a3bc9e` and match BUG-AUTH-013's reported failure mode. The latest result
+  establishes that the supplied slot ID has no matching session row, likely a
+  stale or foreign slot reference; diagnostics do not capture enough browser
+  state to identify how that slot became stale.
+
 ## 2026-10-02T00:24:19Z
 - [account switcher] Made the idle refresh button white by default and accent
   colored on hover, focus, and active interaction without a hover background.

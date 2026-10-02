@@ -318,12 +318,16 @@ does not wait for the feed request. While the prefetch is pending,
 `HomeScreen` so it does not issue a duplicate initial request; if the prefetch
 fails, Home falls back to its existing feed load and preserves the normal feed
 error behavior. The HttpOnly slot cookie
-remains authoritative for API access. A terminal API response
-replaces the frame with session recovery; a network failure keeps private data
-hidden and offers retry. After non-network ambiguous retries are exhausted,
-**Take me back** opens the existing recovery fallback. Routes with no cached
-summary may show a neutral app frame while identity is restored. Staff-only
-surfaces remain gated by a server-confirmed staff role.
+remains authoritative for API access. A definitive authentication failure
+clears the selected in-memory session and returns to the public site after the
+coordinated refresh attempt fails. The public route suppresses automatic
+session re-entry until a successful sign-in, so stale HttpOnly cookies cannot
+send the user back into the failed restore loop. Network, server, and other
+ambiguous failures keep private data hidden and retry up to eight times, ten
+seconds apart. The recovery state offers **Try again** and **Go to public
+site** after those attempts. Routes with no cached summary may show a neutral
+app frame while identity is restored. Staff-only surfaces remain gated by a
+server-confirmed staff role.
 
 The public root renders immediately and the client makes one non-blocking
 `/auth/entry-status` request. That API response treats any slot-scoped access or
@@ -351,10 +355,12 @@ diagnostic persistence is best-effort and never changes session decisions.
 authenticated API indicates whether restoration may be attempted from
 `/auth/entry-status`; a positive response routes `/` to `/home` before session
 validation. The response is not proof that a session is valid. The app shell
-owns terminal and ambiguous recovery. The recovery modal validates
-remembered alternatives and keeps the user in Friink when one is usable;
-app recovery returns public only after no candidate restores. The behavior is
-implemented and tested on staging. The history of this loop is tracked in
+owns terminal and ambiguous recovery. Definitive authentication failure returns
+to the public site after the coordinated refresh attempt fails; a web-only
+failure marker prevents stale slot cookies from starting entry restoration
+again. Ambiguous errors receive bounded retries and explicit exit controls. The
+cookie and server contracts are unchanged. This behavior is implemented
+locally; browser/staging acceptance remains pending. The history of this loop is tracked in
 [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
 The exact state of the browser involved in the reported incident remains
 unverified. See ACCESS-AC-049 and MIG-003 for the public-entry acceptance
@@ -364,11 +370,10 @@ matrix.
 
 This section owns the client experience when session restoration fails; the
 server's session and lifecycle decisions remain authoritative. A technically
-ambiguous error does not mean the session ended. A confirmed terminal result
-shows a blocking `Session ended` modal with neutral copy. The first modal
-discovers remembered accounts in place and shows the single loading status
-“Checking your remembered accounts…” only while doing so; it disappears when
-the account list resolves and must not require a second account-choice modal.
+ambiguous error does not mean the session ended. A definitive authentication
+failure returns to the public site after one coordinated refresh attempt. A
+web-only marker prevents stale cookies from redirecting immediately back into
+the app. Lifecycle-owned recovery remains separate.
 Available accounts and Add account are shown directly. Selecting a remembered
 account validates that slot before continuing. When a usable remembered account
 exists, Close and the close icon are hidden; when none exists, Close/X returns
@@ -419,24 +424,21 @@ Failure cases are distinct:
 
 1. **Technical/ambiguous failure:** timeout, network or CORS failure, `403`,
    `5xx`, or malformed response does not prove session termination. Entry
-   recovery makes four total attempts, ten seconds apart for non-network
-   ambiguity, without changing identity. A detected network failure immediately
-   shows a full-page in-app network error with **Refresh**; background restore attempts continue every 30 seconds,
-   and **Refresh** starts an immediate attempt without reloading the page.
-   Neither path may overlap another restore request. Do not show account choice
-   or assert session termination until the server responds. Other ambiguous
-   failures retain the in-app **Take me back** recovery page. Public visitors
-   without cached account context remain on the public site.
-2. **Confirmed terminal session:** revalidate the current account slot when
-   entering a route with a shared termination notice; the notice is recovery
-   context, not proof that the current slot is still unavailable. Only a fresh
-   terminal response shows the shared neutral `Session ended` modal with
-   available remembered-account choices and Add account. The first modal
-   discovers those choices in place. Selecting an account validates it before
-   switching. Close/X is hidden while a usable account is available; otherwise
-   it returns to the public site. Never silently switch identity.
-3. **Remote logout or security revocation:** use the same session-ended modal
-   and recovery actions as other confirmed terminal results.
+   recovery makes eight total attempts, ten seconds apart for network, server,
+   and other ambiguous failures, without changing identity. Show the current
+   attempt and allow an immediate public-site exit. After exhaustion, offer
+   **Try again** and **Go to public site**. Do not overlap another restore
+   request or assert session termination while validation remains ambiguous.
+   Public visitors without cached account context remain on the public site.
+2. **Confirmed terminal session:** a definitive authentication failure stops
+   after the single coordinated refresh attempt, clears the selected in-memory
+   session, and returns to the public site. A web-only failure marker prevents
+   stale slot cookies from immediately redirecting back into the app; a
+   the marker stays until site data is cleared, while an active local session still routes normally. Do not change cookies, refresh handling, or
+   backend validation as part of this UX behavior.
+3. **Remote logout or security revocation:** return to the public site after
+   the terminal authentication failure. Lifecycle reactivation and deletion
+   cancellation remain separate flows.
 4. **Deactivation or pending deletion:** the initiating client logs out
    immediately after the lifecycle operation succeeds, then restores another
    valid remembered session or returns to `/`. Other clients show the lifecycle
@@ -477,13 +479,11 @@ slot has validated. The recovery flow is:
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
   ambiguous failure does not prove that the session ended. Keep the user in
   retryable recovery without changing identity. With cached identity, keep the
-  inert app frame and private content hidden while showing **Try again**;
-  without cached identity, show the standalone network error. The shared app
-  route continues background restore without overlapping requests.
-5. Ambiguous entry recovery retries four times at ten-second intervals. After
-   exhaustion, **Take me back** opens the remembered-account choice when one is
-   available, with Login as the alternative. A user-selected account is
-   validated before activation.
+  inert app frame and private content hidden; without cached identity, show the
+  standalone recovery state. Retry up to eight times, ten seconds apart, with
+  progress and a public-site exit. After exhaustion, offer **Try again** and
+  **Go to public site**. A definitive authentication failure stops after one
+  coordinated refresh attempt and returns public.
 6. Show the terminal modal in the owner tab. Other tabs show a waiting screen
    with **Continue here**; ownership changes synchronize across tabs, and
    user-triggered takeover shares the account-operation lock with switch/logout.
@@ -520,16 +520,16 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
   [BUG-AUTH-013](../bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-misclassified-as-terminal).
 - Authenticated requests and cookie-backed entry validation treat
   `TOKEN_EXPIRED`, `SESSION_NOT_FOUND`, and `REFRESH_TOKEN_INVALID` as one
-  selected-slot coordinated refresh/revalidation opportunity before terminal
-  recovery. Only a failed recovery clears the in-memory session and broadcasts
-  session termination.
-- A confirmed terminal failure presents the neutral `Session ended` modal and
-  discovers remembered accounts inside that first modal. Selecting a listed
-  remembered account validates that slot before switching; Add account reuses
-  the existing login/signup flow. Close/X is hidden while a usable account is
-  available and returns to the public site when none exists. Ambiguous
-  failures keep the active identity in retryable recovery; they never cause a
-  silent switch.
+  selected-slot coordinated refresh/revalidation opportunity. A failed
+  definitive recovery clears the selected in-memory session and returns to the
+  public site without changing cookie or API behavior. A public-entry failure
+  marker prevents stale slot cookies from immediately routing back to `/home`;
+  the marker stays until site data is cleared, while an active local session still routes normally.
+- Network, 5xx, CORS, malformed-response, and other ambiguous restore failures
+  receive at most eight total attempts, ten seconds apart. They preserve
+  account identity and keep private content hidden. After the final attempt,
+  show **Try again** and **Go to public site**. Automatic background retries do
+  not continue after the bounded attempt sequence.
 - A single tab owns the browser-client termination notice. Other tabs wait for
   acknowledgment and converge after the owner switches to a valid account or
   clears the active selection; if the owner tab closes, another tab can take
@@ -567,10 +567,8 @@ replays remains unknown; see the bug record for details.
 #### Multi-account session continuity policy
 
 On public entry, when one or more remembered sessions are valid, restore the
-most recently used one. During terminal recovery, the first modal discovers and
-shows available remembered accounts, alongside Add account. Close/X is hidden
-while a usable remaining session exists and returns to the public site when none
-is available.
+most recently used one. After a definitive auth failure, return to the public
+site and let the user choose when to sign in again.
 A remembered-account row alone is not proof that its session is valid;
 validate each candidate's own slot-scoped session before exposing that
 account's app state. A session is restorable while its refresh token remains
@@ -581,22 +579,19 @@ problem does not invalidate it and must leave retry available.
   used in the order one, two, three, then three is active and two is next in
   recency order.
 - A user-initiated logout proceeds directly to the next most recently used
-  valid remembered account. Terminal recovery shows the neutral session-ended
-  modal with available remembered accounts and Add account. Close and the close icon
-  validate remaining slots by recency; the
+  valid remembered account. Definitive authentication restore failure returns
+  to the public site; lifecycle recovery remains separate. The
   initiating client logs out immediately after the lifecycle operation
   succeeds. Never switch identity on timeout, network failure, or another
   ambiguous/recoverable result.
 - Show the terminal modal in the owner tab. Waiting tabs offer **Continue here**
   to take over; all tabs follow the same restored account or public-site result.
-- Non-network ambiguous entry recovery makes four total attempts at 10-second
-  intervals. A cached identity keeps the inert app frame and hides private
-  content while showing the shared quiet branded content placeholder and
-  offering **Try again**; the shared app route also retries
-  network failures every 30 seconds. Without a cached identity, show the
-  standalone network error. Other unresolved ambiguous failures show **Take me
-  back**. Do not treat a transient failure as proof that the session ended or
-  silently change identity.
+- Ambiguous entry recovery makes eight total attempts at 10-second intervals,
+  including network and server failures. A cached identity keeps the inert app
+  frame and hides private content while showing the attempt count and a public
+  exit. Without a cached identity, show the standalone recovery state. After
+  exhaustion, offer **Try again** and **Go to public site**. Do not treat an
+  ambiguous failure as proof that the session ended or silently change identity.
 - If no remembered session validates after confirmed termination or explicit
   logout, clear the selected account and go to the public site. Preserve each
   account's identity boundary and never show one account's state while another
@@ -616,18 +611,15 @@ item.
   and rotated within a token family.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
-- **ACCESS-R-031:** A confirmed terminal failure presents the neutral
-  `Session ended` modal and discovers remembered accounts within that first
-  modal. Available accounts and Add account are shown directly; selecting an
-  account validates it before switching. Close/X is hidden while a usable
-  account is available and returns to the public site when none is available.
-  Ambiguous failures never silently switch identity;
-  non-network entry recovery retries four times at 10-second intervals.
-  When a safe cached identity exists, entry validation keeps the inert app
-  frame visible with private content hidden and offers **Try again** on
-  network/ambiguous failure; the shared app route retries network failures in
-  the background every 30 seconds. With no cached identity, recovery shows the
-  standalone error state. Other unresolved ambiguity offers **Take me back**.
+- **ACCESS-R-031:** A definitive authentication failure stops after one
+  coordinated refresh attempt, clears the selected in-memory session, and
+  returns to the public site. The web-only failure marker prevents stale
+  cookies from redirecting back to `/home` and remains until site data is cleared; an active local session still routes normally.
+  Ambiguous failures never silently switch identity; entry recovery retries up
+  to eight times at 10-second intervals for network, server, and other
+  transient failures. During retries, private content stays hidden and progress
+  plus a public exit remain visible. After exhaustion, show **Try again** and
+  **Go to public site**. Cookie and backend behavior do not change.
 - **ACCESS-R-032:** Refresh coordination, request headers, and result state use
   one slot captured at operation start.
 - **ACCESS-R-033:** Successful refresh persists slot recency in the same
@@ -670,10 +662,10 @@ the release is considered complete.
       credentials while retaining only safe recovery context.
 - [ ] **ACCESS-AC-017** Rotation and reuse detection are transactional and tested.
 - [ ] **ACCESS-AC-018** Logout does not expose or retain raw credentials.
-- [ ] **ACCESS-AC-026** Confirmed terminal failures show neutral recovery copy,
-      available remembered accounts, and Add account. Selecting an account
-      validates it; Close or the close icon restore the most recently used valid account
-      or return to the public site.
+- [ ] **ACCESS-AC-026** Definitive authentication failures stop after one
+      coordinated refresh attempt, return to the public site, and do not change
+      cookie or backend behavior. Ambiguous failures retry no more than eight
+      times, ten seconds apart, then offer **Try again** and **Go to public site**.
 - [x] **ACCESS-AC-027** Refresh coordination and requests use the same captured
       slot and isolate state across remembered slots.
 - [x] **ACCESS-AC-028** Explicit slot recovery changes the app only after that
@@ -711,9 +703,9 @@ the release is considered complete.
       acknowledged; invalid candidates are skipped without crossing account
       data boundaries.
 - [ ] **ACCESS-AC-033** An ambiguous entry failure never changes identity,
-      retries four times at 10-second intervals, then offers **Take me back**.
-      Public visitors without remembered auth context remain on the public
-      site.
+      retries up to eight times at 10-second intervals, then offers **Try
+      again** and **Go to public site**. Public visitors without remembered
+      auth context remain on the public site.
 - [ ] **ACCESS-AC-034** If no remembered account is available after ordinary
       expiry, go to Login. If lifecycle fallback has no valid account, return
       to the public site. Explicit logout may proceed directly to its existing

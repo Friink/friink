@@ -1,5 +1,84 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-02T22:06:41Z — Bound Web Session Recovery and Return on Auth Failure
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement the approved web-only session
+  recovery UX: retry ambiguous failures up to eight times at ten-second
+  intervals, return to the public site after definitive auth failure, and keep
+  cookie and backend behavior unchanged.
+- Changes Made: Added bounded retry/progress messaging, manual retry and
+  public-site exit actions, and removed automatic 30-second retry loops.
+  Definitive session failures now clear selected in-memory auth state and
+  navigate to the public site; a web-only marker prevents stale cookies from
+  immediately redirecting back into app entry. It remains until site data is
+  cleared; an active local session still routes normally. Extracted
+  termination recovery orchestration from the oversized app-shell route
+  module. Updated active rules, account-access and error
+  handling unit docs, design-system guidance, changelog, and this log. No API,
+  backend validation, or cookie behavior changed.
+- Files: `web/components/app-entry-frame.tsx`,
+  `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/public-route-guard.tsx`,
+  `web/components/session-recovery-screen.tsx`,
+  `web/components/session-termination-recovery.ts`,
+  `web/components/login-screen.tsx`, `web/app/login/login-client.tsx`,
+  `web/lib/session-manager.ts`, `web/lib/session-recovery.ts`,
+  `web/lib/session-recovery-state.ts`, `docs/rules.md`,
+  `docs/units/account-access.md`, `docs/units/error-handling.md`,
+  `docs/design-system.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `web/tsconfig` type check passed; focused ESLint passed
+  for the new recovery helper/state modules, entry frame, and public guard.
+  ESLint over all touched UI files still reports 19 errors and 21 warnings,
+  including existing hook/ref and markup issues in the larger route and screen
+  modules. `git diff --check` passed. Tests and staging requests were not run.
+
+# 2026-10-02T21:04:46Z — Review Auth Refresh and Observe Incognito Session
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Review relevant auth/session code while waiting five
+  minutes after a successful staging login in an incognito window.
+- Changes Made: Traced web slot resolution, cross-tab refresh coordination,
+  API refresh validation, and current/main route implementations. The client
+  requires a resolved slot before refresh; the API rejects missing slots and
+  validates the active device-bound session before token rotation. During the
+  observation, two slot-scoped staging refreshes returned 200 at
+  `20:58:09Z` and `21:01:18Z`; no new 401 appeared through `21:04:46Z`. This
+  supports stale slot/session state in the earlier browser rather than a
+  refresh-rotation failure. One `20:58:04Z` diagnostic row reports 200 without
+  a slot header or expected cookie, contradicting the checked route behavior;
+  its origin remains unknown. No application code or database data changed.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Read-only staging diagnostics checked; `git diff --check`
+  passed. Tests were not run. Live Vercel runtime logs were unavailable, so
+  the headerless 200 row could not be correlated to a deployed instance.
+
+# 2026-10-02T20:52:08Z — Investigate Staging 401 Against Auth Diagnostics
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Read yesterday's agent log and inspect the staging database
+  diagnostics to identify why staging returns 401 while apex returns 200.
+- Changes Made: Read-only inspection found the staging database at migration
+  `20261002_0062`. Its latest auth refresh record was one
+  `401 SESSION_NOT_FOUND` at `2026-10-02T20:23:31Z` on deployment
+  `d23932ed4b0d871fc8e6d14ef212593ddb98eef3`, matching the current staging
+  commit. The request included the account-slot header and expected refresh
+  cookie, but its slot hash did not match any row in `auth_sessions`. Earlier
+  slotless 401 records around 00:12–00:25Z on `8a3bc9e` match the older
+  BUG-AUTH-013 evidence. The latest failure establishes that the supplied slot
+  ID has no matching session row, likely a stale or foreign slot reference;
+  diagnostics do not capture enough browser state to identify how that slot
+  became stale. The local staging config points to staging API and staging DB.
+  No database changes were made.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Staging database queries ran in a read-only transaction.
+  Direct HTTP checks of staging and apex were blocked by the environment's
+  outbound proxy, so the claimed apex 200 was not independently rechecked.
+  `git diff --check` passed. No application code or tests changed.
+
 # 2026-10-02T00:24:19Z — Restyle Account Switcher Refresh Control
 
 - Agent: Codex
