@@ -15783,3 +15783,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Changes Made: Added `session-store.ts` and `session-coordination.ts`; updated `session-manager.ts` to use those boundaries and kept legacy auth as the backing adapter. Preserved cross-tab rehydration behavior.
 - Files: web/lib/session-store.ts, web/lib/session-coordination.ts, web/lib/session-manager.ts, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
 - Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` pending. No full build or test suite run.
+## 2026-10-02T01:23:03Z — Add incremental code-organization plan
+
+- Agent: Codex
+- Prompt Summary: Document the internal module-organization plan and create placeholder folder structures without changing the API/web boundary or runtime behavior.
+- Changes Made: Added `docs/code-organization.md`, registered it in the documentation README and viewer, and added placeholder directories for API repositories/integrations and web feature/lib modules.
+- Files: docs/code-organization.md, docs/README.md, docs/index.html, api/app/repositories/.gitkeep, api/app/integrations/.gitkeep, web/features/*/.gitkeep, web/lib/*/.gitkeep, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed; documentation links and folder paths reviewed. No build or tests run.
+## 2026-10-02T01:31:30Z — Correct duplicate session-manager rule identifier
+
+- Prompt Summary: Perform a final documentation consistency check before closing the work session.
+- Changes Made: Renamed the session-manager migration rule from duplicate `AUTH-R-032` to unused `AUTH-R-043`; verified the related documentation references and whitespace with `git diff --check`.
+- Files: docs/rules.md, CHANGELOG.md, AGENTLOG.md.

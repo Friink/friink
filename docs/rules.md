@@ -691,7 +691,7 @@ site. See [BUG-AUTH-013](bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-mis
 - **What:** **Deprecated/Superseded by `Authoritative Web Session And Refresh Model`.** The former behavior proactively refreshed access tokens at about 80% of token lifetime and allowed per-request opt-outs. Reactive refresh after `TOKEN_EXPIRED`, one retry, and explicit-refresh-401 session clearing remain only where they conform to the authoritative model.
 - **Edge cases:** The old per-tab promise deduplication and feature-specific opt-outs are no longer the session contract. Cross-tab coordination, retryable non-terminal failures, and single-origin API resolution are governed by the authoritative rule above.
 
-### AUTH-R-032 — Session Manager Migration Seam
+### AUTH-R-043 — Session Manager Migration Seam
 
 - **Status:** Active
 - **Effective:** 2026-10-02T01:01:03Z

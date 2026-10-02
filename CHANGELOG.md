@@ -5724,3 +5724,9 @@ _Last updated: 2026-09-10_
 ## 2026-10-02T01:14:33Z
 
 - Split the session-manager migration seam into dedicated session storage and cross-tab coordination modules while retaining `auth.ts` as the legacy credential and refresh adapter.
+## 2026-10-02T01:23:03Z
+
+- Added the incremental code-organization plan and placeholder module folders inside the existing `api/` and `web/` boundaries.
+## 2026-10-02
+
+- Corrected the session-manager rule identifier in `docs/rules.md` so the active rules registry contains no duplicate `AUTH-R-032` entry.
