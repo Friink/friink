@@ -2199,6 +2199,10 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   cursor: pointer;
 }
 
+.account-switcher-header-status button i {
+  color: inherit;
+}
+
 .account-switcher-header-status button:hover,
 .account-switcher-header-status button:focus-visible,
 .account-switcher-header-status button:active {

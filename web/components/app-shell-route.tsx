@@ -6,7 +6,8 @@ import { AppShell } from '@/components/app-shell';
 import { SessionRecoveryScreen } from '@/components/session-recovery-screen';
 import { useAppAccountLogout } from '@/components/use-app-account-logout';
 import type { AppearanceMode } from '@/components/account-screens';
-import { AuthApiError, claimSessionTermination, clearAuthSession, clearAuthSessionForRecovery, clearSessionTermination, discoverAccounts, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, isTerminalRefreshFailure, listPosts, loadAuthSession, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreAuthSessionForEntry, restoreRememberedAccountWithFallback, runSessionTerminationAction, saveAuthSession, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { AuthApiError, claimSessionTermination, clearAuthSession, clearSessionTermination, discoverAccounts, getCurrentUser, getRememberedAccountSummaries, getSessionTerminationNotice, isSessionTerminationOwner, listPosts, loadCachedAuthUser, renewSessionTerminationLease, restoreAccountSession, restoreRememberedAccountWithFallback, runSessionTerminationAction, type AccountSummary, type ApiFeedPage, type AuthUser, type SessionTerminationCause } from '@/lib/auth';
+import { clearSessionForRecovery, getSession, isTerminalSessionFailure, restoreSession, saveSession, subscribeToSessionChanges } from '@/lib/session-manager';
 import { isNetworkRestoreFailure, restoreWithSessionRetries } from '@/lib/session-recovery';
 import type { Screen } from '@/lib/data';
 
@@ -26,10 +27,10 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   const router = useRouter();
   // Keep the server and first client render identical. Browser-only cached
   // metadata is hydrated in the effect below after React has mounted.
-  const [user, setUser] = useState<AuthUser | null>(() => loadAuthSession()?.user ?? null);
-  const [sessionReady, setSessionReady] = useState(() => Boolean(loadAuthSession()));
+  const [user, setUser] = useState<AuthUser | null>(() => getSession()?.user ?? null);
+  const [sessionReady, setSessionReady] = useState(() => Boolean(getSession()));
   const [currentUserReady, setCurrentUserReady] = useState(() => !refreshCurrentUser);
-  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(loadAuthSession()));
+  const [authCheckComplete, setAuthCheckComplete] = useState(() => Boolean(getSession()));
   const [sessionError, setSessionError] = useState<'network' | 'offline' | 'expired' | 'security' | null>(null);
   const [termination, setTermination] = useState<{ id: string; cause: SessionTerminationCause; owner: boolean } | null>(null);
   const [recoveryUsername, setRecoveryUsername] = useState<string | null>(null);
@@ -93,6 +94,15 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     }
   }, []);
 
+  useEffect(() => subscribeToSessionChanges((change) => {
+    if (change.type !== 'updated') return;
+    setUser(change.session.user);
+    setSessionReady(true);
+    setCurrentUserReady(true);
+    setSessionError(null);
+    setAuthCheckComplete(true);
+  }), []);
+
   const startEntryHomeFeed = useCallback((accountSlot: string) => {
     if (initialScreen !== 'home' || entryHomeFeedPromise.current) return;
     setEntryHomeFeedPending(true);
@@ -135,7 +145,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     const syncTerminationOwner = () => {
       const notice = getSessionTerminationNotice();
       if (!notice) {
-        const currentSession = loadAuthSession();
+        const currentSession = getSession();
         if (currentSession) {
           setUser(currentSession.user);
           setSessionReady(true);
@@ -202,7 +212,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         const fallback = await restoreRememberedAccountWithFallback(
           failedSlot ? [failedSlot] : notice?.accountSlot ? [notice.accountSlot] : [],
         );
-        if (fallback) saveAuthSession(fallback);
+        if (fallback) saveSession(fallback);
         else {
           clearAuthSession();
         }
@@ -214,7 +224,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         if (currentNotice) {
           setTermination({ id: currentNotice.id, cause: currentNotice.cause, owner: isSessionTerminationOwner(currentNotice.id) });
         } else {
-          const currentSession = loadAuthSession();
+          const currentSession = getSession();
           if (currentSession) {
             setUser(currentSession.user);
             setSessionReady(true);
@@ -272,9 +282,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         const selectedSlot = networkRestoreAccountSlot.current;
         const restoredSession = selectedSlot
           ? await restoreAccountSession(selectedSlot)
-          : await restoreAuthSessionForEntry();
+          : await restoreSession();
         if (termination) clearSessionTermination(termination.id);
-        if (selectedSlot) saveAuthSession(restoredSession);
+        if (selectedSlot) saveSession(restoredSession);
         networkRestoreTerminationId.current = null;
         networkRestoreAccountSlot.current = null;
         setUser(restoredSession.user);
@@ -285,9 +295,9 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         setAuthCheckComplete(true);
         if (selectedSlot) router.replace('/home');
       } catch (error) {
-        if (isTerminalRefreshFailure(error)) {
+        if (isTerminalSessionFailure(error)) {
           networkRestoreAccountSlot.current = null;
-          clearAuthSessionForRecovery(error);
+          clearSessionForRecovery(error);
           const notice = getSessionTerminationNotice();
           setRecoveryUsername(loadCachedAuthUser()?.username ?? null);
           setRecoveryAccounts(getRememberedAccountSummaries());
@@ -363,7 +373,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
 
   useEffect(() => {
     function handleAccountSwitched() {
-      const session = loadAuthSession();
+      const session = getSession();
       if (!session) return;
       setUser(session.user);
       setSessionReady(true);
@@ -376,26 +386,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
   }, [router]);
 
   useEffect(() => {
-    async function handleSessionUpdated(event: Event) {
-      const detail = (event as CustomEvent<{ accountSlot?: string | null }>).detail;
-      try {
-        const updated = await restoreAuthSessionForEntry();
-        if (detail?.accountSlot && updated.accountSlot !== detail.accountSlot) return;
-        setUser(updated.user);
-        setSessionReady(true);
-        setSessionError(null);
-        setAuthCheckComplete(true);
-      } catch {
-        // The sending tab has not supplied a credential; stay on the current
-        // account until this tab can validate its own slot cookie.
-      }
-    }
-    window.addEventListener('friink-session-updated', handleSessionUpdated);
-    return () => window.removeEventListener('friink-session-updated', handleSessionUpdated);
-  }, []);
-
-  useEffect(() => {
-    const session = loadAuthSession();
+    const session = getSession();
     if (!session) {
       const cachedUser = loadCachedAuthUser();
       if (cachedUser) setUser(cachedUser);
@@ -418,7 +409,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
       }
 
       const controller = new AbortController();
-      restoreWithSessionRetries(() => restoreAuthSessionForEntry(startEntryHomeFeed), controller.signal)
+      restoreWithSessionRetries(() => restoreSession(startEntryHomeFeed), controller.signal)
         .then((restoredSession) => {
           if (controller.signal.aborted) return;
           setUser(restoredSession.user);
@@ -431,8 +422,8 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           if (controller.signal.aborted) return;
           setSessionReady(false);
           setAuthCheckComplete(true);
-          if (isTerminalRefreshFailure(error)) {
-            clearAuthSessionForRecovery(error);
+          if (isTerminalSessionFailure(error)) {
+            clearSessionForRecovery(error);
             setUser(null);
             setCurrentUserReady(false);
             const terminationNotice = getSessionTerminationNotice();
@@ -466,18 +457,18 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
           router.replace('/home');
           return;
         }
-        saveAuthSession({ ...session, user: currentUser });
+        saveSession({ ...session, user: currentUser });
         setUser(currentUser);
         setCurrentUserReady(true);
       })
       .catch((error) => {
         // requestApi owns refresh. A terminal refresh clears in-memory auth
         // while preserving safe recovery context; other 401s stay separate.
-        if (error instanceof AuthApiError && isTerminalRefreshFailure(error)) {
+        if (error instanceof AuthApiError && isTerminalSessionFailure(error)) {
           const cachedUser = loadCachedAuthUser();
           setRecoveryUsername(cachedUser?.username ?? null);
           setRecoveryAccounts(getRememberedAccountSummaries());
-          clearAuthSessionForRecovery(error);
+          clearSessionForRecovery(error);
           const notice = getSessionTerminationNotice();
           if (notice) setTermination({ id: notice.id, cause: notice.cause, owner: isSessionTerminationOwner(notice.id) });
           else setSessionError('expired');
@@ -501,7 +492,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     try {
       const restore = async () => {
         const restoredSession = await restoreAccountSession(account.accountSlot);
-        saveAuthSession(restoredSession);
+        saveSession(restoredSession);
         if (termination) clearSessionTermination(termination.id);
         return restoredSession;
       };
@@ -513,7 +504,7 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
         if (currentNotice) {
           setTermination({ id: currentNotice.id, cause: currentNotice.cause, owner: isSessionTerminationOwner(currentNotice.id) });
         } else {
-          const currentSession = loadAuthSession();
+          const currentSession = getSession();
           if (currentSession) {
             setUser(currentSession.user);
             setSessionReady(true);
@@ -554,23 +545,23 @@ export function AppShellRoute({ initialScreen, initialSearchQuery, refreshCurren
     networkRestoreInFlight.current = true;
     setNetworkRefreshing(true);
     try {
-      const session = loadAuthSession();
+      const session = getSession();
       const currentUser = session
         ? await getCurrentUser(session.accessToken)
-        : (await restoreAuthSessionForEntry()).user;
+        : (await restoreSession()).user;
       if (initialScreen === 'control-panel' && !currentUser.isStaff) {
         router.replace('/home');
         return;
       }
-      const latestSession = loadAuthSession();
-      if (latestSession) saveAuthSession({ ...latestSession, user: currentUser });
+      const latestSession = getSession();
+      if (latestSession) saveSession({ ...latestSession, user: currentUser });
       setUser(currentUser);
       setSessionReady(true);
       setCurrentUserReady(true);
       setSessionError(null);
     } catch (error) {
-      if (isTerminalRefreshFailure(error)) {
-        clearAuthSessionForRecovery(error);
+      if (isTerminalSessionFailure(error)) {
+        clearSessionForRecovery(error);
         setUser(null);
         setSessionReady(false);
         setCurrentUserReady(false);

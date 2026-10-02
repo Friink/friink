@@ -15748,3 +15748,24 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Changes Made: Reduced the profile row top offset to make a 16px top inset and set the navigation start padding to 16px in both modes. Preserved the 8px spacing between navigation buttons. Updated the navigation, design-system, and active account-switcher contracts.
 - Files: web/app/globals.css, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
 - Verification Status: `git diff --check` passed. No build or tests run.
+## 2026-10-02T00:41:49Z — Correct refresh icon color specificity
+
+- Agent: Codex
+- Prompt Summary: Correct the account-switcher refresh button color behavior after staging showed the background fix but not the white resting icon.
+- Changes Made: Added a nested refresh-icon rule so the glyph inherits the button color; documented white resting and accent hover/focus/active states with no hover background.
+- Files: web/app/globals.css, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` pending; no full build or test suite run.
+## 2026-10-02T00:45:35Z — Set staging landing progress to 80 percent
+
+- Agent: Codex
+- Prompt Summary: Update the staging landing page progress label and bar to 80%.
+- Changes Made: Updated the rendered percentage, progressbar ARIA value, and CSS fill width on the staging branch. Main and the separate public-site repository were not changed.
+- Files: web/app/page.tsx, web/app/landing.module.css, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed; no full build or test suite run.
+## 2026-10-02T01:01:03Z — Add staged session-management seam
+
+- Agent: Codex
+- Prompt Summary: Begin decoupling session management from the monolithic auth client while retaining legacy behavior as a safe migration path.
+- Changes Made: Added `web/lib/session-manager.ts`, migrated `app-shell-route.tsx` to its session contract, added cross-tab rehydration for session updates, and removed the route's duplicate session-update restore listener. Credential and refresh operations remain delegated to `web/lib/auth.ts` for staging verification.
+- Files: web/lib/session-manager.ts, web/components/app-shell-route.tsx, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed. No full build or test suite run.

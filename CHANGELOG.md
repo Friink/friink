@@ -5709,3 +5709,12 @@ _Last updated: 2026-09-10_
 
 ## 2026-09-24T00:15:21Z
 - [design/navigation] Set the Profile control 16px from the drawer top and 16px above the first navigation button in expanded and collapsed layouts.
+## 2026-10-02T00:41:49Z
+
+- Fixed the account-switcher refresh icon so its nested glyph inherits the white resting color and uses the accent color only for hover, focus, and active states without a background.
+## 2026-10-02T00:45:35Z
+
+- Updated the staging landing page development indicator to display and expose 80%, with the visual bar filled to the same value.
+## 2026-10-02T01:01:03Z
+
+- Added the first session-management migration seam and moved the app shell onto it. Cross-tab session updates now rehydrate a tab through its own slot cookie instead of leaving the app with a cleared in-memory session; legacy auth remains the credential fallback.

@@ -293,6 +293,15 @@ or switching accounts updates the shared selected-slot key. Other open tabs
 reload when that key changes, then restore and render only the selected slot.
 Legacy tab-local slot values do not override the shared selection.
 
+The app shell consumes the staged `web/lib/session-manager.ts` session seam for
+session reads, restoration, saving, and cross-tab update handling. The seam
+still delegates credential operations to the legacy implementation in
+`web/lib/auth.ts`; bearer tokens are never copied through cross-tab messages.
+When another tab publishes a session update, a tab without an in-memory session
+rehydrates through its own selected-slot cookie instead of treating the update
+as a logout. The legacy auth functions remain available during staging
+verification and are removed only after the new seam is proven stable.
+
 ##### Startup experience
 
 On a hard reload, show the

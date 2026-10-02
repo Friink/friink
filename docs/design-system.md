@@ -210,7 +210,9 @@ The exact widths, heights, breakpoints, and token names are defined in
 - The Profile identity row does not use the active destination's gray fill,
   including while the signed-in user's own Profile is open. In the expanded
   drawer, the account-switcher button uses that same gray fill on hover,
-  keyboard focus, and while its menu is open; its icon retains the accent color.
+  keyboard focus, and while its menu is open; the refresh icon is white at rest
+  and turns accent-colored on hover, keyboard focus, or active press without a
+  hover background.
 - TopBar icon controls use that same neutral gray for hover and keyboard-focus
   backgrounds; their icon color keeps the existing accent treatment.
 - The drawer's Profile picture is 44px in both expanded and collapsed modes.

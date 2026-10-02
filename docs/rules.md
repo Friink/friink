@@ -691,6 +691,18 @@ site. See [BUG-AUTH-013](bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-mis
 - **What:** **Deprecated/Superseded by `Authoritative Web Session And Refresh Model`.** The former behavior proactively refreshed access tokens at about 80% of token lifetime and allowed per-request opt-outs. Reactive refresh after `TOKEN_EXPIRED`, one retry, and explicit-refresh-401 session clearing remain only where they conform to the authoritative model.
 - **Edge cases:** The old per-tab promise deduplication and feature-specific opt-outs are no longer the session contract. Cross-tab coordination, retryable non-terminal failures, and single-origin API resolution are governed by the authoritative rule above.
 
+### AUTH-R-032 — Session Manager Migration Seam
+
+- **Status:** Active
+- **Effective:** 2026-10-02T01:01:03Z
+- **Related units:** [account-access](units/account-access.md)
+- **Source:** [account-access](units/account-access.md)
+- **Platform:** Web only
+- **File(s):** `web/lib/session-manager.ts`, `web/components/app-shell-route.tsx`, `web/lib/auth.ts`
+
+- **What:** The app shell uses `session-manager.ts` as the app-facing session contract for session reads, restoration, saving, and cross-tab updates. The first migration slice delegates credential and refresh operations to the legacy implementation in `auth.ts` while preserving that implementation as the staging fallback.
+- **Edge cases:** Cross-tab session-update messages never carry bearer tokens. A receiving tab with no in-memory session rehydrates through its own selected-slot cookie. Session-expired messages remain terminal recovery signals; a session update is not treated as logout.
+
 ### AUTH-R-031 — Current User Updates
 
 - **Status:** Active
