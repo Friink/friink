@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-02T00:24:19Z — Restyle Account Switcher Refresh Control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the account-switcher refresh button white at rest and
+  accent-colored on interaction without a hover background.
+- Changes Made: Updated the shared refresh-control CSS and synchronized the
+  shared design contract. The loading spinner and geometry were unchanged.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and `git diff --check`
+  pending; no push performed.
+
 # 2026-10-02T00:20:30Z — Fix Slotless Bootstrap Refresh Race
 
 - Agent: Codex

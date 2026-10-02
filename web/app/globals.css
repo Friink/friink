@@ -2193,16 +2193,17 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   border: 0;
   padding: 0;
   background: none;
-  color: var(--color-accent);
+  color: #ffffff;
   font: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
 }
 
 .account-switcher-header-status button:hover,
-.account-switcher-header-status button:focus-visible {
-  border-radius: 50%;
-  background: var(--color-accent-hover);
+.account-switcher-header-status button:focus-visible,
+.account-switcher-header-status button:active {
+  background: transparent;
+  color: var(--color-accent);
   outline: none;
 }
 

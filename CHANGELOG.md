@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-02T00:24:19Z
+- [account switcher] Made the idle refresh button white by default and accent
+  colored on hover, focus, and active interaction without a hover background.
+  The refresh spinner remains unchanged.
+
 ## 2026-10-02T00:20:30Z
 - [auth/session] Fixed the slotless bootstrap refresh race. The web client now
   resolves or briefly waits for the selected account slot before refreshing;
