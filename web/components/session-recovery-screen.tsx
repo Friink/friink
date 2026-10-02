@@ -178,7 +178,6 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
             ))}
           </div>
         ) : null}
-        {isContinuingRecovery ? <p role="status">Checking your other accounts…</p> : null}
         {accountError ? <p className="session-recovery-error" role="alert">{accountError}</p> : null}
       </Modal>
     </main>

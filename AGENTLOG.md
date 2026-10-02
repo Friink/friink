@@ -1,5 +1,80 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-02T00:20:30Z — Fix Slotless Bootstrap Refresh Race
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit the web session/token flow and fix the staging false
+  session-death where a slotless refresh was treated as terminal.
+- Changes Made: Added `ACCOUNT_SLOT_UNAVAILABLE` as a client-only transient
+  auth error. Refresh coordination now resolves the requested, selected,
+  in-memory, or most-recent cached slot and waits briefly for cross-tab slot
+  publication. It rejects unresolved slots before `/auth/refresh`, so no
+  slotless request can trigger terminal recovery or a public redirect. Logged
+  BUG-AUTH-013 and updated active session rules and Account Access docs.
+- Files: `web/lib/auth.ts`, `docs/bugs.md`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed in `web`; `git diff --check`
+  passed. Staging browser acceptance remains pending. No push performed.
+
+# 2026-10-02T00:15:00Z — Remove Duplicate Session-Recovery Loading Copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant “Checking your other accounts…”
+  message from the session-ended modal.
+- Changes Made: Kept the single remembered-account discovery status and its
+  existing `discoveryPending` lifecycle; removed the fallback-state sentence.
+- Files: `web/components/session-recovery-screen.tsx`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript check and `git diff --check`
+  pending; no push performed.
+
+# 2026-10-02T00:09:52Z — Update BUG-AUTH-002/003/004/006 Statuses
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close BUG-AUTH-003, BUG-AUTH-004, and BUG-AUTH-002 based
+  on current behavior and prior fixes; record BUG-AUTH-006 as fixed with
+  staging testing underway.
+- Changes Made: Updated the bug register and active Account Access/rules
+  documentation, removed the three closed bugs from the open triage table, and
+  retained BUG-AUTH-006 as the remaining staging-test item.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation consistency and `git diff --check`
+  pending; no push performed.
+
+# 2026-10-02T00:07:22Z — Close BUG-AUTH-011 and BUG-AUTH-007
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close BUG-AUTH-011 because correlated logs are now
+  available, and close BUG-AUTH-007 after staging verification.
+- Changes Made: Marked both bugs resolved, removed them from the open triage
+  table, synchronized the Account Access unit summary, and preserved the
+  historical diagnostics and redirect-loop context.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Closure is based on the user's staging confirmation.
+  `git diff --check` pending; no push performed.
+
+# 2026-10-02T00:05:29Z — Close BUG-AUTH-010 After Staging Confirmation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close BUG-AUTH-010 because the changed account-switch API
+  calls fixed the refresh-family accumulation behavior on staging.
+- Changes Made: Marked BUG-AUTH-010 resolved in the bug register, removed it
+  from the open/awaiting-acceptance triage table, and synchronized the Account
+  Access unit summary. Preserved the historical 13-family evidence and the
+  unproven causal relationship to session-recovery reports.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Closure is based on the user's latest staging test of
+  the deployed build. No application code, schema, or database migration was
+  changed. `git diff --check` pending; no push performed.
+
 # 2026-10-02T00:01:48Z — Recover Token-Update Races Before Session Recovery
 
 - Agent: Codex

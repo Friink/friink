@@ -257,8 +257,10 @@ The exact widths, heights, breakpoints, and token names are defined in
   continue.” Show available remembered accounts in most-recent order, each
   with a safe avatar and username. Selecting an account validates only that
   slot, and progress identifies the account currently being restored. Account
-  discovery happens inside this first modal and shows a loading state while it
-  runs; recovery must not require a second account-choice modal.
+  discovery happens inside this first modal and shows the single loading status
+  “Checking your remembered accounts…” only while discovery runs; it disappears
+  when the account list resolves. Recovery must not require a second
+  account-choice modal.
 - **Add account** opens the existing login/signup modal. When a usable
   remembered account is available, the session-ended modal shows the account
   rows directly and hides Close/X so the user chooses a recovery action. When

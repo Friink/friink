@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-10-02T00:20:30Z
+- [auth/session] Fixed the slotless bootstrap refresh race. The web client now
+  resolves or briefly waits for the selected account slot before refreshing;
+  unresolved slot state is transient and cannot trigger Session ended or a
+  public-site redirect.
+- [bug tracking] Added BUG-AUTH-013 with the staging evidence and acceptance
+  checks for this failure mode.
+
+## 2026-10-02T00:15:00Z
+- [session recovery] Removed the redundant “Checking your other accounts…”
+  status from the session-ended modal. The initial remembered-account loading
+  message remains visible only while discovery is pending and disappears when
+  the account list resolves.
+
+## 2026-10-02T00:09:52Z
+- [bug tracking] Closed BUG-AUTH-003 as not reproduced on the latest staging
+  behavior; historical refresh-reuse evidence remains preserved.
+- [bug tracking] Closed BUG-AUTH-004 as fixed previously.
+- [bug tracking] Closed BUG-AUTH-002 after the public-entry logic change.
+- [bug tracking] Updated BUG-AUTH-006 to fixed with staging testing in
+  progress.
+
+## 2026-10-02T00:07:22Z
+- [bug tracking] Closed BUG-AUTH-011 after correlated staging diagnostics and
+  runtime log access were confirmed available.
+- [bug tracking] Closed BUG-AUTH-007 after the terminal recovery redirect-loop
+  fix was tested on staging without reproducing the loop.
+
+## 2026-10-02T00:05:29Z
+- [bug tracking] Closed BUG-AUTH-010 after the latest staging build was tested
+  with the updated account-switch API calls. The register now records the
+  former refresh-family accumulation as resolved while preserving its
+  historical, unproven relationship to session-recovery reports.
+
 ## 2026-10-02T00:01:48Z
 - [session stability] Added one selected-slot coordinated recovery retry for
   `SESSION_NOT_FOUND` and `REFRESH_TOKEN_INVALID` responses during access-token

@@ -343,8 +343,7 @@ validation. The response is not proof that a session is valid. The app shell
 owns terminal and ambiguous recovery. The recovery modal validates
 remembered alternatives and keeps the user in Friink when one is usable;
 app recovery returns public only after no candidate restores. The behavior is
-implemented locally; browser/staging acceptance remains pending. The history
-of this loop is tracked in
+implemented and tested on staging. The history of this loop is tracked in
 [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
 The exact state of the browser involved in the reported incident remains
 unverified. See ACCESS-AC-049 and MIG-003 for the public-entry acceptance
@@ -356,11 +355,13 @@ This section owns the client experience when session restoration fails; the
 server's session and lifecycle decisions remain authoritative. A technically
 ambiguous error does not mean the session ended. A confirmed terminal result
 shows a blocking `Session ended` modal with neutral copy. The first modal
-discovers remembered accounts in place and shows a loading state while doing
-so; it must not require a second account-choice modal. Available accounts and
-Add account are shown directly. Selecting a remembered account validates that
-slot before continuing. When a usable remembered account exists, Close and the
-close icon are hidden; when none exists, Close/X returns to the public site.
+discovers remembered accounts in place and shows the single loading status
+“Checking your remembered accounts…” only while doing so; it disappears when
+the account list resolves and must not require a second account-choice modal.
+Available accounts and Add account are shown directly. Selecting a remembered
+account validates that slot before continuing. When a usable remembered account
+exists, Close and the close icon are hidden; when none exists, Close/X returns
+to the public site.
 Lifecycle state and the associated reactivation or
 deletion-cancellation rules belong to
 [Account Lifecycle](./account-lifecycle.md).
@@ -499,8 +500,13 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 
 #### Refresh coordination and recovery contract
 
-- Use one captured active-slot value for both refresh coordination and the
+- Use one resolved active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
+  Bootstrap and cross-tab races may briefly leave the selected slot unavailable;
+  the client waits briefly or uses the most-recent cached slot, and never sends
+  a slotless refresh request. An unresolved slot remains a transient client
+  error rather than terminal session recovery. This guard is tracked in
+  [BUG-AUTH-013](../bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-misclassified-as-terminal).
 - Authenticated requests and cookie-backed entry validation treat
   `TOKEN_EXPIRED`, `SESSION_NOT_FOUND`, and `REFRESH_TOKEN_INVALID` as one
   selected-slot coordinated refresh/revalidation opportunity before terminal
@@ -885,13 +891,11 @@ click is visually explicit.
 These items have implementation or user-reported progress; they are acceptance
 checks, not all new code projects:
 
-1. **Refresh and reload stability (BUG-AUTH-003/006).** The deterministic API
-   retry fix and regression coverage are in the current local code, but the
-   agent log does not confirm that fix has been deployed to staging. The user
-   reports stability with a five-minute access-token lifetime; the one-day
-   refresh-token check is planned for 2026-09-30. Confirm the tested build, then
-   complete reload interruption, lost-response, same-slot multi-tab, and
-   refresh-expiry checks. Historical stale-token cause remains unproven.
+1. **Refresh grace replay (BUG-AUTH-006).** The deterministic API retry fix and
+   regression coverage are deployed, with staging testing still underway.
+   Complete reload interruption, lost-response, same-slot multi-tab, and
+   refresh-expiry checks. BUG-AUTH-003 is closed as not reproduced on the latest
+   staging behavior; its historical stale-token cause remains unproven.
 2. **Multi-tab account switching.** Browser-wide switch serialization and
    shared selected-slot restoration are implemented. One user-reported staging
    smoke check passed ordinary login and switching, but the multi-tab regression
@@ -989,8 +993,8 @@ findings open. These are bug records, not changes to active authentication
 rules:
 
 - [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): implemented locally with synchronized owner state, a serialized recovery action, and a **Continue here** action for waiting tabs. Multi-tab acceptance remains pending.
-- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): implemented locally; ordinary switches reuse the validated destination refresh cookie. Missing or unusable cookies use a locked, session-validated repair path. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
-- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted runtime and durable refresh-attempt diagnostics are implemented locally. Migration/deployment verification and the historical incident's exact failure remain open.
+- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): resolved on the latest staging build after the account-switch API calls changed; ordinary switches reuse the validated destination refresh cookie, and missing or unusable cookies use a locked, session-validated repair path. The historical 13-family staging count and unproven causal link to the recovery incident remain recorded in the bug register.
+- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): resolved; redacted runtime and durable refresh-attempt diagnostics are deployed, and correlated staging logs are available. The exact failure from the historical incident remains a separate lookup.
 - [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
 
 The staging DB audit found `@muflahulfurqan`'s session active after the report;
@@ -1125,11 +1129,10 @@ logs.
   sequence for each historical session loss. The non-atomic localStorage lock
   fallback remains a possible source of competing IDs in browsers without Web
   Locks, but it was not reproduced in a browser.
-- Latest user report: the session is currently stable with a five-minute
-  access-token lifetime. Validation of a one-day refresh-token lifetime is
-  planned for 2026-09-30; it has not yet been reported as complete. BUG-AUTH-003
-  remains open while that check and the broader refresh stability matrix are
-  pending.
+- Latest disposition: the user reports that the BUG-AUTH-003 session-stability
+  symptom is no longer happening. Its historical refresh-reuse evidence and
+  unknown browser trigger remain preserved in the bug register; the report is
+  closed as not reproduced on the latest staging behavior.
 - Earlier staging evidence showed that interrupting page reload during
   session restoration can end the session, and the 2026-09-27 run lost
   `@muflah` in Chrome and Firefox after the API detected stale refresh-token
