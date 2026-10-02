@@ -1,5 +1,240 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-02T00:24:19Z — Restyle Account Switcher Refresh Control
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make the account-switcher refresh button white at rest and
+  accent-colored on interaction without a hover background.
+- Changes Made: Updated the shared refresh-control CSS and synchronized the
+  shared design contract. The loading spinner and geometry were unchanged.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and `git diff --check`
+  pending; no push performed.
+
+# 2026-10-02T00:20:30Z — Fix Slotless Bootstrap Refresh Race
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Audit the web session/token flow and fix the staging false
+  session-death where a slotless refresh was treated as terminal.
+- Changes Made: Added `ACCOUNT_SLOT_UNAVAILABLE` as a client-only transient
+  auth error. Refresh coordination now resolves the requested, selected,
+  in-memory, or most-recent cached slot and waits briefly for cross-tab slot
+  publication. It rejects unresolved slots before `/auth/refresh`, so no
+  slotless request can trigger terminal recovery or a public redirect. Logged
+  BUG-AUTH-013 and updated active session rules and Account Access docs.
+- Files: `web/lib/auth.ts`, `docs/bugs.md`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed in `web`; `git diff --check`
+  passed. Staging browser acceptance remains pending. No push performed.
+
+# 2026-10-02T00:15:00Z — Remove Duplicate Session-Recovery Loading Copy
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the redundant “Checking your other accounts…”
+  message from the session-ended modal.
+- Changes Made: Kept the single remembered-account discovery status and its
+  existing `discoveryPending` lifecycle; removed the fallback-state sentence.
+- Files: `web/components/session-recovery-screen.tsx`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Targeted TypeScript check and `git diff --check`
+  pending; no push performed.
+
+# 2026-10-02T00:09:52Z — Update BUG-AUTH-002/003/004/006 Statuses
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close BUG-AUTH-003, BUG-AUTH-004, and BUG-AUTH-002 based
+  on current behavior and prior fixes; record BUG-AUTH-006 as fixed with
+  staging testing underway.
+- Changes Made: Updated the bug register and active Account Access/rules
+  documentation, removed the three closed bugs from the open triage table, and
+  retained BUG-AUTH-006 as the remaining staging-test item.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation consistency and `git diff --check`
+  pending; no push performed.
+
+# 2026-10-02T00:07:22Z — Close BUG-AUTH-011 and BUG-AUTH-007
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close BUG-AUTH-011 because correlated logs are now
+  available, and close BUG-AUTH-007 after staging verification.
+- Changes Made: Marked both bugs resolved, removed them from the open triage
+  table, synchronized the Account Access unit summary, and preserved the
+  historical diagnostics and redirect-loop context.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Closure is based on the user's staging confirmation.
+  `git diff --check` pending; no push performed.
+
+# 2026-10-02T00:05:29Z — Close BUG-AUTH-010 After Staging Confirmation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Close BUG-AUTH-010 because the changed account-switch API
+  calls fixed the refresh-family accumulation behavior on staging.
+- Changes Made: Marked BUG-AUTH-010 resolved in the bug register, removed it
+  from the open/awaiting-acceptance triage table, and synchronized the Account
+  Access unit summary. Preserved the historical 13-family evidence and the
+  unproven causal relationship to session-recovery reports.
+- Files: `docs/bugs.md`, `docs/units/account-access.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Closure is based on the user's latest staging test of
+  the deployed build. No application code, schema, or database migration was
+  changed. `git diff --check` pending; no push performed.
+
+# 2026-10-02T00:01:48Z — Recover Token-Update Races Before Session Recovery
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Log and fix the staging symptom where an access-token update
+  produced Session ended while the server session remained active.
+- Changes Made: Added BUG-AUTH-012. Authenticated requests, entry validation,
+  and remembered-account restore now give `SESSION_NOT_FOUND` and
+  `REFRESH_TOKEN_INVALID` one selected-slot coordinated refresh/revalidation
+  and one retry before broadcasting terminal recovery. Genuine failed refresh,
+  revocation, and reuse responses still reach recovery. Updated active auth
+  rules and account-access documentation.
+- Files: `web/lib/auth.ts`, `docs/bugs.md`, `docs/rules.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Focused web TypeScript check and diff review pending;
+  staging browser acceptance remains pending. No push performed.
+
+# 2026-10-01T23:55:00Z — Align Account Switcher Refresh Glyph
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Align the idle account-switcher refresh button with the
+  existing top-right refresh spinner and account-control edge.
+- Changes Made: Kept the existing status slot and spinner unchanged; narrowed
+  only the idle refresh button's visual box so its glyph aligns to the same
+  right edge. Updated the shared account-selector design contract and logs.
+- Files: `web/app/globals.css`, `packages/design/design.md`, `CHANGELOG.md`,
+  and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and diff review pending. No push
+  performed.
+
+# 2026-10-01T23:47:05Z — Make Terminal Recovery Single-Modal
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Show remembered account recovery choices in the first
+  session-ended modal instead of requiring a misleading Close action followed
+  by a second account-choice modal.
+- Changes Made: Added in-place remembered-account discovery and loading state to
+  terminal recovery. The modal now shows available accounts directly, hides
+  Close/X while a usable account exists, and routes Close/X to the public site
+  when no usable account exists. Extended the shared Modal primitive with an
+  optional hidden close control while preserving its centered header layout.
+  Updated account-access, design-system, rules, changelog, and agent logs.
+- Files: `web/components/modal.tsx`, `web/components/session-recovery-screen.tsx`,
+  `web/components/app-shell-route.tsx`, `web/app/globals.css`,
+  `packages/design/design.md`, `docs/design-system.md`,
+  `docs/units/account-access.md`, `docs/rules.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Targeted web TypeScript check and diff review pending.
+  No push performed.
+
+# 2026-10-01T23:35:40Z — Decouple Shell Readiness From Home Feed Prefetch
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix the intermittent entry state where a slow or failed Home
+  feed request made the shell appear not to load after session validation.
+- Changes Made: Kept the first Home feed request overlapped with session and
+  user hydration, but removed it from the app-shell readiness gate. `HomeScreen`
+  now stays in its loading state while the route-level prefetch is pending,
+  consumes a successful prefetched page without a duplicate request, and falls
+  back to its normal feed request when prefetch fails. Updated the active feed,
+  account-access, and rules documentation.
+- Files: `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/home-screen.tsx`, `docs/units/account-access.md`,
+  `docs/units/feed.md`, `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web `npx tsc --noEmit` passed. Focused diff validation
+  follows. No push performed.
+
+# 2026-10-01T23:25:09Z — Extend Cross-Tab Refresh Coordination Window
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent multiple active tabs from starting duplicate refresh
+  requests while another tab is still completing a recoverable refresh.
+- Changes Made: Extended the per-slot browser refresh lease to 45 seconds and
+  the successful coordination-result lifetime to 60 seconds. Followers still
+  revalidate through their own HttpOnly slot cookies; no bearer tokens are
+  shared through JavaScript. Updated the active account-access and auth rules.
+- Files: `web/lib/auth.ts`, `docs/units/account-access.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Web `tsc --noEmit` passed. The focused deterministic
+  refresh-replay assertion passed; pytest still exits non-zero during existing
+  Windows SQLite temporary-file cleanup (`WinError 32`). No push performed.
+
+# 2026-10-01T23:08:19Z — Make Account Switcher Busy State Explicit
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Make intermittent inactive switcher states clearer and add a
+  manual refresh affordance in the existing header loading slot.
+- Changes Made: Added an icon-only refresh button when account discovery is
+  idle; it becomes the existing spinner while refresh is running and reuses
+  the deduplicated refresh request. Disabled switcher rows and refresh actions
+  now expose a not-allowed cursor. Updated account-access, rules, and design
+  documentation.
+- Files: `web/components/side-drawer.tsx`, `web/app/globals.css`,
+  `docs/units/account-access.md`, `docs/rules.md`,
+  `packages/design/design.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and diff review pending. No
+  push performed.
+
+# 2026-10-01T23:03:44Z — Overlap Home Feed With Session Entry
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Reduce the initial Home loading gap by fetching feed content
+  while session validation and user hydration are in progress.
+- Changes Made: After `/auth/session` validates the selected slot,
+  `AppShellRoute` starts the initial Explore or Following feed request in
+  parallel with user hydration. `HomeScreen` consumes a successful prefetched
+  page without issuing a duplicate request; a failed prefetch falls back to
+  its existing load. Updated the active account-access, feed, and rules docs.
+- Files: `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/home-screen.tsx`, `web/lib/auth.ts`,
+  `docs/units/account-access.md`, `docs/units/feed.md`, `docs/rules.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted web type check and diff review pending. No
+  push performed.
+
+# 2026-10-01T22:54:36Z — Reconcile Active Switch Destination Rule
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Verify that the implementation changes were fully reflected
+  in the active documentation and logs.
+- Changes Made: Corrected the stale `AUTH-R-040` sentence that still said
+  account switching opens Home. The active rule now records selector loading,
+  current-URL preservation, and same-URL reload after successful switching.
+- Files: `docs/rules.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Documentation references reviewed; no push performed.
+
+# 2026-10-01T22:52:08Z — Rehydrate Cross-Tab Refresh Followers
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent a tab from retrying with a stale in-memory access
+  token after another tab has already refreshed the slot.
+- Changes Made: Shared refresh-success markers now distinguish the tab that
+  performed the refresh from followers. A follower always revalidates through
+  its own HttpOnly slot cookie instead of returning its stale local session;
+  the refresh owner may continue using its in-memory refreshed result.
+- Files: `web/lib/auth.ts` and `AGENTLOG.md`.
+- Verification Status: Web type checking and diff review pending. No push
+  performed.
+
 # 2026-10-01T22:41:32Z — Preserve Account Switcher Context And Loading State
 
 - Agent: Codex
@@ -15513,3 +15748,24 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Changes Made: Reduced the profile row top offset to make a 16px top inset and set the navigation start padding to 16px in both modes. Preserved the 8px spacing between navigation buttons. Updated the navigation, design-system, and active account-switcher contracts.
 - Files: web/app/globals.css, docs/rules.md, docs/units/navigation.md, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
 - Verification Status: `git diff --check` passed. No build or tests run.
+## 2026-10-02T00:41:49Z — Correct refresh icon color specificity
+
+- Agent: Codex
+- Prompt Summary: Correct the account-switcher refresh button color behavior after staging showed the background fix but not the white resting icon.
+- Changes Made: Added a nested refresh-icon rule so the glyph inherits the button color; documented white resting and accent hover/focus/active states with no hover background.
+- Files: web/app/globals.css, docs/design-system.md, packages/design/design.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` pending; no full build or test suite run.
+## 2026-10-02T00:45:35Z — Set staging landing progress to 80 percent
+
+- Agent: Codex
+- Prompt Summary: Update the staging landing page progress label and bar to 80%.
+- Changes Made: Updated the rendered percentage, progressbar ARIA value, and CSS fill width on the staging branch. Main and the separate public-site repository were not changed.
+- Files: web/app/page.tsx, web/app/landing.module.css, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed; no full build or test suite run.
+## 2026-10-02T01:01:03Z — Add staged session-management seam
+
+- Agent: Codex
+- Prompt Summary: Begin decoupling session management from the monolithic auth client while retaining legacy behavior as a safe migration path.
+- Changes Made: Added `web/lib/session-manager.ts`, migrated `app-shell-route.tsx` to its session contract, added cross-tab rehydration for session updates, and removed the route's duplicate session-update restore listener. Credential and refresh operations remain delegated to `web/lib/auth.ts` for staging verification.
+- Files: web/lib/session-manager.ts, web/components/app-shell-route.tsx, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed. No full build or test suite run.

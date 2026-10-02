@@ -2173,8 +2173,8 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  width: 1rem;
-  min-height: 1rem;
+  width: 1.75rem;
+  min-height: 1.75rem;
   color: var(--color-accent);
   text-align: center;
 }
@@ -2186,13 +2186,34 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .account-switcher-header-status button {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1.75rem;
   border: 0;
   padding: 0;
   background: none;
-  color: var(--color-accent);
+  color: #ffffff;
   font: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
+}
+
+.account-switcher-header-status button i {
+  color: inherit;
+}
+
+.account-switcher-header-status button:hover,
+.account-switcher-header-status button:focus-visible,
+.account-switcher-header-status button:active {
+  background: transparent;
+  color: var(--color-accent);
+  outline: none;
+}
+
+.account-switcher-header-status button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .action-menu-item:hover,
@@ -2209,12 +2230,17 @@ body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) .
 }
 
 .action-menu-item:disabled {
-  cursor: default;
+  cursor: not-allowed;
   opacity: 0.65;
 }
 
 .action-menu-item:disabled:hover {
   background: transparent;
+}
+
+.action-menu-item-main:disabled,
+.action-menu-item-trailing-action:disabled {
+  cursor: not-allowed;
 }
 
 .topbar-brand {
@@ -3255,7 +3281,8 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
 
 .modal-back,
 .modal-close,
-.modal-back-placeholder {
+.modal-back-placeholder,
+.modal-close-placeholder {
   display: inline-grid;
   width: 2rem;
   height: 2rem;
@@ -3275,6 +3302,10 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
 }
 
 .modal-close {
+  grid-column: 3;
+}
+
+.modal-close-placeholder {
   grid-column: 3;
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BrandLockup } from '@/components/design/brand-lockup';
@@ -26,6 +26,8 @@ type SessionRecoveryScreenProps = {
   restoringAccountSlot?: string | null;
   accountError?: string | null;
   onRestoreAccount?: (account: AccountSummary) => void;
+  accountsLoading?: boolean;
+  onDiscoverAccounts?: () => void;
 };
 
 const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'offline' | 'choice' | 'waiting'>, { title: string }> = {
@@ -36,12 +38,22 @@ const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'o
   pending_deletion: { title: 'Session ended' },
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onContinueRecovery, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount }: SessionRecoveryScreenProps) {
+export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onContinueRecovery, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount, accountsLoading = false, onDiscoverAccounts }: SessionRecoveryScreenProps) {
   const [showChoice, setShowChoice] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const discoveryStatusRef = useRef<SessionRecoveryStatus | null>(null);
   const availableAccounts = accounts
     .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== currentUsername?.toLowerCase())
     .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+  const isTerminalStatus = status === 'expired' || status === 'security' || status === 'terminated' || status === 'deactivated' || status === 'pending_deletion';
+  const hasAvailableAccounts = availableAccounts.length > 0;
+  const discoveryPending = isTerminalStatus && (accountsLoading || discoveryStatusRef.current !== status);
+
+  useEffect(() => {
+    if (!isTerminalStatus || discoveryStatusRef.current === status) return;
+    discoveryStatusRef.current = status;
+    onDiscoverAccounts?.();
+  }, [isTerminalStatus, onDiscoverAccounts, status]);
 
   if (showAddAccount) {
     return (
@@ -137,22 +149,25 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
   }
 
   const message = messages[status];
+  const canCloseRecovery = !discoveryPending && !hasAvailableAccounts;
   return (
     <main className="lifecycle-screen" data-theme={appearance}>
       <Modal
         title={message.title}
-        onClose={onCancelRecovery ?? (() => undefined)}
+        onClose={canCloseRecovery ? (onCancelRecovery ?? (() => undefined)) : (() => undefined)}
         closeLabel="Continue without this session"
         closeOnBackdrop={false}
-        closeDisabled={isContinuingRecovery || !!restoringAccountSlot}
+        closeDisabled={!canCloseRecovery || isContinuingRecovery || !!restoringAccountSlot}
+        showClose={canCloseRecovery}
         className="session-recovery-account-modal"
         actions={<>
-          <button className="button-secondary" type="button" onClick={onCancelRecovery} disabled={isContinuingRecovery || !!restoringAccountSlot}>Close</button>
-          <button className="button-primary" type="button" onClick={() => setShowAddAccount(true)} disabled={isContinuingRecovery || !!restoringAccountSlot}>Add account</button>
+          {canCloseRecovery ? <button className="button-secondary" type="button" onClick={onCancelRecovery} disabled={isContinuingRecovery || !!restoringAccountSlot}>Close</button> : null}
+          <button className="button-primary" type="button" onClick={() => setShowAddAccount(true)} disabled={discoveryPending || isContinuingRecovery || !!restoringAccountSlot}>Add account</button>
         </>}
       >
         <p className="session-recovery-copy">Your session has ended. Choose how you’d like to continue.</p>
-        {availableAccounts.length > 0 && onRestoreAccount ? (
+        {discoveryPending ? <p role="status">Checking your remembered accounts…</p> : null}
+        {hasAvailableAccounts && onRestoreAccount ? (
           <div className="session-recovery-accounts" role="group" aria-label="Available accounts" aria-busy={!!restoringAccountSlot}>
             {availableAccounts.map((account) => (
               <button className="session-recovery-account" type="button" key={account.accountSlot} disabled={!!restoringAccountSlot || isContinuingRecovery} onClick={() => onRestoreAccount(account)}>
@@ -163,7 +178,6 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
             ))}
           </div>
         ) : null}
-        {isContinuingRecovery ? <p role="status">Checking your other accounts…</p> : null}
         {accountError ? <p className="session-recovery-error" role="alert">{accountError}</p> : null}
       </Modal>
     </main>

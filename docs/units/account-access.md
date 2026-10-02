@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-01T22:41:32Z
+**Last edited:** 2026-10-02T00:01:48Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -293,13 +293,30 @@ or switching accounts updates the shared selected-slot key. Other open tabs
 reload when that key changes, then restore and render only the selected slot.
 Legacy tab-local slot values do not override the shared selection.
 
+The app shell consumes the staged `web/lib/session-manager.ts` session seam for
+session reads, restoration, saving, and cross-tab update handling. The seam
+still delegates credential operations to the legacy implementation in
+`web/lib/auth.ts`; bearer tokens are never copied through cross-tab messages.
+When another tab publishes a session update, a tab without an in-memory session
+rehydrates through its own selected-slot cookie instead of treating the update
+as a logout. The legacy auth functions remain available during staging
+verification and are removed only after the new seam is proven stable.
+
 ##### Startup experience
 
 On a hard reload, show the
 signed-in application frame immediately when a safe cached user summary exists.
 Do not show cached protected feed, profile, or conversation data, or enable
-account actions, until an authenticated API request succeeds. The HttpOnly
-slot cookie remains authoritative for API access. A terminal API response
+account actions, until an authenticated API request succeeds. On Home, once
+`/auth/session` validates the selected slot, the first Explore or Following
+feed request starts immediately in parallel with user hydration. Session and
+current-user readiness control when the shell becomes interactive; the shell
+does not wait for the feed request. While the prefetch is pending,
+`HomeScreen` owns its loading state. A successful response is passed to
+`HomeScreen` so it does not issue a duplicate initial request; if the prefetch
+fails, Home falls back to its existing feed load and preserves the normal feed
+error behavior. The HttpOnly slot cookie
+remains authoritative for API access. A terminal API response
 replaces the frame with session recovery; a network failure keeps private data
 hidden and offers retry. After non-network ambiguous retries are exhausted,
 **Take me back** opens the existing recovery fallback. Routes with no cached
@@ -335,8 +352,7 @@ validation. The response is not proof that a session is valid. The app shell
 owns terminal and ambiguous recovery. The recovery modal validates
 remembered alternatives and keeps the user in Friink when one is usable;
 app recovery returns public only after no candidate restores. The behavior is
-implemented locally; browser/staging acceptance remains pending. The history
-of this loop is tracked in
+implemented and tested on staging. The history of this loop is tracked in
 [BUG-AUTH-007](../bugs.md#bug-auth-007--terminal-session-recovery-can-loop-between-public-site-and-app).
 The exact state of the browser involved in the reported incident remains
 unverified. See ACCESS-AC-049 and MIG-003 for the public-entry acceptance
@@ -347,11 +363,15 @@ matrix.
 This section owns the client experience when session restoration fails; the
 server's session and lifecycle decisions remain authoritative. A technically
 ambiguous error does not mean the session ended. A confirmed terminal result
-shows a blocking `Session ended` modal with neutral copy, available remembered
-accounts, and Add account. Selecting a remembered account validates that slot
-before continuing. Close and the close icon restore the most recently used valid
-remembered account, or return to the public site
-when none remains. Lifecycle state and the associated reactivation or
+shows a blocking `Session ended` modal with neutral copy. The first modal
+discovers remembered accounts in place and shows the single loading status
+“Checking your remembered accounts…” only while doing so; it disappears when
+the account list resolves and must not require a second account-choice modal.
+Available accounts and Add account are shown directly. Selecting a remembered
+account validates that slot before continuing. When a usable remembered account
+exists, Close and the close icon are hidden; when none exists, Close/X returns
+to the public site.
+Lifecycle state and the associated reactivation or
 deletion-cancellation rules belong to
 [Account Lifecycle](./account-lifecycle.md).
 
@@ -364,9 +384,9 @@ Current web entry points do not all present the same recovery surface:
   opens a `Session ended` modal with the neutral copy “Your session has ended.
   Choose how you’d like to continue.” Available remembered accounts appear
   below the copy. Selecting one validates and restores it; Add account opens
-  the existing login/signup modal. Close and the close icon restore the most recently
-  used valid remembered account, or clear the session hint and return to the
-  public site when none remains.
+  the existing login/signup modal. When an available account exists, Close and
+  the close icon are hidden. When none exists, Close and X clear the session
+  hint and return to the public site.
 - **Public root (`/`)** renders immediately, where `PublicRouteGuard` calls
   `/auth/entry-status` in the background. A positive presence result redirects
   to `/home` without restoring first; the app shell owns validation, refresh,
@@ -409,10 +429,10 @@ Failure cases are distinct:
    entering a route with a shared termination notice; the notice is recovery
    context, not proof that the current slot is still unavailable. Only a fresh
    terminal response shows the shared neutral `Session ended` modal with
-   available remembered-account choices and Add account. Selecting an account
-   validates it before switching. Close or the close icon tries the
-   most-recent valid fallback and returns to the public site with redirect
-   the public site if none restores. Never silently switch identity.
+   available remembered-account choices and Add account. The first modal
+   discovers those choices in place. Selecting an account validates it before
+   switching. Close/X is hidden while a usable account is available; otherwise
+   it returns to the public site. Never silently switch identity.
 3. **Remote logout or security revocation:** use the same session-ended modal
    and recovery actions as other confirmed terminal results.
 4. **Deactivation or pending deletion:** the initiating client logs out
@@ -433,9 +453,9 @@ pending.
 When a current session is confirmed ended, Friink shows the neutral copy
 “Your session has ended. Choose how you’d like to continue.” Available
 remembered accounts appear as choices, and Add account opens the existing
-login/signup modal. The Close and the close icon try remembered accounts in
-most-recent-use order, then return to `/` if none can be
-restored. For deactivation/pending deletion, the initiating client immediately
+login/signup modal. The first modal performs this discovery in place. Close/X
+is hidden while a usable remembered account exists and is shown only when none
+exists, in which case it returns to `/`. For deactivation/pending deletion, the initiating client immediately
 logs out after the successful lifecycle operation; another client uses these
 same recovery choices. Friink never renders a candidate's data before that
 slot has validated. The recovery flow is:
@@ -448,9 +468,10 @@ slot has validated. The recovery flow is:
 3. On confirmed terminal failure, clear the in-memory credential for that
    account and keep only safe recovery context. When a pre-existing notice is
    present during route entry, validate the current slot before showing neutral
-   session-ended copy or selecting a fallback. Add account reuses login/signup;
-   Close and the close icon validate fallback sessions by recency before
-   returning public.
+   session-ended copy or selecting a fallback. Discover remembered accounts
+   inside the first recovery modal; Add account reuses login/signup. Hide
+   Close/X while a usable account is available and return public with Close/X
+   when none is available.
 4. A timeout, network/CORS failure, `403`, `5xx`, malformed response, or other
   ambiguous failure does not prove that the session ended. Keep the user in
   retryable recovery without changing identity. With cached identity, keep the
@@ -488,13 +509,23 @@ and [BUG-AUTH-004](../bugs.md#bug-auth-004--successfully-restored-account-remain
 
 #### Refresh coordination and recovery contract
 
-- Use one captured active-slot value for both refresh coordination and the
+- Use one resolved active-slot value for both refresh coordination and the
   refresh request, and verify it is still active before saving the response.
-- A confirmed terminal failure presents the neutral `Session ended` modal.
-  Selecting a listed remembered account validates that slot before switching;
-  Add account reuses the existing login/signup flow. Close and the close icon attempt
-  valid remembered accounts in most-recent-use order, then return to the public
-  site when none can be restored. Ambiguous
+  Bootstrap and cross-tab races may briefly leave the selected slot unavailable;
+  the client waits briefly or uses the most-recent cached slot, and never sends
+  a slotless refresh request. An unresolved slot remains a transient client
+  error rather than terminal session recovery. This guard is tracked in
+  [BUG-AUTH-013](../bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-misclassified-as-terminal).
+- Authenticated requests and cookie-backed entry validation treat
+  `TOKEN_EXPIRED`, `SESSION_NOT_FOUND`, and `REFRESH_TOKEN_INVALID` as one
+  selected-slot coordinated refresh/revalidation opportunity before terminal
+  recovery. Only a failed recovery clears the in-memory session and broadcasts
+  session termination.
+- A confirmed terminal failure presents the neutral `Session ended` modal and
+  discovers remembered accounts inside that first modal. Selecting a listed
+  remembered account validates that slot before switching; Add account reuses
+  the existing login/signup flow. Close/X is hidden while a usable account is
+  available and returns to the public site when none exists. Ambiguous
   failures keep the active identity in retryable recovery; they never cause a
   silent switch.
 - A single tab owns the browser-client termination notice. Other tabs wait for
@@ -523,15 +554,21 @@ rotating the refresh cookie. Refresh rotation is reactive to access expiry and r
 bounded retry grace and family-reuse detection. Cookie-authenticated unsafe
 requests enforce allowed-Origin checks. A tab that observes another tab's
 refresh revalidates with its own slot access cookie instead of rotating again.
-The historical cause of the stale-token replays remains unknown; see the bug
-record for details.
+The browser coordination lease now remains open for 45 seconds and a
+successful result remains published for 60 seconds, covering the API's
+30-second request timeout and matching the server's configured refresh-reuse
+grace window. Followers still continue immediately after observing success;
+the longer result lifetime only prevents a second refresh from starting while
+the first result is recoverable. The historical cause of the stale-token
+replays remains unknown; see the bug record for details.
 
 #### Multi-account session continuity policy
 
 On public entry, when one or more remembered sessions are valid, restore the
-most recently used one. During terminal recovery, users can select an available
-remembered account or Add account. Close and the close icon try the most recently used
-remaining session before returning to the public site.
+most recently used one. During terminal recovery, the first modal discovers and
+shows available remembered accounts, alongside Add account. Close/X is hidden
+while a usable remaining session exists and returns to the public site when none
+is available.
 A remembered-account row alone is not proof that its session is valid;
 validate each candidate's own slot-scoped session before exposing that
 account's app state. A session is restorable while its refresh token remains
@@ -578,10 +615,11 @@ item.
 - **ACCESS-R-016:** Presenting a rotated/revoked token revokes its family and
   records a durable security event, subject to bounded retry grace.
 - **ACCESS-R-031:** A confirmed terminal failure presents the neutral
-  `Session ended` modal with available remembered accounts and Add account.
-  Selecting an account validates it before switching. Close and the close icon restore
-  the most recently used valid account or return to the public site with the
-  public site. Ambiguous failures never silently switch identity;
+  `Session ended` modal and discovers remembered accounts within that first
+  modal. Available accounts and Add account are shown directly; selecting an
+  account validates it before switching. Close/X is hidden while a usable
+  account is available and returns to the public site when none is available.
+  Ambiguous failures never silently switch identity;
   non-network entry recovery retries four times at 10-second intervals.
   When a safe cached identity exists, entry validation keeps the inert app
   frame visible with private content hidden and offers **Try again** on
@@ -754,7 +792,10 @@ does not change account limits, authorization, session behavior, or access.
 The menu keeps a viewport-safe fixed width, truncates long account labels before
 the trailing controls, and contains row hover surfaces within its padded bounds.
 Its width is capped at `min(16rem, calc(100vw - 1rem))`; the header status
-control remains visible when account labels are long.
+control remains visible when account labels are long. When idle, that status
+slot is an icon-only refresh button; while discovery is running it becomes the
+shared spinner. Disabled account actions use a not-allowed cursor so a blocked
+click is visually explicit.
 
 #### Business rules and contract
 
@@ -859,13 +900,11 @@ control remains visible when account labels are long.
 These items have implementation or user-reported progress; they are acceptance
 checks, not all new code projects:
 
-1. **Refresh and reload stability (BUG-AUTH-003/006).** The deterministic API
-   retry fix and regression coverage are in the current local code, but the
-   agent log does not confirm that fix has been deployed to staging. The user
-   reports stability with a five-minute access-token lifetime; the one-day
-   refresh-token check is planned for 2026-09-30. Confirm the tested build, then
-   complete reload interruption, lost-response, same-slot multi-tab, and
-   refresh-expiry checks. Historical stale-token cause remains unproven.
+1. **Refresh grace replay (BUG-AUTH-006).** The deterministic API retry fix and
+   regression coverage are deployed, with staging testing still underway.
+   Complete reload interruption, lost-response, same-slot multi-tab, and
+   refresh-expiry checks. BUG-AUTH-003 is closed as not reproduced on the latest
+   staging behavior; its historical stale-token cause remains unproven.
 2. **Multi-tab account switching.** Browser-wide switch serialization and
    shared selected-slot restoration are implemented. One user-reported staging
    smoke check passed ordinary login and switching, but the multi-tab regression
@@ -963,8 +1002,8 @@ findings open. These are bug records, not changes to active authentication
 rules:
 
 - [BUG-AUTH-009](../bugs.md#bug-auth-009--session-ended-recovery-ownership-can-leave-close-inoperative): implemented locally with synchronized owner state, a serialized recovery action, and a **Continue here** action for waiting tabs. Multi-tab acceptance remains pending.
-- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): implemented locally; ordinary switches reuse the validated destination refresh cookie. Missing or unusable cookies use a locked, session-validated repair path. Staging showed 13 active families on one account session; the causal link to the recovery incident is unproven.
-- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): redacted runtime and durable refresh-attempt diagnostics are implemented locally. Migration/deployment verification and the historical incident's exact failure remain open.
+- [BUG-AUTH-010](../bugs.md#bug-auth-010--account-switches-accumulate-active-refresh-token-families): resolved on the latest staging build after the account-switch API calls changed; ordinary switches reuse the validated destination refresh cookie, and missing or unusable cookies use a locked, session-validated repair path. The historical 13-family staging count and unproven causal link to the recovery incident remain recorded in the bug register.
+- [BUG-AUTH-011](../bugs.md#bug-auth-011--refresh-failures-lack-enough-correlated-diagnostics): resolved; redacted runtime and durable refresh-attempt diagnostics are deployed, and correlated staging logs are available. The exact failure from the historical incident remains a separate lookup.
 - [BUG-AUTH-008](../bugs.md#bug-auth-008--account-switching-can-race-across-open-tabs) remains reopened for the latest report that the switcher became disabled with multiple tabs. The exact request and UI state were not captured.
 
 The staging DB audit found `@muflahulfurqan`'s session active after the report;
@@ -1099,11 +1138,10 @@ logs.
   sequence for each historical session loss. The non-atomic localStorage lock
   fallback remains a possible source of competing IDs in browsers without Web
   Locks, but it was not reproduced in a browser.
-- Latest user report: the session is currently stable with a five-minute
-  access-token lifetime. Validation of a one-day refresh-token lifetime is
-  planned for 2026-09-30; it has not yet been reported as complete. BUG-AUTH-003
-  remains open while that check and the broader refresh stability matrix are
-  pending.
+- Latest disposition: the user reports that the BUG-AUTH-003 session-stability
+  symptom is no longer happening. Its historical refresh-reuse evidence and
+  unknown browser trigger remain preserved in the bug register; the report is
+  closed as not reproduced on the latest staging behavior.
 - Earlier staging evidence showed that interrupting page reload during
   session restoration can end the session, and the 2026-09-27 run lost
   `@muflah` in Chrome and Firefox after the API detected stale refresh-token

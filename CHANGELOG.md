@@ -1,5 +1,109 @@
 # Changelog
 
+## 2026-10-02T00:24:19Z
+- [account switcher] Made the idle refresh button white by default and accent
+  colored on hover, focus, and active interaction without a hover background.
+  The refresh spinner remains unchanged.
+
+## 2026-10-02T00:20:30Z
+- [auth/session] Fixed the slotless bootstrap refresh race. The web client now
+  resolves or briefly waits for the selected account slot before refreshing;
+  unresolved slot state is transient and cannot trigger Session ended or a
+  public-site redirect.
+- [bug tracking] Added BUG-AUTH-013 with the staging evidence and acceptance
+  checks for this failure mode.
+
+## 2026-10-02T00:15:00Z
+- [session recovery] Removed the redundant “Checking your other accounts…”
+  status from the session-ended modal. The initial remembered-account loading
+  message remains visible only while discovery is pending and disappears when
+  the account list resolves.
+
+## 2026-10-02T00:09:52Z
+- [bug tracking] Closed BUG-AUTH-003 as not reproduced on the latest staging
+  behavior; historical refresh-reuse evidence remains preserved.
+- [bug tracking] Closed BUG-AUTH-004 as fixed previously.
+- [bug tracking] Closed BUG-AUTH-002 after the public-entry logic change.
+- [bug tracking] Updated BUG-AUTH-006 to fixed with staging testing in
+  progress.
+
+## 2026-10-02T00:07:22Z
+- [bug tracking] Closed BUG-AUTH-011 after correlated staging diagnostics and
+  runtime log access were confirmed available.
+- [bug tracking] Closed BUG-AUTH-007 after the terminal recovery redirect-loop
+  fix was tested on staging without reproducing the loop.
+
+## 2026-10-02T00:05:29Z
+- [bug tracking] Closed BUG-AUTH-010 after the latest staging build was tested
+  with the updated account-switch API calls. The register now records the
+  former refresh-family accumulation as resolved while preserving its
+  historical, unproven relationship to session-recovery reports.
+
+## 2026-10-02T00:01:48Z
+- [session stability] Added one selected-slot coordinated recovery retry for
+  `SESSION_NOT_FOUND` and `REFRESH_TOKEN_INVALID` responses during access-token
+  updates, cookie-backed entry validation, and remembered-account restore.
+  Genuine failed refresh/revocation still reaches terminal recovery.
+- [bug tracking] Logged BUG-AUTH-012 for token-update races being misclassified
+  as dead sessions.
+
+## 2026-10-01T23:55:00Z
+- [account switcher] Aligned the idle refresh glyph to the same right-edge
+  status position as the account-refresh spinner without changing the spinner
+  slot or loading behavior.
+- [documentation] Updated the shared account-selector design contract.
+
+## 2026-10-01T23:47:05Z
+- [session recovery] Made terminal recovery a single-modal flow. The first
+  session-ended modal now discovers remembered accounts in place, shows a
+  loading state during discovery, hides Close/X when a usable account exists,
+  and returns to the public site with Close/X only when no account is available.
+- [documentation] Updated the account-access, design-system, rules, and shared
+  Modal contracts.
+
+## 2026-10-01T23:35:40Z
+- [session entry/feed] Decoupled shell readiness from the initial Home feed
+  request. The shell now becomes interactive after session/current-user
+  readiness, while Home shows its own loading state during prefetch and falls
+  back to the normal feed request if prefetch fails.
+- [documentation] Synchronized the active account-access, feed, and rules
+  contracts with the new shell/feed boundary.
+
+## 2026-10-01T23:25:09Z
+- [session stability] Extended per-slot browser refresh coordination to a
+  45-second lease and 60-second successful-result publication window. This
+  gives slow tabs time to observe the owner’s result and revalidate through
+  their own HttpOnly cookies instead of initiating duplicate refresh calls.
+- [documentation] Recorded the cross-tab coordination timing in the active
+  account-access and authentication rules.
+
+## 2026-10-01T23:08:19Z
+- [account switcher] Added an idle refresh control to the switcher header;
+  it occupies the same slot as the discovery spinner and triggers the existing
+  deduplicated refresh flow. Disabled switcher actions now use an explicit
+  not-allowed cursor.
+- [documentation] Updated the active account-access, rules, and design
+  contracts for the refresh affordance and blocked-action feedback.
+
+## 2026-10-01T23:03:44Z
+- [session entry/feed] Start the first Home Explore or Following feed request
+  immediately after `/auth/session` validates the selected slot, overlapping
+  user hydration. Successful pages are passed into `HomeScreen` without a
+  duplicate request; failed prefetches fall back to the existing Home load.
+- [documentation] Updated the active account-access, feed, and rule contracts
+  for the coordinated entry flow.
+
+## 2026-10-01T22:54:36Z
+- [documentation] Corrected the active session-recovery rule so successful
+  account switches are documented as reloading the current URL rather than
+  navigating to `/home`.
+
+## 2026-10-01T22:52:08Z
+- [session recovery] Fixed cross-tab refresh followers reusing stale local
+  access tokens after another tab completed a refresh. Followers now
+  revalidate through their own HttpOnly slot cookie; only the refresh owner
+  reuses its in-memory refreshed session.
+
 ## 2026-10-01T22:41:32Z
 - [account switcher] Preserved the current URL after successful account
   switches by reloading the same page. The selector stays open with a row
@@ -5605,3 +5709,12 @@ _Last updated: 2026-09-10_
 
 ## 2026-09-24T00:15:21Z
 - [design/navigation] Set the Profile control 16px from the drawer top and 16px above the first navigation button in expanded and collapsed layouts.
+## 2026-10-02T00:41:49Z
+
+- Fixed the account-switcher refresh icon so its nested glyph inherits the white resting color and uses the accent color only for hover, focus, and active states without a background.
+## 2026-10-02T00:45:35Z
+
+- Updated the staging landing page development indicator to display and expose 80%, with the visual bar filled to the same value.
+## 2026-10-02T01:01:03Z
+
+- Added the first session-management migration seam and moved the app shell onto it. Cross-tab session updates now rehydrate a tab through its own slot cookie instead of leaving the app with a cleared in-memory session; legacy auth remains the credential fallback.

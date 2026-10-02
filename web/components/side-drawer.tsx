@@ -336,7 +336,14 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
               </span>
               <span className="account-switcher-header-status">
                 {accountLoading ? <i className="fa-solid fa-spinner fa-spin" aria-label="Updating accounts" /> : null}
-                {!accountLoading && accountLoadError ? <button type="button" onClick={() => void refreshAccounts()}>Retry</button> : null}
+                {!accountLoading ? <button
+                  className="account-switcher-refresh"
+                  type="button"
+                  aria-label={accountLoadError ? 'Retry account refresh' : 'Refresh accounts'}
+                  title={accountLoadError ? 'Retry account refresh' : 'Refresh accounts'}
+                  disabled={accountOperation !== null}
+                  onClick={() => void refreshAccounts()}
+                ><i className="fa-solid fa-rotate" aria-hidden="true" /></button> : null}
               </span>
             </div>
           }

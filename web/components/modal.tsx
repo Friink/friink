@@ -14,9 +14,10 @@ type ModalProps = {
   className?: string;
   closeOnBackdrop?: boolean;
   closeDisabled?: boolean;
+  showClose?: boolean;
 };
 
-export function Modal({ title, children, actions, onClose, onBack, closeLabel = 'Close', backLabel = 'Back', className = '', closeOnBackdrop = true, closeDisabled = false }: ModalProps) {
+export function Modal({ title, children, actions, onClose, onBack, closeLabel = 'Close', backLabel = 'Back', className = '', closeOnBackdrop = true, closeDisabled = false, showClose = true }: ModalProps) {
   const titleId = useId();
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
@@ -38,7 +39,7 @@ export function Modal({ title, children, actions, onClose, onBack, closeLabel = 
         <header className="modal-header">
           {onBack ? <button className="modal-back" type="button" aria-label={backLabel} title={backLabel} onClick={onBack}><i className="fa-solid fa-arrow-left" aria-hidden="true" /></button> : <span className="modal-back-placeholder" aria-hidden="true" />}
           <h2 id={titleId}>{title}</h2>
-          <button className="modal-close" type="button" aria-label={closeLabel} onClick={onClose} disabled={closeDisabled}>×</button>
+          {showClose ? <button className="modal-close" type="button" aria-label={closeLabel} onClick={onClose} disabled={closeDisabled}>×</button> : <span className="modal-close-placeholder" aria-hidden="true" />}
         </header>
         <div className="modal-body">{children}</div>
         {actions ? <footer className="modal-actions">{actions}</footer> : null}

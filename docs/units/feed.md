@@ -5,7 +5,7 @@ other contextual timelines.
 
 **Status:** Active  
 **Tier:** Standard  
-**Last edited:** 2026-10-01T20:50:41Z
+**Last edited:** 2026-10-01T23:35:40Z
 **Platforms:** Web and API
 
 ## Canonical ownership
@@ -54,10 +54,12 @@ and reading position. [Posts](./posts.md) owns post semantics and visibility.
 - **FEED-R-011:** Composer text is held in screen-local memory only. Leaving a
   feed or contextual composer does not restore its previous text from browser
   storage.
-- **FEED-R-012:** Home owns one initial feed request through `HomeScreen`; the
-  shell must not issue a duplicate posts prefetch for the Home route. Non-Home
-  surfaces may retain the shell-owned post-state prefetch used by their current
-  fallback paths.
+- **FEED-R-012:** Home starts one initial feed request after `/auth/session`
+  validates the selected slot. The request may be initiated by the route shell
+  while user hydration is still in progress, then is consumed by `HomeScreen`
+  without a duplicate request. If that prefetch fails, `HomeScreen` owns the
+  normal fallback request. Non-Home surfaces may retain the shell-owned
+  post-state prefetch used by their current fallback paths.
 
 ## UX and flows
 
@@ -76,10 +78,16 @@ Feed responses are currently returned through the posts API (`FeedPageResponse`)
 and consumed by `home-screen.tsx`, `feed-post.tsx`, and profile screens. Cursor
 pagination and update endpoints remain server-authoritative.
 
-On Home, `HomeScreen` owns the initial feed request. The shell does not issue
-its separate posts prefetch for the Home route, avoiding two overlapping
-`/posts` reads during app entry. The shell-owned prefetch remains available on
-non-Home surfaces that use the shared post state for existing fallback data.
+On Home, the route shell starts the initial feed request immediately after
+`/auth/session` validates the slot, overlapping it with user hydration. The
+shell becomes interactive when session and current-user readiness complete; it
+does not wait for the feed request. While the prefetch is pending,
+`HomeScreen` owns the loading state. `HomeScreen` consumes the successful page
+supplied by the shell, avoiding two overlapping `/posts` reads during app
+entry. A failed prefetch is not an entry failure: `HomeScreen` falls back to
+its normal request and feed error state.
+The shell-owned prefetch remains available on non-Home surfaces that use the
+shared post state for existing fallback data.
 The generic API client retries once only when authentication refreshes after
 `401 TOKEN_EXPIRED`; other failures are not automatically retried. An initial
 Home load failure currently displays an error without a retry control, and

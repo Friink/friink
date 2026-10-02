@@ -6,7 +6,7 @@ product-level design language that should remain consistent across the public
 site, authentication flows, and signed-in application.
 
 **Status:** Active  
-**Last edited:** 2026-09-29T23:48:44Z
+**Last edited:** 2026-10-01T23:47:05Z
 **Implementation contract:** [`packages/design/design.md`](../packages/design/design.md)  
 **Token source:** [`web/theme.config.ts`](../web/theme.config.ts)  
 **Shared styling source:** [`web/app/globals.css`](../web/app/globals.css)
@@ -210,7 +210,9 @@ The exact widths, heights, breakpoints, and token names are defined in
 - The Profile identity row does not use the active destination's gray fill,
   including while the signed-in user's own Profile is open. In the expanded
   drawer, the account-switcher button uses that same gray fill on hover,
-  keyboard focus, and while its menu is open; its icon retains the accent color.
+  keyboard focus, and while its menu is open; the refresh icon is white at rest
+  and turns accent-colored on hover, keyboard focus, or active press without a
+  hover background.
 - TopBar icon controls use that same neutral gray for hover and keyboard-focus
   backgrounds; their icon color keeps the existing accent treatment.
 - The drawer's Profile picture is 44px in both expanded and collapsed modes.
@@ -256,14 +258,18 @@ The exact widths, heights, breakpoints, and token names are defined in
   with neutral copy: “Your session has ended. Choose how you’d like to
   continue.” Show available remembered accounts in most-recent order, each
   with a safe avatar and username. Selecting an account validates only that
-  slot, and progress identifies the account currently being restored.
-- **Add account** opens the existing login/signup modal. **Close** and the
-  close icon try remembered accounts in most-recent-use order, then return to
-  the public site if none can be restored. The shared modal can show no
-  account rows when no other remembered account is available. When another tab
-  owns recovery, the waiting screen offers **Continue here** so the user can
-  take over from the current tab. Recovery controls stay disabled while a
-  restore or fallback is already running.
+  slot, and progress identifies the account currently being restored. Account
+  discovery happens inside this first modal and shows the single loading status
+  “Checking your remembered accounts…” only while discovery runs; it disappears
+  when the account list resolves. Recovery must not require a second
+  account-choice modal.
+- **Add account** opens the existing login/signup modal. When a usable
+  remembered account is available, the session-ended modal shows the account
+  rows directly and hides Close/X so the user chooses a recovery action. When
+  no usable remembered account is available, Close/X returns to the public
+  site. When another tab owns recovery, the waiting screen offers **Continue
+  here** so the user can take over from the current tab. Recovery controls stay
+  disabled while a restore or fallback is already running.
 - Network failures retain the full-page connection state and **Refresh**
   action. Do not show terminal account choices or claim the account has ended
   while session validation is unavailable.

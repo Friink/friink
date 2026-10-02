@@ -65,8 +65,13 @@ const ACCOUNT_SELECTION_LEASE_KEY = 'friink-account-selection-lease';
 const ACCOUNT_SELECTION_LEASE_MS = 30000;
 const ACCOUNT_SELECTION_OPERATION_TIMEOUT_MS = 15000;
 const DEFAULT_DEMO_EMAIL = 'demo@friink.local';
-const REFRESH_LEASE_MS = 20000;
-const REFRESH_RESULT_TTL_MS = 3000;
+// Refresh coordination must outlive the slowest observed staging refresh.
+// The API request itself times out at 30s; the extra margin lets followers
+// wait for the owner instead of starting a second rotation. The result stays
+// published for the server's 60s refresh-reuse grace window, while followers
+// still continue immediately after they observe success.
+const REFRESH_LEASE_MS = 45000;
+const REFRESH_RESULT_TTL_MS = 60000;
 const refreshPromises = new Map<string, Promise<AuthSession>>();
 let authSessionGeneration = 0;
 const tabId = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
@@ -277,6 +282,7 @@ type AuthErrorCode =
   | 'TOKEN_MALFORMED'
   | 'TOKEN_SIGNATURE_MISMATCH'
   | 'TOKEN_SCHEMA_INVALID'
+  | 'ACCOUNT_SLOT_UNAVAILABLE'
   | 'SESSION_NOT_FOUND'
   | 'REFRESH_TOKEN_MISSING'
   | 'REFRESH_TOKEN_INVALID'
@@ -728,7 +734,7 @@ export async function restoreAccountSession(accountSlot: string): Promise<AuthSe
     const user = await getCurrentUser('', accountSlot, true);
     return { accessToken: '', tokenType: 'Bearer', user, accountSlot };
   } catch (error) {
-    if (!(error instanceof AuthApiError) || error.status !== 401 || !['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING'].includes(error.code ?? '')) {
+    if (!(error instanceof AuthApiError) || error.status !== 401 || !['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING', 'SESSION_NOT_FOUND', 'REFRESH_TOKEN_INVALID'].includes(error.code ?? '')) {
       throw error;
     }
     return coordinateRefresh(accountSlot, false, true);
@@ -788,12 +794,16 @@ export function isLoginChallenge(value: AuthSession | LoginChallenge): value is 
 }
 
 export async function refreshAuthSession(accountSlot: string | null = activeAccountSlot()): Promise<AuthSession> {
-  const key = accountSlot ?? 'unassigned';
+  const resolvedSlot = await resolveRefreshSlot(accountSlot);
+  if (!resolvedSlot) {
+    throw new AuthApiError('The account slot is still loading. Please try again.', 0, 'ACCOUNT_SLOT_UNAVAILABLE');
+  }
+  const key = resolvedSlot;
   const existing = refreshPromises.get(key);
   if (existing) return existing;
 
   installAuthCoordinationListener();
-  const refreshPromise = coordinateRefresh(accountSlot, true, true)
+  const refreshPromise = coordinateRefresh(resolvedSlot, true, true)
     .catch((error) => {
       if (!isTerminalRefreshFailure(error)) throw error;
       preserveFailedAuthContext(error);
@@ -808,28 +818,32 @@ export async function refreshAuthSession(accountSlot: string | null = activeAcco
 }
 
 /** Restore the in-memory session required by any authenticated route entry. */
-export async function restoreAuthSessionForEntry(): Promise<AuthSession> {
+export async function restoreAuthSessionForEntry(onSessionValidated?: (accountSlot: string) => void): Promise<AuthSession> {
   const currentSession = loadAuthSession();
-  const accountSlot = activeAccountSlot();
+  const accountSlot = await resolveRefreshSlot(activeAccountSlot(), 350);
+  if (!accountSlot) {
+    throw new AuthApiError('The account slot is still loading. Please try again.', 0, 'ACCOUNT_SLOT_UNAVAILABLE');
+  }
   if (currentSession?.accountSlot === accountSlot) return currentSession;
   try {
     const sessionStatus = await getSessionStatus(accountSlot);
+    onSessionValidated?.(sessionStatus.account_slot);
     const cachedUser = loadCachedAuthUser();
     const user = cachedUser?.id === sessionStatus.user_id
       ? cachedUser
       : await getCurrentUser('', accountSlot ?? undefined, true);
-    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
+    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry(onSessionValidated);
     const restoredSession = { accessToken: '', tokenType: 'Bearer' as const, user, accountSlot: sessionStatus.account_slot };
     saveAuthSession(restoredSession);
     return restoredSession;
   } catch (error) {
-    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry();
+    if (activeAccountSlot() !== accountSlot) return restoreAuthSessionForEntry(onSessionValidated);
     const refreshedSession = loadAuthSession();
     if (refreshedSession && refreshedSession.accountSlot === accountSlot) return refreshedSession;
     if (!isTerminalRefreshFailure(error)) throw error;
 
     let terminalFailure = error;
-    if (error instanceof AuthApiError && ['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING'].includes(error.code ?? '')) {
+    if (error instanceof AuthApiError && ['TOKEN_EXPIRED', 'REFRESH_TOKEN_MISSING', 'SESSION_NOT_FOUND', 'REFRESH_TOKEN_INVALID'].includes(error.code ?? '')) {
       try {
         const restoredSession = await coordinateRefresh(accountSlot, true, true);
         saveAuthSession(restoredSession);
@@ -896,12 +910,42 @@ function activeAccountSlot(): string | null {
   }
 }
 
+/**
+ * Resolve a slot before any refresh exchange. A missing slot is a bootstrap
+ * race, not evidence that the server session ended. Prefer the explicit
+ * request slot, then shared selection state, then the current in-memory
+ * session, and finally the most recently used cached slot.
+ */
+async function resolveRefreshSlot(requestedSlot: string | null, waitMs = 750): Promise<string | null> {
+  const read = () => requestedSlot || activeAccountSlot() || inMemoryAuthSession?.accountSlot || getMostRecentRememberedAccount()?.accountSlot || null;
+  const immediate = read();
+  if (immediate || typeof window === 'undefined' || waitMs <= 0) return immediate;
+
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+    const finish = () => {
+      window.removeEventListener('storage', check);
+      window.removeEventListener('friink-account-slot-updated', check);
+      window.clearInterval(timer);
+      resolve(read());
+    };
+    const check = () => {
+      if (read() || Date.now() - startedAt >= waitMs) finish();
+    };
+    const timer = window.setInterval(check, 25);
+    window.addEventListener('storage', check);
+    window.addEventListener('friink-account-slot-updated', check);
+    window.setTimeout(finish, waitMs);
+  });
+}
+
 function setActiveAccountSlot(accountSlot: string | null) {
   if (typeof window === 'undefined') return;
   // The selected account is client-wide. A tab-local override can leave a new
   // tab restoring a stale identity after another tab switched accounts.
   if (accountSlot) window.localStorage.setItem(ACCOUNT_SLOT_KEY, accountSlot);
   else window.localStorage.removeItem(ACCOUNT_SLOT_KEY);
+  window.dispatchEvent(new CustomEvent('friink-account-slot-updated'));
 }
 
 function authSessionCacheKey(session: Pick<AuthSession, 'accountSlot' | 'user'>): string {
@@ -1060,11 +1104,15 @@ function touchCachedActiveAccount(session: AuthSession) {
 }
 
 async function coordinateRefresh(slot: string | null = activeAccountSlot(), persist = true, retryFailed = false): Promise<AuthSession> {
+  const resolvedSlot = await resolveRefreshSlot(slot);
+  if (!resolvedSlot) {
+    throw new AuthApiError('The account slot is still loading. Please try again.', 0, 'ACCOUNT_SLOT_UNAVAILABLE');
+  }
   if (supportsCrossTabLock()) {
     const lockManager = (navigator as Navigator & { locks: { request<T>(name: string, options: { mode: 'exclusive' }, callback: () => Promise<T>): Promise<T> } }).locks;
-    return lockManager.request(scopedRefreshKey(REFRESH_LOCK_NAME, slot), { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease(slot, persist, retryFailed));
+    return lockManager.request(scopedRefreshKey(REFRESH_LOCK_NAME, resolvedSlot), { mode: 'exclusive' }, () => coordinateRefreshWithStorageLease(resolvedSlot, persist, retryFailed));
   }
-  return coordinateRefreshWithStorageLease(slot, persist, retryFailed);
+  return coordinateRefreshWithStorageLease(resolvedSlot, persist, retryFailed);
 }
 
 function supportsCrossTabLock() {
@@ -1078,8 +1126,15 @@ async function coordinateRefreshWithStorageLease(slot: string | null, persist: b
     const existing = readRefreshCoordination(slot);
     if (existing && existing.expiresAt > Date.now()) {
       if (existing.status === 'succeeded') {
-        const sharedSession = loadPersistedAuthSession();
-        if (sharedSession?.accountSlot === slot) return sharedSession;
+        // A success written by another tab cannot update this tab's in-memory
+        // bearer token. Reusing this tab's cached session here would retry the
+        // original request with the expired access token. Only the tab that
+        // owns the success may reuse its local result; followers must
+        // rehydrate through their own shared HttpOnly slot cookie.
+        if (existing.ownerId === tabId) {
+          const sharedSession = loadPersistedAuthSession();
+          if (sharedSession?.accountSlot === slot) return sharedSession;
+        }
         // Access credentials never cross tabs. Rehydrate the just-refreshed
         // slot through its HttpOnly cookie so a waiting tab does not replay
         // the same refresh cookie and rotate the family again.
@@ -1150,12 +1205,15 @@ async function coordinateRefreshWithStorageLease(slot: string | null, persist: b
 }
 
 async function performRefresh(generation: number, operationId: string, slot: string | null, persist: boolean): Promise<AuthSession> {
+  if (!slot) {
+    throw new AuthApiError('The account slot is still loading. Please try again.', 0, 'ACCOUNT_SLOT_UNAVAILABLE');
+  }
   const loadedSession = loadPersistedAuthSession();
   const currentSession = loadedSession?.accountSlot === slot ? loadedSession : null;
   const response = await requestApi<{ access_token: string; token_type: string; account_slot?: string }>('/auth/refresh', {
     method: 'POST',
     headers: {
-      ...(slot ? { 'X-Friink-Account-Slot': slot } : {}),
+      'X-Friink-Account-Slot': slot,
       'X-Friink-Refresh-Operation-Id': operationId,
       'X-Friink-Client-Tab-Id': tabId,
     },
@@ -1993,7 +2051,7 @@ export async function searchContent(accessToken: string, query: string, scope: '
   });
 }
 
-export async function listPosts(input: { cursor?: string; limit?: number; feed?: 'explore' | 'following' } = {}): Promise<ApiFeedPage> {
+export async function listPosts(input: { cursor?: string; limit?: number; feed?: 'explore' | 'following'; accountSlot?: string } = {}): Promise<ApiFeedPage> {
   const search = new URLSearchParams();
   if (input.cursor) {
     search.set('cursor', input.cursor);
@@ -2007,10 +2065,15 @@ export async function listPosts(input: { cursor?: string; limit?: number; feed?:
 
   const suffix = search.size > 0 ? `?${search.toString()}` : '';
   const session = loadAuthSession();
+  const accountSlot = input.accountSlot ?? session?.accountSlot;
+  const usableSession = session && (!accountSlot || session.accountSlot === accountSlot) ? session : null;
   return requestApi<ApiFeedPage>(`/posts${suffix}`, {
     method: 'GET',
-    headers: session ? { Authorization: `Bearer ${session.accessToken}` } : undefined,
-    authContext: session ? 'authenticated_request' : undefined,
+    headers: {
+      ...(usableSession?.accessToken ? { Authorization: `Bearer ${usableSession.accessToken}` } : {}),
+      ...(accountSlot ? { 'X-Friink-Account-Slot': accountSlot } : {}),
+    },
+    authContext: usableSession || accountSlot ? 'authenticated_request' : undefined,
   });
 }
 
@@ -2587,12 +2650,12 @@ async function requestApi<T>(
 
   if (!response.ok) {
     const apiError = await getApiError(response);
+    const authError = new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
     if (
       !requestInit.skipAuthRefresh &&
       !requestInit.retryingAfterRefresh &&
-      response.status === 401 &&
-      apiError.code === 'TOKEN_EXPIRED' &&
-      requestInit.authContext === 'authenticated_request'
+      requestInit.authContext === 'authenticated_request' &&
+      shouldAttemptCoordinatedRefresh(authError)
     ) {
       const requestSlot = headers.get('X-Friink-Account-Slot') || activeAccountSlot();
       const refreshedSession = await refreshAuthSession(requestSlot);
@@ -2602,7 +2665,6 @@ async function requestApi<T>(
         retryingAfterRefresh: true,
       });
     }
-    const authError = new AuthApiError(apiError.message, response.status, apiError.code, { cooldownSeconds: apiError.cooldownSeconds });
     if (
       !requestInit.skipAuthRefresh &&
       requestInit.authContext === 'authenticated_request' &&
@@ -2704,6 +2766,14 @@ export function isTerminalRefreshFailure(error: unknown): error is AuthApiError 
     || error.code === 'SESSION_TERMINATED'
     || error.code === 'ACCOUNT_DEACTIVATED'
     || error.code === 'ACCOUNT_PENDING_DELETION'
+  );
+}
+
+function shouldAttemptCoordinatedRefresh(error: unknown): error is AuthApiError {
+  return error instanceof AuthApiError && error.status === 401 && (
+    error.code === 'TOKEN_EXPIRED' ||
+    error.code === 'SESSION_NOT_FOUND' ||
+    error.code === 'REFRESH_TOKEN_INVALID'
   );
 }
 
