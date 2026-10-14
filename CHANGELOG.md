@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-14T22:29:30Z
+- [web analytics] Disabled Mixpanel client batching so the lightweight UX
+  events are sent immediately and are visible promptly in Live View.
+
 ## 2026-10-14T22:05:46Z
 - [web analytics] Pointed the browser SDK at Mixpanel's EU ingestion host so
   events from the EU Friink project appear in its dashboard.

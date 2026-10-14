@@ -1,5 +1,20 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate why the deployed browser integration did not
+  visibly produce Mixpanel events after the project/host diagnosis.
+- Changes Made: Confirmed the configured token and EU ingestion endpoint accept
+  a synthetic diagnostic event (`status: 1`). Disabled the browser SDK's
+  default five-second batching so route events are sent immediately for this
+  minimal integration.
+- Files: `web/lib/analytics.ts`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Direct EU ingestion request returned HTTP 200 with
+  Mixpanel `status: 1`; targeted web TypeScript verification and production
+  redeployment are pending.
+
 # 2026-10-14T22:05:46Z — Use EU Mixpanel Ingestion Host
 
 - Agent: Codex

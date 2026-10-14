@@ -12,6 +12,7 @@ function initializeAnalytics(): boolean {
     mixpanel.init(token, {
       api_host: 'https://api-eu.mixpanel.com',
       autocapture: false,
+      batch_requests: false,
       track_pageview: false,
       persistence: 'localStorage',
     });
