@@ -1039,6 +1039,19 @@ Protect passwords, refresh tokens, OTPs, and device identifiers as specified by
 their contracts. Enforce identity uniqueness, token rotation, challenge
 completion, and slot operations server-side and transactionally where required.
 
+The local allauth prototype now has a separate development PostgreSQL database.
+Its Django user and allauth email rows own authentication identifiers,
+credential hashes, and email-verification state; Django/allauth migrations own
+provider, session, and authentication-flow tables. `friink_account_links`
+cross-references each imported Django user to the unchanged userdata UUID and
+stores a random OIDC subject candidate. The development import copied three
+accounts and preserved their bcrypt hashes using a verifier that upgrades a
+hash after successful login. Profiles, posts, and existing API session or
+refresh-token records remain in userdata and were not copied. The prototype is
+not connected to the Friink login/API flow: the API-side issuer/subject lookup
+and OIDC subject integration remain prerequisites before it can authenticate
+Friink users.
+
 ### Events and observability
 
 Security events may cover fresh login, failed login, refresh, logout, challenges,
@@ -1172,6 +1185,11 @@ logs.
 - [ ] Run automated and manual verification for all acceptance criteria.
 
 ## Changelog
+
+- 2026-10-03 — Initialized the development auth database and imported the
+  existing three development accounts, verified email state, bcrypt hashes,
+  and private userdata UUID cross-references. OIDC/API login integration is
+  still pending.
 
 - 2026-09-29T22:03:18Z — Added per-request response correlation IDs and
   structured, redacted runtime outcomes for refresh requests. Local endpoint

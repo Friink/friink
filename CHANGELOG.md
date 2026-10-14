@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-10-14T19:24:05Z
+- [auth prototype] Initialized the development allauth/PostgreSQL schema and
+  imported three existing userdata accounts with email verification, bcrypt
+  credential preservation, and private cross-references to their unchanged
+  Friink UUIDs. Added an idempotent importer and database-specific settings.
+  The auth service is not connected to Friink login; staging was not changed.
+
+## 2026-10-03T10:37:29Z
+- [auth prototype] Added blank staging and development `DATABASE_URL`
+  templates under `auth/` and ignored `.env.*` files so environment-specific
+  database connectors stay out of Git. The existing `auth/.env` was left
+  untouched.
+
+## 2026-10-03T10:27:10Z
+- [auth prototype] Added an ignored `auth/.env` placeholder with an empty
+  `DATABASE_URL` for the user to fill with the development auth database
+  connector. No credentials or connection settings were added.
+
+## 2026-10-02T23:34:47Z
+- [auth prototype] Installed Django `5.2.11` and django-allauth `65.19.7` in
+  the isolated `auth/.venv`. Added the missing OIDC `requests` dependency and
+  standard Django template/messages settings; created local SQLite migrations
+  and a local signing key. The login page and OIDC discovery endpoint return
+  HTTP 200 on `127.0.0.1:8001`.
+
+## 2026-10-02T23:26:55Z
+- [development database] Upgraded the isolated development database from
+  revision `20261001_0060` to `20261002_0062` and passed `alembic check`.
+  No staging data was copied. The head migration removed the retired
+  `account_session_slots` table and its 18 development rows.
+
+## 2026-10-02T23:16:43Z
+- [auth prototype] Extended the isolated django-allauth service with its
+  built-in OpenID Connect provider so a local client can explore authorization
+  code sign-in and registered callbacks. Documented local signing-key setup,
+  discovery endpoints, and the future `auth.friink.com` browser flow. Friink's
+  current login and API remain disconnected.
+
+## 2026-10-02T23:01:47Z
+- [auth prototype] Added an isolated, local-only Django/allauth headless
+  service scaffold under `auth/` with SQLite persistence, console email, and
+  email-code login enabled. Documented localhost run and exploration steps;
+  existing Friink authentication remains untouched.
+
 ## 2026-10-02T22:06:41Z
 - [web session recovery] Bounded ambiguous session restoration to eight
   attempts ten seconds apart, with progress, retry, and a public-site exit.
@@ -5757,3 +5801,8 @@ _Last updated: 2026-09-10_
 ## 2026-10-02
 
 - Corrected the session-manager rule identifier in `docs/rules.md` so the active rules registry contains no duplicate `AUTH-R-032` entry.
+
+## 2026-10-02T22:14:06Z
+- [documentation] Clarified in AUTH-R-008 that successful sign-in clears
+  the web-only failed-restore marker. Started the documentation viewer for
+  browsing; no application behavior changed.

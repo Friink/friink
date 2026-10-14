@@ -1,5 +1,32 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-14T19:24:05Z — Prepare Auth Database and Import Development Accounts
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain the required auth database contents and migrate
+  existing development users from userdata into the separate auth database.
+- Changes Made: Configured auth settings to select local SQLite or explicit
+  development/staging PostgreSQL environment files. Added the development
+  importer, allauth-compatible email/username sign-in settings, a custom
+  verifier for the existing raw bcrypt hashes, and a private mapping from each
+  imported auth user to the unchanged Friink userdata UUID. Applied Django and
+  allauth migrations to development only and imported three accounts, verified
+  emails, hashes, and identity links. Updated the auth README and account-access
+  unit document. The OIDC subject/API identity bridge and Friink login
+  integration remain unimplemented; staging was untouched.
+- Files: `auth/requirements.txt`, `auth/prototype/settings.py`,
+  `auth/accounts/`, `auth/README.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Django system checks and migration drift check passed;
+  importer rerun confirmed idempotency (0 new, 3 existing links). A read-only
+  source/target check confirmed all 3 usernames/emails, raw password hashes,
+  and verified-email records match. `git diff --check` passed. Package-index
+  access blocked installing missing packages, so compatible PostgreSQL/bcrypt/
+  dotenv modules were reused from the existing API virtualenv for this local
+  run; `auth/requirements.txt` records the dependencies for normal installs.
+  No tests or staging changes were made.
+
 # 2026-10-02T22:06:41Z — Bound Web Session Recovery and Return on Auth Failure
 
 - Agent: Codex
@@ -15874,3 +15901,111 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Prompt Summary: Perform a final documentation consistency check before closing the work session.
 - Changes Made: Renamed the session-manager migration rule from duplicate `AUTH-R-032` to unused `AUTH-R-043`; verified the related documentation references and whitespace with `git diff --check`.
 - Files: docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+# 2026-10-02T22:14:06Z — Clarify Session Recovery Rule and Open Docs Viewer
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Clarify the session recovery patch in docs/rules.md and
+  open the documentation viewer for the user.
+- Changes Made: Clarified that successful sign-in clears the web-only failed-restore
+  marker in AUTH-R-008. Ran docs/index.html through a local HTTP server and
+  opened it in Codex.
+- Files: docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Documentation viewer returned HTTP 200 with title
+  “Friink Documentation”; git diff --check passed. No application behavior changed.
+- 2026-10-02T23:01:47Z — Add local headless auth prototype
+
+  - Agent: Codex
+  - Prompt Summary: Create a root `auth` folder to explore a separate
+    django-allauth service locally and explain how to try it.
+  - Changes Made: Added a Django project configured for allauth headless API,
+    email verification and login codes, local SQLite, and terminal-rendered
+    email. Added local setup and test instructions. No existing Friink auth
+    code or environment was changed.
+  - Files: `auth/README.md`, `auth/requirements.txt`, `auth/manage.py`,
+    `auth/prototype/*`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `git diff --check` passed. Local dependency setup
+    could not start because the available Python launcher runtime lacks
+    `ensurepip`; no application tests or builds run.
+
+- 2026-10-02T23:16:43Z — Add vanilla allauth OIDC provider to local prototype
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Extend the isolated allauth prototype with a vanilla
+    provider install and explain whether sign-in will show `auth.friink.com`.
+  - Changes Made: Added allauth's built-in OIDC provider app and URL routes,
+    documented local RSA signing-key setup and discovery endpoints, and
+    clarified that the Friink login button is not yet connected. The production
+    browser host will be `auth.friink.com` after a future OIDC client
+    integration; localhost shows `127.0.0.1:8001`.
+  - Files: `auth/requirements.txt`, `auth/.gitignore`, `auth/prototype/settings.py`,
+    `auth/prototype/urls.py`, `auth/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `py -m compileall -q auth/prototype auth/manage.py`
+    and `git diff --check` passed. Package installation was attempted, but the
+    configured package source returned no matching Django versions; runtime
+    setup and OIDC endpoints remain unverified.
+
+- 2026-10-02T23:26:55Z — Upgrade development database to Alembic head
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Update the development database schema to revision 62
+    without copying staging data.
+  - Changes Made: Applied revisions `20261001_0061` and `20261002_0062` to the
+    database selected by `.env.development`. No staging records were copied.
+    Revision 0062 dropped the retired `account_session_slots` table and its
+    18 rows from development.
+  - Files: Development database, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: The migration gate completed `alembic upgrade head`
+    and `alembic check` with no new upgrade operations. A read-only query
+    confirmed revision `20261002_0062` and removal of
+    `account_session_slots`.
+
+- 2026-10-02T23:34:47Z — Install and start the local allauth prototype
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Investigate why the vanilla auth prototype could not run
+    due to Django being absent, then make the local install usable.
+  - Changes Made: Found `PIP_NO_INDEX` disabled package lookup; after enabling
+    package access, installed Django `5.2.11`, django-allauth `65.19.7`, and
+    its dependencies in the isolated `auth/.venv`. Added explicit `requests`
+    dependency required by allauth's OIDC imports and configured Django
+    templates/messages for the admin and account UI. Updated local Windows
+    setup instructions, applied the local SQLite migrations, and generated an
+    ignored development signing key. Started the local service on
+    `127.0.0.1:8001`.
+  - Files: `auth/requirements.txt`, `auth/prototype/settings.py`,
+    `auth/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: Django system check passed; all local migrations
+    applied; `/accounts/login/` and `/.well-known/openid-configuration` both
+    returned HTTP 200. No Friink runtime or database was changed.
+
+- 2026-10-03T10:27:10Z — Add auth development environment placeholder
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Create an `auth/.env` file so the user can add the auth
+    database connector.
+  - Changes Made: Added a blank `DATABASE_URL` entry and added `.env` to the
+    auth prototype ignore rules. No credentials or connection string was read
+    or written.
+  - Files: `auth/.env`, `auth/.gitignore`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `git check-ignore -v auth/.env` confirmed the file is
+    ignored; `git diff --check` passed.
+
+- 2026-10-03T10:37:29Z — Add auth staging and development env templates
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Create `.env.staging` and `.env.development` in `auth/`
+    for environment-specific database connectors.
+  - Changes Made: Added blank `DATABASE_URL` templates and extended auth
+    ignore rules to cover `.env.*`. Left the user's existing `auth/.env`
+    connector untouched.
+  - Files: `auth/.env.staging`, `auth/.env.development`, `auth/.gitignore`,
+    `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `git check-ignore -v` confirmed `.env`, `.env.staging`,
+    and `.env.development` are ignored; no connector values were read or
+    printed.
