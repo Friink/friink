@@ -7,7 +7,7 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-02T00:01:48Z
+**Last edited:** 2026-10-15T00:48:42Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
@@ -1045,6 +1045,14 @@ Protect passwords, refresh tokens, OTPs, and device identifiers as specified by
 their contracts. Enforce identity uniqueness, token rotation, challenge
 completion, and slot operations server-side and transactionally where required.
 
+An isolated Django/allauth development auth database was initialized alongside
+the existing userdata database. Three development accounts were imported with
+their usernames, emails, bcrypt hashes, email-verification state, and active
+state. A private auth-side link preserves each existing userdata UUID; profile,
+community, and API session/refresh-token data remain in userdata. A custom
+bcrypt verifier was added in the prototype so a successful login can upgrade a
+legacy hash to Django's preferred hash. This import did not change userdata.
+
 ### Events and observability
 
 Security events may cover fresh login, failed login, refresh, logout, challenges,
@@ -1158,6 +1166,15 @@ logs.
   shell, profile, post-detail, username-post, and username-chat surfaces.
   Route/failure/cross-tab browser and staging acceptance remains open under
   ACCESS-AC-048/MIG-002.
+- An isolated Django/allauth OIDC auth-service prototype and development account
+  import were explored separately from the current FastAPI login. The OIDC
+  subject-to-userdata/API bridge is not implemented, and Friink login still
+  uses the existing API flow. The current `main` checkout does not contain
+  tracked auth-service source files. The user reports configuring the auth
+  domain in Vercel; opening it returned Django `DisallowedHost`. The hostname
+  must be allowed by Django, deployed settings must disable `DEBUG`, and the
+  auth source must be present in the deployed branch before the service can be
+  considered deployable.
 
 ## 9. Rebuild checklist
 
@@ -1178,6 +1195,10 @@ logs.
 - [ ] Run automated and manual verification for all acceptance criteria.
 
 ## Changelog
+
+- 2026-10-15 — Recorded the development auth database import, its separation
+  from userdata, the unfinished OIDC/API account bridge, and the reported
+  Vercel `DisallowedHost` deployment blocker.
 
 - 2026-09-29T22:03:18Z — Added per-request response correlation IDs and
   structured, redacted runtime outcomes for refresh requests. Local endpoint

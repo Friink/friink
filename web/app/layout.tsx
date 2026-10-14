@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { themeToCssVars } from '@/theme.config';
 import { AppShellStateProvider } from '@/components/app-shell-state-provider';
+import { AnalyticsProvider } from '@/components/analytics-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           referrerPolicy="no-referrer"
         />
       </head>
-      <body><AppShellStateProvider>{children}</AppShellStateProvider></body>
+      <body><AppShellStateProvider><AnalyticsProvider />{children}</AppShellStateProvider></body>
     </html>
   );
 }

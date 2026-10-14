@@ -1,5 +1,65 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-14T20:19:14Z — Add Optional Browser Mixpanel Setup
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Set up the minimal web-side Mixpanel integration while the
+  user prepares the production project token.
+- Changes Made: Added `mixpanel-browser` to the web dependencies. Added a
+  token-gated client analytics wrapper and root provider that emits pathname
+  `Page Viewed` events, identifies the active account by stable user ID, and
+  resets on session expiry. Broad autocapture is disabled and analytics is
+  non-blocking. Added the Analytics unit document, documentation-viewer entry,
+  and stack/architecture/deployment notes. The ignored `web/.env` already has
+  an empty `NEXT_PUBLIC_MIXPANEL_TOKEN` variable for the user's token.
+- Files: `web/package.json`, `web/package-lock.json`,
+  `web/lib/analytics.ts`, `web/components/analytics-provider.tsx`,
+  `web/app/layout.tsx`, `docs/units/analytics.md`, `docs/index.html`,
+  `docs/stack.md`, `docs/architecture.md`, `docs/deployment.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed from `web`; `git diff --check`
+  and production deployment remain pending. No API, database, or deployment
+  changes were made.
+
+# 2026-10-14T19:49:25Z — Document Auth Prototype and Deployment State
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the auth migration, Git commit blocker, and Vercel
+  setup and `DisallowedHost` troubleshooting discussed in this session.
+- Changes Made: Updated Account Access, stack, architecture, and deployment
+  documentation to distinguish the current FastAPI login from the standalone
+  allauth exploration. Recorded that the development auth database received
+  three imported accounts with preserved credential hashes and userdata UUID
+  links; the OIDC/API bridge remains incomplete. Recorded the intended separate
+  Vercel project, safe staging/production database separation, and the user's
+  reported `DisallowedHost` error, including the required host/CSRF/DEBUG
+  settings. Noted that auth source is not tracked on the current `main` branch.
+  Earlier in the session, removed a zero-byte stale `.git/index.lock` after
+  confirming it was old and no Git process was active. No application code,
+  database, Vercel project, or domain settings were changed in this turn.
+- Files: `docs/units/account-access.md`, `docs/stack.md`,
+  `docs/architecture.md`, `docs/deployment.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Confirmed current branch is `main`, source files are
+  not tracked by `HEAD`, and relevant docs reflect the observed state. Link
+  syntax and `git diff --check` checked; no tests or deployment performed.
+
+# 2026-10-14T19:50:01Z — Restore Ignore Rules for Local Auth Secrets
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Keep local auth environment files and signing material out
+  of Git while documenting the auth-service work.
+- Changes Made: Restored `auth/.gitignore` on `main` for local environment
+  files, virtualenv/cache files, local SQLite state, and the OIDC private key.
+  No credentials or auth source were added to Git.
+- Files: `auth/.gitignore`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Confirmed the env files, virtualenv, bytecode, and
+  signing key are ignored; `git diff --check` passed. No tests or deployments
+  were performed.
+
 # 2026-10-02T00:24:19Z — Restyle Account Switcher Refresh Control
 
 - Agent: Codex

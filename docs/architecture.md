@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-09-27T23:00:46Z
+**Last edited:** 2026-10-15T00:48:42Z
 
 ## Repository and runtime boundaries
 
@@ -18,7 +18,17 @@ api/  -> FastAPI service    -> API Vercel project
 
 The API entrypoint is `api/api/index.py`. The two Vercel projects are configured
 independently; there is no root `vercel.json`. The web project talks to the API
-through `NEXT_PUBLIC_API_BASE_URL`.
+through `NEXT_PUBLIC_API_BASE_URL`. The web root also mounts the optional
+browser-side Mixpanel provider; it emits route views and session identity only
+when `NEXT_PUBLIC_MIXPANEL_TOKEN` is configured.
+
+An independent Django/allauth OIDC service was explored with a separate
+development auth database. It has not replaced or joined the active FastAPI
+authentication path. Its source is not tracked on the current `main` branch,
+its OIDC subject is not yet resolved to the userdata UUID by the API, and the
+reported Vercel hostname currently fails Django's `ALLOWED_HOSTS` check. Keep
+it outside the current runtime diagram until those integration and deployment
+gaps are closed.
 
 ## Web application conventions
 
@@ -90,3 +100,4 @@ through `NEXT_PUBLIC_API_BASE_URL`.
 - [Chat](units/chat.md)
 - [Feed](units/feed.md)
 - [Notifications](units/notifications.md)
+- [Analytics](units/analytics.md)

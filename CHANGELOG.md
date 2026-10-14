@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-10-14T20:19:14Z
+- [web analytics] Added an optional browser-only Mixpanel integration for
+  pathname page views and authenticated user identity lifecycle. It is gated by
+  `NEXT_PUBLIC_MIXPANEL_TOKEN`, disables broad autocapture, and does not require
+  API or database changes. Added the Analytics unit documentation and deployment
+  configuration notes.
+
+## 2026-10-14T19:49:25Z
+- [auth-service documentation] Recorded the development auth-database import,
+  its separation from userdata, the incomplete OIDC/API integration, the
+  intended Vercel project layout, and the reported `DisallowedHost` deployment
+  blocker. Documented that auth source is not tracked on the current `main`
+  branch. No application or database changes were made in this documentation
+  update.
+
+## 2026-10-14T19:50:01Z
+- [auth prototype] Restored `auth/.gitignore` on `main` to keep local env
+  connectors, virtualenv files, compiled Python files, local SQLite state, and
+  the OIDC signing key out of commits. The auth application source itself is
+  not present in the current tracked `main` tree.
+
 ## 2026-10-02T00:24:19Z
 - [account switcher] Made the idle refresh button white by default and accent
   colored on hover, focus, and active interaction without a hover background.

@@ -67,8 +67,31 @@ is superseded by the staging-gate workflow above.
 
 ## Configuration boundaries
 
+### Standalone auth-service deployment exploration
+
+The Django/allauth auth service is not currently part of the deployed Friink
+login path, and its source is not tracked on the current `main` branch. If and
+when the source is restored and made deployment-ready, the planned Vercel
+layout is a separate project from the same repository with root directory
+`auth/`; Vercel supports Python/Django through its Python runtime (currently
+beta) and separate projects for monorepo directories ([Python runtime](https://vercel.com/docs/functions/runtimes/python),
+[monorepos](https://vercel.com/docs/monorepos)). Keep Preview/Staging pointed
+only at the staging auth database and Production only at a production auth
+database. Local `.env.*` files are ignored and are not substitutes for Vercel
+environment variables.
+
+The user reports that the auth domain is configured but currently returns
+Django `DisallowedHost`. The Django deployment must allow the bare requested
+hostname in `ALLOWED_HOSTS`; `CSRF_TRUSTED_ORIGINS` separately needs the HTTPS
+origin for browser POSTs. Set `DEBUG=False` before exposing the service. This
+host fix alone does not complete the auth service: the OIDC subject-to-userdata
+mapping and Friink web/API integration are still required. Keep existing Friink
+login unchanged until staging acceptance passes.
+
 - The web project receives only its environment-specific
-  `NEXT_PUBLIC_API_BASE_URL`.
+  `NEXT_PUBLIC_API_BASE_URL` and the optional
+  `NEXT_PUBLIC_MIXPANEL_TOKEN`. The Mixpanel token is a browser project token,
+  not a server secret.
 - The API project owns `DATABASE_URL`, authentication secrets, environment
   flags, email settings, and storage credentials.
 - `GROUP_CHAT_ENABLED` is an API-only feature flag and defaults to `false`;
