@@ -7,6 +7,9 @@ import { AppEntryFrame } from '@/components/app-entry-frame';
 import { LoginScreen } from '@/components/login-screen';
 import { Modal } from '@/components/modal';
 import type { AccountSummary, AuthUser } from '@/lib/auth';
+import { clearAuthSession, clearSessionTermination } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import { rememberPublicSessionFailure } from '@/lib/session-recovery-state';
 
 type SessionRecoveryStatus = 'loading' | 'network' | 'offline' | 'choice' | 'expired' | 'security' | 'terminated' | 'deactivated' | 'pending_deletion' | 'waiting';
 
@@ -28,6 +31,7 @@ type SessionRecoveryScreenProps = {
   onRestoreAccount?: (account: AccountSummary) => void;
   accountsLoading?: boolean;
   onDiscoverAccounts?: () => void;
+  loadingMessage?: string;
 };
 
 const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'offline' | 'choice' | 'waiting'>, { title: string }> = {
@@ -38,16 +42,26 @@ const messages: Record<Exclude<SessionRecoveryStatus, 'loading' | 'network' | 'o
   pending_deletion: { title: 'Session ended' },
 };
 
-export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onContinueRecovery, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount, accountsLoading = false, onDiscoverAccounts }: SessionRecoveryScreenProps) {
+export function SessionRecoveryScreen({ status, appearance = 'system', onCancelRecovery, onAddAccountAuthenticated, onTakeMeBack, onContinueRecovery, onRefresh, isRefreshing = false, isContinuingRecovery = false, onChooseLogin, accounts = [], currentUsername, restoringAccountSlot, accountError, onRestoreAccount, accountsLoading = false, onDiscoverAccounts, loadingMessage }: SessionRecoveryScreenProps) {
+  const router = useRouter();
   const [showChoice, setShowChoice] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const discoveryStatusRef = useRef<SessionRecoveryStatus | null>(null);
   const availableAccounts = accounts
     .filter((account) => account.available && account.accountSlot && account.username.toLowerCase() !== currentUsername?.toLowerCase())
     .sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
-  const isTerminalStatus = status === 'expired' || status === 'security' || status === 'terminated' || status === 'deactivated' || status === 'pending_deletion';
+  const isAuthTerminalStatus = status === 'expired' || status === 'security' || status === 'terminated';
+  const isTerminalStatus = status === 'deactivated' || status === 'pending_deletion';
   const hasAvailableAccounts = availableAccounts.length > 0;
   const discoveryPending = isTerminalStatus && (accountsLoading || discoveryStatusRef.current !== status);
+
+  useEffect(() => {
+    if (!isAuthTerminalStatus) return;
+    clearAuthSession();
+    clearSessionTermination();
+    rememberPublicSessionFailure();
+    router.replace('/?session_recovery=failed');
+  }, [isAuthTerminalStatus, router]);
 
   useEffect(() => {
     if (!isTerminalStatus || discoveryStatusRef.current === status) return;
@@ -66,8 +80,10 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
   }
 
   if (status === 'loading') {
-    return <AppEntryFrame appearance={appearance} />;
+    return <AppEntryFrame appearance={appearance} message={loadingMessage ?? 'Checking your session…'} onTakeMeBack={onTakeMeBack} />;
   }
+
+  if (isAuthTerminalStatus) return <AppEntryFrame appearance={appearance} message="Your session ended. Returning to the public site…" />;
 
   if (status === 'network') {
     return (
@@ -75,11 +91,12 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
         <section className="lifecycle-card" aria-labelledby="session-network-title">
           <BrandLockup size="lg" />
           <h1 id="session-network-title">We can’t connect</h1>
-          <p>Check your connection. We’ll keep trying to restore your session.</p>
+          <p>We couldn’t restore your session after several attempts. Try again when your connection is available, or return to the public site.</p>
           <div className="lifecycle-actions session-recovery-actions session-recovery-actions-terminal">
             <button className="button-primary" type="button" onClick={onRefresh} disabled={isRefreshing}>
-              {isRefreshing ? 'Refreshing…' : 'Refresh'}
+              {isRefreshing ? 'Checking…' : 'Try again'}
             </button>
+            <button className="button-secondary" type="button" onClick={onTakeMeBack}>Go to public site</button>
           </div>
         </section>
       </main>
@@ -122,9 +139,10 @@ export function SessionRecoveryScreen({ status, appearance = 'system', onCancelR
         <section className="lifecycle-card" aria-labelledby="session-recovery-title">
           <BrandLockup size="lg" />
           <h1 id="session-recovery-title">We couldn’t restore your session.</h1>
-          <p>Use the button below to continue.</p>
+          <p>We couldn’t confirm your session after several attempts. You can try again or return to the public site.</p>
           <div className="lifecycle-actions session-recovery-actions session-recovery-actions-terminal">
-            <button className="button-primary" type="button" onClick={() => { if (availableAccounts.length > 0 && onRestoreAccount && onChooseLogin) setShowChoice(true); else onTakeMeBack?.(); }}>Take me back</button>
+            <button className="button-primary" type="button" onClick={onRefresh} disabled={isRefreshing}>{isRefreshing ? 'Checking…' : 'Try again'}</button>
+            <button className="button-secondary" type="button" onClick={onTakeMeBack}>Go to public site</button>
           </div>
         </section>
       </main>

@@ -197,35 +197,25 @@ Agreed copy and behavior by error:
    cached safe identity, show the familiar shell with controls inert and route
    content hidden; without cached identity, show a neutral app-frame
    placeholder. Cached identity is presentation-only and never authorizes
-   protected content or actions. Non-network
-   ambiguous failures retry at most four times total, with 10 seconds between
-   attempts. A confirmed terminal result stops retries immediately. If all four
-   attempts fail ambiguously, update the copy to: “We couldn’t restore your
-   session. Use the button below to continue.” Show **Take me back**. Continue
-   to the fallback flow below. A detected network failure immediately enters
-   the dedicated network state described next. After the bounded retry flow,
-   show **Take me back** to enter existing recovery.
+   protected content or actions. Network, 5xx, CORS, malformed-response, and
+   other ambiguous failures retry at most eight times total, with 10 seconds
+   between attempts. A confirmed terminal result stops retries immediately.
+   During retries, show the attempt count and let the user go to the public
+   site. After eight failures, offer **Try again** and **Go to public site**.
 2. **Network unavailable during restoration — retryable entry state.** With a
-   cached identity, keep the inert app frame visible, keep private route data
-   hidden, and provide retry; the shared app route retries in the background
-   every 30 seconds. Without cached identity, show the standalone recovery
-   state with “We can’t connect” and “Check your connection. We’ll keep trying
-   to restore your session.” Provide **Refresh** to retry without reloading the
-   page. Do not overlap manual and background requests. Keep the state until
-   the server responds. Do not show a
-   remembered-account chooser or claim the session ended while validation is
-   unavailable. A successful restore resumes the app; an authoritative
-   terminal result enters the shared session-ended flow.
-3. **Confirmed terminal session — modal.** Show the title **Session ended** and
-   neutral copy: “Your session has ended. Choose how you’d like to continue.”
-   List available remembered accounts, when any exist. Selecting one validates
-   that account before switching. **Add account** opens the existing login and
-   signup flow. **Close** and the close icon attempt remembered accounts in
-   most-recent-use order; if none can be restored, return to the public site
-   with the redirect hint set to zero. A waiting tab offers **Continue here**
-   to take over recovery through the shared account-operation lock. Clicking outside does not close the
-   modal. Lifecycle reactivation and deletion cancellation remain governed by
-   Account Lifecycle.
+   cached identity, keep the inert app frame visible and private route data
+   hidden. Without cached identity, show the standalone recovery state. Do not
+   overlap attempts. Stop after eight total attempts; then offer **Try again**
+   and **Go to public site**. Do not claim the session ended while validation
+   remains ambiguous. A successful restore resumes the app. A definitive
+   authentication failure stops immediately after its one coordinated refresh
+   attempt.
+3. **Confirmed terminal session — public site.** Clear the selected in-memory
+   session and return to the public site after a definitive restore failure.
+   Keep cookie and API behavior unchanged. A web-only failure marker prevents
+   stale slot cookies from immediately redirecting back into the app; clear it
+   after successful sign-in. Lifecycle reactivation and deletion cancellation
+   remain governed by Account Lifecycle.
 
 **Fallback flow depends on why the session ended:**
 
@@ -309,9 +299,9 @@ acceptance remains pending.
 **Error and recovery behavior:**
 
 - Do not create additional restore calls solely because a page transition
-  mounted another route guard. Technical retry is limited to four total
-  attempts, spaced 10 seconds apart, and only while the result remains
-  ambiguous.
+  mounted another route guard. Ambiguous technical retry is limited to eight
+  total attempts, spaced 10 seconds apart. Definitive authentication failures
+  stop after the coordinated refresh attempt.
 - Do not change session validity, token refresh, or lifecycle state through
   presentation-only logic.
 - Close and the close icon have identical effects. Clicking outside does
@@ -323,18 +313,18 @@ acceptance remains pending.
 These are proposed requirements, not active rules in `docs/rules.md`.
 
 - **EH-REQ-001 — Keep session recovery in app context:** Technical/ambiguous
-  recovery uses an in-app page with background recovery; confirmed
-  session/lifecycle failures use an in-app modal. Preserve the originating
-  product surface rather than redirecting solely to explain the failure.
+  recovery uses an in-app page during bounded retries; confirmed
+  authentication failures return to the public site. Preserve lifecycle
+  recovery under the account-lifecycle flow.
 - **EH-REQ-002 — Preserve failure meaning:** Presentation must distinguish
   technical/ambiguous failures, confirmed remote/session termination, and
   lifecycle restrictions; recovery actions follow the owning unit's behavior.
 - **EH-REQ-003 — Avoid duplicate recovery work:** Route changes introduced only
   to display an error should not cause redundant session/status/restore calls.
-  Non-network technical recovery makes at most four total attempts, 10 seconds
-  apart; a detected network failure keeps the cached-identity app frame
-  retryable with private content hidden, or shows the standalone recovery
-  state when no identity is cached. A confirmed terminal result stops retries.
+  Ambiguous technical recovery makes at most eight total attempts, 10 seconds
+  apart, including network and server failures; after exhaustion, show **Try
+  again** and **Go to public site**. A confirmed authentication failure stops
+  immediately and returns to public.
 - **EH-REQ-006 — Define a restorable session by its refresh credential:** For
   fallback, the app selects another remembered session only when the API
   accepts its refresh credential and associated session/account state. The
@@ -343,14 +333,10 @@ These are proposed requirements, not active rules in `docs/rules.md`.
   the cookie itself. Without an available, unexpired refresh token, that
   session cannot be restored by issuing a new access or refresh token and is
   not a fallback candidate.
-- **EH-REQ-007 — Choose fallback by failure context:** All confirmed terminal
-  sessions use one neutral modal with available remembered-account choices and
-  Add account. Selecting a remembered account validates it; Close or the close icon try
-  accounts by recency, then return to the public site with redirect hint zero
-  if none restores. Deactivation or pending deletion still logs the account
-  out on the initiating client and does not route directly to ordinary login
-  for the inactive account. After switching accounts, open Home because the
-  original route may not be accessible to the selected account.
+- **EH-REQ-007 — Choose fallback by failure context:** A definitive auth
+  restore failure returns to the public site after the coordinated refresh
+  attempt. Lifecycle recovery remains owned by Account Lifecycle; a remembered
+  account switch validates the selected slot before opening Home.
 - **EH-REQ-004 — Keep errors within their originating product surface:** An
   error and its recovery UI stay in the surface where the error occurred:
   public-site errors stay on the public site, web-app errors stay in the app,
@@ -436,31 +422,25 @@ browser acceptance is completed.
 - [ ] **EH-AC-005** Error presentation and recovery remain within the originating
   public-site, web-app, or native mobile surface, without opening an iframe or
   external browser for ordinary error handling.
-- [ ] **EH-AC-008** Technical recovery initially runs without controls, makes
-  at most four total attempts 10 seconds apart for non-network ambiguous
-  failures, stops immediately on a confirmed terminal result, then updates
-  copy and offers
-  **Take me back** if all attempts fail.
-- [ ] **EH-AC-013** A network failure during restoration keeps the inert app
-  frame visible when a safe cached identity exists and exposes **Try again**;
-  the shared app route also retries in the background every 30 seconds. With
-  no cached identity, show the standalone network error with **Refresh**.
-  Deduplicate attempts and do not offer account choice or claim termination
-  until the server responds.
+- [ ] **EH-AC-008** Ambiguous recovery makes at most eight total attempts,
+  10 seconds apart, including network failures; it reports progress, allows an
+  immediate public-site exit, and offers **Try again** after exhaustion.
+- [ ] **EH-AC-013** Network and server failures use the same bounded retry
+  sequence, keep the inert app frame and private content hidden, and stop after
+  eight attempts. Offer **Try again** and **Go to public site** after exhaustion.
 - [ ] **EH-AC-015** A cached identity can render the app frame while entry
   validation runs, but cached protected content/actions remain unavailable
   until a protected API response authorizes them; terminal and ambiguous
   failures transition to the matching recovery state.
-- [ ] **EH-AC-009** Confirmed terminal causes share a neutral **Session ended**
-  modal with available remembered-account rows, **Add account**, and equivalent
-  Close or the close icon fallback behavior; clicking outside does not dismiss it.
+- [ ] **EH-AC-009** A definitive authentication failure stops after one
+  coordinated refresh attempt, clears selected in-memory auth state, and
+  returns to the public site without changing cookies or backend behavior.
 - [ ] **EH-AC-010** A remembered session is restorable only while its refresh
   token is present, unexpired, and accepted with the associated session/account
   state by the API.
-- [ ] **EH-AC-011** All confirmed terminal failures use the shared recovery
-  modal. Deactivation/pending deletion still logs out the initiating client;
-  Close or the close icon validate remembered accounts by recency and return public with
-  redirect hint zero if none can be restored. Switching accounts opens Home.
+- [ ] **EH-AC-011** Definitive authentication failures return to public after
+  one coordinated refresh attempt. Deactivation/pending deletion retain their
+  lifecycle-owned recovery; they do not alter cookie or backend behavior.
 - [ ] **EH-AC-012** Session-error recovery is consistent across the public
   root, app-shell, profile, post, username-chat, and login entry points while
   staying within each entry point's product surface.
@@ -469,13 +449,12 @@ browser acceptance is completed.
 
 Refer to [`testing.md`](../testing.md) for shared testing standards.
 
-- [ ] Technical restoration initially runs without controls, retries no more
-  than four times at 10-second intervals for non-network ambiguous failures,
-  and then changes copy and reveals
-  **Take me back** if all attempts remain unresolved.
-- [ ] Network loss during restoration shows the full-page network state;
-  the first detected failure shows the page; **Refresh** starts an immediate restore request, background retries continue
-  every 30 seconds without overlap, and success resumes the app.
+- [ ] Ambiguous restoration retries up to eight times, ten seconds apart,
+  including network and server failures. Progress and a public-site exit remain
+  available; after exhaustion, **Try again** starts a new bounded cycle.
+- [ ] Definitive authentication failure stops after one coordinated refresh
+  attempt, clears selected in-memory auth state, and returns to the public site.
+  Stale cookies do not immediately route the user back into app restoration.
 - [ ] Each confirmed terminal cause shows the same neutral **Session ended**
   modal, with zero or more available remembered-account rows, **Add account**,
   and Close or the close icon fallback; backdrop clicks do not dismiss it.
@@ -769,12 +748,12 @@ cookies, token hashes, or unnecessary personal data.
 | EH-REQ-005 | Use only three shared error-display templates | Template inventory review | Draft |
 | EH-AC-006 | Template catalog has exactly three shared types | Documentation/component inventory review | Planned |
 | EH-AC-007 | Templates preserve originating product surface | Public/web/mobile surface matrix | Planned |
-| EH-AC-008 | Background recovery and Take me back behavior | Recovery success/failure and remembered-session browser matrix | Implemented locally; acceptance pending |
-| EH-AC-013 | Cached-identity frame with hidden content and retry; standalone network state without cache | Offline/online browser and request-overlap matrix | Implemented locally; acceptance pending |
-| EH-AC-009 | Neutral Session ended modal with account options and equivalent Close or the close icon fallback | Expiry/termination/security/lifecycle browser matrix | Implemented locally; acceptance pending |
+| EH-AC-008 | Bounded ambiguous recovery with progress, retry, and public exit | Recovery success/failure and remembered-session browser matrix | Implemented locally; acceptance pending |
+| EH-AC-013 | Cached-identity frame with hidden content and bounded retry | Offline/online browser and request-overlap matrix | Implemented locally; acceptance pending |
+| EH-AC-009 | Definitive auth failure returns public after one coordinated refresh | Expiry/termination/security browser matrix | Implemented locally; acceptance pending |
 | EH-AC-010 | Fallback session is API-validated | Refresh-cookie and account-slot recovery matrix | Implemented locally; acceptance pending |
 | EH-AC-011 | Fallback destination follows failure context | Session and lifecycle destination matrix | Implemented locally; acceptance pending |
-| EH-AC-014 | Hint-zero terminal failure hands off to shared in-app recovery when another remembered session may exist | Public-root tests for valid selected slot, terminal selected slot plus valid alternate, no valid candidates, ambiguous failure, and multi-tab ownership | Implemented locally — browser/staging acceptance pending |
+| EH-AC-014 | Failed session restore returns public and suppresses stale-cookie re-entry | Public-root tests for terminal selected slot, active local session precedence and stale-cookie suppression, ambiguous failure, and multi-tab behavior | Implemented locally — browser/staging acceptance pending |
 | EH-AC-015 | Cached identity shows an inert app frame while session/content remains server-gated | Hard reload with valid, expired, revoked, and unavailable sessions on shell/profile/post/chat routes | Implemented locally — browser/staging acceptance pending |
 
 ### Test matrix
@@ -817,10 +796,11 @@ verified in staging before production.
 The web session-recovery behavior described in this unit is implemented
 locally across the public guard, app shell, profile/post/chat route clients,
 login route, and lifecycle actions. App entry shows an immediate safe frame;
-network failures preserve that inert frame when a cached identity exists, or
-show the standalone recovery state otherwise. The shared app route continues
-background checks every 30 seconds and exposes retry. Browser and staging
-acceptance remain pending. Shared error templates
+ambiguous failures preserve that inert frame when a cached identity exists, or
+show the standalone recovery state otherwise, and retry at most eight times.
+Definitive auth failure returns to public and a web-only marker suppresses
+stale-cookie re-entry until site data is cleared; an active local session still routes normally. Cookie and backend behavior are
+unchanged. Browser and staging acceptance remain pending. Shared error templates
 and non-session error categories remain unimplemented. AUTH-R-008 records the
 active web session and refresh contract; the recovery UX does not change its
 token or server-validation rules.
