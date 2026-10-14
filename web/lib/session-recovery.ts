@@ -1,8 +1,8 @@
 import { AuthApiError, isTerminalRefreshFailure } from '@/lib/auth';
+export { hasPublicSessionFailure, rememberPublicSessionFailure } from '@/lib/session-recovery-state';
 
-const MAX_RESTORE_ATTEMPTS = 4;
+const MAX_RESTORE_ATTEMPTS = 8;
 const RESTORE_RETRY_DELAY_MS = 10_000;
-
 export function isNetworkRestoreFailure(error: unknown): boolean {
   const message = error instanceof AuthApiError ? error.detail : error instanceof Error ? error.message : '';
   return /failed to fetch|networkerror|network request failed|fetch failed|load failed|internet disconnected/i.test(message);
@@ -34,14 +34,16 @@ function waitForRetry(signal?: AbortSignal): Promise<void> {
 export async function restoreWithSessionRetries<T>(
   restore: () => Promise<T>,
   signal?: AbortSignal,
+  onRetry?: (nextAttempt: number, maxAttempts: number) => void,
 ): Promise<T> {
   for (let attempt = 1; attempt <= MAX_RESTORE_ATTEMPTS; attempt += 1) {
     if (signal?.aborted) throw new DOMException('Recovery cancelled.', 'AbortError');
     try {
       return await restore();
     } catch (error) {
-      if (isTerminalRefreshFailure(error) || isNetworkRestoreFailure(error) || attempt === MAX_RESTORE_ATTEMPTS) throw error;
+      if (isTerminalRefreshFailure(error) || attempt === MAX_RESTORE_ATTEMPTS) throw error;
       await waitForRetry(signal);
+      onRetry?.(attempt + 1, MAX_RESTORE_ATTEMPTS);
     }
   }
 

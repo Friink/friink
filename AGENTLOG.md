@@ -11,16 +11,15 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   `Page Viewed` events, identifies the active account by stable user ID, and
   resets on session expiry. Broad autocapture is disabled and analytics is
   non-blocking. Added the Analytics unit document, documentation-viewer entry,
-  and stack/architecture/deployment notes. The ignored `web/.env` already has
-  an empty `NEXT_PUBLIC_MIXPANEL_TOKEN` variable for the user's token.
+  and stack/architecture/deployment notes. The ignored `web/.env` has an empty
+  `NEXT_PUBLIC_MIXPANEL_TOKEN` variable for the user's token.
 - Files: `web/package.json`, `web/package-lock.json`,
   `web/lib/analytics.ts`, `web/components/analytics-provider.tsx`,
   `web/app/layout.tsx`, `docs/units/analytics.md`, `docs/index.html`,
   `docs/stack.md`, `docs/architecture.md`, `docs/deployment.md`,
   `CHANGELOG.md`, and `AGENTLOG.md`.
 - Verification Status: `npx tsc --noEmit` passed from `web`; `git diff --check`
-  and production deployment remain pending. No API, database, or deployment
-  changes were made.
+  passed before this merge. No API, database, or deployment changes were made.
 
 # 2026-10-14T19:49:25Z — Document Auth Prototype and Deployment State
 
@@ -30,21 +29,15 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   setup and `DisallowedHost` troubleshooting discussed in this session.
 - Changes Made: Updated Account Access, stack, architecture, and deployment
   documentation to distinguish the current FastAPI login from the standalone
-  allauth exploration. Recorded that the development auth database received
-  three imported accounts with preserved credential hashes and userdata UUID
-  links; the OIDC/API bridge remains incomplete. Recorded the intended separate
-  Vercel project, safe staging/production database separation, and the user's
-  reported `DisallowedHost` error, including the required host/CSRF/DEBUG
-  settings. Noted that auth source is not tracked on the current `main` branch.
-  Earlier in the session, removed a zero-byte stale `.git/index.lock` after
-  confirming it was old and no Git process was active. No application code,
-  database, Vercel project, or domain settings were changed in this turn.
+  allauth exploration. Recorded the intended separate Vercel project, safe
+  staging/production database separation, and the reported `DisallowedHost`
+  deployment blocker. Noted that auth source is not tracked on the current
+  `main` branch.
 - Files: `docs/units/account-access.md`, `docs/stack.md`,
   `docs/architecture.md`, `docs/deployment.md`, `CHANGELOG.md`, and
   `AGENTLOG.md`.
-- Verification Status: Confirmed current branch is `main`, source files are
-  not tracked by `HEAD`, and relevant docs reflect the observed state. Link
-  syntax and `git diff --check` checked; no tests or deployment performed.
+- Verification Status: Documentation and `git diff --check` were checked; no
+  tests or deployments were performed.
 
 # 2026-10-14T19:50:01Z — Restore Ignore Rules for Local Auth Secrets
 
@@ -52,13 +45,118 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Model: GPT-6
 - Prompt Summary: Keep local auth environment files and signing material out
   of Git while documenting the auth-service work.
-- Changes Made: Restored `auth/.gitignore` on `main` for local environment
-  files, virtualenv/cache files, local SQLite state, and the OIDC private key.
-  No credentials or auth source were added to Git.
+- Changes Made: Restored `auth/.gitignore` for local environment files,
+  virtualenv/cache files, local SQLite state, and the OIDC private key. No
+  credentials were added to Git.
 - Files: `auth/.gitignore`, `CHANGELOG.md`, and `AGENTLOG.md`.
-- Verification Status: Confirmed the env files, virtualenv, bytecode, and
-  signing key are ignored; `git diff --check` passed. No tests or deployments
+- Verification Status: Ignore behavior was checked; no tests or deployments
   were performed.
+
+# 2026-10-14T19:24:05Z — Prepare Auth Database and Import Development Accounts
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Explain the required auth database contents and migrate
+  existing development users from userdata into the separate auth database.
+- Changes Made: Configured auth settings to select local SQLite or explicit
+  development/staging PostgreSQL environment files. Added the development
+  importer, allauth-compatible email/username sign-in settings, a custom
+  verifier for the existing raw bcrypt hashes, and a private mapping from each
+  imported auth user to the unchanged Friink userdata UUID. Applied Django and
+  allauth migrations to development only and imported three accounts, verified
+  emails, hashes, and identity links. Updated the auth README and account-access
+  unit document. The OIDC subject/API identity bridge and Friink login
+  integration remain unimplemented; staging was untouched.
+- Files: `auth/requirements.txt`, `auth/prototype/settings.py`,
+  `auth/accounts/`, `auth/README.md`, `docs/units/account-access.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Django system checks and migration drift check passed;
+  importer rerun confirmed idempotency (0 new, 3 existing links). A read-only
+  source/target check confirmed all 3 usernames/emails, raw password hashes,
+  and verified-email records match. `git diff --check` passed. Package-index
+  access blocked installing missing packages, so compatible PostgreSQL/bcrypt/
+  dotenv modules were reused from the existing API virtualenv for this local
+  run; `auth/requirements.txt` records the dependencies for normal installs.
+  No tests or staging changes were made.
+
+# 2026-10-02T22:06:41Z — Bound Web Session Recovery and Return on Auth Failure
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document and implement the approved web-only session
+  recovery UX: retry ambiguous failures up to eight times at ten-second
+  intervals, return to the public site after definitive auth failure, and keep
+  cookie and backend behavior unchanged.
+- Changes Made: Added bounded retry/progress messaging, manual retry and
+  public-site exit actions, and removed automatic 30-second retry loops.
+  Definitive session failures now clear selected in-memory auth state and
+  navigate to the public site; a web-only marker prevents stale cookies from
+  immediately redirecting back into app entry. It remains until site data is
+  cleared; an active local session still routes normally. Extracted
+  termination recovery orchestration from the oversized app-shell route
+  module. Updated active rules, account-access and error
+  handling unit docs, design-system guidance, changelog, and this log. No API,
+  backend validation, or cookie behavior changed.
+- Files: `web/components/app-entry-frame.tsx`,
+  `web/components/app-shell-route.tsx`, `web/components/app-shell.tsx`,
+  `web/components/public-route-guard.tsx`,
+  `web/components/session-recovery-screen.tsx`,
+  `web/components/session-termination-recovery.ts`,
+  `web/components/login-screen.tsx`, `web/app/login/login-client.tsx`,
+  `web/lib/session-manager.ts`, `web/lib/session-recovery.ts`,
+  `web/lib/session-recovery-state.ts`, `docs/rules.md`,
+  `docs/units/account-access.md`, `docs/units/error-handling.md`,
+  `docs/design-system.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `web/tsconfig` type check passed; focused ESLint passed
+  for the new recovery helper/state modules, entry frame, and public guard.
+  ESLint over all touched UI files still reports 19 errors and 21 warnings,
+  including existing hook/ref and markup issues in the larger route and screen
+  modules. `git diff --check` passed. Tests and staging requests were not run.
+
+# 2026-10-02T21:04:46Z — Review Auth Refresh and Observe Incognito Session
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Review relevant auth/session code while waiting five
+  minutes after a successful staging login in an incognito window.
+- Changes Made: Traced web slot resolution, cross-tab refresh coordination,
+  API refresh validation, and current/main route implementations. The client
+  requires a resolved slot before refresh; the API rejects missing slots and
+  validates the active device-bound session before token rotation. During the
+  observation, two slot-scoped staging refreshes returned 200 at
+  `20:58:09Z` and `21:01:18Z`; no new 401 appeared through `21:04:46Z`. This
+  supports stale slot/session state in the earlier browser rather than a
+  refresh-rotation failure. One `20:58:04Z` diagnostic row reports 200 without
+  a slot header or expected cookie, contradicting the checked route behavior;
+  its origin remains unknown. No application code or database data changed.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Read-only staging diagnostics checked; `git diff --check`
+  passed. Tests were not run. Live Vercel runtime logs were unavailable, so
+  the headerless 200 row could not be correlated to a deployed instance.
+
+# 2026-10-02T20:52:08Z — Investigate Staging 401 Against Auth Diagnostics
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Read yesterday's agent log and inspect the staging database
+  diagnostics to identify why staging returns 401 while apex returns 200.
+- Changes Made: Read-only inspection found the staging database at migration
+  `20261002_0062`. Its latest auth refresh record was one
+  `401 SESSION_NOT_FOUND` at `2026-10-02T20:23:31Z` on deployment
+  `d23932ed4b0d871fc8e6d14ef212593ddb98eef3`, matching the current staging
+  commit. The request included the account-slot header and expected refresh
+  cookie, but its slot hash did not match any row in `auth_sessions`. Earlier
+  slotless 401 records around 00:12–00:25Z on `8a3bc9e` match the older
+  BUG-AUTH-013 evidence. The latest failure establishes that the supplied slot
+  ID has no matching session row, likely a stale or foreign slot reference;
+  diagnostics do not capture enough browser state to identify how that slot
+  became stale. The local staging config points to staging API and staging DB.
+  No database changes were made.
+- Files: `CHANGELOG.md`, `AGENTLOG.md`.
+- Verification Status: Staging database queries ran in a read-only transaction.
+  Direct HTTP checks of staging and apex were blocked by the environment's
+  outbound proxy, so the claimed apex 200 was not independently rechecked.
+  `git diff --check` passed. No application code or tests changed.
 
 # 2026-10-02T00:24:19Z — Restyle Account Switcher Refresh Control
 
@@ -15829,3 +15927,137 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Changes Made: Added `web/lib/session-manager.ts`, migrated `app-shell-route.tsx` to its session contract, added cross-tab rehydration for session updates, and removed the route's duplicate session-update restore listener. Credential and refresh operations remain delegated to `web/lib/auth.ts` for staging verification.
 - Files: web/lib/session-manager.ts, web/components/app-shell-route.tsx, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
 - Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` passed. No full build or test suite run.
+## 2026-10-02T01:12:00Z — Add 512-line code-file limit
+
+- Agent: Codex
+- Prompt Summary: Establish a maintainability rule preventing code files from exceeding 512 lines while excluding global CSS and documentation/log files.
+- Changes Made: Added the line-count rule to `AGENTS.md` and recorded the documentation-only policy change.
+- Files: AGENTS.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Rule text reviewed; no build or tests run.
+## 2026-10-02T01:14:33Z — Split session storage and coordination boundaries
+
+- Agent: Codex
+- Prompt Summary: Continue phase two of auth/session decoupling without removing the legacy auth implementation.
+- Changes Made: Added `session-store.ts` and `session-coordination.ts`; updated `session-manager.ts` to use those boundaries and kept legacy auth as the backing adapter. Preserved cross-tab rehydration behavior.
+- Files: web/lib/session-store.ts, web/lib/session-coordination.ts, web/lib/session-manager.ts, docs/units/account-access.md, docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `npx tsc --noEmit --incremental false` passed; `git diff --check` pending. No full build or test suite run.
+## 2026-10-02T01:23:03Z — Add incremental code-organization plan
+
+- Agent: Codex
+- Prompt Summary: Document the internal module-organization plan and create placeholder folder structures without changing the API/web boundary or runtime behavior.
+- Changes Made: Added `docs/code-organization.md`, registered it in the documentation README and viewer, and added placeholder directories for API repositories/integrations and web feature/lib modules.
+- Files: docs/code-organization.md, docs/README.md, docs/index.html, api/app/repositories/.gitkeep, api/app/integrations/.gitkeep, web/features/*/.gitkeep, web/lib/*/.gitkeep, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: `git diff --check` passed; documentation links and folder paths reviewed. No build or tests run.
+## 2026-10-02T01:31:30Z — Correct duplicate session-manager rule identifier
+
+- Prompt Summary: Perform a final documentation consistency check before closing the work session.
+- Changes Made: Renamed the session-manager migration rule from duplicate `AUTH-R-032` to unused `AUTH-R-043`; verified the related documentation references and whitespace with `git diff --check`.
+- Files: docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+# 2026-10-02T22:14:06Z — Clarify Session Recovery Rule and Open Docs Viewer
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Clarify the session recovery patch in docs/rules.md and
+  open the documentation viewer for the user.
+- Changes Made: Clarified that successful sign-in clears the web-only failed-restore
+  marker in AUTH-R-008. Ran docs/index.html through a local HTTP server and
+  opened it in Codex.
+- Files: docs/rules.md, CHANGELOG.md, AGENTLOG.md.
+- Verification Status: Documentation viewer returned HTTP 200 with title
+  “Friink Documentation”; git diff --check passed. No application behavior changed.
+- 2026-10-02T23:01:47Z — Add local headless auth prototype
+
+  - Agent: Codex
+  - Prompt Summary: Create a root `auth` folder to explore a separate
+    django-allauth service locally and explain how to try it.
+  - Changes Made: Added a Django project configured for allauth headless API,
+    email verification and login codes, local SQLite, and terminal-rendered
+    email. Added local setup and test instructions. No existing Friink auth
+    code or environment was changed.
+  - Files: `auth/README.md`, `auth/requirements.txt`, `auth/manage.py`,
+    `auth/prototype/*`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `git diff --check` passed. Local dependency setup
+    could not start because the available Python launcher runtime lacks
+    `ensurepip`; no application tests or builds run.
+
+- 2026-10-02T23:16:43Z — Add vanilla allauth OIDC provider to local prototype
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Extend the isolated allauth prototype with a vanilla
+    provider install and explain whether sign-in will show `auth.friink.com`.
+  - Changes Made: Added allauth's built-in OIDC provider app and URL routes,
+    documented local RSA signing-key setup and discovery endpoints, and
+    clarified that the Friink login button is not yet connected. The production
+    browser host will be `auth.friink.com` after a future OIDC client
+    integration; localhost shows `127.0.0.1:8001`.
+  - Files: `auth/requirements.txt`, `auth/.gitignore`, `auth/prototype/settings.py`,
+    `auth/prototype/urls.py`, `auth/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `py -m compileall -q auth/prototype auth/manage.py`
+    and `git diff --check` passed. Package installation was attempted, but the
+    configured package source returned no matching Django versions; runtime
+    setup and OIDC endpoints remain unverified.
+
+- 2026-10-02T23:26:55Z — Upgrade development database to Alembic head
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Update the development database schema to revision 62
+    without copying staging data.
+  - Changes Made: Applied revisions `20261001_0061` and `20261002_0062` to the
+    database selected by `.env.development`. No staging records were copied.
+    Revision 0062 dropped the retired `account_session_slots` table and its
+    18 rows from development.
+  - Files: Development database, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: The migration gate completed `alembic upgrade head`
+    and `alembic check` with no new upgrade operations. A read-only query
+    confirmed revision `20261002_0062` and removal of
+    `account_session_slots`.
+
+- 2026-10-02T23:34:47Z — Install and start the local allauth prototype
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Investigate why the vanilla auth prototype could not run
+    due to Django being absent, then make the local install usable.
+  - Changes Made: Found `PIP_NO_INDEX` disabled package lookup; after enabling
+    package access, installed Django `5.2.11`, django-allauth `65.19.7`, and
+    its dependencies in the isolated `auth/.venv`. Added explicit `requests`
+    dependency required by allauth's OIDC imports and configured Django
+    templates/messages for the admin and account UI. Updated local Windows
+    setup instructions, applied the local SQLite migrations, and generated an
+    ignored development signing key. Started the local service on
+    `127.0.0.1:8001`.
+  - Files: `auth/requirements.txt`, `auth/prototype/settings.py`,
+    `auth/README.md`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: Django system check passed; all local migrations
+    applied; `/accounts/login/` and `/.well-known/openid-configuration` both
+    returned HTTP 200. No Friink runtime or database was changed.
+
+- 2026-10-03T10:27:10Z — Add auth development environment placeholder
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Create an `auth/.env` file so the user can add the auth
+    database connector.
+  - Changes Made: Added a blank `DATABASE_URL` entry and added `.env` to the
+    auth prototype ignore rules. No credentials or connection string was read
+    or written.
+  - Files: `auth/.env`, `auth/.gitignore`, `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `git check-ignore -v auth/.env` confirmed the file is
+    ignored; `git diff --check` passed.
+
+- 2026-10-03T10:37:29Z — Add auth staging and development env templates
+
+  - Agent: Codex
+  - Model: GPT-6
+  - Prompt Summary: Create `.env.staging` and `.env.development` in `auth/`
+    for environment-specific database connectors.
+  - Changes Made: Added blank `DATABASE_URL` templates and extended auth
+    ignore rules to cover `.env.*`. Left the user's existing `auth/.env`
+    connector untouched.
+  - Files: `auth/.env.staging`, `auth/.env.development`, `auth/.gitignore`,
+    `CHANGELOG.md`, `AGENTLOG.md`.
+  - Verification Status: `git check-ignore -v` confirmed `.env`, `.env.staging`,
+    and `.env.development` are ignored; no connector values were read or
+    printed.

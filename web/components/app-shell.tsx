@@ -1176,7 +1176,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           <section className="app-entry-notice" role="alert">
             <p>{entryMessage}</p>
             {onRetryEntry ? <button className="button-primary" type="button" onClick={onRetryEntry} disabled={entryRetrying}>{entryRetrying ? 'Checking…' : 'Try again'}</button> : null}
-            {onTakeMeBackEntry ? <button className="button-secondary" type="button" onClick={onTakeMeBackEntry}>Take me back</button> : null}
+            {onTakeMeBackEntry ? <button className="button-secondary" type="button" onClick={onTakeMeBackEntry}>Go to public site</button> : null}
           </section>
         ) : <p className="sr-only" role="status">Loading your page.</p>}
       </main>

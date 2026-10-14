@@ -8,18 +8,84 @@
   configuration notes.
 
 ## 2026-10-14T19:49:25Z
-- [auth-service documentation] Recorded the development auth-database import,
-  its separation from userdata, the incomplete OIDC/API integration, the
-  intended Vercel project layout, and the reported `DisallowedHost` deployment
-  blocker. Documented that auth source is not tracked on the current `main`
-  branch. No application or database changes were made in this documentation
-  update.
+- [auth-service documentation] Recorded the deployment and integration state of
+  the standalone auth prototype, including its separation from the active
+  FastAPI login path and the reported `DisallowedHost` blocker.
 
 ## 2026-10-14T19:50:01Z
-- [auth prototype] Restored `auth/.gitignore` on `main` to keep local env
-  connectors, virtualenv files, compiled Python files, local SQLite state, and
-  the OIDC signing key out of commits. The auth application source itself is
-  not present in the current tracked `main` tree.
+- [auth prototype] Restored `auth/.gitignore` so local environment files,
+  virtualenv files, SQLite state, and OIDC signing material remain untracked.
+
+## 2026-10-14T19:24:05Z
+- [auth prototype] Initialized the development allauth/PostgreSQL schema and
+  imported three existing userdata accounts with email verification, bcrypt
+  credential preservation, and private cross-references to their unchanged
+  Friink UUIDs. Added an idempotent importer and database-specific settings.
+  The auth service is not connected to Friink login; staging was not changed.
+
+## 2026-10-03T10:37:29Z
+- [auth prototype] Added blank staging and development `DATABASE_URL`
+  templates under `auth/` and ignored `.env.*` files so environment-specific
+  database connectors stay out of Git. The existing `auth/.env` was left
+  untouched.
+
+## 2026-10-03T10:27:10Z
+- [auth prototype] Added an ignored `auth/.env` placeholder with an empty
+  `DATABASE_URL` for the user to fill with the development auth database
+  connector. No credentials or connection settings were added.
+
+## 2026-10-02T23:34:47Z
+- [auth prototype] Installed Django `5.2.11` and django-allauth `65.19.7` in
+  the isolated `auth/.venv`. Added the missing OIDC `requests` dependency and
+  standard Django template/messages settings; created local SQLite migrations
+  and a local signing key. The login page and OIDC discovery endpoint return
+  HTTP 200 on `127.0.0.1:8001`.
+
+## 2026-10-02T23:26:55Z
+- [development database] Upgraded the isolated development database from
+  revision `20261001_0060` to `20261002_0062` and passed `alembic check`.
+  No staging data was copied. The head migration removed the retired
+  `account_session_slots` table and its 18 development rows.
+
+## 2026-10-02T23:16:43Z
+- [auth prototype] Extended the isolated django-allauth service with its
+  built-in OpenID Connect provider so a local client can explore authorization
+  code sign-in and registered callbacks. Documented local signing-key setup,
+  discovery endpoints, and the future `auth.friink.com` browser flow. Friink's
+  current login and API remain disconnected.
+
+## 2026-10-02T23:01:47Z
+- [auth prototype] Added an isolated, local-only Django/allauth headless
+  service scaffold under `auth/` with SQLite persistence, console email, and
+  email-code login enabled. Documented localhost run and exploration steps;
+  existing Friink authentication remains untouched.
+
+## 2026-10-02T22:06:41Z
+- [web session recovery] Bounded ambiguous session restoration to eight
+  attempts ten seconds apart, with progress, retry, and a public-site exit.
+  Definitive auth failures now return to the public site after the coordinated
+  refresh attempt; a web-only marker prevents stale cookies from looping back
+  into app entry. Cookie and backend behavior are unchanged.
+
+## 2026-10-02T21:04:46Z
+- [auth/session] Reviewed the client and API refresh paths during a five-minute
+  staging observation. The incognito session produced two slot-scoped refresh
+  responses with HTTP 200 and no new 401 through 21:04:46Z, supporting a stale
+  slot/session mapping in the earlier browser over a refresh-rotation failure.
+  One 20:58Z diagnostic row reports HTTP 200 without a slot header or expected
+  cookie, which the checked API source rejects; that runtime/telemetry mismatch
+  remains unresolved.
+
+## 2026-10-02T20:52:08Z
+- [auth diagnostics] Investigated the staging 401 against the recent auth work.
+  The latest staging database refresh record was a single `401
+  SESSION_NOT_FOUND` at 20:23:31Z on deployment `d23932e`; the slot header and
+  expected refresh cookie were present, but no auth-session row matched the
+  stored slot hash. Earlier slotless 401s at 00:12–00:25Z were recorded on
+  `8a3bc9e` and match BUG-AUTH-013's reported failure mode. The latest result
+  establishes that the supplied slot ID has no matching session row, likely a
+  stale or foreign slot reference; diagnostics do not capture enough browser
+  state to identify how that slot became stale.
 
 ## 2026-10-02T00:24:19Z
 - [account switcher] Made the idle refresh button white by default and accent
@@ -5739,3 +5805,20 @@ _Last updated: 2026-09-10_
 ## 2026-10-02T01:01:03Z
 
 - Added the first session-management migration seam and moved the app shell onto it. Cross-tab session updates now rehydrate a tab through its own slot cookie instead of leaving the app with a cleared in-memory session; legacy auth remains the credential fallback.
+## 2026-10-02T01:12:00Z
+
+- Added a repository rule limiting code files to 512 lines, excluding `web/app/globals.css`, documentation, changelogs, and agent logs.
+## 2026-10-02T01:14:33Z
+
+- Split the session-manager migration seam into dedicated session storage and cross-tab coordination modules while retaining `auth.ts` as the legacy credential and refresh adapter.
+## 2026-10-02T01:23:03Z
+
+- Added the incremental code-organization plan and placeholder module folders inside the existing `api/` and `web/` boundaries.
+## 2026-10-02
+
+- Corrected the session-manager rule identifier in `docs/rules.md` so the active rules registry contains no duplicate `AUTH-R-032` entry.
+
+## 2026-10-02T22:14:06Z
+- [documentation] Clarified in AUTH-R-008 that successful sign-in clears
+  the web-only failed-restore marker. Started the documentation viewer for
+  browsing; no application behavior changed.

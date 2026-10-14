@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { hasSessionForEntry, loadAuthSession } from '@/lib/auth';
+import { hasPublicSessionFailure } from '@/lib/session-recovery-state';
 
 type PublicRouteGuardProps = {
   children: ReactNode;
@@ -19,6 +20,7 @@ export function PublicRouteGuard({ children }: PublicRouteGuardProps) {
         router.replace('/home');
         return;
       }
+      if (new URLSearchParams(window.location.search).get('session_recovery') === 'failed' || hasPublicSessionFailure()) return;
       try {
         if (await hasSessionForEntry() && active) router.replace('/home');
       } catch {

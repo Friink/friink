@@ -14,6 +14,7 @@ This folder contains Friink’s product and engineering documentation.
 - [Design system](design-system.md) — product-level visual and interaction language.
 - [Stack](stack.md) — technologies, services, environments, and development commands.
 - [Architecture](architecture.md) — repository boundaries, runtime shape, and cross-cutting implementation patterns.
+- [Code organization](code-organization.md) — incremental internal module structure and migration plan.
 - [Notes](notes.md) — retained implementation notes and historical context.
 - [Units](units/) — complete documentation for each major product area.
 - [Error Handling](units/error-handling.md) — draft shared error and recovery
