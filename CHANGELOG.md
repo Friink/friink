@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-14T22:05:46Z
+- [web analytics] Pointed the browser SDK at Mixpanel's EU ingestion host so
+  events from the EU Friink project appear in its dashboard.
+
 ## 2026-10-14T20:19:14Z
 - [web analytics] Added an optional browser-only Mixpanel integration for
   pathname page views and authenticated user identity lifecycle. It is gated by

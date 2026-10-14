@@ -1,5 +1,18 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-14T22:05:46Z — Use EU Mixpanel Ingestion Host
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the deployed Mixpanel integration after no events
+  appeared in the dashboard.
+- Changes Made: Confirmed the production bundle contains the Mixpanel provider
+  and token, then configured the browser SDK to send to
+  `https://api-eu.mixpanel.com`, matching the user's EU Mixpanel project.
+- Files: `web/lib/analytics.ts`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted web TypeScript verification pending; production
+  redeployment is required before checking Mixpanel Live View again.
+
 # 2026-10-14T20:19:14Z — Add Optional Browser Mixpanel Setup
 
 - Agent: Codex
