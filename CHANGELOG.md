@@ -41,6 +41,15 @@
   using the encrypted pending-auth flow, and removed the misleading `000000`
   OTP input placeholders.
 
+## 2026-10-18T22:04:00Z
+- [auth health] Added the Muflah-compatible unauthenticated `GET /api/health`
+  endpoint returning the auth service status.
+
+## 2026-10-18T22:14:58Z
+- [auth OTP parity] Aligned signup and login with Muflah's custom pending-auth
+  OTP flow, restored the shared `purpose` route contract, and kept password
+  recovery privacy-preserving through Better Auth's native hashed OTP reset.
+
 ## 2026-10-18T01:00:15Z
 - [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
   Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie

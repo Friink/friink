@@ -1283,6 +1283,12 @@ project-wide history. This section records changes specific to this unit.
 - 2026-10-18T21:56:56Z — Signup OTP now uses the encrypted pending-auth cookie
   for verification before a user exists, matching the pre-account flow. The
   auth UI no longer displays a misleading `000000` OTP placeholder.
+- 2026-10-18T22:04:00Z — Added the unauthenticated `GET /api/health` endpoint,
+  returning `{ status: "ok", service: "auth" }` for deployment monitoring.
+- 2026-10-18T22:14:58Z — Restored the shared Muflah-style OTP purpose contract
+  and actual encrypted pending-auth OTP storage for signup and login. Password
+  recovery now keeps the neutral unknown-email response while using Better
+  Auth's native hashed OTP reset endpoint for password mutation.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

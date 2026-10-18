@@ -112,6 +112,34 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Verification Status: Auth production build and TypeScript checks pass with
   environment variables loaded from `auth/.env`.
 
+# 2026-10-18T22:04:00Z — Add Auth Health Endpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the health route needed for Friink Auth parity with
+  Muflah Auth.
+- Changes Made: Added an unauthenticated Node.js `GET /api/health` route with
+  the Muflah response contract.
+- Files: `auth/app/src/app/api/health/route.ts`, project changelog, agent log,
+  and account-access documentation.
+- Verification Status: Targeted route response verification follows.
+
+# 2026-10-18T22:14:58Z — Align OTP Flows With Muflah
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed Muflah-compatible OTP architecture and
+  privacy-safe password recovery flow.
+- Changes Made: Restored the shared `purpose` contract for signup/login OTP,
+  stored the actual generated login and signup codes in encrypted pending-auth
+  cookies, removed the Better Auth plugin marker from those flows, and routed
+  password recovery through Better Auth's native hashed OTP endpoints with a
+  neutral response for unknown emails.
+- Files: Auth OTP routes, password recovery page, signup page, shared OTP helper,
+  project changelog, agent log, and account-access documentation.
+- Verification Status: TypeScript and production build pass. Unknown-email
+  password-reset request returned HTTP 200 with `{ "success": true }`.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex

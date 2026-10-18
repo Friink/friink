@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
     setBusy(true);
     setError('');
     setSuccess('');
-    const response = await fetch('/api/auth/email-otp/request-password-reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const response = await fetch('/api/auth-flow/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, purpose: 'password-reset' }) });
     const result = await response.json().catch(() => ({}));
     setBusy(false);
     if (!response.ok) { setError(result.error ?? 'We could not send a verification code.'); return false; }

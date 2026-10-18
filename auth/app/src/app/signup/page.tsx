@@ -12,7 +12,7 @@ export default function SignupPage() {
   async function sendOtp(email: string) {
     setBusy(true);
     setError('');
-    const response = await fetch('/api/auth-flow/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const response = await fetch('/api/auth-flow/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, purpose: 'signup' }) });
     const result = await response.json().catch(() => ({}));
     setBusy(false);
     if (!response.ok) { setError(result.error ?? 'We could not send a verification code.'); return false; }

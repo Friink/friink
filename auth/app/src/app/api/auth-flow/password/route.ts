@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { authConfig } from '@/lib/config';
+import { issuePendingOtp } from '@/lib/otp-flow';
 import { clearPendingCookies, pendingCookie } from '@/lib/pending-auth';
 
 export const runtime = 'nodejs';
@@ -26,10 +26,14 @@ export async function POST(request: Request) {
   const temporaryCookies = cookieHeader(result.headers);
   if (temporaryCookies) await auth.api.signOut({ headers: new Headers({ cookie: temporaryCookies }) });
 
-  await auth.api.sendVerificationOTP({ body: { email, type: 'sign-in' }, headers: request.headers });
-  const expiresAt = Date.now() + authConfig.otpExpiresInSeconds * 1000;
-  const response = NextResponse.json({ success: true });
-  for (const cookie of clearPendingCookies()) response.headers.append('set-cookie', cookie);
-  response.headers.append('set-cookie', pendingCookie({ email, purpose: 'login', otp: 'plugin', expiresAt }));
-  return response;
+  try {
+    const { otp, expiresAt } = await issuePendingOtp(email, 'login');
+    const response = NextResponse.json({ success: true });
+    for (const cookie of clearPendingCookies()) response.headers.append('set-cookie', cookie);
+    response.headers.append('set-cookie', pendingCookie({ email, purpose: 'login', otp, expiresAt }));
+    return response;
+  } catch (error) {
+    console.error('Login OTP delivery failed', error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: 'We could not send a verification code.' }, { status: 502 });
+  }
 }
