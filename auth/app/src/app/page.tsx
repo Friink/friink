@@ -131,17 +131,33 @@ export default function HomePage() {
   if (checkingSession) return <div className="auth-shell"><main className="auth-main"><p className="micro">Checking your session…</p></main></div>;
   if (sessionCheckError) return <div className="auth-shell"><main className="auth-main"><section className="auth-card"><p className="micro">Session check</p><h1>Let’s try that again.</h1><p className="intro">{sessionCheckError} Your account has not been signed out.</p><div className="auth-actions"><button className="auth-button" type="button" onClick={() => { setSessionCheckError(""); setCheckingSession(true); setSessionCheckAttempt((attempt) => attempt + 1); }}>Retry ↗</button></div></section></main></div>;
 
-  return <div className="auth-shell">
-    <header className="auth-header"><a className="brand" href="/" aria-label="Friink home">m</a><span className="auth-label">Secure account access</span></header>
-    <main className="auth-main"><section className="auth-card" aria-live="polite"><p className="micro">Friink account</p><h1>{title}</h1><p className="intro">{intro}</p>
-      {step === "identifier" ? <form className="auth-form" onSubmit={continueWithEmail}><label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Checking…" : "Continue ↗"}</button></div></form> : step === "verify" ? <form className="auth-form" onSubmit={verifyEmail}><label htmlFor="otp">Verification code</label><input id="otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} /><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Verifying…" : "Verify code ↗"}</button><button className="auth-button secondary" type="button" disabled={busy} onClick={resendCode}>Resend code</button><button className="auth-button secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Use a different email</button></div></form> : <form className="auth-form" onSubmit={submitCredentials}>
-        {flow === "sign-up" && <><label htmlFor="name">Name</label><input id="name" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} /></>}
-        <label htmlFor="password">Password</label><div className="password-field"><input id="password" type={passwordVisible ? "text" : "password"} autoComplete={flow === "sign-in" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={passwordVisible ? "Hide password" : "Show password"} aria-pressed={passwordVisible} onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? "◉" : "◌"}</button></div>
-        {flow === "sign-up" && <><label htmlFor="confirm-password">Confirm password</label><div className="password-field"><input id="confirm-password" type={confirmPasswordVisible ? "text" : "password"} autoComplete="new-password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={confirmPasswordVisible ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={confirmPasswordVisible} onClick={() => setConfirmPasswordVisible((visible) => !visible)}>{confirmPasswordVisible ? "◉" : "◌"}</button></div></>}
-        <div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Working…" : flow === "sign-in" ? "Continue to verification ↗" : "Create account ↗"}</button><button className="auth-button secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Use a different email</button></div>
-      </form>}
-      {flow === "sign-in" && <p className="auth-switch">Don’t have an account? <a href={signupHref}>Sign up</a></p>}
-      {message && <p className={`notice${isError ? " error" : ""}`}>{message}</p>}
-    </section></main><footer className="auth-footer"><p>© 2026 Friink.</p><p>Authentication service</p></footer>
-  </div>;
+  return <main className="login-screen">
+    <form className="login-form" onSubmit={step === "identifier" ? continueWithEmail : step === "verify" ? verifyEmail : submitCredentials} aria-live="polite">
+      <a className="auth-home-link" href="/" aria-label="Friink home"><img src="/brand/logoBrand.svg" alt="" /></a>
+      <div className="brand-lockup brand-lockup-lg" aria-label="Friink"><img className="brand-lockup-wordmark" src="/brand/logoFullBrand.svg" alt="Friink" /></div>
+      <div className="login-step-copy"><p>{title}</p><span>{intro}</span></div>
+      {step === "identifier" ? <>
+        <label className="pill-field"><span className="sr-only">Email address</span><input id="email" type="email" autoComplete="email" placeholder="Email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+        <div className="signup-actions signup-actions-single"><button className="button-primary login-submit" disabled={busy}>{busy ? "Checking…" : "Continue"}</button></div>
+      </> : step === "verify" ? <>
+        <label className="pill-field"><span className="sr-only">Verification code</span><input id="otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="Verification code" required value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} /></label>
+        <div className="signup-actions"><button className="button-secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Back</button><button className="button-primary login-submit" disabled={busy}>{busy ? "Verifying…" : "Verify code"}</button></div>
+        <div className="auth-secondary-actions"><button className="text-link" type="button" disabled={busy} onClick={resendCode}>Resend code</button><button className="text-link" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Use a different email</button></div>
+      </> : <>
+        {flow === "sign-up" && <label className="pill-field"><span className="sr-only">Name</span><input id="name" autoComplete="name" placeholder="Name" required value={name} onChange={(event) => setName(event.target.value)} /></label>}
+        <label className="pill-field password-field"><span className="sr-only">Password</span><input id="password" type={passwordVisible ? "text" : "password"} autoComplete={flow === "sign-in" ? "current-password" : "new-password"} placeholder="Password" required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={passwordVisible ? "Hide password" : "Show password"} aria-pressed={passwordVisible} onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? "◉" : "◌"}</button></label>
+        {flow === "sign-up" && <SignupPasswordCriteria value={password} />}
+        {flow === "sign-in" && <a className="forgot-password" href="/forgot-password">Forgot password?</a>}
+        {flow === "sign-up" && <label className="pill-field password-field"><span className="sr-only">Confirm password</span><input id="confirm-password" type={confirmPasswordVisible ? "text" : "password"} autoComplete="new-password" placeholder="Confirm password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={confirmPasswordVisible ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={confirmPasswordVisible} onClick={() => setConfirmPasswordVisible((visible) => !visible)}>{confirmPasswordVisible ? "◉" : "◌"}</button></label>}
+        <div className="signup-actions"><button className="button-secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Back</button><button className="button-primary login-submit" disabled={busy}>{busy ? "Please wait…" : flow === "sign-in" ? "Continue" : "Create account"}</button></div>
+      </>}
+      {flow === "sign-in" && <p className="login-switch">Don’t have an account? <a href={signupHref}>Sign up</a></p>}
+      {message && <p className="login-error" role={isError ? "alert" : "status"}>{message}</p>}
+    </form>
+  </main>;
+}
+
+function SignupPasswordCriteria({ value }: { value: string }) {
+  const hasMix = /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9\s]/.test(value);
+  return <ul className="password-criteria" aria-label="Password requirements"><li className={value.length >= 8 ? "met" : ""}>✓ At least 8 characters</li><li className={hasMix ? "met" : ""}>✓ Mix of letters, numbers, and symbols</li><li className={!/\s/.test(value) ? "met" : ""}>✓ No spaces</li></ul>;
 }

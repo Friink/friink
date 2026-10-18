@@ -5992,6 +5992,15 @@ _Last updated: 2026-09-10_
   applying the migration to the live auth database.
 - Added authenticated `/me`, which displays the selected account's current
   identity and status while retaining account switching and session actions.
+
+## 2026-10-18T23:16:45Z
+
+- Fixed the auth app's account-switcher integration by making the shared
+  `@friink/account-switcher` package use the Auth app's direct `/api/auth`
+  endpoint through its package API-base attribute.
+- Matched login, signup, forgot-password, and reset-password presentation to
+  the Friink webapp's centered form, wordmark, input, button, password-guidance,
+  and responsive/dark-theme patterns without changing flow behavior.
 - Added password-reset email delivery and documented that
   `AUTH_EMAIL_DOMAIN` is a domain-only setting; the auth app chooses the
   sender alias.

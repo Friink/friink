@@ -24,5 +24,19 @@ export default function ResetPasswordPage() {
     finally { setBusy(false); }
   }
 
-  return <div className="auth-shell"><header className="auth-header"><a className="brand" href="/" aria-label="Friink home">m</a><span className="auth-label">Secure account access</span></header><main className="auth-main"><section className="auth-card"><p className="micro">Password recovery</p><h1>Choose a new password.</h1><p className="intro">Use a strong password you do not reuse elsewhere.</p><form className="auth-form" onSubmit={submit}><label htmlFor="password">New password</label><div className="password-field"><input id="password" type={visible ? "text" : "password"} autoComplete="new-password" required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? "◉" : "◌"}</button></div><label htmlFor="confirm-password">Confirm password</label><div className="password-field"><input id="confirm-password" type={visible ? "text" : "password"} autoComplete="new-password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} /></div><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Saving…" : "Reset password ↗"}</button><a className="auth-button secondary" href="/login">Back to login</a></div></form>{message && <p className="notice">{message}</p>}</section></main><footer className="auth-footer"><p>© 2026 Friink.</p><p>Authentication service</p></footer></div>;
+  return <main className="login-screen"><form className="login-form" onSubmit={submit}>
+    <a className="auth-home-link" href="/" aria-label="Friink home"><img src="/brand/logoBrand.svg" alt="" /></a>
+    <div className="brand-lockup brand-lockup-lg" aria-label="Friink"><img className="brand-lockup-wordmark" src="/brand/logoFullBrand.svg" alt="Friink" /></div>
+    <div className="login-step-copy"><p>Reset your password</p><span>Choose a new password for your Friink account.</span></div>
+    <label className="pill-field password-field"><span className="sr-only">New password</span><input id="password" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="New password" required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? "◉" : "◌"}</button></label>
+    <ResetPasswordCriteria value={password} />
+    <label className="pill-field password-field"><span className="sr-only">Confirm password</span><input id="confirm-password" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="Confirm password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} /><button className="password-toggle" type="button" aria-label={visible ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? "◉" : "◌"}</button></label>
+    <div className="signup-actions"><a className="button-secondary login-back-button" href="/login">Back</a><button className="button-primary login-submit" disabled={busy}>{busy ? "Please wait…" : "Reset password"}</button></div>
+    {message && <p className="login-error" role="alert">{message}</p>}
+  </form></main>;
+}
+
+function ResetPasswordCriteria({ value }: { value: string }) {
+  const hasMix = /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9\s]/.test(value);
+  return <ul className="password-criteria" aria-label="Password requirements"><li className={value.length >= 8 ? "met" : ""}>✓ At least 8 characters</li><li className={hasMix ? "met" : ""}>✓ Mix of letters, numbers, and symbols</li><li className={!/\s/.test(value) ? "met" : ""}>✓ No spaces</li></ul>;
 }

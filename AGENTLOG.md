@@ -16466,3 +16466,18 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     session successfully, then cleaned up. `GET /me` redirects unauthenticated
     users to `/login`. Typecheck and production build passed. Changes remain
     uncommitted.
+
+- 2026-10-18T23:16:45Z — Repair account switcher endpoint and match auth UX
+
+  - Agent: Codex
+  - Prompt Summary: Make the auth app account switcher work through the shared
+    package and align login, signup, forgot-password, and reset-password UI to
+    the webapp without changing flow behavior.
+  - Changes Made: Added the package-owned configurable API base and mounted the
+    Auth app with `/api/auth`; restyled the auth forms using the Friink
+    wordmark, centered webapp form layout, pill inputs, shared buttons, password
+    criteria, and responsive/dark variants. Added only presentation links and
+    labels; authentication handlers remain unchanged.
+  - Verification Status: `npm run typecheck`, `npm run build`, and `git diff
+    --check` passed. Direct Auth session and multi-session endpoints return the
+    expected unauthenticated response shapes. Changes remain uncommitted.

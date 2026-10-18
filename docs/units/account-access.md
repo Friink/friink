@@ -1313,6 +1313,12 @@ project-wide history. This section records changes specific to this unit.
   shows the selected account identity and onboarding status and exposes the
   shared account switcher and session actions.
 
+- 2026-10-18T23:16:45Z — The Auth app now mounts the shared
+  `@friink/account-switcher` package against its direct `/api/auth` endpoint,
+  while consuming applications may continue using their `/auth-api` proxy.
+  Login, signup, forgot-password, and reset-password retain their existing
+  flow contracts while using the Friink webapp's centered form visual language.
+
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account
   switching across tabs. Active-account removal reuses fallback without a

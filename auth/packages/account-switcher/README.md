@@ -9,10 +9,12 @@ Auth maintains the component and remains authoritative for identity, sessions, a
 The component uses browser-native HTML, CSS, and JavaScript. It has no React, Next.js, or framework runtime dependency.
 
 ```html
-<account-switcher auth-url="https://auth.example.com"></account-switcher>
+<account-switcher auth-url="https://auth.example.com" api-base="/auth-api"></account-switcher>
 ```
 
-The `auth-url` attribute is the configured Auth origin. Applications should normally call the component through their local `/auth-api` proxy so the Auth origin remains deployment-configurable.
+The `auth-url` attribute is the configured Auth origin. `api-base` selects the
+same-origin API prefix used by the host application; consuming applications
+normally use `/auth-api`, while the Auth app uses its direct `/api/auth` route.
 
 ## JavaScript usage
 

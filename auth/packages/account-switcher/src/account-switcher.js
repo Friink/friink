@@ -27,8 +27,9 @@ em { color: #6f766f; font-size: .68rem; font-style: normal; }
 .toast button:hover, .toast button:focus-visible { background: #eef5ef; outline: none; }
 `;
 
-function authRequest(path, init) {
-  return fetch(`/auth-api/${path}`, { ...init, cache: "no-store", credentials: "include", headers: { "Content-Type": "application/json", ...(init?.headers || {}) } }).then((response) => {
+function authRequest(path, init, apiBase = "/auth-api") {
+  const base = apiBase.replace(/\/$/, "");
+  return fetch(`${base}/${path}`, { ...init, cache: "no-store", credentials: "include", headers: { "Content-Type": "application/json", ...(init?.headers || {}) } }).then((response) => {
     if (!response.ok) throw new Error(`Auth request failed (${response.status})`);
     return response.json();
   });
@@ -97,9 +98,12 @@ export class AccountSwitcher extends ElementBase {
     root.querySelector(".toast-close").addEventListener("click", () => this.hideToast());
   }
 
+  apiBase() { return this.getAttribute("api-base") || "/auth-api"; }
+
   async load(announce = false) {
     try {
-      const [session, deviceSessions] = await Promise.all([authRequest("get-session"), authRequest("multi-session/list-device-sessions")]);
+      const apiBase = this.apiBase();
+      const [session, deviceSessions] = await Promise.all([authRequest("get-session", undefined, apiBase), authRequest("multi-session/list-device-sessions", undefined, apiBase)]);
       const previousUser = this.user;
       this.user = session?.user;
       this.token = session?.session?.token;
@@ -139,15 +143,15 @@ export class AccountSwitcher extends ElementBase {
     root.querySelector(".accounts").replaceChildren(...this.accounts.map((account) => { const button = document.createElement("button"); button.className = "account"; button.type = "button"; button.innerHTML = `<span class="avatar">${account.name.slice(0, 1).toUpperCase()}</span><span><strong></strong><small></small></span><em></em>`; button.querySelector("strong").textContent = account.name; button.querySelector("small").textContent = `${account.username ? `@${account.username} · ` : ""}${account.email}`; button.querySelector("em").textContent = account.email.toLowerCase() === this.user.email.toLowerCase() ? "Current" : account.onboardingComplete ? "Switch" : "Finish setup"; button.disabled = !account.sessionToken; button.addEventListener("click", () => this.switchAccount(account)); return button; }));
   }
 
-  async switchAccount(account) { if (!account.sessionToken || account.email.toLowerCase() === this.user.email.toLowerCase()) return; try { await authRequest("multi-session/set-active", { method: "POST", body: JSON.stringify({ sessionToken: account.sessionToken }) }); publishSessionEvent("account-switched"); await this.load(true); } catch { this.showError("That account session is no longer available."); } }
+  async switchAccount(account) { if (!account.sessionToken || account.email.toLowerCase() === this.user.email.toLowerCase()) return; try { await authRequest("multi-session/set-active", { method: "POST", body: JSON.stringify({ sessionToken: account.sessionToken }) }, this.apiBase()); publishSessionEvent("account-switched"); await this.load(true); } catch { this.showError("That account session is no longer available."); } }
   async logout() {
     if (!this.token) return;
     try {
-      await authRequest("multi-session/revoke", { method: "POST", body: JSON.stringify({ sessionToken: this.token }) });
+      await authRequest("multi-session/revoke", { method: "POST", body: JSON.stringify({ sessionToken: this.token }) }, this.apiBase());
     } catch {
       // Older sessions may not have a multi-session cookie. Revoke the authoritative session directly.
       try {
-        await authRequest("revoke-session", { method: "POST", body: JSON.stringify({ token: this.token }) });
+        await authRequest("revoke-session", { method: "POST", body: JSON.stringify({ token: this.token }) }, this.apiBase());
       } catch {
         this.showError("Unable to sign out. Please try again.");
         return;

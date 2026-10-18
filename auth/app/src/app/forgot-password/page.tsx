@@ -17,5 +17,12 @@ export default function ForgotPasswordPage() {
     finally { setBusy(false); }
   }
 
-  return <div className="auth-shell"><header className="auth-header"><a className="brand" href="/" aria-label="Friink home">m</a><span className="auth-label">Secure account access</span></header><main className="auth-main"><section className="auth-card"><p className="micro">Password recovery</p><h1>Reset your password.</h1><p className="intro">Enter your email and we’ll send a secure reset link if the account exists.</p><form className="auth-form" onSubmit={submit}><label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Sending…" : "Send reset link ↗"}</button><a className="auth-button secondary" href="/login">Back to login</a></div></form>{message && <p className="notice">{message}</p>}</section></main><footer className="auth-footer"><p>© 2026 Friink.</p><p>Authentication service</p></footer></div>;
+  return <main className="login-screen"><form className="login-form" onSubmit={submit}>
+    <a className="auth-home-link" href="/" aria-label="Friink home"><img src="/brand/logoBrand.svg" alt="" /></a>
+    <div className="brand-lockup brand-lockup-lg" aria-label="Friink"><img className="brand-lockup-wordmark" src="/brand/logoFullBrand.svg" alt="Friink" /></div>
+    <div className="login-step-copy"><p>Reset your password</p><span>Enter your account email and we’ll send a single-use reset link.</span></div>
+    <label className="pill-field"><span className="sr-only">Email address</span><input id="email" type="email" autoComplete="email" placeholder="Email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+    <div className="signup-actions"><a className="button-secondary login-back-button" href="/login">Back</a><button className="button-primary login-submit" disabled={busy}>{busy ? "Please wait…" : "Send reset link"}</button></div>
+    {message && <p className="login-error" role="status">{message}</p>}
+  </form></main>;
 }
