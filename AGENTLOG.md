@@ -16438,4 +16438,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - Verification Status: Typecheck passed. Real email delivery and the final
     password-plus-OTP/login and pre-account signup UI flows still require the
     pending flow implementation and provider acceptance test. Changes remain
-    uncommitted.
+  uncommitted.
+
+- 2026-10-18T22:42:33Z — Align standalone auth UI with Friink design system
+
+  - Agent: Codex
+  - Prompt Summary: Match auth UI elements to the Friink webapp without
+    changing authentication flow or JavaScript behavior.
+  - Changes Made: Applied Friink design tokens and typography, copied canonical
+    logos and favicon, updated app metadata icon, and restyled the auth,
+    onboarding, and account-switcher surfaces including responsive and dark
+    variants. Removed the remaining Muflah-specific footer name.
+  - Verification Status: `npm run typecheck`, `npm run build`, and `git diff
+    --check` passed. Changes remain uncommitted.

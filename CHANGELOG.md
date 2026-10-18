@@ -5976,6 +5976,14 @@ _Last updated: 2026-09-10_
 
 - Configured Better Auth Email OTP delivery through Resend with hashed OTP
   storage, expiry, attempt limits, resend limits, and generated sender aliases.
+
+## 2026-10-18T22:42:33Z
+
+- Matched the standalone Friink auth UI to the shared Friink design system:
+  canonical logos and favicon, Friink colors, Inter/Nunito typography, layout
+  spacing, controls, responsive behavior, dark theme, and shared onboarding
+  and account-switcher styling. Authentication routes and JavaScript flows were
+  unchanged.
 - Added password-reset email delivery and documented that
   `AUTH_EMAIL_DOMAIN` is a domain-only setting; the auth app chooses the
   sender alias.

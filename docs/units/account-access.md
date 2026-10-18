@@ -1301,6 +1301,12 @@ project-wide history. This section records changes specific to this unit.
 - 2026-10-18T22:31:00Z — Preserved Friink's UUID-backed auth schema while using
   the copied Muflah implementation by enabling Better Auth UUID ID generation.
 
+- 2026-10-18T22:42:33Z — Matched the standalone auth UI to Friink's existing
+  visual contract without changing routes, authentication flow, or client
+  behavior. The auth app now uses the canonical Friink logos and favicon,
+  shared colors, Inter/Nunito typography, responsive layout, dark-theme tokens,
+  and aligned onboarding/account-switcher styling.
+
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account
   switching across tabs. Active-account removal reuses fallback without a

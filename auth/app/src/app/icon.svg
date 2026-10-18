@@ -1,17 +1,9 @@
-<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="96" height="96" fill="black"/>
-<rect x="24" y="24" width="8" height="8" fill="white"/>
-<rect x="24" y="34" width="8" height="8" fill="white"/>
-<rect x="24" y="44" width="8" height="8" fill="white"/>
-<rect x="24" y="54" width="8" height="8" fill="white"/>
-<rect x="24" y="64" width="8" height="8" fill="white"/>
-<rect x="34" y="24" width="8" height="8" fill="white"/>
-<rect x="44" y="34" width="8" height="8" fill="white"/>
-<rect x="44" y="44" width="8" height="8" fill="white"/>
-<rect x="44" y="54" width="8" height="8" fill="white"/>
-<rect x="54" y="24" width="8" height="8" fill="white"/>
-<rect x="64" y="34" width="8" height="8" fill="white"/>
-<rect x="64" y="44" width="8" height="8" fill="white"/>
-<rect x="64" y="54" width="8" height="8" fill="white"/>
-<rect x="64" y="64" width="8" height="8" fill="white"/>
+<svg width="96" height="97" viewBox="0 0 96 97" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M24.981 33.0624C24.4577 28.3525 28.1445 24.2333 32.8835 24.2333C36.9349 24.2333 40.3385 27.2796 40.7859 31.3063L43.5583 56.2578C43.8519 58.9 43.8519 61.5666 43.5583 64.2088L40.7859 89.1603C40.3385 93.1869 36.9349 96.2333 32.8835 96.2333C28.1445 96.2333 24.4577 92.1141 24.981 87.4042L27.6382 63.4896C27.8787 61.3254 27.8787 59.1412 27.6382 56.977L24.981 33.0624Z" fill="#33AA55"/>
+<circle cx="31" cy="9.23329" r="8" fill="#33AA55" stroke="#33AA55" stroke-width="2"/>
+<path d="M64.1162 95.2333C60.5744 95.2331 57.5991 92.5698 57.208 89.0497L54.4355 64.0985C54.1501 61.5297 54.1501 58.9369 54.4355 56.3681L57.208 31.4169C57.5991 27.8967 60.5744 25.2335 64.1162 25.2333C68.2591 25.2333 71.4829 28.8345 71.0254 32.952L68.3682 56.8661C68.1195 59.1037 68.1195 61.3629 68.3682 63.6005L71.0254 87.5145C71.4829 91.6321 68.2591 95.2333 64.1162 95.2333Z" stroke="#33AA55" stroke-width="2"/>
+<circle cx="66" cy="9.23329" r="8" stroke="#33AA55" stroke-width="2"/>
+<path d="M64.1162 94.2333C61.084 94.2331 58.537 91.953 58.2021 88.9393L55.4297 63.9882C55.1524 61.4927 55.1524 58.9738 55.4297 56.4784L58.2021 31.5272C58.537 28.5135 61.084 26.2335 64.1162 26.2333C67.6631 26.2333 70.4229 29.3165 70.0313 32.8417L67.374 56.7558C67.1172 59.0668 67.1172 61.3998 67.374 63.7108L70.0312 87.6249C70.4229 91.1501 67.6631 94.2333 64.1162 94.2333Z" stroke="#33AA55" stroke-width="4"/>
+<circle cx="66" cy="9.23329" r="6" stroke="#33AA55" stroke-width="2"/>
+<circle cx="66" cy="9.23329" r="7" stroke="#33AA55" stroke-width="2"/>
 </svg>

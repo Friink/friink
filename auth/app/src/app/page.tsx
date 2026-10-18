@@ -142,6 +142,6 @@ export default function HomePage() {
       </form>}
       {flow === "sign-in" && <p className="auth-switch">Don’t have an account? <a href={signupHref}>Sign up</a></p>}
       {message && <p className={`notice${isError ? " error" : ""}`}>{message}</p>}
-    </section></main><footer className="auth-footer"><p>© 2026 Friink Ul Furqan.</p><p>Authentication service</p></footer>
+    </section></main><footer className="auth-footer"><p>© 2026 Friink.</p><p>Authentication service</p></footer>
   </div>;
 }
