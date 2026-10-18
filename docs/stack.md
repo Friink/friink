@@ -25,12 +25,9 @@ planned or undecided items are marked explicitly.
 ## Authentication and platform services
 
 - **Authentication and sessions:** FastAPI routes, PyJWT access tokens, an HTTP-only refresh-token cookie, and bcrypt password hashing.
-- **Auth-service exploration:** Django 5.2 and django-allauth OIDC were
-  prototyped with a separate Neon auth database. Three development accounts
-  were imported while their existing userdata records stayed in place. This
-  prototype is not connected to Friink login, and its source is not tracked on
-  the current `main` branch; treat the FastAPI auth flow above as the only
-  active login implementation.
+- **Auth-service exploration:** The Django 5.2/django-allauth OIDC prototype
+  was removed after exploration. It was never connected to Friink login; treat
+  the FastAPI auth flow above as the only active login implementation.
 - **Validation and settings:** Pydantic, pydantic-settings, and email-validator.
 - **Notifications:** In-app notification records and API endpoints are implemented; an email delivery provider is TBD.
 - **Payments:** TBD.
@@ -41,11 +38,9 @@ planned or undecided items are marked explicitly.
 ## Hosting and environments
 
 - Two separate Vercel projects are used: `web/` for the Next.js client and `api/` for the API entrypoint at `api/api/index.py`.
-- A third Vercel project rooted at `auth/` is the intended hosting shape for
-  the standalone auth service, but it is not currently represented by tracked
-  source on `main` and is not a live Friink login provider. The user reports
-  assigning the auth domain; the Django deployment currently reports
-  `DisallowedHost` and needs host/security settings before acceptance.
+- No third auth deployment is currently configured. A future Better Auth
+  service would need its own deployment project, environment contract, domain,
+  database, and staging acceptance before becoming a Friink login provider.
 - The web deployment receives `NEXT_PUBLIC_API_BASE_URL` and the optional
   `NEXT_PUBLIC_MIXPANEL_TOKEN`; it does not receive `DATABASE_URL`.
 - The API deployment requires `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL`, and the other variables in the matching environment file.

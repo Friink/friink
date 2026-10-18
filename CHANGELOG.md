@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-18T00:08:30Z
+- [auth prototype] Emptied the standalone `auth/` folder and removed the
+  unused Django/allauth prototype, local virtualenv, local environment files,
+  signing key, and development-only state. Friink's active FastAPI/JWT auth
+  path remains unchanged; documentation now records the prototype as removed.
+
 ## 2026-10-14T22:29:30Z
 - [web analytics] Disabled Mixpanel client batching so the lightweight UX
   events are sent immediately and are visible promptly in Live View.

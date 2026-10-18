@@ -23,12 +23,10 @@ browser-side Mixpanel provider; it emits route views and session identity only
 when `NEXT_PUBLIC_MIXPANEL_TOKEN` is configured.
 
 An independent Django/allauth OIDC service was explored with a separate
-development auth database. It has not replaced or joined the active FastAPI
-authentication path. Its source is not tracked on the current `main` branch,
-its OIDC subject is not yet resolved to the userdata UUID by the API, and the
-reported Vercel hostname currently fails Django's `ALLOWED_HOSTS` check. Keep
-it outside the current runtime diagram until those integration and deployment
-gaps are closed.
+development auth database and then removed. It never replaced or joined the
+active FastAPI authentication path. Any future Better Auth service must be
+introduced as a new, explicitly integrated identity boundary; the current
+runtime diagram remains FastAPI-only.
 
 ## Web application conventions
 

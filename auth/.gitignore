@@ -1,7 +1,0 @@
-.venv/
-.env
-.env.*
-__pycache__/
-*.py[cod]
-auth-prototype.sqlite3
-local-oidc-private.pem

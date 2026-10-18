@@ -67,26 +67,14 @@ is superseded by the staging-gate workflow above.
 
 ## Configuration boundaries
 
-### Standalone auth-service deployment exploration
+### Standalone auth-service exploration
 
-The Django/allauth auth service is not currently part of the deployed Friink
-login path, and its source is not tracked on the current `main` branch. If and
-when the source is restored and made deployment-ready, the planned Vercel
-layout is a separate project from the same repository with root directory
-`auth/`; Vercel supports Python/Django through its Python runtime (currently
-beta) and separate projects for monorepo directories ([Python runtime](https://vercel.com/docs/functions/runtimes/python),
-[monorepos](https://vercel.com/docs/monorepos)). Keep Preview/Staging pointed
-only at the staging auth database and Production only at a production auth
-database. Local `.env.*` files are ignored and are not substitutes for Vercel
-environment variables.
-
-The user reports that the auth domain is configured but currently returns
-Django `DisallowedHost`. The Django deployment must allow the bare requested
-hostname in `ALLOWED_HOSTS`; `CSRF_TRUSTED_ORIGINS` separately needs the HTTPS
-origin for browser POSTs. Set `DEBUG=False` before exposing the service. This
-host fix alone does not complete the auth service: the OIDC subject-to-userdata
-mapping and Friink web/API integration are still required. Keep existing Friink
-login unchanged until staging acceptance passes.
+The standalone Django/allauth prototype under `auth/` was removed on
+2026-10-18. It was never part of the deployed Friink login path. The active
+deployment remains the `web/` and `api/` pair described below. A future
+Better Auth service requires a new deployment design, database, domain,
+application-registration contract, and staging acceptance before it can be
+connected to Friink login.
 
 - The web project receives only its environment-specific
   `NEXT_PUBLIC_API_BASE_URL` and the optional

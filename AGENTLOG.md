@@ -16089,3 +16089,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - Verification Status: `git check-ignore -v` confirmed `.env`, `.env.staging`,
     and `.env.development` are ignored; no connector values were read or
     printed.
+- 2026-10-18T00:08:30Z — Remove standalone allauth prototype
+
+  - Agent: Codex
+  - Prompt Summary: Empty Friink's standalone allauth auth folder and compare
+    the required future auth shape with the local Muflah implementation.
+  - Changes Made: Removed every tracked and ignored item under `auth/`,
+    including the Django/allauth prototype, local virtualenv, environment
+    files, signing key, and local development state. Kept the active FastAPI,
+    JWT, refresh-cookie, and web session implementation unchanged. Updated
+    architecture, deployment, and stack documentation to record the removal.
+  - Verification Status: Confirmed `auth/` has no remaining entries;
+    `git diff --check` passed. No build or full test suite run.
