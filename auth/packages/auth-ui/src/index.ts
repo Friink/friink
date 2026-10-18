@@ -14,5 +14,3 @@ export {
   type SignupFormProps,
   type SignupSubmit,
 } from './ui';
-
-import './styles.css';

@@ -16149,3 +16149,18 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - Verification Status: Both files contain exactly 16 keys; `auth/.env` is
     ignored by Git; `git diff --check` passed. Vercel dashboard values were
     not inspected because no Vercel account connector is available.
+- 2026-10-18T01:00:15Z — Create deployable Better Auth Next.js service
+
+  - Agent: Codex
+  - Prompt Summary: Proceed with the Next.js deployment option for the
+    Better Auth service rooted at `auth/`.
+  - Changes Made: Added Next.js 16.4.2, PostgreSQL pooling, strict env
+    validation, Better Auth server configuration, cross-subdomain cookies,
+    `/api/auth/[...all]`, hosted login/signup/forgot-password/reset-password
+    pages, auth migration/check scripts, and Vercel-compatible Next config.
+    Connected the existing auth UI package through callback-based Better Auth
+    client calls. No `web/` files or active Friink FastAPI auth code changed.
+  - Verification Status: `npm run typecheck` and `npm run build` passed with
+    temporary non-production build variables. The build reported the expected
+    database-schema validation warning because the temporary PostgreSQL URL
+    was not a live migrated database. No full test suite run.

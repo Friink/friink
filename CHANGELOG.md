@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-18T01:00:15Z
+- [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
+  Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie
+  configuration, Next.js catch-all auth route, login/signup/forgot-password and
+  reset-password pages using `@friink/auth-ui`, migration/check scripts, and
+  Vercel-compatible build configuration. The existing `web/` app was not
+  changed.
+
 ## 2026-10-18T00:51:18Z
 - [auth configuration] Normalized `auth/.env` and `auth/.env.example` to the
   exact 16-variable Better Auth production contract. Removed future-only and

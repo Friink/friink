@@ -10,12 +10,28 @@ FastAPI authentication path.
 npm install
 ```
 
-The local `auth/.env` contains the production variable contract with secret
-and database values intentionally blank. Fill those values only in a secure
-deployment environment; do not commit them.
+The local `auth/.env` contains the production variable contract. Its generated
+Better Auth secret is local-only; database and provider values must be filled
+only in a secure deployment environment. Do not commit the file.
 
-The next implementation step is to add a Better Auth server configuration and
-database adapter before running schema migration commands.
+The Better Auth server configuration and PostgreSQL adapter now live under
+`app/src/lib/`.
+
+## Next.js service
+
+The deployable auth application lives under `app/`. It mounts Better Auth at
+`/api/auth/*` and provides `/login`, `/signup`, `/forgot-password`, and
+`/reset-password`. From this directory:
+
+```powershell
+npm run dev
+npm run typecheck
+npm run build
+npm run auth:migrate
+```
+
+Run `auth:migrate` only against the dedicated Better Auth PostgreSQL database
+after the production environment variables are configured.
 
 ## Auth UI package
 
