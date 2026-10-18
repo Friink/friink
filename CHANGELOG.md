@@ -19,6 +19,17 @@
   starts an add-account login flow. It is mounted on `/me`; webapp/API
   integration remains deferred.
 
+## 2026-10-18T21:40:38Z
+- [auth OTP flows] Completed the staged signup and login flows. Signup now uses
+  email OTP → password → profile → session; login uses email → password → OTP
+  → session. Added auth-owned flow routes and encrypted short-lived
+  pending-auth cookies. The webapp and API remain unchanged.
+
+## 2026-10-18T21:42:12Z
+- [auth password recovery] Changed forgot-password from link-only recovery to
+  email OTP verification followed by a new password, using Better Auth's
+  Email OTP password-reset endpoints.
+
 ## 2026-10-18T01:00:15Z
 - [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
   Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie

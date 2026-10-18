@@ -48,6 +48,38 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   `auth/package.json`, `auth/package-lock.json`, auth/docs, and project logs.
 - Verification Status: Auth TypeScript checks and production build pass.
 
+# 2026-10-18T21:40:38Z — Complete Auth OTP Flows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix signup and login so both use OTP while changing only the
+  auth app.
+- Changes Made: Added Muflah-style staged auth routes and encrypted short-lived
+  pending cookies. Signup now sends/verifies email OTP before account creation;
+  login validates password, sends a sign-in OTP, then creates the final session.
+  Updated the shared auth UI and auth pages to expose the required steps.
+- Files: `auth/app/src/app/api/auth-flow/`,
+  `auth/app/src/app/login/page.tsx`, `auth/app/src/app/signup/page.tsx`,
+  `auth/app/src/lib/pending-auth.ts`, `auth/app/src/lib/database.ts`,
+  `auth/packages/auth-ui/src/ui.tsx`, `auth/packages/auth-ui/src/index.ts`,
+  auth docs, and project logs.
+- Verification Status: Auth TypeScript checks, live schema check, real invalid
+  request/response checks for all new flow routes, production build, and
+  `git diff --check` pass.
+
+# 2026-10-18T21:42:12Z — Add Password Recovery OTP
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Extend OTP ownership verification to forgot-password while
+  changing only the auth app.
+- Changes Made: Replaced the reset-link-only browser flow with email OTP plus
+  new-password UI, using Better Auth's request-password-reset and reset-password
+  Email OTP endpoints. Updated auth documentation and logs.
+- Files: `auth/app/src/app/forgot-password/page.tsx`,
+  `auth/packages/auth-ui/src/ui.tsx`, auth docs, and project logs.
+- Verification Status: Auth TypeScript checks and production build pass.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex

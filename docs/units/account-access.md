@@ -1267,6 +1267,15 @@ project-wide history. This section records changes specific to this unit.
   endpoints, supports switching/revoking an account session and adding an
   account, and publishes a Friink active-account event. It is mounted on
   `/me`; the existing webapp account-slot implementation remains unchanged.
+- 2026-10-18T21:40:38Z — Completed the auth-owned OTP flows modeled on Muflah:
+  signup now verifies an email OTP before account creation, and login validates
+  the password before issuing an OTP and creating the final session. The
+  staged routes use encrypted short-lived pending cookies; the webapp/API
+  remain unchanged.
+- 2026-10-18T21:42:12Z — Changed password recovery from reset-link-only to
+  email OTP verification followed by a new password, using Better Auth's
+  Email OTP password-reset endpoints. The auth app continues to own the full
+  recovery flow; the webapp/API remain unchanged.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

@@ -19,6 +19,13 @@ The auth app also provides `/me`, a server-rendered active-session page that
 shows the current authenticated user's non-secret account and session details.
 The Friink webapp is not connected to these endpoints yet.
 
+The browser auth flows use auth-owned staged routes: signup is email OTP,
+password, profile, and session; login is email, password, OTP, and session;
+password recovery is email OTP followed by a new password. Better Auth's
+password-reset OTP endpoints are used for recovery, and the temporary
+pending-auth cookies only bridge signup/login steps.
+Those cookies are encrypted, HttpOnly, SameSite=Lax, and short-lived.
+
 `@friink/account-switcher` is the auth-side Web Component modeled on Muflah's
 switcher. It reads the active session and device sessions, switches or revokes
 one session through Better Auth, supports adding another account through the

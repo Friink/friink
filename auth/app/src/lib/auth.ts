@@ -1,11 +1,9 @@
 import { betterAuth } from 'better-auth';
 import { emailOTP, multiSession, username } from 'better-auth/plugins';
-import { Pool } from 'pg';
 import { authConfig } from './config';
+import { database } from './database';
 import { env } from './env';
 import { otpEmail, sendTransactionalEmail } from './email/connector';
-
-const database = new Pool({ connectionString: env.databaseUrl, max: 5 });
 
 export const auth = betterAuth({
   database,

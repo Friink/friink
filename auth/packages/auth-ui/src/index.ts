@@ -10,7 +10,8 @@ export {
   type AuthShellProps,
   type ForgotPasswordFormProps,
   type LoginFormProps,
-  type LoginSubmit,
+  type LoginPasswordSubmit,
+  type LoginOtpSubmit,
   type SignupFormProps,
   type SignupSubmit,
 } from './ui';

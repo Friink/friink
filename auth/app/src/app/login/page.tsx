@@ -3,14 +3,23 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthShell, LoginForm } from '@friink/auth-ui';
-import { authClient } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function submit({ identifier, password }: { identifier: string; password: string }) {
+  async function startLogin({ email, password }: { email: string; password: string }) {
+    setBusy(true);
+    setError('');
+    const response = await fetch('/api/auth-flow/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const result = await response.json().catch(() => ({}));
+    setBusy(false);
+    if (!response.ok) { setError(result.error ?? 'Sorry, that didn’t work.'); return false; }
+    return true;
+  }
+
+  async function finishLogin({ email, password, otp }: { email: string; password: string; otp: string }) {
     const returnTo = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('returnTo');
     let destination = '/';
     if (returnTo) {
@@ -23,13 +32,12 @@ export default function LoginPage() {
     }
     setBusy(true);
     setError('');
-    const result = identifier.includes('@')
-      ? await authClient.signIn.email({ email: identifier, password, callbackURL: destination })
-      : await authClient.signIn.username({ username: identifier, password, callbackURL: destination });
+    const response = await fetch('/api/auth-flow/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, otp }) });
+    const result = await response.json().catch(() => ({}));
     setBusy(false);
-    if (result.error) setError(result.error.message ?? 'Sorry, that didn’t work.');
+    if (!response.ok) setError(result.error ?? 'That code was not accepted.');
     else router.push(destination);
   }
 
-  return <AuthShell><LoginForm busy={busy} error={error} onSubmit={submit} onBack={() => router.push('/')} onSignup={() => router.push('/signup')} onForgotPassword={() => router.push('/forgot-password')} /></AuthShell>;
+  return <AuthShell><LoginForm busy={busy} error={error} onPasswordSubmit={startLogin} onOtpSubmit={finishLogin} onBack={() => router.push('/')} onSignup={() => router.push('/signup')} onForgotPassword={() => router.push('/forgot-password')} /></AuthShell>;
 }

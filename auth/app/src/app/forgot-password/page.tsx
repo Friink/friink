@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthShell, ForgotPasswordForm } from '@friink/auth-ui';
-import { authClient } from '@/lib/auth-client';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -11,15 +10,26 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function submit(email: string) {
+  async function sendOtp(email: string) {
     setBusy(true);
     setError('');
     setSuccess('');
-    const result = await authClient.requestPasswordReset({ email, redirectTo: '/reset-password' });
+    const response = await fetch('/api/auth/email-otp/request-password-reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const result = await response.json().catch(() => ({}));
     setBusy(false);
-    if (result.error) setError(result.error.message ?? 'We could not send reset instructions.');
-    else setSuccess('If an account exists for that email, password-reset instructions have been sent.');
+    if (!response.ok) { setError(result.error ?? 'We could not send a verification code.'); return false; }
+    return true;
   }
 
-  return <AuthShell><ForgotPasswordForm busy={busy} error={error} success={success} onSubmit={submit} onBack={() => router.push('/login')} /></AuthShell>;
+  async function resetPassword(value: { email: string; otp: string; password: string }) {
+    setBusy(true);
+    setError('');
+    const response = await fetch('/api/auth/email-otp/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: value.email, otp: value.otp, password: value.password }) });
+    const result = await response.json().catch(() => ({}));
+    setBusy(false);
+    if (!response.ok) setError(result.error ?? 'That code is invalid or expired.');
+    else { setSuccess('Your password was reset. You can now log in.'); router.push('/login'); }
+  }
+
+  return <AuthShell><ForgotPasswordForm busy={busy} error={error} success={success} onSendOtp={sendOtp} onSubmit={resetPassword} onBack={() => router.push('/login')} /></AuthShell>;
 }
