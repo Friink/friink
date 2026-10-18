@@ -5876,3 +5876,9 @@ _Last updated: 2026-09-10_
 - Fixed the Better Auth Next.js build output path so Vercel finds the generated
   `.next` directory at the `auth/` project root.
 
+## 2026-10-18T01:14:30Z
+
+- Aligned the standalone Better Auth surface with Friink's canonical webapp
+  authentication design, including typography, theme tokens, controls,
+  responsive layout, dark mode, and a branded not-found state.
+

@@ -1,3 +1,5 @@
+'use client';
+
 import type { FormEvent, InputHTMLAttributes, ReactNode } from 'react';
 import { useState } from 'react';
 

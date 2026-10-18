@@ -16176,3 +16176,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     variables and generated the root `.next` output. The PostgreSQL SSL notice
     remains a non-fatal dependency warning.
 
+- 2026-10-18T01:14:30Z — Align Better Auth UI with Friink webapp
+
+  - Agent: Codex
+  - Prompt Summary: Make all Better Auth user-facing pages match the existing
+    Friink webapp instead of the generic initial styling.
+  - Changes Made: Applied the canonical Friink auth theme and typography,
+    bundled the Nunito display font, preserved the exact brand sizing and
+    controls, and added a branded custom not-found state. The API route and
+    root redirect remain functional non-visual routes.
+  - Verification Status: `npm run typecheck` and `npm run build` passed with
+    temporary non-secret build variables. The dummy database warning is
+    expected during build verification.
+

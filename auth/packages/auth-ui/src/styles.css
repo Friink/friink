@@ -1,47 +1,74 @@
-:root {
-  --friink-auth-paper: #f8faf8;
-  --friink-auth-ink: #17231c;
-  --friink-auth-muted: #8a908c;
-  --friink-auth-line: #9dc7ae;
-  --friink-auth-accent: #33aa55;
-  --friink-auth-accent-focus: color-mix(in srgb, var(--friink-auth-accent) 35%, transparent);
-  --friink-auth-radius: 8px;
+@font-face {
+  font-family: 'Nunito Local';
+  src: url('/fonts/Nunito-VariableFont_wght.ttf') format('truetype');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
 }
 
-.friink-auth-shell { display: flex; justify-content: center; min-height: 100vh; padding: 0; color: var(--friink-auth-ink); background: var(--friink-auth-paper); }
+:root {
+  --friink-auth-brand: #33aa55;
+  --friink-auth-ink: #111111;
+  --friink-auth-muted: #8a908c;
+  --friink-auth-line: #e3e6e3;
+  --friink-auth-paper: #ffffff;
+  --friink-auth-background: #f2f5f1;
+  --friink-auth-accent-focus: color-mix(in srgb, var(--friink-auth-brand) 18%, transparent);
+  --friink-auth-radius: 8px;
+  --friink-auth-font-body: 'Inter', sans-serif;
+  --friink-auth-font-display: 'Nunito Local', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; margin: 0; }
+
+body {
+  color: var(--friink-auth-ink);
+  background: var(--friink-auth-background);
+  font-family: var(--friink-auth-font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+button, input { font: inherit; }
+
+button, a { -webkit-tap-highlight-color: transparent; }
+
+.friink-auth-shell { display: flex; justify-content: center; min-height: 100vh; padding: 0; background: var(--friink-auth-paper); }
 .friink-auth-home-link { position: fixed; top: 1.25rem; left: 1.25rem; z-index: 1; display: block; width: 2.25rem; height: 2.5rem; }
 .friink-auth-home-link img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.friink-auth-form { position: relative; display: grid; align-content: center; width: 100%; max-width: 31rem; min-height: 100vh; padding: 3rem clamp(1.25rem, 5vw, 3rem) 5rem; text-align: center; gap: 0.75rem; }
+.friink-auth-form { position: relative; display: grid; align-content: center; width: 100%; max-width: 31rem; min-width: 0; min-height: 100vh; padding: 3rem clamp(1.25rem, 5vw, 3rem) 5rem; text-align: center; gap: 0.75rem; }
 .friink-auth-brand { display: block; width: 13.5rem; height: auto; margin: 0 auto 1rem; }
 .friink-auth-fields { display: grid; gap: 0.75rem; width: 100%; }
 .friink-auth-field { position: relative; display: block; width: 100%; }
-.friink-auth-field input { box-sizing: border-box; width: 100%; height: 3rem; border: 1px solid var(--friink-auth-line); border-radius: var(--friink-auth-radius); padding: 0 1rem; color: var(--friink-auth-ink); background: #edf1ee; font: inherit; font-size: 0.95rem; }
-.friink-auth-field input:focus { border-color: var(--friink-auth-accent); outline: 2px solid var(--friink-auth-accent-focus); }
+.friink-auth-field input { width: 100%; height: 3rem; border: 1px solid #9dc7ae; border-radius: var(--friink-auth-radius); padding: 0 1rem; color: var(--friink-auth-ink); background: #edf1ee; font-size: 0.95rem; }
+.friink-auth-field input:focus { border-color: var(--friink-auth-brand); outline: 2px solid color-mix(in srgb, var(--friink-auth-brand) 35%, transparent); }
 .friink-auth-field input::placeholder { color: var(--friink-auth-muted); opacity: 1; }
 .friink-auth-field.has-prefix input { padding-left: 2.6rem; }
 .friink-auth-field-prefix { position: absolute; top: 50%; left: 0.9rem; color: var(--friink-auth-muted); font-weight: 700; transform: translateY(-50%); }
 .friink-auth-password-toggle { position: absolute; top: 50%; right: 1rem; border: 0; padding: 0; color: var(--friink-auth-muted); background: transparent; font: inherit; font-size: 0.8rem; transform: translateY(-50%); cursor: pointer; }
 .friink-auth-step-copy { display: grid; gap: 0.3rem; margin-bottom: 0.25rem; text-align: left; }
-.friink-auth-step-copy p { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.friink-auth-step-copy p { margin: 0; color: var(--friink-auth-ink); font-family: var(--friink-auth-font-display); font-size: 1.2rem; font-weight: 700; }
 .friink-auth-step-copy span { color: var(--friink-auth-muted); font-size: 0.85rem; line-height: 1.35; }
 .friink-auth-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; margin-top: 0.35rem; }
-.friink-auth-primary, .friink-auth-secondary { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0.75rem 1.25rem; border-radius: var(--friink-auth-radius); font: inherit; line-height: 1; text-decoration: none; cursor: pointer; }
-.friink-auth-primary { border: 1px solid var(--friink-auth-accent); color: var(--friink-auth-paper); background: var(--friink-auth-accent); }
-.friink-auth-secondary { border: 1px solid color-mix(in srgb, var(--friink-auth-accent) 55%, var(--friink-auth-line)); color: var(--friink-auth-accent); background: color-mix(in srgb, var(--friink-auth-accent) 12%, transparent); }
-.friink-auth-primary:hover, .friink-auth-primary:focus-visible, .friink-auth-secondary:hover, .friink-auth-secondary:focus-visible, .friink-auth-link-button:focus-visible, .friink-auth-switch button:focus-visible { outline: 2px solid var(--friink-auth-accent-focus); outline-offset: 2px; }
+.friink-auth-primary, .friink-auth-secondary { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; max-width: 100%; padding: 0.75rem 1.25rem; border: 1px solid transparent; border-radius: var(--friink-auth-radius); font: inherit; line-height: 1; text-align: center; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.friink-auth-primary { border-color: var(--friink-auth-brand); color: var(--friink-auth-paper); background: var(--friink-auth-brand); }
+.friink-auth-secondary { border-color: color-mix(in srgb, var(--friink-auth-brand) 55%, var(--friink-auth-line)); color: var(--friink-auth-brand); background: color-mix(in srgb, var(--friink-auth-brand) 12%, transparent); }
+.friink-auth-primary:hover, .friink-auth-primary:focus-visible, .friink-auth-secondary:hover, .friink-auth-secondary:focus-visible, .friink-auth-link-button:focus-visible, .friink-auth-switch button:focus-visible { outline: 2px solid color-mix(in srgb, var(--friink-auth-brand) 35%, transparent); outline-offset: 2px; }
 .friink-auth-primary:disabled, .friink-auth-secondary:disabled { cursor: not-allowed; opacity: 0.45; }
-.friink-auth-link-button, .friink-auth-switch button { justify-self: start; border: 0; padding: 0; color: var(--friink-auth-accent); background: transparent; font: inherit; font-size: 0.85rem; cursor: pointer; }
+.friink-auth-link-button, .friink-auth-switch button { justify-self: start; border: 0; padding: 0; color: var(--friink-auth-brand); background: transparent; font: inherit; font-size: 0.85rem; cursor: pointer; }
 .friink-auth-switch { position: absolute; right: clamp(1.25rem, 5vw, 3rem); bottom: 1.5rem; left: clamp(1.25rem, 5vw, 3rem); margin: 0; color: var(--friink-auth-muted); font-size: 0.85rem; }
 .friink-auth-error { margin: 0 0 0.5rem; color: #b54444; font-size: 0.9rem; font-weight: 600; }
-.friink-auth-success { margin: 0 0 0.5rem; color: var(--friink-auth-accent); font-size: 0.9rem; font-weight: 600; }
+.friink-auth-success { margin: 0 0 0.5rem; color: var(--friink-auth-brand); font-size: 0.9rem; font-weight: 600; }
 .friink-auth-password-criteria { display: grid; gap: 0.25rem; width: 100%; margin: 0; padding: 0; color: var(--friink-auth-muted); font-size: 0.75rem; list-style: none; text-align: left; }
 .friink-auth-password-criteria li { display: flex; align-items: center; gap: 0.45rem; }
-.friink-auth-password-criteria li span { width: 0.75rem; color: var(--friink-auth-line); text-align: center; }
-.friink-auth-password-criteria li.met, .friink-auth-password-criteria li.met span { color: var(--friink-auth-accent); }
+.friink-auth-password-criteria li span { width: 0.75rem; color: #9dc7ae; text-align: center; }
+.friink-auth-password-criteria li.met, .friink-auth-password-criteria li.met span { color: var(--friink-auth-brand); }
 .friink-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 @media (prefers-color-scheme: dark) {
-  .friink-auth-shell { --friink-auth-paper: #161616; --friink-auth-ink: #f5f5f5; --friink-auth-line: #555; --friink-auth-muted: #c4c4c4; }
+  .friink-auth-shell { --friink-auth-paper: #161616; --friink-auth-background: #161616; --friink-auth-ink: #f5f5f5; --friink-auth-line: #555; --friink-auth-muted: #c4c4c4; }
   .friink-auth-field input { color: #f5f5f5; background: #3d3d3d; }
 }
 
