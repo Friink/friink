@@ -4,9 +4,18 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "check": "node --version"
+    "check": "node --version",
+    "typecheck": "tsc --noEmit -p packages/auth-ui/tsconfig.json"
   },
   "dependencies": {
-    "better-auth": "1.7.10"
+    "@friink/auth-ui": "file:./packages/auth-ui",
+    "better-auth": "1.7.10",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3"
   }
 }

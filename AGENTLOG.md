@@ -16114,3 +16114,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     implemented.
   - Verification Status: `npm list --depth=0` reports Better Auth installed;
     npm audit reports zero vulnerabilities; no build or full test suite run.
+- 2026-10-18T00:25:05Z — Copy Friink auth UI into auth-owned package
+
+  - Agent: Codex
+  - Prompt Summary: Copy the good existing Friink auth UI into a package for
+    the vanilla Better Auth install without editing the web app.
+  - Changes Made: Added `auth/packages/auth-ui` with React forms for login,
+    signup, and forgot-password, shared auth shell/field/button primitives,
+    password criteria, copied Friink brand assets, responsive/dark styling,
+    and callback-based integration points. Added React, TypeScript, and the
+    local package dependency to the auth project. No `web/` files were edited.
+  - Verification Status: `npm --prefix auth run typecheck` passed;
+    `git diff --check` passed. No build or full test suite run.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-18T00:25:05Z
+- [auth UI] Added the auth-owned `@friink/auth-ui` package with the existing
+  Friink visual language for login, signup, password recovery, shared fields,
+  password criteria, buttons, responsive layout, dark mode, and brand assets.
+  The package uses callback props and is not connected to the web app or
+  Better Auth handlers yet.
+
 ## 2026-10-18T00:16:47Z
 - [auth foundation] Added a vanilla `better-auth@1.7.10` package under
   `auth/`, generated its npm lockfile, added the production environment
