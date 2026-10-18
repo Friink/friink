@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
+import { randomInt } from 'node:crypto';
 import { authConfig } from '@/lib/config';
-import { auth } from '@/lib/auth';
 import { database } from '@/lib/database';
 import { otpEmail, sendTransactionalEmail } from '@/lib/email/connector';
 import { clearPendingCookies, pendingCookie } from '@/lib/pending-auth';
@@ -15,12 +15,11 @@ export async function POST(request: Request) {
   const existing = await database.query('SELECT 1 FROM "user" WHERE lower("email") = $1 LIMIT 1', [email]);
   if (existing.rowCount) return NextResponse.json({ error: 'That email is already registered.' }, { status: 400 });
 
+  const otp = String(randomInt(100000, 1000000));
   try {
-    const otp = await auth.api.createVerificationOTP({ body: { email, type: 'email-verification' }, headers: request.headers });
     await sendTransactionalEmail({ to: email, type: 'otp', subject: 'Your Friink verification code', html: otpEmail(otp, 'email-verification') });
   } catch (error) {
     console.error('Signup OTP delivery failed', error instanceof Error ? error.message : error);
-    await database.query('DELETE FROM "verification" WHERE "identifier" = $1', [`email-verification-otp-${email}`]).catch(() => undefined);
     return NextResponse.json({ error: 'We could not send a verification code.' }, { status: 502 });
   }
   const expiresAt = Date.now() + authConfig.otpExpiresInSeconds * 1000;

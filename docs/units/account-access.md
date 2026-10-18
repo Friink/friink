@@ -1280,6 +1280,9 @@ project-wide history. This section records changes specific to this unit.
   for Email OTP signup by adding the required `gen_random_uuid()` default and
   recorded the reproducible SQL migration. Signup OTP provider failures now
   return a controlled error and remove the unusable pending verification.
+- 2026-10-18T21:56:56Z — Signup OTP now uses the encrypted pending-auth cookie
+  for verification before a user exists, matching the pre-account flow. The
+  auth UI no longer displays a misleading `000000` OTP placeholder.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

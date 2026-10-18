@@ -112,7 +112,7 @@ export function LoginForm({ initialIdentifier = '', busy = false, error = '', on
         <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={() => setStep('identifier')}>Back</button><button className="friink-auth-primary" type="submit" disabled={busy}>{busy ? 'Please wait...' : 'Continue'}</button></div>
       </> : <>
         <div className="friink-auth-step-copy"><p>Check your email</p><span>Enter the six-digit code we sent to {identifier}.</span></div>
-        <AuthField label="Verification code" inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="000000" autoComplete="one-time-code" maxLength={6} required />
+        <AuthField label="Verification code" inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value)} autoComplete="one-time-code" maxLength={6} required />
         <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={() => setStep('password')}>Back</button><button className="friink-auth-primary" type="submit" disabled={busy}>{busy ? 'Please wait...' : 'Login'}</button></div>
       </>}
       {onSignup ? <p className="friink-auth-switch">Don’t have an account? <button type="button" onClick={onSignup}>Sign up</button></p> : null}
@@ -165,7 +165,7 @@ export function SignupForm({ busy = false, error = '', onEmailSubmit, onOtpSubmi
       </> : null}
       {step === 2 ? <>
         <div className="friink-auth-step-copy"><p>Step 2 of 4</p><span>Enter the six-digit code sent to {form.email}.</span></div>
-        <AuthField label="Verification code" inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="000000" autoComplete="one-time-code" maxLength={6} required />
+        <AuthField label="Verification code" inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value)} autoComplete="one-time-code" maxLength={6} required />
       </> : null}
       {step === 3 ? <>
         <div className="friink-auth-step-copy"><p>Step 3 of 4</p></div>
@@ -220,7 +220,7 @@ export function ForgotPasswordForm({ busy = false, error = '', success = '', ini
         <AuthField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" autoComplete="email" required />
       </> : <>
         <div className="friink-auth-step-copy"><p>Verify account ownership</p><span>Enter the code sent to {email}, then choose a new password.</span></div>
-        <AuthField label="Verification code" inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="000000" autoComplete="one-time-code" maxLength={6} required />
+        <AuthField label="Verification code" inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value)} autoComplete="one-time-code" maxLength={6} required />
         <AuthField label="New password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" minLength={8} required />
         <PasswordCriteria value={password} id="forgot-password-criteria" />
         <AuthField label="Confirm password" type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} autoComplete="new-password" required />

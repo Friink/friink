@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { clearPendingCookies, pendingCookie, readPendingCookie, verifiedSignupCookie } from '@/lib/pending-auth';
+import { clearPendingCookies, otpMatches, readPendingCookie, verifiedSignupCookie } from '@/lib/pending-auth';
 
 export const runtime = 'nodejs';
 
@@ -15,18 +15,18 @@ export async function POST(request: Request) {
   const otp = typeof body?.otp === 'string' ? body.otp.trim() : '';
   if (!pending || !/^\d{6}$/.test(otp)) return NextResponse.json({ error: 'That code is not valid or has expired.' }, { status: 400 });
 
-  const type = pending.purpose === 'signup' ? 'email-verification' : 'sign-in';
-  try {
-    await auth.api.checkVerificationOTP({ body: { email: pending.email, otp, type }, headers: request.headers });
-  } catch {
-    return NextResponse.json({ error: 'That code is not valid or has expired.' }, { status: 400 });
-  }
-
   if (pending.purpose === 'signup') {
+    if (!otpMatches(pending.otp, otp)) return NextResponse.json({ error: 'That code is not valid or has expired.' }, { status: 400 });
     const response = NextResponse.json({ success: true, purpose: 'signup' });
     response.headers.append('set-cookie', verifiedSignupCookie(pending.email, pending.expiresAt));
     response.headers.append('set-cookie', clearPendingCookies()[0]);
     return response;
+  }
+
+  try {
+    await auth.api.checkVerificationOTP({ body: { email: pending.email, otp, type: 'sign-in' }, headers: request.headers });
+  } catch {
+    return NextResponse.json({ error: 'That code is not valid or has expired.' }, { status: 400 });
   }
 
   const password = typeof body?.password === 'string' ? body.password : '';

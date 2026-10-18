@@ -97,6 +97,21 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   Resend's official test recipient; TypeScript and production build checks
   pass. A real user-recipient delivery test remains provider/account dependent.
 
+# 2026-10-18T21:56:56Z — Fix Pre-Account Signup OTP Verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the placeholder OTP and fix signup OTP mismatch.
+- Changes Made: Signup OTP generation and verification now use the encrypted
+  pending-auth cookie because Better Auth's standard verification check requires
+  an existing user. Removed all `000000` OTP placeholders from the auth UI.
+- Files: `auth/app/src/app/api/auth-flow/send-otp/route.ts`,
+  `auth/app/src/app/api/auth-flow/verify-otp/route.ts`,
+  `auth/packages/auth-ui/src/ui.tsx`, project changelog, unit documentation,
+  and agent log.
+- Verification Status: Auth production build and TypeScript checks pass with
+  environment variables loaded from `auth/.env`.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex
