@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { AuthField, AuthShell, PasswordCriteria } from '@friink/auth-ui';
-import { authClient } from '@/lib/auth-client';
+import { FormEvent, useState } from "react";
 
 export default function ResetPasswordPage() {
-  const [token, setToken] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [message, setMessage] = useState('');
-  const [done, setDone] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [visible, setVisible] = useState(false);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => setToken(new URLSearchParams(window.location.search).get('token') ?? ''), []);
-
-  async function submit(event: React.FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
-    if (password.length < 8 || password !== confirm) {
-      setMessage(password !== confirm ? 'Passwords do not match.' : 'Password does not meet the requirements.');
-      return;
-    }
-    const result = await authClient.resetPassword({ newPassword: password, token });
-    if (result.error) setMessage(result.error.message ?? 'This reset link is invalid or expired.');
-    else { setDone(true); setMessage('Your password was reset. You can now log in.'); }
+    if (password !== confirm) { setMessage("Passwords do not match."); return; }
+    setBusy(true); setMessage("");
+    try {
+      const token = new URLSearchParams(window.location.search).get("token");
+      if (!token) throw new Error("This reset link is missing or expired.");
+      const response = await fetch("/api/auth/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, newPassword: password }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message ?? "Unable to reset your password.");
+      setMessage("Your password has been reset. You can now sign in.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to reset your password."); }
+    finally { setBusy(false); }
   }
 
-  return <AuthShell><form className="friink-auth-fields" onSubmit={submit}><div className="friink-auth-step-copy"><p>Reset your password</p><span>{done ? message : 'Choose a new password for your Friink account.'}</span></div>{!done ? <><AuthField label="New password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" required /><PasswordCriteria value={password} id="reset-password-criteria" /><AuthField label="Confirm password" type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} autoComplete="new-password" required /><button className="friink-auth-primary" type="submit">Reset password</button></> : <a className="friink-auth-secondary" href="/login">Return to login</a>}{message && !done ? <p className="friink-auth-error" role="alert">{message}</p> : null}</form></AuthShell>;
+  return <div className="auth-shell"><header className="auth-header"><a className="brand" href="/" aria-label="Friink home">m</a><span className="auth-label">Secure account access</span></header><main className="auth-main"><section className="auth-card"><p className="micro">Password recovery</p><h1>Choose a new password.</h1><p className="intro">Use a strong password you do not reuse elsewhere.</p><form className="auth-form" onSubmit={submit}><label htmlFor="password">New password</label><div className="password-field"><input id="password" type={visible ? "text" : "password"} autoComplete="new-password" required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? "◉" : "◌"}</button></div><label htmlFor="confirm-password">Confirm password</label><div className="password-field"><input id="confirm-password" type={visible ? "text" : "password"} autoComplete="new-password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} /></div><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Saving…" : "Reset password ↗"}</button><a className="auth-button secondary" href="/login">Back to login</a></div></form>{message && <p className="notice">{message}</p>}</section></main><footer className="auth-footer"><p>© 2026 Friink Ul Furqan.</p><p>Authentication service</p></footer></div>;
 }

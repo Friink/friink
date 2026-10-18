@@ -1,1 +1,1 @@
-export { AccountSwitcher, publishSessionEvent } from './account-switcher.js';
+export { AccountSwitcher, publishSessionEvent } from "./account-switcher.js";

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 
 export function GET() {
-  return NextResponse.json({ status: 'ok', service: 'auth' });
+  return NextResponse.json({ status: "ok", service: "auth" });
 }

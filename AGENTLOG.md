@@ -140,6 +140,46 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
 - Verification Status: TypeScript and production build pass. Unknown-email
   password-reset request returned HTTP 200 with `{ "success": true }`.
 
+# 2026-10-18T22:19:21Z — Add Neutral Password Recovery Step
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent forgot-password from opening the OTP/password form
+  immediately after email submission.
+- Changes Made: Added a neutral “Check your email” state with an explicit
+  “I have a code” action. OTP and new-password fields are now shown only after
+  that action, while the account-existence-preserving response remains intact.
+- Files: `auth/packages/auth-ui/src/ui.tsx`, project changelog, agent log, and
+  account-access documentation.
+- Verification Status: Auth UI and application TypeScript checks pass.
+
+# 2026-10-18T22:26:05Z — Copy Muflah Auth Into Friink Auth
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace Friink Auth with the working Muflah Auth app and UI,
+  adapting only Friink-specific names and environment configuration.
+- Changes Made: Copied Muflah's auth routes, pages, CSS, account switcher,
+  onboarding package, session-management UI, identity lookup, and supporting
+  helpers. Removed the divergent Friink auth-ui package and stale `/me` flow,
+  renamed package scopes and product identifiers to Friink, preserved
+  `auth/.env`, and added the Muflah onboarding fields migration.
+- Files: `auth/` implementation and packages, `auth/migrations/002_muflah_onboarding_fields.sql`,
+  project changelog, agent log, and account-access documentation.
+- Verification Status: Live Better Auth migration completed successfully;
+  production build and TypeScript checks pass. No webapp/API files were changed.
+
+# 2026-10-18T22:28:00Z — Allow Username Changes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Allow usernames to be changed after onboarding.
+- Changes Made: Set Better Auth's username plugin to mutable while preserving
+  the Muflah onboarding and username UI flow.
+- Files: `auth/app/src/lib/auth.ts`, project changelog, agent log, and
+  account-access documentation.
+- Verification Status: Targeted TypeScript and production build checks follow.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex

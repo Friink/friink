@@ -4,28 +4,29 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "check": "node --version",
     "dev": "next dev app",
     "build": "next build app",
     "start": "next start app",
-    "auth:migrate": "npx auth@latest migrate --config app/src/lib/auth.ts --yes",
-    "auth:check": "npx auth@latest check --config app/src/lib/auth.ts",
-    "typecheck": "tsc --noEmit -p app/tsconfig.json && tsc --noEmit -p packages/auth-ui/tsconfig.json"
+    "typecheck": "tsc -p app/tsconfig.json --noEmit",
+    "lint": "next lint app",
+    "db:migrate": "npx auth@latest migrate --config app/src/lib/auth.ts --yes",
+    "db:check": "npx auth@latest check --config app/src/lib/auth.ts"
   },
   "dependencies": {
-    "@friink/auth-ui": "file:./packages/auth-ui",
     "@friink/account-switcher": "file:./packages/account-switcher",
-    "better-auth": "1.7.10",
-    "next": "16.4.2",
-    "pg": "8.16.3",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "@friink/onboarding": "file:./packages/onboarding",
+    "better-auth": "^1.7.10",
+    "dotenv": "^17.2.3",
+    "next": "^16.4.2",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
-    "@types/node": "24.10.1",
-    "@types/pg": "8.15.6",
-    "@types/react": "19.2.9",
-    "@types/react-dom": "19.2.3",
-    "typescript": "5.9.3"
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
   }
 }

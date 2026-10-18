@@ -1,35 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AuthShell, ForgotPasswordForm } from '@friink/auth-ui';
+import { FormEvent, useState } from "react";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function sendOtp(email: string) {
-    setBusy(true);
-    setError('');
-    setSuccess('');
-    const response = await fetch('/api/auth-flow/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, purpose: 'password-reset' }) });
-    const result = await response.json().catch(() => ({}));
-    setBusy(false);
-    if (!response.ok) { setError(result.error ?? 'We could not send a verification code.'); return false; }
-    return true;
+  async function submit(event: FormEvent) {
+    event.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const response = await fetch("/api/auth/request-password-reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, redirectTo: `${window.location.origin}/reset-password` }) });
+      if (!response.ok) throw new Error("Unable to send a reset link.");
+      setMessage("If an account exists for that email, a reset link is on its way.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to send a reset link."); }
+    finally { setBusy(false); }
   }
 
-  async function resetPassword(value: { email: string; otp: string; password: string }) {
-    setBusy(true);
-    setError('');
-    const response = await fetch('/api/auth/email-otp/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: value.email, otp: value.otp, password: value.password }) });
-    const result = await response.json().catch(() => ({}));
-    setBusy(false);
-    if (!response.ok) setError(result.error ?? 'That code is invalid or expired.');
-    else { setSuccess('Your password was reset. You can now log in.'); router.push('/login'); }
-  }
-
-  return <AuthShell><ForgotPasswordForm busy={busy} error={error} success={success} onSendOtp={sendOtp} onSubmit={resetPassword} onBack={() => router.push('/login')} /></AuthShell>;
+  return <div className="auth-shell"><header className="auth-header"><a className="brand" href="/" aria-label="Friink home">m</a><span className="auth-label">Secure account access</span></header><main className="auth-main"><section className="auth-card"><p className="micro">Password recovery</p><h1>Reset your password.</h1><p className="intro">Enter your email and we’ll send a secure reset link if the account exists.</p><form className="auth-form" onSubmit={submit}><label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Sending…" : "Send reset link ↗"}</button><a className="auth-button secondary" href="/login">Back to login</a></div></form>{message && <p className="notice">{message}</p>}</section></main><footer className="auth-footer"><p>© 2026 Friink Ul Furqan.</p><p>Authentication service</p></footer></div>;
 }

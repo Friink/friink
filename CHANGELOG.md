@@ -50,6 +50,20 @@
   OTP flow, restored the shared `purpose` route contract, and kept password
   recovery privacy-preserving through Better Auth's native hashed OTP reset.
 
+## 2026-10-18T22:19:21Z
+- [auth recovery UX] Added a neutral “Check your email” step before showing
+  password-reset OTP and new-password fields.
+
+## 2026-10-18T22:26:05Z
+- [auth parity] Replaced the divergent Friink Auth implementation with the
+  Muflah Auth application and UI, adapted package scopes and branding to Friink,
+  preserved the Friink environment contract, and added the Muflah onboarding
+  user fields to the auth schema.
+
+## 2026-10-18T22:28:00Z
+- [auth username policy] Kept onboarding username collection while allowing
+  usernames to be changed later.
+
 ## 2026-10-18T01:00:15Z
 - [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
   Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie

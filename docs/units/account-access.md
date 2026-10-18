@@ -1289,6 +1289,15 @@ project-wide history. This section records changes specific to this unit.
   and actual encrypted pending-auth OTP storage for signup and login. Password
   recovery now keeps the neutral unknown-email response while using Better
   Auth's native hashed OTP reset endpoint for password mutation.
+- 2026-10-18T22:19:21Z — Password recovery now shows a neutral “Check your
+  email” step before revealing OTP and new-password fields.
+- 2026-10-18T22:26:05Z — Friink Auth was aligned with the Muflah Auth
+  implementation and UI, including onboarding, identity lookup, session
+  management, and the shared auth packages. Friink package scopes and
+  environment names remain in use; onboarding fields were added to the auth
+  database.
+- 2026-10-18T22:28:00Z — Friink keeps Muflah's onboarding username flow but
+  explicitly allows usernames to be changed later through Better Auth.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

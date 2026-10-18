@@ -1,5 +1,147 @@
-import { redirect } from 'next/navigation';
+"use client";
 
-export default function AuthHomePage() {
-  redirect('/login');
+import { FormEvent, useEffect, useState } from "react";
+import { destinationAfterAuth, getTrustedReturnTo, onboardingUrl } from "@/lib/return-url";
+
+type Flow = "sign-in" | "sign-up";
+type Step = "identifier" | "credentials" | "verify";
+
+export default function HomePage() {
+  const [email, setEmail] = useState("");
+  const [flow, setFlow] = useState<Flow | null>(null);
+  const [step, setStep] = useState<Step>("identifier");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [name, setName] = useState("");
+  const [otp, setOtp] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionCheckError, setSessionCheckError] = useState("");
+  const [sessionCheckAttempt, setSessionCheckAttempt] = useState(0);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const requestedReturnTo = getTrustedReturnTo();
+    setReturnTo(requestedReturnTo);
+    const path = window.location.pathname;
+    const requestedFlow = path.endsWith("/signup") ? "sign-up" : path.endsWith("/login") ? "sign-in" : null;
+    const params = new URLSearchParams(window.location.search);
+    const intent = params.get("intent");
+    const emailFromStart = params.get("email");
+    if (requestedFlow || intent === "login" || intent === "signup") {
+      setFlow(requestedFlow ?? (intent === "signup" ? "sign-up" : "sign-in"));
+      if (emailFromStart) {
+        setEmail(emailFromStart);
+        setStep(requestedFlow === "sign-up" || intent === "signup" ? "verify" : "credentials");
+      }
+      setCheckingSession(false);
+      return;
+    }
+    let active = true;
+    async function resolveSession() {
+      try {
+        const response = await fetch("/api/auth/get-session", { credentials: "include", cache: "no-store" });
+        if (!response.ok) throw new Error("Session check failed");
+        const result = await response.json();
+        const user = result?.user;
+        if (user) {
+          window.location.replace(user.onboardingStatus === "complete" && user.username ? destinationAfterAuth(requestedReturnTo, `/${encodeURIComponent(user.username)}`) : onboardingUrl(requestedReturnTo));
+          return;
+        }
+        if (active) setCheckingSession(false);
+      } catch {
+        if (active) { setSessionCheckError("We couldn’t verify your session."); setCheckingSession(false); }
+      }
+    }
+    resolveSession();
+    return () => { active = false; };
+  }, [sessionCheckAttempt]);
+
+  async function continueWithEmail(event: FormEvent) {
+    event.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const response = await fetch("/api/identity/lookup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Unable to continue");
+      if (result.exists) {
+        if (flow === "sign-up") throw new Error("An account already exists for this email.");
+        setFlow("sign-in"); setStep("credentials");
+      } else {
+        if (flow === "sign-in") throw new Error("We couldn’t find an account with that email.");
+        setFlow("sign-up");
+        const otpResponse = await fetch("/api/auth-flow/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "signup" }) });
+        const otpResult = await otpResponse.json().catch(() => ({}));
+        if (!otpResponse.ok) throw new Error(otpResult.error ?? "Unable to send a verification code");
+        setStep("verify"); setMessage("We sent a verification code to your email.");
+      }
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to continue"); }
+    finally { setBusy(false); }
+  }
+
+  async function submitCredentials(event: FormEvent) {
+    event.preventDefault();
+    if (flow === "sign-up" && password !== confirmPassword) { setMessage("Passwords do not match."); return; }
+    setBusy(true); setMessage("");
+    try {
+      const endpoint = flow === "sign-in" ? "/api/auth-flow/password" : "/api/auth-flow/signup";
+      const body = flow === "sign-in" ? { email, password } : { password, name };
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Authentication failed");
+      if (flow === "sign-in") { setStep("verify"); setMessage("We sent a sign-in code to your email."); }
+      else { window.location.assign(onboardingUrl(returnTo)); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Authentication failed"); }
+    finally { setBusy(false); }
+  }
+
+  async function verifyEmail(event: FormEvent) {
+    event.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const body = flow === "sign-in" ? { otp, password } : { otp };
+      const response = await fetch("/api/auth-flow/verify-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "That code is not valid");
+      if (flow === "sign-in") {
+        const destination = result.user?.onboardingStatus === "complete" && result.user?.username ? destinationAfterAuth(returnTo, `/${encodeURIComponent(result.user.username)}`) : onboardingUrl(returnTo);
+        window.location.assign(destination);
+      } else { setOtp(""); setStep("credentials"); setMessage("Email verified. Create your password."); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : "That code is not valid"); }
+    finally { setBusy(false); }
+  }
+
+  async function resendCode() {
+    setBusy(true); setMessage("");
+    try {
+      const response = await fetch("/api/auth-flow/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: flow === "sign-in" ? "login" : "signup" }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Unable to send a new code");
+      setMessage("A new verification code is on its way.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to send a new code"); }
+    finally { setBusy(false); }
+  }
+
+  const isError = /failed|unable|not valid|error|match|find|already/i.test(message);
+  const title = step === "verify" ? "Check your email." : flow ? (flow === "sign-in" ? "Welcome back." : "Create your account.") : "Continue to your account.";
+  const intro = step === "verify" ? `Enter the code we sent to ${email}.` : flow ? `Continue with ${email}.` : "Enter your email and we’ll take you to the right place.";
+  const signupHref = returnTo ? `/signup?returnTo=${encodeURIComponent(returnTo)}` : "/signup";
+
+  if (checkingSession) return <div className="auth-shell"><main className="auth-main"><p className="micro">Checking your session…</p></main></div>;
+  if (sessionCheckError) return <div className="auth-shell"><main className="auth-main"><section className="auth-card"><p className="micro">Session check</p><h1>Let’s try that again.</h1><p className="intro">{sessionCheckError} Your account has not been signed out.</p><div className="auth-actions"><button className="auth-button" type="button" onClick={() => { setSessionCheckError(""); setCheckingSession(true); setSessionCheckAttempt((attempt) => attempt + 1); }}>Retry ↗</button></div></section></main></div>;
+
+  return <div className="auth-shell">
+    <header className="auth-header"><a className="brand" href="/" aria-label="Friink home">m</a><span className="auth-label">Secure account access</span></header>
+    <main className="auth-main"><section className="auth-card" aria-live="polite"><p className="micro">Friink account</p><h1>{title}</h1><p className="intro">{intro}</p>
+      {step === "identifier" ? <form className="auth-form" onSubmit={continueWithEmail}><label htmlFor="email">Email address</label><input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Checking…" : "Continue ↗"}</button></div></form> : step === "verify" ? <form className="auth-form" onSubmit={verifyEmail}><label htmlFor="otp">Verification code</label><input id="otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} /><div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Verifying…" : "Verify code ↗"}</button><button className="auth-button secondary" type="button" disabled={busy} onClick={resendCode}>Resend code</button><button className="auth-button secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Use a different email</button></div></form> : <form className="auth-form" onSubmit={submitCredentials}>
+        {flow === "sign-up" && <><label htmlFor="name">Name</label><input id="name" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} /></>}
+        <label htmlFor="password">Password</label><div className="password-field"><input id="password" type={passwordVisible ? "text" : "password"} autoComplete={flow === "sign-in" ? "current-password" : "new-password"} required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={passwordVisible ? "Hide password" : "Show password"} aria-pressed={passwordVisible} onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? "◉" : "◌"}</button></div>
+        {flow === "sign-up" && <><label htmlFor="confirm-password">Confirm password</label><div className="password-field"><input id="confirm-password" type={confirmPasswordVisible ? "text" : "password"} autoComplete="new-password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={confirmPasswordVisible ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={confirmPasswordVisible} onClick={() => setConfirmPasswordVisible((visible) => !visible)}>{confirmPasswordVisible ? "◉" : "◌"}</button></div></>}
+        <div className="auth-actions"><button className="auth-button" disabled={busy}>{busy ? "Working…" : flow === "sign-in" ? "Continue to verification ↗" : "Create account ↗"}</button><button className="auth-button secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Use a different email</button></div>
+      </form>}
+      {flow === "sign-in" && <p className="auth-switch">Don’t have an account? <a href={signupHref}>Sign up</a></p>}
+      {message && <p className={`notice${isError ? " error" : ""}`}>{message}</p>}
+    </section></main><footer className="auth-footer"><p>© 2026 Friink Ul Furqan.</p><p>Authentication service</p></footer>
+  </div>;
 }

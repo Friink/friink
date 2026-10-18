@@ -1,66 +1,81 @@
-import { betterAuth } from 'better-auth';
-import { emailOTP, multiSession, username } from 'better-auth/plugins';
-import { authConfig } from './config';
-import { database } from './database';
-import { env } from './env';
-import { otpEmail, sendTransactionalEmail } from './email/connector';
+import { betterAuth } from "better-auth";
+import { emailOTP, multiSession, username } from "better-auth/plugins";
+import { config } from "./config";
+import { database } from "./database";
+import { otpEmail, sendTransactionalEmail } from "./email/connector";
 
 export const auth = betterAuth({
   database,
-  baseURL: env.authUrl,
-  secret: env.secret,
-  trustedOrigins: env.trustedOrigins,
+  baseURL: config.authUrl,
+  secret: config.secret,
+  trustedOrigins: config.trustedOrigins,
   session: {
-    expiresIn: authConfig.sessionExpiresInSeconds,
-    updateAge: authConfig.sessionUpdateAgeSeconds,
+    expiresIn: config.sessionExpiresInSeconds,
+    updateAge: config.sessionUpdateAgeSeconds,
   },
-  advanced: {
-    database: {
-      generateId: 'uuid',
-    },
-    ...(env.cookieDomain
-      ? {
+  ...(config.cookieDomain
+    ? {
+        advanced: {
           crossSubDomainCookies: {
             enabled: true,
-            domain: env.cookieDomain,
+            domain: config.cookieDomain,
           },
-        }
-      : {}),
+        },
+      }
+    : {}),
+  user: {
+    additionalFields: {
+      onboardingStatus: {
+        type: "string",
+        required: true,
+        input: false,
+        defaultValue: "pending",
+      },
+      onboardingCompletedAt: {
+        type: "date",
+        required: false,
+        input: false,
+      },
+    },
   },
   emailAndPassword: {
     enabled: true,
+    // Signup verifies the email through the Auth flow before this endpoint is called.
     requireEmailVerification: false,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       await sendTransactionalEmail({
         to: user.email,
-        type: 'password-reset',
-        subject: 'Reset your Friink password',
+        type: "password-reset",
+        subject: "Reset your password",
         html: `<p>Reset your password by <a href="${url}">opening this secure link</a>.</p>`,
       });
     },
   },
   plugins: [
-    username(),
-    multiSession({ maximumSessions: authConfig.maxSessions }),
-    ...(authConfig.otpEnabled
+    username({
+      displayUsername: false,
+      immutableUsername: false,
+    }),
+    multiSession({ maximumSessions: config.maxSessions }),
+    ...(config.otpEnabled
       ? [
           emailOTP({
-            expiresIn: authConfig.otpExpiresInSeconds,
-            allowedAttempts: authConfig.otpMaxAttempts,
+            expiresIn: config.otpExpiresInSeconds,
+            allowedAttempts: config.otpMaxAttempts,
             rateLimit: {
-              window: authConfig.otpResentInSeconds,
-              max: authConfig.otpResentLimit,
+              window: config.otpResentInSeconds,
+              max: config.otpResentLimit,
             },
-            storeOTP: 'hashed',
             sendVerificationOnSignUp: true,
             overrideDefaultEmailVerification: true,
+            storeOTP: "hashed",
             sendVerificationOTP: async ({ email, otp, type }) => {
               await sendTransactionalEmail({
                 to: email,
-                type: 'otp',
-                subject: 'Your Friink verification code',
-                html: otpEmail(otp, type),
+                type: "otp",
+                subject: `Your ${type.replace("-", " ")} code`,
+                html: otpEmail(otp),
               });
             },
           }),

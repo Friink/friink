@@ -1,22 +1,29 @@
-import { authConfig } from '../config';
-import { senderAddress, type TransactionalEmailType } from './aliases';
+import { config } from "../config";
+import { senderAddress } from "./aliases";
 
-type TransactionalEmail = {
+export type TransactionalEmailType =
+  | "welcome"
+  | "verification"
+  | "otp"
+  | "password-reset"
+  | "security-alert";
+
+type EmailInput = {
   to: string;
   type: TransactionalEmailType;
   subject: string;
   html: string;
 };
 
-export async function sendTransactionalEmail(input: TransactionalEmail): Promise<void> {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
+export async function sendTransactionalEmail(input: EmailInput): Promise<void> {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
     headers: {
-      Authorization: `Bearer ${authConfig.emailApiKey}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.emailApiKey}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `Friink Auth <${senderAddress(input.type, authConfig.emailDomain)}>`,
+      from: `Auth Service <${senderAddress(input.type, config.emailDomain)}>`,
       to: [input.to],
       subject: input.subject,
       html: input.html,
@@ -29,7 +36,6 @@ export async function sendTransactionalEmail(input: TransactionalEmail): Promise
   }
 }
 
-export function otpEmail(otp: string, type: string): string {
-  const label = type === 'email-verification' ? 'verify your Friink email' : type === 'sign-in' ? 'complete your Friink sign-in' : 'reset your Friink password';
-  return `<p>Use this code to ${label}:</p><p style="font-size:24px;font-weight:700;letter-spacing:6px">${otp}</p><p>This code expires soon. If you did not request it, you can ignore this message.</p>`;
+export function otpEmail(otp: string): string {
+  return `<p>Your authentication code is:</p><p><strong>${otp}</strong></p><p>This code expires soon. If you did not request it, you can ignore this message.</p>`;
 }

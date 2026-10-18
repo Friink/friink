@@ -1,20 +1,19 @@
-import type * as React from 'react';
+import type * as React from "react";
 
-type AccountSwitcherProps = React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-  'auth-url'?: string;
-  'api-base'?: string;
-};
-
-declare module 'react' {
+declare module "react" {
   namespace JSX {
-    interface IntrinsicElements { 'account-switcher': AccountSwitcherProps; }
+    interface IntrinsicElements {
+      "account-switcher": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { "auth-url": string };
+      "friink-onboarding": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { "auth-url": string; "session-url": string; "complete-url": string; "return-to"?: string };
+    }
   }
 }
 
-declare module 'react/jsx-runtime' {
+declare module "react/jsx-runtime" {
   namespace JSX {
-    interface IntrinsicElements { 'account-switcher': AccountSwitcherProps; }
+    interface IntrinsicElements {
+      "account-switcher": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { "auth-url": string };
+      "friink-onboarding": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { "auth-url": string; "session-url": string; "complete-url": string; "return-to"?: string };
+    }
   }
 }
-
-export {};
