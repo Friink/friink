@@ -16481,3 +16481,18 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - Verification Status: `npm run typecheck`, `npm run build`, and `git diff
     --check` passed. Direct Auth session and multi-session endpoints return the
     expected unauthenticated response shapes. Changes remain uncommitted.
+
+- 2026-10-18T23:33:49Z — Polish auth UI controls, favicon, and copy
+
+  - Agent: Codex
+  - Prompt Summary: Fix the auth app's remaining visual and security-copy
+    issues only: password visibility icon, favicon, account switcher styling,
+    neutral login lookup messaging, and username setup styling.
+  - Changes Made: Added an inline SVG password-toggle component for login,
+    signup, and reset-password fields; restored the canonical Friink favicon;
+    restyled the package-owned account switcher with a CSS chevron and aligned
+    menu; neutralized account lookup copy; and restyled the username setup
+    screen to the Friink design system. No flow, API, database, or session
+    behavior changed.
+  - Verification Status: Targeted typecheck, production build, and
+    `git diff --check` passed. Changes remain uncommitted.

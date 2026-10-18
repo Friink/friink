@@ -6005,3 +6005,16 @@ _Last updated: 2026-09-10_
   `AUTH_EMAIL_DOMAIN` is a domain-only setting; the auth app chooses the
   sender alias.
 
+## 2026-10-18T23:33:49Z
+
+- Replaced the auth pages' text password visibility controls with inline Friink
+  eye and eye-off icons and aligned the controls inside password fields.
+- Switched the auth app to its canonical Friink `/icon.svg` favicon and removed
+  the unrelated legacy auth favicon asset.
+- Updated the package-owned account switcher styling with a Friink-aligned
+  trigger, CSS chevron, menu alignment, focus states, and action feedback.
+- Reworded sign-in email lookup errors to remain neutral about whether an
+  account exists.
+- Matched the username setup screen to the Friink wordmark, typography, form,
+  inputs, buttons, and responsive layout without changing authentication flow.
+

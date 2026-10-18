@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import PasswordToggle from "@/components/auth/password-toggle";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -28,9 +29,9 @@ export default function ResetPasswordPage() {
     <a className="auth-home-link" href="/" aria-label="Friink home"><img src="/brand/logoBrand.svg" alt="" /></a>
     <div className="brand-lockup brand-lockup-lg" aria-label="Friink"><img className="brand-lockup-wordmark" src="/brand/logoFullBrand.svg" alt="Friink" /></div>
     <div className="login-step-copy"><p>Reset your password</p><span>Choose a new password for your Friink account.</span></div>
-    <label className="pill-field password-field"><span className="sr-only">New password</span><input id="password" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="New password" required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? "◉" : "◌"}</button></label>
+    <label className="pill-field password-field"><span className="sr-only">New password</span><input id="password" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="New password" required value={password} onChange={(event) => setPassword(event.target.value)} /><PasswordToggle visible={visible} label={visible ? "Hide password" : "Show password"} onClick={() => setVisible((value) => !value)} /></label>
     <ResetPasswordCriteria value={password} />
-    <label className="pill-field password-field"><span className="sr-only">Confirm password</span><input id="confirm-password" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="Confirm password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} /><button className="password-toggle" type="button" aria-label={visible ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={visible} onClick={() => setVisible((value) => !value)}>{visible ? "◉" : "◌"}</button></label>
+    <label className="pill-field password-field"><span className="sr-only">Confirm password</span><input id="confirm-password" type={visible ? "text" : "password"} autoComplete="new-password" placeholder="Confirm password" required value={confirm} onChange={(event) => setConfirm(event.target.value)} /><PasswordToggle visible={visible} label={visible ? "Hide confirmation password" : "Show confirmation password"} onClick={() => setVisible((value) => !value)} /></label>
     <div className="signup-actions"><a className="button-secondary login-back-button" href="/login">Back</a><button className="button-primary login-submit" disabled={busy}>{busy ? "Please wait…" : "Reset password"}</button></div>
     {message && <p className="login-error" role="alert">{message}</p>}
   </form></main>;

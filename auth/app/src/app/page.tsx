@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { destinationAfterAuth, getTrustedReturnTo, onboardingUrl } from "@/lib/return-url";
+import PasswordToggle from "@/components/auth/password-toggle";
 
 type Flow = "sign-in" | "sign-up";
 type Step = "identifier" | "credentials" | "verify";
@@ -67,10 +68,10 @@ export default function HomePage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Unable to continue");
       if (result.exists) {
-        if (flow === "sign-up") throw new Error("An account already exists for this email.");
+        if (flow === "sign-up") throw new Error("We couldn’t continue with that email. Check the address or try another one.");
         setFlow("sign-in"); setStep("credentials");
       } else {
-        if (flow === "sign-in") throw new Error("We couldn’t find an account with that email.");
+        if (flow === "sign-in") throw new Error("We couldn’t continue with that email. Check the address or try again.");
         setFlow("sign-up");
         const otpResponse = await fetch("/api/auth-flow/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "signup" }) });
         const otpResult = await otpResponse.json().catch(() => ({}));
@@ -145,10 +146,10 @@ export default function HomePage() {
         <div className="auth-secondary-actions"><button className="text-link" type="button" disabled={busy} onClick={resendCode}>Resend code</button><button className="text-link" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Use a different email</button></div>
       </> : <>
         {flow === "sign-up" && <label className="pill-field"><span className="sr-only">Name</span><input id="name" autoComplete="name" placeholder="Name" required value={name} onChange={(event) => setName(event.target.value)} /></label>}
-        <label className="pill-field password-field"><span className="sr-only">Password</span><input id="password" type={passwordVisible ? "text" : "password"} autoComplete={flow === "sign-in" ? "current-password" : "new-password"} placeholder="Password" required value={password} onChange={(event) => setPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={passwordVisible ? "Hide password" : "Show password"} aria-pressed={passwordVisible} onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? "◉" : "◌"}</button></label>
+        <label className="pill-field password-field"><span className="sr-only">Password</span><input id="password" type={passwordVisible ? "text" : "password"} autoComplete={flow === "sign-in" ? "current-password" : "new-password"} placeholder="Password" required value={password} onChange={(event) => setPassword(event.target.value)} /><PasswordToggle visible={passwordVisible} label={passwordVisible ? "Hide password" : "Show password"} onClick={() => setPasswordVisible((visible) => !visible)} /></label>
         {flow === "sign-up" && <SignupPasswordCriteria value={password} />}
         {flow === "sign-in" && <a className="forgot-password" href="/forgot-password">Forgot password?</a>}
-        {flow === "sign-up" && <label className="pill-field password-field"><span className="sr-only">Confirm password</span><input id="confirm-password" type={confirmPasswordVisible ? "text" : "password"} autoComplete="new-password" placeholder="Confirm password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /><button className="password-toggle" type="button" aria-label={confirmPasswordVisible ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={confirmPasswordVisible} onClick={() => setConfirmPasswordVisible((visible) => !visible)}>{confirmPasswordVisible ? "◉" : "◌"}</button></label>}
+        {flow === "sign-up" && <label className="pill-field password-field"><span className="sr-only">Confirm password</span><input id="confirm-password" type={confirmPasswordVisible ? "text" : "password"} autoComplete="new-password" placeholder="Confirm password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /><PasswordToggle visible={confirmPasswordVisible} label={confirmPasswordVisible ? "Hide confirmation password" : "Show confirmation password"} onClick={() => setConfirmPasswordVisible((visible) => !visible)} /></label>}
         <div className="signup-actions"><button className="button-secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Back</button><button className="button-primary login-submit" disabled={busy}>{busy ? "Please wait…" : flow === "sign-in" ? "Continue" : "Create account"}</button></div>
       </>}
       {flow === "sign-in" && <p className="login-switch">Don’t have an account? <a href={signupHref}>Sign up</a></p>}

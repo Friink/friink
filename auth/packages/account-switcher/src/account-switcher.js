@@ -3,25 +3,26 @@ const STORAGE_KEY = "friink-auth-session-event";
 
 const styles = `
 :host { display: block; color: #111111; font-family: inherit; }
-.switcher { position: relative; }
+.switcher { position: relative; width: 100%; }
 button { font: inherit; }
-.trigger { display: flex; align-items: center; gap: .65rem; min-width: 14rem; padding: .5rem .7rem; border: 1px solid rgba(27,25,22,.14); border-radius: 999px; background: #ffffff; color: inherit; cursor: pointer; text-align: left; }
-.trigger:hover, .trigger:focus-visible { border-color: rgba(27,25,22,.45); outline: none; }
+.trigger { display: flex; width: 100%; min-width: 0; align-items: center; gap: .65rem; padding: .55rem .65rem; border: 1px solid #e3e6e3; border-radius: 8px; background: #ffffff; color: inherit; cursor: pointer; text-align: left; }
+.trigger:hover, .trigger:focus-visible, .trigger[aria-expanded="true"] { border-color: #33aa55; outline: 2px solid rgb(51 170 85 / 20%); outline-offset: 2px; }
 .avatar { display: grid; flex: 0 0 2rem; width: 2rem; height: 2rem; place-items: center; border-radius: 50%; background: #d5ead8; color: #1f4a2a; font-size: .8rem; font-weight: 700; }
 .summary { display: grid; min-width: 0; flex: 1; gap: .1rem; }
 strong, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 strong { font-size: .78rem; }
 small { color: #6f766f; font-size: .7rem; }
-.chevron { font-size: 1.1rem; }
-.menu { position: absolute; z-index: 20; top: calc(100% + .5rem); right: 0; width: min(22rem, calc(100vw - 2rem)); padding: .55rem; border: 1px solid rgba(27,25,22,.12); border-radius: 1rem; background: #ffffff; box-shadow: 0 1rem 3rem rgba(27,25,22,.14); }
+.chevron { width: .55rem; height: .55rem; flex: 0 0 .55rem; margin: -.2rem .2rem 0 0; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 180ms ease; }
+.trigger[aria-expanded="true"] .chevron { margin-top: .2rem; transform: rotate(225deg); }
+.menu { position: absolute; z-index: 20; top: calc(100% + .5rem); left: 0; width: 100%; min-width: 15rem; padding: .55rem; border: 1px solid #e3e6e3; border-radius: 12px; background: #ffffff; box-shadow: 0 1rem 3rem rgb(17 17 17 / 14%); }
 .label { margin: .45rem .65rem; color: #6f766f; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .account, .action { display: flex; width: 100%; align-items: center; gap: .65rem; padding: .6rem; border: 0; border-radius: .7rem; background: transparent; color: inherit; cursor: pointer; text-align: left; }
 .account:hover, .action:hover, .account:focus-visible, .action:focus-visible { background: #eef5ef; outline: none; }
 .account > span:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: .1rem; }
 em { color: #6f766f; font-size: .68rem; font-style: normal; }
-.action { margin-top: .2rem; border-top: 1px solid rgba(27,25,22,.08); border-radius: 0; color: #33aa55; font-size: .8rem; }
+.action { margin-top: .2rem; border-top: 1px solid #e3e6e3; border-radius: 0; color: #33aa55; font-size: .8rem; }
 .error { margin: .5rem .65rem .25rem; color: #b54444; font-size: .72rem; }
-.toast { position: fixed; z-index: 100; top: 1rem; right: 1rem; width: min(24rem, calc(100vw - 2rem)); padding: .85rem 2.25rem .85rem .95rem; border: 1px solid rgba(27,25,22,.12); border-radius: .85rem; background: #ffffff; box-shadow: 0 1rem 3rem rgba(27,25,22,.18); color: #111111; font-size: .8rem; line-height: 1.4; }
+.toast { position: fixed; z-index: 100; top: 1rem; right: 1rem; width: min(24rem, calc(100vw - 2rem)); padding: .85rem 2.25rem .85rem .95rem; border: 1px solid #e3e6e3; border-radius: 12px; background: #ffffff; box-shadow: 0 1rem 3rem rgb(17 17 17 / 18%); color: #111111; font-size: .8rem; line-height: 1.4; }
 .toast strong { display: block; margin-bottom: .15rem; font-size: .8rem; }
 .toast button { position: absolute; top: .5rem; right: .5rem; width: 1.5rem; height: 1.5rem; border: 0; border-radius: 50%; background: transparent; color: #6f766f; cursor: pointer; }
 .toast button:hover, .toast button:focus-visible { background: #eef5ef; outline: none; }
@@ -90,7 +91,7 @@ export class AccountSwitcher extends ElementBase {
   render() {
     this.shadowRoot?.replaceChildren();
     const root = this.attachShadow({ mode: "open" });
-    root.innerHTML = `<style>${styles}</style><div class="switcher"><button class="trigger" type="button" aria-expanded="false"><span class="avatar">?</span><span class="summary"><strong>Account</strong><small>Loading…</small></span><span class="chevron">⌄</span></button><div class="menu" hidden><p class="label">Available accounts</p><div class="accounts"></div><button class="action add" type="button">＋ Add account</button><button class="action logout" type="button">Log out account ↗</button><p class="error" hidden></p></div><div class="toast" role="status" aria-live="polite" hidden><strong>Account changed</strong><span class="toast-copy"></span><button class="toast-close" type="button" aria-label="Dismiss">×</button></div></div>`;
+    root.innerHTML = `<style>${styles}</style><div class="switcher"><button class="trigger" type="button" aria-expanded="false"><span class="avatar">?</span><span class="summary"><strong>Account</strong><small>Loading…</small></span><span class="chevron" aria-hidden="true"></span></button><div class="menu" hidden><p class="label">Available accounts</p><div class="accounts"></div><button class="action add" type="button">＋ Add account</button><button class="action logout" type="button">Log out account ↗</button><p class="error" hidden></p></div><div class="toast" role="status" aria-live="polite" hidden><strong>Account changed</strong><span class="toast-copy"></span><button class="toast-close" type="button" aria-label="Dismiss">×</button></div></div>`;
     this.root = root;
     root.querySelector(".trigger").addEventListener("click", () => { const menu = root.querySelector(".menu"); menu.hidden = !menu.hidden; root.querySelector(".trigger").setAttribute("aria-expanded", String(!menu.hidden)); });
     root.querySelector(".add").addEventListener("click", () => window.location.assign(authUrl(this.getAttribute("auth-url"), "login")));

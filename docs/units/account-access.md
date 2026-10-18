@@ -1312,6 +1312,12 @@ project-wide history. This section records changes specific to this unit.
   database. Added authenticated `/me` as the stable current-account view; it
   shows the selected account identity and onboarding status and exposes the
   shared account switcher and session actions.
+- 2026-10-18T23:33:49Z — Polished the Auth app's account-access presentation:
+  password visibility controls now use inline Friink SVG icons, the canonical
+  Friink favicon is used, the shared account switcher has aligned Friink
+  styling and a CSS chevron, sign-in lookup copy is neutral, and username
+  setup matches the Friink form design. Authentication flow and session
+  behavior are unchanged.
 
 - 2026-10-18T23:16:45Z — The Auth app now mounts the shared
   `@friink/account-switcher` package against its direct `/api/auth` endpoint,
