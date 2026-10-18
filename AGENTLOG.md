@@ -16101,3 +16101,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     architecture, deployment, and stack documentation to record the removal.
   - Verification Status: Confirmed `auth/` has no remaining entries;
     `git diff --check` passed. No build or full test suite run.
+- 2026-10-18T00:16:47Z — Add vanilla Better Auth package foundation
+
+  - Agent: Codex
+  - Prompt Summary: Install Better Auth in Friink's empty `auth/` folder and
+    create a production environment-variable contract.
+  - Changes Made: Added the private `friink-auth` npm package with
+    `better-auth@1.7.10`, generated `auth/package-lock.json`, added
+    `auth/.env.example`, and created an ignored local `auth/.env` with
+    `https://auth.friink.com` plus blank secret/database/provider values. No
+    Better Auth instance, database schema, or Friink login integration was
+    implemented.
+  - Verification Status: `npm list --depth=0` reports Better Auth installed;
+    npm audit reports zero vulnerabilities; no build or full test suite run.

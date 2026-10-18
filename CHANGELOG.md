@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-18T00:16:47Z
+- [auth foundation] Added a vanilla `better-auth@1.7.10` package under
+  `auth/`, generated its npm lockfile, added the production environment
+  contract, and created an ignored local `auth/.env` with blank secret and
+  database values. No auth server, schema, or Friink integration is wired yet.
+
 ## 2026-10-18T00:08:30Z
 - [auth prototype] Emptied the standalone `auth/` folder and removed the
   unused Django/allauth prototype, local virtualenv, local environment files,
