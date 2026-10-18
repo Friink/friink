@@ -16138,3 +16138,14 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     blank.
   - Verification Status: Confirmed `auth/.env` is ignored by Git; no build or
     test suite run.
+- 2026-10-18T00:51:18Z — Normalize Better Auth variables to 16 entries
+
+  - Agent: Codex
+  - Prompt Summary: Verify that the Better Auth environment contains exactly
+    16 variables for both Vercel and local `auth/.env`.
+  - Changes Made: Reduced the local and example files to the 16 Muflah-aligned
+    runtime variables and set `AUTH_COOKIE_DOMAIN=.friink.com` for the apex
+    Friink app and auth subdomain.
+  - Verification Status: Both files contain exactly 16 keys; `auth/.env` is
+    ignored by Git; `git diff --check` passed. Vercel dashboard values were
+    not inspected because no Vercel account connector is available.

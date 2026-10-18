@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-18T00:51:18Z
+- [auth configuration] Normalized `auth/.env` and `auth/.env.example` to the
+  exact 16-variable Better Auth production contract. Removed future-only and
+  client-prefixed placeholders and set `AUTH_COOKIE_DOMAIN=.friink.com` for
+  the apex/subdomain cookie plan. The local secret remains present but is not
+  committed.
+
 ## 2026-10-18T00:38:02Z
 - [auth configuration] Expanded the ignored local `auth/.env` and tracked
   `auth/.env.example` with the complete Better Auth production contract:
