@@ -32,6 +32,14 @@ username plugin fields and UUID user IDs, but it has not yet replaced the
 active FastAPI authentication path. Web/API integration remains a separate
 migration step.
 
+### Planned identity cutover
+
+The staged target is for Better Auth to become the sole identity and session
+authority. It will generate UUID user IDs, while the web/API userdata database
+will store those IDs as ownership references. The cutover will first prove one
+protected API request and session restoration, then migrate feature authorization
+and remove the legacy FastAPI JWT/session path after staging acceptance.
+
 ## Web application conventions
 
 - `web/theme.config.ts` is the canonical source for design-token values.

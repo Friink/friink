@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-18T11:53:25Z
+- [auth multi-session] Added the Better Auth `multiSession` plugin and client
+  plugin, bounded by `AUTH_MAX_SESSIONS`, with explicit session expiry and
+  update-age settings modeled on Muflah. The auth catch-all now exposes the
+  standard device-session list, active-session switch, and session revoke
+  contract. The webapp and API remain unchanged for a later cutover.
+
+## 2026-10-18T12:00:00Z
+- [auth app] Added the server-rendered `/me` active-session page. It displays
+  the current Better Auth user's non-secret identity/session metadata and a
+  signed-out login state without changing the webapp or API.
+
+## 2026-10-18T12:10:00Z
+- [auth account switcher] Added `@friink/account-switcher`, an auth-only Web
+  Component modeled on Muflah's account switcher. It lists device sessions,
+  switches the active Better Auth session, revokes the current session, and
+  starts an add-account login flow. It is mounted on `/me`; webapp/API
+  integration remains deferred.
+
 ## 2026-10-18T01:00:15Z
 - [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
   Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie
@@ -5895,4 +5914,20 @@ _Last updated: 2026-09-10_
 - Configured Better Auth to generate UUID identifiers and converted the empty
   dedicated auth schema's primary and user-reference columns from text to
   PostgreSQL UUID types.
+
+## 2026-10-18T11:24:00Z
+
+- Documented the planned Better Auth cutover contract: Better Auth will own
+  UUID identity and sessions, while Friink userdata stores the same user IDs;
+  the legacy FastAPI auth remains until staged integration acceptance passes.
+- Fixed the Better Auth `advanced` configuration so UUID ID generation and
+  cross-subdomain cookies are enabled together.
+
+## 2026-10-18T11:40:00Z
+
+- Configured Better Auth Email OTP delivery through Resend with hashed OTP
+  storage, expiry, attempt limits, resend limits, and generated sender aliases.
+- Added password-reset email delivery and documented that
+  `AUTH_EMAIL_DOMAIN` is a domain-only setting; the auth app chooses the
+  sender alias.
 

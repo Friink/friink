@@ -16,6 +16,13 @@ implementation documented below. A separate Better Auth service now owns a
 dedicated identity database and username-enabled schema, but the web/API
 request path has not yet been migrated to it.
 
+**Planned Better Auth cutover:** Better Auth will become the authoritative
+identity and session service after staged integration. It will generate the
+UUID `user.id`; Friink userdata tables will store that same value as their
+owner reference. The legacy FastAPI auth remains in place until a protected
+API request, web session restoration, logout, expiry, password recovery, and
+staging acceptance have all been verified against Better Auth.
+
 ---
 
 ## Canonical ownership
@@ -52,6 +59,27 @@ while this document owns the underlying access and session semantics.
 ---
 
 ## 1. Product definition
+
+### Planned migration contract
+
+The migration will proceed without a user-data migration because the Better
+Auth database currently has no users. The target contract is:
+
+1. Better Auth creates and owns identity UUIDs, credentials, and sessions.
+2. The web app sends the Better Auth HttpOnly cookie with authenticated calls.
+3. The API validates the Better Auth session and derives the user ID server-side.
+4. Friink product tables reference that UUID without generating a second user ID.
+5. The legacy JWT, refresh-token, and DIY session paths are removed only after
+   staging acceptance and production smoke checks pass.
+
+Email signup verification and password-plus-OTP login are planned auth-service
+flows. They must issue a Better Auth session only after their final successful
+verification step.
+
+The configured auth email boundary uses Resend. `AUTH_EMAIL_DOMAIN` supplies
+the verified domain only; application code selects aliases, using
+`noreply@<domain>` for OTP messages and `hello@<domain>` for password recovery
+and security messages. The browser never supplies the sender address.
 
 ### Purpose
 
@@ -1223,6 +1251,22 @@ logs.
 
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records changes specific to this unit.
+
+- 2026-10-18T11:53:25Z — Added the auth-service-side Better Auth multi-session
+  foundation modeled on Muflah: bounded device sessions, explicit session
+  expiry/update-age policy, and the standard list-device-sessions,
+  set-active, and revoke endpoints. Friink webapp/API integration remains
+  planned; the existing DIY account-slot/session implementation is unchanged.
+
+- 2026-10-18T12:00:00Z — Added the auth-owned `/me` route. It renders the
+  current Better Auth user and non-secret active-session metadata, with a
+  signed-out state that links to login. Webapp/API integration remains
+  unchanged.
+- 2026-10-18T12:10:00Z — Added the auth-only `@friink/account-switcher`
+  Web Component modeled on Muflah. It consumes Better Auth's device-session
+  endpoints, supports switching/revoking an account session and adding an
+  account, and publishes a Friink active-account event. It is mounted on
+  `/me`; the existing webapp account-slot implementation remains unchanged.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

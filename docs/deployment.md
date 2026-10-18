@@ -84,6 +84,18 @@ is completed and accepted in staging.
 - The Better Auth user identity includes the standard user fields plus
   `username` and `displayUsername`; Better Auth generates UUID IDs, and all
   product tables will reference the Better Auth `user.id` after integration.
+- Auth email delivery uses Resend through `EMAIL_API_KEY`. The app generates
+  sender aliases from `AUTH_EMAIL_DOMAIN`; the domain is not a complete sender
+  address and no alias is accepted from the browser.
+
+### Planned auth cutover
+
+The auth service is intentionally being prepared before it becomes the
+production identity authority. The planned release sequence is: validate the
+Better Auth UUID/session contract locally, connect one protected API endpoint,
+validate web session restoration and logout in staging, migrate feature-level
+authorization, and only then retire the legacy FastAPI JWT/session path. No
+user migration is required because the Better Auth database is empty.
 
 - The web project receives only its environment-specific
   `NEXT_PUBLIC_API_BASE_URL` and the optional

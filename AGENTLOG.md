@@ -1,5 +1,53 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-18T11:53:25Z — Add Friink Auth Multi-Session Foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Inspect Muflah Auth's account-switcher and multiple-session
+  implementation, then make the corresponding changes only in Friink's auth
+  app before any webapp merge.
+- Changes Made: Added Better Auth `multiSession` and `multiSessionClient`,
+  configured maximum sessions and explicit session expiry/update-age settings,
+  and documented the auth-owned session endpoint contract. No `web/` or `api/`
+  files were changed.
+- Files: `auth/app/src/lib/auth.ts`, `auth/app/src/lib/auth-client.ts`,
+  `auth/app/src/lib/config.ts`, `auth/README.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Auth TypeScript checks pass, the live Better Auth
+  schema check passes, and a real unauthenticated GET of
+  `/api/auth/multi-session/list-device-sessions` returned HTTP 200 with `[]`.
+  No production build was run.
+
+# 2026-10-18T12:00:00Z — Add Auth Active Session Page
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add `auth.friink.com/me` as the active session page while
+  keeping all work inside the auth app.
+- Changes Made: Added a server-rendered `/me` route using
+  `auth.api.getSession`, displaying non-secret user/session metadata and a
+  signed-out state. Added shared auth styling and documentation.
+- Files: `auth/app/src/app/me/page.tsx`, `auth/packages/auth-ui/src/styles.css`,
+  `auth/README.md`, `docs/units/account-access.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Targeted auth TypeScript verification pending.
+
+# 2026-10-18T12:10:00Z — Add Auth Account Switcher
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match Muflah's account-switcher behavior while changing only
+  Friink's auth app.
+- Changes Made: Added `@friink/account-switcher`, adapted Muflah's Web
+  Component to Friink's Better Auth endpoints and event namespace, mounted it
+  on `/me`, and added custom-element typings.
+- Files: `auth/packages/account-switcher/`,
+  `auth/app/src/components/account-switcher-element.tsx`,
+  `auth/app/src/types/account-switcher.d.ts`, `auth/app/src/app/me/page.tsx`,
+  `auth/package.json`, `auth/package-lock.json`, auth/docs, and project logs.
+- Verification Status: Auth TypeScript checks and production build pass.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex
@@ -16218,3 +16266,30 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     inspection confirmed UUID types. No users existed before conversion.
     Changes were intentionally left uncommitted.
 
+- 2026-10-18T11:24:00Z — Document and fix Better Auth UUID cutover foundation
+
+  - Agent: Codex
+  - Prompt Summary: Document the planned replacement of DIY auth/session and
+    safely proceed with the UUID-based Better Auth configuration change.
+  - Changes Made: Added the staged identity/session cutover contract to the
+    account-access, architecture, deployment, and auth README documents. Fixed
+    the `advanced` Better Auth configuration merge so UUID generation is not
+    overwritten by cross-subdomain cookie settings.
+  - Verification Status: Typecheck, live Better Auth schema check, and the
+    production build passed. The build used temporary non-secret variables and
+    reported only the expected dummy-database validation warning. Changes were
+    intentionally left uncommitted for review.
+
+- 2026-10-18T11:40:00Z — Configure Better Auth OTP email delivery
+
+  - Agent: Codex
+  - Prompt Summary: Configure OTP flows and use the email domain while letting
+    the auth application choose sender aliases.
+  - Changes Made: Added the Resend connector, generated OTP sender aliases,
+    Better Auth Email OTP configuration, hashed OTP storage, rate/expiry/attempt
+    limits, and password-reset email delivery. Added the client Email OTP
+    plugin and documented the sender policy.
+  - Verification Status: Typecheck passed. Real email delivery and the final
+    password-plus-OTP/login and pre-account signup UI flows still require the
+    pending flow implementation and provider acceptance test. Changes remain
+    uncommitted.
