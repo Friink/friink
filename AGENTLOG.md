@@ -16126,3 +16126,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     local package dependency to the auth project. No `web/` files were edited.
   - Verification Status: `npm --prefix auth run typecheck` passed;
     `git diff --check` passed. No build or full test suite run.
+- 2026-10-18T00:38:02Z — Expand Better Auth environment contract
+
+  - Agent: Codex
+  - Prompt Summary: Put all planned Better Auth production variables in the
+    local `auth/.env` file.
+  - Changes Made: Added the Muflah-aligned session, OTP, trusted-origin,
+    email, branding, application-registry, and key-management variables to
+    ignored `auth/.env` and mirrored the safe placeholders in
+    `auth/.env.example`. Secret, database, and provider-key values remain
+    blank.
+  - Verification Status: Confirmed `auth/.env` is ignored by Git; no build or
+    test suite run.

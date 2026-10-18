@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-18T00:38:02Z
+- [auth configuration] Expanded the ignored local `auth/.env` and tracked
+  `auth/.env.example` with the complete Better Auth production contract:
+  trusted origins, session policy, OTP policy, email settings, branding, and
+  future key/application configuration placeholders. Secret, database, and
+  provider-key values remain blank locally.
+
 ## 2026-10-18T00:25:05Z
 - [auth UI] Added the auth-owned `@friink/auth-ui` package with the existing
   Friink visual language for login, signup, password recovery, shared fields,
