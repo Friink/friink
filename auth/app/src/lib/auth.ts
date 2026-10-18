@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { username } from 'better-auth/plugins';
 import { Pool } from 'pg';
 import { env } from './env';
 
@@ -9,6 +10,11 @@ export const auth = betterAuth({
   baseURL: env.authUrl,
   secret: env.secret,
   trustedOrigins: env.trustedOrigins,
+  advanced: {
+    database: {
+      generateId: 'uuid',
+    },
+  },
   ...(env.cookieDomain
     ? {
         advanced: {
@@ -23,4 +29,5 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
   },
+  plugins: [username()],
 });

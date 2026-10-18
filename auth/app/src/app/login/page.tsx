@@ -13,11 +13,13 @@ export default function LoginPage() {
   async function submit({ identifier, password }: { identifier: string; password: string }) {
     setBusy(true);
     setError('');
-    const result = await authClient.signIn.email({ email: identifier, password, callbackURL: '/' });
+    const result = identifier.includes('@')
+      ? await authClient.signIn.email({ email: identifier, password, callbackURL: '/' })
+      : await authClient.signIn.username({ username: identifier, password, callbackURL: '/' });
     setBusy(false);
     if (result.error) setError(result.error.message ?? 'Sorry, that didn’t work.');
     else router.push('/');
   }
 
-  return <AuthShell><LoginForm busy={busy} error={error} onSubmit={submit} onSignup={() => router.push('/signup')} onForgotPassword={() => router.push('/forgot-password')} /></AuthShell>;
+  return <AuthShell><LoginForm busy={busy} error={error} onSubmit={submit} onBack={() => router.push('/')} onSignup={() => router.push('/signup')} onForgotPassword={() => router.push('/forgot-password')} /></AuthShell>;
 }

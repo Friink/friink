@@ -13,7 +13,7 @@ export default function SignupPage() {
   async function submit(value: SignupSubmit) {
     setBusy(true);
     setError('');
-    const result = await authClient.signUp.email({ email: value.email, password: value.password, name: value.name, callbackURL: '/' });
+    const result = await authClient.signUp.email({ email: value.email, password: value.password, name: value.name, username: value.username, callbackURL: '/' });
     setBusy(false);
     if (result.error) setError(result.error.message ?? 'Sorry, that didn’t work.');
     else router.push('/');

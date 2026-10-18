@@ -67,14 +67,23 @@ is superseded by the staging-gate workflow above.
 
 ## Configuration boundaries
 
-### Standalone auth-service exploration
+### Standalone auth service
 
 The standalone Django/allauth prototype under `auth/` was removed on
-2026-10-18. It was never part of the deployed Friink login path. The active
-deployment remains the `web/` and `api/` pair described below. A future
-Better Auth service requires a new deployment design, database, domain,
-application-registration contract, and staging acceptance before it can be
-connected to Friink login.
+2026-10-18. The replacement `auth/` project is a Next.js + Better Auth
+service deployed separately at `auth.friink.com`, with its own PostgreSQL
+database and username-enabled user schema. It currently provides the auth UI,
+Better Auth API, and session system independently. The active web/API login
+path remains the legacy FastAPI implementation until the integration migration
+is completed and accepted in staging.
+
+- The auth Vercel project uses `auth/` as its Root Directory and the default
+  Next.js framework preset.
+- Better Auth migrations run from `auth/` with `npm run auth:migrate` and are
+  checked with `npm run auth:check` against the dedicated auth database.
+- The Better Auth user identity includes the standard user fields plus
+  `username` and `displayUsername`; Better Auth generates UUID IDs, and all
+  product tables will reference the Better Auth `user.id` after integration.
 
 - The web project receives only its environment-specific
   `NEXT_PUBLIC_API_BASE_URL` and the optional

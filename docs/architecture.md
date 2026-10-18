@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-10-15T00:48:42Z
+**Last edited:** 2026-10-18T01:25:00Z
 
 ## Repository and runtime boundaries
 
@@ -14,6 +14,8 @@ web/  -> Next.js web client -> web Vercel project
 api/  -> FastAPI service    -> API Vercel project
        -> PostgreSQL/Neon
        -> Cloudflare R2
+auth/ -> Next.js + Better Auth service -> auth.friink.com
+       -> dedicated Better Auth PostgreSQL database
 ```
 
 The API entrypoint is `api/api/index.py`. The two Vercel projects are configured
@@ -23,10 +25,12 @@ browser-side Mixpanel provider; it emits route views and session identity only
 when `NEXT_PUBLIC_MIXPANEL_TOKEN` is configured.
 
 An independent Django/allauth OIDC service was explored with a separate
-development auth database and then removed. It never replaced or joined the
-active FastAPI authentication path. Any future Better Auth service must be
-introduced as a new, explicitly integrated identity boundary; the current
-runtime diagram remains FastAPI-only.
+development auth database and then removed. The `auth/` service is now a
+standalone Better Auth deployment with its own PostgreSQL database at
+`auth.friink.com`. It owns the Better Auth identity schema, including the
+username plugin fields and UUID user IDs, but it has not yet replaced the
+active FastAPI authentication path. Web/API integration remains a separate
+migration step.
 
 ## Web application conventions
 

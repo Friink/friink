@@ -50,7 +50,7 @@ export function AuthField({ label, trailing, prefix, ...props }: AuthFieldProps)
 function PasswordToggle({ visible, onToggle, label }: { visible: boolean; onToggle: () => void; label: string }) {
   return (
     <button className="friink-auth-password-toggle" type="button" onClick={onToggle} aria-label={label} aria-pressed={visible}>
-      {visible ? 'Hide' : 'Show'}
+      <i className={`fa-regular ${visible ? 'fa-eye' : 'fa-eye-slash'}`} aria-hidden="true" />
     </button>
   );
 }
@@ -81,16 +81,29 @@ export function LoginForm({ initialIdentifier = '', busy = false, error = '', on
   const [identifier, setIdentifier] = useState(initialIdentifier);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const submit = (event: FormEvent) => { event.preventDefault(); void onSubmit({ identifier: identifier.trim(), password }); };
+  const [step, setStep] = useState<'identifier' | 'password'>('identifier');
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (step === 'identifier') {
+      if (identifier.trim()) setStep('password');
+      return;
+    }
+    void onSubmit({ identifier: identifier.trim(), password });
+  };
 
   return (
     <form className="friink-auth-fields" onSubmit={submit}>
       {error ? <p className="friink-auth-error" role="alert" aria-live="assertive">{error}</p> : null}
-      <div className="friink-auth-step-copy"><p>Welcome back</p><span>Enter your email or username to continue.</span></div>
-      <AuthField label="Email or username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="Email or username" autoComplete="username" required />
-      <AuthField label="Password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" required trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((value) => !value)} label={showPassword ? 'Hide password' : 'Show password'} />} />
-      {onForgotPassword ? <button className="friink-auth-link-button" type="button" onClick={onForgotPassword}>Forgot password?</button> : null}
-      <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={onBack}>Back</button><button className="friink-auth-primary" type="submit" disabled={busy}>{busy ? 'Please wait...' : 'Login'}</button></div>
+      {step === 'identifier' ? <>
+        <div className="friink-auth-step-copy"><p>Welcome back</p><span>Enter your email or username to continue.</span></div>
+        <AuthField label="Email or username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="Email or username" autoComplete="username" required />
+        <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={onBack}>Back</button><button className="friink-auth-primary" type="submit">Continue</button></div>
+      </> : <>
+        <div className="friink-auth-step-copy"><p>Enter your password</p><button className="friink-auth-identifier-summary" type="button" onClick={() => setStep('identifier')}>{identifier}<span>Change</span></button></div>
+        <AuthField label="Password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" required trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((value) => !value)} label={showPassword ? 'Hide password' : 'Show password'} />} />
+        {onForgotPassword ? <button className="friink-auth-link-button" type="button" onClick={onForgotPassword}>Forgot password?</button> : null}
+        <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={() => setStep('identifier')}>Back</button><button className="friink-auth-primary" type="submit" disabled={busy}>{busy ? 'Please wait...' : 'Login'}</button></div>
+      </>}
       {onSignup ? <p className="friink-auth-switch">Don’t have an account? <button type="button" onClick={onSignup}>Sign up</button></p> : null}
     </form>
   );
@@ -110,21 +123,42 @@ export function SignupForm({ busy = false, error = '', onSubmit, onLogin, onBack
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const update = (key: keyof SignupSubmit, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const submit = (event: FormEvent) => { event.preventDefault(); void onSubmit(form); };
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (step === 1) {
+      if (form.email.trim()) setStep(2);
+      return;
+    }
+    if (step === 2) {
+      if (form.password === confirmPassword && form.password.length >= 8) setStep(3);
+      return;
+    }
+    void onSubmit(form);
+  };
 
   return (
     <form className="friink-auth-fields" onSubmit={submit}>
       {error ? <p className="friink-auth-error" role="alert" aria-live="assertive">{error}</p> : null}
-      <div className="friink-auth-step-copy"><p>Create your account</p><span>Join Friink with your email and a few details.</span></div>
-      <AuthField label="Email" type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="Email" autoComplete="email" required />
-      <AuthField label="Password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(event) => update('password', event.target.value)} placeholder="Password" autoComplete="new-password" minLength={8} required aria-describedby="friink-signup-password-criteria" trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((value) => !value)} label={showPassword ? 'Hide password' : 'Show password'} />} />
-      <PasswordCriteria value={form.password} id="friink-signup-password-criteria" />
-      <AuthField label="Confirm password" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm password" autoComplete="new-password" required trailing={<PasswordToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword((value) => !value)} label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'} />} />
-      <AuthField label="Name" value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="Name" autoComplete="name" required />
-      <AuthField label="Username" value={form.username} onChange={(event) => update('username', event.target.value)} placeholder="username" prefix="@" autoComplete="off" minLength={2} maxLength={32} required />
-      <AuthField label="Date of birth" type="date" value={form.dateOfBirth} onChange={(event) => update('dateOfBirth', event.target.value)} autoComplete="bday" required />
-      <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={onBack}>Back</button><button className="friink-auth-primary" type="submit" disabled={busy || form.password !== confirmPassword}>{busy ? 'Please wait...' : 'Create account'}</button></div>
+      {step === 1 ? <>
+        <div className="friink-auth-step-copy"><p>Step 1 of 4</p><span>Start with your email address.</span></div>
+        <AuthField label="Email" type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="Email" autoComplete="email" required />
+      </> : null}
+      {step === 2 ? <>
+        <div className="friink-auth-step-copy"><p>Step 3 of 4</p></div>
+        <AuthField label="Password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(event) => update('password', event.target.value)} placeholder="Password" autoComplete="new-password" minLength={8} required aria-describedby="friink-signup-password-criteria" trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((value) => !value)} label={showPassword ? 'Hide password' : 'Show password'} />} />
+        <PasswordCriteria value={form.password} id="friink-signup-password-criteria" />
+        <AuthField label="Confirm password" type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm Password" autoComplete="new-password" required trailing={<PasswordToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword((value) => !value)} label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'} />} />
+      </> : null}
+      {step === 3 ? <>
+        <div className="friink-auth-step-copy"><p>Step 4 of 4</p></div>
+        <AuthField label="Name" value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="Name" autoComplete="name" />
+        <AuthField label="Username" value={form.username} onChange={(event) => update('username', event.target.value)} placeholder="username" prefix="@" autoComplete="off" minLength={2} maxLength={32} required />
+        <p className="friink-auth-username-criteria">2–32 characters · letters, numbers, '.', '_', and '-'</p>
+        <AuthField label="Date of birth" type="date" value={form.dateOfBirth} onChange={(event) => update('dateOfBirth', event.target.value)} autoComplete="bday" required />
+      </> : null}
+      <div className="friink-auth-actions"><button className="friink-auth-secondary" type="button" onClick={() => step === 1 ? onBack?.() : setStep((step - 1) as 1 | 2 | 3)}>Back</button><button className="friink-auth-primary" type="submit" disabled={busy || (step === 2 && form.password !== confirmPassword)}>{busy ? 'Please wait...' : step === 3 ? 'Create account' : 'Continue'}</button></div>
       {onLogin ? <p className="friink-auth-switch">Already have an account? <button type="button" onClick={onLogin}>Log in</button></p> : null}
     </form>
   );

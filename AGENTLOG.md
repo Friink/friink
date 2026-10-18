@@ -16189,3 +16189,32 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     temporary non-secret build variables. The dummy database warning is
     expected during build verification.
 
+- 2026-10-18T01:26:00Z — Add username-enabled standalone Better Auth schema
+
+  - Agent: Codex
+  - Prompt Summary: Add the agreed 36-field Better Auth schema and update
+    project documentation before ending the work session.
+  - Changes Made: Enabled Better Auth's official username plugin, added
+    username signup and username login, migrated the live auth database with
+    `user.username` and `user.displayUsername`, and documented the standalone
+    auth service, ownership boundary, and current legacy web/API migration
+    status.
+  - Verification Status: `npm run typecheck`, `npm run auth:check`, and the
+    production build passed. The build used temporary non-secret variables and
+    reported only the expected dummy-database validation warning. Changes were
+    intentionally left uncommitted per user instruction.
+
+- 2026-10-18T01:31:00Z — Configure UUID identifiers for standalone auth
+
+  - Agent: Codex
+  - Prompt Summary: Configure UUID user IDs for the standalone Better Auth and
+    session system.
+  - Changes Made: Set Better Auth `advanced.database.generateId` to `uuid`,
+    converted the empty live auth database's user, session, account, and
+    verification ID/reference columns to PostgreSQL UUID types, restored the
+    session/account foreign keys, and updated architecture, deployment, and
+    auth README documentation.
+  - Verification Status: `npm run auth:check` passed and direct schema
+    inspection confirmed UUID types. No users existed before conversion.
+    Changes were intentionally left uncommitted.
+

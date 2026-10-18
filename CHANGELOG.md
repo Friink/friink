@@ -5882,3 +5882,17 @@ _Last updated: 2026-09-10_
   authentication design, including typography, theme tokens, controls,
   responsive layout, dark mode, and a branded not-found state.
 
+## 2026-10-18T01:26:00Z
+
+- Added Better Auth's username plugin to the standalone auth service, including
+  unique normalized username support, username signup, and username login.
+- Migrated the dedicated Better Auth database with `username` and
+  `displayUsername` user columns and documented the standalone auth boundary
+  and current web/API migration status.
+
+## 2026-10-18T01:31:00Z
+
+- Configured Better Auth to generate UUID identifiers and converted the empty
+  dedicated auth schema's primary and user-reference columns from text to
+  PostgreSQL UUID types.
+

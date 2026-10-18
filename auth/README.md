@@ -1,8 +1,8 @@
 # Friink Auth
 
-This is a vanilla Better Auth dependency install for the future hosted auth
-service at `https://auth.friink.com`. It is not connected to Friink's current
-FastAPI authentication path.
+This is the standalone Better Auth service for `https://auth.friink.com`. It
+owns its own identity and session database, but it is not yet connected to
+Friink's current FastAPI authentication path.
 
 ## Local setup
 
@@ -16,6 +16,11 @@ only in a secure deployment environment. Do not commit the file.
 
 The Better Auth server configuration and PostgreSQL adapter now live under
 `app/src/lib/`.
+
+The Better Auth user schema contains the standard user fields plus the official
+username plugin's `username` and `displayUsername` fields. Username is unique,
+normalized for lookup, accepted during signup, and supported during login. All
+Better Auth primary and foreign-key IDs use PostgreSQL UUIDs.
 
 ## Next.js service
 
@@ -36,7 +41,7 @@ after the production environment variables are configured.
 ## Auth UI package
 
 `@friink/auth-ui` contains the copied Friink authentication presentation for
-the future auth service. It exports `AuthShell`, `LoginForm`, `SignupForm`,
+the standalone auth service. It exports `AuthShell`, `LoginForm`, `SignupForm`,
 `ForgotPasswordForm`, `PasswordCriteria`, and the shared field primitives.
 The forms use callback props, so the auth app can connect them to Better Auth
 without making the package depend on a particular router or API handler.

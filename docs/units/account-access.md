@@ -7,9 +7,14 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-02T00:01:48Z
+**Last edited:** 2026-10-18T01:25:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
+
+**Migration status:** The active web/API contract remains the FastAPI auth
+implementation documented below. A separate Better Auth service now owns a
+dedicated identity database and username-enabled schema, but the web/API
+request path has not yet been migrated to it.
 
 ---
 
