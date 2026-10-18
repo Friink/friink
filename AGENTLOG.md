@@ -16164,3 +16164,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     temporary non-production build variables. The build reported the expected
     database-schema validation warning because the temporary PostgreSQL URL
     was not a live migrated database. No full test suite run.
+- 2026-10-18T01:07:30Z — Fix Better Auth Vercel output directory
+
+  - Agent: Codex
+  - Prompt Summary: Resolve the Vercel deployment failure reporting that
+    `auth/.next` was missing after a successful Next.js build.
+  - Changes Made: Configured Next.js to emit its build artifact at the
+    Vercel project root while retaining the source app under `auth/app/`.
+    Updated generated Next.js type references accordingly.
+  - Verification Status: Production build passed with temporary non-secret
+    variables and generated the root `.next` output. The PostgreSQL SSL notice
+    remains a non-fatal dependency warning.
+

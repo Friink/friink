@@ -5871,3 +5871,8 @@ _Last updated: 2026-09-10_
 - [documentation] Clarified in AUTH-R-008 that successful sign-in clears
   the web-only failed-restore marker. Started the documentation viewer for
   browsing; no application behavior changed.
+## 2026-10-18T01:07:30Z
+
+- Fixed the Better Auth Next.js build output path so Vercel finds the generated
+  `.next` directory at the `auth/` project root.
+
