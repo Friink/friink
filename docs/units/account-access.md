@@ -1307,6 +1307,12 @@ project-wide history. This section records changes specific to this unit.
   shared colors, Inter/Nunito typography, responsive layout, dark-theme tokens,
   and aligned onboarding/account-switcher styling.
 
+- 2026-10-18T22:58:19Z — Added PostgreSQL UUID defaults for Better Auth's
+  `user`, `session`, and `account` IDs and applied them to the live auth
+  database. Added authenticated `/me` as the stable current-account view; it
+  shows the selected account identity and onboarding status and exposes the
+  shared account switcher and session actions.
+
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account
   switching across tabs. Active-account removal reuses fallback without a

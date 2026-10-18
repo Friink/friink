@@ -5984,6 +5984,14 @@ _Last updated: 2026-09-10_
   spacing, controls, responsive behavior, dark theme, and shared onboarding
   and account-switcher styling. Authentication routes and JavaScript flows were
   unchanged.
+
+## 2026-10-18T22:58:19Z
+
+- Fixed UUID-backed Better Auth account creation by adding PostgreSQL
+  `gen_random_uuid()` defaults to the `user`, `session`, and `account` IDs and
+  applying the migration to the live auth database.
+- Added authenticated `/me`, which displays the selected account's current
+  identity and status while retaining account switching and session actions.
 - Added password-reset email delivery and documented that
   `AUTH_EMAIL_DOMAIN` is a domain-only setting; the auth app chooses the
   sender alias.

@@ -16451,3 +16451,18 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     variants. Removed the remaining Muflah-specific footer name.
   - Verification Status: `npm run typecheck`, `npm run build`, and `git diff
     --check` passed. Changes remain uncommitted.
+
+- 2026-10-18T22:58:19Z — Fix UUID defaults and add current-account route
+
+  - Agent: Codex
+  - Prompt Summary: Fix signup authentication failure and implement `/me` for
+    the selected/current account.
+  - Changes Made: Added migration `003_uuid_id_defaults.sql` for PostgreSQL
+    UUID defaults on Better Auth `user`, `session`, and `account` IDs; applied
+    and verified it against the live database. Added the authenticated `/me`
+    page with current account details, account switcher, navigation, and
+    session logout actions.
+  - Verification Status: Disposable Better Auth signup created a UUID user and
+    session successfully, then cleaned up. `GET /me` redirects unauthenticated
+    users to `/login`. Typecheck and production build passed. Changes remain
+    uncommitted.
