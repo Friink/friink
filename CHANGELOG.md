@@ -64,6 +64,10 @@
 - [auth username policy] Kept onboarding username collection while allowing
   usernames to be changed later.
 
+## 2026-10-18T22:31:00Z
+- [auth signup compatibility] Restored Better Auth UUID ID generation required
+  by Friink's UUID-backed auth database after copying the Muflah implementation.
+
 ## 2026-10-18T01:00:15Z
 - [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
   Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie

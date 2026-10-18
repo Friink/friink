@@ -1298,6 +1298,8 @@ project-wide history. This section records changes specific to this unit.
   database.
 - 2026-10-18T22:28:00Z — Friink keeps Muflah's onboarding username flow but
   explicitly allows usernames to be changed later through Better Auth.
+- 2026-10-18T22:31:00Z — Preserved Friink's UUID-backed auth schema while using
+  the copied Muflah implementation by enabling Better Auth UUID ID generation.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

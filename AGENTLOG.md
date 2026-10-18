@@ -180,6 +180,20 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   account-access documentation.
 - Verification Status: Targeted TypeScript and production build checks follow.
 
+# 2026-10-18T22:31:00Z — Restore UUID Signup Compatibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose signup authentication failure after copying Muflah
+  Auth and verify Friink's database connection.
+- Changes Made: Confirmed the live database connection and schema, then enabled
+  Better Auth UUID ID generation because Friink's `user.id` column is UUID-backed
+  while the copied Muflah configuration did not include the UUID generator.
+- Files: `auth/app/src/lib/auth.ts`, project changelog, agent log, and
+  account-access documentation.
+- Verification Status: Database connection query and live schema check passed;
+  TypeScript and production build checks follow.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex

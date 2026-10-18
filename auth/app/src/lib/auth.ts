@@ -13,16 +13,19 @@ export const auth = betterAuth({
     expiresIn: config.sessionExpiresInSeconds,
     updateAge: config.sessionUpdateAgeSeconds,
   },
-  ...(config.cookieDomain
-    ? {
-        advanced: {
+  advanced: {
+    database: {
+      generateId: "uuid",
+    },
+    ...(config.cookieDomain
+      ? {
           crossSubDomainCookies: {
             enabled: true,
             domain: config.cookieDomain,
           },
-        },
-      }
-    : {}),
+        }
+      : {}),
+  },
   user: {
     additionalFields: {
       onboardingStatus: {
