@@ -80,6 +80,23 @@ INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especia
   `auth/packages/auth-ui/src/ui.tsx`, auth docs, and project logs.
 - Verification Status: Auth TypeScript checks and production build pass.
 
+# 2026-10-18T21:48:03Z — Fix Signup OTP Verification Storage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and fix the signup verification-code error.
+- Changes Made: Found that the live UUID `verification.id` column had no
+  default, causing Better Auth's server-only OTP generator to fail. Enabled
+  `pgcrypto`, added the `gen_random_uuid()` default live, recorded the SQL
+  migration, and made signup OTP delivery return a controlled 502 while
+  cleaning failed verification rows.
+- Files: `auth/app/src/app/api/auth-flow/send-otp/route.ts`,
+  `auth/migrations/001_verification_uuid_default.sql`, auth README, docs, and
+  project logs. Test verification records were deleted after validation.
+- Verification Status: Live signup OTP route returned HTTP 200 with
+  Resend's official test recipient; TypeScript and production build checks
+  pass. A real user-recipient delivery test remains provider/account dependent.
+
 # 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
 
 - Agent: Codex

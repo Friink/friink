@@ -30,6 +30,12 @@
   email OTP verification followed by a new password, using Better Auth's
   Email OTP password-reset endpoints.
 
+## 2026-10-18T21:48:03Z
+- [auth OTP reliability] Fixed the UUID-backed `verification.id` default needed
+  by Better Auth's server-only signup OTP generator. Added a reproducible SQL
+  migration, controlled provider-error responses, and cleanup of failed OTP
+  verification rows.
+
 ## 2026-10-18T01:00:15Z
 - [auth app] Converted `auth/` into a deployable Next.js Better Auth service.
   Added the PostgreSQL-backed Better Auth instance, cross-subdomain cookie

@@ -71,6 +71,11 @@ npm run auth:migrate
 Run `auth:migrate` only against the dedicated Better Auth PostgreSQL database
 after the production environment variables are configured.
 
+The one-time SQL compatibility migration in `migrations/001_verification_uuid_default.sql`
+is required for Email OTP signup when the Better Auth `verification.id` column
+uses UUIDs. It enables `pgcrypto` and adds the UUID default required by the
+server-only OTP generator.
+
 ## Auth UI package
 
 `@friink/auth-ui` contains the copied Friink authentication presentation for

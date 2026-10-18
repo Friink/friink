@@ -1276,6 +1276,10 @@ project-wide history. This section records changes specific to this unit.
   email OTP verification followed by a new password, using Better Auth's
   Email OTP password-reset endpoints. The auth app continues to own the full
   recovery flow; the webapp/API remain unchanged.
+- 2026-10-18T21:48:03Z — Fixed the UUID-backed Better Auth verification table
+  for Email OTP signup by adding the required `gen_random_uuid()` default and
+  recorded the reproducible SQL migration. Signup OTP provider failures now
+  return a controlled error and remove the unusable pending verification.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account
