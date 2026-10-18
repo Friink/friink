@@ -26,6 +26,16 @@ em { color: #6f766f; font-size: .68rem; font-style: normal; }
 .toast strong { display: block; margin-bottom: .15rem; font-size: .8rem; }
 .toast button { position: absolute; top: .5rem; right: .5rem; width: 1.5rem; height: 1.5rem; border: 0; border-radius: 50%; background: transparent; color: #6f766f; cursor: pointer; }
 .toast button:hover, .toast button:focus-visible { background: #eef5ef; outline: none; }
+@media (prefers-color-scheme: dark) {
+  :host { color: #f5f5f5; }
+  .trigger, .menu, .toast { border-color: #555555; background: #161616; color: #f5f5f5; }
+  small, em, .label, .toast button { color: #c4c4c4; }
+  .avatar { background: #294b31; color: #b8e3be; }
+  .account:hover, .action:hover, .account:focus-visible, .action:focus-visible, .toast button:hover, .toast button:focus-visible { background: #24352a; }
+  .action { border-top-color: #555555; }
+  .toast { box-shadow: 0 1rem 3rem rgb(0 0 0 / 38%); }
+  .error { color: #f08b8b; }
+}
 `;
 
 function authRequest(path, init, apiBase = "/auth-api") {
@@ -36,8 +46,8 @@ function authRequest(path, init, apiBase = "/auth-api") {
   });
 }
 
-function authUrl(value, intent) {
-  const url = new URL("/login", value);
+function authUrl(value, intent, path = "/login") {
+  const url = new URL(path, value);
   url.searchParams.set("returnTo", window.location.href);
   if (intent) url.searchParams.set("intent", intent);
   return url.toString();
@@ -94,7 +104,7 @@ export class AccountSwitcher extends ElementBase {
     root.innerHTML = `<style>${styles}</style><div class="switcher"><button class="trigger" type="button" aria-expanded="false"><span class="avatar">?</span><span class="summary"><strong>Account</strong><small>Loading…</small></span><span class="chevron" aria-hidden="true"></span></button><div class="menu" hidden><p class="label">Available accounts</p><div class="accounts"></div><button class="action add" type="button">＋ Add account</button><button class="action logout" type="button">Log out account ↗</button><p class="error" hidden></p></div><div class="toast" role="status" aria-live="polite" hidden><strong>Account changed</strong><span class="toast-copy"></span><button class="toast-close" type="button" aria-label="Dismiss">×</button></div></div>`;
     this.root = root;
     root.querySelector(".trigger").addEventListener("click", () => { const menu = root.querySelector(".menu"); menu.hidden = !menu.hidden; root.querySelector(".trigger").setAttribute("aria-expanded", String(!menu.hidden)); });
-    root.querySelector(".add").addEventListener("click", () => window.location.assign(authUrl(this.getAttribute("auth-url"), "login")));
+    root.querySelector(".add").addEventListener("click", () => window.location.assign(authUrl(this.getAttribute("auth-url"), undefined, "/start")));
     root.querySelector(".logout").addEventListener("click", () => this.logout());
     root.querySelector(".toast-close").addEventListener("click", () => this.hideToast());
   }

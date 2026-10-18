@@ -1318,6 +1318,11 @@ project-wide history. This section records changes specific to this unit.
   styling and a CSS chevron, sign-in lookup copy is neutral, and username
   setup matches the Friink form design. Authentication flow and session
   behavior are unchanged.
+- 2026-10-18T23:42:58Z — Added Forgot password and Sign up links to the main
+  email entry screen and `/start`, routed the shared account switcher's Add
+  account action to `/start`, and added dark-theme styling for the switcher's
+  controls and feedback. Authentication flow and session behavior are
+  unchanged.
 
 - 2026-10-18T23:16:45Z — The Auth app now mounts the shared
   `@friink/account-switcher` package against its direct `/api/auth` endpoint,

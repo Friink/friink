@@ -6018,3 +6018,11 @@ _Last updated: 2026-09-10_
 - Matched the username setup screen to the Friink wordmark, typography, form,
   inputs, buttons, and responsive layout without changing authentication flow.
 
+## 2026-10-18T23:42:58Z
+
+- Added Forgot password and Sign up links to both the main email entry screen
+  and `/start`.
+- Updated the shared account switcher's Add account action to open `/start`.
+- Added dark-theme styling for the account switcher's trigger, menu, account
+  rows, actions, avatars, and toast.
+

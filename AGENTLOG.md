@@ -16496,3 +16496,16 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     behavior changed.
   - Verification Status: Targeted typecheck, production build, and
     `git diff --check` passed. Changes remain uncommitted.
+
+- 2026-10-18T23:42:58Z — Complete auth entry links and switcher theme polish
+
+  - Agent: Codex
+  - Prompt Summary: Add password reset and signup options to email entry,
+    support both links in `/start`, align the account switcher with dark mode,
+    and send Add account to `/start`.
+  - Changes Made: Added the two entry links to both email-entry surfaces,
+    routed the package-owned Add account action to `/start`, and added the
+    package's dark-theme trigger, menu, row, avatar, action, and toast styles.
+    Authentication flow and session behavior remain unchanged.
+  - Verification Status: `npm run typecheck` and `git diff --check` passed.
+    Changes remain uncommitted.

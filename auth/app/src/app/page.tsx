@@ -140,6 +140,7 @@ export default function HomePage() {
       {step === "identifier" ? <>
         <label className="pill-field"><span className="sr-only">Email address</span><input id="email" type="email" autoComplete="email" placeholder="Email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
         <div className="signup-actions signup-actions-single"><button className="button-primary login-submit" disabled={busy}>{busy ? "Checking…" : "Continue"}</button></div>
+        <nav className="auth-entry-links" aria-label="Account access options"><a href="/forgot-password">Forgot password?</a><a href={signupHref}>Sign up</a></nav>
       </> : step === "verify" ? <>
         <label className="pill-field"><span className="sr-only">Verification code</span><input id="otp" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="Verification code" required value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} /></label>
         <div className="signup-actions"><button className="button-secondary" type="button" disabled={busy} onClick={() => { setStep("identifier"); setFlow(null); setMessage(""); }}>Back</button><button className="button-primary login-submit" disabled={busy}>{busy ? "Verifying…" : "Verify code"}</button></div>

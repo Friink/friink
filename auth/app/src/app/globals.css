@@ -62,6 +62,9 @@ button { cursor: pointer; }
 .notice.error { border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-line)); color: var(--color-danger); }
 .auth-switch { margin: 20px 0 0; color: var(--color-muted); font-size: 14px; text-align: center; }
 .auth-switch a { color: var(--color-accent); font-weight: 700; }
+.auth-entry-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1rem; font-size: .85rem; }
+.auth-entry-links a { color: var(--color-accent); font-weight: 700; text-decoration: none; }
+.auth-entry-links a:hover, .auth-entry-links a:focus-visible { outline: 2px solid color-mix(in srgb, var(--color-accent) 35%, transparent); outline-offset: 2px; }
 .auth-footer { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--color-line); color: var(--color-muted); }
 .auth-footer p { margin: 0; font-size: 12px; }
 
