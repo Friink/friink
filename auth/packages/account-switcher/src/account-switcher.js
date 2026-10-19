@@ -112,10 +112,10 @@ export class AccountSwitcher extends ElementBase {
   }
 
   render() {
-    this.replaceChildren();
-    const root = this;
+    this.shadowRoot?.replaceChildren();
+    const root = this.attachShadow({ mode: "open" });
     const variant = ["button", "picture", "compact", "full", "icon"].includes(this.getAttribute("variant")) ? this.getAttribute("variant") : "full";
-    root.innerHTML = `<div class="switcher account-switcher-root" data-variant="${variant}"><button class="trigger" type="button" aria-expanded="false"><span class="avatar">?</span><span class="summary"><strong>Account</strong><small>Loading…</small><span class="username"></span></span><span class="chevron" aria-hidden="true"></span></button><div class="menu" hidden><p class="label">Available accounts</p><div class="accounts"></div><button class="action add" type="button">＋ Add account</button><button class="action logout" type="button">Log out account ↗</button><p class="error" hidden></p></div><div class="toast" role="status" aria-live="polite" hidden><strong>Account changed</strong><span class="toast-copy"></span><button class="toast-close" type="button" aria-label="Dismiss">×</button></div></div>`;
+    root.innerHTML = `<style>${styles}</style><div class="switcher" data-variant="${variant}"><button class="trigger" type="button" aria-expanded="false"><span class="avatar">?</span><span class="summary"><strong>Account</strong><small>Loading…</small><span class="username"></span></span><span class="chevron" aria-hidden="true"></span></button><div class="menu" hidden><p class="label">Available accounts</p><div class="accounts"></div><button class="action add" type="button">＋ Add account</button><button class="action logout" type="button">Log out account ↗</button><p class="error" hidden></p></div><div class="toast" role="status" aria-live="polite" hidden><strong>Account changed</strong><span class="toast-copy"></span><button class="toast-close" type="button" aria-label="Dismiss">×</button></div></div>`;
     this.root = root;
     root.querySelector(".trigger").addEventListener("click", () => { const menu = root.querySelector(".menu"); menu.hidden = !menu.hidden; root.querySelector(".trigger").setAttribute("aria-expanded", String(!menu.hidden)); });
     root.querySelector(".add").addEventListener("click", () => window.location.assign(authUrl(this.getAttribute("auth-url"), undefined, "/start")));

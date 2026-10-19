@@ -21,12 +21,6 @@ The `auth-url` attribute is the configured Auth origin. `api-base` selects the
 same-origin API prefix used by the host application; consuming applications
 normally use `/auth-api`, while the Auth app uses its direct `/api/auth` route.
 
-The component renders light-DOM markup so the host application owns all visual
-styling. The package does not impose borders, padding, colors, shadows, fixed
-menu widths, or viewport-fixed positioning. Hosts should position the menu
-relative to the switcher and give it a responsive width appropriate to the
-available space.
-
 ## JavaScript usage
 
 Framework applications import the package to register the custom element:

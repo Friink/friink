@@ -828,10 +828,8 @@ forking its session behavior:
 - `full`: display name, email, username, and dropdown arrow; the package
   default for identity-rich surfaces.
 
-The host controls all visual styling, placement, and available width. The
-component renders light-DOM markup and imposes no borders, padding, colors,
-shadows, fixed menu widths, or viewport-fixed positioning. The package must
-remain usable without a fixed host width or height, and labels must truncate before
+The host controls placement and available width. The package must remain
+usable without a fixed host width or height, and labels must truncate before
 the arrow or other fixed controls. All variants retain the same menu, loading,
 error, add-account, switching, logout, and account-change behavior. The
 variant is presentation-only and cannot alter Auth ownership, session
@@ -852,9 +850,6 @@ and recovery redirects.
 - **ACCESS-R-036:** Shared account-switcher variants change presentation only;
   `button`, `picture`, `compact`, and `full` expose the same Auth-authoritative
   account and session operations.
-- **ACCESS-R-039:** Host applications own account-switcher styling and
-  responsive placement; the shared component supplies behavior and semantic
-  markup without fixed visual chrome or viewport-fixed menus.
 
 #### Presentation acceptance criteria
 

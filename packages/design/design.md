@@ -458,10 +458,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   the default. The Auth shell uses `picture` in its top bar and the Web app
   uses `button` in its drawer.
 - **Layout contract**: The host chooses placement and available width. The
-  component renders light-DOM markup and must not impose borders, padding,
-  colors, shadows, fixed menu widths, or viewport-fixed positioning. The host
-  owns visual styling and responsive menu placement; the component must not
-  require a fixed host width or height. Identity text
+  component must not require a fixed host width or height. Identity text
   truncates before the arrow and other fixed controls, with no horizontal
   overflow or clipping.
 - **Behavior contract**: Variants are presentation-only. All variants retain
