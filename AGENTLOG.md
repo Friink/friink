@@ -16786,3 +16786,9 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Updated the related rules and design documentation. Auth typecheck passed;
   changes remain unpushed.
 
+# 2026-10-19T05:00:00Z
+
+- Removed Account Status from the Auth shell's primary rail and documented it
+  as a Settings destination while preserving its direct lifecycle/recovery
+  route. Changes remain unpushed.
+

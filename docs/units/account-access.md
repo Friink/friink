@@ -800,7 +800,9 @@ The Auth shell uses a compact 42px top bar and 42px rail with 4px internal
 padding in each. Its brand mark aligns with the rail icon cells and has no
 hover background. Active rail links have no persistent fill; hover and focus
 feedback remain available. The icon switcher is right-aligned within the top
-bar and uses a circular avatar.
+bar and uses a circular avatar. Account Status is reached from Settings rather
+than the primary rail, while `/account-status` remains available for lifecycle
+and recovery redirects.
 
 #### Presentation contract
 

@@ -6231,3 +6231,9 @@ _Last updated: 2026-09-10_
 - Updated the corresponding rules, Account Access, design-system, and shared
   design contracts.
 
+## 2026-10-19T05:00:00Z
+
+- Moved Account Status out of the primary Auth rail; Settings remains its
+  navigation entry while `/account-status` is preserved for lifecycle and
+  recovery redirects.
+

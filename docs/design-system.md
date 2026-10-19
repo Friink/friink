@@ -422,7 +422,8 @@ responsive, and free of clipping; identity labels truncate before fixed
 controls. The Auth shell uses `icon` in its top bar, right-aligned inside a
 42px black top bar. The Auth shell's 42px black rail uses 4px internal padding;
 its brand mark aligns with the rail icon cells, has no hover background, and
-active rail links do not retain a permanent fill.
+active rail links do not retain a permanent fill. Account Status is a Settings
+destination rather than a primary rail item.
 
 Icon-and-text primary and secondary buttons use a consistent 8px inline gap;
 icon-only `.icon-button` controls remain compact and are excluded. Button-like

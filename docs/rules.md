@@ -499,6 +499,7 @@ site. See [BUG-AUTH-013](bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-mis
 - **Security and accessibility:** The component remains a presentation and browser-integration layer over Auth-owned APIs. It never stores credentials or authorizes an account from client-supplied identity fields. Every trigger has an accessible name and visible expanded state; decorative icons and arrows are hidden from assistive technology; labels truncate before fixed controls rather than clipping or causing horizontal overflow.
 - **Edge cases:** Variant changes must not change account limits, session ownership, switching validation, logout semantics, or lifecycle enforcement. Hosts control placement and available width; the shared component must not require a fixed host width or height. Menu, loading, error, and account-change feedback remain available in every variant.
 - **Shell presentation:** The Auth shell uses a 42px top bar and 42px navigation rail. Both chrome regions use 4px internal padding. The brand mark is aligned to the rail icon cells and has no hover surface. Active rail links do not retain a permanent background; hover and keyboard focus may provide transient feedback. The icon switcher is right-aligned inside the top bar, and its avatar is circular.
+- **Navigation placement:** Account Status is not a primary rail destination. Settings links to `/account-status`; the route remains available for lifecycle and recovery redirects.
 
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 

@@ -471,7 +471,9 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   a 42px black top bar. The matching 42px black rail and top bar each use 4px
   internal padding. The brand mark aligns with the rail icon cells, has no
   hover surface, and active rail links use transient hover/focus feedback
-  rather than a permanent background. Icon-mode avatars are circular.
+  rather than a permanent background. Icon-mode avatars are circular. Account
+  Status belongs under Settings, not the primary rail; `/account-status` remains
+  a valid lifecycle and recovery destination.
 
 ### 6. TopBar (`web/components/top-bar.tsx`) & NavigationBar (`web/components/navigationbar.tsx`)
 - **Desktop `Header`**:
