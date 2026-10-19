@@ -23,6 +23,7 @@ export default function HomePage() {
   const [sessionCheckError, setSessionCheckError] = useState("");
   const [sessionCheckAttempt, setSessionCheckAttempt] = useState(0);
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [existingUser, setExistingUser] = useState<{ name?: string; email?: string; username?: string | null } | null>(null);
 
   useEffect(() => {
     const requestedReturnTo = getTrustedReturnTo();
@@ -38,7 +39,13 @@ export default function HomePage() {
         setEmail(emailFromStart);
         setStep(requestedFlow === "sign-up" || intent === "signup" ? "verify" : "credentials");
       }
-      setCheckingSession(false);
+      if (requestedFlow === "sign-up" || intent === "signup") setCheckingSession(false);
+      else {
+        fetch("/api/auth/get-session", { credentials: "include", cache: "no-store" }).then((response) => response.json()).then((result) => {
+          if (result?.user) setExistingUser(result.user);
+          setCheckingSession(false);
+        }).catch(() => setCheckingSession(false));
+      }
       return;
     }
     let active = true;
@@ -60,6 +67,15 @@ export default function HomePage() {
     resolveSession();
     return () => { active = false; };
   }, [sessionCheckAttempt]);
+
+  async function signOutExisting() {
+    setBusy(true);
+    try {
+      await fetch("/api/auth/sign-out", { method: "POST", credentials: "include" });
+      setExistingUser(null);
+      setCheckingSession(false);
+    } finally { setBusy(false); }
+  }
 
   async function continueWithEmail(event: FormEvent) {
     event.preventDefault(); setBusy(true); setMessage("");
@@ -129,6 +145,7 @@ export default function HomePage() {
   const signupHref = returnTo ? `/signup?returnTo=${encodeURIComponent(returnTo)}` : "/signup";
 
   if (checkingSession) return <div className="auth-shell"><main className="auth-main"><p className="micro">Checking your session…</p></main></div>;
+  if (existingUser) return <div className="auth-shell"><main className="auth-main"><section className="auth-card" aria-live="polite"><p className="micro">Existing session</p><h1>You’re already signed in.</h1><p className="intro">{existingUser.username ? `You’re signed in as @${existingUser.username}.` : `You’re signed in as ${existingUser.email ?? existingUser.name ?? "this account"}.`}</p><div className="auth-actions"><button className="auth-button" type="button" onClick={() => window.location.assign(destinationAfterAuth(returnTo, "/me"))}>Continue to Friink ↗</button><button className="auth-button secondary" type="button" onClick={() => setExistingUser(null)}>Use another account</button><button className="text-button" type="button" disabled={busy} onClick={() => void signOutExisting()}>{busy ? "Signing out…" : "Sign out"}</button></div></section></main></div>;
   if (sessionCheckError) return <div className="auth-shell"><main className="auth-main"><section className="auth-card"><p className="micro">Session check</p><h1>Let’s try that again.</h1><p className="intro">{sessionCheckError} Your account has not been signed out.</p><div className="auth-actions"><button className="auth-button" type="button" onClick={() => { setSessionCheckError(""); setCheckingSession(true); setSessionCheckAttempt((attempt) => attempt + 1); }}>Retry ↗</button></div></section></main></div>;
 
   return <main className="login-screen">

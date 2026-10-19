@@ -58,6 +58,8 @@ button { cursor: pointer; }
 .auth-button:disabled { cursor: wait; opacity: .55; transform: none; }
 .auth-button.secondary { border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-line)); background: var(--color-accent-soft); color: var(--color-accent); }
 .auth-button.secondary:hover { background: color-mix(in srgb, var(--color-accent) 18%, var(--color-paper)); }
+.text-button { border: 0; background: transparent; color: var(--color-muted); font-size: 14px; font-weight: 700; }
+.text-button:hover { color: var(--color-accent); }
 .notice { margin: 18px 0 0; padding: 12px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-sm); color: var(--color-muted); font-size: 14px; line-height: 1.5; }
 .notice.error { border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-line)); color: var(--color-danger); }
 .auth-switch { margin: 20px 0 0; color: var(--color-muted); font-size: 14px; text-align: center; }

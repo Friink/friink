@@ -16677,3 +16677,13 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     Component, covering its canvas, text, inputs, focus ring, primary action,
     and error state while preserving the existing light treatment.
   - Verification Status: `npm run typecheck` passed in `auth/`.
+
+- 2026-10-19T01:44:00Z — Guard login when a session already exists
+
+  - Agent: Codex
+  - Prompt Summary: Prevent a signed-in user from logging into the same account
+    again through the normal Auth entry flow.
+  - Changes Made: Added an existing-session screen with Continue, Use another
+    account, and Sign out actions. The normal login form is now withheld when a
+    current session exists.
+  - Verification Status: `npm run typecheck` passed in `auth/`.

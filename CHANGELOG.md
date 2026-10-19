@@ -6130,3 +6130,9 @@ _Last updated: 2026-09-10_
 - Updated the shared Auth onboarding Web Component with a dark-theme treatment
   for its surface, typography, fields, focus states, button, and error notice.
 
+## 2026-10-19T01:44:00Z
+
+- Added an existing-session guard to Auth login.
+- Signed-in users now see Continue, Use another account, and Sign out instead
+  of being able to silently start a duplicate same-account login flow.
+
