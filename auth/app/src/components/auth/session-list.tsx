@@ -35,7 +35,7 @@ export default function SessionList({ sessions, currentToken }: { sessions: Sess
       {items.map((session) => (
         <article className="session-item" key={session.id}>
           <div>
-            <strong>{session.userAgent || "Unknown device"}</strong>
+            <strong>{session.userAgent || "Unknown device"} {session.token === currentToken && <span className="session-current">Current session</span>}</strong>
             <span>{session.ipAddress || "IP unavailable"}</span>
             <small>Last active {new Date(session.updatedAt).toLocaleString()}</small>
             <small>Session expires {new Date(session.expiresAt).toLocaleString()}</small>

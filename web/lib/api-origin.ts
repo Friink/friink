@@ -34,6 +34,15 @@ export function getApiOrigin() {
   throw new Error('Friink API is not configured for this environment. Set NEXT_PUBLIC_API_BASE_URL on the web deployment.');
 }
 
+export function getAuthOrigin() {
+  const configuredOrigin = process.env.NEXT_PUBLIC_AUTH_BASE_URL?.trim();
+  if (configuredOrigin) return trimTrailingSlash(configuredOrigin);
+  if (typeof window === 'undefined') return 'http://localhost:3001';
+  const hostname = window.location.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return 'http://localhost:3001';
+  throw new Error('Friink Auth is not configured for this environment. Set NEXT_PUBLIC_AUTH_BASE_URL on the web deployment.');
+}
+
 export async function fetchApi(path: string, init?: RequestInit) {
   const origin = getApiOrigin();
   const controller = new AbortController();

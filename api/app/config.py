@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     database_pool_recycle_seconds: int = Field(default=300, alias="DB_POOL_RECYCLE_SECONDS")
     database_pool_pre_ping: bool = Field(default=True, alias="DB_POOL_PRE_PING")
     frontend_url: AnyHttpUrl | str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
+    auth_service_url: AnyHttpUrl | str = Field(default="http://localhost:3001", alias="AUTH_SERVICE_URL")
+    auth_internal_token: str = Field(default="", alias="AUTH_INTERNAL_TOKEN")
     environment: str = Field(default="development", alias="ENVIRONMENT")
     otp_enabled: bool = Field(default=True, alias="OTP_ENABLED")
     jwt_secret_key: str = Field(alias="JWT_SECRET_KEY")

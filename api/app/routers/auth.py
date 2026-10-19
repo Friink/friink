@@ -83,6 +83,7 @@ from app.services.session_service import (
     revoke_refresh_family_for_session,
     revoke_refresh_token,
 )
+from app.services.better_auth import introspect_better_auth
 from app.services.token_context import get_auth_flow_context
 from app.services.storage import StorageNotConfiguredError, StorageObjectError, StorageService
 from app.services.account_lifecycle import confirm_deletion, deactivate_account, reactivate_account, start_deletion
@@ -994,6 +995,20 @@ async def get_current_user(
     if from_cookie and token and request.method not in {"GET", "HEAD", "OPTIONS"}:
         require_allowed_origin(request, settings)
     if not token:
+        # Better Auth owns the browser session after the cutover. Resolve its
+        # UUID against the existing product user row; profile provisioning is
+        # deliberately a separate onboarding step.
+        try:
+            identity = await introspect_better_auth(request, settings)
+            user = session.get(User, uuid.UUID(identity.id))
+        except (HTTPException, ValueError):
+            user = None
+        if user:
+            if user.lifecycle_status != "active":
+                lifecycle_code = AuthErrorCode.ACCOUNT_PENDING_DELETION if user.lifecycle_status == "pending_deletion" else AuthErrorCode.ACCOUNT_DEACTIVATED
+                lifecycle_message = "This account is scheduled for deletion." if user.lifecycle_status == "pending_deletion" else "This account has been deactivated."
+                raise HTTPException(status_code=401, detail=auth_error_detail(lifecycle_message, lifecycle_code))
+            return user
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=auth_error_detail("Access session is not available.", AuthErrorCode.REFRESH_TOKEN_MISSING),

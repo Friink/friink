@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { config } from "@/lib/config";
 import { sendTransactionalEmail } from "@/lib/email/connector";
 
 export const runtime = "nodejs";
@@ -11,8 +12,12 @@ export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-  const body = (await request.json().catch(() => null)) as { username?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { username?: unknown; dateOfBirth?: unknown } | null;
   const username = typeof body?.username === "string" ? body.username.trim().toLowerCase() : "";
+  const dateOfBirth = typeof body?.dateOfBirth === "string" ? body.dateOfBirth : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth) || new Date(`${dateOfBirth}T00:00:00Z`) > new Date()) {
+    return NextResponse.json({ error: "Enter a valid date of birth." }, { status: 400 });
+  }
   if (!USERNAME_PATTERN.test(username) || RESERVED_USERNAMES.has(username)) {
     return NextResponse.json({ error: "Choose a valid username." }, { status: 400 });
   }
@@ -39,7 +44,16 @@ export async function POST(request: Request) {
   const completedUser = await context.internalAdapter.updateUser(session.user.id, {
     onboardingStatus: "complete",
     onboardingCompletedAt: completedAt,
+    dateOfBirth,
   });
+
+  const productResponse = await fetch(`${config.productApiUrl.replace(/\/$/, "")}/auth/better-profile`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Friink-Auth-Internal-Token": config.productApiToken },
+    body: JSON.stringify({ id: completedUser.id, email: completedUser.email, name: completedUser.name, username, date_of_birth: dateOfBirth }),
+    cache: "no-store",
+  });
+  if (!productResponse.ok) return NextResponse.json({ error: "We could not finish your Friink profile. Please try again." }, { status: 502 });
 
   await sendTransactionalEmail({
     to: completedUser.email,

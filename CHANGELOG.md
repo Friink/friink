@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19T00:18:05Z
+- [auth UI] Added the standalone hosted-flow screen layer for verification,
+  email verification, account status, deactivation, deletion, reactivation,
+  deletion cancellation, secure handoff, consent, and expired-link states.
+  These screens use local/mockable actions; Web App/API integration remains
+  deferred.
+
+## 2026-10-19T00:08:15Z
+- [auth documentation] Added `auth/docs/MATURITY-PLAN.md`, defining the
+  standalone Auth maturity phases and explicitly deferring Web App/API
+  integration until Auth passes its readiness gate.
+
 ## 2026-10-18T11:53:25Z
 - [auth multi-session] Added the Better Auth `multiSession` plugin and client
   plugin, bounded by `AUTH_MAX_SESSIONS`, with explicit session expiry and
@@ -6025,4 +6037,83 @@ _Last updated: 2026-09-10_
 - Updated the shared account switcher's Add account action to open `/start`.
 - Added dark-theme styling for the account switcher's trigger, menu, account
   rows, actions, avatars, and toast.
+
+## 2026-10-18T23:49:00Z
+
+- Ensured the Active Sessions page explicitly includes the authenticated
+  current session when Better Auth's device-session list omits it.
+- Added a visible `Current session` label to the matching session row while
+  preserving individual session revocation behavior.
+
+## 2026-10-19T00:01:18Z
+
+- Added authenticated email-change flow at `/email`: verify the current email,
+  verify the new email, then update the account email.
+- Added a Change email entry to `/me` and enabled Better Auth's OTP-backed
+  email-change support with current-email confirmation.
+- Removed the public identity-lookup route and changed `/start` and the main
+  email entry flow to use explicit sign-in/signup entry instead of exposing
+  account existence through a lookup response.
+- Account deletion remains intentionally deferred.
+
+## 2026-10-19T00:39:50Z
+
+- Added the first Better Auth session bridge for the API.
+- Added protected Auth session introspection and `GET /auth/better-session`,
+  returning the Better Auth user UUID and session expiry without changing
+  legacy authentication behavior.
+- Documented `AUTH_SERVICE_URL` and `AUTH_INTERNAL_TOKEN` configuration.
+
+## 2026-10-19T00:54:17Z
+
+- Started the Web App Better Auth cutover.
+- Web `/login` now redirects to the hosted Auth `/start` flow with a return
+  URL, and Web requests can use the shared Auth cookie.
+- API authenticated requests now fall back to Better Auth session
+  introspection when no legacy bearer token is present, resolving the Auth
+  UUID against an existing product user row.
+- Profile provisioning and full Web session hydration remain intentionally
+  incomplete; the legacy login implementation remains in source as fallback.
+
+## 2026-10-19T00:57:30Z
+
+- Reset the Better Auth database configured in `auth/.env` for the empty-user
+  development cutover.
+- Truncated the `account`, `session`, `user`, and `verification` tables in the
+  `auth` database and verified all four tables contain zero rows.
+
+## 2026-10-19T01:01:00Z
+
+- Applied the complete API Alembic schema to the new database configured in
+  `api/.env`.
+- Verified the database is at migration head `20261002_0062` and
+  `alembic check` reports no schema drift.
+
+## 2026-10-19T01:08:00Z
+
+- Added the Better Auth onboarding data flow for username and date of birth.
+- Added trusted Auth-to-API profile provisioning using the Better Auth UUID,
+  with age, username, identity, and duplicate checks.
+- Added the Auth onboarding fields and API bridge contract without generating
+  a second identity ID.
+- Added the `dateOfBirth` column to the freshly reset Better Auth `user` table.
+
+## 2026-10-19T01:15:00Z
+
+- Added Web session hydration from the Better Auth cookie through the API's
+  `/auth/me` endpoint before falling back to legacy account restoration.
+- The Web App now keeps only the safe app session shape and does not copy a
+  Better Auth bearer credential into browser storage.
+
+## 2026-10-19T01:20:00Z
+
+- Configured the shared Auth/API internal token across local production,
+  staging, and development environment files.
+- Added Auth service and product API URLs to Auth environments and added
+  `NEXT_PUBLIC_AUTH_BASE_URL` to Web environments.
+
+## 2026-10-19T01:24:00Z
+
+- Verified the Auth database schema used by `auth/.env` contains the required
+  `user.dateOfBirth` column; no additional schema change was needed.
 

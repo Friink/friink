@@ -21,6 +21,7 @@ export default async function MePage() {
           <a href="/me" aria-current="page">Current account</a>
           {isOnboarded && <a href={`/${encodeURIComponent(user.username as string)}`}>Account home</a>}
           <a href="/security/sessions">Sessions &amp; security</a>
+          <a href="/email">Change email</a>
         </nav>
         <AccountActions currentToken={current.session.token} />
       </aside>

@@ -1,70 +1,26 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LoginScreen } from '@/components/login-screen';
-import { consumeLoginLink, getMostRecentRememberedAccount, hasSessionForEntry, loadAuthSession, restoreAuthSessionForEntry, saveAuthSession } from '@/lib/auth';
-
-const SECURITY_REVOCATION_MESSAGE = 'For your security, your session ended. Please sign in again.';
+import { loadAuthSession } from '@/lib/auth';
+import { getAuthOrigin } from '@/lib/api-origin';
 
 export function LoginClient() {
   const router = useRouter();
-  const [sessionChecked, setSessionChecked] = useState(true);
-  const [initialMessage, setInitialMessage] = useState<string | undefined>();
-  const [initialIdentifier, setInitialIdentifier] = useState<string | undefined>();
 
   useEffect(() => {
     const session = loadAuthSession();
-    const loginToken = new URLSearchParams(window.location.search).get('login_token');
-
-    if (window.location.search.includes('reason=security-revocation')) {
-      setInitialMessage(SECURITY_REVOCATION_MESSAGE);
-    }
-    const rememberedAccount = new URLSearchParams(window.location.search).get('account') || getMostRecentRememberedAccount()?.username;
-    if (rememberedAccount) setInitialIdentifier(rememberedAccount);
-
     if (session) {
       router.replace('/home');
       return;
     }
 
-    if (loginToken) {
-      window.history.replaceState({}, '', '/login');
-      consumeLoginLink(loginToken)
-        .then((loginSession) => {
-          saveAuthSession(loginSession);
-          router.replace('/home');
-        })
-        .catch((error) => {
-          setInitialMessage(error instanceof Error ? error.message : 'This sign-in link is invalid or expired.');
-          setSessionChecked(true);
-        });
-      return;
-    }
-
-    if (new URLSearchParams(window.location.search).get('session_recovery') === '1') {
-      setInitialMessage('Your session ended. Log in to continue.');
-      setSessionChecked(true);
-      return;
-    }
-
-    hasSessionForEntry()
-      .then((available) => available ? restoreAuthSessionForEntry() : null)
-      .then((restored) => {
-        if (restored || loadAuthSession()) router.replace('/home');
-        else setSessionChecked(true);
-      })
-      .catch((error) => {
-        if (loadAuthSession()) {
-          router.replace('/home');
-          return;
-        }
-        if (error instanceof Error && error.message) setInitialMessage(error.message);
-        setSessionChecked(true);
-      });
+    // Better Auth is the hosted credential and browser-session owner. Keep
+    // the Web App's old login UI unreachable during the cutover; it remains
+    // available in source until the new flow is verified end to end.
+    const returnTo = `${window.location.origin}/home`;
+    window.location.assign(`${getAuthOrigin()}/start?returnTo=${encodeURIComponent(returnTo)}`);
   }, [router]);
 
-  if (!sessionChecked) return null;
-
-  return <LoginScreen onAuthenticated={() => router.replace('/home')} initialMessage={initialMessage} initialIdentifier={initialIdentifier} />;
+  return null;
 }

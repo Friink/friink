@@ -110,7 +110,7 @@ intended and approved.
 Friink deploys as two independent Vercel projects:
 
 - `web/` deploys the Next.js client and uses `NEXT_PUBLIC_API_BASE_URL` for the
-  API origin.
+  API origin and `NEXT_PUBLIC_AUTH_BASE_URL` for the hosted Better Auth origin.
 - `api/` deploys the FastAPI service through `api/api/index.py` and requires the
   server-side variables documented by the matching API environment file.
 

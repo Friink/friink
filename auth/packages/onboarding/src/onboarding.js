@@ -58,10 +58,11 @@ export class FriinkOnboarding extends ElementBase {
 
   render() {
     const root = this.attachShadow({ mode: "open" });
-    root.innerHTML = `<style>${styles}</style><div class="shell"><header class="header"><a class="brand" href="/" aria-label="Friink home">m</a><span class="label">Account setup</span></header><main class="main"><section class="card" aria-live="polite"><p class="eyebrow">One last step</p><h1>Choose your username.</h1><p class="intro">Your username is your public identity across Friink. It can use lowercase letters, numbers, and underscores.</p><form><label for="username">Username</label><input id="username" name="username" autocomplete="username" autocapitalize="none" pattern="[a-z0-9_]+" minlength="3" maxlength="30" required /><button type="submit">Finish setup ↗</button></form><p class="notice" hidden></p></section></main><footer class="footer"><span>© 2026 Friink.</span><span>Authentication service</span></footer></div>`;
+    root.innerHTML = `<style>${styles}</style><div class="shell"><header class="header"><a class="brand" href="/" aria-label="Friink home">m</a><span class="label">Account setup</span></header><main class="main"><section class="card" aria-live="polite"><p class="eyebrow">One last step</p><h1>Finish your Friink profile.</h1><p class="intro">Choose your public username and tell us your date of birth. You must be at least 13 to use Friink.</p><form><label for="username">Username</label><input id="username" name="username" autocomplete="username" autocapitalize="none" pattern="[a-z0-9_]+" minlength="3" maxlength="30" required placeholder="username" /><label for="date-of-birth">Date of birth</label><input id="date-of-birth" name="dateOfBirth" type="date" autocomplete="bday" required /><button type="submit">Finish setup ↗</button></form><p class="notice" hidden></p></section></main><footer class="footer"><span>© 2026 Friink.</span><span>Authentication service</span></footer></div>`;
     this.root = root;
     this.form = root.querySelector("form");
     this.input = root.querySelector("input");
+    this.dateInput = root.querySelector("#date-of-birth");
     this.button = root.querySelector("button");
     this.notice = root.querySelector(".notice");
     this.form.addEventListener("submit", (event) => this.complete(event));
@@ -86,7 +87,7 @@ export class FriinkOnboarding extends ElementBase {
     this.button.textContent = "Saving…";
     this.notice.hidden = true;
     try {
-      const result = await request(getAttribute(this, "complete-url", "/onboarding-api/complete"), { method: "POST", body: JSON.stringify({ username: this.input.value.trim().toLowerCase() }) });
+      const result = await request(getAttribute(this, "complete-url", "/onboarding-api/complete"), { method: "POST", body: JSON.stringify({ username: this.input.value.trim().toLowerCase(), dateOfBirth: this.dateInput.value }) });
       this.redirectAfterCompletion(result.username);
     } catch (error) {
       this.showError(error instanceof Error ? error.message : "Unable to complete onboarding.");

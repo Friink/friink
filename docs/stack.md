@@ -48,7 +48,8 @@ planned or undecided items are marked explicitly.
   environment contract documented in `auth/.env.example`. It is currently a
   standalone auth service; it must pass web/API integration acceptance before
   becoming Friink's authoritative login provider.
-- The web deployment receives `NEXT_PUBLIC_API_BASE_URL` and the optional
+- The web deployment receives `NEXT_PUBLIC_API_BASE_URL`,
+  `NEXT_PUBLIC_AUTH_BASE_URL`, and the optional
   `NEXT_PUBLIC_MIXPANEL_TOKEN`; it does not receive `DATABASE_URL`.
 - The API deployment requires `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL`, and the other variables in the matching environment file.
 - There is no root `vercel.json`; each project is configured independently in the Vercel dashboard.

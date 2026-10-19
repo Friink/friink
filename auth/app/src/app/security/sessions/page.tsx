@@ -13,7 +13,11 @@ export default async function SessionsPage() {
   if (current.user.onboardingStatus !== "complete" || !current.user.username) redirect("/onboarding");
 
   const allSessions = await auth.api.listDeviceSessions({ headers: requestHeaders });
-  const sessions = allSessions.filter((item) => item.user.id === current.user.id);
+  const accountSessions = allSessions.filter((item) => item.user.id === current.user.id);
+  const hasCurrentSession = accountSessions.some((item) => item.session.token === current.session.token);
+  const sessions = hasCurrentSession
+    ? accountSessions
+    : [{ user: current.user, session: current.session }, ...accountSessions];
   return (
     <div className="account-shell">
       <aside className="account-sidebar">

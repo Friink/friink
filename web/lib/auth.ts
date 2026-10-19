@@ -820,6 +820,16 @@ export async function refreshAuthSession(accountSlot: string | null = activeAcco
 /** Restore the in-memory session required by any authenticated route entry. */
 export async function restoreAuthSessionForEntry(onSessionValidated?: (accountSlot: string) => void): Promise<AuthSession> {
   const currentSession = loadAuthSession();
+  if (!currentSession) {
+    try {
+      const user = await getCurrentUser('', undefined, true);
+      const restoredSession: AuthSession = { accessToken: '', tokenType: 'Bearer', user };
+      saveAuthSession(restoredSession);
+      return restoredSession;
+    } catch {
+      // Fall through to legacy restoration while the cutover is staged.
+    }
+  }
   const accountSlot = await resolveRefreshSlot(activeAccountSlot(), 350);
   if (!accountSlot) {
     throw new AuthApiError('The account slot is still loading. Please try again.', 0, 'ACCOUNT_SLOT_UNAVAILABLE');

@@ -16509,3 +16509,149 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     Authentication flow and session behavior remain unchanged.
   - Verification Status: `npm run typecheck` and `git diff --check` passed.
     Changes remain uncommitted.
+
+- 2026-10-18T23:49:00Z — Include and label the current active session
+
+  - Agent: Codex
+  - Prompt Summary: Ensure Active Sessions includes the current session and
+    visibly identifies it.
+  - Changes Made: The sessions page now merges the authenticated session into
+    Better Auth's device-session response when absent, and the session list
+    renders a `Current session` label for the matching token. Revocation
+    behavior is unchanged.
+  - Verification Status: Targeted typecheck, production build, and
+    `git diff --check` passed. Changes remain uncommitted.
+
+- 2026-10-19T00:01:18Z — Add verified email change and remove identity lookup
+
+  - Agent: Codex
+  - Prompt Summary: Implement the recommended email-change verification flow
+    and stop exposing account existence through the public entry flow; keep
+    account deletion deferred.
+  - Changes Made: Enabled Better Auth email-change OTP support with current
+    email confirmation, added `/email` and its authenticated API route, linked
+    it from `/me`, removed `/api/identity/lookup`, and changed `/start` and the
+    root entry flow to select sign-in/signup without a lookup response.
+  - Verification Status: `npm run build` passed. Initial typecheck saw stale
+    generated Next types for the deleted route; the subsequent production build
+    regenerated the route graph and passed TypeScript. Changes remain
+    uncommitted.
+- 2026-10-19T00:08:15Z — Add standalone Auth maturity plan
+
+  - Agent: Codex
+  - Prompt Summary: Create a document under `auth/` describing the phased plan
+    to mature the Auth app before it is used by the Friink Web App.
+  - Changes Made: Added `auth/docs/MATURITY-PLAN.md`, linked it from the Auth
+    README, and explicitly kept Web App/API integration, product-data cleanup,
+    and billing integration deferred until a later approved project.
+  - Verification Status: Checked Markdown structure and repository-relative
+    links. No application behavior or integration code changed.
+- 2026-10-19T00:18:05Z — Build the standalone Auth flow screen layer
+
+  - Agent: Codex
+  - Prompt Summary: Make all Auth UI screens first while keeping the Auth app
+    independent from the Friink Web App and API.
+  - Changes Made: Added shared flow-shell components and route-addressable UI
+    for OTP verification, email verification, account status, deactivation,
+    deletion, reactivation, deletion cancellation, secure handoff, consent,
+    and expired links. Added responsive, theme-aware styles and kept action
+    handlers local/mockable for later API wiring.
+  - Verification Status: `npm run typecheck` passed in `auth/`; `git diff
+    --check` passed. Existing unrelated working-tree changes remain
+    unmodified.
+
+- 2026-10-19T00:39:50Z — Add the first Better Auth-to-API session bridge
+
+  - Agent: Codex
+  - Prompt Summary: Start making the Web/API side compatible with Better Auth
+    while preserving the explicit no-migration, no-live-user constraint.
+  - Changes Made: Added protected Auth session introspection, added the API
+    `GET /auth/better-session` bridge, added shared-token configuration, and
+    documented the contract in both service READMEs. Legacy auth/session
+    endpoints remain unchanged.
+  - Verification Status: Auth typecheck passed before this bridge change;
+    `python -m compileall -q app` passed in `api/`; the route appeared in the
+    generated OpenAPI schema; and a real FastAPI request without a session
+    returned `401 {"detail":"Auth session is not available."}`.
+
+- 2026-10-19T00:54:17Z — Start the Web App Better Auth cutover
+
+  - Agent: Codex
+  - Prompt Summary: Connect the Web App to Better Auth after proving the API
+    bridge, with no user migration.
+  - Changes Made: Web `/login` now redirects to Auth `/start`; the API accepts
+    Better Auth cookies as a fallback when no legacy bearer token exists; Web
+    and deployment documentation now declare the Auth origin configuration.
+  - Verification Status: `npx tsc --noEmit` passed in `web/`; API Python
+    compilation passed; OpenAPI route and unauthenticated bridge behavior were
+    verified. End-to-end authenticated session testing remains pending.
+
+- 2026-10-19T00:57:30Z — Flush the Better Auth development database
+
+  - Agent: Codex
+  - Prompt Summary: Reset the Auth database before creating fresh test users;
+    no production users or migration are in scope.
+  - Changes Made: Verified `auth/.env` resolves to the PostgreSQL database
+    named `auth`, truncated its public Better Auth tables with cascade, and
+    verified `account`, `session`, `user`, and `verification` each contain zero
+    rows.
+  - Verification Status: Database metadata and post-reset row counts were
+    checked successfully.
+
+- 2026-10-19T01:01:00Z — Apply the API schema to the new database
+
+  - Agent: Codex
+  - Prompt Summary: Use the corrected `api/.env` location for the new database
+    and make it ready for the API.
+  - Changes Made: Applied all repository Alembic migrations to the configured
+    PostgreSQL database without resetting data.
+  - Verification Status: `alembic current` reports `20261002_0062 (head)` and
+    `alembic check` reports `No new upgrade operations detected.`
+
+- 2026-10-19T01:08:00Z — Implement Better Auth onboarding provisioning
+
+  - Agent: Codex
+  - Prompt Summary: Make a newly created Better Auth account usable in the
+    Friink Web App.
+  - Changes Made: Auth onboarding now collects username and date of birth;
+    completion stores the onboarding data and calls the trusted API profile
+    provisioning endpoint. The API creates the product user row with the
+    Better Auth UUID and validates age, identity, and username uniqueness.
+  - Verification Status: Auth `npm run typecheck` passed; API compilation
+    passed; `/auth/better-profile` appears in the API OpenAPI schema. The
+    Better Auth CLI migration was unavailable in the current environment, so
+    the single additive `dateOfBirth` column was applied directly and verified;
+    the shared internal token still must be configured in deployment
+    environments before an end-to-end account test.
+
+- 2026-10-19T01:15:00Z — Hydrate the Web session from Better Auth
+
+  - Agent: Codex
+  - Prompt Summary: Finish the Web-side session handoff after Auth onboarding
+    and API profile provisioning.
+  - Changes Made: Web session restoration now first calls API `/auth/me` using
+    the Better Auth cookie and stores only the safe app session shape; legacy
+    account restoration remains the fallback.
+  - Verification Status: `npx tsc --noEmit` passed in `web/`.
+
+- 2026-10-19T01:20:00Z — Configure Auth integration environment variables
+
+  - Agent: Codex
+  - Prompt Summary: Create one shared internal token and configure the three
+    Vercel project environments.
+  - Changes Made: Added the generated token to API and Auth local environment
+    files, added Auth-to-API URLs, and added public Auth origin variables to
+    Web production, staging, and development files. The secret was not added
+    to Web environments.
+  - Verification Status: Confirmed the token is present only in API/Auth env
+    files and all required public/private variable names are configured.
+
+- 2026-10-19T01:24:00Z — Verify the Auth onboarding schema
+
+  - Agent: Codex
+  - Prompt Summary: Update the Auth database schema for the new onboarding
+    date-of-birth field.
+  - Changes Made: Checked the `auth` database configured in `auth/.env`; the
+    `public.user.dateOfBirth` column already exists as `timestamp with time zone`.
+  - Verification Status: Schema query succeeded; no duplicate alteration was
+    performed.

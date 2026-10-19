@@ -64,20 +64,19 @@ export default function HomePage() {
   async function continueWithEmail(event: FormEvent) {
     event.preventDefault(); setBusy(true); setMessage("");
     try {
-      const response = await fetch("/api/identity/lookup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Unable to continue");
-      if (result.exists) {
-        if (flow === "sign-up") throw new Error("We couldn’t continue with that email. Check the address or try another one.");
-        setFlow("sign-in"); setStep("credentials");
-      } else {
-        if (flow === "sign-in") throw new Error("We couldn’t continue with that email. Check the address or try again.");
-        setFlow("sign-up");
-        const otpResponse = await fetch("/api/auth-flow/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "signup" }) });
-        const otpResult = await otpResponse.json().catch(() => ({}));
-        if (!otpResponse.ok) throw new Error(otpResult.error ?? "Unable to send a verification code");
-        setStep("verify"); setMessage("We sent a verification code to your email.");
+      if (!flow) {
+        setFlow("sign-in");
+        setStep("credentials");
+        return;
       }
+      if (flow === "sign-in") {
+        setStep("credentials");
+        return;
+      }
+      const otpResponse = await fetch("/api/auth-flow/send-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, purpose: "signup" }) });
+      const otpResult = await otpResponse.json().catch(() => ({}));
+      if (!otpResponse.ok) throw new Error(otpResult.error ?? "Unable to send a verification code");
+      setStep("verify"); setMessage("We sent a verification code to your email.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to continue"); }
     finally { setBusy(false); }
   }

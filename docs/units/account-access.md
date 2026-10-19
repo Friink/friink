@@ -11,17 +11,17 @@ independent accounts remembered on one web device.
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
 
-**Migration status:** The active web/API contract remains the FastAPI auth
-implementation documented below. A separate Better Auth service now owns a
-dedicated identity database and username-enabled schema, but the web/API
-request path has not yet been migrated to it.
+**Migration status:** Better Auth is now the Web App's hosted credential and
+browser-session entry point. The API accepts a Better Auth cookie when it can
+resolve the Better Auth UUID to an existing Friink product user row. Legacy
+FastAPI bearer-token behavior remains as a compatibility path while profile
+provisioning and full feature authorization are completed.
 
-**Planned Better Auth cutover:** Better Auth will become the authoritative
-identity and session service after staged integration. It will generate the
-UUID `user.id`; Friink userdata tables will store that same value as their
-owner reference. The legacy FastAPI auth remains in place until a protected
-API request, web session restoration, logout, expiry, password recovery, and
-staging acceptance have all been verified against Better Auth.
+**Better Auth cutover status:** The first integration slice is active: Web
+login redirects to the hosted Auth app, and the API can validate a Better Auth
+cookie for an existing product user with the same UUID. Web-side session
+hydration, profile provisioning, logout, expiry, password recovery, and staging
+acceptance remain required before the legacy path can be removed.
 
 ---
 
@@ -1323,6 +1323,15 @@ project-wide history. This section records changes specific to this unit.
   account action to `/start`, and added dark-theme styling for the switcher's
   controls and feedback. Authentication flow and session behavior are
   unchanged.
+- 2026-10-18T23:49:00Z — Active Sessions now explicitly includes the current
+  authenticated session when it is absent from Better Auth's device-session
+  response, and labels that row `Current session`. Individual revocation
+  remains unchanged.
+- 2026-10-19T00:01:18Z — Added authenticated email change at `/email` with
+  current-email OTP confirmation followed by new-email OTP confirmation.
+  Removed the public identity lookup endpoint and changed entry routing to
+  avoid exposing account existence through a browser-visible lookup response.
+  Account deletion remains deferred.
 
 - 2026-10-18T23:16:45Z — The Auth app now mounts the shared
   `@friink/account-switcher` package against its direct `/api/auth` endpoint,

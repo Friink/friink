@@ -12,6 +12,8 @@ from starlette.concurrency import run_in_threadpool
 
 from app.config import get_settings
 from app.routers.auth import router as auth_router
+from app.routers.better_auth import router as better_auth_router
+from app.routers.better_auth_profile import router as better_auth_profile_router
 from app.routers.connections import router as connections_router
 from app.routers.chat import router as chat_router
 from app.routers.notifications import router as notifications_router
@@ -61,6 +63,8 @@ app.add_middleware(
     expose_headers=["X-Friink-Request-Id"],
 )
 app.include_router(auth_router)
+app.include_router(better_auth_router)
+app.include_router(better_auth_profile_router)
 app.include_router(connections_router)
 app.include_router(chat_router)
 app.include_router(notifications_router)

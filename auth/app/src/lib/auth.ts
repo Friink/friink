@@ -39,6 +39,11 @@ export const auth = betterAuth({
         required: false,
         input: false,
       },
+      dateOfBirth: {
+        type: "date",
+        required: false,
+        input: false,
+      },
     },
   },
   emailAndPassword: {
@@ -72,6 +77,10 @@ export const auth = betterAuth({
             },
             sendVerificationOnSignUp: true,
             overrideDefaultEmailVerification: true,
+            changeEmail: {
+              enabled: true,
+              verifyCurrentEmail: true,
+            },
             storeOTP: "hashed",
             sendVerificationOTP: async ({ email, otp, type }) => {
               await sendTransactionalEmail({

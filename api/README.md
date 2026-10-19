@@ -45,6 +45,8 @@ RESEND_FROM_NAME=Friink
 ACCOUNT_DELETION_GRACE_DAYS=32
 ACCOUNT_DELETION_WARNING_DAYS=4
 ACCOUNT_LIFECYCLE_INTERNAL_TOKEN=
+AUTH_SERVICE_URL=http://localhost:3001
+AUTH_INTERNAL_TOKEN=
 ```
 
 ## Run
@@ -92,12 +94,18 @@ controlled independently by their dedicated settings.
 - `POST /auth/refresh`
 - `POST /auth/logout`
 - `GET /auth/me`
+- `GET /auth/better-session`
 
 Login returns the access token in JSON and sets the refresh token as an httpOnly cookie. The Next.js client should call the API with:
 
 ```ts
 credentials: "include"
 ```
+
+`GET /auth/better-session` is the first Better Auth bridge endpoint. It forwards
+the browser's Better Auth cookie to the Auth service and returns the Auth user
+UUID and session expiry. It requires `AUTH_INTERNAL_TOKEN` on both services and
+does not replace the legacy endpoints until the bridge is verified end to end.
 
 Use `NEXT_PUBLIC_API_BASE_URL` on the frontend only for the API origin, never for database secrets.
 

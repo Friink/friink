@@ -98,7 +98,7 @@ authorization, and only then retire the legacy FastAPI JWT/session path. No
 user migration is required because the Better Auth database is empty.
 
 - The web project receives only its environment-specific
-  `NEXT_PUBLIC_API_BASE_URL` and the optional
+  `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_AUTH_BASE_URL`, and the optional
   `NEXT_PUBLIC_MIXPANEL_TOKEN`. The Mixpanel token is a browser project token,
   not a server secret.
 - The API project owns `DATABASE_URL`, authentication secrets, environment
