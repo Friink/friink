@@ -34,6 +34,19 @@ input:focus { border-color: #33aa55; outline: 2px solid rgb(51 170 85 / 22%); }
 button { min-height: 3rem; margin-top: .35rem; border-radius: 8px; background: #33aa55; font-size: .95rem; font-weight: 500; }
 .notice { margin-top: .75rem; color: #b54444; }
 .footer { width: min(100% - 3rem, 31rem); padding: 1.25rem 0; border-top: 1px solid #e3e6e3; }
+@media (prefers-color-scheme: dark) {
+  :host { color: #f4f5f2; }
+  .shell { background: #161616; }
+  .header, .footer { border-color: rgba(255,255,255,.14); }
+  .card { background: transparent; }
+  h1, label { color: #f4f5f2; }
+  .intro, .label, .eyebrow, .footer { color: #a7aea8; }
+  input { border-color: #52665a; background: #222823; color: #f4f5f2; }
+  input::placeholder { color: #8f9991; }
+  input:focus { border-color: #63c878; outline-color: rgba(99,200,120,.28); }
+  button { border-color: #63c878; background: #43a958; }
+  .notice { color: #f08b8b; }
+}
 `;
 
 function getAttribute(element, name, fallback) {

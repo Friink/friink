@@ -6125,3 +6125,8 @@ _Last updated: 2026-09-10_
   by returning the Auth account to pending onboarding state when provisioning
   fails.
 
+## 2026-10-19T01:38:00Z
+
+- Updated the shared Auth onboarding Web Component with a dark-theme treatment
+  for its surface, typography, fields, focus states, button, and error notice.
+

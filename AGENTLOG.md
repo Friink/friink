@@ -16667,3 +16667,13 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     the form is safe and intentional.
   - Verification Status: Web TypeScript check, Auth typecheck, and API Python
     compilation passed.
+
+- 2026-10-19T01:38:00Z — Make Auth onboarding theme-aware
+
+  - Agent: Codex
+  - Prompt Summary: Make the onboarding page follow the active light/dark
+    theme.
+  - Changes Made: Added a shared dark-mode treatment to the onboarding Web
+    Component, covering its canvas, text, inputs, focus ring, primary action,
+    and error state while preserving the existing light treatment.
+  - Verification Status: `npm run typecheck` passed in `auth/`.
