@@ -35,6 +35,12 @@
   production build now pass, including `/security`, `/security/sessions`, and
   `/settings`.
 
+## 2026-10-19T03:00:00Z
+
+- [auth UI] Restyled the authenticated shell with a left black navigation rail
+  and black header, removed their borders, and added theme-specific content
+  surfaces (`#eeeeee` light, `#222222` dark) with a rounded upper-right corner.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,

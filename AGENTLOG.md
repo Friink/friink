@@ -16723,3 +16723,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   omitted from the prior commit. Committed it as `6a1e42c`, pushed it, and
   verified both Auth typecheck and the full production build successfully.
 
+# 2026-10-19T03:00:00Z
+
+- Moved the Auth shell rail to the left and restyled the header/rail as one
+  borderless black component in both themes. Set the account content surface to
+  `#eeeeee` in light mode and `#222222` in dark mode with a rounded upper-right
+  corner. Auth typecheck and production build passed.
+
