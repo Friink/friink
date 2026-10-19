@@ -6198,3 +6198,9 @@ _Last updated: 2026-09-10_
 - Signed-in users now see Continue, Use another account, and Sign out instead
   of being able to silently start a duplicate same-account login flow.
 
+## 2026-10-19T04:00:00Z
+
+- Added Font Awesome Free to the Auth app shell.
+- Replaced shell rail and logout Unicode placeholders with consistent,
+  accessible Font Awesome icons, including a busy-state spinner.
+

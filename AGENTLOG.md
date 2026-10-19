@@ -16751,3 +16751,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   and `{ sessions: [...] }` responses are supported. Auth typecheck passed;
   changes remain unpushed per user instruction.
 
+# 2026-10-19T04:00:00Z
+
+- Added `@fortawesome/fontawesome-free` to the Auth app.
+- Updated the reusable account shell and logout action to use Font Awesome
+  icons instead of Unicode symbols. Auth typecheck passed; changes remain
+  unpushed per user instruction.
+

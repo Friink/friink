@@ -21,10 +21,10 @@ export default function AccountShell({ username, currentToken, activePath, child
       <main className="account-content">{children}</main>
       <aside className="account-rail" aria-label="Account navigation">
         <nav className="account-rail-nav">
-          <a className={activePath === "profile" ? "active" : ""} href={profileHref} aria-label="Profile" aria-current={activePath === "profile" ? "page" : undefined}>⌂</a>
-          <a className={activePath === "settings" ? "active" : ""} href="/settings" aria-label="Settings" aria-current={activePath === "settings" ? "page" : undefined}>⚙</a>
-          <a className={activePath === "security" ? "active" : ""} href="/security" aria-label="Security" aria-current={activePath === "security" ? "page" : undefined}>♢</a>
-          <a className={activePath === "status" ? "active" : ""} href="/account-status" aria-label="Account status" aria-current={activePath === "status" ? "page" : undefined}>◎</a>
+          <a className={activePath === "profile" ? "active" : ""} href={profileHref} aria-label="Profile" aria-current={activePath === "profile" ? "page" : undefined}><i className="fa-solid fa-house" aria-hidden="true" /></a>
+          <a className={activePath === "settings" ? "active" : ""} href="/settings" aria-label="Settings" aria-current={activePath === "settings" ? "page" : undefined}><i className="fa-solid fa-gear" aria-hidden="true" /></a>
+          <a className={activePath === "security" ? "active" : ""} href="/security" aria-label="Security" aria-current={activePath === "security" ? "page" : undefined}><i className="fa-solid fa-shield-halved" aria-hidden="true" /></a>
+          <a className={activePath === "status" ? "active" : ""} href="/account-status" aria-label="Account status" aria-current={activePath === "status" ? "page" : undefined}><i className="fa-solid fa-circle-user" aria-hidden="true" /></a>
         </nav>
         <AccountActions currentToken={currentToken} />
       </aside>

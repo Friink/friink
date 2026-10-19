@@ -13,6 +13,7 @@
     "db:check": "npx auth@latest check --config app/src/lib/auth.ts"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.3.1",
     "@friink/account-switcher": "file:./packages/account-switcher",
     "@friink/onboarding": "file:./packages/onboarding",
     "better-auth": "^1.7.10",
