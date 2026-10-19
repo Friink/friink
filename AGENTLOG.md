@@ -16701,3 +16701,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   states, reconcile deployment configuration, add targeted verification, align
   documentation, and require clean-browser staging acceptance before promotion.
 
+# 2026-10-19T02:25:00Z
+
+- Replaced the Web account-slot switcher with the shared
+  `@friink/account-switcher` package. The Web package now calls Better Auth's
+  direct cross-subdomain session and multi-session endpoints; legacy Web
+  account discovery/switch/add/remove UI was removed. TypeScript verification
+  passed; no full build was run.
+

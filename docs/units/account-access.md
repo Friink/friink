@@ -7,9 +7,9 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-18T01:25:00Z
+**Last edited:** 2026-10-19T02:25:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
-**Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
+**Canonical sources:** [`docs/rules.md`](../rules.md), `auth/packages/account-switcher/src/account-switcher.js`, `api/app/routers/auth.py`, `web/lib/auth.ts`
 
 **Migration status:** Better Auth is now the Web App's hosted credential and
 browser-session entry point. The API accepts a Better Auth cookie when it can
@@ -20,8 +20,11 @@ provisioning and full feature authorization are completed.
 **Better Auth cutover status:** The first integration slice is active: Web
 login redirects to the hosted Auth app, and the API can validate a Better Auth
 cookie for an existing product user with the same UUID. Web-side session
-hydration, profile provisioning, logout, expiry, password recovery, and staging
-acceptance remain required before the legacy path can be removed.
+hydration and profile provisioning are active. Web account switching now uses
+the shared `@friink/account-switcher` package and Better Auth's multi-session
+endpoints; the legacy Web account-slot switcher has been removed. Logout,
+expiry, password recovery, full feature authorization, and staging acceptance
+remain required before the remaining legacy authentication path can be removed.
 
 ---
 

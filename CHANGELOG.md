@@ -13,6 +13,13 @@
   reliable provisioning, recovery behavior, environment reconciliation,
   verification, documentation, and staging acceptance gates.
 
+## 2026-10-19T02:25:00Z
+
+- [web auth cleanup] Replaced the Web app's legacy account-slot switcher with
+  the shared `@friink/account-switcher` package backed by Better Auth
+  multi-session endpoints. Removed the Web-side account discovery, switching,
+  add-account, and remembered-account removal UI path.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,

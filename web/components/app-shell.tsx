@@ -1159,7 +1159,7 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
     return (
       <main className="app-shell" data-theme={appearance} aria-busy="true">
         <div className="app-layout" inert>
-          <SideDrawer user={user} activeScreen={sidebarActiveScreen} collapsed={sidebarCollapsed} onNavigate={navigateTo} onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)} onLogout={onLogout} onAccountChange={onUserChange} onToast={addToast} />
+          <SideDrawer user={user} activeScreen={sidebarActiveScreen} collapsed={sidebarCollapsed} onNavigate={navigateTo} onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)} onLogout={onLogout} />
           <TopBar title={getPageTitle(activeScreen)} isHome={activeScreen === 'home'} sidebarCollapsed={sidebarCollapsed} isSearchPage={activeScreen === 'search'} initialSearchQuery={initialSearchQuery} searchFilter={searchFilter} searchScope={activeScreen === 'messages' ? 'messages' : 'global'} notificationCount={0} unreadMessageCount={0} notifications={[]} hasUnreadMessages={false} backDisabled menuItems={[]} onNavigate={navigateTo} onBack={() => undefined} onToggleSidebar={() => undefined} />
           <section className="main-panel">
             <div className="main-content app-entry-content" aria-hidden="true">
@@ -1212,8 +1212,6 @@ export function AppShell({ user, onLogout, logoutError, initialScreen = 'home', 
           onNavigate={navigateTo}
           onToggleCollapsed={() => persistSidebarCollapsed(!sidebarCollapsed)}
           onLogout={onLogout}
-          onAccountChange={onUserChange}
-          onToast={addToast}
         />
 
         <TopBar

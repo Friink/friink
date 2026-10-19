@@ -1,13 +1,10 @@
 import { sidebarNavItems, type Screen } from '@/lib/data';
-import { DEFAULT_PROFILE_IMAGE, ProfileCard } from '@/components/profile-card';
+import { DEFAULT_PROFILE_IMAGE } from '@/components/profile-card';
 import Image from 'next/image';
-import { Modal } from '@/components/modal';
-import { LoginScreen } from '@/components/login-screen';
-import { ActionMenu, type ActionMenuItem } from '@/components/action-menu';
-import { BetaBadge } from '@/components/design/beta-badge';
 import type { AuthUser } from '@/lib/auth';
-import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { discoverAccounts, getRememberedAccountSummaries, loadAuthSession, removeAccount, switchAccount, type AccountSummary } from '@/lib/auth';
+import { type PointerEvent, useEffect, useRef, useState } from 'react';
+import { getAuthOrigin } from '@/lib/api-origin';
+import '@friink/account-switcher';
 
 type SideDrawerProps = {
   user: AuthUser;
@@ -16,114 +13,53 @@ type SideDrawerProps = {
   onNavigate: (screen: Screen) => void;
   onToggleCollapsed: () => void;
   onLogout: (options?: { serverSessionAlreadyEnded?: boolean }) => void | Promise<void>;
-  onAccountChange?: (user: AuthUser) => void;
-  onToast?: (message: string) => void;
 };
 
-type AccountOperation = 'switch' | 'remove' | 'add' | null;
+function AuthAccountSwitcher() {
+  const hostRef = useRef<HTMLDivElement | null>(null);
 
-function getInitials(value: string) {
-  return (
-    value
-      .replace(/[^A-Za-z0-9]+/g, ' ')
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('')
-      .slice(0, 2) || 'FR'
-  );
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    const switcher = document.createElement('account-switcher');
+    const authOrigin = getAuthOrigin();
+    switcher.setAttribute('auth-url', authOrigin);
+    switcher.setAttribute('api-base', `${authOrigin}/api/auth`);
+    host.replaceChildren(switcher);
+    const reload = () => window.location.reload();
+    window.addEventListener('friink:active-account-changed', reload);
+    return () => {
+      window.removeEventListener('friink:active-account-changed', reload);
+      host.replaceChildren();
+    };
+  }, []);
+
+  return <div ref={hostRef} className="auth-account-switcher" />;
 }
 
-export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout, onAccountChange, onToast }: SideDrawerProps) {
+export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggleCollapsed, onLogout }: SideDrawerProps) {
   const ref = useRef<HTMLElement | null>(null);
-  const hoverExpansionExitPending = useRef(false);
   const [hoverExpanded, setHoverExpanded] = useState(false);
-  const [accounts, setAccounts] = useState<AccountSummary[]>(() => getRememberedAccountSummaries());
-  const [accountOperation, setAccountOperation] = useState<AccountOperation>(null);
-  const [accountSwitchingUsername, setAccountSwitchingUsername] = useState<string | null>(null);
-  const [accountModal, setAccountModal] = useState<'add' | null>(null);
-  const [removeTarget, setRemoveTarget] = useState<AccountSummary | null>(null);
-  const [accountNotice, setAccountNotice] = useState('');
-  const [accountModalMessage, setAccountModalMessage] = useState('');
-  const [accountLoading, setAccountLoading] = useState(false);
-  const [accountSwitcherEnabled, setAccountSwitcherEnabled] = useState<boolean | null>(null);
-  const [accountAddAllowed, setAccountAddAllowed] = useState(false);
-  const [accountLoadError, setAccountLoadError] = useState(false);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
-  const accountRefreshId = useRef(0);
-  const accountRefreshPromise = useRef<Promise<void> | null>(null);
 
   function handleDrawerPointerEnter(event: PointerEvent<HTMLElement>) {
-    hoverExpansionExitPending.current = false;
     if (event.pointerType === 'touch' || !window.matchMedia('(min-width: 768px)').matches) return;
     setHoverExpanded(true);
   }
 
   function handleDrawerPointerLeave() {
-    if (accountMenuOpen) {
-      hoverExpansionExitPending.current = true;
-      return;
-    }
     setHoverExpanded(false);
-  }
-
-  function handleAccountMenuClose() {
-    setAccountMenuOpen(false);
-    if (hoverExpansionExitPending.current) {
-      hoverExpansionExitPending.current = false;
-      setHoverExpanded(false);
-    }
   }
 
   useEffect(() => {
     const desktopOrTablet = window.matchMedia('(min-width: 768px)');
     const resetMobileHoverExpansion = () => {
       if (desktopOrTablet.matches) return;
-      hoverExpansionExitPending.current = false;
       setHoverExpanded(false);
     };
 
     resetMobileHoverExpansion();
     desktopOrTablet.addEventListener('change', resetMobileHoverExpansion);
     return () => desktopOrTablet.removeEventListener('change', resetMobileHoverExpansion);
-  }, []);
-
-  const refreshAccounts = useCallback(() => {
-    if (accountRefreshPromise.current) return accountRefreshPromise.current;
-
-    const request = (async () => {
-      if (!loadAuthSession()) return;
-      const refreshId = ++accountRefreshId.current;
-      setAccountLoading(true);
-      setAccountLoadError(false);
-      try {
-        try {
-          const nextAccounts = await discoverAccounts();
-          if (refreshId !== accountRefreshId.current) return;
-          setAccounts(nextAccounts.accounts);
-          setAccountSwitcherEnabled(nextAccounts.switcherEnabled);
-          setAccountAddAllowed(nextAccounts.allowed);
-          if (!nextAccounts.switcherEnabled) {
-            setAccountMenuOpen(false);
-            setAccountModal(null);
-          }
-          setAccountNotice('');
-        } catch {
-          if (refreshId !== accountRefreshId.current) return;
-          setAccountLoadError(true);
-        }
-      } finally {
-        setAccountLoading(false);
-      }
-    })();
-
-    const trackedRequest = request.finally(() => {
-      if (accountRefreshPromise.current === trackedRequest) accountRefreshPromise.current = null;
-    });
-    accountRefreshPromise.current = trackedRequest;
-    return trackedRequest;
   }, []);
 
   useEffect(() => {
@@ -148,72 +84,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
       document.removeEventListener('focusin', handleOutside);
     };
   }, [collapsed, onToggleCollapsed]);
-
-  useEffect(() => {
-    void refreshAccounts();
-  }, [refreshAccounts, user.id]);
-
-  async function handleAccountSwitch(account: AccountSummary) {
-    const session = loadAuthSession();
-    if (!session || account.active || accountOperation) return;
-    setAccountOperation('switch');
-    setAccountSwitchingUsername(account.username);
-    try {
-      const next = await switchAccount(account.accountSlot);
-      setAccounts((items) => items.map((item) => ({ ...item, active: item.accountSlot === next.accountSlot })));
-      onAccountChange?.(next.user);
-      window.location.reload();
-    } catch (error) {
-      onToast?.(error instanceof Error && error.message.includes('too long')
-        ? 'Switching is taking too long. Please try again.'
-        : 'Couldn’t switch accounts. Please try again.');
-    } finally {
-      setAccountOperation(null);
-      setAccountSwitchingUsername(null);
-    }
-  }
-
-  async function confirmRemoveAccount() {
-    const session = loadAuthSession();
-    if (!session || !removeTarget || accountOperation) return;
-    setAccountOperation('remove');
-    try {
-      await removeAccount(session.accessToken, removeTarget.accountSlot);
-      if (removeTarget.active) {
-        const remaining = accounts.filter((item) => item.accountSlot !== removeTarget.accountSlot).sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
-        if (remaining[0]) {
-          const next = await switchAccount(remaining[0].accountSlot);
-          onAccountChange?.(next.user);
-          window.location.reload();
-          return;
-        }
-        await onLogout({ serverSessionAlreadyEnded: true });
-        return;
-      }
-      setAccounts((items) => items.filter((item) => item.accountSlot !== removeTarget.accountSlot));
-      setRemoveTarget(null);
-      await refreshAccounts();
-    } catch {
-      // Keep the current account usable on recoverable failures and expose a
-      // retryable notice instead of silently losing the user's action.
-      setAccountNotice('We could not log out that account. Please try again.');
-    } finally {
-      setAccountOperation(null);
-    }
-  }
-
-  async function handleAddAccount() {
-    const session = loadAuthSession();
-    if (!session || accountOperation === 'add' || accountOperation === 'remove') return;
-    setAccountOperation('add');
-    try {
-      setAccountNotice('');
-      setAccountModalMessage(accountAddAllowed ? '' : 'You have reached the maximum number of remembered accounts.');
-      setAccountModal('add');
-    } finally {
-      setAccountOperation(null);
-    }
-  }
 
   function handleNavigate(screen: Screen) {
     onNavigate(screen);
@@ -247,37 +117,6 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
     }
   }
 
-  const menuAccounts = accounts.length > 0 ? accounts : [{
-    accountSlot: '',
-    username: user.username,
-    displayName: user.name,
-    profilePictureUrl: user.profilePictureUrl,
-    active: true,
-    available: true,
-    lastUsedAt: '',
-    showProfessionalBadge: user.showProfessionalBadge,
-  } satisfies AccountSummary];
-  const accountMenuItems: ActionMenuItem[] = [
-    ...menuAccounts.map((account) => ({
-      label: `@${account.username}${account.active ? ' (current)' : ''}`,
-      icon: 'fa-circle-user',
-      imageUrl: account.profilePictureUrl || DEFAULT_PROFILE_IMAGE,
-      trailingIcon: accountSwitchingUsername === account.username ? 'fa-spinner fa-spin' : account.active ? 'fa-check' : 'fa-right-from-bracket',
-      trailingAction: account.active ? undefined : () => setRemoveTarget(account),
-      trailingAriaLabel: account.active ? undefined : `Log out @${account.username}`,
-      disabled: account.active || accountOperation !== null,
-      closeOnClick: false,
-      onClick: () => void handleAccountSwitch(account),
-    })),
-    ...(accountSwitcherEnabled ? [{
-      label: 'Add account',
-      icon: 'fa-user-plus',
-      disabled: accountOperation === 'add' || accountOperation === 'remove',
-      closeOnClick: false,
-      onClick: () => void handleAddAccount(),
-    }] : []),
-  ];
-
   return (
     <aside
       ref={ref}
@@ -303,52 +142,7 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           </span>
           <span className="sidebar-profile-label">@{user.username}</span>
         </a>
-        {accountSwitcherEnabled ? <button
-          ref={accountMenuButtonRef}
-          className="sidebar-account-menu-button"
-          type="button"
-          aria-label="Switch account"
-          aria-expanded={accountMenuOpen}
-          aria-busy={accountLoading}
-          onClick={() => {
-            if (accountMenuOpen) {
-              handleAccountMenuClose();
-              return;
-            }
-            setAccountMenuOpen(true);
-          }}
-        >
-          <span className="sidebar-account-menu-icon" aria-hidden="true">
-            <i className="fa-solid fa-caret-down" />
-          </span>
-        </button> : null}
-        {accountSwitcherEnabled ? <ActionMenu
-          open={accountMenuOpen}
-          anchorRef={accountMenuButtonRef}
-          onClose={handleAccountMenuClose}
-          ariaLabel="Account switcher"
-          className="account-switcher-menu"
-          header={
-            <div className="account-switcher-header" role="status" aria-live="polite">
-              <span className="account-switcher-header-title">
-                <span>Switch Account</span>
-                <BetaBadge />
-              </span>
-              <span className="account-switcher-header-status">
-                {accountLoading ? <i className="fa-solid fa-spinner fa-spin" aria-label="Updating accounts" /> : null}
-                {!accountLoading ? <button
-                  className="account-switcher-refresh"
-                  type="button"
-                  aria-label={accountLoadError ? 'Retry account refresh' : 'Refresh accounts'}
-                  title={accountLoadError ? 'Retry account refresh' : 'Refresh accounts'}
-                  disabled={accountOperation !== null}
-                  onClick={() => void refreshAccounts()}
-                ><i className="fa-solid fa-rotate" aria-hidden="true" /></button> : null}
-              </span>
-            </div>
-          }
-          items={accountMenuItems}
-        /> : null}
+        <AuthAccountSwitcher />
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
@@ -389,31 +183,13 @@ export function SideDrawer({ user, activeScreen, collapsed, onNavigate, onToggle
           </span>
           <span>Settings</span>
         </a>
-        <button className="sidebar-action" type="button" onClick={() => { const active = accounts.find((item) => item.active); if (active) setRemoveTarget(active); else onLogout(); }}>
+        <button className="sidebar-action" type="button" onClick={() => onLogout()}>
           <span className="nav-item-icon" aria-hidden="true">
             <i className="fa-solid fa-right-from-bracket" />
           </span>
           <span>Log out</span>
         </button>
       </div>
-      {accountModal === 'add' ? <Modal title="Add account" className="account-auth-modal" onClose={() => { setAccountModalMessage(''); setAccountModal(null); }}><LoginScreen mode="account-modal" initialMessage={accountModalMessage} onAuthenticated={(nextUser) => { onAccountChange?.(nextUser); setAccountModalMessage(''); setAccountModal(null); void refreshAccounts(); }} /></Modal> : null}
-      {removeTarget ? (
-        <Modal
-          title="Log out account"
-          onClose={() => setRemoveTarget(null)}
-          actions={(
-            <>
-              <button className="button-secondary" type="button" onClick={() => setRemoveTarget(null)} disabled={accountOperation === 'remove'}>Cancel</button>
-              <button className="button-primary" type="button" disabled={accountOperation === 'remove'} onClick={() => void confirmRemoveAccount()}>Log out</button>
-            </>
-          )}
-        >
-          <div className="logout-confirm-account">
-            <ProfileCard name={removeTarget.displayName || removeTarget.username} handle={`@${removeTarget.username}`} tone="mint" initials={getInitials(removeTarget.displayName || removeTarget.username)} imageUrl={removeTarget.profilePictureUrl || DEFAULT_PROFILE_IMAGE} showProfessionalBadge={removeTarget.showProfessionalBadge} />
-          </div>
-          <p>{removeTarget.active ? 'You will be switched to your most recently used account.' : `Log out @${removeTarget.username} on this device?`}</p>
-        </Modal>
-      ) : null}
     </aside>
   );
 }

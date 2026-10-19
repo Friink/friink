@@ -1928,13 +1928,6 @@ textarea {
   visibility: hidden;
 }
 
-/* Account menus are portaled to body, so keep their sizing outside sidebar scope. */
-.account-switcher-menu {
-  box-sizing: border-box;
-  width: min(16rem, calc(100vw - 1rem));
-  min-width: 0;
-}
-
 body:has(.app-shell[data-theme='dark']) .action-menu:not(.public-account-menu) {
   border-color: #555555;
   background: #161616;
@@ -5297,47 +5290,6 @@ body:has(.lifecycle-screen[data-theme='dark']) .account-auth-modal {
   border: 0;
   color: var(--color-ink);
   outline: none;
-}
-
-.sidebar-account-menu-button {
-  display: inline-grid;
-  flex: 0 0 2rem;
-  aspect-ratio: 1;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 0;
-  border-radius: 50%;
-  padding: 0;
-  color: var(--color-muted);
-  background: transparent;
-  font: inherit;
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button:hover,
-.sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button:focus-visible,
-.sidebar:not(.sidebar-collapsed) .sidebar-account-menu-button[aria-expanded='true'] {
-  color: var(--color-accent);
-  background: var(--color-sidebar-active);
-  outline: none;
-}
-
-.sidebar-account-menu-icon {
-  display: inline-grid;
-  width: var(--space-sidebar-account-icon-cell);
-  height: var(--space-sidebar-account-icon-cell);
-  place-items: center;
-}
-
-.sidebar-account-menu-icon i {
-  display: block;
-  width: var(--space-sidebar-account-icon-size);
-  height: var(--space-sidebar-account-icon-size);
-  font-size: var(--space-sidebar-account-icon-size);
-  line-height: 1;
-  text-align: center;
 }
 
 .floating-bar-composer-multiline {
