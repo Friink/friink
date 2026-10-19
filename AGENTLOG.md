@@ -16736,3 +16736,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   black page background, and round the content surface at the upper-left.
   Per user instruction, these changes were not pushed.
 
+# 2026-10-19T03:20:00Z
+
+- Locally adjusted the Web sidebar account-switcher host to show only in the
+  expanded drawer, hide in collapsed mode, and allow its dropdown to extend
+  outside the sidebar without clipping. Per user instruction, changes remain
+  unpushed.
+

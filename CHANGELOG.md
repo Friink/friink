@@ -28,6 +28,13 @@
   `/security/sessions` beneath it. Added `/settings` and moved logout to the
   rail footer.
 
+## 2026-10-19T03:20:00Z
+
+- [web auth UI] Updated the Web sidebar account-switcher presentation so the
+  dropdown control appears only when the drawer is expanded, disappears when
+  collapsed, and can extend beyond the sidebar without being clipped. Changes
+  remain local and unpushed for review.
+
 ## 2026-10-19T02:50:00Z
 
 - [auth deployment] Fixed the Auth shell deployment by committing the shared
