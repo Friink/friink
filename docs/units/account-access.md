@@ -814,7 +814,8 @@ The account-switcher behavior is implemented once in the framework-neutral
 `@friink/account-switcher` package. Hosts choose a presentation variant without
 forking its session behavior:
 
-- `icon`: avatar with a dropdown arrow; used by the Auth shell top bar and
+- `button`: dropdown button only; used by the Web app drawer;
+- `picture`: avatar with a dropdown arrow; used by the Auth shell top bar and
   intended for narrow chrome;
 - `compact`: avatar and `@username`; intended for an expanded navigation area;
 - `full`: display name, email, username, and dropdown arrow; the package
@@ -838,12 +839,13 @@ and recovery redirects.
 #### Presentation contract
 
 - **ACCESS-R-036:** Shared account-switcher variants change presentation only;
-  `icon`, `compact`, and `full` expose the same Auth-authoritative account and
-  session operations.
+  `button`, `picture`, `compact`, and `full` expose the same Auth-authoritative
+  account and session operations.
 
 #### Presentation acceptance criteria
 
-- [ ] **ACCESS-AC-055** Auth renders the shared switcher in icon mode.
+- [ ] **ACCESS-AC-055** Auth renders the shared switcher in picture mode and
+      Web renders it in button mode.
 - [ ] **ACCESS-AC-056** Compact mode shows avatar and `@username` without
       clipping the trigger or arrow.
 - [ ] **ACCESS-AC-057** Full mode shows name, email, username, and arrow with

@@ -14,10 +14,12 @@ strong { font-size: .78rem; }
 small { color: #6f766f; font-size: .7rem; }
 .chevron { width: .55rem; height: .55rem; flex: 0 0 .55rem; margin: -.2rem .2rem 0 0; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 180ms ease; }
 .trigger[aria-expanded="true"] .chevron { margin-top: .2rem; transform: rotate(225deg); }
-.switcher[data-variant="icon"] .trigger { position: relative; width: 2.125rem; height: 2.125rem; justify-content: center; padding: .1875rem; border: 0; border-radius: 50%; }
-.switcher[data-variant="icon"] .avatar { width: 1.75rem; height: 1.75rem; border-radius: 50%; }
-.switcher[data-variant="icon"] .summary { display: none; }
-.switcher[data-variant="icon"] .chevron { position: absolute; right: .08rem; bottom: .12rem; width: .45rem; height: .45rem; margin: 0; border-width: 1.5px; border-color: #ffffff; transform: rotate(45deg); filter: drop-shadow(0 0 0.1rem #111111); }
+.switcher[data-variant="button"] .trigger { width: 2.125rem; height: 2.125rem; justify-content: center; padding: .1875rem; }
+.switcher[data-variant="button"] .avatar, .switcher[data-variant="button"] .summary { display: none; }
+.switcher[data-variant="picture"] .trigger, .switcher[data-variant="icon"] .trigger { position: relative; width: 2.125rem; height: 2.125rem; justify-content: center; padding: .1875rem; border: 0; border-radius: 50%; }
+.switcher[data-variant="picture"] .avatar, .switcher[data-variant="icon"] .avatar { width: 1.75rem; height: 1.75rem; border-radius: 50%; }
+.switcher[data-variant="picture"] .summary, .switcher[data-variant="icon"] .summary { display: none; }
+.switcher[data-variant="picture"] .chevron, .switcher[data-variant="icon"] .chevron { position: absolute; right: .08rem; bottom: .12rem; width: .45rem; height: .45rem; margin: 0; border-width: 1.5px; border-color: #ffffff; transform: rotate(45deg); filter: drop-shadow(0 0 0.1rem #111111); }
 .switcher[data-variant="compact"] .summary small { display: none; }
 .switcher[data-variant="compact"] .summary strong::after { content: ''; }
 .username { display: none; color: #6f766f; font-size: .68rem; }
@@ -112,7 +114,7 @@ export class AccountSwitcher extends ElementBase {
   render() {
     this.shadowRoot?.replaceChildren();
     const root = this.attachShadow({ mode: "open" });
-    const variant = ["icon", "compact", "full"].includes(this.getAttribute("variant")) ? this.getAttribute("variant") : "full";
+    const variant = ["button", "picture", "compact", "full", "icon"].includes(this.getAttribute("variant")) ? this.getAttribute("variant") : "full";
     root.innerHTML = `<style>${styles}</style><div class="switcher" data-variant="${variant}"><button class="trigger" type="button" aria-expanded="false"><span class="avatar">?</span><span class="summary"><strong>Account</strong><small>Loading…</small><span class="username"></span></span><span class="chevron" aria-hidden="true"></span></button><div class="menu" hidden><p class="label">Available accounts</p><div class="accounts"></div><button class="action add" type="button">＋ Add account</button><button class="action logout" type="button">Log out account ↗</button><p class="error" hidden></p></div><div class="toast" role="status" aria-live="polite" hidden><strong>Account changed</strong><span class="toast-copy"></span><button class="toast-close" type="button" aria-label="Dismiss">×</button></div></div>`;
     this.root = root;
     root.querySelector(".trigger").addEventListener("click", () => { const menu = root.querySelector(".menu"); menu.hidden = !menu.hidden; root.querySelector(".trigger").setAttribute("aria-expanded", String(!menu.hidden)); });

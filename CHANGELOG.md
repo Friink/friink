@@ -6243,3 +6243,9 @@ _Last updated: 2026-09-10_
   account shell, incomplete onboarding opens onboarding, and explicit login,
   recovery, signup, and Add-account flows remain reachable.
 
+## 2026-10-19T05:30:00Z
+
+- Expanded the shared account switcher to `button`, `picture`, `compact`, and
+  `full` modes.
+- Configured Auth to use `picture` and Web to use `button`.
+

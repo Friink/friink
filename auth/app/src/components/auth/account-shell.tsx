@@ -16,7 +16,7 @@ export default function AccountShell({ username, currentToken, activePath, child
     <div className="account-shell">
       <header className="account-topbar">
         <a className="brand" href="/" aria-label="Friink home">m</a>
-        <AccountSwitcherElement authUrl={config.authUrl} variant="icon" />
+        <AccountSwitcherElement authUrl={config.authUrl} variant="picture" />
       </header>
       <main className="account-content">{children}</main>
       <aside className="account-rail" aria-label="Account navigation">

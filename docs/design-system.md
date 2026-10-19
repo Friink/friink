@@ -413,13 +413,15 @@ in [`packages/design/design.md`](../packages/design/design.md).
 ### Shared account switcher
 
 The reusable `@friink/account-switcher` presents the same Auth-owned account
-and session behavior in three layout modes: `icon` shows the avatar and
-dropdown arrow, `compact` shows the avatar and `@username`, and `full` shows
-the display name, email, username, and arrow. Hosts select the mode according
+and session behavior in four layout modes: `button` shows only a dropdown
+button, `picture` shows the avatar and dropdown arrow, `compact` shows the
+avatar and `@username`, and `full` shows the display name, email, username,
+and arrow. Hosts select the mode according
 to available space; the mode must not change account permissions, session
 ownership, or switching behavior. The trigger and menu must remain accessible,
 responsive, and free of clipping; identity labels truncate before fixed
-controls. The Auth shell uses `icon` in its top bar, right-aligned inside a
+controls. The Auth shell uses `picture` in its top bar, while the Web app uses
+`button` in its drawer. The Auth switcher is right-aligned inside a
 42px black top bar. The Auth shell's 42px black rail uses 4px internal padding;
 its brand mark aligns with the rail icon cells, has no hover background, and
 active rail links do not retain a permanent fill. Account Status is a Settings

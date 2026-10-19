@@ -25,6 +25,7 @@ function AuthAccountSwitcher() {
     const authOrigin = getAuthOrigin();
     switcher.setAttribute('auth-url', authOrigin);
     switcher.setAttribute('api-base', `${authOrigin}/api/auth`);
+    switcher.setAttribute('variant', 'button');
     host.replaceChildren(switcher);
     const reload = () => window.location.reload();
     window.addEventListener('friink:active-account-changed', reload);

@@ -16798,3 +16798,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `auth/docs/MATURITY-PLAN.md` with the active Auth-domain entry contract and
   its explicit-flow exceptions. Documentation-only change; remains unpushed.
 
+# 2026-10-19T05:30:00Z
+
+- Expanded the shared account switcher to `button`, `picture`, `compact`, and
+  `full` modes; configured Auth to use `picture` and Web to use `button`.
+- Updated the related component, rules, unit, design, and maturity-plan
+  documentation. Auth typecheck passed; changes remain unpushed.
+

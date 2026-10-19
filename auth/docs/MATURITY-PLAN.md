@@ -284,8 +284,9 @@ Work:
 - replace generic authentication failures with user-safe handling for missing
   profiles, expired sessions, deactivated accounts, and pending deletion;
 - keep the shared account-switcher package presentation-only and documented:
-  Auth uses its `icon` variant in the shell top bar, while consuming products
-  may select `compact` or `full` without changing Auth-owned session behavior;
+  Auth uses its `picture` variant in the shell top bar, while the Web app uses
+  `button`; consuming products may select `compact` or `full` without changing
+  Auth-owned session behavior;
 - reconcile production, staging, and development variables, cookie domains,
   CORS origins, internal tokens, and service URLs;
 - add automated and real-request checks for session validation, provisioning,
@@ -362,8 +363,8 @@ dependency.
 - 2026-10-19T02:40:00Z — Simplified the authenticated Auth shell around the
   username profile, upper-right account switcher, slim navigation rail,
   security overview, sessions page, settings overview, and rail logout.
-- 2026-10-19T04:20:00Z — Added shared account-switcher `icon`, `compact`, and
-  `full` presentation variants and configured the Auth shell to use `icon`.
+- 2026-10-19T04:20:00Z — Added shared account-switcher presentation variants
+  and configured the Auth shell to use its picture-style trigger.
 - 2026-10-19T05:15:00Z — Documented direct Auth-domain entry routing: valid
   sessions open the current account shell, incomplete onboarding opens
   onboarding, and explicit login/Add-account flows remain reachable.

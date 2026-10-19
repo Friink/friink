@@ -452,10 +452,11 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 - **Purpose**: Framework-neutral account discovery, account activation,
   add-account navigation, and account logout over Auth-owned APIs.
-- **Variants**: `icon` renders an avatar with a dropdown arrow; `compact`
-  renders an avatar and `@username`; `full` renders display name, email,
-  username, and dropdown arrow. `full` is the default. The Auth shell uses
-  `icon` in its top bar.
+- **Variants**: `button` renders only a dropdown button; `picture` renders an
+  avatar with a dropdown arrow; `compact` renders an avatar and `@username`;
+  `full` renders display name, email, username, and dropdown arrow. `full` is
+  the default. The Auth shell uses `picture` in its top bar and the Web app
+  uses `button` in its drawer.
 - **Layout contract**: The host chooses placement and available width. The
   component must not require a fixed host width or height. Identity text
   truncates before the arrow and other fixed controls, with no horizontal
@@ -467,7 +468,7 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Accessibility contract**: The trigger exposes an accessible name and
   expanded state; decorative avatar arrows and icons are hidden from assistive
   technology; keyboard focus remains visible in every variant.
-- **Auth shell placement**: Auth uses the `icon` variant right-aligned inside
+- **Auth shell placement**: Auth uses the `picture` variant right-aligned inside
   a 42px black top bar. The matching 42px black rail and top bar each use 4px
   internal padding. The brand mark aligns with the rail icon cells, has no
   hover surface, and active rail links use transient hover/focus feedback
