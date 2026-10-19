@@ -7,9 +7,21 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-02T00:01:48Z
+**Last edited:** 2026-10-18T01:25:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
 **Canonical sources:** [`docs/rules.md`](../rules.md), `api/app/routers/auth.py`, `web/lib/auth.ts`
+
+**Migration status:** The active web/API contract remains the FastAPI auth
+implementation documented below. A separate Better Auth service now owns a
+dedicated identity database and username-enabled schema, but the web/API
+request path has not yet been migrated to it.
+
+**Planned Better Auth cutover:** Better Auth will become the authoritative
+identity and session service after staged integration. It will generate the
+UUID `user.id`; Friink userdata tables will store that same value as their
+owner reference. The legacy FastAPI auth remains in place until a protected
+API request, web session restoration, logout, expiry, password recovery, and
+staging acceptance have all been verified against Better Auth.
 
 ---
 
@@ -47,6 +59,27 @@ while this document owns the underlying access and session semantics.
 ---
 
 ## 1. Product definition
+
+### Planned migration contract
+
+The migration will proceed without a user-data migration because the Better
+Auth database currently has no users. The target contract is:
+
+1. Better Auth creates and owns identity UUIDs, credentials, and sessions.
+2. The web app sends the Better Auth HttpOnly cookie with authenticated calls.
+3. The API validates the Better Auth session and derives the user ID server-side.
+4. Friink product tables reference that UUID without generating a second user ID.
+5. The legacy JWT, refresh-token, and DIY session paths are removed only after
+   staging acceptance and production smoke checks pass.
+
+Email signup verification and password-plus-OTP login are planned auth-service
+flows. They must issue a Better Auth session only after their final successful
+verification step.
+
+The configured auth email boundary uses Resend. `AUTH_EMAIL_DOMAIN` supplies
+the verified domain only; application code selects aliases, using
+`noreply@<domain>` for OTP messages and `hello@<domain>` for password recovery
+and security messages. The browser never supplies the sender address.
 
 ### Purpose
 
@@ -1218,6 +1251,84 @@ logs.
 
 The repository [`CHANGELOG.md`](../../CHANGELOG.md) is authoritative for
 project-wide history. This section records changes specific to this unit.
+
+- 2026-10-18T11:53:25Z — Added the auth-service-side Better Auth multi-session
+  foundation modeled on Muflah: bounded device sessions, explicit session
+  expiry/update-age policy, and the standard list-device-sessions,
+  set-active, and revoke endpoints. Friink webapp/API integration remains
+  planned; the existing DIY account-slot/session implementation is unchanged.
+
+- 2026-10-18T12:00:00Z — Added the auth-owned `/me` route. It renders the
+  current Better Auth user and non-secret active-session metadata, with a
+  signed-out state that links to login. Webapp/API integration remains
+  unchanged.
+- 2026-10-18T12:10:00Z — Added the auth-only `@friink/account-switcher`
+  Web Component modeled on Muflah. It consumes Better Auth's device-session
+  endpoints, supports switching/revoking an account session and adding an
+  account, and publishes a Friink active-account event. It is mounted on
+  `/me`; the existing webapp account-slot implementation remains unchanged.
+- 2026-10-18T21:40:38Z — Completed the auth-owned OTP flows modeled on Muflah:
+  signup now verifies an email OTP before account creation, and login validates
+  the password before issuing an OTP and creating the final session. The
+  staged routes use encrypted short-lived pending cookies; the webapp/API
+  remain unchanged.
+- 2026-10-18T21:42:12Z — Changed password recovery from reset-link-only to
+  email OTP verification followed by a new password, using Better Auth's
+  Email OTP password-reset endpoints. The auth app continues to own the full
+  recovery flow; the webapp/API remain unchanged.
+- 2026-10-18T21:48:03Z — Fixed the UUID-backed Better Auth verification table
+  for Email OTP signup by adding the required `gen_random_uuid()` default and
+  recorded the reproducible SQL migration. Signup OTP provider failures now
+  return a controlled error and remove the unusable pending verification.
+- 2026-10-18T21:56:56Z — Signup OTP now uses the encrypted pending-auth cookie
+  for verification before a user exists, matching the pre-account flow. The
+  auth UI no longer displays a misleading `000000` OTP placeholder.
+- 2026-10-18T22:04:00Z — Added the unauthenticated `GET /api/health` endpoint,
+  returning `{ status: "ok", service: "auth" }` for deployment monitoring.
+- 2026-10-18T22:14:58Z — Restored the shared Muflah-style OTP purpose contract
+  and actual encrypted pending-auth OTP storage for signup and login. Password
+  recovery now keeps the neutral unknown-email response while using Better
+  Auth's native hashed OTP reset endpoint for password mutation.
+- 2026-10-18T22:19:21Z — Password recovery now shows a neutral “Check your
+  email” step before revealing OTP and new-password fields.
+- 2026-10-18T22:26:05Z — Friink Auth was aligned with the Muflah Auth
+  implementation and UI, including onboarding, identity lookup, session
+  management, and the shared auth packages. Friink package scopes and
+  environment names remain in use; onboarding fields were added to the auth
+  database.
+- 2026-10-18T22:28:00Z — Friink keeps Muflah's onboarding username flow but
+  explicitly allows usernames to be changed later through Better Auth.
+- 2026-10-18T22:31:00Z — Preserved Friink's UUID-backed auth schema while using
+  the copied Muflah implementation by enabling Better Auth UUID ID generation.
+
+- 2026-10-18T22:42:33Z — Matched the standalone auth UI to Friink's existing
+  visual contract without changing routes, authentication flow, or client
+  behavior. The auth app now uses the canonical Friink logos and favicon,
+  shared colors, Inter/Nunito typography, responsive layout, dark-theme tokens,
+  and aligned onboarding/account-switcher styling.
+
+- 2026-10-18T22:58:19Z — Added PostgreSQL UUID defaults for Better Auth's
+  `user`, `session`, and `account` IDs and applied them to the live auth
+  database. Added authenticated `/me` as the stable current-account view; it
+  shows the selected account identity and onboarding status and exposes the
+  shared account switcher and session actions.
+- 2026-10-18T23:33:49Z — Polished the Auth app's account-access presentation:
+  password visibility controls now use inline Friink SVG icons, the canonical
+  Friink favicon is used, the shared account switcher has aligned Friink
+  styling and a CSS chevron, sign-in lookup copy is neutral, and username
+  setup matches the Friink form design. Authentication flow and session
+  behavior are unchanged.
+- 2026-10-18T23:42:58Z — Added Forgot password and Sign up links to the main
+  email entry screen and `/start`, routed the shared account switcher's Add
+  account action to `/start`, and added dark-theme styling for the switcher's
+  controls and feedback. Authentication flow and session behavior are
+  unchanged.
+
+- 2026-10-18T23:16:45Z — The Auth app now mounts the shared
+  `@friink/account-switcher` package against its direct `/api/auth` endpoint,
+  while consuming applications may continue using their `/auth-api` proxy.
+  Login, signup, forgot-password, and reset-password retain their existing
+  flow contracts while using the Friink webapp's centered form visual language.
 
 - 2026-09-29T13:58:48Z — Routed all app logout surfaces through the shared
   server-backed logout and fallback operation; serialized it with account

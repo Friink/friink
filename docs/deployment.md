@@ -67,8 +67,40 @@ is superseded by the staging-gate workflow above.
 
 ## Configuration boundaries
 
+### Standalone auth service
+
+The standalone Django/allauth prototype under `auth/` was removed on
+2026-10-18. The replacement `auth/` project is a Next.js + Better Auth
+service deployed separately at `auth.friink.com`, with its own PostgreSQL
+database and username-enabled user schema. It currently provides the auth UI,
+Better Auth API, and session system independently. The active web/API login
+path remains the legacy FastAPI implementation until the integration migration
+is completed and accepted in staging.
+
+- The auth Vercel project uses `auth/` as its Root Directory and the default
+  Next.js framework preset.
+- Better Auth migrations run from `auth/` with `npm run auth:migrate` and are
+  checked with `npm run auth:check` against the dedicated auth database.
+- The Better Auth user identity includes the standard user fields plus
+  `username` and `displayUsername`; Better Auth generates UUID IDs, and all
+  product tables will reference the Better Auth `user.id` after integration.
+- Auth email delivery uses Resend through `EMAIL_API_KEY`. The app generates
+  sender aliases from `AUTH_EMAIL_DOMAIN`; the domain is not a complete sender
+  address and no alias is accepted from the browser.
+
+### Planned auth cutover
+
+The auth service is intentionally being prepared before it becomes the
+production identity authority. The planned release sequence is: validate the
+Better Auth UUID/session contract locally, connect one protected API endpoint,
+validate web session restoration and logout in staging, migrate feature-level
+authorization, and only then retire the legacy FastAPI JWT/session path. No
+user migration is required because the Better Auth database is empty.
+
 - The web project receives only its environment-specific
-  `NEXT_PUBLIC_API_BASE_URL`.
+  `NEXT_PUBLIC_API_BASE_URL` and the optional
+  `NEXT_PUBLIC_MIXPANEL_TOKEN`. The Mixpanel token is a browser project token,
+  not a server secret.
 - The API project owns `DATABASE_URL`, authentication secrets, environment
   flags, email settings, and storage credentials.
 - `GROUP_CHAT_ENABLED` is an API-only feature flag and defaults to `false`;

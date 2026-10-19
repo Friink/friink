@@ -5,7 +5,7 @@ boundaries, runtime deployment shape, shared web conventions, and the main
 cross-cutting flows. Product behavior belongs in [Rules](rules.md) and the
 relevant [unit documents](units/).
 
-**Last edited:** 2026-09-27T23:00:46Z
+**Last edited:** 2026-10-18T01:25:00Z
 
 ## Repository and runtime boundaries
 
@@ -14,11 +14,31 @@ web/  -> Next.js web client -> web Vercel project
 api/  -> FastAPI service    -> API Vercel project
        -> PostgreSQL/Neon
        -> Cloudflare R2
+auth/ -> Next.js + Better Auth service -> auth.friink.com
+       -> dedicated Better Auth PostgreSQL database
 ```
 
 The API entrypoint is `api/api/index.py`. The two Vercel projects are configured
 independently; there is no root `vercel.json`. The web project talks to the API
-through `NEXT_PUBLIC_API_BASE_URL`.
+through `NEXT_PUBLIC_API_BASE_URL`. The web root also mounts the optional
+browser-side Mixpanel provider; it emits route views and session identity only
+when `NEXT_PUBLIC_MIXPANEL_TOKEN` is configured.
+
+An independent Django/allauth OIDC service was explored with a separate
+development auth database and then removed. The `auth/` service is now a
+standalone Better Auth deployment with its own PostgreSQL database at
+`auth.friink.com`. It owns the Better Auth identity schema, including the
+username plugin fields and UUID user IDs, but it has not yet replaced the
+active FastAPI authentication path. Web/API integration remains a separate
+migration step.
+
+### Planned identity cutover
+
+The staged target is for Better Auth to become the sole identity and session
+authority. It will generate UUID user IDs, while the web/API userdata database
+will store those IDs as ownership references. The cutover will first prove one
+protected API request and session restoration, then migrate feature authorization
+and remove the legacy FastAPI JWT/session path after staging acceptance.
 
 ## Web application conventions
 
@@ -90,3 +110,4 @@ through `NEXT_PUBLIC_API_BASE_URL`.
 - [Chat](units/chat.md)
 - [Feed](units/feed.md)
 - [Notifications](units/notifications.md)
+- [Analytics](units/analytics.md)

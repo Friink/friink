@@ -4,11 +4,13 @@ This document records the technologies, runtime services, environments, and
 development commands used by Friink. It describes the current implementation;
 planned or undecided items are marked explicitly.
 
-**Last edited:** 2026-09-12T22:10:13Z
+**Last edited:** 2026-10-18T01:25:00Z
 
 ## Clients
 
-- **Web:** Next.js 16.3.4, React 19.3.0, TypeScript, and Font Awesome; hosted on Vercel.
+- **Web:** Next.js 16.3.4, React 19.3.0, TypeScript, Font Awesome, and the
+  browser-side `mixpanel-browser` SDK; hosted on Vercel. Analytics is disabled
+  when `NEXT_PUBLIC_MIXPANEL_TOKEN` is empty.
 - **Mobile:** TBD. Mobile authentication and session requirements remain deferred until a mobile client exists.
 
 ## API and data
@@ -22,7 +24,15 @@ planned or undecided items are marked explicitly.
 
 ## Authentication and platform services
 
-- **Authentication and sessions:** FastAPI routes, PyJWT access tokens, an HTTP-only refresh-token cookie, and bcrypt password hashing.
+- **Authentication and sessions:** The active web/API path still uses FastAPI
+  routes, PyJWT access tokens, an HTTP-only refresh-token cookie, and bcrypt
+  password hashing. The standalone `auth/` service uses Better Auth with
+  PostgreSQL, email/password authentication, cross-subdomain cookies, and the
+  username plugin; it is not yet wired into the web/API request path.
+- **Auth-service exploration:** The Django 5.2/django-allauth OIDC prototype
+  was removed after exploration. It was never connected to Friink login; the
+  FastAPI auth flow above remains the only active web/API login implementation
+  until Better Auth integration is completed.
 - **Validation and settings:** Pydantic, pydantic-settings, and email-validator.
 - **Notifications:** In-app notification records and API endpoints are implemented; an email delivery provider is TBD.
 - **Payments:** TBD.
@@ -33,7 +43,13 @@ planned or undecided items are marked explicitly.
 ## Hosting and environments
 
 - Two separate Vercel projects are used: `web/` for the Next.js client and `api/` for the API entrypoint at `api/api/index.py`.
-- The web deployment receives `NEXT_PUBLIC_API_BASE_URL`; it does not receive `DATABASE_URL`.
+- The third auth deployment is configured as its own Vercel project rooted at
+  `auth/`, with `auth.friink.com`, a dedicated PostgreSQL database, and the
+  environment contract documented in `auth/.env.example`. It is currently a
+  standalone auth service; it must pass web/API integration acceptance before
+  becoming Friink's authoritative login provider.
+- The web deployment receives `NEXT_PUBLIC_API_BASE_URL` and the optional
+  `NEXT_PUBLIC_MIXPANEL_TOKEN`; it does not receive `DATABASE_URL`.
 - The API deployment requires `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL`, and the other variables in the matching environment file.
 - There is no root `vercel.json`; each project is configured independently in the Vercel dashboard.
 - Staging uses `staging.friink.com` and `staging-api.friink.com`.
@@ -78,3 +94,4 @@ the migration gate and release workflow.
 - [Testing](testing.md)
 - [Account access unit](units/account-access.md)
 - [Account lifecycle unit](units/account-lifecycle.md)
+- [Analytics unit](units/analytics.md)

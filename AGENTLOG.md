@@ -1,5 +1,279 @@
 INSTRUCTIONS FOR AI AGENTS: Before starting any task, read this file — especially the most recent 3-5 entries — to understand exactly what the last agent(s) did, including which files or scope they touched. After completing any change, append a new entry here with the fields below.
 
+# 2026-10-18T11:53:25Z — Add Friink Auth Multi-Session Foundation
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Inspect Muflah Auth's account-switcher and multiple-session
+  implementation, then make the corresponding changes only in Friink's auth
+  app before any webapp merge.
+- Changes Made: Added Better Auth `multiSession` and `multiSessionClient`,
+  configured maximum sessions and explicit session expiry/update-age settings,
+  and documented the auth-owned session endpoint contract. No `web/` or `api/`
+  files were changed.
+- Files: `auth/app/src/lib/auth.ts`, `auth/app/src/lib/auth-client.ts`,
+  `auth/app/src/lib/config.ts`, `auth/README.md`,
+  `docs/units/account-access.md`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Auth TypeScript checks pass, the live Better Auth
+  schema check passes, and a real unauthenticated GET of
+  `/api/auth/multi-session/list-device-sessions` returned HTTP 200 with `[]`.
+  No production build was run.
+
+# 2026-10-18T12:00:00Z — Add Auth Active Session Page
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add `auth.friink.com/me` as the active session page while
+  keeping all work inside the auth app.
+- Changes Made: Added a server-rendered `/me` route using
+  `auth.api.getSession`, displaying non-secret user/session metadata and a
+  signed-out state. Added shared auth styling and documentation.
+- Files: `auth/app/src/app/me/page.tsx`, `auth/packages/auth-ui/src/styles.css`,
+  `auth/README.md`, `docs/units/account-access.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Targeted auth TypeScript verification pending.
+
+# 2026-10-18T12:10:00Z — Add Auth Account Switcher
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Match Muflah's account-switcher behavior while changing only
+  Friink's auth app.
+- Changes Made: Added `@friink/account-switcher`, adapted Muflah's Web
+  Component to Friink's Better Auth endpoints and event namespace, mounted it
+  on `/me`, and added custom-element typings.
+- Files: `auth/packages/account-switcher/`,
+  `auth/app/src/components/account-switcher-element.tsx`,
+  `auth/app/src/types/account-switcher.d.ts`, `auth/app/src/app/me/page.tsx`,
+  `auth/package.json`, `auth/package-lock.json`, auth/docs, and project logs.
+- Verification Status: Auth TypeScript checks and production build pass.
+
+# 2026-10-18T21:40:38Z — Complete Auth OTP Flows
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Fix signup and login so both use OTP while changing only the
+  auth app.
+- Changes Made: Added Muflah-style staged auth routes and encrypted short-lived
+  pending cookies. Signup now sends/verifies email OTP before account creation;
+  login validates password, sends a sign-in OTP, then creates the final session.
+  Updated the shared auth UI and auth pages to expose the required steps.
+- Files: `auth/app/src/app/api/auth-flow/`,
+  `auth/app/src/app/login/page.tsx`, `auth/app/src/app/signup/page.tsx`,
+  `auth/app/src/lib/pending-auth.ts`, `auth/app/src/lib/database.ts`,
+  `auth/packages/auth-ui/src/ui.tsx`, `auth/packages/auth-ui/src/index.ts`,
+  auth docs, and project logs.
+- Verification Status: Auth TypeScript checks, live schema check, real invalid
+  request/response checks for all new flow routes, production build, and
+  `git diff --check` pass.
+
+# 2026-10-18T21:42:12Z — Add Password Recovery OTP
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Extend OTP ownership verification to forgot-password while
+  changing only the auth app.
+- Changes Made: Replaced the reset-link-only browser flow with email OTP plus
+  new-password UI, using Better Auth's request-password-reset and reset-password
+  Email OTP endpoints. Updated auth documentation and logs.
+- Files: `auth/app/src/app/forgot-password/page.tsx`,
+  `auth/packages/auth-ui/src/ui.tsx`, auth docs, and project logs.
+- Verification Status: Auth TypeScript checks and production build pass.
+
+# 2026-10-18T21:48:03Z — Fix Signup OTP Verification Storage
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose and fix the signup verification-code error.
+- Changes Made: Found that the live UUID `verification.id` column had no
+  default, causing Better Auth's server-only OTP generator to fail. Enabled
+  `pgcrypto`, added the `gen_random_uuid()` default live, recorded the SQL
+  migration, and made signup OTP delivery return a controlled 502 while
+  cleaning failed verification rows.
+- Files: `auth/app/src/app/api/auth-flow/send-otp/route.ts`,
+  `auth/migrations/001_verification_uuid_default.sql`, auth README, docs, and
+  project logs. Test verification records were deleted after validation.
+- Verification Status: Live signup OTP route returned HTTP 200 with
+  Resend's official test recipient; TypeScript and production build checks
+  pass. A real user-recipient delivery test remains provider/account dependent.
+
+# 2026-10-18T21:56:56Z — Fix Pre-Account Signup OTP Verification
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Remove the placeholder OTP and fix signup OTP mismatch.
+- Changes Made: Signup OTP generation and verification now use the encrypted
+  pending-auth cookie because Better Auth's standard verification check requires
+  an existing user. Removed all `000000` OTP placeholders from the auth UI.
+- Files: `auth/app/src/app/api/auth-flow/send-otp/route.ts`,
+  `auth/app/src/app/api/auth-flow/verify-otp/route.ts`,
+  `auth/packages/auth-ui/src/ui.tsx`, project changelog, unit documentation,
+  and agent log.
+- Verification Status: Auth production build and TypeScript checks pass with
+  environment variables loaded from `auth/.env`.
+
+# 2026-10-18T22:04:00Z — Add Auth Health Endpoint
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Add the health route needed for Friink Auth parity with
+  Muflah Auth.
+- Changes Made: Added an unauthenticated Node.js `GET /api/health` route with
+  the Muflah response contract.
+- Files: `auth/app/src/app/api/health/route.ts`, project changelog, agent log,
+  and account-access documentation.
+- Verification Status: Targeted route response verification follows.
+
+# 2026-10-18T22:14:58Z — Align OTP Flows With Muflah
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Implement the agreed Muflah-compatible OTP architecture and
+  privacy-safe password recovery flow.
+- Changes Made: Restored the shared `purpose` contract for signup/login OTP,
+  stored the actual generated login and signup codes in encrypted pending-auth
+  cookies, removed the Better Auth plugin marker from those flows, and routed
+  password recovery through Better Auth's native hashed OTP endpoints with a
+  neutral response for unknown emails.
+- Files: Auth OTP routes, password recovery page, signup page, shared OTP helper,
+  project changelog, agent log, and account-access documentation.
+- Verification Status: TypeScript and production build pass. Unknown-email
+  password-reset request returned HTTP 200 with `{ "success": true }`.
+
+# 2026-10-18T22:19:21Z — Add Neutral Password Recovery Step
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Prevent forgot-password from opening the OTP/password form
+  immediately after email submission.
+- Changes Made: Added a neutral “Check your email” state with an explicit
+  “I have a code” action. OTP and new-password fields are now shown only after
+  that action, while the account-existence-preserving response remains intact.
+- Files: `auth/packages/auth-ui/src/ui.tsx`, project changelog, agent log, and
+  account-access documentation.
+- Verification Status: Auth UI and application TypeScript checks pass.
+
+# 2026-10-18T22:26:05Z — Copy Muflah Auth Into Friink Auth
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Replace Friink Auth with the working Muflah Auth app and UI,
+  adapting only Friink-specific names and environment configuration.
+- Changes Made: Copied Muflah's auth routes, pages, CSS, account switcher,
+  onboarding package, session-management UI, identity lookup, and supporting
+  helpers. Removed the divergent Friink auth-ui package and stale `/me` flow,
+  renamed package scopes and product identifiers to Friink, preserved
+  `auth/.env`, and added the Muflah onboarding fields migration.
+- Files: `auth/` implementation and packages, `auth/migrations/002_muflah_onboarding_fields.sql`,
+  project changelog, agent log, and account-access documentation.
+- Verification Status: Live Better Auth migration completed successfully;
+  production build and TypeScript checks pass. No webapp/API files were changed.
+
+# 2026-10-18T22:28:00Z — Allow Username Changes
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Allow usernames to be changed after onboarding.
+- Changes Made: Set Better Auth's username plugin to mutable while preserving
+  the Muflah onboarding and username UI flow.
+- Files: `auth/app/src/lib/auth.ts`, project changelog, agent log, and
+  account-access documentation.
+- Verification Status: Targeted TypeScript and production build checks follow.
+
+# 2026-10-18T22:31:00Z — Restore UUID Signup Compatibility
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose signup authentication failure after copying Muflah
+  Auth and verify Friink's database connection.
+- Changes Made: Confirmed the live database connection and schema, then enabled
+  Better Auth UUID ID generation because Friink's `user.id` column is UUID-backed
+  while the copied Muflah configuration did not include the UUID generator.
+- Files: `auth/app/src/lib/auth.ts`, project changelog, agent log, and
+  account-access documentation.
+- Verification Status: Database connection query and live schema check passed;
+  TypeScript and production build checks follow.
+
+# 2026-10-14T22:29:30Z — Send Mixpanel Events Immediately
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Investigate why the deployed browser integration did not
+  visibly produce Mixpanel events after the project/host diagnosis.
+- Changes Made: Confirmed the configured token and EU ingestion endpoint accept
+  a synthetic diagnostic event (`status: 1`). Disabled the browser SDK's
+  default five-second batching so route events are sent immediately for this
+  minimal integration.
+- Files: `web/lib/analytics.ts`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Direct EU ingestion request returned HTTP 200 with
+  Mixpanel `status: 1`; targeted web TypeScript verification and production
+  redeployment are pending.
+
+# 2026-10-14T22:05:46Z — Use EU Mixpanel Ingestion Host
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Diagnose the deployed Mixpanel integration after no events
+  appeared in the dashboard.
+- Changes Made: Confirmed the production bundle contains the Mixpanel provider
+  and token, then configured the browser SDK to send to
+  `https://api-eu.mixpanel.com`, matching the user's EU Mixpanel project.
+- Files: `web/lib/analytics.ts`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Targeted web TypeScript verification pending; production
+  redeployment is required before checking Mixpanel Live View again.
+
+# 2026-10-14T20:19:14Z — Add Optional Browser Mixpanel Setup
+
+- Agent: Codex
+- Model: GPT-5
+- Prompt Summary: Set up the minimal web-side Mixpanel integration while the
+  user prepares the production project token.
+- Changes Made: Added `mixpanel-browser` to the web dependencies. Added a
+  token-gated client analytics wrapper and root provider that emits pathname
+  `Page Viewed` events, identifies the active account by stable user ID, and
+  resets on session expiry. Broad autocapture is disabled and analytics is
+  non-blocking. Added the Analytics unit document, documentation-viewer entry,
+  and stack/architecture/deployment notes. The ignored `web/.env` has an empty
+  `NEXT_PUBLIC_MIXPANEL_TOKEN` variable for the user's token.
+- Files: `web/package.json`, `web/package-lock.json`,
+  `web/lib/analytics.ts`, `web/components/analytics-provider.tsx`,
+  `web/app/layout.tsx`, `docs/units/analytics.md`, `docs/index.html`,
+  `docs/stack.md`, `docs/architecture.md`, `docs/deployment.md`,
+  `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: `npx tsc --noEmit` passed from `web`; `git diff --check`
+  passed before this merge. No API, database, or deployment changes were made.
+
+# 2026-10-14T19:49:25Z — Document Auth Prototype and Deployment State
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Document the auth migration, Git commit blocker, and Vercel
+  setup and `DisallowedHost` troubleshooting discussed in this session.
+- Changes Made: Updated Account Access, stack, architecture, and deployment
+  documentation to distinguish the current FastAPI login from the standalone
+  allauth exploration. Recorded the intended separate Vercel project, safe
+  staging/production database separation, and the reported `DisallowedHost`
+  deployment blocker. Noted that auth source is not tracked on the current
+  `main` branch.
+- Files: `docs/units/account-access.md`, `docs/stack.md`,
+  `docs/architecture.md`, `docs/deployment.md`, `CHANGELOG.md`, and
+  `AGENTLOG.md`.
+- Verification Status: Documentation and `git diff --check` were checked; no
+  tests or deployments were performed.
+
+# 2026-10-14T19:50:01Z — Restore Ignore Rules for Local Auth Secrets
+
+- Agent: Codex
+- Model: GPT-6
+- Prompt Summary: Keep local auth environment files and signing material out
+  of Git while documenting the auth-service work.
+- Changes Made: Restored `auth/.gitignore` for local environment files,
+  virtualenv/cache files, local SQLite state, and the OIDC private key. No
+  credentials were added to Git.
+- Files: `auth/.gitignore`, `CHANGELOG.md`, and `AGENTLOG.md`.
+- Verification Status: Ignore behavior was checked; no tests or deployments
+  were performed.
+
 # 2026-10-14T19:24:05Z — Prepare Auth Database and Import Development Accounts
 
 - Agent: Codex
@@ -16009,3 +16283,229 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   - Verification Status: `git check-ignore -v` confirmed `.env`, `.env.staging`,
     and `.env.development` are ignored; no connector values were read or
     printed.
+- 2026-10-18T00:08:30Z — Remove standalone allauth prototype
+
+  - Agent: Codex
+  - Prompt Summary: Empty Friink's standalone allauth auth folder and compare
+    the required future auth shape with the local Muflah implementation.
+  - Changes Made: Removed every tracked and ignored item under `auth/`,
+    including the Django/allauth prototype, local virtualenv, environment
+    files, signing key, and local development state. Kept the active FastAPI,
+    JWT, refresh-cookie, and web session implementation unchanged. Updated
+    architecture, deployment, and stack documentation to record the removal.
+  - Verification Status: Confirmed `auth/` has no remaining entries;
+    `git diff --check` passed. No build or full test suite run.
+- 2026-10-18T00:16:47Z — Add vanilla Better Auth package foundation
+
+  - Agent: Codex
+  - Prompt Summary: Install Better Auth in Friink's empty `auth/` folder and
+    create a production environment-variable contract.
+  - Changes Made: Added the private `friink-auth` npm package with
+    `better-auth@1.7.10`, generated `auth/package-lock.json`, added
+    `auth/.env.example`, and created an ignored local `auth/.env` with
+    `https://auth.friink.com` plus blank secret/database/provider values. No
+    Better Auth instance, database schema, or Friink login integration was
+    implemented.
+  - Verification Status: `npm list --depth=0` reports Better Auth installed;
+    npm audit reports zero vulnerabilities; no build or full test suite run.
+- 2026-10-18T00:25:05Z — Copy Friink auth UI into auth-owned package
+
+  - Agent: Codex
+  - Prompt Summary: Copy the good existing Friink auth UI into a package for
+    the vanilla Better Auth install without editing the web app.
+  - Changes Made: Added `auth/packages/auth-ui` with React forms for login,
+    signup, and forgot-password, shared auth shell/field/button primitives,
+    password criteria, copied Friink brand assets, responsive/dark styling,
+    and callback-based integration points. Added React, TypeScript, and the
+    local package dependency to the auth project. No `web/` files were edited.
+  - Verification Status: `npm --prefix auth run typecheck` passed;
+    `git diff --check` passed. No build or full test suite run.
+- 2026-10-18T00:38:02Z — Expand Better Auth environment contract
+
+  - Agent: Codex
+  - Prompt Summary: Put all planned Better Auth production variables in the
+    local `auth/.env` file.
+  - Changes Made: Added the Muflah-aligned session, OTP, trusted-origin,
+    email, branding, application-registry, and key-management variables to
+    ignored `auth/.env` and mirrored the safe placeholders in
+    `auth/.env.example`. Secret, database, and provider-key values remain
+    blank.
+  - Verification Status: Confirmed `auth/.env` is ignored by Git; no build or
+    test suite run.
+- 2026-10-18T00:51:18Z — Normalize Better Auth variables to 16 entries
+
+  - Agent: Codex
+  - Prompt Summary: Verify that the Better Auth environment contains exactly
+    16 variables for both Vercel and local `auth/.env`.
+  - Changes Made: Reduced the local and example files to the 16 Muflah-aligned
+    runtime variables and set `AUTH_COOKIE_DOMAIN=.friink.com` for the apex
+    Friink app and auth subdomain.
+  - Verification Status: Both files contain exactly 16 keys; `auth/.env` is
+    ignored by Git; `git diff --check` passed. Vercel dashboard values were
+    not inspected because no Vercel account connector is available.
+- 2026-10-18T01:00:15Z — Create deployable Better Auth Next.js service
+
+  - Agent: Codex
+  - Prompt Summary: Proceed with the Next.js deployment option for the
+    Better Auth service rooted at `auth/`.
+  - Changes Made: Added Next.js 16.4.2, PostgreSQL pooling, strict env
+    validation, Better Auth server configuration, cross-subdomain cookies,
+    `/api/auth/[...all]`, hosted login/signup/forgot-password/reset-password
+    pages, auth migration/check scripts, and Vercel-compatible Next config.
+    Connected the existing auth UI package through callback-based Better Auth
+    client calls. No `web/` files or active Friink FastAPI auth code changed.
+  - Verification Status: `npm run typecheck` and `npm run build` passed with
+    temporary non-production build variables. The build reported the expected
+    database-schema validation warning because the temporary PostgreSQL URL
+    was not a live migrated database. No full test suite run.
+- 2026-10-18T01:07:30Z — Fix Better Auth Vercel output directory
+
+  - Agent: Codex
+  - Prompt Summary: Resolve the Vercel deployment failure reporting that
+    `auth/.next` was missing after a successful Next.js build.
+  - Changes Made: Configured Next.js to emit its build artifact at the
+    Vercel project root while retaining the source app under `auth/app/`.
+    Updated generated Next.js type references accordingly.
+  - Verification Status: Production build passed with temporary non-secret
+    variables and generated the root `.next` output. The PostgreSQL SSL notice
+    remains a non-fatal dependency warning.
+
+- 2026-10-18T01:14:30Z — Align Better Auth UI with Friink webapp
+
+  - Agent: Codex
+  - Prompt Summary: Make all Better Auth user-facing pages match the existing
+    Friink webapp instead of the generic initial styling.
+  - Changes Made: Applied the canonical Friink auth theme and typography,
+    bundled the Nunito display font, preserved the exact brand sizing and
+    controls, and added a branded custom not-found state. The API route and
+    root redirect remain functional non-visual routes.
+  - Verification Status: `npm run typecheck` and `npm run build` passed with
+    temporary non-secret build variables. The dummy database warning is
+    expected during build verification.
+
+- 2026-10-18T01:26:00Z — Add username-enabled standalone Better Auth schema
+
+  - Agent: Codex
+  - Prompt Summary: Add the agreed 36-field Better Auth schema and update
+    project documentation before ending the work session.
+  - Changes Made: Enabled Better Auth's official username plugin, added
+    username signup and username login, migrated the live auth database with
+    `user.username` and `user.displayUsername`, and documented the standalone
+    auth service, ownership boundary, and current legacy web/API migration
+    status.
+  - Verification Status: `npm run typecheck`, `npm run auth:check`, and the
+    production build passed. The build used temporary non-secret variables and
+    reported only the expected dummy-database validation warning. Changes were
+    intentionally left uncommitted per user instruction.
+
+- 2026-10-18T01:31:00Z — Configure UUID identifiers for standalone auth
+
+  - Agent: Codex
+  - Prompt Summary: Configure UUID user IDs for the standalone Better Auth and
+    session system.
+  - Changes Made: Set Better Auth `advanced.database.generateId` to `uuid`,
+    converted the empty live auth database's user, session, account, and
+    verification ID/reference columns to PostgreSQL UUID types, restored the
+    session/account foreign keys, and updated architecture, deployment, and
+    auth README documentation.
+  - Verification Status: `npm run auth:check` passed and direct schema
+    inspection confirmed UUID types. No users existed before conversion.
+    Changes were intentionally left uncommitted.
+
+- 2026-10-18T11:24:00Z — Document and fix Better Auth UUID cutover foundation
+
+  - Agent: Codex
+  - Prompt Summary: Document the planned replacement of DIY auth/session and
+    safely proceed with the UUID-based Better Auth configuration change.
+  - Changes Made: Added the staged identity/session cutover contract to the
+    account-access, architecture, deployment, and auth README documents. Fixed
+    the `advanced` Better Auth configuration merge so UUID generation is not
+    overwritten by cross-subdomain cookie settings.
+  - Verification Status: Typecheck, live Better Auth schema check, and the
+    production build passed. The build used temporary non-secret variables and
+    reported only the expected dummy-database validation warning. Changes were
+    intentionally left uncommitted for review.
+
+- 2026-10-18T11:40:00Z — Configure Better Auth OTP email delivery
+
+  - Agent: Codex
+  - Prompt Summary: Configure OTP flows and use the email domain while letting
+    the auth application choose sender aliases.
+  - Changes Made: Added the Resend connector, generated OTP sender aliases,
+    Better Auth Email OTP configuration, hashed OTP storage, rate/expiry/attempt
+    limits, and password-reset email delivery. Added the client Email OTP
+    plugin and documented the sender policy.
+  - Verification Status: Typecheck passed. Real email delivery and the final
+    password-plus-OTP/login and pre-account signup UI flows still require the
+    pending flow implementation and provider acceptance test. Changes remain
+  uncommitted.
+
+- 2026-10-18T22:42:33Z — Align standalone auth UI with Friink design system
+
+  - Agent: Codex
+  - Prompt Summary: Match auth UI elements to the Friink webapp without
+    changing authentication flow or JavaScript behavior.
+  - Changes Made: Applied Friink design tokens and typography, copied canonical
+    logos and favicon, updated app metadata icon, and restyled the auth,
+    onboarding, and account-switcher surfaces including responsive and dark
+    variants. Removed the remaining Muflah-specific footer name.
+  - Verification Status: `npm run typecheck`, `npm run build`, and `git diff
+    --check` passed. Changes remain uncommitted.
+
+- 2026-10-18T22:58:19Z — Fix UUID defaults and add current-account route
+
+  - Agent: Codex
+  - Prompt Summary: Fix signup authentication failure and implement `/me` for
+    the selected/current account.
+  - Changes Made: Added migration `003_uuid_id_defaults.sql` for PostgreSQL
+    UUID defaults on Better Auth `user`, `session`, and `account` IDs; applied
+    and verified it against the live database. Added the authenticated `/me`
+    page with current account details, account switcher, navigation, and
+    session logout actions.
+  - Verification Status: Disposable Better Auth signup created a UUID user and
+    session successfully, then cleaned up. `GET /me` redirects unauthenticated
+    users to `/login`. Typecheck and production build passed. Changes remain
+    uncommitted.
+
+- 2026-10-18T23:16:45Z — Repair account switcher endpoint and match auth UX
+
+  - Agent: Codex
+  - Prompt Summary: Make the auth app account switcher work through the shared
+    package and align login, signup, forgot-password, and reset-password UI to
+    the webapp without changing flow behavior.
+  - Changes Made: Added the package-owned configurable API base and mounted the
+    Auth app with `/api/auth`; restyled the auth forms using the Friink
+    wordmark, centered webapp form layout, pill inputs, shared buttons, password
+    criteria, and responsive/dark variants. Added only presentation links and
+    labels; authentication handlers remain unchanged.
+  - Verification Status: `npm run typecheck`, `npm run build`, and `git diff
+    --check` passed. Direct Auth session and multi-session endpoints return the
+    expected unauthenticated response shapes. Changes remain uncommitted.
+
+- 2026-10-18T23:33:49Z — Polish auth UI controls, favicon, and copy
+
+  - Agent: Codex
+  - Prompt Summary: Fix the auth app's remaining visual and security-copy
+    issues only: password visibility icon, favicon, account switcher styling,
+    neutral login lookup messaging, and username setup styling.
+  - Changes Made: Added an inline SVG password-toggle component for login,
+    signup, and reset-password fields; restored the canonical Friink favicon;
+    restyled the package-owned account switcher with a CSS chevron and aligned
+    menu; neutralized account lookup copy; and restyled the username setup
+    screen to the Friink design system. No flow, API, database, or session
+    behavior changed.
+  - Verification Status: Targeted typecheck, production build, and
+    `git diff --check` passed. Changes remain uncommitted.
+
+- 2026-10-18T23:42:58Z — Complete auth entry links and switcher theme polish
+
+  - Agent: Codex
+  - Prompt Summary: Add password reset and signup options to email entry,
+    support both links in `/start`, align the account switcher with dark mode,
+    and send Add account to `/start`.
+  - Changes Made: Added the two entry links to both email-entry surfaces,
+    routed the package-owned Add account action to `/start`, and added the
+    package's dark-theme trigger, menu, row, avatar, action, and toast styles.
+    Authentication flow and session behavior remain unchanged.
+  - Verification Status: `npm run typecheck` and `git diff --check` passed.
+    Changes remain uncommitted.

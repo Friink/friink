@@ -1,7 +1,7 @@
-.venv/
+node_modules/
 .env
 .env.*
-__pycache__/
-*.py[cod]
-auth-prototype.sqlite3
-local-oidc-private.pem
+!.env.example
+.next/
+dist/
+*.tsbuildinfo

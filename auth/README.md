@@ -1,103 +1,143 @@
-# Local django-allauth prototype
+# Reusable Authentication Service
 
-This is an isolated Django auth service using django-allauth account flows and
-its built-in OpenID Connect (OIDC) provider. Local mode uses SQLite and prints
-email to the terminal. Development and staging modes read their matching
-`DATABASE_URL` from `.env.development` and `.env.staging` respectively.
-Staging has not been initialized or imported by this prototype.
+This directory contains the reusable authentication and single sign-on service for current and future applications. The current hosted pilot implements the web identity, onboarding, multi-account, session-management, redirect handoff, and cross-tab foundations; the target V1 SSO and mobile capabilities remain separately identified below.
 
-## Development accounts and data boundary
+## Application details
 
-The development auth database has Django/allauth's own user, email-verification,
-session, and OIDC-provider tables. It also has `friink_account_links`, a private
-cross-reference from a Django user to the UUID of the existing Friink user and
-a separately generated opaque subject reserved for later OIDC integration.
-The development import copied three users, their email and username, bcrypt
-password hashes, staff flag, active/locked state, email verification status,
-and the private cross-reference. Password hashes are verified by the local
-`FriinkBcryptPasswordHasher`; a successful login upgrades them to Django's
-preferred PBKDF2 format. It does not copy profiles, posts, relationships, or
-Friink session/refresh-token rows. Those remain in userdata.
+- **Role:** Central identity, authentication, session, and SSO service
+- **Architecture:** Modular monolith
+- **Authentication engine:** Better Auth
+- **Primary database:** PostgreSQL
+- **Email delivery:** Resend through a provider-neutral connector boundary
+- **Hosted service URL:** Configured through `BETTER_AUTH_URL`
+- **Client types:** Web applications and mobile applications
+- **Release model:** Rolling release with stable, unversioned API and callback paths
+- **UI model:** Thin hosted authentication UI with headless APIs as the primary integration
 
-This is not a live login integration. Friink's API does not yet resolve the
-auth service's OIDC subject to the userdata UUID, and the OIDC provider has not
-yet been configured to use the reserved subject mapping. Do not route Friink
-login to this service until that bridge is implemented and verified.
+The service is intended to be cloned and configured for other application platforms. It is product-neutral and does not own product-specific organizations, memberships, roles, permissions, billing, or business data.
 
-To migrate development accounts (safe to rerun; already-linked accounts are
-skipped), first install `auth/requirements.txt`, then run from the repository
-root:
+## Target V1 capabilities
 
-```powershell
-$env:AUTH_ENVIRONMENT = 'development'
-& auth/.venv/Scripts/python.exe auth/manage.py migrate --noinput
-& auth/.venv/Scripts/python.exe auth/manage.py import_development_users
+The planned first release includes:
+
+- Identifier-first email signup and sign-in
+- Account-existence routing with rate limiting and neutral abuse-resistant responses
+- Email/password authentication
+- Email verification and password recovery
+- OTP verification with expiry, attempt, resend, and rate limits
+- Password followed by OTP sign-in on every login attempt in the current pilot policy
+- Trusted-device handling for reduced repeated OTP prompts
+- Multiple active sessions, including multiple accounts on one client
+- Account switching, adding an existing account, and creating a new account
+- Active-session listing and individual or global revocation
+- Domain-wide SSO for registered applications
+- Web SSO and mobile authorization-flow support
+- Central logout with application session revalidation
+- Email change with verification of the new address
+- Thin hosted UI and headless HTTP/JSON integration
+
+Applications remain responsible for their own organizations, memberships, roles, permissions, and product authorization.
+
+## Repository layout
+
+```text
+repository/
+├── packages/
+│   ├── account-switcher/ # Auth-maintained plain JS/HTML/CSS web component
+│   └── onboarding/       # Auth-maintained plain JS/HTML/CSS onboarding UI
+├── auth/
+│   ├── .env              # Local deployment secrets; never commit
+│   ├── README.md         # This overview
+│   ├── AGENTS.md         # Auth-specific repository instructions
+│   ├── docs/             # Auth architecture and implementation docs
+│   └── app/              # Auth application implementation
+│       ├── config/
+│       ├── migrations/
+│       ├── src/
+│       └── tests/
 ```
 
-The importer reads only `api/.env.development` and writes only to
-`auth/.env.development`. It aborts the import transaction on unsupported
-password hashes or account conflicts. It never prints account data or
-connection strings.
+The repository-level [AGENTLOG.md](../AGENTLOG.md) contains chronological implementation history, and [CHANGELOG.md](../CHANGELOG.md) contains release history.
 
-## Run it on localhost
+`package.json` and `package-lock.json` will live directly under `auth/` because they define the dependency graph and project commands. Other implementation files remain under `auth/app/`.
 
-Requirements: Python and OpenSSL. From the repository root in PowerShell:
+The shared [account-switcher package](../packages/account-switcher/README.md) is maintained by Auth but lives at the repository root so Accounts, Web, and future products can consume it without depending on the Accounts application.
 
-```powershell
-py -m venv --without-pip auth/.venv
-$env:PIP_NO_INDEX = '0'
-$venvPython = (Resolve-Path auth/.venv/Scripts/python.exe).Path
-py -m pip --python $venvPython install -r auth/requirements.txt
-@'
-from pathlib import Path
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-Path('auth/local-oidc-private.pem').write_bytes(key.private_bytes(
-    serialization.Encoding.PEM,
-    serialization.PrivateFormat.PKCS8,
-    serialization.NoEncryption(),
-))
-'@ | & $venvPython -
-$env:AUTH_ENVIRONMENT = 'local'
-$env:AUTH_OIDC_PRIVATE_KEY = Get-Content auth/local-oidc-private.pem -Raw
-& $venvPython auth/manage.py migrate
-& $venvPython auth/manage.py createsuperuser
-& $venvPython auth/manage.py runserver 127.0.0.1:8001
+The shared [onboarding package](../packages/onboarding/README.md) follows the same boundary: it owns reusable presentation only, while Auth owns onboarding status, username validation, completion, and access authority. Auth's `/onboarding` route remains the direct-visit and compatibility fallback.
+
+## Configuration
+
+The current local environment uses these variable names:
+
+```text
+BETTER_AUTH_SECRET
+BETTER_AUTH_URL
+AUTH_COOKIE_DOMAIN
+AUTH_TRUSTED_ORIGINS
+DATABASE_URL
+AUTH_EMAIL_DOMAIN
+AUTH_MAX_SESSIONS
+EMAIL_API_KEY
+AUTH_OTP_ENABLED
+AUTH_OTP_EXPIRES_IN_MINUTES
+AUTH_OTP_MAX_ATTEMPTS
+AUTH_OTP_RESENT_LIMIT
+AUTH_OTP_RESENT_IN_SECONDS
 ```
 
-Open <http://127.0.0.1:8001/admin/> to create an OIDC client and set its
-redirect URI to the callback of whichever test client you use. The allauth OIDC
-discovery document is at
-<http://127.0.0.1:8001/.well-known/openid-configuration>; JWKS is at
-<http://127.0.0.1:8001/.well-known/jwks.json>. The admin interface also
-provides the generated client secret at creation time. The account sign-in
-page is under `/accounts/login/`; email verification and login-code messages
-are printed in the server terminal.
+`AUTH_EMAIL_DOMAIN` supplies the verified domain. Sender aliases are generated by application code according to the message type; no sender alias is configured through an environment variable.
 
-Allauth's OIDC provider includes the standard authorization-code flow. The
-provider defaults to opaque access tokens; the identity token and userinfo
-endpoint are the normal OIDC way for a client to obtain the signed-in identity.
-The provider's documented defaults include one-hour access tokens,
-five-minute ID tokens, and refresh tokens that do not expire. These defaults
-are only for local exploration and must be reviewed before any deployment.
+`AUTH_MAX_SESSIONS` controls the Better Auth multi-session account-switcher capacity per client/device. It defaults to `4`; missing or invalid values also fall back to `4`.
 
-## What the experiment can establish
+Set `AUTH_COOKIE_DOMAIN` to the shared parent domain, such as `.example.com`, to enable Better Auth cross-subdomain cookies. Set `AUTH_TRUSTED_ORIGINS` to a comma-separated list of full approved origins, such as `https://app.example.com,https://admin.example.com`; `BETTER_AUTH_URL` is always included automatically.
 
-- Whether allauth's built-in login, email verification, and email-code flows
-  fit Friink's desired sign-in UX.
-- Whether a local OIDC client can sign in through this service and return to its
-  registered localhost callback.
-- What identity and claims a client receives, and how the imported private
-  account mapping must be exposed to the API.
+`AUTH_TRUSTED_ORIGINS` also controls browser return redirects. Every consuming product, including the accounts app, must be listed as a full origin. Auth rejects a `returnTo` value whose origin is not in this allowlist.
 
-The Friink login button is not connected to this service. Connecting it later
-requires registering Friink as an OIDC client, adding the callback and code
-exchange to the web/API boundary, and mapping the allauth identity to the
-existing Friink account. The local signing key and fixed development secret
-must never be used outside this machine.
+The V1 sender policy uses `hello@<AUTH_EMAIL_DOMAIN>` for welcome, signup verification, password recovery, and security emails. OTP messages use `noreply@<AUTH_EMAIL_DOMAIN>`. The welcome email is sent only after onboarding is complete.
 
-For production, the OIDC issuer URL would be `https://auth.friink.com`. A
-browser sent through that OIDC sign-in flow would show `auth.friink.com` during
-login, then return to the registered Friink callback. On this local prototype
-the visible host is `127.0.0.1:8001`.
+## Vercel deployment
+
+The service is deployable to Vercel with the current layout. Configure the Vercel project as follows:
+
+- **Root Directory:** `auth`
+- **Framework preset:** Next.js
+- **Install command:** `npm install`
+- **Build command:** `npm run build`
+- **Output directory:** automatic
+
+The Auth app consumes the shared `../packages/account-switcher` and `../packages/onboarding` file dependencies. The repository root must remain available to the Vercel build so npm can resolve those packages.
+
+Add the variables listed above to the Vercel project environment for the required environments. Do not upload the local `.env` file. `BETTER_AUTH_URL` must be the public auth origin, and the configured PostgreSQL database and Resend API key must be reachable from Vercel. The first deployment will run the application, but a consuming application's SSO callback cannot be tested until that application is registered with its real URLs.
+
+## Documentation
+
+- [Auth requirements, status, and handoff](../units/AUTH.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Implementation](docs/IMPLEMENTATION.md)
+- [Repository release notes and scope](../RELEASE.md)
+
+## Current status
+
+The pilot foundation is implemented: the modular-monolith layout is in place, Better Auth is configured against PostgreSQL, the live schema passes Better Auth's check, the Resend connector boundary is wired, the identifier-first signup/sign-in/OTP flow is available, onboarding completion and username routing are available, and the thin auth UI supports redirect handoff to consuming applications. The `accounts/` app is the product-facing account shell and consumes auth-owned sessions, account switching, logout, and active-session management. Reference-application SSO callbacks, real email-delivery verification, trusted-device persistence, and a fully staged pre-account signup record remain follow-up work.
+
+## Web routing model
+
+The hosted routes are:
+
+- `/login` — email, password, then sign-in OTP
+- `/signup` — email verification OTP, password, and confirmation
+- `/start` — neutral email entry that hands off to login or signup
+- `/forgot-password` — password-reset request
+- `/onboarding` — username setup after account creation
+
+The root route resolves the session state:
+
+```text
+No valid active session  → Hosted Auth Screen
+Incomplete account       → /onboarding
+Complete account         → /<username> compatibility route or consuming-app return target
+```
+
+The Hosted Auth Screen is a thin auth surface. Consuming applications such as `accounts/` start auth with a validated `returnTo` URL; auth completes login, signup, verification, or onboarding and returns the user to that application. The auth root also resolves existing sessions for direct visits, while the product-facing account shell lives in the consuming application. Existing active sessions are honored when the auth domain is opened in a new tab unless the caller supplies explicit add-account intent.
+
+The pilot requires password verification followed by an email OTP for every existing-account login. Signup verifies email ownership before password creation and onboarding. Logging out revokes only the selected account’s Better Auth multi-session device session through `/multi-session/revoke`; it does not call the global `/sign-out` endpoint, so other account identities remain available. Cross-tab account changes, logout, and session revocation refresh visible tabs immediately and refresh hidden tabs when they become active.

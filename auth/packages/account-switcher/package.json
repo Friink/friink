@@ -1,0 +1,11 @@
+{
+  "name": "@friink/account-switcher",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": "./src/index.js",
+    "./account-switcher.js": "./src/account-switcher.js"
+  }
+}
