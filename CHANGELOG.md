@@ -6255,3 +6255,8 @@ _Last updated: 2026-09-10_
 - Standardized shell icon cells to 32px with 20px icons while keeping the
   picture-mode account switcher at 32px.
 
+## 2026-10-19T06:00:00Z
+
+- Aligned the Auth shell Friink brand mark with the icon contract: a 32px cell
+  containing a 20px mark.
+

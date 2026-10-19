@@ -829,8 +829,9 @@ variant is presentation-only and cannot alter Auth ownership, session
 validation, slot limits, or lifecycle enforcement.
 
 The Auth shell uses a 48px top bar and 48px rail with 6px internal padding in
-each. Its rail and top-bar icon cells are 32px with 20px icons. Its brand mark
-aligns with the rail icon cells and has no hover background. Active rail links
+each. Its rail and top-bar icon cells are 32px with 20px icons, including the
+Friink brand mark. The brand mark aligns with the rail icon cells and has no
+hover background. Active rail links
 have no persistent fill; hover and focus feedback remain available. The picture
 switcher is right-aligned within the top bar and remains a 32px circular
 control. Account Status is reached from Settings rather

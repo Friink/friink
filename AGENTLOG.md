@@ -16812,3 +16812,8 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Updated the related rules and design contracts. Auth typecheck passed;
   changes remain unpushed.
 
+# 2026-10-19T06:00:00Z
+
+- Aligned the Auth shell Friink brand mark to the shared 32px cell and 20px
+  icon contract. Updated related documentation; changes remain unpushed.
+
