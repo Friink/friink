@@ -6117,3 +6117,11 @@ _Last updated: 2026-09-10_
 - Verified the Auth database schema used by `auth/.env` contains the required
   `user.dateOfBirth` column; no additional schema change was needed.
 
+## 2026-10-19T01:32:00Z
+
+- Fixed Web session hydration to use the Better Auth-aware restore path from
+  the app shell's session manager.
+- Made onboarding profile provisioning retryable after a transient API failure
+  by returning the Auth account to pending onboarding state when provisioning
+  fails.
+

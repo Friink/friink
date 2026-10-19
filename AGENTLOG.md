@@ -16655,3 +16655,15 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     `public.user.dateOfBirth` column already exists as `timestamp with time zone`.
   - Verification Status: Schema query succeeded; no duplicate alteration was
     performed.
+
+- 2026-10-19T01:32:00Z — Fix shell hydration and onboarding retry behavior
+
+  - Agent: Codex
+  - Prompt Summary: Diagnose the first-attempt onboarding 502 and the Web App
+    shell failing to load after Auth redirect.
+  - Changes Made: Routed the Web app-shell session manager through Better Auth
+    cookie hydration instead of the legacy restore function. If API profile
+    provisioning fails, Auth now rolls onboarding back to pending so retrying
+    the form is safe and intentional.
+  - Verification Status: Web TypeScript check, Auth typecheck, and API Python
+    compilation passed.

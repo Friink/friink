@@ -1,7 +1,7 @@
 import {
   AuthApiError,
   isTerminalRefreshFailure as legacyIsTerminalRefreshFailure,
-  restoreAuthSessionForEntry as legacyRestoreAuthSessionForEntry,
+  restoreAuthSessionForEntry,
   type AuthSession,
   type AuthUser,
 } from '@/lib/auth';
@@ -46,7 +46,7 @@ export function isTerminalSessionFailure(error: unknown): error is AuthApiError 
  * implementation remains the fallback path for the migration.
  */
 export async function restoreSession(onSessionValidated?: (accountSlot: string) => void): Promise<AuthSession> {
-  return legacyRestoreAuthSessionForEntry(onSessionValidated);
+  return restoreAuthSessionForEntry(onSessionValidated);
 }
 
 /**

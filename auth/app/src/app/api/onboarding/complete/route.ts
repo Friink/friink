@@ -53,7 +53,13 @@ export async function POST(request: Request) {
     body: JSON.stringify({ id: completedUser.id, email: completedUser.email, name: completedUser.name, username, date_of_birth: dateOfBirth }),
     cache: "no-store",
   });
-  if (!productResponse.ok) return NextResponse.json({ error: "We could not finish your Friink profile. Please try again." }, { status: 502 });
+  if (!productResponse.ok) {
+    await context.internalAdapter.updateUser(session.user.id, {
+      onboardingStatus: "pending",
+      onboardingCompletedAt: null,
+    });
+    return NextResponse.json({ error: "We could not finish your Friink profile. Please try again." }, { status: 502 });
+  }
 
   await sendTransactionalEmail({
     to: completedUser.email,
