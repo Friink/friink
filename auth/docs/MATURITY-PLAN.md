@@ -1,7 +1,7 @@
 # Friink Auth App Maturity Plan
 
 **Status:** Planned  
-**Last edited:** 2026-10-19T00:08:15Z  
+**Last edited:** 2026-10-19T02:15:00Z
 **Owner:** `auth/`  
 **Purpose:** Prepare the standalone Auth app to become Friink Web App's future
 identity and account-lifecycle authority.
@@ -262,6 +262,47 @@ staging:
 The readiness decision must record passed checks, deferred checks, known
 limitations, and the explicit approval needed to begin Web App integration.
 
+### Phase 8 — Integration-pilot cleanup and hardening
+
+**Goal:** Remove pilot scaffolding and make Better Auth the durable identity
+and session boundary for the Web App/API path.
+
+The first pilot has proven the critical browser path: Better Auth authenticates
+the browser, the API introspects the cross-subdomain session, and the API
+resolves the Better Auth UUID to a product profile. The pilot is not complete
+until this cleanup is finished.
+
+Work:
+
+- remove or disable legacy Web/API login, refresh-token, JWT, account-slot, and
+  session-restoration paths that are no longer authoritative;
+- remove temporary compatibility, fallback, bridge, and debugging code after
+  replacement contracts are stable;
+- make Better Auth profile provisioning reliable and idempotent for every new
+  account, including safe parent/history write ordering and retryable missing-
+  profile handling;
+- replace generic authentication failures with user-safe handling for missing
+  profiles, expired sessions, deactivated accounts, and pending deletion;
+- reconcile production, staging, and development variables, cookie domains,
+  CORS origins, internal tokens, and service URLs;
+- add automated and real-request checks for session validation, provisioning,
+  logout, expiry, deactivation, deletion, and recovery;
+- align architecture, deployment, account-access, and lifecycle documentation;
+- deploy through staging, run clean-browser acceptance checks, then promote the
+  exact verified artifacts to production.
+
+Exit criteria:
+
+- no normal Web App request depends on the retired FastAPI authentication path;
+- a new Auth account reaches the Web App without manual database repair;
+- an existing Auth session restores the Web App shell after refresh;
+- logout, expiry, lifecycle transitions, and provisioning have verified status
+  codes and response shapes;
+- no temporary secrets, diagnostics, migration-only branches, or dead auth code
+  remain in the deployed path;
+- staging acceptance passes with separate credentials and database data before
+  production promotion.
+
 ## 4. Explicitly deferred until integration
 
 These are not part of Auth maturity work:
@@ -298,9 +339,11 @@ the later integration project.
 
 The Auth pilot currently provides Better Auth identity, email/password and OTP
 flows, onboarding, multi-session account switching, logout, email change, and
-session management. Account lifecycle persistence, lifecycle endpoints,
-reactivation, deletion scheduling, and lifecycle UI are not yet implemented in
-the standalone Auth app.
+session management. The live pilot also proves cross-subdomain session
+introspection and API profile resolution for a provisioned user. Cleanup and
+hardening remain, followed by lifecycle persistence, lifecycle endpoints,
+reactivation, deletion scheduling, and complete lifecycle UI in the standalone
+Auth app.
 
 The legacy FastAPI implementation contains product lifecycle behavior, but it
 remains outside this Auth-only plan and must not be treated as an Auth
@@ -310,3 +353,6 @@ dependency.
 
 - 2026-10-19T00:08:15Z — Created the Auth-only maturity plan, separating
   standalone lifecycle readiness from future Web App/API integration.
+- 2026-10-19T02:15:00Z — Added the integration-pilot cleanup and hardening
+  phase covering legacy auth removal, reliable provisioning, recovery states,
+  environment reconciliation, verification, documentation, and staging gates.

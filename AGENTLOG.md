@@ -16694,3 +16694,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   and its username-history row were flushed in an unsafe order. Added an
   explicit parent-row flush before the history insert.
 
+# 2026-10-19T02:15:00Z
+
+- Updated `auth/docs/MATURITY-PLAN.md` to record the post-pilot cleanup plan:
+  retire legacy auth paths, harden Better Auth profile provisioning and failure
+  states, reconcile deployment configuration, add targeted verification, align
+  documentation, and require clean-browser staging acceptance before promotion.
+

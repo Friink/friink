@@ -6,6 +6,13 @@
   before inserting username history, preventing a PostgreSQL foreign-key race
   that caused onboarding to return HTTP 500.
 
+## 2026-10-19T02:15:00Z
+
+- [auth documentation] Expanded `auth/docs/MATURITY-PLAN.md` with the
+  integration-pilot cleanup and hardening phase, including legacy auth removal,
+  reliable provisioning, recovery behavior, environment reconciliation,
+  verification, documentation, and staging acceptance gates.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,
