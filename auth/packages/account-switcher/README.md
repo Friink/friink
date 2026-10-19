@@ -12,6 +12,11 @@ The component uses browser-native HTML, CSS, and JavaScript. It has no React, Ne
 <account-switcher auth-url="https://auth.example.com" api-base="/auth-api"></account-switcher>
 ```
 
+Set `variant` to control the presentation without changing the component's
+behavior: `icon` shows the avatar and arrow, `compact` shows the avatar and
+username, and `full` shows the name, email, username, and arrow. The default is
+`full`.
+
 The `auth-url` attribute is the configured Auth origin. `api-base` selects the
 same-origin API prefix used by the host application; consuming applications
 normally use `/auth-api`, while the Auth app uses its direct `/api/auth` route.

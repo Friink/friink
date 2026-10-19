@@ -2,6 +2,6 @@
 
 import "@friink/account-switcher";
 
-export default function AccountSwitcherElement({ authUrl }: { authUrl: string }) {
-  return <account-switcher auth-url={authUrl} api-base="/api/auth" />;
+export default function AccountSwitcherElement({ authUrl, variant = "full" }: { authUrl: string; variant?: "icon" | "compact" | "full" }) {
+  return <account-switcher auth-url={authUrl} api-base="/api/auth" variant={variant} />;
 }

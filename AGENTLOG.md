@@ -16763,3 +16763,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Unified the Auth shell top bar and sidebar dimensions through the shared
   `--account-shell-unit` token set to 42px. Changes remain unpushed.
 
+# 2026-10-19T04:20:00Z
+
+- Added configurable `icon`, `compact`, and `full` modes to the shared account
+  switcher, with documentation and React element typing.
+- Configured the Auth shell top-bar switcher as icon-only. Auth typecheck
+  passed; changes remain unpushed.
+

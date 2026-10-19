@@ -6209,3 +6209,9 @@ _Last updated: 2026-09-10_
 - Unified the Auth account shell geometry with a shared 42px dimension for the
   top bar height, sidebar width, and related content calculations.
 
+## 2026-10-19T04:20:00Z
+
+- Added `icon`, `compact`, and `full` presentation variants to the shared
+  account switcher.
+- Configured the Auth shell top bar to use the icon-only variant.
+
