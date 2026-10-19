@@ -16,8 +16,8 @@ small { color: #6f766f; font-size: .7rem; }
 .trigger[aria-expanded="true"] .chevron { margin-top: .2rem; transform: rotate(225deg); }
 .switcher[data-variant="button"] .trigger { width: 2.125rem; height: 2.125rem; justify-content: center; padding: .1875rem; }
 .switcher[data-variant="button"] .avatar, .switcher[data-variant="button"] .summary { display: none; }
-.switcher[data-variant="picture"] .trigger, .switcher[data-variant="icon"] .trigger { position: relative; width: 2.125rem; height: 2.125rem; justify-content: center; padding: .1875rem; border: 0; border-radius: 50%; }
-.switcher[data-variant="picture"] .avatar, .switcher[data-variant="icon"] .avatar { width: 1.75rem; height: 1.75rem; border-radius: 50%; }
+.switcher[data-variant="picture"] .trigger, .switcher[data-variant="icon"] .trigger { position: relative; width: 2rem; height: 2rem; justify-content: center; padding: .1875rem; border: 0; border-radius: 50%; }
+.switcher[data-variant="picture"] .avatar, .switcher[data-variant="icon"] .avatar { width: 1.625rem; height: 1.625rem; border-radius: 50%; }
 .switcher[data-variant="picture"] .summary, .switcher[data-variant="icon"] .summary { display: none; }
 .switcher[data-variant="picture"] .chevron, .switcher[data-variant="icon"] .chevron { position: absolute; right: .08rem; bottom: .12rem; width: .45rem; height: .45rem; margin: 0; border-width: 1.5px; border-color: #ffffff; transform: rotate(45deg); filter: drop-shadow(0 0 0.1rem #111111); }
 .switcher[data-variant="compact"] .summary small { display: none; }

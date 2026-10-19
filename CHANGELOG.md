@@ -6249,3 +6249,9 @@ _Last updated: 2026-09-10_
   `full` modes.
 - Configured Auth to use `picture` and Web to use `button`.
 
+## 2026-10-19T05:45:00Z
+
+- Sized the Auth shell top bar and rail to 48px with 6px chrome padding.
+- Standardized shell icon cells to 32px with 20px icons while keeping the
+  picture-mode account switcher at 32px.
+

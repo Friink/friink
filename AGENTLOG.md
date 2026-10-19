@@ -16805,3 +16805,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Updated the related component, rules, unit, design, and maturity-plan
   documentation. Auth typecheck passed; changes remain unpushed.
 
+# 2026-10-19T05:45:00Z
+
+- Updated Auth shell geometry to a 48px top bar/rail, 6px padding, 32px icon
+  cells, and 20px icons; kept the picture switcher at 32px.
+- Updated the related rules and design contracts. Auth typecheck passed;
+  changes remain unpushed.
+

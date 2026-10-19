@@ -828,11 +828,12 @@ error, add-account, switching, logout, and account-change behavior. The
 variant is presentation-only and cannot alter Auth ownership, session
 validation, slot limits, or lifecycle enforcement.
 
-The Auth shell uses a compact 42px top bar and 42px rail with 4px internal
-padding in each. Its brand mark aligns with the rail icon cells and has no
-hover background. Active rail links have no persistent fill; hover and focus
-feedback remain available. The icon switcher is right-aligned within the top
-bar and uses a circular avatar. Account Status is reached from Settings rather
+The Auth shell uses a 48px top bar and 48px rail with 6px internal padding in
+each. Its rail and top-bar icon cells are 32px with 20px icons. Its brand mark
+aligns with the rail icon cells and has no hover background. Active rail links
+have no persistent fill; hover and focus feedback remain available. The picture
+switcher is right-aligned within the top bar and remains a 32px circular
+control. Account Status is reached from Settings rather
 than the primary rail, while `/account-status` remains available for lifecycle
 and recovery redirects.
 
