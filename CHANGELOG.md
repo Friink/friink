@@ -6260,3 +6260,10 @@ _Last updated: 2026-09-10_
 - Aligned the Auth shell Friink brand mark with the icon contract: a 32px cell
   containing a 20px mark.
 
+## 2026-10-19T06:15:00Z
+
+- Fixed the Auth API route's credentialed CORS boundary so allowlisted Web
+  origins can load Better Auth device sessions for the shared account switcher.
+- Added explicit preflight handling and origin allowlisting; Auth typecheck
+  passes.
+

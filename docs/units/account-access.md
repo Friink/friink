@@ -91,6 +91,13 @@ the verified domain only; application code selects aliases, using
 `noreply@<domain>` for OTP messages and `hello@<domain>` for password recovery
 and security messages. The browser never supplies the sender address.
 
+Cross-origin Auth API calls from consuming Friink products use credentialed
+CORS only for origins listed in `AUTH_TRUSTED_ORIGINS`. The Auth route echoes
+the exact allowlisted origin, allows credentials, and handles preflight for the
+session and multi-session requests used by the shared account switcher. The
+configuration must include every deployed product origin expected to call Auth
+directly.
+
 ### Purpose
 
 Allow people to create or access Friink accounts safely, remain signed in

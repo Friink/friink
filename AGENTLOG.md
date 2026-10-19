@@ -16817,3 +16817,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Aligned the Auth shell Friink brand mark to the shared 32px cell and 20px
   icon contract. Updated related documentation; changes remain unpushed.
 
+# 2026-10-19T06:15:00Z
+
+- Diagnosed the Web account-switcher list failure as a missing credentialed
+  CORS response from the Auth Better Auth route.
+- Added allowlisted CORS and preflight handling, updated the active rules and
+  Account Access documentation, and passed Auth typecheck. Changes remain
+  unpushed.
+

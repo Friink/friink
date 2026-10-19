@@ -513,6 +513,17 @@ site. See [BUG-AUTH-013](bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-mis
 - **Exceptions:** Explicit `/login`, `/start`, signup, password-recovery, and Add-account flows remain reachable and may intentionally show authentication UI. A trusted `returnTo` destination may send the user back to the requesting Friink product after authentication; it does not change the default direct-entry behavior.
 - **Security boundary:** Cookie presence alone is not treated as proof of a session. The server/API session check remains authoritative, and a failed or ambiguous check must not silently select or change an account.
 
+### AUTH-R-046 — Auth API Cross-Origin Session Responses Are Allowlisted
+
+- **Status:** Active
+- **Effective:** 2026-10-19T06:15:00Z
+- **Related units:** [account-access](units/account-access.md)
+- **Platform:** Auth/Web
+- **File(s):** `auth/app/src/app/api/auth/[...all]/route.ts`, `auth/app/src/lib/config.ts`
+
+- **What:** Auth API responses used by Friink products may include credentialed CORS headers only when the request `Origin` is present in `AUTH_TRUSTED_ORIGINS`. Allowed responses echo that exact origin, allow credentials, and vary by origin. Auth preflight responses allow only the configured origin and the required GET/POST/OPTIONS methods and request headers.
+- **Security boundary:** Auth never uses a wildcard origin with credentials. An untrusted origin receives no credentialed CORS response, and an untrusted preflight receives `403`.
+
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 
 - **Status:** Active
