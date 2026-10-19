@@ -16825,3 +16825,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   Account Access documentation, and passed Auth typecheck. Changes remain
   unpushed.
 
+# 2026-10-19T06:45:00Z
+
+- Made the account switcher host-styled: it now renders light-DOM semantic
+  markup and no longer imposes visual chrome or fixed menu positioning.
+- Updated the package README, active rules, Account Access unit, design
+  contracts, and logs. Auth typecheck passed; changes remain unpushed.
+

@@ -6267,3 +6267,9 @@ _Last updated: 2026-09-10_
 - Added explicit preflight handling and origin allowlisting; Auth typecheck
   passes.
 
+## 2026-10-19T06:45:00Z
+
+- Made the shared switcher presentation-neutral by rendering light-DOM semantic
+  markup and moving borders, padding, visual chrome, dimensions, and responsive
+  menu placement to consuming apps.
+
