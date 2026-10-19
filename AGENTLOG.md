@@ -16687,3 +16687,10 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
     account, and Sign out actions. The normal login form is now withheld when a
     current session exists.
   - Verification Status: `npm run typecheck` passed in `auth/`.
+# 2026-10-19T02:08:00Z
+
+- Diagnosed the live session failure: Better Auth introspection succeeds, but
+  the API profile-provisioning endpoint returned HTTP 500 because the new user
+  and its username-history row were flushed in an unsafe order. Added an
+  explicit parent-row flush before the history insert.
+

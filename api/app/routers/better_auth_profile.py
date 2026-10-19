@@ -47,6 +47,10 @@ async def provision_better_auth_profile(
         setup_completed=False,
     )
     session.add(user)
+    # Materialize the parent row before inserting its history record. Without
+    # this flush, PostgreSQL may order the two independent pending inserts with
+    # the history row first, violating the foreign-key constraint.
+    session.flush()
     session.add(UserUsernameHistory(user_id=user_id, username_key=user.username_key, username_display=user.username, event_type="created"))
     session.commit()
     return {"id": str(user.id), "username": user.username}

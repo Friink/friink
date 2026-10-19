@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-19T02:08:00Z
+
+- Fixed Better Auth product-profile provisioning to flush the parent API user
+  before inserting username history, preventing a PostgreSQL foreign-key race
+  that caused onboarding to return HTTP 500.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,
