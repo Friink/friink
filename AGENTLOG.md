@@ -16837,3 +16837,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   visual chrome, and updated the active component documentation. Changes
   remain unpushed.
 
+# 2026-10-20T01:15:00Z
+
+- Resized the Auth shell to 64px top bar/rail geometry with 8px padding,
+  48px icon cells, 32px glyphs, and a 48px picture switcher.
+- Made the account dropdown right-anchored and viewport-constrained. Updated
+  the related design contracts; Auth typecheck passed and changes remain
+  unpushed.
+

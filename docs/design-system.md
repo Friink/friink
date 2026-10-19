@@ -422,8 +422,8 @@ ownership, or switching behavior. The trigger and menu must remain accessible,
 responsive, and free of clipping; identity labels truncate before fixed
 controls. The Auth shell uses `picture` in its top bar, while the Web app uses
 `button` in its drawer. The Auth switcher is right-aligned inside a 48px black
-top bar and remains a 32px circular control. The Auth shell's 48px black rail
-uses 6px internal padding and 32px icon cells with 20px icons, including the
+top bar and remains a 48px circular control. The Auth shell's 64px black rail
+uses 8px internal padding and 48px icon cells with 32px icons, including the
 Friink brand mark;
 its brand mark aligns with the rail icon cells, has no hover background, and
 active rail links do not retain a permanent fill. Account Status is a Settings

@@ -835,13 +835,14 @@ error, add-account, switching, logout, and account-change behavior. The
 variant is presentation-only and cannot alter Auth ownership, session
 validation, slot limits, or lifecycle enforcement.
 
-The Auth shell uses a 48px top bar and 48px rail with 6px internal padding in
-each. Its rail and top-bar icon cells are 32px with 20px icons, including the
+The Auth shell uses a 64px top bar and 64px rail with 8px internal padding in
+each. Its rail and top-bar icon cells are 48px with 32px icons, including the
 Friink brand mark. The brand mark aligns with the rail icon cells and has no
 hover background. Active rail links
 have no persistent fill; hover and focus feedback remain available. The picture
-switcher is right-aligned within the top bar and remains a 32px circular
-control. Account Status is reached from Settings rather
+switcher is right-aligned within the top bar and remains a 48px circular
+control. Its dropdown is right-anchored and viewport-constrained so it does not
+leave the visible browser area. Account Status is reached from Settings rather
 than the primary rail, while `/account-status` remains available for lifecycle
 and recovery redirects.
 

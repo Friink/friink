@@ -6278,3 +6278,10 @@ _Last updated: 2026-09-10_
 - Made the Web account switcher's `button` variant a bare dropdown trigger with
   no border, padding, background, radius, or shadow.
 
+## 2026-10-20T01:15:00Z
+
+- Resized the Auth shell top bar and rail to 64px with 8px padding.
+- Standardized shell icon cells to 48px with 32px icons, including the logo,
+  and resized the picture switcher to a 48px circular control.
+- Made the switcher dropdown right-anchored and viewport-constrained.
+

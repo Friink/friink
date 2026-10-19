@@ -470,10 +470,11 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
   expanded state; decorative avatar arrows and icons are hidden from assistive
   technology; keyboard focus remains visible in every variant.
 - **Auth shell placement**: Auth uses the `picture` variant right-aligned inside
-  a 48px black top bar. The matching 48px black rail and top bar each use 6px
-  internal padding, with 32px icon cells and 20px icons, including the Friink
-  brand mark. The picture switcher remains a 32px circular control. The brand
-  mark aligns with the rail icon cells, has no
+  a 64px black top bar. The matching 64px black rail and top bar each use 8px
+  internal padding, with 48px icon cells and 32px icons, including the Friink
+  brand mark. The picture switcher remains a 48px circular control. Its
+  dropdown is right-anchored and constrained to the viewport. The brand mark
+  aligns with the rail icon cells, has no
   hover surface, and active rail links use transient hover/focus feedback
   rather than a permanent background. Icon-mode avatars are circular. Account
   Status belongs under Settings, not the primary rail; `/account-status` remains
