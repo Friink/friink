@@ -28,6 +28,13 @@
   `/security/sessions` beneath it. Added `/settings` and moved logout to the
   rail footer.
 
+## 2026-10-19T02:50:00Z
+
+- [auth deployment] Fixed the Auth shell deployment by committing the shared
+  `account-shell.tsx` component that the new routes import. Auth typecheck and
+  production build now pass, including `/security`, `/security/sessions`, and
+  `/settings`.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,

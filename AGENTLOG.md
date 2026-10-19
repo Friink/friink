@@ -16717,3 +16717,9 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   icon-only logout. Updated the existing profile, `/me`, and sessions pages to
   use the shared shell. Auth typecheck passed; no full build was run.
 
+# 2026-10-19T02:50:00Z
+
+- Diagnosed the Vercel Auth build failure: `account-shell.tsx` was created but
+  omitted from the prior commit. Committed it as `6a1e42c`, pushed it, and
+  verified both Auth typecheck and the full production build successfully.
+
