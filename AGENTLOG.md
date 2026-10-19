@@ -16758,3 +16758,8 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   icons instead of Unicode symbols. Auth typecheck passed; changes remain
   unpushed per user instruction.
 
+# 2026-10-19T04:10:00Z
+
+- Unified the Auth shell top bar and sidebar dimensions through the shared
+  `--account-shell-unit` token set to 42px. Changes remain unpushed.
+

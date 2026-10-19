@@ -6204,3 +6204,8 @@ _Last updated: 2026-09-10_
 - Replaced shell rail and logout Unicode placeholders with consistent,
   accessible Font Awesome icons, including a busy-state spinner.
 
+## 2026-10-19T04:10:00Z
+
+- Unified the Auth account shell geometry with a shared 42px dimension for the
+  top bar height, sidebar width, and related content calculations.
+

@@ -70,10 +70,10 @@ button { cursor: pointer; }
 .auth-footer { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--color-line); color: var(--color-muted); }
 .auth-footer p { margin: 0; font-size: 12px; }
 
-.account-shell { width: 100%; min-height: 100vh; margin: 0; display: grid; grid-template-columns: 56px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 0; }
-.account-topbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 0 20px; background: #000000; }
+.account-shell { --account-shell-unit: 42px; width: 100%; min-height: 100vh; margin: 0; display: grid; grid-template-columns: var(--account-shell-unit) minmax(0, 1fr); grid-template-rows: var(--account-shell-unit) 1fr; gap: 0; }
+.account-topbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; height: var(--account-shell-unit); padding: 0 20px; background: #000000; }
 .account-topbar account-switcher { width: min(18rem, 45vw); }
-.account-rail { grid-column: 1; grid-row: 2; display: flex; min-height: calc(100vh - 72px); flex-direction: column; align-items: center; justify-content: space-between; padding: 24px 0; background: #000000; color: #ffffff; }
+.account-rail { grid-column: 1; grid-row: 2; display: flex; min-height: calc(100vh - var(--account-shell-unit)); flex-direction: column; align-items: center; justify-content: space-between; padding: 24px 0; background: #000000; color: #ffffff; }
 .account-rail-nav { display: grid; gap: 10px; }
 .account-rail-nav a { display: grid; width: 40px; height: 40px; place-items: center; border-radius: var(--radius-sm); color: #aaaaaa; font-size: 21px; text-decoration: none; }
 .account-rail-nav a:hover, .account-rail-nav a.active { color: #ffffff; background: #222222; }
@@ -81,7 +81,7 @@ button { cursor: pointer; }
 .account-logout { width: 100%; min-height: 42px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent; color: #aaaaaa; text-align: center; }
 .account-logout:hover { background: #222222; color: #ffffff; }
 .account-logout-error { display: block; margin-top: 8px; color: var(--color-danger); font-size: 12px; }
-.account-content { grid-column: 2; grid-row: 2; align-self: stretch; min-width: 0; min-height: calc(100vh - 72px); padding: clamp(56px, 10vh, 120px) clamp(24px, 6vw, 88px); background: #eeeeee; border-radius: 24px 0 0 0; }
+.account-content { grid-column: 2; grid-row: 2; align-self: stretch; min-width: 0; min-height: calc(100vh - var(--account-shell-unit)); padding: clamp(56px, 10vh, 120px) clamp(24px, 6vw, 88px); background: #eeeeee; border-radius: 24px 0 0 0; }
 .account-content h1 { max-width: 640px; margin: 0 0 16px; color: var(--color-ink); font-family: var(--font-display); font-size: clamp(40px, 7vw, 72px); font-weight: 800; letter-spacing: -.05em; line-height: 1; }
 .account-lede { max-width: 560px; margin: 0; color: var(--color-muted); line-height: 1.6; }
 .account-card { display: grid; gap: 6px; width: min(100%, 440px); margin-top: 32px; padding: 20px; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-paper); }
@@ -106,9 +106,9 @@ button { cursor: pointer; }
   .auth-card { padding: 24px 20px; }
   .auth-footer { align-items: flex-start; flex-direction: column; justify-content: center; padding: 14px 0; }
   .account-shell { display: flex; flex-direction: column; }
-  .account-topbar { min-height: 64px; padding: 0 12px; }
+  .account-topbar { height: var(--account-shell-unit); padding: 0 12px; }
   .account-topbar account-switcher { width: min(15rem, 65vw); }
-  .account-content { order: 1; min-height: calc(100vh - 128px); padding: 40px 20px 96px; border-radius: 24px 0 0 0; }
+  .account-content { order: 1; min-height: calc(100vh - var(--account-shell-unit)); padding: 40px 20px 96px; border-radius: 24px 0 0 0; }
   .account-rail { order: 2; min-height: auto; flex-direction: row; padding: 12px 16px; }
   .account-rail-nav { display: flex; }
   .account-logout-wrap { width: 40px; }
