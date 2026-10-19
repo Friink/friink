@@ -26,6 +26,13 @@ endpoints; the legacy Web account-slot switcher has been removed. Logout,
 expiry, password recovery, full feature authorization, and staging acceptance
 remain required before the remaining legacy authentication path can be removed.
 
+Direct entry to `auth.friink.com` now follows the active-session entry contract:
+the Auth app checks the Better Auth session and routes an authenticated,
+onboarded user to the current `/<username>` account shell. A user whose setup
+is incomplete goes to `/onboarding`; a signed-out visitor remains in the Auth
+entry flow. Explicit `/login`, `/start`, signup, recovery, and Add-account
+flows remain available and are not permanently redirected to the shell.
+
 ---
 
 ## Canonical ownership
@@ -173,6 +180,30 @@ Login challenges are pending until exactly one of OTP verified, approved,
 denied, or expired wins. Late responses cannot replace a terminal result.
 
 ## 4. Subunits
+
+### 4.0 Auth domain entry
+
+#### Purpose
+
+Make the Auth domain a useful account home for authenticated users while
+preserving explicit authentication and Add-account entry points.
+
+#### Business rules
+
+- **ACCESS-R-037:** Direct Auth-domain entry uses the authoritative Better Auth
+  session to route an onboarded user to `/<username>` and an incomplete user to
+  `/onboarding`; no valid session leaves the user in the entry flow.
+- **ACCESS-R-038:** Explicit login, signup, recovery, and Add-account routes
+  remain reachable and may render authentication UI even when another session
+  exists.
+
+#### Acceptance criteria
+
+- [ ] **ACCESS-AC-059** A valid onboarded session entering the Auth domain lands
+      in the current account shell.
+- [ ] **ACCESS-AC-060** An incomplete session enters onboarding.
+- [ ] **ACCESS-AC-061** A signed-out visitor sees the Auth entry flow.
+- [ ] **ACCESS-AC-062** Explicit login and Add-account flows remain reachable.
 
 ### 4.1 Signup and email ownership
 

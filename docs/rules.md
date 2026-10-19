@@ -501,6 +501,18 @@ site. See [BUG-AUTH-013](bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-mis
 - **Shell presentation:** The Auth shell uses a 42px top bar and 42px navigation rail. Both chrome regions use 4px internal padding. The brand mark is aligned to the rail icon cells and has no hover surface. Active rail links do not retain a permanent background; hover and keyboard focus may provide transient feedback. The icon switcher is right-aligned inside the top bar, and its avatar is circular.
 - **Navigation placement:** Account Status is not a primary rail destination. Settings links to `/account-status`; the route remains available for lifecycle and recovery redirects.
 
+### AUTH-R-045 — Auth Domain Entry Uses the Account Shell
+
+- **Status:** Active
+- **Effective:** 2026-10-19T05:15:00Z
+- **Related units:** [account-access](units/account-access.md)
+- **Platform:** Auth
+- **File(s):** `auth/app/src/app/page.tsx`, `auth/app/src/app/[username]/page.tsx`, `auth/app/src/lib/return-url.ts`
+
+- **What:** A direct visit to the Auth domain checks the authoritative Better Auth session. When at least one valid session exists, the user is sent to the current account's Auth shell at `/<username>`; incomplete onboarding is sent to `/onboarding`. With no valid session, the Auth entry flow remains available.
+- **Exceptions:** Explicit `/login`, `/start`, signup, password-recovery, and Add-account flows remain reachable and may intentionally show authentication UI. A trusted `returnTo` destination may send the user back to the requesting Friink product after authentication; it does not change the default direct-entry behavior.
+- **Security boundary:** Cookie presence alone is not treated as proof of a session. The server/API session check remains authoritative, and a failed or ambiguous check must not silently select or change an account.
+
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 
 - **Status:** Active

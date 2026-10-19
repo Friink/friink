@@ -364,3 +364,6 @@ dependency.
   security overview, sessions page, settings overview, and rail logout.
 - 2026-10-19T04:20:00Z — Added shared account-switcher `icon`, `compact`, and
   `full` presentation variants and configured the Auth shell to use `icon`.
+- 2026-10-19T05:15:00Z — Documented direct Auth-domain entry routing: valid
+  sessions open the current account shell, incomplete onboarding opens
+  onboarding, and explicit login/Add-account flows remain reachable.

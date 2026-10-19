@@ -16792,3 +16792,9 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   as a Settings destination while preserving its direct lifecycle/recovery
   route. Changes remain unpushed.
 
+# 2026-10-19T05:15:00Z
+
+- Updated `docs/rules.md`, `docs/units/account-access.md`, and
+  `auth/docs/MATURITY-PLAN.md` with the active Auth-domain entry contract and
+  its explicit-flow exceptions. Documentation-only change; remains unpushed.
+

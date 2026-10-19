@@ -6237,3 +6237,9 @@ _Last updated: 2026-09-10_
   navigation entry while `/account-status` is preserved for lifecycle and
   recovery redirects.
 
+## 2026-10-19T05:15:00Z
+
+- Documented Auth-domain entry routing: valid sessions open the current
+  account shell, incomplete onboarding opens onboarding, and explicit login,
+  recovery, signup, and Add-account flows remain reachable.
+
