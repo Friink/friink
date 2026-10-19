@@ -35,6 +35,14 @@
   collapsed, and can extend beyond the sidebar without being clipped. Changes
   remain local and unpushed for review.
 
+## 2026-10-19T03:30:00Z
+
+- [account switcher] Hardened the shared switcher for Web consumers: GET
+  requests no longer send an unnecessary JSON content type, session loading is
+  independent from device-account listing, and wrapped session-list responses
+  are accepted. The current account now remains usable when account discovery
+  temporarily fails.
+
 ## 2026-10-19T02:50:00Z
 
 - [auth deployment] Fixed the Auth shell deployment by committing the shared

@@ -16743,3 +16743,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   outside the sidebar without clipping. Per user instruction, changes remain
   unpushed.
 
+# 2026-10-19T03:30:00Z
+
+- Hardened `auth/packages/account-switcher/src/account-switcher.js` after
+  reproducing the Web account-list failure. GET requests omit JSON
+  `Content-Type`, session hydration is separated from device-session discovery,
+  and `{ sessions: [...] }` responses are supported. Auth typecheck passed;
+  changes remain unpushed per user instruction.
+

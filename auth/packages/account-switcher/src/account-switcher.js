@@ -40,7 +40,9 @@ em { color: #6f766f; font-size: .68rem; font-style: normal; }
 
 function authRequest(path, init, apiBase = "/auth-api") {
   const base = apiBase.replace(/\/$/, "");
-  return fetch(`${base}/${path}`, { ...init, cache: "no-store", credentials: "include", headers: { "Content-Type": "application/json", ...(init?.headers || {}) } }).then((response) => {
+  const headers = { Accept: "application/json", ...(init?.headers || {}) };
+  if (init?.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+  return fetch(`${base}/${path}`, { ...init, cache: "no-store", credentials: "include", headers }).then((response) => {
     if (!response.ok) throw new Error(`Auth request failed (${response.status})`);
     return response.json();
   });
@@ -60,7 +62,8 @@ export function publishSessionEvent(type) {
 }
 
 function accountsFrom(value) {
-  return (Array.isArray(value) ? value : []).flatMap((item, index) => {
+  const entries = Array.isArray(value) ? value : Array.isArray(value?.sessions) ? value.sessions : [];
+  return entries.flatMap((item, index) => {
     if (!item || typeof item !== "object") return [];
     const entry = item;
     const user = entry.user && typeof entry.user === "object" ? entry.user : entry;
@@ -114,15 +117,18 @@ export class AccountSwitcher extends ElementBase {
   async load(announce = false) {
     try {
       const apiBase = this.apiBase();
-      const [session, deviceSessions] = await Promise.all([authRequest("get-session", undefined, apiBase), authRequest("multi-session/list-device-sessions", undefined, apiBase)]);
+      const [sessionResult, deviceSessionsResult] = await Promise.allSettled([authRequest("get-session", undefined, apiBase), authRequest("multi-session/list-device-sessions", undefined, apiBase)]);
+      if (sessionResult.status === "rejected") throw sessionResult.reason;
+      const session = sessionResult.value;
       const previousUser = this.user;
       this.user = session?.user;
       this.token = session?.session?.token;
-      this.accounts = accountsFrom(deviceSessions);
+      this.accounts = deviceSessionsResult.status === "fulfilled" ? accountsFrom(deviceSessionsResult.value) : [];
       if (this.user?.email && !this.accounts.some((account) => account.email.toLowerCase() === this.user.email.toLowerCase())) {
         this.accounts.unshift({ id: this.user.id || this.user.email, name: this.user.name || this.user.email, email: this.user.email, username: this.user.username || "", onboardingComplete: this.user.onboardingStatus === undefined || this.user.onboardingStatus === "complete" || this.user.onboardingStatus === "completed", sessionToken: this.token });
       }
       this.update();
+      if (deviceSessionsResult.status === "rejected") this.showError("Your account is signed in, but the account list could not be loaded.");
       if (announce && previousUser && this.user && this.accountKey(previousUser) !== this.accountKey(this.user)) this.accountChanged(this.user);
       if (!this.user && previousUser) window.dispatchEvent(new CustomEvent("friink:session-invalidated"));
     } catch { this.showError("We could not load your account list."); }
