@@ -20,6 +20,14 @@
   multi-session endpoints. Removed the Web-side account discovery, switching,
   add-account, and remembered-account removal UI path.
 
+## 2026-10-19T02:40:00Z
+
+- [auth UI] Simplified the authenticated Auth shell: the Better Auth account
+  switcher now sits in the upper-right, navigation is a slim right rail, the
+  profile lives at `/{username}`, and `/security` is the security overview with
+  `/security/sessions` beneath it. Added `/settings` and moved logout to the
+  rail footer.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,

@@ -356,3 +356,6 @@ dependency.
 - 2026-10-19T02:15:00Z — Added the integration-pilot cleanup and hardening
   phase covering legacy auth removal, reliable provisioning, recovery states,
   environment reconciliation, verification, documentation, and staging gates.
+- 2026-10-19T02:40:00Z — Simplified the authenticated Auth shell around the
+  username profile, upper-right account switcher, slim navigation rail,
+  security overview, sessions page, settings overview, and rail logout.

@@ -16709,3 +16709,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   account discovery/switch/add/remove UI was removed. TypeScript verification
   passed; no full build was run.
 
+# 2026-10-19T02:40:00Z
+
+- Reworked the authenticated Auth shell into a compact account console. Added
+  the shared `AccountShell`, upper-right Better Auth switcher, slim right rail,
+  `/security` overview, `/settings` overview, username profile navigation, and
+  icon-only logout. Updated the existing profile, `/me`, and sessions pages to
+  use the shared shell. Auth typecheck passed; no full build was run.
+

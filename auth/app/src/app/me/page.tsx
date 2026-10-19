@@ -1,9 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import AccountActions from "@/components/auth/account-actions";
-import AccountSwitcherElement from "@/components/auth/account-switcher-element";
-import { config } from "@/lib/config";
+import AccountShell from "@/components/auth/account-shell";
 
 export default async function MePage() {
   const current = await auth.api.getSession({ headers: await headers() });
@@ -12,20 +10,7 @@ export default async function MePage() {
   const user = current.user;
   const isOnboarded = user.onboardingStatus === "complete" && Boolean(user.username);
 
-  return (
-    <div className="account-shell">
-      <aside className="account-sidebar">
-        <a className="brand" href="/" aria-label="Friink home">m</a>
-        <AccountSwitcherElement authUrl={config.authUrl} />
-        <nav className="account-nav" aria-label="Account navigation">
-          <a href="/me" aria-current="page">Current account</a>
-          {isOnboarded && <a href={`/${encodeURIComponent(user.username as string)}`}>Account home</a>}
-          <a href="/security/sessions">Sessions &amp; security</a>
-          <a href="/email">Change email</a>
-        </nav>
-        <AccountActions currentToken={current.session.token} />
-      </aside>
-      <main className="account-content">
+  return <AccountShell username={user.username} currentToken={current.session.token} activePath="profile">
         <p className="micro">Current account</p>
         <h1>{user.name}.</h1>
         <p className="account-lede">This is the account currently selected for this auth session.</p>
@@ -35,7 +20,5 @@ export default async function MePage() {
           <span>{user.username ? `@${user.username}` : "Username setup pending"}</span>
           <span>{isOnboarded ? "Setup complete" : "Setup pending"}</span>
         </section>
-      </main>
-    </div>
-  );
+  </AccountShell>;
 }

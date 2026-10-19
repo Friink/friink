@@ -27,5 +27,5 @@ export default function AccountActions({ currentToken }: { currentToken: string 
     }
   }
 
-  return <div className="account-logout-wrap"><button className="account-logout" type="button" disabled={busy} onClick={signOut}>{busy ? "Signing out…" : "Log out account ↗"}</button>{error && <span className="account-logout-error" role="alert">{error}</span>}</div>;
+  return <div className="account-logout-wrap"><button className="account-logout" type="button" aria-label={busy ? "Signing out" : "Log out"} title={busy ? "Signing out" : "Log out"} disabled={busy} onClick={signOut}>{busy ? "…" : "↥"}</button>{error && <span className="account-logout-error" role="alert">{error}</span>}</div>;
 }
