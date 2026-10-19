@@ -6267,3 +6267,9 @@ _Last updated: 2026-09-10_
 - Added explicit preflight handling and origin allowlisting; Auth typecheck
   passes.
 
+## 2026-10-19T06:55:00Z
+
+- Reverted the host-styled/light-DOM account-switcher experiment. The prior
+  shared component presentation and styling remain active while switcher UX is
+  reconsidered.
+

@@ -16825,3 +16825,9 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   Account Access documentation, and passed Auth typecheck. Changes remain
   unpushed.
 
+# 2026-10-19T06:55:00Z
+
+- Reverted the previous host-styled/light-DOM account-switcher change and
+  restored the prior shared component implementation. Preserved the historical
+  changelog entry and kept the change unpushed.
+
