@@ -467,6 +467,11 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Accessibility contract**: The trigger exposes an accessible name and
   expanded state; decorative avatar arrows and icons are hidden from assistive
   technology; keyboard focus remains visible in every variant.
+- **Auth shell placement**: Auth uses the `icon` variant right-aligned inside
+  a 42px black top bar. The matching 42px black rail and top bar each use 4px
+  internal padding. The brand mark aligns with the rail icon cells, has no
+  hover surface, and active rail links use transient hover/focus feedback
+  rather than a permanent background. Icon-mode avatars are circular.
 
 ### 6. TopBar (`web/components/top-bar.tsx`) & NavigationBar (`web/components/navigationbar.tsx`)
 - **Desktop `Header`**:

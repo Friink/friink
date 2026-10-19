@@ -14,8 +14,8 @@ strong { font-size: .78rem; }
 small { color: #6f766f; font-size: .7rem; }
 .chevron { width: .55rem; height: .55rem; flex: 0 0 .55rem; margin: -.2rem .2rem 0 0; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 180ms ease; }
 .trigger[aria-expanded="true"] .chevron { margin-top: .2rem; transform: rotate(225deg); }
-.switcher[data-variant="icon"] .trigger { position: relative; width: 2.75rem; height: 2.75rem; justify-content: center; padding: .25rem; border: 0; border-radius: 50%; }
-.switcher[data-variant="icon"] .avatar { width: 2.25rem; height: 2.25rem; }
+.switcher[data-variant="icon"] .trigger { position: relative; width: 2.125rem; height: 2.125rem; justify-content: center; padding: .1875rem; border: 0; border-radius: 50%; }
+.switcher[data-variant="icon"] .avatar { width: 1.75rem; height: 1.75rem; border-radius: 50%; }
 .switcher[data-variant="icon"] .summary { display: none; }
 .switcher[data-variant="icon"] .chevron { position: absolute; right: .08rem; bottom: .12rem; width: .45rem; height: .45rem; margin: 0; border-width: 1.5px; border-color: #ffffff; transform: rotate(45deg); filter: drop-shadow(0 0 0.1rem #111111); }
 .switcher[data-variant="compact"] .summary small { display: none; }

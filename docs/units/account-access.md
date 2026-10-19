@@ -796,6 +796,12 @@ error, add-account, switching, logout, and account-change behavior. The
 variant is presentation-only and cannot alter Auth ownership, session
 validation, slot limits, or lifecycle enforcement.
 
+The Auth shell uses a compact 42px top bar and 42px rail with 4px internal
+padding in each. Its brand mark aligns with the rail icon cells and has no
+hover background. Active rail links have no persistent fill; hover and focus
+feedback remain available. The icon switcher is right-aligned within the top
+bar and uses a circular avatar.
+
 #### Presentation contract
 
 - **ACCESS-R-036:** Shared account-switcher variants change presentation only;

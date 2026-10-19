@@ -6223,3 +6223,11 @@ _Last updated: 2026-09-10_
   maturity plan with the new presentation-only switcher behavior.
 - Superseded the former Web-only account-switcher presentation rule.
 
+## 2026-10-19T04:45:00Z
+
+- Refined Auth shell chrome with 4px top-bar and rail padding, right-aligned
+  in-bar account switching, circular icon-mode avatars, aligned branding, no
+  logo hover surface, and transient rather than persistent active rail styling.
+- Updated the corresponding rules, Account Access, design-system, and shared
+  design contracts.
+

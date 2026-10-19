@@ -419,7 +419,10 @@ the display name, email, username, and arrow. Hosts select the mode according
 to available space; the mode must not change account permissions, session
 ownership, or switching behavior. The trigger and menu must remain accessible,
 responsive, and free of clipping; identity labels truncate before fixed
-controls. The Auth shell uses `icon` in its top bar.
+controls. The Auth shell uses `icon` in its top bar, right-aligned inside a
+42px black top bar. The Auth shell's 42px black rail uses 4px internal padding;
+its brand mark aligns with the rail icon cells, has no hover background, and
+active rail links do not retain a permanent fill.
 
 Icon-and-text primary and secondary buttons use a consistent 8px inline gap;
 icon-only `.icon-button` controls remain compact and are excluded. Button-like

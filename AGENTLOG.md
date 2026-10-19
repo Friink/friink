@@ -16778,3 +16778,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `auth/docs/MATURITY-PLAN.md`; superseded stale Web-only presentation wording
   and added the active shared component contract. Changes remain unpushed.
 
+# 2026-10-19T04:45:00Z
+
+- Updated the Auth shell visual contract and implementation: 4px top-bar/rail
+  padding, right-aligned switcher, circular icon avatar, aligned brand mark,
+  no logo hover background, and no persistent active rail fill.
+- Updated the related rules and design documentation. Auth typecheck passed;
+  changes remain unpushed.
+
