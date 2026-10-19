@@ -41,6 +41,12 @@
   and black header, removed their borders, and added theme-specific content
   surfaces (`#eeeeee` light, `#222222` dark) with a rounded upper-right corner.
 
+## 2026-10-19T03:10:00Z
+
+- [auth UI] Removed the authenticated shell's outer page gutters, set the page
+  background to black, and moved the content surface's rounded corner to the
+  upper-left. Changes are local and intentionally unpushed for review.
+
 ## 2026-10-19T00:18:05Z
 - [auth UI] Added the standalone hosted-flow screen layer for verification,
   email verification, account status, deactivation, deletion, reactivation,

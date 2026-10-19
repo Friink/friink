@@ -16730,3 +16730,9 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   `#eeeeee` in light mode and `#222222` in dark mode with a rounded upper-right
   corner. Auth typecheck and production build passed.
 
+# 2026-10-19T03:10:00Z
+
+- Locally adjusted the Auth shell to remove outer horizontal gutters, use a
+  black page background, and round the content surface at the upper-left.
+  Per user instruction, these changes were not pushed.
+
