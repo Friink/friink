@@ -16770,3 +16770,11 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
 - Configured the Auth shell top-bar switcher as icon-only. Auth typecheck
   passed; changes remain unpushed.
 
+# 2026-10-19T04:30:00Z
+
+- Performed the documentation alignment for shared account-switcher variants.
+  Updated `docs/rules.md`, `docs/units/account-access.md`,
+  `docs/design-system.md`, `packages/design/design.md`, and
+  `auth/docs/MATURITY-PLAN.md`; superseded stale Web-only presentation wording
+  and added the active shared component contract. Changes remain unpushed.
+

@@ -11,7 +11,7 @@ dates, platform scope, exact implementation files, related units, and source
 links. Detailed UX, technical contracts, and verification remain in the unit
 documents.
 
-**Last edited:** 2026-10-02T00:01:48Z
+**Last edited:** 2026-10-19T04:30:00Z
 **Rule policy:** Active rules describe behavior currently enforced by the product or an explicitly active implementation contract. Deferred, superseded, or retired decisions belong in [Rule history](#rule-history).
 
 ## How to read this file
@@ -476,15 +476,28 @@ site. See [BUG-AUTH-013](bugs.md#bug-auth-013--slotless-bootstrap-refresh-is-mis
 
 ### AUTH-R-013 — Account Switcher UX
 
-- **Status:** Active
+- **Status:** Superseded by AUTH-R-044
 - **Effective:** 2026-09-26T13:07:02Z
 - **Related units:** [account-access](units/account-access.md)
 - **Source:** [archived RULES.md](archives/RULES.md)
 - **Platform:** Web
 - **File(s):** `api/app/routers/auth.py`, `api/app/schemas/auth.py`, `web/components/side-drawer.tsx`, `web/components/modal.tsx`, `web/components/login-screen.tsx`, `web/lib/auth.ts`, `docs/archives/auth-and-session.md`
 
-- **What:** Add account opens the existing modal with Login first and Create account below. Successful authentication activates the new or already-remembered account. The drawer exposes switching, Add account, and active-account logout. Non-current accounts have an inline right-side logout action; the current account retains its checkmark.
+- **What:** The former Web-only account-switcher presentation and modal contract. The active shared behavior and presentation contract is now defined by AUTH-R-044 and the Account Access unit.
 - **Edge cases:** When `MAX_REMEMBERED_ACCOUNTS_PER_DEVICE=1`, the Add account action remains available in the switcher but opens the modal with the capacity message; the switcher stays visible while multiple accounts are already available and is hidden when there is at most one. Ordinary sign-in and logout remain available. Otherwise, the selector opens immediately with the cached device account list, or the current account as a safe fallback when no cache exists. While the deduplicated account refresh runs, the permanent `Switch Account` header remains unchanged and shows the shared spinner; when idle, the same slot shows an icon-only refresh control. A failed refresh preserves the cached/current account and keeps that control available as a retry action. Disabled switcher actions expose a not-allowed cursor. Logout/removal is confirmed with the selected account's profile card. Active logout selects the most recently used remaining account or returns to the public site. Deactivated and pending-deletion accounts show lifecycle messaging; after the user acknowledges that the session ended, Friink removes the unavailable account from the device list and activates the most recently used valid remembered account, or returns to public when none remain. Before adding an account, a legacy active session without a device slot is migrated into one when possible so it remains switchable. The API remains authoritative for Add account availability. During an account switch, the selected row shows a spinner, the selector remains open, and competing account rows and logout actions are disabled while Add account remains available; a stalled switch times out with retryable feedback instead of leaving the selector inert. A successful add keeps the selector open and refreshes its cached list; a successful switch reloads the current URL rather than forcing `/home`, and other tabs reload and restore the selected slot. Removing the active account may reload the browser after automatically switching to the most recently used remaining account.
+- **Edge cases:** Preserved as historical behavior for the superseded Web-only presentation. Session, slot, lifecycle, and recovery semantics remain active through AUTH-R-010, AUTH-R-044, and the Account Access unit.
+
+### AUTH-R-044 — Shared Account Switcher Presentation Variants
+
+- **Status:** Active
+- **Effective:** 2026-10-19T04:20:00Z
+- **Related units:** [account-access](units/account-access.md), [navigation](units/navigation.md)
+- **Platform:** Auth/Web
+- **File(s):** `auth/packages/account-switcher/src/account-switcher.js`, `auth/packages/account-switcher/README.md`, `auth/app/src/components/auth/account-switcher-element.tsx`, `auth/app/src/components/auth/account-shell.tsx`, `web/components/side-drawer.tsx`
+
+- **What:** Friink products consume the framework-neutral `@friink/account-switcher` custom element for account discovery, activation, add-account navigation, and account logout. Its presentation is selected independently from its session behavior through the `variant` attribute: `icon` renders the avatar with a dropdown arrow, `compact` renders the avatar and `@username`, and `full` renders the display name, email, username, and dropdown arrow. The default variant is `full`. The Auth account shell uses `icon` in its top bar; consuming products may select the variant that fits their available layout.
+- **Security and accessibility:** The component remains a presentation and browser-integration layer over Auth-owned APIs. It never stores credentials or authorizes an account from client-supplied identity fields. Every trigger has an accessible name and visible expanded state; decorative icons and arrows are hidden from assistive technology; labels truncate before fixed controls rather than clipping or causing horizontal overflow.
+- **Edge cases:** Variant changes must not change account limits, session ownership, switching validation, logout semantics, or lifecycle enforcement. Hosts control placement and available width; the shared component must not require a fixed host width or height. Menu, loading, error, and account-change feedback remain available in every variant.
 
 ### AUTH-R-014 — Drawer Account Controls Use Profile Menu
 
@@ -1839,6 +1852,7 @@ The unit documents also carry local rule IDs for detailed traceability. These en
 | [account-access](units/account-access.md) | ACCESS-R-028 | Switching refreshes account-scoped shell, feed, |
 | [account-access](units/account-access.md) | ACCESS-R-029 | Failed list, add, switch, logout, refresh, or slot operations |
 | [account-access](units/account-access.md) | ACCESS-R-030 | Active logout selects the most-recent remaining valid slot |
+| [account-access](units/account-access.md) | ACCESS-R-036 | Shared account-switcher variants change presentation only. |
 | [account-access](units/account-access.md) | ACCESS-R-044 | Concurrent switches serialize and stale restore responses cannot replace the selected slot. |
 | [account-lifecycle](units/account-lifecycle.md) | LIFE-R-001 | Profile setup resumes until complete; optional steps remain |
 | [account-lifecycle](units/account-lifecycle.md) | LIFE-R-002 | Deactivation requires the current password, ends all |

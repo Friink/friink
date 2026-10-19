@@ -7,9 +7,9 @@ independent accounts remembered on one web device.
 
 **Status:** Active  
 **Tier:** Full  
-**Last edited:** 2026-10-19T02:25:00Z
+**Last edited:** 2026-10-19T04:30:00Z
 **Platforms:** Web and API; mobile requirements are deferred  
-**Canonical sources:** [`docs/rules.md`](../rules.md), `auth/packages/account-switcher/src/account-switcher.js`, `api/app/routers/auth.py`, `web/lib/auth.ts`
+**Canonical sources:** [`docs/rules.md`](../rules.md), `auth/packages/account-switcher/src/account-switcher.js`, `auth/packages/account-switcher/README.md`, `auth/app/src/components/auth/account-shell.tsx`, `api/app/routers/auth.py`, `web/lib/auth.ts`
 
 **Migration status:** Better Auth is now the Web App's hosted credential and
 browser-session entry point. The API accepts a Better Auth cookie when it can
@@ -776,6 +776,41 @@ be revoked individually or through `Log out other sessions`.
 - The client never supplies the identity of the current session.
 
 ### 4.6 Device-scoped account switching
+
+#### Shared switcher presentation
+
+The account-switcher behavior is implemented once in the framework-neutral
+`@friink/account-switcher` package. Hosts choose a presentation variant without
+forking its session behavior:
+
+- `icon`: avatar with a dropdown arrow; used by the Auth shell top bar and
+  intended for narrow chrome;
+- `compact`: avatar and `@username`; intended for an expanded navigation area;
+- `full`: display name, email, username, and dropdown arrow; the package
+  default for identity-rich surfaces.
+
+The host controls placement and available width. The package must remain
+usable without a fixed host width or height, and labels must truncate before
+the arrow or other fixed controls. All variants retain the same menu, loading,
+error, add-account, switching, logout, and account-change behavior. The
+variant is presentation-only and cannot alter Auth ownership, session
+validation, slot limits, or lifecycle enforcement.
+
+#### Presentation contract
+
+- **ACCESS-R-036:** Shared account-switcher variants change presentation only;
+  `icon`, `compact`, and `full` expose the same Auth-authoritative account and
+  session operations.
+
+#### Presentation acceptance criteria
+
+- [ ] **ACCESS-AC-055** Auth renders the shared switcher in icon mode.
+- [ ] **ACCESS-AC-056** Compact mode shows avatar and `@username` without
+      clipping the trigger or arrow.
+- [ ] **ACCESS-AC-057** Full mode shows name, email, username, and arrow with
+      responsive truncation.
+- [ ] **ACCESS-AC-058** Changing variants does not change session or account
+      switching behavior.
 
 #### UX and flows
 

@@ -410,6 +410,17 @@ Feature units own what a component means in context. This document owns the
 shared design language. The implementation details and component contracts are
 in [`packages/design/design.md`](../packages/design/design.md).
 
+### Shared account switcher
+
+The reusable `@friink/account-switcher` presents the same Auth-owned account
+and session behavior in three layout modes: `icon` shows the avatar and
+dropdown arrow, `compact` shows the avatar and `@username`, and `full` shows
+the display name, email, username, and arrow. Hosts select the mode according
+to available space; the mode must not change account permissions, session
+ownership, or switching behavior. The trigger and menu must remain accessible,
+responsive, and free of clipping; identity labels truncate before fixed
+controls. The Auth shell uses `icon` in its top bar.
+
 Icon-and-text primary and secondary buttons use a consistent 8px inline gap;
 icon-only `.icon-button` controls remain compact and are excluded. Button-like
 links use the same shared primitives and never display browser-default

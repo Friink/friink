@@ -448,6 +448,26 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 - **Usage**: Currently rendered beside `Switch Account` in the account
   switcher header. Do not use it for unavailable or unimplemented features.
 
+### 5c. Shared AccountSwitcher (`auth/packages/account-switcher`)
+
+- **Purpose**: Framework-neutral account discovery, account activation,
+  add-account navigation, and account logout over Auth-owned APIs.
+- **Variants**: `icon` renders an avatar with a dropdown arrow; `compact`
+  renders an avatar and `@username`; `full` renders display name, email,
+  username, and dropdown arrow. `full` is the default. The Auth shell uses
+  `icon` in its top bar.
+- **Layout contract**: The host chooses placement and available width. The
+  component must not require a fixed host width or height. Identity text
+  truncates before the arrow and other fixed controls, with no horizontal
+  overflow or clipping.
+- **Behavior contract**: Variants are presentation-only. All variants retain
+  the same Auth-authoritative loading, account listing, switching, add-account,
+  logout, error, and account-change behavior. The component does not store
+  credentials or authorize a client-supplied identity.
+- **Accessibility contract**: The trigger exposes an accessible name and
+  expanded state; decorative avatar arrows and icons are hidden from assistive
+  technology; keyboard focus remains visible in every variant.
+
 ### 6. TopBar (`web/components/top-bar.tsx`) & NavigationBar (`web/components/navigationbar.tsx`)
 - **Desktop `Header`**:
   - Fixed top bar (`height: 4rem`, `--space-topbar-height`).

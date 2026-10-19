@@ -1,7 +1,7 @@
 # Friink Auth App Maturity Plan
 
 **Status:** Planned  
-**Last edited:** 2026-10-19T02:15:00Z
+**Last edited:** 2026-10-19T04:30:00Z
 **Owner:** `auth/`  
 **Purpose:** Prepare the standalone Auth app to become Friink Web App's future
 identity and account-lifecycle authority.
@@ -283,6 +283,9 @@ Work:
   profile handling;
 - replace generic authentication failures with user-safe handling for missing
   profiles, expired sessions, deactivated accounts, and pending deletion;
+- keep the shared account-switcher package presentation-only and documented:
+  Auth uses its `icon` variant in the shell top bar, while consuming products
+  may select `compact` or `full` without changing Auth-owned session behavior;
 - reconcile production, staging, and development variables, cookie domains,
   CORS origins, internal tokens, and service URLs;
 - add automated and real-request checks for session validation, provisioning,
@@ -359,3 +362,5 @@ dependency.
 - 2026-10-19T02:40:00Z — Simplified the authenticated Auth shell around the
   username profile, upper-right account switcher, slim navigation rail,
   security overview, sessions page, settings overview, and rail logout.
+- 2026-10-19T04:20:00Z — Added shared account-switcher `icon`, `compact`, and
+  `full` presentation variants and configured the Auth shell to use `icon`.

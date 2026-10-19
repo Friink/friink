@@ -6215,3 +6215,11 @@ _Last updated: 2026-09-10_
   account switcher.
 - Configured the Auth shell top bar to use the icon-only variant.
 
+## 2026-10-19T04:30:00Z
+
+- Updated the active rules and Account Access unit contract for the shared
+  account-switcher package and its `icon`, `compact`, and `full` variants.
+- Aligned the product design system, implementation design contract, and Auth
+  maturity plan with the new presentation-only switcher behavior.
+- Superseded the former Web-only account-switcher presentation rule.
+
