@@ -821,7 +821,7 @@ The account-switcher behavior is implemented once in the framework-neutral
 `@friink/account-switcher` package. Hosts choose a presentation variant without
 forking its session behavior:
 
-- `button`: dropdown button only; used by the Web app drawer;
+- `button`: bare dropdown trigger with no visual chrome; used by the Web app drawer;
 - `picture`: avatar with a dropdown arrow; used by the Auth shell top bar and
   intended for narrow chrome;
 - `compact`: avatar and `@username`; intended for an expanded navigation area;

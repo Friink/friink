@@ -6273,3 +6273,8 @@ _Last updated: 2026-09-10_
   shared component presentation and styling remain active while switcher UX is
   reconsidered.
 
+## 2026-10-19T07:10:00Z
+
+- Made the Web account switcher's `button` variant a bare dropdown trigger with
+  no border, padding, background, radius, or shadow.
+

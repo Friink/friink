@@ -452,7 +452,8 @@ The composer attachment menu uses `Add media` (`fa-image`) and `Add link` (`fa-l
 
 - **Purpose**: Framework-neutral account discovery, account activation,
   add-account navigation, and account logout over Auth-owned APIs.
-- **Variants**: `button` renders only a dropdown button; `picture` renders an
+- **Variants**: `button` renders only a bare dropdown button without visual
+  chrome; `picture` renders an
   avatar with a dropdown arrow; `compact` renders an avatar and `@username`;
   `full` renders display name, email, username, and dropdown arrow. `full` is
   the default. The Auth shell uses `picture` in its top bar and the Web app

@@ -13,7 +13,7 @@ The component uses browser-native HTML, CSS, and JavaScript. It has no React, Ne
 ```
 
 Set `variant` to control the presentation without changing the component's
-behavior: `button` shows only a dropdown button, `picture` shows the avatar
+behavior: `button` shows only a bare dropdown button without visual chrome, `picture` shows the avatar
 with a dropdown arrow, `compact` shows the avatar and username, and `full`
 shows the name, email, username, and arrow. The default is `full`.
 

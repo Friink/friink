@@ -16831,3 +16831,9 @@ HEADER INTEGRITY RULE: This header is append-only. Never remove, reword, shorten
   restored the prior shared component implementation. Preserved the historical
   changelog entry and kept the change unpushed.
 
+# 2026-10-19T07:10:00Z
+
+- Made the shared switcher's `button` variant a bare dropdown trigger with no
+  visual chrome, and updated the active component documentation. Changes
+  remain unpushed.
+
